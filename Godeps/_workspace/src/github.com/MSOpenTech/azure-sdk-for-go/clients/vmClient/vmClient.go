@@ -18,16 +18,16 @@ import (
 	"github.com/MSOpenTech/azure-sdk-for-go/clients/imageClient"
 	"github.com/MSOpenTech/azure-sdk-for-go/clients/locationClient"
 	"github.com/MSOpenTech/azure-sdk-for-go/clients/storageServiceClient"
-	"github.com/MSOpenTech/azure-sdk-for-go/clients/vmDiskClient"
 )
 
 const (
 	azureXmlns                        = "http://schemas.microsoft.com/windowsazure"
 	azureDeploymentListURL            = "services/hostedservices/%s/deployments"
 	azureHostedServiceListURL         = "services/hostedservices"
-	azureHostedServiceURL             = "services/hostedservices/%s"
+	deleteAzureHostedServiceURL       = "services/hostedservices/%s?comp=media"
 	azureHostedServiceAvailabilityURL = "services/hostedservices/operations/isavailable/%s"
 	azureDeploymentURL                = "services/hostedservices/%s/deployments/%s"
+	deleteAzureDeploymentURL          = "services/hostedservices/%s/deployments/%s?comp=media"
 	azureRoleURL                      = "services/hostedservices/%s/deployments/%s/roles/%s"
 	azureOperationsURL                = "services/hostedservices/%s/deployments/%s/roleinstances/%s/Operations"
 	azureCertificatListURL            = "services/hostedservices/%s/certificates"
@@ -174,7 +174,7 @@ func DeleteHostedService(dnsName string) error {
 		return err
 	}
 
-	requestURL := fmt.Sprintf(azureHostedServiceURL, dnsName)
+	requestURL := fmt.Sprintf(deleteAzureHostedServiceURL, dnsName)
 	requestId, err := azure.SendAzureDeleteRequest(requestURL)
 	if err != nil {
 		return err
@@ -321,9 +321,6 @@ func SetAzureDockerVMExtension(azureVMConfiguration *Role, dockerPort int, versi
 	}
 
 	privateConfiguration := "{}"
-	if err != nil {
-		return nil, err
-	}
 
 	azureVMConfiguration, err = SetAzureVMExtension(azureVMConfiguration, "DockerExtension", "MSOpenTech.Extensions", version, "DockerExtension", "enable", publicConfiguration, privateConfiguration)
 	return azureVMConfiguration, nil
@@ -361,24 +358,13 @@ func DeleteVMDeployment(cloudserviceName, deploymentName string) error {
 		return fmt.Errorf(azure.ParamNotSpecifiedError, "deploymentName")
 	}
 
-	vmDeployment, err := GetVMDeployment(cloudserviceName, deploymentName)
-	if err != nil {
-		return err
-	}
-	vmDiskName := vmDeployment.RoleList.Role[0].OSVirtualHardDisk.DiskName
-
-	requestURL := fmt.Sprintf(azureDeploymentURL, cloudserviceName, deploymentName)
+	requestURL := fmt.Sprintf(deleteAzureDeploymentURL, cloudserviceName, deploymentName)
 	requestId, err := azure.SendAzureDeleteRequest(requestURL)
 	if err != nil {
 		return err
 	}
 
 	azure.WaitAsyncOperation(requestId)
-
-	err = vmDiskClient.DeleteDisk(vmDiskName)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
