@@ -98,7 +98,14 @@ Options:
 
 ## Contributing
 
-Want to hack on Machine? [Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md) apply, and you'll also need [Docker with identity authentication](https://github.com/dmcgowan/docker/tree/tls_libtrust_auth) checked out in your GOPATH.
+Want to hack on Machine? [Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md) apply.
+
+To build, run:
+
+    $ go get github.com/docker/machine
+    $ cd $GOPATH/src/github.com/docker/machine
+    $ script/build
+    $ ./machine
 
 ## Creators
 

@@ -1,0 +1,2 @@
+#!/bin/sh
+GOPATH=`pwd`/Godeps/_workspace:$GOPATH go build
