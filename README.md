@@ -1,6 +1,6 @@
 # Docker Machine
 
-Machine makes it really easy to create Docker hosts on local hypervisors and cloud providers. It create servers, installs Docker on them, then configures the Docker client to talk to them.
+Machine makes it really easy to create Docker hosts on local hypervisors and cloud providers. It creates servers, installs Docker on them, then configures the Docker client to talk to them.
 
 It works a bit like this:
 
