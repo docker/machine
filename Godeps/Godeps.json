@@ -1,11 +1,21 @@
 {
 	"ImportPath": "github.com/docker/machine",
-	"GoVersion": "go1.3",
+	"GoVersion": "go1.3.3",
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/goauth2/oauth",
 			"Comment": "weekly-56",
 			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
+		},
+		{
+			"ImportPath": "code.google.com/p/google-api-go-client/compute/v1",
+			"Comment": "release-107",
+			"Rev": "6ddfebb10ece847f1ae09c701834f1b15abbd8b2"
+		},
+		{
+			"ImportPath": "code.google.com/p/google-api-go-client/googleapi",
+			"Comment": "release-107",
+			"Rev": "6ddfebb10ece847f1ae09c701834f1b15abbd8b2"
 		},
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
