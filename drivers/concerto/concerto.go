@@ -109,6 +109,60 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
 	return nil
 }
 
+func (d *Driver) Put(url string) error {
+	request, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set("Accept", "application/json")
+
+	response, err := d.connection.Do(request)
+
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode >= 400 {
+		return errors.New("Not Found")
+	} else {
+		_, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func (d *Driver) Delete(url string, parameters url.Values) error {
+	request, err := http.NewRequest("DELETE", url, bytes.NewBufferString(parameters.Encode()))
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set("Accept", "application/json")
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("Content-Length", strconv.Itoa(len(parameters.Encode())))
+
+	response, err := d.connection.Do(request)
+
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode >= 400 {
+		return errors.New("Not Found")
+	} else {
+		_, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
 func (d *Driver) Post(url string, parameters url.Values) ([]byte, error) {
 	request, err := http.NewRequest("POST", url, bytes.NewBufferString(parameters.Encode()))
 	if err != nil {
@@ -294,23 +348,45 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	return fmt.Errorf("Not implemented yet")
+	err := d.Put(d.endpoint + "/krane/ships/" + d.ID + "/start")
+	if err != nil {
+		return errors.New("Unable to Start Machine")
+	}
+	return nil
 }
 
 func (d *Driver) Stop() error {
-	return fmt.Errorf("Not implemented yet")
+	err := d.Put(d.endpoint + "/krane/ships/" + d.ID + "/stop")
+	if err != nil {
+		return errors.New("Unable to Stop Machine")
+	}
+	return nil
 }
 
 func (d *Driver) Remove() error {
+	err := d.Delete(d.endpoint+"/krane/ships/"+d.ID, nil)
+	if err != nil {
+		return errors.New("Unable to Kill Machine")
+	}
 	return nil
 }
 
 func (d *Driver) Restart() error {
-	return fmt.Errorf("Not implemented yet")
+	err := d.Put(d.endpoint + "/krane/ships/" + d.ID + "/restart")
+	if err != nil {
+		return errors.New("Unable to Start Machine")
+	}
+	return nil
 }
 
 func (d *Driver) Kill() error {
-	return fmt.Errorf("Not implemented yet")
+	parameters := url.Values{}
+	parameters.Set("force", "1")
+	err := d.Delete(d.endpoint+"/krane/ships/"+d.ID, parameters)
+	if err != nil {
+		return errors.New("Unable to Kill Machine")
+	}
+	return nil
 }
 
 func (d *Driver) Upgrade() error {
