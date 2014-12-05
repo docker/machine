@@ -192,7 +192,7 @@ func (cli *DockerCli) CmdCreate(args ...string) error {
 	if err := store.SetActive(host); err != nil {
 		return err
 	}
-	log.Infof("%q has been created and is now the active machine. Docker commands will now run against that machine.", name)
+	log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity", name)
 	return nil
 }
 
