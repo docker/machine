@@ -146,3 +146,34 @@ func (s *Store) RemoveActive() error {
 func (s *Store) activePath() string {
 	return filepath.Join(s.Path, ".active")
 }
+
+func (s *Store) Rename(oldName string, newName string) error {
+
+	oldHost, err := s.Load(oldName)
+	if err != nil {
+		return nil
+	}
+	isActive, err := s.IsActive(oldHost)
+	if err != nil {
+		return nil
+	}
+
+	oldPath := filepath.Join(s.Path, oldName)
+	newPath := filepath.Join(s.Path, newName)
+	if err := os.Rename(oldPath, newPath); err != nil {
+		return err
+	}
+
+	newHost, err := s.Load(newName)
+	if err != nil {
+		return err
+	}
+
+	if isActive {
+		if err := s.SetActive(newHost); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

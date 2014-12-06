@@ -286,6 +286,29 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Name:  "rename",
+		Usage: "Rename a machine",
+		Action: func(c *cli.Context) {
+			oldName := c.Args().First()
+			if oldName == "" {
+				cli.ShowCommandHelp(c, "rename")
+				os.Exit(1)
+			}
+			newName := c.Args().Get(1)
+			if newName == "" {
+				cli.ShowCommandHelp(c, "rename")
+				os.Exit(1)
+			}
+
+			store := NewStore()
+
+			if err := store.Rename(oldName, newName); err != nil {
+				log.Errorf("error unable to rename %s to %s: %s", oldName, newName, err)
+				os.Exit(1)
+			}
+		},
+	},
+	{
 		Name:  "restart",
 		Usage: "Restart a machine",
 		Action: func(c *cli.Context) {

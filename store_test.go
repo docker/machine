@@ -231,3 +231,133 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatalf("Active host is not nil", host.Name)
 	}
 }
+
+func TestStoreRename(t *testing.T) {
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
+	store := NewStore()
+	_, err := store.Create("test1", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = store.Rename("test1", "test2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exists, err := store.Exists("test2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		t.Fatal("Exists returned false when it should have been true")
+	}
+}
+
+func TestStoreRenameActive(t *testing.T) {
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
+	// Create test1 & test2
+	store := NewStore()
+	_, err := store.Create("test1", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldActiveHost, err := store.Create("test2", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// set test2 as Active
+	if err := store.SetActive(oldActiveHost); err != nil {
+		t.Fatal(err)
+	}
+
+	// Rename test2 to test3
+	err = store.Rename("test2", "test3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exists, err := store.Exists("test3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		t.Fatal("Exists returned false when it should have been true")
+	}
+
+	// Active host should be test3
+	newActiveHost, err := store.GetActive()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newActiveHost.Name != "test3" {
+		t.Fatalf("Active host is not 'test3', got %s", newActiveHost.Name)
+	}
+}
+
+func TestStoreRenameInactive(t *testing.T) {
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
+	// Create test1 & test2
+	store := NewStore()
+	oldActiveHost, err := store.Create("test1", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.Create("test2", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// set test1 as Active
+	if err := store.SetActive(oldActiveHost); err != nil {
+		t.Fatal(err)
+	}
+
+	// Rename test2 to test3
+	err = store.Rename("test2", "test3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exists, err := store.Exists("test3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		t.Fatal("Exists returned false when it should have been true")
+	}
+
+	// Active host should be test1
+	newActiveHost, err := store.GetActive()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newActiveHost.Name != "test1" {
+		t.Fatalf("Active host is not 'test1', got %s", newActiveHost.Name)
+	}
+}
