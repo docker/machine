@@ -93,6 +93,10 @@ Options:
  - `--azure-subscription-id`: Your Azure subscription ID.
  - `--azure-subscription-cert`: Your Azure subscription cert.
 
+### Cloudstack
+
+TO be filled...
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
