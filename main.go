@@ -36,8 +36,8 @@ func main() {
 			{"stop", "Stop a machine"},
 			{"upgrade", "Upgrade a machine to the latest version of Docker"},
 			{"url", "Get the URL of a machine"},
-      {"export", "Export a machine"},
-      {"import", "Import a machine"},
+			{"export", "Export a machine"},
+			{"import", "Import a machine"},
 		} {
 			help += fmt.Sprintf("    %-10.10s%s\n", command[0], command[1])
 		}

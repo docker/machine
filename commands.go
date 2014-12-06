@@ -8,12 +8,12 @@ import (
 	"strings"
 	"sync"
 	"text/tabwriter"
-  "path"
-  "path/filepath"
-  "archive/tar"
-  "bytes"
-  "io"
-  "io/ioutil"
+	"path"
+	"path/filepath"
+	"archive/tar"
+	"bytes"
+	"io"
+	"io/ioutil"
 
 	log "github.com/Sirupsen/logrus"
 	flag "github.com/docker/docker/pkg/mflag"
@@ -457,111 +457,111 @@ func (cli *DockerCli) CmdActive(args ...string) error {
 }
 
 func (cli * DockerCli) CmdExport(args ...string) error {
-  cmd := cli.Subcmd("machines export", "[NAME]", "Export a machine to a tarfile")
-	if err := cmd.Parse(args); err != nil {
-    return err
-  }
+	cmd := cli.Subcmd("machines export", "[NAME]", "Export a machine to a tarfile")
+		if err := cmd.Parse(args); err != nil {
+		return err
+	}
 
 	store := NewStore()
 
-  if  cmd.NArg() == 0 {
-    cmd.Usage()
-    return nil
-  }
+	if  cmd.NArg() == 0 {
+		cmd.Usage()
+		return nil
+	}
 
-  hostName := cmd.Arg(0)
-  hostPath := path.Join(store.Path, hostName)
+	hostName := cmd.Arg(0)
+	hostPath := path.Join(store.Path, hostName)
 
-  files, err := ioutil.ReadDir(hostPath)
-  if err != nil {
-    return err
-  }
+	files, err := ioutil.ReadDir(hostPath)
+	if err != nil {
+		return err
+	}
 
-  buf := new(bytes.Buffer)
-  tw := tar.NewWriter(buf)
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
 
-  for _, file := range files {
+	for _, file := range files {
 
-    hdr := &tar.Header{
-      Name: file.Name(),
-      Mode: int64(file.Mode()),
-      Size: file.Size(),
-    }
-    if err := tw.WriteHeader(hdr); err != nil {
-      return err
-    }
+		hdr := &tar.Header{
+			Name: file.Name(),
+			Mode: int64(file.Mode()),
+			Size: file.Size(),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
 
-    fileO, err := os.Open(path.Join(hostPath, file.Name()))
-    if err != nil{
-      return err
-    }
+		fileO, err := os.Open(path.Join(hostPath, file.Name()))
+		if err != nil{
+			return err
+		}
 
-    _, err = io.Copy(tw, fileO)
-    if err != nil{
-      return err
-    }
-  }
+		_, err = io.Copy(tw, fileO)
+		if err != nil{
+			return err
+		}
+	}
 
-  output := hostName + ".tar"
-  err = ioutil.WriteFile(output, buf.Bytes(), 0600)
-  if err != nil {
-    return err
-  }
+	output := hostName + ".tar"
+	err = ioutil.WriteFile(output, buf.Bytes(), 0600)
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 
 }
 
 func (cli * DockerCli) CmdImport(args ...string) error {
-  cmd := cli.Subcmd("machines import", "[TARFILE]", "Import a machine from a tarfile")
+	cmd := cli.Subcmd("machines import", "[TARFILE]", "Import a machine from a tarfile")
 	if err := cmd.Parse(args); err != nil {
-    return err
-  }
+		return err
+	}
 
-  if  cmd.NArg() == 0 {
-    cmd.Usage()
-    return nil
-  }
+	if  cmd.NArg() == 0 {
+		cmd.Usage()
+		return nil
+	}
 
-  store := NewStore()
+	store := NewStore()
 
-  tarName := cmd.Arg(0)
-  hostName := strings.TrimSuffix(tarName, filepath.Ext(tarName))
+	tarName := cmd.Arg(0)
+	hostName := strings.TrimSuffix(tarName, filepath.Ext(tarName))
 
-  curDir, err := os.Getwd()
-  tarPath := path.Join(curDir, tarName)
-  data, err := ioutil.ReadFile(tarPath)
-  if err != nil {
-    return err
-  }
+	curDir, err := os.Getwd()
+	tarPath := path.Join(curDir, tarName)
+	data, err := ioutil.ReadFile(tarPath)
+	if err != nil {
+		return err
+	}
 
-  r := bytes.NewReader(data)
-  tr := tar.NewReader(r)
+	r := bytes.NewReader(data)
+	tr := tar.NewReader(r)
 
-  os.MkdirAll(path.Join(store.Path, hostName), 0700)
+	os.MkdirAll(path.Join(store.Path, hostName), 0700)
 
-  // Iterate through the files in the archive.
-  for {
-    hdr, err := tr.Next()
-    if err == io.EOF {
-      break
-    }
-    if err != nil {
-      return err
-    }
-    buf := new(bytes.Buffer)
-    if _, err := io.Copy(buf, tr); err != nil {
-      return err
-    }
+	// Iterate through the files in the archive.
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		buf := new(bytes.Buffer)
+		if _, err := io.Copy(buf, tr); err != nil {
+			return err
+		}
 
-    filePath := path.Join(store.Path, hostName, hdr.Name)
-    err = ioutil.WriteFile(filePath, buf.Bytes(), 0600)
-    if err != nil {
-      return err
-    }
-  }
+		filePath := path.Join(store.Path, hostName, hdr.Name)
+		err = ioutil.WriteFile(filePath, buf.Bytes(), 0600)
+		if err != nil {
+			return err
+		}
+	}
 
-  return nil
+	return nil
 }
 
 
