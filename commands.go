@@ -1,19 +1,19 @@
 package main
 
 import (
+	"archive/tar"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 	"text/tabwriter"
-	"path"
-	"path/filepath"
-	"archive/tar"
-	"bytes"
-	"io"
-	"io/ioutil"
 
 	log "github.com/Sirupsen/logrus"
 	flag "github.com/docker/docker/pkg/mflag"
@@ -456,15 +456,15 @@ func (cli *DockerCli) CmdActive(args ...string) error {
 
 }
 
-func (cli * DockerCli) CmdExport(args ...string) error {
+func (cli *DockerCli) CmdExport(args ...string) error {
 	cmd := cli.Subcmd("machines export", "[NAME]", "Export a machine to a tarfile")
-		if err := cmd.Parse(args); err != nil {
+	if err := cmd.Parse(args); err != nil {
 		return err
 	}
 
 	store := NewStore()
 
-	if  cmd.NArg() == 0 {
+	if cmd.NArg() == 0 {
 		cmd.Usage()
 		return nil
 	}
@@ -492,12 +492,12 @@ func (cli * DockerCli) CmdExport(args ...string) error {
 		}
 
 		fileO, err := os.Open(path.Join(hostPath, file.Name()))
-		if err != nil{
+		if err != nil {
 			return err
 		}
 
 		_, err = io.Copy(tw, fileO)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
@@ -512,13 +512,13 @@ func (cli * DockerCli) CmdExport(args ...string) error {
 
 }
 
-func (cli * DockerCli) CmdImport(args ...string) error {
+func (cli *DockerCli) CmdImport(args ...string) error {
 	cmd := cli.Subcmd("machines import", "[TARFILE]", "Import a machine from a tarfile")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
 
-	if  cmd.NArg() == 0 {
+	if cmd.NArg() == 0 {
 		cmd.Usage()
 		return nil
 	}
@@ -563,7 +563,6 @@ func (cli * DockerCli) CmdImport(args ...string) error {
 
 	return nil
 }
-
 
 func (cli *DockerCli) CmdInspect(args ...string) error {
 	cmd := cli.Subcmd("machines inspect", "[NAME]", "Get detailed information about a machine")
