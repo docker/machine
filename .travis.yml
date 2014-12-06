@@ -3,4 +3,5 @@ go:
 - 1.3
 script:
 - script/validate-dco
+- script/validate-gofmt
 - script/test
