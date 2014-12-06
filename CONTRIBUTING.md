@@ -1,4 +1,4 @@
-# Contributing to libtrust
+# Contributing to machine
 
 Want to hack on Machine? Awesome! Here are instructions to get you
 started.
