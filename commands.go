@@ -62,7 +62,7 @@ func (cli *DockerCli) Subcmd(name, signature, description string) *flag.FlagSet 
 		if flags.FlagCountUndeprecated() > 0 {
 			options = "[OPTIONS] "
 		}
-		fmt.Fprintf(os.Stderr, "\nUsage: docker %s %s%s\n\n%s\n\n", name, options, signature, description)
+		fmt.Fprintf(os.Stderr, "\nUsage: machine %s %s%s\n\n%s\n\n", name, options, signature, description)
 		flags.PrintDefaults()
 		os.Exit(2)
 	}
@@ -93,7 +93,7 @@ func (cli *DockerCli) CmdHelp(args ...string) error {
 }
 
 func (cli *DockerCli) CmdLs(args ...string) error {
-	cmd := cli.Subcmd("machines ls", "", "List machines")
+	cmd := cli.Subcmd("ls", "", "List machines")
 	quiet := cmd.Bool([]string{"q", "-quiet"}, false, "Only display names")
 
 	if err := cmd.Parse(args); err != nil {
@@ -161,7 +161,7 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 }
 
 func (cli *DockerCli) CmdCreate(args ...string) error {
-	cmd := cli.Subcmd("machines create", "NAME", "Create machines")
+	cmd := cli.Subcmd("create", "NAME", "Create machines")
 
 	driverDesc := fmt.Sprintf(
 		"Driver to create machine with. Available drivers: %s",
@@ -197,7 +197,7 @@ func (cli *DockerCli) CmdCreate(args ...string) error {
 }
 
 func (cli *DockerCli) CmdStart(args ...string) error {
-	cmd := cli.Subcmd("machines start", "NAME", "Start a machine")
+	cmd := cli.Subcmd("start", "NAME", "Start a machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func (cli *DockerCli) CmdStart(args ...string) error {
 }
 
 func (cli *DockerCli) CmdStop(args ...string) error {
-	cmd := cli.Subcmd("machines stop", "NAME", "Stop a machine")
+	cmd := cli.Subcmd("stop", "NAME", "Stop a machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func (cli *DockerCli) CmdStop(args ...string) error {
 }
 
 func (cli *DockerCli) CmdRm(args ...string) error {
-	cmd := cli.Subcmd("machines rm", "NAME", "Remove a machine")
+	cmd := cli.Subcmd("rm", "NAME", "Remove a machine")
 	force := cmd.Bool([]string{"f", "-force"}, false, "Remove local configuration even if machine cannot be removed")
 
 	if err := cmd.Parse(args); err != nil {
@@ -263,7 +263,7 @@ func (cli *DockerCli) CmdRm(args ...string) error {
 }
 
 func (cli *DockerCli) CmdIp(args ...string) error {
-	cmd := cli.Subcmd("machines ip", "NAME", "Get the IP address of a machine")
+	cmd := cli.Subcmd("ip", "NAME", "Get the IP address of a machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -304,7 +304,7 @@ func (cli *DockerCli) CmdIp(args ...string) error {
 }
 
 func (cli *DockerCli) CmdUrl(args ...string) error {
-	cmd := cli.Subcmd("machines url", "NAME", "Get the URL of a machine")
+	cmd := cli.Subcmd("url", "NAME", "Get the URL of a machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -345,7 +345,7 @@ func (cli *DockerCli) CmdUrl(args ...string) error {
 }
 
 func (cli *DockerCli) CmdRestart(args ...string) error {
-	cmd := cli.Subcmd("machines restart", "NAME", "Restart a machine")
+	cmd := cli.Subcmd("restart", "NAME", "Restart a machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -364,7 +364,7 @@ func (cli *DockerCli) CmdRestart(args ...string) error {
 }
 
 func (cli *DockerCli) CmdKill(args ...string) error {
-	cmd := cli.Subcmd("machines kill", "NAME", "Kill a machine")
+	cmd := cli.Subcmd("kill", "NAME", "Kill a machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -383,7 +383,7 @@ func (cli *DockerCli) CmdKill(args ...string) error {
 }
 
 func (cli *DockerCli) CmdSsh(args ...string) error {
-	cmd := cli.Subcmd("machines ssh", "NAME [COMMAND ...]", "Log into or run a command on a machine with SSH")
+	cmd := cli.Subcmd("ssh", "NAME [COMMAND ...]", "Log into or run a command on a machine with SSH")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -419,7 +419,7 @@ func (cli *DockerCli) CmdSsh(args ...string) error {
 }
 
 func (cli *DockerCli) CmdActive(args ...string) error {
-	cmd := cli.Subcmd("machines active", "[NAME]", "Get or set the active machine")
+	cmd := cli.Subcmd("active", "[NAME]", "Get or set the active machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -451,7 +451,7 @@ func (cli *DockerCli) CmdActive(args ...string) error {
 }
 
 func (cli *DockerCli) CmdInspect(args ...string) error {
-	cmd := cli.Subcmd("machines inspect", "[NAME]", "Get detailed information about a machine")
+	cmd := cli.Subcmd("inspect", "[NAME]", "Get detailed information about a machine")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
@@ -478,7 +478,7 @@ func (cli *DockerCli) CmdInspect(args ...string) error {
 }
 
 func (cli *DockerCli) CmdUpgrade(args ...string) error {
-	cmd := cli.Subcmd("machines upgrade", "[NAME]", "Upgrade a machine to the latest version of Docker")
+	cmd := cli.Subcmd("upgrade", "[NAME]", "Upgrade a machine to the latest version of Docker")
 	if err := cmd.Parse(args); err != nil {
 		return err
 	}
