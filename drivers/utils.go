@@ -6,8 +6,12 @@ import (
 	"path/filepath"
 )
 
+func PublicKeyPath() string {
+	return filepath.Join(os.Getenv("HOME"), ".docker/public-key.json")
+}
+
 func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
+	f, err := os.Open(PublicKeyPath())
 	if err != nil {
 		return err
 	}
@@ -20,4 +24,14 @@ func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {
 	}
 	cmd.Stdin = f
 	return cmd.Run()
+}
+
+func PublicKeyExists() (bool, error) {
+	_, err := os.Stat(PublicKeyPath())
+	if err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
