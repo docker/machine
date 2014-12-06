@@ -96,6 +96,10 @@ Options:
  - `--azure-subscription-id`: Your Azure subscription ID.
  - `--azure-subscription-cert`: Your Azure subscription cert.
 
+### Cloudstack
+
+TO be filled...
+
 ## Contributing
 
 Want to hack on Machine? [Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md) apply.
