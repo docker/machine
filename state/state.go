@@ -9,6 +9,7 @@ const (
 	Paused
 	Saved
 	Stopped
+	Stopping
 	Starting
 	Error
 )
@@ -19,6 +20,7 @@ var states = []string{
 	"Paused",
 	"Saved",
 	"Stopped",
+	"Stopping",
 	"Starting",
 	"Error",
 }
