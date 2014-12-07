@@ -39,7 +39,7 @@ func main() {
 		} {
 			help += fmt.Sprintf("    %-10.10s%s\n", command[0], command[1])
 		}
-		help += "\nRun 'docker COMMAND --help' for more information on a command."
+		help += "\nRun 'machine COMMAND --help' for more information on a command."
 		fmt.Fprintf(os.Stderr, "%s\n", help)
 	}
 
