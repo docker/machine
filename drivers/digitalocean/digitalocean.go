@@ -86,9 +86,9 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
 	d.Region = *flags.Region
 	d.Size = *flags.Size
 
-  if os.Getenv("DIGITALOCEAN_ACCESS_TOKEN") != "" {
-    d.AccessToken = os.Getenv("DIGITALOCEAN_ACCESS_TOKEN")
-  }
+	if os.Getenv("DIGITALOCEAN_ACCESS_TOKEN") != "" {
+		d.AccessToken = os.Getenv("DIGITALOCEAN_ACCESS_TOKEN")
+	}
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
