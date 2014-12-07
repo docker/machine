@@ -91,7 +91,7 @@ func (d *Driver) Create() error {
 		isoURL string
 	)
 
-	if err = vbm("--version"); err != nil {
+	if err = vbm(""); err != nil {
 		return err
 	}
 
