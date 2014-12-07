@@ -91,6 +91,10 @@ func (d *Driver) Create() error {
 		isoURL string
 	)
 
+	if err = vbm("--version"); err != nil {
+		return err
+	}
+
 	d.SSHPort, err = getAvailableTCPPort()
 	if err != nil {
 		return err
