@@ -86,6 +86,10 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
 	d.Region = *flags.Region
 	d.Size = *flags.Size
 
+	if os.Getenv("DIGITALOCEAN_REGION") != "" {
+		d.Region = os.Getenv("DIGITALOCEAN_REGION")
+	}
+
 	if os.Getenv("DIGITALOCEAN_ACCESS_TOKEN") != "" {
 		d.AccessToken = os.Getenv("DIGITALOCEAN_ACCESS_TOKEN")
 	}
