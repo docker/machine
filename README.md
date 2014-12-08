@@ -52,6 +52,16 @@ You will also need a version of Docker with identity authentication. Builds are 
  - Mac OS X: https://bfirsh.s3.amazonaws.com/docker/darwin/docker-1.3.1-dev-identity-auth
  - Linux: https://bfirsh.s3.amazonaws.com/docker/linux/docker-1.3.1-dev-identity-auth
 
+Once you have the tailored docker, you need to create the public key. Just call the Docker client
+without any subcommand/option:
+
+```
+$ ./docker-1.3.1-dev-identity-auth
+```
+
+It will create: `~/.docker/public-key.json`.
+
+
 ## Drivers
 
 ### VirtualBox
