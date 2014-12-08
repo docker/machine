@@ -630,9 +630,9 @@ func (d *Driver) setupDocker() error {
 	}
 
 	if buildErr != nil || !installed {
-		log.Infof(`You'll need to log in with "docker hosts ssh" and:`)
+		log.Infof(`You'll need to log in with "machine ssh" and:`)
 		log.Infof(" * Install Docker if necessary")
-		log.Infof(" * Configure Docker to listen on all interfaces")
+		log.Infof(" * Configure Docker to use identity auth and listen on all interfaces")
 	}
 
 	return nil
