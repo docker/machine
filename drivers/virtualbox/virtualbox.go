@@ -91,6 +91,7 @@ func (d *Driver) Create() error {
 		isoURL string
 	)
 
+	// Check that VBoxManage exists and works
 	if err = vbm(""); err != nil {
 		return err
 	}
