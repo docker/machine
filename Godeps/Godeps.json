@@ -10,7 +10,7 @@
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-14-g814812a",
-			"Rev": "814812a21a49da38c5cc808ec0958277e33c81d3"
+			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
