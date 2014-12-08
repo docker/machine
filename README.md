@@ -100,12 +100,21 @@ Options:
 
 Want to hack on Machine? [Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md) apply.
 
-To build, run:
+To build :
+
+ - On *Nix/Linux, run:
 
     $ go get github.com/docker/machine
     $ cd $GOPATH/src/github.com/docker/machine
     $ script/build
     $ ./machine
+
+ - On Windows, run:
+
+    > go get github.com/docker/machine
+    > cd %GOPATH%\src\github.com\docker\machine
+    > script\windows\build.bat
+    >machine.exe
 
 ## Creators
 
