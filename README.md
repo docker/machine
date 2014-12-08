@@ -98,6 +98,9 @@ Options:
 
 ## Contributing
 
+[![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
+[![Build Status](https://travis-ci.org/docker/machine.svg?branch=master)](https://travis-ci.org/docker/machine)
+
 Want to hack on Machine? [Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md) apply.
 
 To build, run:
@@ -107,10 +110,11 @@ To build, run:
     $ script/build
     $ ./machine
 
+If you have any questions we're in #docker-machine on Freenode.
+
 ## Creators
 
 **Ben Firshman**
 
 - <https://twitter.com/bfirsh>
 - <https://github.com/bfirsh>
-
