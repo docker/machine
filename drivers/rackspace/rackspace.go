@@ -586,145 +586,19 @@ func (d *Driver) setupDocker() error {
 		return err
 	}
 
-	kinds := make(map[string]func() error)
-	kinds["(which apt && which service)"] = func() error { return d.setupDockerUbuntu() }
-	kinds["(yum --help)"] = func() error { return d.setupDockerFedora() }
-	kinds["(which docker && which systemctl && which update_engine_client)"] = func() error { return d.setupDockerCoreOS() }
-
-	var buildErr error
-	installed := false
-
-	for probe, installCmdFunc := range kinds {
-		// The &&/|| bit keeps the ssh command from exiting with an unsuccessful status when the
-		// probe fails, which would keep us from being able to tell the difference between
-		// connection problems and a failed probe.
-		probeCmd := fmt.Sprintf(`%s && echo -n "yes" || echo -n "no"`, probe)
-		sshCmd, err := d.GetSSHCommand(probeCmd)
-		if err != nil {
-			buildErr = err
-			break
-		}
-		output, err := sshCmd.Output()
-		if err != nil {
-			buildErr = err
-			break
-		}
-
-		if strings.HasSuffix(string(output), "yes") {
-			if err := installCmdFunc(); err != nil {
-				buildErr = err
-			} else {
-				installed = true
-			}
-			break
-		}
-	}
-
-	if buildErr != nil {
-		log.Errorf("Something broke while I was setting up Docker on this host!")
-		log.Errorf("Details: %v", buildErr)
-	}
-
-	if !installed {
-		log.Errorf("I don't know how to set up Docker on this host!")
-	}
-
-	if buildErr != nil || !installed {
-		log.Infof(`You'll need to log in with "machine ssh" and:`)
-		log.Infof(" * Install Docker if necessary")
-		log.Infof(" * Configure Docker to use identity auth and listen on all interfaces")
-	}
-
-	return nil
-}
-
-const systemdInit = `[Unit]
-Description=Docker Socket for the API
-
-[Socket]
-ListenStream=2376
-BindIPv6Only=both
-Service=docker.service
-
-[Install]
-WantedBy=sockets.target`
-
-func (d *Driver) setupDockerUbuntu() error {
 	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
 		return err
 	}
 
-	return d.sshAll([]string{
-		`curl -sSL https://get.docker.com/ | sh`,
-		`service docker stop`,
-		`curl https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -o /usr/bin/docker`,
-		`echo 'export DOCKER_OPTS="--auth=identity --host=tcp://0.0.0.0:2376"' >> /etc/default/docker`,
-		`service docker start`,
-	})
-}
-
-func (d *Driver) setupDockerFedora() error {
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
-	const systemdConfig = `OPTIONS=--auth=identity --host=tcp://0.0.0.0:2376 --selinux-enabled`
-
-	return d.sshAll([]string{
-		`curl -sSL https://get.docker.com | sh`,
-		`systemctl stop docker`,
-		`curl https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -o /usr/bin/docker`,
-		fmt.Sprintf(`echo '%s' > /etc/sysconfig/docker`, systemdConfig),
-		`setsebool -P docker_connect_any 1`,
-		`firewall-cmd --zone=public --add-port=2376/tcp`,
-		`firewall-cmd --permanent --zone=public --add-port=2376/tcp`,
-		`systemctl start docker`,
-	})
-}
-
-func (d *Driver) setupDockerCoreOS() error {
-	// Ignore the error here because it boots us from ssh.
-	d.sshAll([]string{"update_engine_client -update"})
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.ServerIPAddr, 22)); err != nil {
-		return err
-	}
-
-	// HACK: Replace the docker daemon in place.
-	cmd, err := d.GetSSHCommand("sudo curl https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -o /usr/bin/docker")
+	sshCmd, err := d.GetSSHCommand(`curl -sSL https://gist.githubusercontent.com/smashwilson/1a286139720a28ac6ead/raw/41d93c57ea2e86815cdfbfec42aaa696034afcc8/setup-docker.sh | /bin/bash`)
 	if err != nil {
 		return err
 	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
-	serviceCmds := []string{
-		`systemctl enable docker-tcp.socket`,
-		`systemctl stop docker`,
-		`systemctl start docker-tcp.socket`,
-		`systemctl start docker`,
-	}
-
-	return d.sshAll([]string{
-		fmt.Sprintf(`sudo sh -c "echo '%s' > /etc/systemd/system/docker-tcp.socket"`, systemdInit),
-		fmt.Sprintf(`sudo sh -c "%s"`, strings.Join(serviceCmds, " && ")),
-	})
-}
-
-func (d *Driver) sshAll(commands []string) error {
-	for _, command := range commands {
-		sshCmd, err := d.GetSSHCommand(command)
-		if err != nil {
-			return err
-		}
-		if err := sshCmd.Run(); err != nil {
-			return err
-		}
+	if err := sshCmd.Run(); err != nil {
+		log.Infof("Error while bootstrapping docker: %v", err)
+		log.Infof(`You'll need to log in with "machine ssh" and:`)
+		log.Infof(" * Install Docker if necessary")
+		log.Infof(" * Configure Docker to use identity auth and listen on all interfaces")
 	}
 
 	return nil
