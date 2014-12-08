@@ -180,6 +180,14 @@ func (cli *DockerCli) CmdCreate(args ...string) error {
 		return nil
 	}
 
+	keyExists, err := drivers.PublicKeyExists()
+	if err != nil {
+		return err
+	}
+	if !keyExists {
+		log.Fatalf("Identity auth public key does not exist at %s. Please run the docker client without any options to create it.", drivers.PublicKeyPath())
+	}
+
 	name := cmd.Arg(0)
 
 	store := NewStore()
