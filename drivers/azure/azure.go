@@ -320,23 +320,18 @@ func (driver *Driver) Remove() error {
 		return err
 	}
 
-	_, err = vmClient.GetVMDeployment(driver.Name, driver.Name)
+	available, _, err := vmClient.CheckHostedServiceNameAvailability(driver.Name)
 	if err != nil {
-		if strings.Contains(err.Error(), "Code: ResourceNotFound") {
-			return nil
-		}
-
 		return err
 	}
-
-	err = vmClient.DeleteVMDeployment(driver.Name, driver.Name)
-	if err != nil {
-		return err
+	if available {
+		return nil
 	}
 	err = vmClient.DeleteHostedService(driver.Name)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
