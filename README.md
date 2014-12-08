@@ -46,6 +46,7 @@ Machine is still in its early stages. If you'd like to try out a preview build, 
 
  - Mac OS X: https://github.com/docker/machine/releases/download/0.0.1/darwin
  - Linux: https://github.com/docker/machine/releases/download/0.0.1/linux
+ - Windows : https://dl.dropboxusercontent.com/u/2524496/Docker/machine/windows/0.0.1/machine.exe
 
 You will also need a version of Docker with identity authentication. Builds are available here:
 
