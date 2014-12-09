@@ -89,7 +89,7 @@ Go to the Azure portal, go to the "Settings" page, then "Manage Certificates" an
 
 Grab your subscription ID from the portal, then run `machine create` with these details:
 
-    $ machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.cer"
+    $ machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem"
 
 Options:
 
