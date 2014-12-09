@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 func PublicKeyPath() string {
-	return filepath.Join(os.Getenv("HOME"), ".docker/public-key.json")
+	homeDir, err := homedir.Dir()
+	if err != nil {
+		homeDir = ""
+	}
+	return filepath.Join(homeDir, ".docker/public-key.json")
 }
 
 func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {
