@@ -20,7 +20,7 @@ func NewStore() *Store {
 	return &Store{Path: rootPath}
 }
 
-func (s *Store) Create(name string, driverName string, createFlags interface{}) (*Host, error) {
+func (s *Store) Create(name string, driverName string, flags drivers.DriverOptions) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -35,8 +35,8 @@ func (s *Store) Create(name string, driverName string, createFlags interface{}) 
 	if err != nil {
 		return host, err
 	}
-	if createFlags != nil {
-		if err := host.Driver.SetConfigFromFlags(createFlags); err != nil {
+	if flags != nil {
+		if err := host.Driver.SetConfigFromFlags(flags); err != nil {
 			return host, err
 		}
 	}
