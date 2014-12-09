@@ -102,28 +102,19 @@ func (d *Driver) Create() error {
 	}
 	d.setMachineNameIfNotSet()
 
-	// HACK: if ~/.docker/boot2docker.iso exists, use that
-	localISOPath := path.Join(os.Getenv("HOME"), ".docker/boot2docker.iso")
-	if _, err := os.Stat(localISOPath); err == nil {
-		cmd := exec.Command("cp", localISOPath, path.Join(d.storePath, "boot2docker.iso"))
-		if err := cmd.Run(); err != nil {
-			return err
-		}
+	if d.Boot2DockerURL != "" {
+		isoURL = d.Boot2DockerURL
 	} else {
-		if d.Boot2DockerURL != "" {
-			isoURL = d.Boot2DockerURL
-		} else {
-			// HACK: Docker 1.3 boot2docker image with client/daemon auth
-			isoURL = "https://bfirsh.s3.amazonaws.com/boot2docker/boot2docker-1.3.1-identity-auth.iso"
-			// isoURL, err = getLatestReleaseURL()
-			// if err != nil {
-			// 	return err
-			// }
-		}
-		log.Infof("Downloading boot2docker...")
-		if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
-			return err
-		}
+		// HACK: Docker 1.3 boot2docker image with client/daemon auth
+		isoURL = "https://bfirsh.s3.amazonaws.com/boot2docker/boot2docker-1.3.1-identity-auth.iso"
+		// isoURL, err = getLatestReleaseURL()
+		// if err != nil {
+		// 	return err
+		// }
+	}
+	log.Infof("Downloading boot2docker...")
+	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+		return err
 	}
 
 	log.Infof("Creating SSH key...")
