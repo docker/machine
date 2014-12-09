@@ -119,6 +119,20 @@
 			"Rev": "1f0db8c0ee6362470abe06a94e3385927ed72a4b"
 		},
 		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
+		},
+		{
+			"ImportPath": "github.com/racker/perigee",
+			"Comment": "v0.0.0-18-g0c00cb0",
+			"Rev": "0c00cb0a026b71034ebc8205263c77dad3577db5"
+		},
+		{
+			"ImportPath": "github.com/rackspace/gophercloud",
+			"Comment": "v1.0.0-232-g2e7ab37",
+			"Rev": "2e7ab378257b8723e02cbceac7410be4db286436"
+		},
+		{
 			"ImportPath": "github.com/tent/http-link-go",
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		},
