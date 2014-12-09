@@ -4,24 +4,30 @@ import (
     "fmt"
     "os/exec"
 
-    "github.com/docker/docker/api"
-    flag "github.com/docker/docker/pkg/mflag"
     "github.com/docker/machine/drivers"
     "github.com/docker/machine/state"
+    log "github.com/Sirupsen/logrus"
     gcs "github.com/mindjiver/gopherstack"
+    flag "github.com/docker/docker/pkg/mflag"
+    
 )
 
-// Driver is the driver used when no driver is selected. It is used to
-// connect to existing Docker hosts by specifying the URL of the host as
-// an option.
 type Driver struct {
-    ApiKey      string
-    SecretKey   string
+    ApiURL              string
+    ApiKey              string
+    SecretKey           string
+    TemplateName        string
+    TemplateId          string
+    OfferName           string
+    OfferId             string
 }
 
 type CreateFlags struct {
-    ApiKey      *string
-    SecretKey   *string
+    ApiURL              *string
+    ApiKey              *string
+    SecretKey           *string
+    TemplateName        *string
+    OfferName           *string
 }
 
 func init() {
@@ -35,6 +41,11 @@ func init() {
 // "machine create"
 func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
     createFlags := new(CreateFlags)
+    createFlags.ApiURL = cmd.String(
+        []string{"-cloudstack-api-url"},
+        "",
+        "Your cloudstack API URL",
+    )
     createFlags.ApiKey = cmd.String(
         []string{"-cloudstack-api-key"},
         "",
@@ -45,6 +56,17 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
         "",
         "Your cloudstack secret key",
     )
+    createFlags.OfferName = cmd.String(
+        []string{"-cloudstack-offer"},
+        "",
+        "Your cloudstack offer ",
+    )
+    createFlags.OfferName = cmd.String(
+        []string{"-cloudstack-template"},
+        "",
+        "Your cloudstack template to use",
+    )
+
     return createFlags
 }
 
@@ -58,19 +80,63 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
     flags := flagsInterface.(*CreateFlags)
-    if *flags.URL == "" {
-        return fmt.Errorf("--url option is required when no driver is selected")
+
+    d.ApiURL = *flags.ApiURL
+    if d.ApiURL == "" {
+        return fmt.Errorf("cloudstack driver requires the --cloudstack-api-url option")
     }
-    url, err := api.ValidateHost(*flags.URL)
-    if err != nil {
-        return err
+
+    d.ApiKey = *flags.ApiKey
+    if d.ApiKey == "" {
+        return fmt.Errorf("cloudstack driver requires the --cloudstack-api-key option")
     }
-    d.URL = url
+
+    d.SecretKey = *flags.SecretKey
+    if d.SecretKey == "" {
+        return fmt.Errorf("cloudstack driver requires the --cloudstack-secret-key option")
+    }
+
+    d.OfferName = *flags.OfferName
+    if d.OfferName == "" {
+        return fmt.Errorf("cloudstack driver requires the --cloudstack-offer option")
+    }
+
+    d.TemplateName = *flags.TemplateName
+    if d.TemplateName == "" {
+        return fmt.Errorf("cloudstack driver requires the --cloudstack-template option")
+    }
+
     return nil
 }
 
+func (d *Driver) Create() error {
+
+    log.Infof("Creating Cloudstack instance...")
+
+    client := d.getClient()
+
+    /** First we have to fetch some IDs before creating the instance **/
+    log.Infof("Fetching template id from provided name",
+        d.TemplateName,
+    )
+    responseTemplateList, err := client.ListTemplates(d.TemplateName,"*")
+    if err != nil {
+        return err
+    }
+    d.TemplateName = responseTemplateList.Listtemplatesresponse.Template[0].Name
+    d.TemplateId = responseTemplateList.Listtemplatesresponse.Template[0].ID
+
+    
+
+    return nil
+}
+
+func (d *Driver) Start() error {
+    return fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) GetURL() (string, error) {
-    return d.URL, nil
+    return "foo", nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -79,14 +145,6 @@ func (d *Driver) GetIP() (string, error) {
 
 func (d *Driver) GetState() (state.State, error) {
     return state.None, nil
-}
-
-func (d *Driver) Create() error {
-    return nil
-}
-
-func (d *Driver) Start() error {
-    return fmt.Warningf("Not implemented yet")
 }
 
 func (d *Driver) Stop    () error {
@@ -111,4 +169,12 @@ func (d *Driver) Upgrade() error {
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
     return nil, fmt.Errorf("hosts without a driver do not support SSH")
+}
+
+func (d *Driver) getClient() *gcs.CloudstackClient {
+
+    client := gcs.CloudstackClient{}.New(d.ApiURL, d.ApiKey,
+        d.SecretKey, true)
+
+    return client
 }
