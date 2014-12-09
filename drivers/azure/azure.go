@@ -224,7 +224,7 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	if err:= driver.hackForIdentityAuth(); err != nil {
+	if err := driver.hackForIdentityAuth(); err != nil {
 		return err
 	}
 
@@ -236,11 +236,11 @@ func (driver *Driver) hackForIdentityAuth() error {
 	log.Debugf("HACK: Downloading version of Docker with identity auth...")
 
 	numberOfRetries := 3
-	if err:= driver.runSSHCommand("sudo stop docker", numberOfRetries); err != nil {
+	if err := driver.runSSHCommand("sudo stop docker", numberOfRetries); err != nil {
 		return err
 	}
 
-	if err:= driver.runSSHCommand("sudo bash -c \"curl -sS https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /usr/bin/docker\"", numberOfRetries); err != nil {
+	if err := driver.runSSHCommand("sudo bash -c \"curl -sS https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /usr/bin/docker\"", numberOfRetries); err != nil {
 		return err
 	}
 
@@ -249,7 +249,7 @@ func (driver *Driver) hackForIdentityAuth() error {
 	cmdString := fmt.Sprintf(`sudo bash -c 'cat <<EOF > /etc/default/docker
 export DOCKER_OPTS="--auth=identity --host=tcp://0.0.0.0:%v"
 EOF'`, driver.DockerPort)
-	if err:= driver.runSSHCommand(cmdString, numberOfRetries); err != nil {
+	if err := driver.runSSHCommand(cmdString, numberOfRetries); err != nil {
 		return err
 	}
 
@@ -259,28 +259,28 @@ EOF'`, driver.DockerPort)
 		return err
 	}
 
-	if err:= driver.runSSHCommand("sudo cp -a /tmp/.docker/ /", numberOfRetries); err != nil {
+	if err := driver.runSSHCommand("sudo cp -a /tmp/.docker/ /", numberOfRetries); err != nil {
 		return err
 	}
 
-	if err:= driver.runSSHCommand("rm -r /tmp/.docker/", numberOfRetries); err != nil {
+	if err := driver.runSSHCommand("rm -r /tmp/.docker/", numberOfRetries); err != nil {
 		return err
 	}
 
-	if err:= driver.runSSHCommand("sudo start docker", numberOfRetries); err != nil {
+	if err := driver.runSSHCommand("sudo start docker", numberOfRetries); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (driver *Driver) addPublicKeyToAuthorizedHosts(authorizedKeysPath  string, retries int) error {
-	if err := drivers.AddPublicKeyToAuthorizedHosts(driver, authorizedKeysPath ); err != nil {
+func (driver *Driver) addPublicKeyToAuthorizedHosts(authorizedKeysPath string, retries int) error {
+	if err := drivers.AddPublicKeyToAuthorizedHosts(driver, authorizedKeysPath); err != nil {
 		if err.Error() == "exit status 255" {
 			if retries == 0 {
 				return err
 			}
-			return driver.addPublicKeyToAuthorizedHosts(authorizedKeysPath, retries -1)
+			return driver.addPublicKeyToAuthorizedHosts(authorizedKeysPath, retries-1)
 		}
 
 		return err
@@ -299,7 +299,7 @@ func (driver *Driver) runSSHCommand(command string, retries int) error {
 			if retries == 0 {
 				return err
 			}
-			return driver.runSSHCommand(command, retries -1)
+			return driver.runSSHCommand(command, retries-1)
 		}
 
 		return err
