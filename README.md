@@ -108,7 +108,8 @@ To build, run:
     $ go get github.com/docker/machine
     $ cd $GOPATH/src/github.com/docker/machine
     $ script/build
-    $ ./machine
+
+That will create binaries for various platforms in the current directory.
 
 If you have any questions we're in #docker-machine on Freenode.
 
