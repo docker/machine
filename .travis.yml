@@ -4,4 +4,4 @@ go:
 script:
 - script/validate-dco
 - script/validate-gofmt
-- script/test
+- go test -v ./...
