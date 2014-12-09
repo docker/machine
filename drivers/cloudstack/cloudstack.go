@@ -38,12 +38,12 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
     createFlags.ApiKey = cmd.String(
         []string{"-cloudstack-api-key"},
         "",
-        "Your cloudstack API key"
+        "Your cloudstack API key",
     )
     createFlags.SecretKey = cmd.String(
         []string{"-cloudstack-secret-key"},
         "",
-        "Your cloudstack secret key"
+        "Your cloudstack secret key",
     )
     return createFlags
 }
@@ -90,7 +90,7 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop    () error {
-    return fdsqfds fmt.Errorf ("hosts without a driver cannot be stopped")
+    return fmt.Errorf("hosts without a driver cannot be stopped")
 }
 
 func (d *Driver) Remove() error {
