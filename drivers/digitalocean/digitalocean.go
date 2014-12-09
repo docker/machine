@@ -10,8 +10,8 @@ import (
 
 	"code.google.com/p/goauth2/oauth"
 	log "github.com/Sirupsen/logrus"
+	"github.com/codegangsta/cli"
 	"github.com/digitalocean/godo"
-	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
@@ -30,45 +30,41 @@ type Driver struct {
 	storePath   string
 }
 
-type CreateFlags struct {
-	AccessToken *string
-	Image       *string
-	Region      *string
-	Size        *string
-}
-
 func init() {
 	drivers.Register("digitalocean", &drivers.RegisteredDriver{
-		New:                 NewDriver,
-		RegisterCreateFlags: RegisterCreateFlags,
+		New:            NewDriver,
+		GetCreateFlags: GetCreateFlags,
 	})
 }
 
-// RegisterCreateFlags registers the flags this driver adds to
+// GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
-	createFlags := new(CreateFlags)
-	createFlags.AccessToken = cmd.String(
-		[]string{"-digitalocean-access-token"},
-		"",
-		"Digital Ocean access token",
-	)
-	createFlags.Image = cmd.String(
-		[]string{"-digitalocean-image"},
-		"docker",
-		"Digital Ocean image",
-	)
-	createFlags.Region = cmd.String(
-		[]string{"-digitalocean-region"},
-		"nyc3",
-		"Digital Ocean region",
-	)
-	createFlags.Size = cmd.String(
-		[]string{"-digitalocean-size"},
-		"512mb",
-		"Digital Ocean size",
-	)
-	return createFlags
+func GetCreateFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			EnvVar: "DIGITALOCEAN_ACCESS_TOKEN",
+			Name:   "digitalocean-access-token",
+			Usage:  "Digital Ocean access token",
+		},
+		cli.StringFlag{
+			EnvVar: "DIGITALOCEAN_IMAGE",
+			Name:   "digitalocean-image",
+			Usage:  "Digital Ocean Image",
+			Value:  "docker",
+		},
+		cli.StringFlag{
+			EnvVar: "DIGITALOCEAN_REGION",
+			Name:   "digitalocean-region",
+			Usage:  "Digital Ocean region",
+			Value:  "nyc3",
+		},
+		cli.StringFlag{
+			EnvVar: "DIGITALOCEAN_SIZE",
+			Name:   "digitalocean-size",
+			Usage:  "Digital Ocean size",
+			Value:  "512mb",
+		},
+	}
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
@@ -79,12 +75,11 @@ func (d *Driver) DriverName() string {
 	return "digitalocean"
 }
 
-func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
-	flags := flagsInterface.(*CreateFlags)
-	d.AccessToken = *flags.AccessToken
-	d.Image = *flags.Image
-	d.Region = *flags.Region
-	d.Size = *flags.Size
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.AccessToken = flags.String("digitalocean-access-token")
+	d.Image = flags.String("digitalocean-image")
+	d.Region = flags.String("digitalocean-region")
+	d.Size = flags.String("digitalocean-size")
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")

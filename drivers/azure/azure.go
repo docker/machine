@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 	"github.com/MSOpenTech/azure-sdk-for-go/clients/vmClient"
 
 	log "github.com/Sirupsen/logrus"
-	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
@@ -36,87 +35,74 @@ type Driver struct {
 	storePath               string
 }
 
-type CreateFlags struct {
-	SubscriptionID          *string
-	SubscriptionCert        *string
-	PublishSettingsFilePath *string
-	Name                    *string
-	Location                *string
-	Size                    *string
-	UserName                *string
-	UserPassword            *string
-	Image                   *string
-	SSHPort                 *string
-	DockerPort              *string
-}
-
 func init() {
 	drivers.Register("azure", &drivers.RegisteredDriver{
-		New:                 NewDriver,
-		RegisterCreateFlags: RegisterCreateFlags,
+		New:            NewDriver,
+		GetCreateFlags: GetCreateFlags,
 	})
 }
 
-// RegisterCreateFlags registers the flags this driver adds to
+// GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
-	createFlags := new(CreateFlags)
-	createFlags.SubscriptionID = cmd.String(
-		[]string{"-azure-subscription-id"},
-		"",
-		"Azure subscription ID",
-	)
-	createFlags.SubscriptionCert = cmd.String(
-		[]string{"-azure-subscription-cert"},
-		"",
-		"Azure subscription cert",
-	)
-	createFlags.PublishSettingsFilePath = cmd.String(
-		[]string{"-azure-publish-settings-file"},
-		"",
-		"Azure publish settings file",
-	)
-	createFlags.Location = cmd.String(
-		[]string{"-azure-location"},
-		"West US",
-		"Azure location",
-	)
-	createFlags.Size = cmd.String(
-		[]string{"-azure-size"},
-		"Small",
-		"Azure size",
-	)
-	createFlags.Name = cmd.String(
-		[]string{"-azure-name"},
-		"",
-		"Azure cloud service name",
-	)
-	createFlags.UserName = cmd.String(
-		[]string{"-azure-username"},
-		"tcuser",
-		"Azure username",
-	)
-	createFlags.UserPassword = cmd.String(
-		[]string{"-azure-password"},
-		"",
-		"Azure user password",
-	)
-	createFlags.Image = cmd.String(
-		[]string{"-azure-image"},
-		"",
-		"Azure image name. Default is Ubuntu 14.04 LTS x64",
-	)
-	createFlags.SSHPort = cmd.String(
-		[]string{"-azure-ssh"},
-		"22",
-		"Azure ssh port",
-	)
-	createFlags.DockerPort = cmd.String(
-		[]string{"-azure-docker-port"},
-		"4243",
-		"Azure docker port",
-	)
-	return createFlags
+func GetCreateFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.IntFlag{
+			Name:  "azure-docker-port",
+			Usage: "Azure Docker port",
+			Value: 4243,
+		},
+		cli.StringFlag{
+			EnvVar: "AZURE_IMAGE",
+			Name:   "azure-image",
+			Usage:  "Azure image name. Default is Ubuntu 14.04 LTS x64",
+		},
+		cli.StringFlag{
+			EnvVar: "AZURE_LOCATION",
+			Name:   "azure-location",
+			Usage:  "Azure location",
+			Value:  "West US",
+		},
+		cli.StringFlag{
+			Name:  "azure-name",
+			Usage: "Azure cloud service name",
+		},
+		cli.StringFlag{
+			Name:  "azure-password",
+			Usage: "Azure user password",
+		},
+		cli.StringFlag{
+			EnvVar: "AZURE_PUBLISH_SETTINGS_FILE",
+			Name:   "azure-publish-settings-file",
+			Usage:  "Azure publish settings file",
+		},
+		cli.StringFlag{
+			EnvVar: "AZURE_SIZE",
+			Name:   "azure-size",
+			Usage:  "Azure size",
+			Value:  "Small",
+		},
+		cli.IntFlag{
+			Name:  "azure-ssh",
+			Usage: "Azure SSH port",
+			Value: 22,
+		},
+
+		cli.StringFlag{
+			EnvVar: "AZURE_SUBSCRIPTION_CERT",
+			Name:   "azure-subscription-cert",
+			Usage:  "Azure subscription cert",
+		},
+		cli.StringFlag{
+			EnvVar: "AZURE_SUBSCRIPTION_ID",
+			Name:   "azure-subscription-id",
+			Usage:  "Azure subscription ID",
+		},
+		cli.StringFlag{
+			Name:  "azure-username",
+			Usage: "Azure username",
+			Value: "tcuser",
+		},
+	}
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
@@ -128,61 +114,56 @@ func (driver *Driver) DriverName() string {
 	return "azure"
 }
 
-func (driver *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
-	flags := flagsInterface.(*CreateFlags)
-	driver.SubscriptionID = *flags.SubscriptionID
+func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	driver.SubscriptionID = flags.String("azure-subscription-id")
 
-	if *flags.SubscriptionCert != "" {
-		if _, err := os.Stat(*flags.SubscriptionCert); os.IsNotExist(err) {
+	cert := flags.String("azure-subscription-cert")
+	publishSettings := flags.String("azure-publish-settings-file")
+	name := flags.String("azure-name")
+	image := flags.String("azure-image")
+	username := flags.String("azure-username")
+
+	if cert != "" {
+		if _, err := os.Stat(cert); os.IsNotExist(err) {
 			return err
 		}
-		driver.SubscriptionCert = *flags.SubscriptionCert
+		driver.SubscriptionCert = cert
 	}
 
-	if *flags.PublishSettingsFilePath != "" {
-		if _, err := os.Stat(*flags.PublishSettingsFilePath); os.IsNotExist(err) {
+	if publishSettings != "" {
+		if _, err := os.Stat(publishSettings); os.IsNotExist(err) {
 			return err
 		}
-		driver.PublishSettingsFilePath = *flags.PublishSettingsFilePath
+		driver.PublishSettingsFilePath = publishSettings
 	}
 
 	if (driver.SubscriptionID == "" || driver.SubscriptionCert == "") && driver.PublishSettingsFilePath == "" {
 		return fmt.Errorf("Please specify azure subscription params using options: --azure-subscription-id and --azure-subscription-cert or --azure-publish-settings-file")
 	}
 
-	if *flags.Name == "" {
+	if name == "" {
 		driver.Name = generateVMName()
 	} else {
-		driver.Name = *flags.Name
+		driver.Name = name
 	}
 
-	if *flags.Image == "" {
+	if image == "" {
 		driver.Image = "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB"
 	} else {
-		driver.Image = *flags.Image
+		driver.Image = image
 	}
 
-	driver.Location = *flags.Location
-	driver.Size = *flags.Size
+	driver.Location = flags.String("azure-location")
+	driver.Size = flags.String("azure-size")
 
-	if strings.ToLower(*flags.UserName) == "docker" {
+	if strings.ToLower(username) == "docker" {
 		return fmt.Errorf("'docker' is not valid user name for docker host. Please specify another user name")
 	}
 
-	driver.UserName = *flags.UserName
-	driver.UserPassword = *flags.UserPassword
-
-	dockerPort, err := strconv.Atoi(*flags.DockerPort)
-	if err != nil {
-		return err
-	}
-	driver.DockerPort = dockerPort
-
-	sshPort, err := strconv.Atoi(*flags.SSHPort)
-	if err != nil {
-		return err
-	}
-	driver.SSHPort = sshPort
+	driver.UserName = username
+	driver.UserPassword = flags.String("azure-password")
+	driver.DockerPort = flags.Int("azure-docker-port")
+	driver.SSHPort = flags.Int("azure-docker-port")
 
 	return nil
 }
