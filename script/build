@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
 docker build -t docker-machine .
-exec docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox -os="darwin linux" -parallel=5
+exec docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox -os="darwin linux windows"
