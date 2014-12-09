@@ -105,8 +105,6 @@ Want to hack on Machine? [Docker's contributions guidelines](https://github.com/
 
 To build, run:
 
-    $ go get github.com/docker/machine
-    $ cd $GOPATH/src/github.com/docker/machine
     $ script/build
 
 That will create binaries for various platforms in the current directory.
