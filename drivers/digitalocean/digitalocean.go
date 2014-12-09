@@ -47,10 +47,16 @@ func init() {
 // RegisterCreateFlags registers the flags this driver adds to
 // "docker hosts create"
 func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
+	defaultRegion := os.Getenv("MACHINE_DIGITALOCEAN_REGION")
+
+	if defaultRegion == "" {
+		defaultRegion = "nyc3"
+	}
+
 	createFlags := new(CreateFlags)
 	createFlags.AccessToken = cmd.String(
 		[]string{"-digitalocean-access-token"},
-		"",
+		os.Getenv("MACHINE_DIGITALOCEAN_ACCESS_TOKEN"),
 		"Digital Ocean access token",
 	)
 	createFlags.Image = cmd.String(
@@ -60,7 +66,7 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
 	)
 	createFlags.Region = cmd.String(
 		[]string{"-digitalocean-region"},
-		"nyc3",
+		defaultRegion,
 		"Digital Ocean region",
 	)
 	createFlags.Size = cmd.String(

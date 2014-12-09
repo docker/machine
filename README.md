@@ -70,9 +70,9 @@ Creates machines on [Digital Ocean](https://www.digitalocean.com/). You need to 
 
 Options:
 
- - `--digitalocean-access-token`: Your personal access token for the Digital Ocean API.
+ - `--digitalocean-access-token`: Your personal access token for the Digital Ocean API, may be superseded by DIGITALOCEAN_ACCESS_TOKEN environment variable.
  - `--digitalocean-image`: The name of the Digital Ocean image to use. Default: `docker`
- - `--digitalocean-region`: The region to create the droplet in. Default: `nyc3`
+ - `--digitalocean-region`: The region to create the droplet in. Default: `nyc3`, may be superseded by DIGITALOCEAN_REGION environment variable.
  - `--digitalocean-size`: The size of the Digital Ocean driver. Default: `512mb`
 
 ### Microsoft Azure
