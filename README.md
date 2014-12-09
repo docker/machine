@@ -46,6 +46,7 @@ Machine is still in its early stages. If you'd like to try out a preview build, 
 
  - Mac OS X: https://github.com/docker/machine/releases/download/0.0.1/darwin
  - Linux: https://github.com/docker/machine/releases/download/0.0.1/linux
+ - Windows : https://dl.dropboxusercontent.com/u/2524496/Docker/machine/windows/0.0.1/machine.exe
 
 You will also need a version of Docker with identity authentication. Builds are available here:
 
@@ -103,13 +104,22 @@ Options:
 
 Want to hack on Machine? [Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md) apply.
 
-To build, run:
+To build :
+
+ - On *Nix/Linux, run:
 
     $ script/build
 
 That will create binaries for various platforms in the current directory.
 
 If you have any questions we're in #docker-machine on Freenode.
+
+ - On Windows, run:
+
+    > go get github.com/docker/machine
+    > cd %GOPATH%\src\github.com\docker\machine
+    > script\windows\build.bat
+    >machine.exe
 
 ## Creators
 
