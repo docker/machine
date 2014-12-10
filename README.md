@@ -95,7 +95,22 @@ Options:
 
 ### Cloudstack
 
-TO be filled...
+Create machines on your [Apache Cloudstack IaaS](http://cloudstack.apache.org/).
+
+You need to have a valid coupl of API Key and Secret Key with the rights associated (see with your Cloudstack admin for more details).
+
+Options :
+
+ - `--cloudstack-api-url`: Complete URL to your Cloudstack instance.
+ - `--cloudstack-api-key`: Your cloudstack API key.
+ - `--cloudstack-secret-key`: Your cloudstack secret key.
+ - `--cloudstack-template`: The template name to use for the VM.
+
+
+Example :
+
+    $ machine create -d cloudstack --cloudstack-api-url=https://you.cloudstack.priv:443/api/ --cloudstack-secret-key=$CLOUDSTACK_SECRETKEY --cloudstack-api-key=$CLOUDSTACK_APIKEY --cloudstack-offer-id="xxxxxx-yyyyy-zzzzz-rrrr-aaaaaaaaa" --cloudstack-template="boot2docker-latest" dev
+
 
 ## Contributing
 
