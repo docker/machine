@@ -18,6 +18,7 @@ import (
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/google"
 	_ "github.com/docker/machine/drivers/none"
+	_ "github.com/docker/machine/drivers/openstack"
 	_ "github.com/docker/machine/drivers/virtualbox"
 	_ "github.com/docker/machine/drivers/vmwarefusion"
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
