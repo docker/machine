@@ -92,7 +92,7 @@ func (d *Driver) Create() error {
 	)
 
 	// Check that VBoxManage exists and works
-	if err = vbm(""); err != nil {
+	if err = vbm(); err != nil {
 		return err
 	}
 
