@@ -18,7 +18,6 @@ type Driver struct {
     SecretKey           string
     TemplateName        string
     TemplateId          string
-    OfferName           string
     OfferId             string
 }
 
@@ -27,7 +26,7 @@ type CreateFlags struct {
     ApiKey              *string
     SecretKey           *string
     TemplateName        *string
-    OfferName           *string
+    OfferId           *string
 }
 
 func init() {
@@ -56,15 +55,15 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
         "",
         "Your cloudstack secret key",
     )
-    createFlags.OfferName = cmd.String(
-        []string{"-cloudstack-offer"},
+    createFlags.OfferId = cmd.String(
+        []string{"-cloudstack-offer-id"},
         "",
-        "Your cloudstack offer ",
+        "Your cloudstack offer's ID ",
     )
     createFlags.TemplateName = cmd.String(
         []string{"-cloudstack-template"},
         "",
-        "Your cloudstack template to use",
+        "Your cloudstack template name to use",
     )
 
     return createFlags
@@ -96,9 +95,9 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
         return fmt.Errorf("cloudstack driver requires the --cloudstack-secret-key option")
     }
 
-    d.OfferName = *flags.OfferName
-    if d.OfferName == "" {
-        return fmt.Errorf("cloudstack driver requires the --cloudstack-offer option")
+    d.OfferId = *flags.OfferId
+    if d.OfferId == "" {
+        return fmt.Errorf("cloudstack driver requires the --cloudstack-offer-id option")
     }
 
     d.TemplateName = *flags.TemplateName
@@ -116,15 +115,20 @@ func (d *Driver) Create() error {
     client := d.getClient()
 
     /** First we have to fetch some IDs before creating the instance **/
-    log.Infof("Fetching template id from provided name",
+    log.Infof("Fetching template id from provided template name : %q",
         d.TemplateName,
     )
-    responseTemplateList, err := client.ListTemplates(d.TemplateName,"*")
+    responseTemplateList, err := client.ListTemplates(d.TemplateName,"self")
     if err != nil {
         return err
     }
     d.TemplateName = responseTemplateList.Listtemplatesresponse.Template[0].Name
     d.TemplateId = responseTemplateList.Listtemplatesresponse.Template[0].ID
+
+    // TODO : implement listServiceOfferings CS's API into Gopher and use offer name instead ID (more user friendly)
+    log.Infof("Offer ID is %q",
+        d.OfferId,
+    )
 
     
 
