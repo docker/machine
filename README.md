@@ -42,10 +42,7 @@ Machine creates Docker hosts that are secure by default. The connection between 
 
 ## Try it out
 
-Machine is still in its early stages. If you'd like to try out a preview build, download it here:
-
- - Mac OS X: https://github.com/docker/machine/releases/download/0.0.1/darwin
- - Linux: https://github.com/docker/machine/releases/download/0.0.1/linux
+Machine is still in its early stages. If you'd like to try out a preview build, [download it here](https://github.com/docker/machine/releases/latest).
 
 You will also need a version of Docker with identity authentication. Builds are available here:
 
