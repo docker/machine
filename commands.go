@@ -16,6 +16,7 @@ import (
 	_ "github.com/docker/machine/drivers/azure"
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/none"
+	_ "github.com/docker/machine/drivers/openstack"
 	_ "github.com/docker/machine/drivers/virtualbox"
 )
 
