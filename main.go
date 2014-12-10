@@ -52,6 +52,11 @@ func main() {
 		initLogging(log.DebugLevel)
 	}
 
+	if *flVersion {
+		fmt.Println(VERSION)
+		os.Exit(0)
+	}
+
 	cli := &DockerCli{}
 
 	if err := cli.Cmd(flag.Args()...); err != nil {
