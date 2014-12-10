@@ -109,7 +109,7 @@
 		},
 		{
 			"ImportPath": "github.com/docker/libtrust",
-			"Rev": "d273ef2565cab2fd9832b8a3d6320e5ab39ef9db"
+			"Rev": "6b7834910dcbb3021adc193411d01f65595445fb"
 		},
 		{
 			"ImportPath": "github.com/google/go-querystring/query",
