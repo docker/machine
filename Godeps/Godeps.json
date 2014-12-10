@@ -4,8 +4,8 @@
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/goauth2/oauth",
-			"Comment": "weekly-44",
-			"Rev": "696c088491246273e92442aa66b5281e5bb34faa"
+			"Comment": "weekly-56",
+			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
 		},
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
