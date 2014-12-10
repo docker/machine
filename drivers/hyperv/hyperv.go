@@ -12,12 +12,12 @@ import (
 	"path"
 	"time"
 
-	"github.com/docker/docker/hosts/drivers"
-	"github.com/docker/docker/hosts/ssh"
-	"github.com/docker/docker/hosts/state"
-	"github.com/docker/docker/pkg/log"
-	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/docker/docker/utils"
+	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/ssh"
+	"github.com/docker/machine/state"
+	flag "github.com/docker/docker/pkg/mflag"
+	log "github.com/Sirupsen/logrus"
 )
 
 type Driver struct {
@@ -359,9 +359,33 @@ func (d *Driver) GetIP() (string, error) {
 	return resp[0], nil
 }
 
-func (d *Driver) GetSSHCommand(args ...string) *exec.Cmd {
+func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	ip, _ := d.GetIP()
-	return ssh.GetSSHCommand(ip, 22, "docker", d.sshKeyPath(), args...)
+	return ssh.GetSSHCommand(ip, 22, "docker", d.sshKeyPath(), args...), nil
+}
+
+func (d *Driver) Upgrade() error {
+	log.Infof("Stopping machine...")
+	if err := d.Stop(); err != nil {
+		return err
+	}
+
+	isoURL, err := getLatestReleaseURL()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Downloading boot2docker...")
+	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+		return err
+	}
+
+	log.Infof("Starting machine...")
+	if err := d.Start(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Driver) sshKeyPath() string {
@@ -374,7 +398,7 @@ func (d *Driver) publicSSHKeyPath() string {
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
-// func getLatestReleaseURL() (string, error) {
+func getLatestReleaseURL() (string, error) {
 // 	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
 // 	if err != nil {
 // 		return "", err
@@ -394,7 +418,8 @@ func (d *Driver) publicSSHKeyPath() string {
 // 	tag := t[0].TagName
 // 	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", tag)
 // 	return url, nil
-// }
+	return "", nil
+}
 
 // Download boot2docker ISO image for the given tag and save it at dest.
 func downloadISO(dir, file, url string) error {
