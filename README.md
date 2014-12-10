@@ -93,6 +93,18 @@ Options:
  - `--azure-subscription-id`: Your Azure subscription ID.
  - `--azure-subscription-cert`: Your Azure subscription cert.
 
+### OpenStack
+
+Creates machines on [OpenStack](https://www.openstack.org/). OpenStack RC file has to be exported first before creating server instance with machine. This file can be downloaed from "Access &Security" -> "API Access" panel from your OpenStack dashboard. You can also use your existing RC file as long as you can manipulate OpenStack cloud with that set of environment variables and client tools.
+
+Options:
+
+ - `--openstack-docker-port=`: The port docker daemon listening to on the OpenStack instance. Default: `2375`
+ - `--openstack-flavor`: The flavor ID to use.
+ - `--openstack-image`: The image ID to use.
+ - `--openstack-region`: The region for the OpenStack API endpoints.
+ - `--openstack-username`: The username used for instance SSH connection. Default: `root`
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
