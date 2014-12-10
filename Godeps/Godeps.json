@@ -19,8 +19,8 @@
 		},
 		{
 			"ImportPath": "github.com/digitalocean/godo",
-			"Comment": "v0.4.0-1-ga7066ec",
-			"Rev": "a7066ece1ff635d9fc12d123cd8a22aaf7b0062e"
+			"Comment": "v0.5.0",
+			"Rev": "5478aae80694de1d2d0e02c386bbedd201266234"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/api",
