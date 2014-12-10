@@ -235,6 +235,11 @@ func (driver *Driver) hackForIdentityAuth() error {
 
 	log.Debugf("HACK: Downloading version of Docker with identity auth...")
 
+	/* We need to add retries to every SSH call we make, because Azure has some weird networking bug:
+	sometimes when it comes to communication between VMs or with Azure itself, Azure API throws an error.
+	So when we are running remote commands via SSH, sometimes they fail for no reason.
+	This issue is fixed by repeating SSH calls few times before throwing an error.
+	*/
 	numberOfRetries := 3
 	if err := driver.runSSHCommand("sudo stop docker", numberOfRetries); err != nil {
 		return err
