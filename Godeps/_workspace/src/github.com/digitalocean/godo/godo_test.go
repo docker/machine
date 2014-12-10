@@ -78,7 +78,10 @@ func TestNewRequest(t *testing.T) {
 	c := NewClient(nil)
 
 	inURL, outURL := "/foo", defaultBaseURL+"foo"
-	inBody, outBody := &DropletCreateRequest{Name: "l"}, `{"name":"l","region":"","size":"","image":"","ssh_keys":null}`+"\n"
+	inBody, outBody := &DropletCreateRequest{Name: "l"},
+		`{"name":"l","region":"","size":"","image":"",`+
+			`"ssh_keys":null,"backups":false,"ipv6":false,`+
+			`"private_networking":false,"user_data":""}`+"\n"
 	req, _ := c.NewRequest("GET", inURL, inBody)
 
 	// test relative URL was expanded
