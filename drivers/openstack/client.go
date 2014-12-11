@@ -294,12 +294,10 @@ func (c *GenericClient) getPorts(d *Driver) ([]string, error) {
 }
 
 func (c *GenericClient) InitComputeClient(d *Driver) error {
-	if c.Provider == nil {
-		err := c.Authenticate(d)
-		if err != nil {
-			return err
-		}
+	if c.Compute != nil {
+		return nil
 	}
+
 	compute, err := openstack.NewComputeV2(c.Provider, gophercloud.EndpointOpts{
 		Region:       d.Region,
 		Availability: c.getEndpointType(d),
@@ -312,6 +310,10 @@ func (c *GenericClient) InitComputeClient(d *Driver) error {
 }
 
 func (c *GenericClient) InitNetworkClient(d *Driver) error {
+	if c.Network != nil {
+		return nil
+	}
+
 	network, err := openstack.NewNetworkV2(c.Provider, gophercloud.EndpointOpts{
 		Region:       d.Region,
 		Availability: c.getEndpointType(d),
