@@ -3,9 +3,12 @@ package cloudstack
 import (
     "fmt"
     "os/exec"
+    "path"
 
     "github.com/docker/machine/drivers"
     "github.com/docker/machine/state"
+    "github.com/docker/machine/ssh"
+    "github.com/docker/docker/utils"
     log "github.com/Sirupsen/logrus"
     gcs "github.com/mindjiver/gopherstack"
     flag "github.com/docker/docker/pkg/mflag"
