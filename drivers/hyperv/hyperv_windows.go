@@ -211,7 +211,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Adding key to authorized-keys.d...")
 
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/root/.docker/authorized-keys.d"); err != nil {
+	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/var/lib/docker/auth.d"); err != nil {
 		return err
 	}
 
