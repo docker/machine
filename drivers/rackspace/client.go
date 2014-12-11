@@ -54,3 +54,18 @@ func (c *Client) StartInstance(d *openstack.Driver) error {
 func (c *Client) StopInstance(d *openstack.Driver) error {
 	return unsupportedOpErr("stop")
 }
+
+// GetInstanceIpAddresses can be short-circuited with the server's AccessIPv4Addr on Rackspace.
+func (c *Client) GetInstanceIpAddresses(d *openstack.Driver) ([]openstack.IpAddress, error) {
+	server, err := c.GetServerDetail(d)
+	if err != nil {
+		return nil, err
+	}
+	return []openstack.IpAddress{
+		{
+			Network:     "public",
+			Address:     server.AccessIPv4,
+			AddressType: openstack.Fixed,
+		},
+	}, nil
+}
