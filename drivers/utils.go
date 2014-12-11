@@ -13,7 +13,7 @@ func PublicKeyPath() string {
 	if err != nil {
 		homeDir = ""
 	}
-	return filepath.Join(homeDir, ".docker/public-key.json")
+	return filepath.Join(homeDir, ".docker","public-key.json")
 }
 
 func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {

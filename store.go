@@ -20,7 +20,7 @@ func NewStore() *Store {
 	if err != nil {
 		log.Errorf("error getting home directory : %s", err)
 	}
-	rootPath := filepath.Join(homeDir, ".docker/hosts")
+	rootPath := filepath.Join(homeDir, ".docker","hosts")
 	return &Store{Path: rootPath}
 }
 
