@@ -327,6 +327,13 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if d.SSHUser != "root" {
+		cmd := strings.Replace(strings.Join(args, " "), "'", "\\'", -1)
+		args = []string{"sudo", "sh", "-c", fmt.Sprintf("'%s'", cmd)}
+	}
+
+	log.Debug("Command: %s", args)
 	return ssh.GetSSHCommand(ip, d.SSHPort, d.SSHUser, d.sshKeyPath(), args...), nil
 }
 
@@ -411,15 +418,15 @@ func (d *Driver) waitForInstanceToStart() error {
 }
 
 func (d *Driver) installDocker() error {
-	log.WithField("MachineId", d.MachineId).Info("Installing dock on the machine")
-	cmdTemplate := "%scurl -sSL https://gist.githubusercontent.com/smashwilson/1a286139720a28ac6ead/raw/41d93c57ea2e86815cdfbfec42aaa696034afcc8/setup-docker.sh | /bin/bash"
-	var cmd string
-	if d.SSHUser == "root" {
-		cmd = fmt.Sprintf(cmdTemplate, "")
-	} else {
-		cmd = fmt.Sprintf(cmdTemplate, "sudo ")
+	log.WithField("MachineId", d.MachineId).Debug("Adding key to authorized-keys.d...")
+
+	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
+		return err
 	}
-	log.Infof(cmd)
+
+	log.WithField("MachineId", d.MachineId).Debug("Installing docker daemon on the machine")
+
+	cmd := "curl -sSL https://gist.githubusercontent.com/smashwilson/1a286139720a28ac6ead/raw/41d93c57ea2e86815cdfbfec42aaa696034afcc8/setup-docker.sh | /bin/bash"
 	sshCmd, err := d.GetSSHCommand(cmd)
 	if err != nil {
 		return err
