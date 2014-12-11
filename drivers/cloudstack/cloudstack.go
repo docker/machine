@@ -158,7 +158,7 @@ func (d *Driver) Create() error {
     log.Infof("Zone ID is %q",
         d.ZoneId,
     )
-    
+
     d.setMachineNameIfNotSet()
 
     log.Infof("Creating SSH key...")
