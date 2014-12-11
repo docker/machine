@@ -129,6 +129,11 @@
 		{
 			"ImportPath": "google.golang.org/api/googleapi",
 			"Rev": "aa91ac681e18e52b1a0dfe29b9d8354e88c0dcf5"
+		},
+		{
+			"ImportPath": "github.com/vmware/govcloudair",
+			"Comment": "v0.0.1-1-g9672590",
+			"Rev": "9672590d5e5795b2d29fce97084fd5810665fc27"
 		}
 	]
 }
