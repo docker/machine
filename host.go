@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 
 	log "github.com/Sirupsen/logrus"
@@ -105,7 +105,7 @@ func (h *Host) GetURL() (string, error) {
 }
 
 func (h *Host) LoadConfig() error {
-	data, err := ioutil.ReadFile(path.Join(h.storePath, "config.json"))
+	data, err := ioutil.ReadFile(filepath.Join(h.storePath, "config.json"))
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (h *Host) SaveConfig() error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(path.Join(h.storePath, "config.json"), data, 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
 	return nil

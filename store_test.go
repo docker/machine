@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	none "github.com/docker/machine/drivers/none"
@@ -14,7 +14,7 @@ func clearHosts() error {
 	if err != nil {
 		return err
 	}
-	return os.RemoveAll(path.Join(homeDir, ".docker/hosts"))
+	return os.RemoveAll(filepath.Join(homeDir, ".docker", "hosts"))
 }
 
 func TestStoreCreate(t *testing.T) {
@@ -35,7 +35,7 @@ func TestStoreCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := path.Join(homeDir, ".docker/hosts/test")
+	path := filepath.Join(homeDir, ".docker", "hosts", "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -56,7 +56,7 @@ func TestStoreRemove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := path.Join(homeDir, ".docker/hosts/test")
+	path := filepath.Join(homeDir, ".docker", "hosts", "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
