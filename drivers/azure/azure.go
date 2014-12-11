@@ -224,6 +224,92 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
+	if err := driver.hackForIdentityAuth(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (driver *Driver) hackForIdentityAuth() error {
+
+	log.Debugf("HACK: Downloading version of Docker with identity auth...")
+
+	/* We need to add retries to every SSH call we make, because Azure has some weird networking bug:
+	sometimes when it comes to communication between VMs or with Azure itself, Azure API throws an error.
+	So when we are running remote commands via SSH, sometimes they fail for no reason.
+	This issue is fixed by repeating SSH calls few times before throwing an error.
+	*/
+	numberOfRetries := 3
+	if err := driver.runSSHCommand("sudo stop docker", numberOfRetries); err != nil {
+		return err
+	}
+
+	if err := driver.runSSHCommand("sudo bash -c \"curl -sS https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /usr/bin/docker\"", numberOfRetries); err != nil {
+		return err
+	}
+
+	log.Debugf("Updating /etc/default/docker to use identity auth...")
+
+	cmdString := fmt.Sprintf(`sudo bash -c 'cat <<EOF > /etc/default/docker
+export DOCKER_OPTS="--auth=identity --host=tcp://0.0.0.0:%v"
+EOF'`, driver.DockerPort)
+	if err := driver.runSSHCommand(cmdString, numberOfRetries); err != nil {
+		return err
+	}
+
+	log.Debugf("Adding key to authorized-keys.d...")
+
+	if err := driver.addPublicKeyToAuthorizedHosts("/tmp/.docker/authorized-keys.d", numberOfRetries); err != nil {
+		return err
+	}
+
+	if err := driver.runSSHCommand("sudo cp -a /tmp/.docker/ /", numberOfRetries); err != nil {
+		return err
+	}
+
+	if err := driver.runSSHCommand("rm -r /tmp/.docker/", numberOfRetries); err != nil {
+		return err
+	}
+
+	if err := driver.runSSHCommand("sudo start docker", numberOfRetries); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (driver *Driver) addPublicKeyToAuthorizedHosts(authorizedKeysPath string, retries int) error {
+	if err := drivers.AddPublicKeyToAuthorizedHosts(driver, authorizedKeysPath); err != nil {
+		if err.Error() == "exit status 255" {
+			if retries == 0 {
+				return err
+			}
+			return driver.addPublicKeyToAuthorizedHosts(authorizedKeysPath, retries-1)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (driver *Driver) runSSHCommand(command string, retries int) error {
+	cmd, err := driver.GetSSHCommand(command)
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		if err.Error() == "exit status 255" {
+			if retries == 0 {
+				return err
+			}
+			return driver.runSSHCommand(command, retries-1)
+		}
+
+		return err
+	}
+
 	return nil
 }
 
