@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	
+
 	log "github.com/Sirupsen/logrus"
 	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/docker/docker/utils"
@@ -185,7 +185,7 @@ func (d *Driver) Create() error {
 	}
 
 	vmid := response.Deployvirtualmachineresponse.ID
-	log.Infof("VM successfully deployed : %q",vmid)
+	log.Infof("VM successfully deployed : %q", vmid)
 
 	return nil
 }
