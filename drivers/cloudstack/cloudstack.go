@@ -183,7 +183,7 @@ func (d *Driver) GetState() (state.State, error) {
     return state.None, nil
 }
 
-func (d *Driver) Stop    () error {
+func (d *Driver) Stop() error {
     return fmt.Errorf("hosts without a driver cannot be stopped")
 }
 
