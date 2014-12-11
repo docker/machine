@@ -13,6 +13,7 @@ import (
 )
 
 type Driver struct {
+    MachineName         string
     ApiURL              string
     ApiKey              string
     SecretKey           string
@@ -154,7 +155,7 @@ func (d *Driver) Create() error {
         d.ZoneId,
     )
 
-    
+    d.setMachineNameIfNotSet()
 
     return nil
 }
@@ -205,4 +206,10 @@ func (d *Driver) getClient() *gcs.CloudstackClient {
         d.SecretKey, true)
 
     return client
+}
+
+func (d *Driver) setMachineNameIfNotSet() {
+    if d.MachineName == "" {
+        d.MachineName = fmt.Sprintf("docker-host-cloudstack-%s", utils.GenerateRandomID())
+    }
 }
