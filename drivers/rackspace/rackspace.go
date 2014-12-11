@@ -92,7 +92,7 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
 func NewDriver(storePath string) (drivers.Driver, error) {
 	log.WithFields(log.Fields{
 		"storePath": storePath,
-	}).Info("Instantiating Rackspace driver.")
+	}).Debug("Instantiating Rackspace driver.")
 
 	client := &Client{}
 	inner, err := openstack.NewDerivedDriver(storePath, client)
