@@ -71,7 +71,7 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
 		"",
 		"Your cloudstack template name to use",
 	)
-	createFlags.TemplateName = cmd.String(
+	createFlags.ZoneId = cmd.String(
 		[]string{"-cloudstack-zone-id"},
 		"",
 		"Your cloudstack zone id to use",
