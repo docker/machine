@@ -140,7 +140,7 @@ func (d *Driver) Create() error {
     if len(responseTemplateList.Listtemplatesresponse.Template) > 1 {
         log.Infof("More than one template has been found with the name %q. I'm gonna use the first with the ID %q",
             d.TemplateName,
-            d.TemplateId
+            d.TemplateId,
         )
     }
     d.TemplateName = responseTemplateList.Listtemplatesresponse.Template[0].Name
