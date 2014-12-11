@@ -333,7 +333,6 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 const (
 	errorMandatoryEnvOrOption    string = "%s must be specified either using the environment variable %s or the CLI option %s"
 	errorMandatoryOption         string = "%s must be specified using the CLI option %s"
-	errorExclusiveOptions        string = "Either %s or %s must be specified, not both"
 	errorMandatoryTenantNameOrId string = "Tenant id or name must be provided either using one of the environment variables OS_TENANT_ID and OS_TENANT_NAME or one of the CLI options --openstack-tenant-id and --openstack-tenant-name"
 	errorWrongEndpointType       string = "Endpoint type must be 'publicURL', 'adminURL' or 'internalURL'"
 )
@@ -350,9 +349,6 @@ func (d *Driver) checkConfig() error {
 	}
 	if d.TenantName == "" && d.TenantId == "" {
 		return fmt.Errorf(errorMandatoryTenantNameOrId)
-	}
-	if d.TenantName != "" && d.TenantId != "" {
-		return fmt.Errorf(errorExclusiveOptions, "tenant id", "tenant name")
 	}
 	if d.FlavorId == "" {
 		return fmt.Errorf(errorMandatoryOption, "Flavor id", "--openstack-flavor-id")
