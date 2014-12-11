@@ -23,7 +23,7 @@ var requests = []struct {
 }{
 	{
 		path:        "/token",
-		query:       "grant_type=authorization_code&code=c0d3&client_id=cl13nt1d&client_secret=s3cr3t",
+		query:       "grant_type=authorization_code&code=c0d3&client_id=cl13nt1d",
 		contenttype: "application/json",
 		auth:        "Basic Y2wxM250MWQ6czNjcjN0",
 		body: `
@@ -38,7 +38,7 @@ var requests = []struct {
 	{path: "/secure", auth: "Bearer token1", body: "first payload"},
 	{
 		path:        "/token",
-		query:       "grant_type=refresh_token&refresh_token=refreshtoken1&client_id=cl13nt1d&client_secret=s3cr3t",
+		query:       "grant_type=refresh_token&refresh_token=refreshtoken1&client_id=cl13nt1d",
 		contenttype: "application/json",
 		auth:        "Basic Y2wxM250MWQ6czNjcjN0",
 		body: `
@@ -53,12 +53,25 @@ var requests = []struct {
 	{path: "/secure", auth: "Bearer token2", body: "second payload"},
 	{
 		path:        "/token",
-		query:       "grant_type=refresh_token&refresh_token=refreshtoken2&client_id=cl13nt1d&client_secret=s3cr3t",
+		query:       "grant_type=refresh_token&refresh_token=refreshtoken2&client_id=cl13nt1d",
 		contenttype: "application/x-www-form-urlencoded",
 		body:        "access_token=token3&refresh_token=refreshtoken3&id_token=idtoken3&expires_in=3600",
 		auth:        "Basic Y2wxM250MWQ6czNjcjN0",
 	},
 	{path: "/secure", auth: "Bearer token3", body: "third payload"},
+	{
+		path:        "/token",
+		query:       "grant_type=client_credentials&client_id=cl13nt1d",
+		contenttype: "application/json",
+		auth:        "Basic Y2wxM250MWQ6czNjcjN0",
+		body: `
+			{
+				"access_token":"token4",
+				"expires_in":3600
+			}
+		`,
+	},
+	{path: "/secure", auth: "Bearer token4", body: "fourth payload"},
 }
 
 func TestOAuth(t *testing.T) {
@@ -134,6 +147,18 @@ func TestOAuth(t *testing.T) {
 	}
 	checkBody(t, resp, "third payload")
 	checkToken(t, transport.Token, "token3", "refreshtoken3", "idtoken3")
+
+	transport.Token = &Token{}
+	err = transport.AuthenticateClient()
+	if err != nil {
+		t.Fatalf("AuthenticateClient: %v", err)
+	}
+	checkToken(t, transport.Token, "token4", "", "")
+	resp, err = c.Get(server.URL + "/secure")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	checkBody(t, resp, "fourth payload")
 }
 
 func checkToken(t *testing.T, tok *Token, access, refresh, id string) {
@@ -146,16 +171,21 @@ func checkToken(t *testing.T, tok *Token, access, refresh, id string) {
 	if g, w := tok.Extra["id_token"], id; g != w {
 		t.Errorf("Extra['id_token'] = %q, want %q", g, w)
 	}
-	exp := tok.Expiry.Sub(time.Now())
-	if (time.Hour-time.Second) > exp || exp > time.Hour {
-		t.Errorf("Expiry = %v, want ~1 hour", exp)
+	if tok.Expiry.IsZero() {
+		t.Errorf("Expiry is zero; want ~1 hour")
+	} else {
+		exp := tok.Expiry.Sub(time.Now())
+		const slop = 3 * time.Second // time moving during test
+		if (time.Hour-slop) > exp || exp > time.Hour {
+			t.Errorf("Expiry = %v, want ~1 hour", exp)
+		}
 	}
 }
 
 func checkBody(t *testing.T, r *http.Response, body string) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		t.Error("reading reponse body: %v, want %q", err, body)
+		t.Errorf("reading reponse body: %v, want %q", err, body)
 	}
 	if g, w := string(b), body; g != w {
 		t.Errorf("request body mismatch: got %q, want %q", g, w)
@@ -185,5 +215,22 @@ func TestCachePermissions(t *testing.T) {
 	}
 	if fi.Mode()&0077 != 0 {
 		t.Errorf("Created cache file has mode %#o, want non-accessible to group+other", fi.Mode())
+	}
+}
+
+func TestTokenExpired(t *testing.T) {
+	tests := []struct {
+		token   Token
+		expired bool
+	}{
+		{Token{AccessToken: "foo"}, false},
+		{Token{AccessToken: ""}, true},
+		{Token{AccessToken: "foo", Expiry: time.Now().Add(-1 * time.Hour)}, true},
+		{Token{AccessToken: "foo", Expiry: time.Now().Add(1 * time.Hour)}, false},
+	}
+	for _, tt := range tests {
+		if got := tt.token.Expired(); got != tt.expired {
+			t.Errorf("token %+v Expired = %v; want %v", tt.token, got, !got)
+		}
 	}
 }

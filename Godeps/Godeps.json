@@ -4,8 +4,8 @@
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/goauth2/oauth",
-			"Comment": "weekly-44",
-			"Rev": "696c088491246273e92442aa66b5281e5bb34faa"
+			"Comment": "weekly-56",
+			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
 		},
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
@@ -14,13 +14,13 @@
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.6.0-5-gf92b795",
-			"Rev": "f92b7950b372b1db80bd3527e4d40e42555fe6c2"
+			"Comment": "v0.6.1",
+			"Rev": "1f2ba2c6317323dd667bd266c1e8ebffc4a4c62f"
 		},
 		{
 			"ImportPath": "github.com/digitalocean/godo",
-			"Comment": "v0.4.0-1-ga7066ec",
-			"Rev": "a7066ece1ff635d9fc12d123cd8a22aaf7b0062e"
+			"Comment": "v0.5.0",
+			"Rev": "5478aae80694de1d2d0e02c386bbedd201266234"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/api",
@@ -109,7 +109,7 @@
 		},
 		{
 			"ImportPath": "github.com/docker/libtrust",
-			"Rev": "d273ef2565cab2fd9832b8a3d6320e5ab39ef9db"
+			"Rev": "6b7834910dcbb3021adc193411d01f65595445fb"
 		},
 		{
 			"ImportPath": "github.com/google/go-querystring/query",
