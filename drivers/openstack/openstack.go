@@ -213,6 +213,10 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	if err := d.initCompute(); err != nil {
+		return "", err
+	}
+
 	addresses, err := d.client.GetInstanceIpAddresses(d)
 	if err != nil {
 		return "", err
@@ -251,8 +255,13 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-
 	log.WithField("MachineId", d.MachineId).Debug("Get status for OpenStack instance...")
+	if err := d.initCompute(); err != nil {
+		return state.None, err
+	}
+	if err := d.initNetwork(); err != nil {
+		return state.None, err
+	}
 
 	s, err := d.client.GetInstanceState(d)
 	if err != nil {
@@ -282,7 +291,6 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) Create() error {
-
 	d.setMachineNameIfNotSet()
 	d.KeyPairName = d.MachineName
 
@@ -306,6 +314,9 @@ func (d *Driver) Create() error {
 
 func (d *Driver) Start() error {
 	log.WithField("MachineId", d.MachineId).Info("Starting OpenStack instance...")
+	if err := d.initCompute(); err != nil {
+		return err
+	}
 	if err := d.client.StartInstance(d); err != nil {
 		return err
 	}
@@ -313,8 +324,10 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-
 	log.WithField("MachineId", d.MachineId).Info("Stopping OpenStack instance...")
+	if err := d.initCompute(); err != nil {
+		return err
+	}
 	if err := d.client.StopInstance(d); err != nil {
 		return err
 	}
@@ -328,6 +341,9 @@ func (d *Driver) Stop() error {
 
 func (d *Driver) Remove() error {
 	log.WithField("MachineId", d.MachineId).Info("Deleting OpenStack instance...")
+	if err := d.initCompute(); err != nil {
+		return err
+	}
 	if err := d.client.DeleteInstance(d); err != nil {
 		return err
 	}
@@ -340,6 +356,9 @@ func (d *Driver) Remove() error {
 
 func (d *Driver) Restart() error {
 	log.WithField("MachineId", d.MachineId).Info("Restarting OpenStack instance...")
+	if err := d.initCompute(); err != nil {
+		return err
+	}
 	if err := d.client.RestartInstance(d); err != nil {
 		return err
 	}
@@ -482,6 +501,23 @@ func (d *Driver) resolveIds() error {
 		}).Debug("Found image id using its name")
 	}
 
+func (d *Driver) initCompute() error {
+	if err := d.client.Authenticate(d); err != nil {
+		return err
+	}
+	if err := d.client.InitComputeClient(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Driver) initNetwork() error {
+	if err := d.client.Authenticate(d); err != nil {
+		return err
+	}
+	if err := d.client.InitNetworkClient(d); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -492,6 +528,10 @@ func (d *Driver) createSSHKey() error {
 	}
 	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
+		return err
+	}
+
+	if err := d.initCompute(); err != nil {
 		return err
 	}
 	if err := d.client.CreateKeyPair(d, d.KeyPairName, string(publicKey)); err != nil {
@@ -505,6 +545,10 @@ func (d *Driver) createMachine() error {
 		"FlavorId": d.FlavorId,
 		"ImageId":  d.ImageId,
 	}).Debug("Creating OpenStack instance...")
+
+	if err := d.initCompute(); err != nil {
+		return err
+	}
 	instanceId, err := d.client.CreateInstance(d)
 	if err != nil {
 		return err
