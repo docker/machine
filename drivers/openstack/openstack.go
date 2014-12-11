@@ -26,9 +26,12 @@ type Driver struct {
 	EndpointType   string
 	MachineName    string
 	MachineId      string
+	FlavorName     string
 	FlavorId       string
+	ImageName      string
 	ImageId        string
 	KeyPairName    string
+	NetworkName    string
 	NetworkId      string
 	SecurityGroups []string
 	FloatingIpPool string
@@ -46,8 +49,11 @@ type CreateFlags struct {
 	TenantId       *string
 	Region         *string
 	EndpointType   *string
+	FlavorName     *string
 	FlavorId       *string
+	ImageName      *string
 	ImageId        *string
+	NetworkName    *string
 	NetworkId      *string
 	SecurityGroups *string
 	FloatingIpPool *string
@@ -104,15 +110,30 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
 		"",
 		"OpenStack flavor id to use for the instance",
 	)
+	createFlags.FlavorName = cmd.String(
+		[]string{"-openstack-flavor-name"},
+		"",
+		"OpenStack flavor name to use for the instance",
+	)
 	createFlags.ImageId = cmd.String(
 		[]string{"-openstack-image-id"},
 		"",
 		"OpenStack image id to use for the instance",
 	)
+	createFlags.ImageName = cmd.String(
+		[]string{"-openstack-image-name"},
+		"",
+		"OpenStack image name to use for the instance",
+	)
 	createFlags.NetworkId = cmd.String(
 		[]string{"-openstack-net-id"},
 		"",
 		"OpenStack network id the machine will be connected on",
+	)
+	createFlags.NetworkName = cmd.String(
+		[]string{"-openstack-net-name"},
+		"",
+		"OpenStack network name the machine will be connected on",
 	)
 	createFlags.SecurityGroups = cmd.String(
 		[]string{"-openstack-sec-groups"},
@@ -160,15 +181,19 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
 	d.TenantId = *flags.TenantId
 	d.Region = *flags.Region
 	d.EndpointType = *flags.EndpointType
+	d.FlavorName = *flags.FlavorName
 	d.FlavorId = *flags.FlavorId
+	d.ImageName = *flags.ImageName
 	d.ImageId = *flags.ImageId
 	d.NetworkId = *flags.NetworkId
+	d.NetworkName = *flags.NetworkName
 	if *flags.SecurityGroups != "" {
 		d.SecurityGroups = strings.Split(*flags.SecurityGroups, ",")
 	}
 	d.FloatingIpPool = *flags.FloatingIpPool
 	d.SSHUser = *flags.SSHUser
 	d.SSHPort = *flags.SSHPort
+
 	return d.checkConfig()
 }
 
@@ -257,6 +282,9 @@ func (d *Driver) Create() error {
 	d.setMachineNameIfNotSet()
 	d.KeyPairName = d.MachineName
 
+	if err := d.resolveIds(); err != nil {
+		return err
+	}
 	if err := d.createSSHKey(); err != nil {
 		return err
 	}
@@ -340,8 +368,12 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 const (
 	errorMandatoryEnvOrOption    string = "%s must be specified either using the environment variable %s or the CLI option %s"
 	errorMandatoryOption         string = "%s must be specified using the CLI option %s"
+	errorExclusiveOptions        string = "Either %s or %s must be specified, not both"
 	errorMandatoryTenantNameOrId string = "Tenant id or name must be provided either using one of the environment variables OS_TENANT_ID and OS_TENANT_NAME or one of the CLI options --openstack-tenant-id and --openstack-tenant-name"
 	errorWrongEndpointType       string = "Endpoint type must be 'publicURL', 'adminURL' or 'internalURL'"
+	errorUnknownFlavorName       string = "Unable to find flavor named %s"
+	errorUnknownImageName        string = "Unable to find image named %s"
+	errorUnknownNetworkName      string = "Unable to find network named %s"
 )
 
 func (d *Driver) checkConfig() error {
@@ -357,12 +389,25 @@ func (d *Driver) checkConfig() error {
 	if d.TenantName == "" && d.TenantId == "" {
 		return fmt.Errorf(errorMandatoryTenantNameOrId)
 	}
-	if d.FlavorId == "" {
-		return fmt.Errorf(errorMandatoryOption, "Flavor id", "--openstack-flavor-id")
+
+	if d.FlavorName == "" && d.FlavorId == "" {
+		return fmt.Errorf(errorMandatoryOption, "Flavor name or Flavor id", "--openstack-flavor-name or --openstack-flavor-id")
 	}
-	if d.ImageId == "" {
-		return fmt.Errorf(errorMandatoryOption, "Image id", "--openstack-image-id")
+	if d.FlavorName != "" && d.FlavorId != "" {
+		return fmt.Errorf(errorExclusiveOptions, "Flavor name", "Flavor id")
 	}
+
+	if d.ImageName == "" && d.ImageId == "" {
+		return fmt.Errorf(errorMandatoryOption, "Image name or Image id", "--openstack-image-name or --openstack-image-id")
+	}
+	if d.ImageName != "" && d.ImageId != "" {
+		return fmt.Errorf(errorExclusiveOptions, "Image name", "Image id")
+	}
+
+	if d.NetworkName != "" && d.NetworkId != "" {
+		return fmt.Errorf(errorExclusiveOptions, "Network name", "Network id")
+	}
+
 	if d.EndpointType != "" && (d.EndpointType != "publicURL" || d.EndpointType != "adminURL" || d.EndpointType != "internalURL") {
 		return fmt.Errorf(errorWrongEndpointType)
 	}
@@ -375,6 +420,65 @@ func (d *Driver) foundIP(ip string) string {
 		"MachineId": d.MachineId,
 	}).Debug("IP address found")
 	return ip
+}
+
+func (d *Driver) resolveIds() error {
+
+	if d.NetworkName != "" {
+		networkId, err := d.client.GetNetworkId(d, d.NetworkName)
+
+		if err != nil {
+			return err
+		}
+
+		if networkId == "" {
+			return fmt.Errorf(errorUnknownNetworkName, d.NetworkName)
+		}
+
+		d.NetworkId = networkId
+		log.WithFields(log.Fields{
+			"Name": d.NetworkName,
+			"ID":   d.NetworkId,
+		}).Debug("Found network id using its name")
+	}
+
+	if d.FlavorName != "" {
+		flavorId, err := d.client.GetFlavorId(d, d.FlavorName)
+
+		if err != nil {
+			return err
+		}
+
+		if flavorId == "" {
+			return fmt.Errorf(errorUnknownFlavorName, d.FlavorName)
+		}
+
+		d.FlavorId = flavorId
+		log.WithFields(log.Fields{
+			"Name": d.FlavorName,
+			"ID":   d.FlavorId,
+		}).Debug("Found flavor id using its name")
+	}
+
+	if d.ImageName != "" {
+		imageId, err := d.client.GetImageId(d, d.ImageName)
+
+		if err != nil {
+			return err
+		}
+
+		if imageId == "" {
+			return fmt.Errorf(errorUnknownImageName, d.ImageName)
+		}
+
+		d.ImageId = imageId
+		log.WithFields(log.Fields{
+			"Name": d.ImageName,
+			"ID":   d.ImageId,
+		}).Debug("Found image id using its name")
+	}
+
+	return nil
 }
 
 func (d *Driver) createSSHKey() error {
