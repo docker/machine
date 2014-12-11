@@ -38,7 +38,7 @@ type Driver struct {
 	SSHUser        string
 	SSHPort        int
 	storePath      string
-	client         *Client
+	client         Client
 }
 
 type CreateFlags struct {
@@ -159,12 +159,16 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
+	return NewDerivedDriver(storePath, &GenericClient{})
+}
+
+func NewDerivedDriver(storePath string, client Client) (*Driver, error) {
 	log.WithFields(log.Fields{
 		"storePath": storePath,
-	}).Debug("Instanciate OpenStack driver...")
+	}).Debug("Instantiating OpenStack driver...")
 	return &Driver{
 		storePath: storePath,
-		client:    &Client{},
+		client:    client,
 	}, nil
 }
 

@@ -15,13 +15,27 @@ import (
 	"github.com/rackspace/gophercloud/pagination"
 )
 
-type Client struct {
+type Client interface {
+	CreateInstance(d *Driver) (string, error)
+	GetInstanceState(d *Driver) (string, error)
+	StartInstance(d *Driver) error
+	StopInstance(d *Driver) error
+	RestartInstance(d *Driver) error
+	DeleteInstance(d *Driver) error
+	WaitForInstanceStatus(d *Driver, status string, timeout int) error
+	GetInstanceIpAddresses(d *Driver) ([]IpAddress, error)
+	CreateKeyPair(d *Driver, name string, publicKey string) error
+	DeleteKeyPair(d *Driver, name string) error
+	Authenticate(d *Driver) error
+}
+
+type GenericClient struct {
 	Provider *gophercloud.ProviderClient
 	Compute  *gophercloud.ServiceClient
 	Network  *gophercloud.ServiceClient
 }
 
-func (c *Client) CreateInstance(d *Driver) (string, error) {
+func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 	if err := c.initComputeClient(d); err != nil {
 		return "", err
 	}
@@ -60,7 +74,7 @@ type IpAddress struct {
 	Mac         string
 }
 
-func (c *Client) GetInstanceState(d *Driver) (string, error) {
+func (c *GenericClient) GetInstanceState(d *Driver) (string, error) {
 	server, err := c.getServerDetail(d)
 	if err != nil {
 		return "", err
@@ -73,7 +87,7 @@ func (c *Client) GetInstanceState(d *Driver) (string, error) {
 	return server.Status, nil
 }
 
-func (c *Client) StartInstance(d *Driver) error {
+func (c *GenericClient) StartInstance(d *Driver) error {
 	if err := c.initComputeClient(d); err != nil {
 		return err
 	}
@@ -83,7 +97,7 @@ func (c *Client) StartInstance(d *Driver) error {
 	return nil
 }
 
-func (c *Client) StopInstance(d *Driver) error {
+func (c *GenericClient) StopInstance(d *Driver) error {
 	if err := c.initComputeClient(d); err != nil {
 		return err
 	}
@@ -93,7 +107,7 @@ func (c *Client) StopInstance(d *Driver) error {
 	return nil
 }
 
-func (c *Client) RestartInstance(d *Driver) error {
+func (c *GenericClient) RestartInstance(d *Driver) error {
 	if err := c.initComputeClient(d); err != nil {
 		return err
 	}
@@ -103,7 +117,7 @@ func (c *Client) RestartInstance(d *Driver) error {
 	return nil
 }
 
-func (c *Client) DeleteInstance(d *Driver) error {
+func (c *GenericClient) DeleteInstance(d *Driver) error {
 	if err := c.initComputeClient(d); err != nil {
 		return err
 	}
@@ -113,14 +127,14 @@ func (c *Client) DeleteInstance(d *Driver) error {
 	return nil
 }
 
-func (c *Client) WaitForInstanceStatus(d *Driver, status string, timeout int) error {
+func (c *GenericClient) WaitForInstanceStatus(d *Driver, status string, timeout int) error {
 	if err := servers.WaitForStatus(c.Compute, d.MachineId, status, timeout); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
+func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 	server, err := c.getServerDetail(d)
 	if err != nil {
 		return nil, err
@@ -140,7 +154,7 @@ func (c *Client) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 	return addresses, nil
 }
 
-func (c *Client) GetNetworkId(d *Driver, networkName string) (string, error) {
+func (c *GenericClient) GetNetworkId(d *Driver, networkName string) (string, error) {
 	if err := c.initNetworkClient(d); err != nil {
 		return "", err
 	}
@@ -168,7 +182,7 @@ func (c *Client) GetNetworkId(d *Driver, networkName string) (string, error) {
 	return networkId, err
 }
 
-func (c *Client) GetFlavorId(d *Driver, flavorName string) (string, error) {
+func (c *GenericClient) GetFlavorId(d *Driver, flavorName string) (string, error) {
 	if err := c.initComputeClient(d); err != nil {
 		return "", err
 	}
@@ -195,7 +209,7 @@ func (c *Client) GetFlavorId(d *Driver, flavorName string) (string, error) {
 	return flavorId, err
 }
 
-func (c *Client) GetImageId(d *Driver, imageName string) (string, error) {
+func (c *GenericClient) GetImageId(d *Driver, imageName string) (string, error) {
 	if err := c.initComputeClient(d); err != nil {
 		return "", err
 	}
@@ -223,7 +237,7 @@ func (c *Client) GetImageId(d *Driver, imageName string) (string, error) {
 	return imageId, err
 }
 
-func (c *Client) CreateKeyPair(d *Driver, name string, publicKey string) error {
+func (c *GenericClient) CreateKeyPair(d *Driver, name string, publicKey string) error {
 	if err := c.initComputeClient(d); err != nil {
 		return err
 	}
@@ -237,7 +251,7 @@ func (c *Client) CreateKeyPair(d *Driver, name string, publicKey string) error {
 	return nil
 }
 
-func (c *Client) DeleteKeyPair(d *Driver, name string) error {
+func (c *GenericClient) DeleteKeyPair(d *Driver, name string) error {
 	if err := c.initComputeClient(d); err != nil {
 		return err
 	}
@@ -247,7 +261,7 @@ func (c *Client) DeleteKeyPair(d *Driver, name string) error {
 	return nil
 }
 
-func (c *Client) getServerDetail(d *Driver) (*servers.Server, error) {
+func (c *GenericClient) getServerDetail(d *Driver) (*servers.Server, error) {
 	if err := c.initComputeClient(d); err != nil {
 		return nil, err
 	}
@@ -258,7 +272,7 @@ func (c *Client) getServerDetail(d *Driver) (*servers.Server, error) {
 	return server, nil
 }
 
-func (c *Client) getFloatingIPs(d *Driver) ([]string, error) {
+func (c *GenericClient) getFloatingIPs(d *Driver) ([]string, error) {
 
 	if err := c.initNetworkClient(d); err != nil {
 		return nil, err
@@ -283,7 +297,7 @@ func (c *Client) getFloatingIPs(d *Driver) ([]string, error) {
 	return nil, nil
 }
 
-func (c *Client) getPorts(d *Driver) ([]string, error) {
+func (c *GenericClient) getPorts(d *Driver) ([]string, error) {
 
 	if err := c.initNetworkClient(d); err != nil {
 		return nil, err
@@ -310,7 +324,7 @@ func (c *Client) getPorts(d *Driver) ([]string, error) {
 	return nil, nil
 }
 
-func (c *Client) initComputeClient(d *Driver) error {
+func (c *GenericClient) initComputeClient(d *Driver) error {
 	if c.Provider == nil {
 		err := c.Authenticate(d)
 		if err != nil {
@@ -328,7 +342,7 @@ func (c *Client) initComputeClient(d *Driver) error {
 	return nil
 }
 
-func (c *Client) initNetworkClient(d *Driver) error {
+func (c *GenericClient) initNetworkClient(d *Driver) error {
 	if c.Provider == nil {
 		err := c.Authenticate(d)
 		if err != nil {
@@ -346,7 +360,7 @@ func (c *Client) initNetworkClient(d *Driver) error {
 	return nil
 }
 
-func (c *Client) getEndpointType(d *Driver) gophercloud.Availability {
+func (c *GenericClient) getEndpointType(d *Driver) gophercloud.Availability {
 	switch d.EndpointType {
 	case "internalURL":
 		return gophercloud.AvailabilityInternal
@@ -356,7 +370,7 @@ func (c *Client) getEndpointType(d *Driver) gophercloud.Availability {
 	return gophercloud.AvailabilityPublic
 }
 
-func (c *Client) Authenticate(d *Driver) error {
+func (c *GenericClient) Authenticate(d *Driver) error {
 	log.WithFields(log.Fields{
 		"AuthUrl":    d.AuthUrl,
 		"Username":   d.Username,
