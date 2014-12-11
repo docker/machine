@@ -6,8 +6,11 @@ import (
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/extensions/startstop"
+	"github.com/rackspace/gophercloud/openstack/compute/v2/flavors"
+	"github.com/rackspace/gophercloud/openstack/compute/v2/images"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
 	"github.com/rackspace/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
+	"github.com/rackspace/gophercloud/openstack/networking/v2/networks"
 	"github.com/rackspace/gophercloud/openstack/networking/v2/ports"
 	"github.com/rackspace/gophercloud/pagination"
 )
@@ -135,6 +138,89 @@ func (c *Client) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 		}
 	}
 	return addresses, nil
+}
+
+func (c *Client) GetNetworkId(d *Driver, networkName string) (string, error) {
+	if err := c.initNetworkClient(d); err != nil {
+		return "", err
+	}
+
+	opts := networks.ListOpts{Name: d.NetworkName}
+	pager := networks.List(c.Network, opts)
+	networkId := ""
+
+	err := pager.EachPage(func(page pagination.Page) (bool, error) {
+		networkList, err := networks.ExtractNetworks(page)
+		if err != nil {
+			return false, err
+		}
+
+		for _, n := range networkList {
+			if n.Name == d.NetworkName {
+				networkId = n.ID
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+
+	return networkId, err
+}
+
+func (c *Client) GetFlavorId(d *Driver, flavorName string) (string, error) {
+	if err := c.initComputeClient(d); err != nil {
+		return "", err
+	}
+
+	pager := flavors.ListDetail(c.Compute, nil)
+	flavorId := ""
+
+	err := pager.EachPage(func(page pagination.Page) (bool, error) {
+		flavorList, err := flavors.ExtractFlavors(page)
+		if err != nil {
+			return false, err
+		}
+
+		for _, f := range flavorList {
+			if f.Name == d.FlavorName {
+				flavorId = f.ID
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+
+	return flavorId, err
+}
+
+func (c *Client) GetImageId(d *Driver, imageName string) (string, error) {
+	if err := c.initComputeClient(d); err != nil {
+		return "", err
+	}
+
+	opts := images.ListOpts{Name: imageName}
+	pager := images.ListDetail(c.Compute, opts)
+	imageId := ""
+
+	err := pager.EachPage(func(page pagination.Page) (bool, error) {
+		imageList, err := images.ExtractImages(page)
+		if err != nil {
+			return false, err
+		}
+
+		for _, i := range imageList {
+			if i.Name == d.ImageName {
+				imageId = i.ID
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+
+	return imageId, err
 }
 
 func (c *Client) CreateKeyPair(d *Driver, name string, publicKey string) error {
