@@ -22,9 +22,13 @@ type Client struct {
 
 // Authenticate creates a Rackspace-specific Gophercloud client.
 func (c *Client) Authenticate(d *openstack.Driver) error {
+	if c.Provider != nil {
+		return nil
+	}
+
 	log.WithFields(log.Fields{
 		"Username": d.Username,
-	}).Info("Authenticating...")
+	}).Info("Authenticating to Rackspace.")
 
 	apiKey := c.driver.APIKey
 	opts := gophercloud.AuthOptions{
