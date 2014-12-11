@@ -131,12 +131,20 @@ func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 	for network, networkAddresses := range server.Addresses {
 		for _, element := range networkAddresses.([]interface{}) {
 			address := element.(map[string]interface{})
-			addresses = append(addresses, IpAddress{
-				Network:     network,
-				AddressType: address["OS-EXT-IPS:type"].(string),
-				Address:     address["addr"].(string),
-				Mac:         address["OS-EXT-IPS-MAC:mac_addr"].(string),
-			})
+
+			addr := IpAddress{
+				Network: network,
+				Address: address["addr"].(string),
+			}
+
+			if tp, ok := address["OS-EXT-IPS:type"]; ok {
+				addr.AddressType = tp.(string)
+			}
+			if mac, ok := address["OS-EXT-IPS-MAC:mac_addr"]; ok {
+				addr.Mac = mac.(string)
+			}
+
+			addresses = append(addresses, addr)
 		}
 	}
 	return addresses, nil

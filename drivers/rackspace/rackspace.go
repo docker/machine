@@ -95,7 +95,7 @@ func NewDriver(storePath string) (drivers.Driver, error) {
 	}).Info("Instantiating Rackspace driver.")
 
 	client := &Client{}
-	inner, err := openstack.NewDerivedDriver(storePath, &Client{})
+	inner, err := openstack.NewDerivedDriver(storePath, client)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,6 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
 	d.Username = *flags.Username
 	d.APIKey = *flags.APIKey
 	d.Region = *flags.Region
-	d.MachineName = *flags.MachineName
 	d.EndpointType = *flags.EndpointType
 	d.ImageId = *flags.ImageID
 	d.FlavorId = *flags.FlavorID
