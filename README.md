@@ -106,6 +106,7 @@ Options :
  - `--cloudstack-secret-key`: Your cloudstack secret key.
  - `--cloudstack-template`: The template name to use for the VM.
  - `--cloudstack-offer-id`: The Cloudstack offer's ID to use (VM size). Note that name doesn't work because the underlying CS client doesn't support it yet.
+ - `--cloudstack-zone-id`: The Cloudstack offer's ID to use (VM size). Note that name doesn't work because the underlying CS client doesn't support it yet.
 
 Example :
 

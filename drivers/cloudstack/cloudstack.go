@@ -19,6 +19,7 @@ type Driver struct {
     TemplateName        string
     TemplateId          string
     OfferId             string
+    ZoneId              string
 }
 
 type CreateFlags struct {
@@ -26,7 +27,8 @@ type CreateFlags struct {
     ApiKey              *string
     SecretKey           *string
     TemplateName        *string
-    OfferId           *string
+    OfferId             *string
+    ZoneId              *string
 }
 
 func init() {
@@ -64,6 +66,11 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
         []string{"-cloudstack-template"},
         "",
         "Your cloudstack template name to use",
+    )
+    createFlags.TemplateName = cmd.String(
+        []string{"-cloudstack-zone-id"},
+        "",
+        "Your cloudstack zone id to use",
     )
 
     return createFlags
@@ -105,6 +112,11 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
         return fmt.Errorf("cloudstack driver requires the --cloudstack-template option")
     }
 
+    d.ZoneId = *flags.ZoneId
+    if d.ZoneId == "" {
+        return fmt.Errorf("cloudstack driver requires the --cloudstack-zone-id option")
+    }
+
     return nil
 }
 
@@ -118,16 +130,28 @@ func (d *Driver) Create() error {
     log.Infof("Fetching template id from provided template name : %q",
         d.TemplateName,
     )
-    responseTemplateList, err := client.ListTemplates(d.TemplateName,"self")
+    responseTemplateList, err := client.ListTemplates(d.TemplateName,"executable")
     if err != nil {
         return err
     }
-    d.TemplateName = responseTemplateList.Listtemplatesresponse.Template[0].Name
     d.TemplateId = responseTemplateList.Listtemplatesresponse.Template[0].ID
+    if len(responseTemplateList.Listtemplatesresponse.Template) > 1 {
+        log.Infof("More than one template has been found with the name %q. I'm gonna use the first with the ID %q",
+            d.TemplateName,
+            d.TemplateId
+        )
+    }
+    d.TemplateName = responseTemplateList.Listtemplatesresponse.Template[0].Name
 
-    // TODO : implement listServiceOfferings CS's API into Gopher and use offer name instead ID (more user friendly)
+
+    // TODO : implement listServiceOfferings CS's API into gopherstack and use offer name instead ID (more user friendly)
     log.Infof("Offer ID is %q",
         d.OfferId,
+    )
+
+    // TODO : implement listZones CS's API into gopherstack and use zone name instead ID (more user friendly)
+    log.Infof("Zone ID is %q",
+        d.ZoneId,
     )
 
     
