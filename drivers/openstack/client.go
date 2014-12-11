@@ -186,7 +186,7 @@ func (c *Client) getFloatingIPs(d *Driver) ([]string, error) {
 			return false, err
 		}
 		for _, f := range floatingipList {
-			log.Info("### FloatingIP => %s", f)
+			log.Debug("### FloatingIP => %s", f)
 		}
 		return true, nil
 	})
@@ -213,7 +213,7 @@ func (c *Client) getPorts(d *Driver) ([]string, error) {
 			return false, err
 		}
 		for _, port := range portList {
-			log.Info("### Port => %s", port)
+			log.Debug("### Port => %s", port)
 		}
 		return true, nil
 	})
@@ -276,7 +276,7 @@ func (c *Client) Authenticate(d *Driver) error {
 		"Username":   d.Username,
 		"TenantName": d.TenantName,
 		"TenantID":   d.TenantId,
-	}).Info("Authenticating...")
+	}).Debug("Authenticating...")
 
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint: d.AuthUrl,
