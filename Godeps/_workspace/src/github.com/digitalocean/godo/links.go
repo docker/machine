@@ -51,7 +51,7 @@ func (p *Pages) current() (int, error) {
 
 // IsLastPage returns true if the current page is the last
 func (l *Links) IsLastPage() bool {
-	if l == nil {
+	if l.Pages == nil {
 		return true
 	}
 	return l.Pages.isLast()

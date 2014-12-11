@@ -55,16 +55,7 @@ func (k *ecPublicKey) CurveName() string {
 
 // KeyID returns a distinct identifier which is unique to this Public Key.
 func (k *ecPublicKey) KeyID() string {
-	// Generate and return a libtrust fingerprint of the EC public key.
-	// For an EC key this should be:
-	//   SHA256("EC"+curveName+bytes(X)+bytes(Y))
-	// Then truncated to 240 bits and encoded into 12 base32 groups like so:
-	//   ABCD:EFGH:IJKL:MNOP:QRST:UVWX:YZ23:4567:ABCD:EFGH:IJKL:MNOP
-	hasher := crypto.SHA256.New()
-	hasher.Write([]byte(k.KeyType() + k.CurveName()))
-	hasher.Write(k.X.Bytes())
-	hasher.Write(k.Y.Bytes())
-	return keyIDEncode(hasher.Sum(nil)[:30])
+	return keyIDFromCryptoKey(k)
 }
 
 func (k *ecPublicKey) String() string {
@@ -151,7 +142,7 @@ func (k *ecPublicKey) PEMBlock() (*pem.Block, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to serialize EC PublicKey to DER-encoded PKIX format: %s", err)
 	}
-	k.extended["keyID"] = k.KeyID() // For display purposes.
+	k.extended["kid"] = k.KeyID() // For display purposes.
 	return createPemBlock("PUBLIC KEY", derBytes, k.extended)
 }
 

@@ -57,11 +57,15 @@ type dropletsRoot struct {
 
 // DropletCreateRequest represents a request to create a droplet.
 type DropletCreateRequest struct {
-	Name    string        `json:"name"`
-	Region  string        `json:"region"`
-	Size    string        `json:"size"`
-	Image   string        `json:"image"`
-	SSHKeys []interface{} `json:"ssh_keys"`
+	Name              string        `json:"name"`
+	Region            string        `json:"region"`
+	Size              string        `json:"size"`
+	Image             string        `json:"image"`
+	SSHKeys           []interface{} `json:"ssh_keys"`
+	Backups           bool          `json:"backups"`
+	IPv6              bool          `json:"ipv6"`
+	PrivateNetworking bool          `json:"private_networking"`
+	UserData          string        `json:"user_data"`
 }
 
 func (d DropletCreateRequest) String() string {
