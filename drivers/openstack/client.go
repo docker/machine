@@ -16,6 +16,10 @@ import (
 )
 
 type Client interface {
+	Authenticate(d *Driver) error
+	InitComputeClient(d *Driver) error
+	InitNetworkClient(d *Driver) error
+
 	CreateInstance(d *Driver) (string, error)
 	GetInstanceState(d *Driver) (string, error)
 	StartInstance(d *Driver) error
@@ -26,7 +30,6 @@ type Client interface {
 	GetInstanceIpAddresses(d *Driver) ([]IpAddress, error)
 	CreateKeyPair(d *Driver, name string, publicKey string) error
 	DeleteKeyPair(d *Driver, name string) error
-	Authenticate(d *Driver) error
 }
 
 type GenericClient struct {
@@ -36,9 +39,6 @@ type GenericClient struct {
 }
 
 func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
-	if err := c.initComputeClient(d); err != nil {
-		return "", err
-	}
 	serverOpts := servers.CreateOpts{
 		Name:           d.MachineName,
 		FlavorRef:      d.FlavorId,
@@ -88,9 +88,6 @@ func (c *GenericClient) GetInstanceState(d *Driver) (string, error) {
 }
 
 func (c *GenericClient) StartInstance(d *Driver) error {
-	if err := c.initComputeClient(d); err != nil {
-		return err
-	}
 	if result := startstop.Start(c.Compute, d.MachineId); result.Err != nil {
 		return result.Err
 	}
@@ -98,9 +95,6 @@ func (c *GenericClient) StartInstance(d *Driver) error {
 }
 
 func (c *GenericClient) StopInstance(d *Driver) error {
-	if err := c.initComputeClient(d); err != nil {
-		return err
-	}
 	if result := startstop.Stop(c.Compute, d.MachineId); result.Err != nil {
 		return result.Err
 	}
@@ -108,9 +102,6 @@ func (c *GenericClient) StopInstance(d *Driver) error {
 }
 
 func (c *GenericClient) RestartInstance(d *Driver) error {
-	if err := c.initComputeClient(d); err != nil {
-		return err
-	}
 	if result := servers.Reboot(c.Compute, d.MachineId, servers.SoftReboot); result.Err != nil {
 		return result.Err
 	}
@@ -118,9 +109,6 @@ func (c *GenericClient) RestartInstance(d *Driver) error {
 }
 
 func (c *GenericClient) DeleteInstance(d *Driver) error {
-	if err := c.initComputeClient(d); err != nil {
-		return err
-	}
 	if result := servers.Delete(c.Compute, d.MachineId); result.Err != nil {
 		return result.Err
 	}
@@ -238,9 +226,6 @@ func (c *GenericClient) GetImageId(d *Driver, imageName string) (string, error) 
 }
 
 func (c *GenericClient) CreateKeyPair(d *Driver, name string, publicKey string) error {
-	if err := c.initComputeClient(d); err != nil {
-		return err
-	}
 	opts := keypairs.CreateOpts{
 		Name:      name,
 		PublicKey: publicKey,
@@ -252,9 +237,6 @@ func (c *GenericClient) CreateKeyPair(d *Driver, name string, publicKey string) 
 }
 
 func (c *GenericClient) DeleteKeyPair(d *Driver, name string) error {
-	if err := c.initComputeClient(d); err != nil {
-		return err
-	}
 	if result := keypairs.Delete(c.Compute, name); result.Err != nil {
 		return result.Err
 	}
@@ -262,9 +244,6 @@ func (c *GenericClient) DeleteKeyPair(d *Driver, name string) error {
 }
 
 func (c *GenericClient) getServerDetail(d *Driver) (*servers.Server, error) {
-	if err := c.initComputeClient(d); err != nil {
-		return nil, err
-	}
 	server, err := servers.Get(c.Compute, d.MachineId).Extract()
 	if err != nil {
 		return nil, err
@@ -273,11 +252,6 @@ func (c *GenericClient) getServerDetail(d *Driver) (*servers.Server, error) {
 }
 
 func (c *GenericClient) getFloatingIPs(d *Driver) ([]string, error) {
-
-	if err := c.initNetworkClient(d); err != nil {
-		return nil, err
-	}
-
 	pager := floatingips.List(c.Network, floatingips.ListOpts{})
 
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
@@ -298,11 +272,6 @@ func (c *GenericClient) getFloatingIPs(d *Driver) ([]string, error) {
 }
 
 func (c *GenericClient) getPorts(d *Driver) ([]string, error) {
-
-	if err := c.initNetworkClient(d); err != nil {
-		return nil, err
-	}
-
 	pager := ports.List(c.Network, ports.ListOpts{
 		DeviceID: d.MachineId,
 	})
@@ -324,7 +293,7 @@ func (c *GenericClient) getPorts(d *Driver) ([]string, error) {
 	return nil, nil
 }
 
-func (c *GenericClient) initComputeClient(d *Driver) error {
+func (c *GenericClient) InitComputeClient(d *Driver) error {
 	if c.Provider == nil {
 		err := c.Authenticate(d)
 		if err != nil {
@@ -342,13 +311,7 @@ func (c *GenericClient) initComputeClient(d *Driver) error {
 	return nil
 }
 
-func (c *GenericClient) initNetworkClient(d *Driver) error {
-	if c.Provider == nil {
-		err := c.Authenticate(d)
-		if err != nil {
-			return err
-		}
-	}
+func (c *GenericClient) InitNetworkClient(d *Driver) error {
 	network, err := openstack.NewNetworkV2(c.Provider, gophercloud.EndpointOpts{
 		Region:       d.Region,
 		Availability: c.getEndpointType(d),
@@ -371,6 +334,10 @@ func (c *GenericClient) getEndpointType(d *Driver) gophercloud.Availability {
 }
 
 func (c *GenericClient) Authenticate(d *Driver) error {
+	if c.Provider != nil {
+		return nil
+	}
+
 	log.WithFields(log.Fields{
 		"AuthUrl":    d.AuthUrl,
 		"Username":   d.Username,
