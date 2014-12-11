@@ -158,6 +158,12 @@ func (d *Driver) Create() error {
 
     d.setMachineNameIfNotSet()
 
+    log.Infof("Creating SSH key...")
+
+    if err := ssh.GenerateSSHKey(path.Join(d.storePath, "id_rsa")); err != nil {
+        return err
+    }
+
     return nil
 }
 
