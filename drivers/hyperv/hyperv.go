@@ -9,15 +9,15 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
+	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
-	flag "github.com/docker/docker/pkg/mflag"
-	log "github.com/Sirupsen/logrus"
 )
 
 type Driver struct {
@@ -74,8 +74,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	// No security for now, expect boot2docker running insecure
-	return fmt.Sprintf("tcp://%s:2375", ip), nil
+	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -136,12 +135,10 @@ func (d *Driver) Create() error {
 		if d.boot2DockerURL != "" {
 			isoURL = d.boot2DockerURL
 		} else {
-			// HACK: Docker 1.3 boot2docker image
-			isoURL = "http://cl.ly/1c1c0O3N193A/download/boot2docker-1.2.0-dev.iso"
-			// isoURL, err = getLatestReleaseURL()
-			// if err != nil {
-			// 	return err
-			// }
+			isoURL, err = getLatestReleaseURL()
+			if err != nil {
+				return err
+			}
 		}
 		log.Infof("Downloading boot2docker...")
 
@@ -149,7 +146,7 @@ func (d *Driver) Create() error {
 			return err
 		}
 	} else {
-		copyFile(d.boot2DockerLoc, path.Join(d.storePath, "boot2docker.iso"))
+		copyFile(d.boot2DockerLoc, filepath.Join(d.storePath, "boot2docker.iso"))
 	}
 
 	log.Infof("Creating SSH key...")
@@ -183,7 +180,7 @@ func (d *Driver) Create() error {
 	command = []string{
 		"Set-VMDvdDrive",
 		"-VMName", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", path.Join(d.storePath, "boot2docker.iso"))}
+		"-Path", fmt.Sprintf("'%s'", filepath.Join(d.storePath, "boot2docker.iso"))}
 	_, err = execute(command)
 	if err != nil {
 		return err
@@ -208,7 +205,26 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Starting  VM...")
-	return d.Start()
+	if err := d.Start(); err != nil {
+		return err
+	}
+
+	log.Infof("Adding key to authorized-keys.d...")
+
+	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/root/.docker/authorized-keys.d"); err != nil {
+		return err
+	}
+
+	log.Infof("Restart docker...")
+	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker restart")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Driver) chooseVirtualSwitch() (string, error) {
@@ -389,7 +405,7 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
+	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
@@ -399,26 +415,28 @@ func (d *Driver) publicSSHKeyPath() string {
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func getLatestReleaseURL() (string, error) {
-// 	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer rsp.Body.Close()
+	// HACK: boot2docker iso with ident auth built from here:
+	// https://github.com/MSOpenTech/boot2docker/tree/ident-auth
+	return "https://jlmstore.blob.core.windows.net/boot2docker/boot2docker-ident.iso", nil
+	// 	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	defer rsp.Body.Close()
 
-// 	var t []struct {
-// 		TagName string `json:"tag_name"`
-// 	}
-// 	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
-// 		return "", err
-// 	}
-// 	if len(t) == 0 {
-// 		return "", fmt.Errorf("no releases found")
-// 	}
+	// 	var t []struct {
+	// 		TagName string `json:"tag_name"`
+	// 	}
+	// 	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
+	// 		return "", err
+	// 	}
+	// 	if len(t) == 0 {
+	// 		return "", fmt.Errorf("no releases found")
+	// 	}
 
-// 	tag := t[0].TagName
-// 	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", tag)
-// 	return url, nil
-	return "", nil
+	// 	tag := t[0].TagName
+	// 	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", tag)
+	// 	return url, nil
 }
 
 // Download boot2docker ISO image for the given tag and save it at dest.
@@ -442,7 +460,7 @@ func downloadISO(dir, file, url string) error {
 	if err := f.Close(); err != nil {
 		return err
 	}
-	if err := os.Rename(f.Name(), path.Join(dir, file)); err != nil {
+	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
 		return err
 	}
 	return nil
@@ -452,8 +470,8 @@ func (d *Driver) generateDiskImage() error {
 	// Create a small fixed vhd, put the tar in,
 	// convert to dynamic, then resize
 
-	d.diskImage = path.Join(d.storePath, "disk.vhd")
-	fixed := path.Join(d.storePath, "fixed.vhd")
+	d.diskImage = filepath.Join(d.storePath, "disk.vhd")
+	fixed := filepath.Join(d.storePath, "fixed.vhd")
 	log.Infof("Creating VHD")
 	command := []string{
 		"New-VHD",
