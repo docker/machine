@@ -3,8 +3,8 @@ package cloudstack
 import (
 	"fmt"
 	"os/exec"
-	"path"
-
+	"path/filepath"
+	
 	log "github.com/Sirupsen/logrus"
 	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/docker/docker/utils"
@@ -161,9 +161,31 @@ func (d *Driver) Create() error {
 
 	log.Infof("Creating SSH key...")
 
-	if err := ssh.GenerateSSHKey(path.Join(d.storePath, "id_rsa")); err != nil {
+	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
 		return err
 	}
+
+	// Create the virtual machine based on configuration
+	log.Infof("Deploying the VM..")
+	response, err := client.DeployVirtualMachine(
+		d.OfferId,
+		d.TemplateId,
+		d.ZoneId,
+		"", // No need for 'account' param for now (not mandatory)
+		"", // No need for 'diskOfferingId' param for now (not mandatory). We assume the template embed its own one.
+		d.MachineName,
+		nil,
+		d.sshKeyPath(),
+		"",
+		"", // No need for 'userData' param for now (not mandatory). We assume the template embed its own one.
+		"", // No need for 'hypervisor' param for now (not mandatory). We assume the template embed its own one.
+	)
+	if err != nil {
+		return err
+	}
+
+	vmid := response.Deployvirtualmachineresponse.ID
+	log.Infof("VM successfully deployed : %q",vmid)
 
 	return nil
 }
@@ -220,4 +242,8 @@ func (d *Driver) setMachineNameIfNotSet() {
 	if d.MachineName == "" {
 		d.MachineName = fmt.Sprintf("docker-host-cloudstack-%s", utils.GenerateRandomID())
 	}
+}
+
+func (d *Driver) sshKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
 }
