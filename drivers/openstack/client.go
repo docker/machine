@@ -75,7 +75,7 @@ type IpAddress struct {
 }
 
 func (c *GenericClient) GetInstanceState(d *Driver) (string, error) {
-	server, err := c.getServerDetail(d)
+	server, err := c.GetServerDetail(d)
 	if err != nil {
 		return "", err
 	}
@@ -123,7 +123,7 @@ func (c *GenericClient) WaitForInstanceStatus(d *Driver, status string, timeout 
 }
 
 func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
-	server, err := c.getServerDetail(d)
+	server, err := c.GetServerDetail(d)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (c *GenericClient) DeleteKeyPair(d *Driver, name string) error {
 	return nil
 }
 
-func (c *GenericClient) getServerDetail(d *Driver) (*servers.Server, error) {
+func (c *GenericClient) GetServerDetail(d *Driver) (*servers.Server, error) {
 	server, err := servers.Get(c.Compute, d.MachineId).Extract()
 	if err != nil {
 		return nil, err
