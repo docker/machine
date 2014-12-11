@@ -21,6 +21,7 @@ type Driver struct {
     TemplateId          string
     OfferId             string
     ZoneId              string
+    storePath           string
 }
 
 type CreateFlags struct {
@@ -78,7 +79,7 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
-    return &Driver{}, nil
+    return &Driver{storePath: storePath}, nil
 }
 
 func (d *Driver) DriverName() string {
