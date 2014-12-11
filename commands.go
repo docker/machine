@@ -17,7 +17,9 @@ import (
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/none"
 	_ "github.com/docker/machine/drivers/virtualbox"
+	_ "github.com/docker/machine/drivers/cloudstack"
 	"github.com/docker/machine/state"
+	
 )
 
 type HostListItem struct {
