@@ -15,9 +15,11 @@ import (
 
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/azure"
+	_ "github.com/docker/machine/drivers/cloudstack"
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/none"
 	_ "github.com/docker/machine/drivers/virtualbox"
+	_ "github.com/docker/machine/drivers/cloudstack"
 	"github.com/docker/machine/state"
 )
 
