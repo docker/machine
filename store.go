@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	homedir "github.com/mitchellh/go-homedir"
