@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -115,6 +116,8 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 
 	wg := sync.WaitGroup{}
 
+	hostStateList := []HostState{}
+
 	for _, host := range hostList {
 		host := host
 		if *quiet {
@@ -142,19 +145,32 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 						host.Name, err)
 				}
 
-				activeString := ""
-				if isActive {
-					activeString = "*"
-				}
+				hostStateList = append(hostStateList, HostState{
+					Name:       host.Name,
+					Active:     isActive,
+					DriverName: host.Driver.DriverName(),
+					State:      currentState,
+					URL:        url,
+				})
 
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-					host.Name, activeString, host.Driver.DriverName(), currentState, url)
 				wg.Done()
 			}()
 		}
 	}
 
 	wg.Wait()
+
+	sort.Sort(HostStateByName(hostStateList))
+
+	for _, hostState := range hostStateList {
+		activeString := ""
+		if hostState.Active {
+			activeString = "*"
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			hostState.Name, activeString, hostState.DriverName, hostState.State, hostState.URL)
+	}
+
 	w.Flush()
 
 	return nil
