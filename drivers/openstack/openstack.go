@@ -140,7 +140,7 @@ func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
 func NewDriver(storePath string) (drivers.Driver, error) {
 	log.WithFields(log.Fields{
 		"storePath": storePath,
-	}).Info("Instanciate OpenStack driver...")
+	}).Debug("Instanciate OpenStack driver...")
 	return &Driver{
 		storePath: storePath,
 		client:    &Client{},
@@ -223,7 +223,7 @@ func (d *Driver) GetIP() (string, error) {
 
 func (d *Driver) GetState() (state.State, error) {
 
-	log.WithField("MachineId", d.MachineId).Info("Get status for OpenStack instance...")
+	log.WithField("MachineId", d.MachineId).Debug("Get status for OpenStack instance...")
 
 	s, err := d.client.GetInstanceState(d)
 	if err != nil {
@@ -233,7 +233,7 @@ func (d *Driver) GetState() (state.State, error) {
 	log.WithFields(log.Fields{
 		"MachineId": d.MachineId,
 		"State":     s,
-	}).Info("State for OpenStack instance")
+	}).Debug("State for OpenStack instance")
 
 	switch s {
 	case "ACTIVE":
@@ -366,12 +366,12 @@ func (d *Driver) foundIP(ip string) string {
 	log.WithFields(log.Fields{
 		"IP":        ip,
 		"MachineId": d.MachineId,
-	}).Info("IP address found")
+	}).Debug("IP address found")
 	return ip
 }
 
 func (d *Driver) createSSHKey() error {
-	log.WithField("Name", d.KeyPairName).Info("Creating Key Pair...")
+	log.WithField("Name", d.KeyPairName).Debug("Creating Key Pair...")
 	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
 		return err
 	}
@@ -389,7 +389,7 @@ func (d *Driver) createMachine() error {
 	log.WithFields(log.Fields{
 		"FlavorId": d.FlavorId,
 		"ImageId":  d.ImageId,
-	}).Info("Creating OpenStack instance...")
+	}).Debug("Creating OpenStack instance...")
 	instanceId, err := d.client.CreateInstance(d)
 	if err != nil {
 		return err
@@ -399,7 +399,7 @@ func (d *Driver) createMachine() error {
 }
 
 func (d *Driver) waitForInstanceToStart() error {
-	log.WithField("MachineId", d.MachineId).Info("Waiting for the OpenStack instance to start...")
+	log.WithField("MachineId", d.MachineId).Debug("Waiting for the OpenStack instance to start...")
 	if err := d.client.WaitForInstanceStatus(d, "ACTIVE", 200); err != nil {
 		return err
 	}
