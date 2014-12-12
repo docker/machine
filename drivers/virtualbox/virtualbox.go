@@ -19,7 +19,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
@@ -43,19 +43,32 @@ type CreateFlags struct {
 
 func init() {
 	drivers.Register("virtualbox", &drivers.RegisteredDriver{
-		New:                 NewDriver,
-		RegisterCreateFlags: RegisterCreateFlags,
+		New:            NewDriver,
+		GetCreateFlags: GetCreateFlags,
 	})
 }
 
 // RegisterCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
-	createFlags := new(CreateFlags)
-	createFlags.Memory = cmd.Int([]string{"-virtualbox-memory"}, 1024, "Size of memory for host in MB")
-	createFlags.DiskSize = cmd.Int([]string{"-virtualbox-disk-size"}, 20000, "Size of disk for host in MB")
-	createFlags.Boot2DockerURL = cmd.String([]string{"-virtualbox-boot2docker-url"}, "", "The URL of the boot2docker image. Defaults to the latest available version")
-	return createFlags
+func GetCreateFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.IntFlag{
+			Name:  "virtualbox-memory",
+			Usage: "Size of memory for host in MB",
+			Value: 1024,
+		},
+		cli.IntFlag{
+			Name:  "virtualbox-disk-size",
+			Usage: "Size of disk for host in MB",
+			Value: 20000,
+		},
+		cli.StringFlag{
+			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
+			Name:   "virtualbox-boot2docker-url",
+			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
+			Value:  "",
+		},
+	}
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
@@ -77,11 +90,10 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
-func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
-	flags := flagsInterface.(*CreateFlags)
-	d.Memory = *flags.Memory
-	d.DiskSize = *flags.DiskSize
-	d.Boot2DockerURL = *flags.Boot2DockerURL
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.Memory = flags.Int("virtualbox-memory")
+	d.DiskSize = flags.Int("virtualbox-disk-size")
+	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
 	return nil
 }
 

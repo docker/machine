@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"sort"
 
-	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/codegangsta/cli"
 	"github.com/docker/machine/state"
 )
 
@@ -19,7 +19,7 @@ type Driver interface {
 
 	// SetConfigFromFlags configures the driver with the object that was returned
 	// by RegisterCreateFlags
-	SetConfigFromFlags(flags interface{}) error
+	SetConfigFromFlags(flags DriverOptions) error
 
 	// GetURL returns a Docker compatible host URL for connecting to this host
 	// e.g. tcp://1.2.3.4:2376
@@ -67,8 +67,8 @@ type Driver interface {
 // - RegisterCreateFlags: a function that takes the FlagSet for
 //   "docker hosts create" and returns an object to pass to SetConfigFromFlags
 type RegisteredDriver struct {
-	New                 func(storePath string) (Driver, error)
-	RegisterCreateFlags func(cmd *flag.FlagSet) interface{}
+	New            func(storePath string) (Driver, error)
+	GetCreateFlags func() []cli.Flag
 }
 
 var ErrHostIsNotRunning = errors.New("host is not running")
@@ -86,8 +86,8 @@ func Register(name string, registeredDriver *RegisteredDriver) error {
 	if _, exists := drivers[name]; exists {
 		return fmt.Errorf("Name already registered %s", name)
 	}
-	drivers[name] = registeredDriver
 
+	drivers[name] = registeredDriver
 	return nil
 }
 
@@ -100,14 +100,18 @@ func NewDriver(name string, storePath string) (Driver, error) {
 	return driver.New(storePath)
 }
 
-// RegisterCreateFlags runs RegisterCreateFlags for all of the drivers and
+// GetCreateFlags runs GetCreateFlags for all of the drivers and
 // returns their return values indexed by the driver name
-func RegisterCreateFlags(cmd *flag.FlagSet) map[string]interface{} {
-	flags := make(map[string]interface{})
+func GetCreateFlags() []cli.Flag {
+	flags := []cli.Flag{}
+
 	for driverName := range drivers {
 		driver := drivers[driverName]
-		flags[driverName] = driver.RegisterCreateFlags(cmd)
+		for _, f := range driver.GetCreateFlags() {
+			flags = append(flags, f)
+		}
 	}
+
 	return flags
 }
 
@@ -119,4 +123,10 @@ func GetDriverNames() []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+type DriverOptions interface {
+	String(key string) string
+	Int(key string) int
+	Bool(key string) bool
 }

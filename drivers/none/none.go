@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/codegangsta/cli"
 	"github.com/docker/docker/api"
-	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/state"
 )
@@ -17,23 +17,21 @@ type Driver struct {
 	URL string
 }
 
-type CreateFlags struct {
-	URL *string
-}
-
 func init() {
 	drivers.Register("none", &drivers.RegisteredDriver{
-		New:                 NewDriver,
-		RegisterCreateFlags: RegisterCreateFlags,
+		New:            NewDriver,
+		GetCreateFlags: GetCreateFlags,
 	})
 }
 
-// RegisterCreateFlags registers the flags this driver adds to
-// "docker hosts create"
-func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
-	createFlags := new(CreateFlags)
-	createFlags.URL = cmd.String([]string{"-url"}, "", "URL of host when no driver is selected")
-	return createFlags
+func GetCreateFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "url",
+			Usage: "URL of host when no driver is selected",
+			Value: "",
+		},
+	}
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
@@ -44,16 +42,18 @@ func (d *Driver) DriverName() string {
 	return "none"
 }
 
-func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
-	flags := flagsInterface.(*CreateFlags)
-	if *flags.URL == "" {
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	url := flags.String("url")
+
+	if url == "" {
 		return fmt.Errorf("--url option is required when no driver is selected")
 	}
-	url, err := api.ValidateHost(*flags.URL)
+	validatedUrl, err := api.ValidateHost(url)
 	if err != nil {
 		return err
 	}
-	d.URL = url
+
+	d.URL = validatedUrl
 	return nil
 }
 
