@@ -26,7 +26,7 @@ type Host struct {
 	storePath  string
 }
 
-type HostState struct {
+type HostListItem struct {
 	Name       string
 	Active     bool
 	DriverName string
@@ -34,17 +34,17 @@ type HostState struct {
 	URL        string
 }
 
-type HostStateByName []HostState
+type HostListItemByName []HostListItem
 
-func (h HostStateByName) Len() int {
+func (h HostListItemByName) Len() int {
 	return len(h)
 }
 
-func (h HostStateByName) Swap(i, j int) {
+func (h HostListItemByName) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
-func (h HostStateByName) Less(i, j int) bool {
+func (h HostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
