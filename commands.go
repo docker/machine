@@ -116,7 +116,7 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 
 	wg := sync.WaitGroup{}
 
-	hostStateList := []HostState{}
+	hostListItem := []HostListItem{}
 
 	for _, host := range hostList {
 		host := host
@@ -145,7 +145,7 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 						host.Name, err)
 				}
 
-				hostStateList = append(hostStateList, HostState{
+				hostListItem = append(hostListItem, HostListItem{
 					Name:       host.Name,
 					Active:     isActive,
 					DriverName: host.Driver.DriverName(),
@@ -160,9 +160,9 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 
 	wg.Wait()
 
-	sort.Sort(HostStateByName(hostStateList))
+	sort.Sort(HostListItemByName(hostListItem))
 
-	for _, hostState := range hostStateList {
+	for _, hostState := range hostListItem {
 		activeString := ""
 		if hostState.Active {
 			activeString = "*"
