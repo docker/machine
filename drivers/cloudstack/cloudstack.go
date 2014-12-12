@@ -134,7 +134,7 @@ func (d *Driver) Create() error {
 	log.Infof("Fetching template id from provided template name : %q",
 		d.TemplateName,
 	)
-	d.TemplateId, _ = cloudstackClient.Template.GetTemplateID(d.TemplateName,"executable")
+	d.TemplateId, _ = cloudstackClient.Template.GetTemplateID(d.TemplateName, "executable")
 	log.Infof("Found template ID is %q",
 		d.TemplateId,
 	)
@@ -159,8 +159,8 @@ func (d *Driver) Create() error {
 	}
 
 	vmParams := cloudstackClient.VirtualMachine.NewDeployVirtualMachineParams(
-		d.OfferId, 
-		d.TemplateId, 
+		d.OfferId,
+		d.TemplateId,
 		d.ZoneId,
 	)
 	vmParams.SetName(d.MachineName)
@@ -218,7 +218,7 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 
 func (d *Driver) getClient() *gcs.CloudStackClient {
 
-	return gcs.NewAsyncClient(d.ApiURL, d.ApiKey,d.SecretKey, false)
+	return gcs.NewAsyncClient(d.ApiURL, d.ApiKey, d.SecretKey, false)
 
 }
 
