@@ -224,7 +224,8 @@ func (d *Driver) getClient() *gcs.CloudStackClient {
 
 func (d *Driver) setMachineNameIfNotSet() {
 	if d.MachineName == "" {
-		d.MachineName = fmt.Sprintf("docker-host-cloudstack-%s", utils.GenerateRandomID())
+		fullName := fmt.Sprintf("docker-mcs-%s", utils.GenerateRandomID())
+		d.MachineName = fullName[0:63]
 	}
 }
 
