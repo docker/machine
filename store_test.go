@@ -5,16 +5,12 @@ import (
 	"path"
 	"testing"
 
-	none "github.com/docker/machine/drivers/none"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/drivers/none"
 )
 
 func clearHosts() error {
-	homeDir, err := homedir.Dir()
-	if err != nil {
-		return err
-	}
-	return os.RemoveAll(path.Join(homeDir, ".docker/hosts"))
+	return os.RemoveAll(path.Join(drivers.GetHomeDir(), ".docker/hosts"))
 }
 
 func TestStoreCreate(t *testing.T) {
@@ -31,11 +27,7 @@ func TestStoreCreate(t *testing.T) {
 	if host.Name != "test" {
 		t.Fatal("Host name is incorrect")
 	}
-	homeDir, err := homedir.Dir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	path := path.Join(homeDir, ".docker/hosts/test")
+	path := path.Join(drivers.GetHomeDir(), ".docker/hosts/test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -52,11 +44,7 @@ func TestStoreRemove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	homeDir, err := homedir.Dir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	path := path.Join(homeDir, ".docker/hosts/test")
+	path := path.Join(drivers.GetHomeDir(), ".docker/hosts/test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
