@@ -471,11 +471,6 @@ var Commands = []cli.Command{
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
 
-			if name == "" {
-				cli.ShowCommandHelp(c, "url")
-				os.Exit(1)
-			}
-
 			var (
 				err   error
 				host  *Host
