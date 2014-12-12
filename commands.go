@@ -41,15 +41,6 @@ func (h HostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
-func BeforeHandler(c *cli.Context) error {
-	// if c.Bool("debug") {
-	// 	os.Setenv("DEBUG", "1")
-	// 	initLogging(log.DebugLevel)
-	// }
-
-	return nil
-}
-
 var Commands = []cli.Command{
 	{
 		Name:  "active",
@@ -118,8 +109,6 @@ var Commands = []cli.Command{
 			}
 
 			store := NewStore()
-
-			fmt.Printf("%#v", c.String("url"))
 
 			host, err := store.Create(name, driver, c)
 			if err != nil {
@@ -349,6 +338,13 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "command, c",
+				Usage: "SSH Command",
+				Value: "",
+			},
+		},
 		Name:  "ssh",
 		Usage: "Log into or run a command on a machine with SSH",
 		Action: func(c *cli.Context) {
@@ -376,7 +372,7 @@ var Commands = []cli.Command{
 				os.Exit(1)
 			}
 
-			sshCmd, err := host.Driver.GetSSHCommand(os.Args[i:]...)
+			sshCmd, err := host.Driver.GetSSHCommand(c.String("command"))
 			if err != nil {
 				log.Errorf("%s", err)
 				os.Exit(1)
