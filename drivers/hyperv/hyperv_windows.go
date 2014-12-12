@@ -258,14 +258,20 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
 func (d *Driver) wait() error {
 	log.Infof("Waiting for host to start...")
 	for {
-		ip, _ := d.GetIP()
+		ip, err := d.GetIP()
+		if err != nil {
+			return err
+		}
 		if ip != "" {
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
 	log.Infof("Got IP, waiting for SSH")
-	ip, _ := d.GetIP()
+	ip, err := d.GetIP()
+	if err != nil {
+		return err
+	}
 	return ssh.WaitForTCP(fmt.Sprintf("%s:22", ip))
 }
 
@@ -376,7 +382,10 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	ip, _ := d.GetIP()
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
 	return ssh.GetSSHCommand(ip, 22, "docker", d.sshKeyPath(), args...), nil
 }
 
@@ -488,7 +497,10 @@ func (d *Driver) generateDiskImage() error {
 		return err
 	}
 
-	file, _ := os.OpenFile(fixed, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fixed, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
 	defer file.Close()
 	file.Seek(0, os.SEEK_SET)
 	_, err = file.Write(tarBuf.Bytes())
