@@ -42,10 +42,10 @@ func (h HostListItemByName) Less(i, j int) bool {
 }
 
 func BeforeHandler(c *cli.Context) error {
-	if c.Bool("debug") {
-		os.Setenv("DEBUG", "1")
-		initLogging(log.DebugLevel)
-	}
+	// if c.Bool("debug") {
+	// 	os.Setenv("DEBUG", "1")
+	// 	initLogging(log.DebugLevel)
+	// }
 
 	return nil
 }
@@ -118,6 +118,8 @@ var Commands = []cli.Command{
 			}
 
 			store := NewStore()
+
+			fmt.Printf("%#v", c.String("url"))
 
 			host, err := store.Create(name, driver, c)
 			if err != nil {
@@ -351,18 +353,22 @@ var Commands = []cli.Command{
 		Usage: "Log into or run a command on a machine with SSH",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
+			store := NewStore()
 
 			if name == "" {
-				cli.ShowCommandHelp(c, "ssh")
-				os.Exit(1)
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
 			}
 
 			i := 1
 			for i < len(os.Args) && os.Args[i-1] != name {
 				i++
 			}
-
-			store := NewStore()
 
 			host, err := store.Load(name)
 			if err != nil {
@@ -390,8 +396,17 @@ var Commands = []cli.Command{
 		Usage: "Start a machine",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
-
 			store := NewStore()
+
+			if name == "" {
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
+			}
 
 			host, err := store.Load(name)
 			if err != nil {
@@ -407,12 +422,17 @@ var Commands = []cli.Command{
 		Usage: "Stop a machine",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
-			if name == "" {
-				cli.ShowCommandHelp(c, "stop")
-				os.Exit(1)
-			}
-
 			store := NewStore()
+
+			if name == "" {
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
+			}
 
 			host, err := store.Load(name)
 			if err != nil {
@@ -428,12 +448,18 @@ var Commands = []cli.Command{
 		Usage: "Upgrade a machine to the latest version of Docker",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
+			store := NewStore()
+
 			if name == "" {
-				cli.ShowCommandHelp(c, "upgrade")
-				os.Exit(1)
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
 			}
 
-			store := NewStore()
 			host, err := store.Load(name)
 			if err != nil {
 				log.Errorf("error unable to load host")
