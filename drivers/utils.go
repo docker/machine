@@ -15,7 +15,7 @@ func GetHomeDir() string {
 }
 
 func PublicKeyPath() string {
-	return filepath.Join(GetHomeDir(), ".docker/public-key.json")
+	return filepath.Join(GetHomeDir(), ".docker","public-key.json")
 }
 
 func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {

@@ -16,7 +16,7 @@ type Store struct {
 }
 
 func NewStore() *Store {
-	rootPath := filepath.Join(drivers.GetHomeDir(), ".docker/hosts")
+	rootPath := filepath.Join(drivers.GetHomeDir(), ".docker","hosts")
 	return &Store{Path: rootPath}
 }
 
