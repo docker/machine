@@ -7,11 +7,9 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/state"
 )
 
 var (
@@ -24,28 +22,6 @@ type Host struct {
 	DriverName string
 	Driver     drivers.Driver
 	storePath  string
-}
-
-type HostListItem struct {
-	Name       string
-	Active     bool
-	DriverName string
-	State      state.State
-	URL        string
-}
-
-type HostListItemByName []HostListItem
-
-func (h HostListItemByName) Len() int {
-	return len(h)
-}
-
-func (h HostListItemByName) Swap(i, j int) {
-	h[i], h[j] = h[j], h[i]
-}
-
-func (h HostListItemByName) Less(i, j int) bool {
-	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
 type hostConfig struct {

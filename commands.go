@@ -18,6 +18,7 @@ import (
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/none"
 	_ "github.com/docker/machine/drivers/virtualbox"
+	"github.com/docker/machine/state"
 )
 
 type DockerCli struct{}
@@ -91,6 +92,28 @@ func (cli *DockerCli) CmdHelp(args ...string) error {
 	flag.Usage()
 
 	return nil
+}
+
+type HostListItem struct {
+	Name       string
+	Active     bool
+	DriverName string
+	State      state.State
+	URL        string
+}
+
+type HostListItemByName []HostListItem
+
+func (h HostListItemByName) Len() int {
+	return len(h)
+}
+
+func (h HostListItemByName) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h HostListItemByName) Less(i, j int) bool {
+	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
 func (cli *DockerCli) CmdLs(args ...string) error {
