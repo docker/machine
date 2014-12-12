@@ -30,6 +30,9 @@ type Client interface {
 	GetInstanceIpAddresses(d *Driver) ([]IpAddress, error)
 	CreateKeyPair(d *Driver, name string, publicKey string) error
 	DeleteKeyPair(d *Driver, name string) error
+	GetNetworkId(d *Driver, name string) (string, error)
+	GetFlavorId(d *Driver, name string) (string, error)
+	GetImageId(d *Driver, name string) (string, error)
 }
 
 type GenericClient struct {
@@ -151,10 +154,6 @@ func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 }
 
 func (c *GenericClient) GetNetworkId(d *Driver, networkName string) (string, error) {
-	if err := c.initNetworkClient(d); err != nil {
-		return "", err
-	}
-
 	opts := networks.ListOpts{Name: d.NetworkName}
 	pager := networks.List(c.Network, opts)
 	networkId := ""
@@ -179,10 +178,6 @@ func (c *GenericClient) GetNetworkId(d *Driver, networkName string) (string, err
 }
 
 func (c *GenericClient) GetFlavorId(d *Driver, flavorName string) (string, error) {
-	if err := c.initComputeClient(d); err != nil {
-		return "", err
-	}
-
 	pager := flavors.ListDetail(c.Compute, nil)
 	flavorId := ""
 
@@ -206,10 +201,6 @@ func (c *GenericClient) GetFlavorId(d *Driver, flavorName string) (string, error
 }
 
 func (c *GenericClient) GetImageId(d *Driver, imageName string) (string, error) {
-	if err := c.initComputeClient(d); err != nil {
-		return "", err
-	}
-
 	opts := images.ListOpts{Name: imageName}
 	pager := images.ListDetail(c.Compute, opts)
 	imageId := ""

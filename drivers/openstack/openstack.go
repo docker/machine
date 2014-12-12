@@ -446,8 +446,11 @@ func (d *Driver) foundIP(ip string) string {
 }
 
 func (d *Driver) resolveIds() error {
-
 	if d.NetworkName != "" {
+		if err := d.initNetwork(); err != nil {
+			return err
+		}
+
 		networkId, err := d.client.GetNetworkId(d, d.NetworkName)
 
 		if err != nil {
@@ -466,6 +469,9 @@ func (d *Driver) resolveIds() error {
 	}
 
 	if d.FlavorName != "" {
+		if err := d.initCompute(); err != nil {
+			return err
+		}
 		flavorId, err := d.client.GetFlavorId(d, d.FlavorName)
 
 		if err != nil {
@@ -484,6 +490,9 @@ func (d *Driver) resolveIds() error {
 	}
 
 	if d.ImageName != "" {
+		if err := d.initCompute(); err != nil {
+			return err
+		}
 		imageId, err := d.client.GetImageId(d, d.ImageName)
 
 		if err != nil {
@@ -500,6 +509,9 @@ func (d *Driver) resolveIds() error {
 			"ID":   d.ImageId,
 		}).Debug("Found image id using its name")
 	}
+
+	return nil
+}
 
 func (d *Driver) initCompute() error {
 	if err := d.client.Authenticate(d); err != nil {
