@@ -108,7 +108,15 @@ type (
 )
 
 func newAwsApiResponseError(r http.Response) error {
-	return fmt.Errorf("Non-200 API response: %d", r.StatusCode)
+	var errorResponse ErrorResponse
+	if err := getDecodedResponse(r, &errorResponse); err != nil {
+		return fmt.Errorf("Error decoding error response: %s", err)
+	}
+	msg := ""
+	for _, e := range errorResponse.Errors {
+		msg += fmt.Sprintf("%s\n", e.Message)
+	}
+	return fmt.Errorf("Non-200 API response: code=%d message=%s", r.StatusCode, msg)
 }
 
 func newAwsApiCallError(err error) error {
