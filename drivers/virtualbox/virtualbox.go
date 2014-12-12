@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -221,7 +221,7 @@ func (d *Driver) Create() error {
 		"--port", "0",
 		"--device", "0",
 		"--type", "dvddrive",
-		"--medium", path.Join(d.storePath, "boot2docker.iso")); err != nil {
+		"--medium", filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
 		return err
 	}
 
@@ -446,7 +446,7 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 }
 
 func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
+	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
@@ -454,7 +454,7 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) diskPath() string {
-	return path.Join(d.storePath, "disk.vmdk")
+	return filepath.Join(d.storePath, "disk.vmdk")
 }
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
@@ -502,7 +502,7 @@ func downloadISO(dir, file, url string) error {
 	if err := f.Close(); err != nil {
 		return err
 	}
-	if err := os.Rename(f.Name(), path.Join(dir, file)); err != nil {
+	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
 		return err
 	}
 	return nil

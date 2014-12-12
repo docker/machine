@@ -5,7 +5,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -543,7 +543,7 @@ func (driver *Driver) generateCertForAzure() error {
 }
 
 func (driver *Driver) sshKeyPath() string {
-	return path.Join(driver.storePath, "id_rsa")
+	return filepath.Join(driver.storePath, "id_rsa")
 }
 
 func (driver *Driver) publicSSHKeyPath() string {
@@ -551,5 +551,5 @@ func (driver *Driver) publicSSHKeyPath() string {
 }
 
 func (driver *Driver) azureCertPath() string {
-	return path.Join(driver.storePath, "azure_cert.pem")
+	return filepath.Join(driver.storePath, "azure_cert.pem")
 }
