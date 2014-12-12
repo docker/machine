@@ -11,7 +11,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
-	gcs "github.com/mindjiver/gopherstack"
+	gcs "github.com/xanzy/go-cloudstack/cloudstack"
 )
 
 type Driver struct {
@@ -128,36 +128,29 @@ func (d *Driver) Create() error {
 
 	log.Infof("Creating Cloudstack instance...")
 
-	client := d.getClient()
+	cloudstackClient := d.getClient()
 
 	/** First we have to fetch some IDs before creating the instance **/
 	log.Infof("Fetching template id from provided template name : %q",
 		d.TemplateName,
 	)
-	responseTemplateList, err := client.ListTemplates(d.TemplateName, "executable")
-	if err != nil {
-		return err
-	}
-	d.TemplateId = responseTemplateList.Listtemplatesresponse.Template[0].ID
-	if len(responseTemplateList.Listtemplatesresponse.Template) > 1 {
-		log.Infof("More than one template has been found with the name %q. I'm gonna use the first with the ID %q",
-			d.TemplateName,
-			d.TemplateId,
-		)
-	}
-	d.TemplateName = responseTemplateList.Listtemplatesresponse.Template[0].Name
+	d.TemplateId, _ = cloudstackClient.Template.GetTemplateID(d.TemplateName,"executable")
+	log.Infof("Found template ID is %q",
+		d.TemplateId,
+	)
 
-	// TODO : implement listServiceOfferings CS's API into gopherstack and use offer name instead ID (more user friendly)
+	// TODO : fetch ID from OfferName instead
 	log.Infof("Offer ID is %q",
 		d.OfferId,
 	)
 
-	// TODO : implement listZones CS's API into gopherstack and use zone name instead ID (more user friendly)
+	// TODO : fetch ID from ZoneName instead
 	log.Infof("Zone ID is %q",
 		d.ZoneId,
 	)
 
 	d.setMachineNameIfNotSet()
+	log.Infof("Name is %q", d.MachineName)
 
 	log.Infof("Creating SSH key...")
 
@@ -165,27 +158,20 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	// Create the virtual machine based on configuration
-	log.Infof("Deploying the VM..")
-	response, err := client.DeployVirtualMachine(
-		d.OfferId,
-		d.TemplateId,
+	vmParams := cloudstackClient.VirtualMachine.NewDeployVirtualMachineParams(
+		d.OfferId, 
+		d.TemplateId, 
 		d.ZoneId,
-		"", // No need for 'account' param for now (not mandatory)
-		"", // No need for 'diskOfferingId' param for now (not mandatory). We assume the template embed its own one.
-		d.MachineName,
-		nil,
-		d.sshKeyPath(),
-		"",
-		"", // No need for 'userData' param for now (not mandatory). We assume the template embed its own one.
-		"", // No need for 'hypervisor' param for now (not mandatory). We assume the template embed its own one.
 	)
+	vmParams.SetName(d.MachineName)
+	vmParams.SetDisplayname(d.MachineName)
+
+	response, err := cloudstackClient.VirtualMachine.DeployVirtualMachine(vmParams)
 	if err != nil {
 		return err
 	}
 
-	vmid := response.Deployvirtualmachineresponse.ID
-	log.Infof("VM successfully deployed : %q", vmid)
+	log.Infof("VM successfully deployed : %q", response.Id)
 
 	return nil
 }
@@ -230,12 +216,10 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return nil, fmt.Errorf("hosts without a driver do not support SSH")
 }
 
-func (d *Driver) getClient() *gcs.CloudstackClient {
+func (d *Driver) getClient() *gcs.CloudStackClient {
 
-	client := gcs.CloudstackClient{}.New(d.ApiURL, d.ApiKey,
-		d.SecretKey, true)
+	return gcs.NewAsyncClient(d.ApiURL, d.ApiKey,d.SecretKey, false)
 
-	return client
 }
 
 func (d *Driver) setMachineNameIfNotSet() {
