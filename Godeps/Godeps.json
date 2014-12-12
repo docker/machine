@@ -53,11 +53,6 @@
 			"Rev": "831d09f8b535a1e2939bdacb02032d238e8dd249"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/mflag",
-			"Comment": "v1.2.0-1619-g831d09f",
-			"Rev": "831d09f8b535a1e2939bdacb02032d238e8dd249"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/parsers",
 			"Comment": "v1.2.0-1619-g831d09f",
 			"Rev": "831d09f8b535a1e2939bdacb02032d238e8dd249"
@@ -118,6 +113,10 @@
 		{
 			"ImportPath": "github.com/tent/http-link-go",
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Rev": "fbda1ce02d5dabcee952040e5f4025753b6c9ce0"
 		}
 	]
 }

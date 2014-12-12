@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"text/tabwriter"
 
 	log "github.com/Sirupsen/logrus"
-	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/codegangsta/cli"
 
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/azure"
@@ -20,79 +18,6 @@ import (
 	_ "github.com/docker/machine/drivers/virtualbox"
 	"github.com/docker/machine/state"
 )
-
-type DockerCli struct{}
-
-func (cli *DockerCli) getMethod(args ...string) (func(...string) error, bool) {
-	camelArgs := make([]string, len(args))
-	for i, s := range args {
-		if len(s) == 0 {
-			return nil, false
-		}
-		camelArgs[i] = strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
-	}
-	methodName := "Cmd" + strings.Join(camelArgs, "")
-	method := reflect.ValueOf(cli).MethodByName(methodName)
-	if !method.IsValid() {
-		return nil, false
-	}
-	return method.Interface().(func(...string) error), true
-}
-
-func (cli *DockerCli) Cmd(args ...string) error {
-	if len(args) > 1 {
-		method, exists := cli.getMethod(args[:2]...)
-		if exists {
-			return method(args[2:]...)
-		}
-	}
-	if len(args) > 0 {
-		method, exists := cli.getMethod(args[0])
-		if !exists {
-			fmt.Println("Error: Command not found:", args[0])
-			return cli.CmdHelp()
-		}
-		return method(args[1:]...)
-	}
-	return cli.CmdHelp()
-}
-
-func (cli *DockerCli) Subcmd(name, signature, description string) *flag.FlagSet {
-	flags := flag.NewFlagSet(name, flag.ContinueOnError)
-	flags.Usage = func() {
-		options := ""
-		if flags.FlagCountUndeprecated() > 0 {
-			options = "[OPTIONS] "
-		}
-		fmt.Fprintf(os.Stderr, "\nUsage: machine %s %s%s\n\n%s\n\n", name, options, signature, description)
-		flags.PrintDefaults()
-		os.Exit(2)
-	}
-	return flags
-}
-
-func (cli *DockerCli) CmdHelp(args ...string) error {
-	if len(args) > 1 {
-		method, exists := cli.getMethod(args[:2]...)
-		if exists {
-			method("--help")
-			return nil
-		}
-	}
-	if len(args) > 0 {
-		method, exists := cli.getMethod(args[0])
-		if !exists {
-			fmt.Fprintf(os.Stderr, "Error: Command not found: %s\n", args[0])
-		} else {
-			method("--help")
-			return nil
-		}
-	}
-
-	flag.Usage()
-
-	return nil
-}
 
 type HostListItem struct {
 	Name       string
@@ -116,430 +41,471 @@ func (h HostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
-func (cli *DockerCli) CmdLs(args ...string) error {
-	cmd := cli.Subcmd("ls", "", "List machines")
-	quiet := cmd.Bool([]string{"q", "-quiet"}, false, "Only display names")
+var Commands = []cli.Command{
+	{
+		Name:  "active",
+		Usage: "Get or set the active machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+			store := NewStore()
 
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-
-	store := NewStore()
-
-	hostList, err := store.List()
-	if err != nil {
-		return err
-	}
-
-	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
-
-	if !*quiet {
-		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL")
-	}
-
-	wg := sync.WaitGroup{}
-
-	hostListItem := []HostListItem{}
-
-	for _, host := range hostList {
-		host := host
-		if *quiet {
-			fmt.Fprintf(w, "%s\n", host.Name)
-		} else {
-			wg.Add(1)
-			go func() {
-				currentState, err := host.Driver.GetState()
+			if name == "" {
+				host, err := store.GetActive()
 				if err != nil {
-					log.Errorf("error getting state for host %s: %s", host.Name, err)
+					log.Errorf("error finding active host")
+				}
+				if host != nil {
+					fmt.Println(host.Name)
+				}
+			} else if name != "" {
+				host, err := store.Load(name)
+				if err != nil {
+					log.Errorln(err)
+					log.Errorf("error loading new active host")
+					os.Exit(1)
 				}
 
-				url, err := host.GetURL()
+				if err := store.SetActive(host); err != nil {
+					log.Errorf("error setting new active host")
+					os.Exit(1)
+				}
+			} else {
+				cli.ShowCommandHelp(c, "active")
+			}
+		},
+	},
+	{
+		Flags: append(
+			drivers.GetCreateFlags(),
+			cli.StringFlag{
+				Name: "driver, d",
+				Usage: fmt.Sprintf(
+					"Driver to create machine with. Available drivers: %s",
+					strings.Join(drivers.GetDriverNames(), ", "),
+				),
+				Value: "none",
+			},
+		),
+		Name:  "create",
+		Usage: "Create a machine",
+		Action: func(c *cli.Context) {
+			driver := c.String("driver")
+			name := c.Args().First()
+
+			if name == "" {
+				cli.ShowCommandHelp(c, "create")
+				os.Exit(1)
+			}
+
+			keyExists, err := drivers.PublicKeyExists()
+			if err != nil {
+				log.Errorf("error")
+				os.Exit(1)
+			}
+
+			if !keyExists {
+				log.Errorf("error key doesn't exist")
+				os.Exit(1)
+			}
+
+			store := NewStore()
+
+			host, err := store.Create(name, driver, c)
+			if err != nil {
+				log.Errorf("%s", err)
+				os.Exit(1)
+			}
+			if err := store.SetActive(host); err != nil {
+				log.Errorf("%s", err)
+				os.Exit(1)
+			}
+
+			log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity", name)
+		},
+	},
+	{
+		Name:  "inspect",
+		Usage: "Inspect information about a machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+
+			if name == "" {
+				cli.ShowCommandHelp(c, "inspect")
+				os.Exit(1)
+			}
+
+			store := NewStore()
+			host, err := store.Load(name)
+			if err != nil {
+				log.Errorf("error loading data")
+				os.Exit(1)
+			}
+
+			prettyJson, err := json.MarshalIndent(host, "", "    ")
+			if err != nil {
+				log.Error("error with json")
+				os.Exit(1)
+			}
+
+			fmt.Println(string(prettyJson))
+		},
+	},
+	{
+		Name:  "ip",
+		Usage: "Get the IP address of a machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+
+			if name == "" {
+				cli.ShowCommandHelp(c, "ip")
+				os.Exit(1)
+			}
+
+			var (
+				err   error
+				host  *Host
+				store = NewStore()
+			)
+
+			if name != "" {
+				host, err = store.Load(name)
 				if err != nil {
-					if err == drivers.ErrHostIsNotRunning {
-						url = ""
-					} else {
-						log.Errorf("error getting URL for host %s: %s", host.Name, err)
-					}
+					log.Errorf("error unable to load data")
+					os.Exit(1)
+				}
+			} else {
+				host, err = store.GetActive()
+				if err != nil {
+					log.Errorf("error")
+					os.Exit(1)
+				}
+				if host == nil {
+					os.Exit(1)
+				}
+			}
+
+			ip, err := host.Driver.GetIP()
+			if err != nil {
+				log.Errorf("error unable to get IP")
+				os.Exit(1)
+			}
+
+			fmt.Println(ip)
+		},
+	},
+	{
+		Name:  "kill",
+		Usage: "Kill a machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+
+			if name == "" {
+				cli.ShowCommandHelp(c, "kill")
+				os.Exit(1)
+			}
+
+			store := NewStore()
+
+			host, err := store.Load(name)
+			if err != nil {
+				log.Errorf("error unable to load data")
+				os.Exit(1)
+			}
+
+			host.Driver.Kill()
+		},
+	},
+	{
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "quiet, q",
+				Usage: "Enable quiet mode",
+			},
+		},
+		Name:  "ls",
+		Usage: "List machines",
+		Action: func(c *cli.Context) {
+			quiet := c.Bool("quiet")
+			store := NewStore()
+
+			hostList, err := store.List()
+			if err != nil {
+				log.Errorf("error unable to list hosts")
+				os.Exit(1)
+			}
+
+			w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
+
+			if !quiet {
+				fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL")
+			}
+
+			wg := sync.WaitGroup{}
+
+			for _, host := range hostList {
+				host := host
+				if quiet {
+					fmt.Fprintf(w, "%s\n", host.Name)
+				} else {
+					wg.Add(1)
+					go func() {
+						currentState, err := host.Driver.GetState()
+						if err != nil {
+							log.Errorf("error getting state for host %s: %s", host.Name, err)
+						}
+
+						url, err := host.GetURL()
+						if err != nil {
+							if err == drivers.ErrHostIsNotRunning {
+								url = ""
+							} else {
+								log.Errorf("error getting URL for host %s: %s", host.Name, err)
+							}
+						}
+
+						isActive, err := store.IsActive(&host)
+						if err != nil {
+							log.Errorf("error determining whether host %q is active: %s",
+								host.Name, err)
+						}
+
+						activeString := ""
+						if isActive {
+							activeString = "*"
+						}
+
+						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+							host.Name, activeString, host.Driver.DriverName(), currentState, url)
+						wg.Done()
+					}()
+				}
+			}
+
+			wg.Wait()
+			w.Flush()
+		},
+	},
+	{
+		Name:  "restart",
+		Usage: "Restart a machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+			if name == "" {
+				cli.ShowCommandHelp(c, "restart")
+				os.Exit(1)
+			}
+
+			store := NewStore()
+
+			host, err := store.Load(name)
+			if err != nil {
+				log.Errorf("error unable to load data")
+				os.Exit(1)
+			}
+
+			host.Driver.Restart()
+		},
+	},
+	{
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "force, f",
+				Usage: "Remove local configuration even if machine cannot be removed",
+			},
+		},
+		Name:  "rm",
+		Usage: "Remove a machine",
+		Action: func(c *cli.Context) {
+			if len(c.Args()) == 0 {
+				cli.ShowCommandHelp(c, "rm")
+				os.Exit(1)
+			}
+
+			force := c.Bool("force")
+
+			isError := false
+
+			store := NewStore()
+			for _, host := range c.Args() {
+				if err := store.Remove(host, force); err != nil {
+					log.Errorf("Error removing machine %s: %s", host, err)
+					isError = true
+				}
+			}
+			if isError {
+				log.Errorf("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
+			}
+		},
+	},
+	{
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "command, c",
+				Usage: "SSH Command",
+				Value: "",
+			},
+		},
+		Name:  "ssh",
+		Usage: "Log into or run a command on a machine with SSH",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+			store := NewStore()
+
+			if name == "" {
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
 				}
 
-				isActive, err := store.IsActive(&host)
+				name = host.Name
+			}
+
+			i := 1
+			for i < len(os.Args) && os.Args[i-1] != name {
+				i++
+			}
+
+			host, err := store.Load(name)
+			if err != nil {
+				log.Errorf("%s", err)
+				os.Exit(1)
+			}
+
+			sshCmd, err := host.Driver.GetSSHCommand(c.String("command"))
+			if err != nil {
+				log.Errorf("%s", err)
+				os.Exit(1)
+			}
+
+			sshCmd.Stdin = os.Stdin
+			sshCmd.Stdout = os.Stdout
+			sshCmd.Stderr = os.Stderr
+			if err := sshCmd.Run(); err != nil {
+				log.Errorf("%s", err)
+				os.Exit(1)
+			}
+		},
+	},
+	{
+		Name:  "start",
+		Usage: "Start a machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+			store := NewStore()
+
+			if name == "" {
+				host, err := store.GetActive()
 				if err != nil {
-					log.Errorf("error determining whether host %q is active: %s",
-						host.Name, err)
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
 				}
 
-				hostListItem = append(hostListItem, HostListItem{
-					Name:       host.Name,
-					Active:     isActive,
-					DriverName: host.Driver.DriverName(),
-					State:      currentState,
-					URL:        url,
-				})
-
-				wg.Done()
-			}()
-		}
-	}
-
-	wg.Wait()
-
-	sort.Sort(HostListItemByName(hostListItem))
-
-	for _, hostState := range hostListItem {
-		activeString := ""
-		if hostState.Active {
-			activeString = "*"
-		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-			hostState.Name, activeString, hostState.DriverName, hostState.State, hostState.URL)
-	}
-
-	w.Flush()
-
-	return nil
-}
-
-func (cli *DockerCli) CmdCreate(args ...string) error {
-	cmd := cli.Subcmd("create", "NAME", "Create machines")
-
-	driverDesc := fmt.Sprintf(
-		"Driver to create machine with. Available drivers: %s",
-		strings.Join(drivers.GetDriverNames(), ", "),
-	)
-
-	driver := cmd.String([]string{"d", "-driver"}, "none", driverDesc)
-
-	createFlags := drivers.RegisterCreateFlags(cmd)
-
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() != 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	keyExists, err := drivers.PublicKeyExists()
-	if err != nil {
-		return err
-	}
-	if !keyExists {
-		log.Fatalf("Identity auth public key does not exist at %s. Please run the docker client without any options to create it.", drivers.PublicKeyPath())
-	}
-
-	name := cmd.Arg(0)
-
-	store := NewStore()
-
-	driverCreateFlags, _ := createFlags[*driver]
-	host, err := store.Create(name, *driver, driverCreateFlags)
-	if err != nil {
-		return err
-	}
-	if err := store.SetActive(host); err != nil {
-		return err
-	}
-	log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity", name)
-	return nil
-}
-
-func (cli *DockerCli) CmdStart(args ...string) error {
-	cmd := cli.Subcmd("start", "NAME", "Start a machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	store := NewStore()
-
-	host, err := store.Load(cmd.Arg(0))
-	if err != nil {
-		return err
-	}
-	return host.Start()
-}
-
-func (cli *DockerCli) CmdStop(args ...string) error {
-	cmd := cli.Subcmd("stop", "NAME", "Stop a machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	store := NewStore()
-
-	host, err := store.Load(cmd.Arg(0))
-	if err != nil {
-		return err
-	}
-	return host.Stop()
-}
-
-func (cli *DockerCli) CmdRm(args ...string) error {
-	cmd := cli.Subcmd("rm", "NAME", "Remove a machine")
-	force := cmd.Bool([]string{"f", "-force"}, false, "Remove local configuration even if machine cannot be removed")
-
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	isError := false
-
-	store := NewStore()
-	for _, host := range cmd.Args() {
-		host := host
-		if err := store.Remove(host, *force); err != nil {
-			log.Errorf("Error removing machine %s: %s", host, err)
-			isError = true
-		}
-	}
-	if isError {
-		return fmt.Errorf("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
-	}
-	return nil
-}
-
-func (cli *DockerCli) CmdIp(args ...string) error {
-	cmd := cli.Subcmd("ip", "NAME", "Get the IP address of a machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() > 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	var (
-		err   error
-		host  *Host
-		store = NewStore()
-	)
-
-	if cmd.NArg() == 1 {
-		host, err = store.Load(cmd.Arg(0))
-		if err != nil {
-			return err
-		}
-	} else {
-		host, err = store.GetActive()
-		if err != nil {
-			return err
-		}
-		if host == nil {
-			os.Exit(1)
-		}
-	}
-
-	ip, err := host.Driver.GetIP()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(ip)
-
-	return nil
-}
-
-func (cli *DockerCli) CmdUrl(args ...string) error {
-	cmd := cli.Subcmd("url", "NAME", "Get the URL of a machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() > 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	var (
-		err   error
-		host  *Host
-		store = NewStore()
-	)
-
-	if cmd.NArg() == 1 {
-		host, err = store.Load(cmd.Arg(0))
-		if err != nil {
-			return err
-		}
-	} else {
-		host, err = store.GetActive()
-		if err != nil {
-			return err
-		}
-		if host == nil {
-			os.Exit(1)
-		}
-	}
-
-	url, err := host.GetURL()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(url)
-
-	return nil
-}
-
-func (cli *DockerCli) CmdRestart(args ...string) error {
-	cmd := cli.Subcmd("restart", "NAME", "Restart a machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	store := NewStore()
-
-	host, err := store.Load(cmd.Arg(0))
-	if err != nil {
-		return err
-	}
-	return host.Driver.Restart()
-}
-
-func (cli *DockerCli) CmdKill(args ...string) error {
-	cmd := cli.Subcmd("kill", "NAME", "Kill a machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	store := NewStore()
-
-	host, err := store.Load(cmd.Arg(0))
-	if err != nil {
-		return err
-	}
-	return host.Driver.Kill()
-}
-
-func (cli *DockerCli) CmdSsh(args ...string) error {
-	cmd := cli.Subcmd("ssh", "NAME [COMMAND ...]", "Log into or run a command on a machine with SSH")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-
-	if cmd.NArg() < 1 {
-		cmd.Usage()
-		return nil
-	}
-
-	i := 1
-	for i < len(os.Args) && os.Args[i-1] != cmd.Arg(0) {
-		i++
-	}
-
-	store := NewStore()
-
-	host, err := store.Load(cmd.Arg(0))
-	if err != nil {
-		return err
-	}
-
-	sshCmd, err := host.Driver.GetSSHCommand(os.Args[i:]...)
-	if err != nil {
-		return err
-	}
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	return nil
-}
-
-func (cli *DockerCli) CmdActive(args ...string) error {
-	cmd := cli.Subcmd("active", "[NAME]", "Get or set the active machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-
-	store := NewStore()
-
-	if cmd.NArg() == 0 {
-		host, err := store.GetActive()
-		if err != nil {
-			return err
-		}
-		if host != nil {
-			fmt.Println(host.Name)
-		}
-	} else if cmd.NArg() == 1 {
-		host, err := store.Load(cmd.Arg(0))
-		if err != nil {
-			return err
-		}
-		if err := store.SetActive(host); err != nil {
-			return err
-		}
-	} else {
-		cmd.Usage()
-	}
-
-	return nil
-
-}
-
-func (cli *DockerCli) CmdInspect(args ...string) error {
-	cmd := cli.Subcmd("inspect", "[NAME]", "Get detailed information about a machine")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-
-	if cmd.NArg() == 0 {
-		cmd.Usage()
-		return nil
-	}
-
-	store := NewStore()
-	host, err := store.Load(cmd.Arg(0))
-	if err != nil {
-		return err
-	}
-
-	prettyJson, err := json.MarshalIndent(host, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(prettyJson))
-
-	return nil
-}
-
-func (cli *DockerCli) CmdUpgrade(args ...string) error {
-	cmd := cli.Subcmd("upgrade", "[NAME]", "Upgrade a machine to the latest version of Docker")
-	if err := cmd.Parse(args); err != nil {
-		return err
-	}
-
-	if cmd.NArg() == 0 {
-		cmd.Usage()
-		return nil
-	}
-
-	store := NewStore()
-	host, err := store.Load(cmd.Arg(0))
-	if err != nil {
-		return err
-	}
-
-	return host.Driver.Upgrade()
+				name = host.Name
+			}
+
+			host, err := store.Load(name)
+			if err != nil {
+				log.Errorf("error unable to load data")
+				os.Exit(1)
+			}
+
+			host.Start()
+		},
+	},
+	{
+		Name:  "stop",
+		Usage: "Stop a machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+			store := NewStore()
+
+			if name == "" {
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
+			}
+
+			host, err := store.Load(name)
+			if err != nil {
+				log.Errorf("error unable to load data")
+				os.Exit(1)
+			}
+
+			host.Stop()
+		},
+	},
+	{
+		Name:  "upgrade",
+		Usage: "Upgrade a machine to the latest version of Docker",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+			store := NewStore()
+
+			if name == "" {
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
+			}
+
+			host, err := store.Load(name)
+			if err != nil {
+				log.Errorf("error unable to load host")
+				os.Exit(1)
+			}
+
+			host.Driver.Upgrade()
+		},
+	},
+	{
+		Name:  "url",
+		Usage: "Get the URL of a machine",
+		Action: func(c *cli.Context) {
+			name := c.Args().First()
+
+			if name == "" {
+				cli.ShowCommandHelp(c, "url")
+				os.Exit(1)
+			}
+
+			var (
+				err   error
+				host  *Host
+				store = NewStore()
+			)
+
+			if name != "" {
+				host, err = store.Load(name)
+				if err != nil {
+					log.Errorf("error unable to load data")
+					os.Exit(1)
+				}
+			} else {
+				host, err = store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+				if host == nil {
+					os.Exit(1)
+				}
+			}
+
+			url, err := host.GetURL()
+			if err != nil {
+				log.Errorf("error unable to get url for host")
+				os.Exit(1)
+			}
+
+			fmt.Println(url)
+		},
+	},
 }

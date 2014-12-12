@@ -6,8 +6,24 @@ import (
 	"testing"
 
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/drivers/none"
+	_ "github.com/docker/machine/drivers/none"
 )
+
+type DriverOptionsMock struct {
+	Data map[string]interface{}
+}
+
+func (d DriverOptionsMock) String(key string) string {
+	return d.Data[key].(string)
+}
+
+func (d DriverOptionsMock) Int(key string) int {
+	return d.Data[key].(int)
+}
+
+func (d DriverOptionsMock) Bool(key string) bool {
+	return d.Data[key].(bool)
+}
 
 func clearHosts() error {
 	return os.RemoveAll(path.Join(drivers.GetHomeDir(), ".docker/hosts"))
@@ -18,9 +34,15 @@ func TestStoreCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
 	store := NewStore()
-	url := "unix:///var/run/docker.sock"
-	host, err := store.Create("test", "none", &none.CreateFlags{URL: &url})
+
+	host, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,9 +60,14 @@ func TestStoreRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
 	store := NewStore()
-	url := "unix:///var/run/docker.sock"
-	_, err := store.Create("test", "none", &none.CreateFlags{URL: &url})
+	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,9 +89,14 @@ func TestStoreList(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
 	store := NewStore()
-	url := "unix:///var/run/docker.sock"
-	_, err := store.Create("test", "none", &none.CreateFlags{URL: &url})
+	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,13 +114,18 @@ func TestStoreExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
 	store := NewStore()
 	exists, err := store.Exists("test")
 	if exists {
 		t.Fatal("Exists returned true when it should have been false")
 	}
-	url := "unix:///var/run/docker.sock"
-	_, err = store.Create("test", "none", &none.CreateFlags{URL: &url})
+	_, err = store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,9 +143,15 @@ func TestStoreLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := NewStore()
 	expectedURL := "unix:///foo/baz"
-	_, err := store.Create("test", "none", &none.CreateFlags{URL: &expectedURL})
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": expectedURL,
+		},
+	}
+
+	store := NewStore()
+	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,6 +175,12 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"url": "unix:///var/run/docker.sock",
+		},
+	}
+
 	store := NewStore()
 
 	// No hosts set
@@ -144,8 +193,7 @@ func TestStoreGetSetActive(t *testing.T) {
 	}
 
 	// Set normal host
-	url := "unix:///var/run/docker.sock"
-	originalHost, err := store.Create("test", "none", &none.CreateFlags{URL: &url})
+	originalHost, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,5 +229,4 @@ func TestStoreGetSetActive(t *testing.T) {
 	if host != nil {
 		t.Fatalf("Active host is not nil", host.Name)
 	}
-
 }
