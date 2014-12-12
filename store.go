@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -16,7 +16,7 @@ type Store struct {
 }
 
 func NewStore() *Store {
-	rootPath := path.Join(drivers.GetHomeDir(), ".docker/hosts")
+	rootPath := filepath.Join(drivers.GetHomeDir(), ".docker", "hosts")
 	return &Store{Path: rootPath}
 }
 
@@ -29,7 +29,7 @@ func (s *Store) Create(name string, driverName string, createFlags interface{}) 
 		return nil, fmt.Errorf("Host %q already exists", name)
 	}
 
-	hostPath := path.Join(s.Path, name)
+	hostPath := filepath.Join(s.Path, name)
 
 	host, err := NewHost(name, driverName, hostPath)
 	if err != nil {
@@ -95,7 +95,7 @@ func (s *Store) List() ([]Host, error) {
 }
 
 func (s *Store) Exists(name string) (bool, error) {
-	_, err := os.Stat(path.Join(s.Path, name))
+	_, err := os.Stat(filepath.Join(s.Path, name))
 	if os.IsNotExist(err) {
 		return false, nil
 	} else if err == nil {
@@ -105,7 +105,7 @@ func (s *Store) Exists(name string) (bool, error) {
 }
 
 func (s *Store) Load(name string) (*Host, error) {
-	hostPath := path.Join(s.Path, name)
+	hostPath := filepath.Join(s.Path, name)
 	return LoadHost(name, hostPath)
 }
 
@@ -131,7 +131,7 @@ func (s *Store) IsActive(host *Host) (bool, error) {
 }
 
 func (s *Store) SetActive(host *Host) error {
-	if err := os.MkdirAll(path.Dir(s.activePath()), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.activePath()), 0700); err != nil {
 		return err
 	}
 	return ioutil.WriteFile(s.activePath(), []byte(host.Name), 0600)
@@ -144,5 +144,5 @@ func (s *Store) RemoveActive() error {
 // activePath returns the path to the file that stores the name of the
 // active host
 func (s *Store) activePath() string {
-	return path.Join(s.Path, ".active")
+	return filepath.Join(s.Path, ".active")
 }

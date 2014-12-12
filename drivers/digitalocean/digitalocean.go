@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
@@ -323,7 +323,7 @@ func (d *Driver) getClient() *godo.Client {
 }
 
 func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
+	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
