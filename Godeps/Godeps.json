@@ -116,10 +116,6 @@
 			"Rev": "30f7a39f4a218feb5325f3aebc60c32a572a8274"
 		},
 		{
-			"ImportPath": "github.com/mitchellh/go-homedir",
-			"Rev": "7d2d8c8a4e078ce3c58736ab521a40b37a504c52"
-		},
-		{
 			"ImportPath": "github.com/tent/http-link-go",
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		}
