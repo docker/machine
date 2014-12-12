@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -17,6 +18,7 @@ import (
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/none"
 	_ "github.com/docker/machine/drivers/virtualbox"
+	"github.com/docker/machine/state"
 )
 
 type DockerCli struct{}
@@ -92,6 +94,28 @@ func (cli *DockerCli) CmdHelp(args ...string) error {
 	return nil
 }
 
+type HostListItem struct {
+	Name       string
+	Active     bool
+	DriverName string
+	State      state.State
+	URL        string
+}
+
+type HostListItemByName []HostListItem
+
+func (h HostListItemByName) Len() int {
+	return len(h)
+}
+
+func (h HostListItemByName) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h HostListItemByName) Less(i, j int) bool {
+	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
+}
+
 func (cli *DockerCli) CmdLs(args ...string) error {
 	cmd := cli.Subcmd("ls", "", "List machines")
 	quiet := cmd.Bool([]string{"q", "-quiet"}, false, "Only display names")
@@ -114,6 +138,8 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 	}
 
 	wg := sync.WaitGroup{}
+
+	hostListItem := []HostListItem{}
 
 	for _, host := range hostList {
 		host := host
@@ -142,19 +168,32 @@ func (cli *DockerCli) CmdLs(args ...string) error {
 						host.Name, err)
 				}
 
-				activeString := ""
-				if isActive {
-					activeString = "*"
-				}
+				hostListItem = append(hostListItem, HostListItem{
+					Name:       host.Name,
+					Active:     isActive,
+					DriverName: host.Driver.DriverName(),
+					State:      currentState,
+					URL:        url,
+				})
 
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-					host.Name, activeString, host.Driver.DriverName(), currentState, url)
 				wg.Done()
 			}()
 		}
 	}
 
 	wg.Wait()
+
+	sort.Sort(HostListItemByName(hostListItem))
+
+	for _, hostState := range hostListItem {
+		activeString := ""
+		if hostState.Active {
+			activeString = "*"
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			hostState.Name, activeString, hostState.DriverName, hostState.State, hostState.URL)
+	}
+
 	w.Flush()
 
 	return nil
