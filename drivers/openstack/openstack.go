@@ -380,7 +380,7 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 		return nil, err
 	}
 
-	if d.SSHUser != "root" {
+	if len(args) != 0 && d.SSHUser != "root" {
 		cmd := strings.Replace(strings.Join(args, " "), "'", "\\'", -1)
 		args = []string{"sudo", "sh", "-c", fmt.Sprintf("'%s'", cmd)}
 	}
