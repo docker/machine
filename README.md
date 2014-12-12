@@ -270,6 +270,18 @@ Options:
   - `--softlayer-private-net-only`: Disable public networking
   - `--softlayer-region`: softlayer region
 
+### Hyper-V
+
+Creates a Boot2Docker virtual machine locally on your Windows machine using Hyper-V. [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines) for instructions to enable Hyper-V.
+
+Options:
+
+ - `--hyper-v-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
+ - `--hyper-v-boot2docker-url`: The URL of the boot2docker iso. Defaults to the latest available version.
+ - `--hyper-v-disk-size`: Size of disk for the host in MB. Defaults to `20000`.
+ - `--hyper-v-memory`: Size of memory for the host in MB. Defaults to `1024`. The machine is setup to use dynamic memory.
+ - `--hyper-v-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
