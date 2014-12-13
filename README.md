@@ -93,6 +93,20 @@ Options:
  - `--azure-subscription-id`: Your Azure subscription ID.
  - `--azure-subscription-cert`: Your Azure subscription cert.
 
+### Amazon EC2
+
+Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and Subnet ID.  To find the Subnet ID, login to the AWS console and go to Services -> VPC -> Subnets.  Select the one where you would like to launch the instance.
+
+Options:
+
+ - `--amazonec2-access-key`: Your access key id for the Amazon Web Services API.
+ - `--amazonec2-ami`: The AMI ID of the instance to use  Default: `ami-a00461c8`
+ - `--amazonec2-instance-type`: The instance type to run.  Default: `t2.micro`
+ - `--amazonec2-region`: The region to use when launching the instance.  Default: `us-east-1`
+ - `--amazonec2-root-size`: The root disk size of the instance (in GB).  Default: `16`
+ - `--amazonec2-secret-key`: Your secret access key for the Amazon Web Services API.
+ - `--amazonec2-subnet-id`: Your VPC subnet ID to launch the instance in.
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
