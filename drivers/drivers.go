@@ -1,8 +1,10 @@
 package drivers
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"sort"
 
@@ -79,6 +81,51 @@ var (
 
 func init() {
 	drivers = make(map[string]*RegisteredDriver)
+}
+
+func StreamSSHCommand(d Driver, args ...string) error {
+	var (
+		err       error
+		cmd       *exec.Cmd
+		cmdReader io.ReadCloser
+	)
+
+	cmd, err = d.GetSSHCommand(args...)
+	if err != nil {
+		return err
+	}
+
+	// get future output in a form we
+	// can scan
+	cmdReader, err = cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
+	// use scanner to read output line by line
+	scanner := bufio.NewScanner(cmdReader)
+
+	// run the command in its own goroutine and block on Wait()
+	// call later in this method
+	go func() {
+		for scanner.Scan() {
+			fmt.Printf("%s | %s\n", d.DriverName(), scanner.Text())
+		}
+	}()
+
+	// start buffering output to the previous goroutine
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	// wait for command to finish before returning
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Register a driver
