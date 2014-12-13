@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -21,7 +22,7 @@ import (
 	"github.com/docker/machine/state"
 )
 
-type HostListItem struct {
+type hostListItem struct {
 	Name       string
 	Active     bool
 	DriverName string
@@ -29,17 +30,17 @@ type HostListItem struct {
 	URL        string
 }
 
-type HostListItemByName []HostListItem
+type hostListItemByName []hostListItem
 
-func (h HostListItemByName) Len() int {
+func (h hostListItemByName) Len() int {
 	return len(h)
 }
 
-func (h HostListItemByName) Swap(i, j int) {
+func (h hostListItemByName) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
-func (h HostListItemByName) Less(i, j int) bool {
+func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
@@ -176,6 +177,7 @@ var Commands = []cli.Command{
 			}
 
 			wg := sync.WaitGroup{}
+			items := []hostListItem{}
 
 			for _, host := range hostList {
 				host := host
@@ -204,19 +206,32 @@ var Commands = []cli.Command{
 								host.Name, err)
 						}
 
-						activeString := ""
-						if isActive {
-							activeString = "*"
-						}
+						items = append(items, hostListItem{
+							Name:       host.Name,
+							Active:     isActive,
+							DriverName: host.Driver.DriverName(),
+							State:      currentState,
+							URL:        url,
+						})
 
-						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-							host.Name, activeString, host.Driver.DriverName(), currentState, url)
 						wg.Done()
 					}()
 				}
 			}
 
 			wg.Wait()
+
+			sort.Sort(hostListItemByName(items))
+
+			for _, item := range items {
+				activeString := ""
+				if item.Active {
+					activeString = "*"
+				}
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+					item.Name, activeString, item.DriverName, item.State, item.URL)
+			}
+
 			w.Flush()
 		},
 	},
