@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -373,7 +374,12 @@ var Commands = []cli.Command{
 				os.Exit(1)
 			}
 
-			sshCmd, err := host.Driver.GetSSHCommand(c.String("command"))
+			var sshCmd *exec.Cmd
+			if c.String("command") == "" {
+				sshCmd, err = host.Driver.GetSSHCommand()
+			} else {
+				sshCmd, err = host.Driver.GetSSHCommand(c.String("command"))
+			}
 			if err != nil {
 				log.Errorf("%s", err)
 				os.Exit(1)
