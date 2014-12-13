@@ -2,10 +2,9 @@ package rackspace
 
 import (
 	"fmt"
-	"os"
 
 	log "github.com/Sirupsen/logrus"
-	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/openstack"
 )
@@ -32,60 +31,60 @@ type CreateFlags struct {
 
 func init() {
 	drivers.Register("rackspace", &drivers.RegisteredDriver{
-		New:                 NewDriver,
-		RegisterCreateFlags: RegisterCreateFlags,
+		New:            NewDriver,
+		GetCreateFlags: GetCreateFlags,
 	})
 }
 
-// RegisterCreateFlags registers the "machine create" flags recognized by this driver, including
+// GetCreateFlags registers the "machine create" flags recognized by this driver, including
 // their help text and defaults.
-func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
-	createFlags := new(CreateFlags)
-	createFlags.Username = cmd.String(
-		[]string{"-rackspace-username"},
-		os.Getenv("OS_USERNAME"),
-		"Rackspace account username",
-	)
-	createFlags.APIKey = cmd.String(
-		[]string{"-rackspace-api-key"},
-		os.Getenv("OS_API_KEY"),
-		"Rackspace API key",
-	)
-	createFlags.Region = cmd.String(
-		[]string{"-rackspace-region"},
-		os.Getenv("OS_REGION_NAME"),
-		"Rackspace region name",
-	)
-	endpointDefault := os.Getenv("OS_ENDPOINT_TYPE")
-	if endpointDefault == "" {
-		endpointDefault = "publicURL"
+func GetCreateFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			EnvVar: "OS_USERNAME",
+			Name:   "rackspace-username",
+			Usage:  "Rackspace account username",
+			Value:  "",
+		},
+		cli.StringFlag{
+			EnvVar: "OS_API_KEY",
+			Name:   "rackspace-api-key",
+			Usage:  "Rackspace API key",
+			Value:  "",
+		},
+		cli.StringFlag{
+			EnvVar: "OS_REGION_NAME",
+			Name:   "rackspace-region",
+			Usage:  "Rackspace region name",
+			Value:  "",
+		},
+		cli.StringFlag{
+			EnvVar: "OS_ENDPOINT_TYPE",
+			Name:   "rackspace-endpoint-type",
+			Usage:  "Rackspace endpoint type (adminURL, internalURL or the default publicURL)",
+			Value:  "publicURL",
+		},
+		cli.StringFlag{
+			Name:  "rackspace-image-id",
+			Usage: "Rackspace image ID. Default: Ubuntu 14.10 (Utopic Unicorn) (PVHVM)",
+			Value: "",
+		},
+		cli.StringFlag{
+			Name:  "rackspace-flavor-id",
+			Usage: "Rackspace flavor ID. Default: General Purpose 1GB",
+			Value: "general1-1",
+		},
+		cli.StringFlag{
+			Name:  "rackspace-ssh-user",
+			Usage: "SSH user for the newly booted machine. Set to root by default",
+			Value: "root",
+		},
+		cli.IntFlag{
+			Name:  "rackspace-ssh-port",
+			Usage: "SSH port for the newly booted machine. Set to 22 by default",
+			Value: 22,
+		},
 	}
-	createFlags.EndpointType = cmd.String(
-		[]string{"-rackspace-endpoint-type"},
-		endpointDefault,
-		"Rackspace endpoint type (adminURL, internalURL or the default publicURL)",
-	)
-	createFlags.ImageID = cmd.String(
-		[]string{"-rackspace-image-id"},
-		"",
-		"Rackspace image ID. Default: Ubuntu 14.10 (Utopic Unicorn) (PVHVM)",
-	)
-	createFlags.FlavorID = cmd.String(
-		[]string{"-rackspace-flavor-id"},
-		"general1-1",
-		"Rackspace flavor ID. Default: General Purpose 1GB",
-	)
-	createFlags.SSHUser = cmd.String(
-		[]string{"-rackspace-ssh-user"},
-		"root",
-		"SSH user for the newly booted machine. Set to root by default",
-	)
-	createFlags.SSHPort = cmd.Int(
-		[]string{"-rackspace-ssh-port"},
-		22,
-		"SSH port for the newly booted machine. Set to 22 by default",
-	)
-	return createFlags
 }
 
 // NewDriver instantiates a Rackspace driver.
@@ -111,19 +110,16 @@ func (d *Driver) DriverName() string {
 }
 
 // SetConfigFromFlags assigns and verifies the command-line arguments presented to the driver.
-func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
-	flags := flagsInterface.(*CreateFlags)
-
-	d.Username = *flags.Username
-	d.APIKey = *flags.APIKey
-	d.Region = *flags.Region
-	d.EndpointType = *flags.EndpointType
-	d.ImageId = *flags.ImageID
-	d.FlavorId = *flags.FlavorID
-	d.SSHUser = *flags.SSHUser
-	d.SSHPort = *flags.SSHPort
-
-	return d.checkConfig()
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.Username = flags.String("rackspace-username")
+	d.APIKey = flags.String("rackspace-api-key")
+	d.Region = flags.String("rackspace-region")
+	d.EndpointType = flags.String("rackspace-endpoint-type")
+	d.ImageId = flags.String("rackspace-image-id")
+	d.FlavorId = flags.String("rackspace-flavor-id")
+	d.SSHUser = flags.String("rackspace-ssh-user")
+	d.SSHPort = flags.Int("rackspace-ssh-port")
+	return nil
 }
 
 func missingEnvOrOption(setting, envVar, opt string) error {
