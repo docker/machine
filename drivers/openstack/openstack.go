@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -16,28 +17,30 @@ import (
 )
 
 type Driver struct {
-	AuthUrl        string
-	Username       string
-	Password       string
-	TenantName     string
-	TenantId       string
-	Region         string
-	EndpointType   string
-	MachineName    string
-	MachineId      string
-	FlavorName     string
-	FlavorId       string
-	ImageName      string
-	ImageId        string
-	KeyPairName    string
-	NetworkName    string
-	NetworkId      string
-	SecurityGroups []string
-	FloatingIpPool string
-	SSHUser        string
-	SSHPort        int
-	storePath      string
-	client         Client
+	AuthUrl          string
+	Username         string
+	Password         string
+	TenantName       string
+	TenantId         string
+	Region           string
+	EndpointType     string
+	MachineName      string
+	MachineId        string
+	FlavorName       string
+	FlavorId         string
+	ImageName        string
+	ImageId          string
+	KeyPairName      string
+	NetworkName      string
+	NetworkId        string
+	SecurityGroups   []string
+	FloatingIpPool   string
+	FloatingIpPoolId string
+	SSHUser          string
+	SSHPort          int
+	Ip               string
+	storePath        string
+	client           Client
 }
 
 type CreateFlags struct {
@@ -218,44 +221,34 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	if d.Ip != "" {
+		return d.Ip, nil
+	}
+
+	log.WithField("MachineId", d.MachineId).Debug("Looking for the IP address...")
+
 	if err := d.initCompute(); err != nil {
 		return "", err
 	}
 
-	addresses, err := d.client.GetInstanceIpAddresses(d)
-	if err != nil {
-		return "", err
+	addressType := Fixed
+	if d.FloatingIpPool != "" {
+		addressType = Floating
 	}
 
-	floating := []string{}
-	fixed := []string{}
-
-	for _, address := range addresses {
-		if address.AddressType == Floating {
-			floating = append(floating, address.Address)
-			continue
+	// Looking for the IP address in a retry loop to deal with OpenStack latency
+	for retryCount := 0; retryCount < 200; retryCount++ {
+		addresses, err := d.client.GetInstanceIpAddresses(d)
+		if err != nil {
+			return "", err
 		}
-		if address.AddressType == Fixed {
-			fixed = append(fixed, address.Address)
-			continue
+		for _, a := range addresses {
+			if a.AddressType == addressType {
+				return a.Address, nil
+			}
 		}
-		log.Warnf("Unknown IP address type : %s", address)
+		time.Sleep(2 * time.Second)
 	}
-
-	if len(floating) == 1 {
-		return d.foundIP(floating[0]), nil
-	} else if len(floating) > 1 {
-		log.Warnf("Multiple floating IP found. Take the first one of %s", floating)
-		return d.foundIP(floating[0]), nil
-	}
-
-	if len(fixed) == 1 {
-		return d.foundIP(fixed[0]), nil
-	} else if len(fixed) > 1 {
-		log.Warnf("Multiple fixed IP found. Take the first one of %s", floating)
-		return d.foundIP(fixed[0]), nil
-	}
-
 	return "", fmt.Errorf("No IP found for the machine")
 }
 
@@ -308,7 +301,18 @@ func (d *Driver) Create() error {
 	if err := d.createMachine(); err != nil {
 		return err
 	}
-	if err := d.waitForInstanceToStart(); err != nil {
+	if err := d.waitForInstanceActive(); err != nil {
+		return err
+	}
+	if d.FloatingIpPool != "" {
+		if err := d.assignFloatingIp(); err != nil {
+			return err
+		}
+	}
+	if err := d.lookForIpAddress(); err != nil {
+		return err
+	}
+	if err := d.waitForSSHServer(); err != nil {
 		return err
 	}
 	if err := d.installDocker(); err != nil {
@@ -389,7 +393,7 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 		args = []string{"sudo", "sh", "-c", fmt.Sprintf("'%s'", cmd)}
 	}
 
-	log.Debug("Command: %s", args)
+	log.WithField("MachineId", d.MachineId).Debug("Command: %s", args)
 	return ssh.GetSSHCommand(ip, d.SSHPort, d.SSHUser, d.sshKeyPath(), args...), nil
 }
 
@@ -441,21 +445,13 @@ func (d *Driver) checkConfig() error {
 	return nil
 }
 
-func (d *Driver) foundIP(ip string) string {
-	log.WithFields(log.Fields{
-		"IP":        ip,
-		"MachineId": d.MachineId,
-	}).Debug("IP address found")
-	return ip
-}
-
 func (d *Driver) resolveIds() error {
 	if d.NetworkName != "" {
 		if err := d.initNetwork(); err != nil {
 			return err
 		}
 
-		networkId, err := d.client.GetNetworkId(d, d.NetworkName)
+		networkId, err := d.client.GetNetworkId(d)
 
 		if err != nil {
 			return err
@@ -476,7 +472,7 @@ func (d *Driver) resolveIds() error {
 		if err := d.initCompute(); err != nil {
 			return err
 		}
-		flavorId, err := d.client.GetFlavorId(d, d.FlavorName)
+		flavorId, err := d.client.GetFlavorId(d)
 
 		if err != nil {
 			return err
@@ -497,7 +493,7 @@ func (d *Driver) resolveIds() error {
 		if err := d.initCompute(); err != nil {
 			return err
 		}
-		imageId, err := d.client.GetImageId(d, d.ImageName)
+		imageId, err := d.client.GetImageId(d)
 
 		if err != nil {
 			return err
@@ -512,6 +508,27 @@ func (d *Driver) resolveIds() error {
 			"Name": d.ImageName,
 			"ID":   d.ImageId,
 		}).Debug("Found image id using its name")
+	}
+
+	if d.FloatingIpPool != "" {
+		if err := d.initNetwork(); err != nil {
+			return err
+		}
+		f, err := d.client.GetFloatingIpPoolId(d)
+
+		if err != nil {
+			return err
+		}
+
+		if f == "" {
+			return fmt.Errorf(errorUnknownNetworkName, d.FloatingIpPool)
+		}
+
+		d.FloatingIpPoolId = f
+		log.WithFields(log.Fields{
+			"Name": d.FloatingIpPool,
+			"ID":   d.FloatingIpPoolId,
+		}).Debug("Found floating IP pool id using its name")
 	}
 
 	return nil
@@ -573,16 +590,92 @@ func (d *Driver) createMachine() error {
 	return nil
 }
 
-func (d *Driver) waitForInstanceToStart() error {
-	log.WithField("MachineId", d.MachineId).Debug("Waiting for the OpenStack instance to start...")
+func (d *Driver) assignFloatingIp() error {
+
+	if err := d.initNetwork(); err != nil {
+		return err
+	}
+
+	portId, err := d.client.GetInstancePortId(d)
+	if err != nil {
+		return err
+	}
+
+	ips, err := d.client.GetFloatingIPs(d)
+	if err != nil {
+		return err
+	}
+
+	var floatingIp *FloatingIp
+
+	log.WithFields(log.Fields{
+		"MachineId": d.MachineId,
+		"Pool":      d.FloatingIpPool,
+	}).Debugf("Looking for an available floating IP")
+
+	for _, ip := range ips {
+		if ip.PortId == "" {
+			log.WithFields(log.Fields{
+				"MachineId": d.MachineId,
+				"IP":        ip.Ip,
+			}).Debugf("Available floating IP found")
+			floatingIp = &ip
+			break
+		}
+	}
+
+	if floatingIp == nil {
+		floatingIp = &FloatingIp{}
+		log.WithField("MachineId", d.MachineId).Debugf("No available floating IP found. Allocating a new one...")
+	} else {
+		log.WithField("MachineId", d.MachineId).Debugf("Assigning floating IP to the instance")
+	}
+
+	if err := d.client.AssignFloatingIP(d, floatingIp, portId); err != nil {
+		return err
+	}
+	d.Ip = floatingIp.Ip
+	return nil
+}
+
+func (d *Driver) waitForInstanceActive() error {
+	log.WithField("MachineId", d.MachineId).Debug("Waiting for the OpenStack instance to be ACTIVE...")
 	if err := d.client.WaitForInstanceStatus(d, "ACTIVE", 200); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (d *Driver) lookForIpAddress() error {
 	ip, err := d.GetIP()
 	if err != nil {
 		return err
 	}
+	d.Ip = ip
+	log.WithFields(log.Fields{
+		"IP":        ip,
+		"MachineId": d.MachineId,
+	}).Debug("IP address found")
+	return nil
+}
+
+func (d *Driver) waitForSSHServer() error {
+	ip, err := d.GetIP()
+	if err != nil {
+		return err
+	}
+	log.WithFields(log.Fields{
+		"MachineId": d.MachineId,
+		"IP":        ip,
+	}).Debug("Waiting for the SSH server to be started...")
 	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
+}
+
+func (d *Driver) waitForInstanceToStart() error {
+	if err := d.waitForInstanceActive(); err != nil {
+		return err
+	}
+	return d.waitForSSHServer()
 }
 
 func (d *Driver) installDocker() error {
