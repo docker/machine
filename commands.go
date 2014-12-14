@@ -129,13 +129,18 @@ var Commands = []cli.Command{
 		Usage: "Inspect information about a machine",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
+			store := NewStore()
 
 			if name == "" {
-				cli.ShowCommandHelp(c, "inspect")
-				os.Exit(1)
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
 			}
 
-			store := NewStore()
 			host, err := store.Load(name)
 			if err != nil {
 				log.Errorf("error loading data")
@@ -156,11 +161,6 @@ var Commands = []cli.Command{
 		Usage: "Get the IP address of a machine",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
-
-			if name == "" {
-				cli.ShowCommandHelp(c, "ip")
-				os.Exit(1)
-			}
 
 			var (
 				err   error
@@ -199,13 +199,17 @@ var Commands = []cli.Command{
 		Usage: "Kill a machine",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
+			store := NewStore()
 
 			if name == "" {
-				cli.ShowCommandHelp(c, "kill")
-				os.Exit(1)
-			}
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
 
-			store := NewStore()
+				name = host.Name
+			}
 
 			host, err := store.Load(name)
 			if err != nil {
@@ -291,12 +295,17 @@ var Commands = []cli.Command{
 		Usage: "Restart a machine",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
-			if name == "" {
-				cli.ShowCommandHelp(c, "restart")
-				os.Exit(1)
-			}
-
 			store := NewStore()
+
+			if name == "" {
+				host, err := store.GetActive()
+				if err != nil {
+					log.Errorf("error unable to get active host")
+					os.Exit(1)
+				}
+
+				name = host.Name
+			}
 
 			host, err := store.Load(name)
 			if err != nil {
