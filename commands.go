@@ -128,26 +128,7 @@ var Commands = []cli.Command{
 		Name:  "inspect",
 		Usage: "Inspect information about a machine",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-			store := NewStore()
-
-			if name == "" {
-				host, err := store.GetActive()
-				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
-				}
-
-				name = host.Name
-			}
-
-			host, err := store.Load(name)
-			if err != nil {
-				log.Errorf("error loading data")
-				os.Exit(1)
-			}
-
-			prettyJson, err := json.MarshalIndent(host, "", "    ")
+			prettyJson, err := json.MarshalIndent(getHost(c), "", "    ")
 			if err != nil {
 				log.Error("error with json")
 				os.Exit(1)
@@ -160,32 +141,7 @@ var Commands = []cli.Command{
 		Name:  "ip",
 		Usage: "Get the IP address of a machine",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-
-			var (
-				err   error
-				host  *Host
-				store = NewStore()
-			)
-
-			if name != "" {
-				host, err = store.Load(name)
-				if err != nil {
-					log.Errorf("error unable to load data")
-					os.Exit(1)
-				}
-			} else {
-				host, err = store.GetActive()
-				if err != nil {
-					log.Errorf("error")
-					os.Exit(1)
-				}
-				if host == nil {
-					os.Exit(1)
-				}
-			}
-
-			ip, err := host.Driver.GetIP()
+			ip, err := getHost(c).Driver.GetIP()
 			if err != nil {
 				log.Errorf("error unable to get IP")
 				os.Exit(1)
@@ -198,26 +154,7 @@ var Commands = []cli.Command{
 		Name:  "kill",
 		Usage: "Kill a machine",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-			store := NewStore()
-
-			if name == "" {
-				host, err := store.GetActive()
-				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
-				}
-
-				name = host.Name
-			}
-
-			host, err := store.Load(name)
-			if err != nil {
-				log.Errorf("error unable to load data")
-				os.Exit(1)
-			}
-
-			host.Driver.Kill()
+			getHost(c).Driver.Kill()
 		},
 	},
 	{
@@ -294,26 +231,7 @@ var Commands = []cli.Command{
 		Name:  "restart",
 		Usage: "Restart a machine",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-			store := NewStore()
-
-			if name == "" {
-				host, err := store.GetActive()
-				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
-				}
-
-				name = host.Name
-			}
-
-			host, err := store.Load(name)
-			if err != nil {
-				log.Errorf("error unable to load data")
-				os.Exit(1)
-			}
-
-			host.Driver.Restart()
+			getHost(c).Driver.Restart()
 		},
 	},
 	{
@@ -401,110 +319,28 @@ var Commands = []cli.Command{
 		Name:  "start",
 		Usage: "Start a machine",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-			store := NewStore()
-
-			if name == "" {
-				host, err := store.GetActive()
-				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
-				}
-
-				name = host.Name
-			}
-
-			host, err := store.Load(name)
-			if err != nil {
-				log.Errorf("error unable to load data")
-				os.Exit(1)
-			}
-
-			host.Start()
+			getHost(c).Start()
 		},
 	},
 	{
 		Name:  "stop",
 		Usage: "Stop a machine",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-			store := NewStore()
-
-			if name == "" {
-				host, err := store.GetActive()
-				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
-				}
-
-				name = host.Name
-			}
-
-			host, err := store.Load(name)
-			if err != nil {
-				log.Errorf("error unable to load data")
-				os.Exit(1)
-			}
-
-			host.Stop()
+			getHost(c).Stop()
 		},
 	},
 	{
 		Name:  "upgrade",
 		Usage: "Upgrade a machine to the latest version of Docker",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-			store := NewStore()
-
-			if name == "" {
-				host, err := store.GetActive()
-				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
-				}
-
-				name = host.Name
-			}
-
-			host, err := store.Load(name)
-			if err != nil {
-				log.Errorf("error unable to load host")
-				os.Exit(1)
-			}
-
-			host.Driver.Upgrade()
+			getHost(c).Driver.Upgrade()
 		},
 	},
 	{
 		Name:  "url",
 		Usage: "Get the URL of a machine",
 		Action: func(c *cli.Context) {
-			name := c.Args().First()
-
-			var (
-				err   error
-				host  *Host
-				store = NewStore()
-			)
-
-			if name != "" {
-				host, err = store.Load(name)
-				if err != nil {
-					log.Errorf("error unable to load data")
-					os.Exit(1)
-				}
-			} else {
-				host, err = store.GetActive()
-				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
-				}
-				if host == nil {
-					os.Exit(1)
-				}
-			}
-
-			url, err := host.GetURL()
+			url, err := getHost(c).GetURL()
 			if err != nil {
 				log.Errorf("error unable to get url for host")
 				os.Exit(1)
@@ -513,4 +349,26 @@ var Commands = []cli.Command{
 			fmt.Println(url)
 		},
 	},
+}
+
+func getHost(c *cli.Context) *Host {
+	name := c.Args().First()
+	store := NewStore()
+
+	if name == "" {
+		host, err := store.GetActive()
+		if err != nil {
+			log.Errorf("error unable to get active host")
+			os.Exit(1)
+		}
+		name = host.Name
+	}
+
+	host, err := store.Load(name)
+	if err != nil {
+		log.Errorf("error unable to load host")
+		os.Exit(1)
+	}
+
+	return host
 }
