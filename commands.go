@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -21,7 +22,7 @@ import (
 	"github.com/docker/machine/state"
 )
 
-type HostListItem struct {
+type hostListItem struct {
 	Name       string
 	Active     bool
 	DriverName string
@@ -29,17 +30,17 @@ type HostListItem struct {
 	URL        string
 }
 
-type HostListItemByName []HostListItem
+type hostListItemByName []hostListItem
 
-func (h HostListItemByName) Len() int {
+func (h hostListItemByName) Len() int {
 	return len(h)
 }
 
-func (h HostListItemByName) Swap(i, j int) {
+func (h hostListItemByName) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
-func (h HostListItemByName) Less(i, j int) bool {
+func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
@@ -54,7 +55,7 @@ var Commands = []cli.Command{
 			if name == "" {
 				host, err := store.GetActive()
 				if err != nil {
-					log.Errorf("error finding active host")
+					log.Fatalf("error getting active host: %v", err)
 				}
 				if host != nil {
 					fmt.Println(host.Name)
@@ -62,14 +63,11 @@ var Commands = []cli.Command{
 			} else if name != "" {
 				host, err := store.Load(name)
 				if err != nil {
-					log.Errorln(err)
-					log.Errorf("error loading new active host")
-					os.Exit(1)
+					log.Fatalf("error loading host: %v", err)
 				}
 
 				if err := store.SetActive(host); err != nil {
-					log.Errorf("error setting new active host")
-					os.Exit(1)
+					log.Fatalf("error setting active host: %v", err)
 				}
 			} else {
 				cli.ShowCommandHelp(c, "active")
@@ -101,25 +99,21 @@ var Commands = []cli.Command{
 
 			keyExists, err := drivers.PublicKeyExists()
 			if err != nil {
-				log.Errorf("error")
-				os.Exit(1)
+				log.Fatal(err)
 			}
 
 			if !keyExists {
-				log.Errorf("error key doesn't exist")
-				os.Exit(1)
+				log.Fatalf("Identity authentication public key doesn't exist at %q. Create your public key by running the \"docker\" command.", drivers.PublicKeyPath())
 			}
 
 			store := NewStore()
 
 			host, err := store.Create(name, driver, c)
 			if err != nil {
-				log.Errorf("%s", err)
-				os.Exit(1)
+				log.Fatal(err)
 			}
 			if err := store.SetActive(host); err != nil {
-				log.Errorf("%s", err)
-				os.Exit(1)
+				log.Fatalf("error setting active host: %v", err)
 			}
 
 			log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity", name)
@@ -129,13 +123,12 @@ var Commands = []cli.Command{
 		Name:  "inspect",
 		Usage: "Inspect information about a machine",
 		Action: func(c *cli.Context) {
-			prettyJson, err := json.MarshalIndent(getHost(c), "", "    ")
+			prettyJSON, err := json.MarshalIndent(getHost(c), "", "    ")
 			if err != nil {
-				log.Error("error with json")
-				os.Exit(1)
+				log.Fatal(err)
 			}
 
-			fmt.Println(string(prettyJson))
+			fmt.Println(string(prettyJSON))
 		},
 	},
 	{
@@ -144,8 +137,7 @@ var Commands = []cli.Command{
 		Action: func(c *cli.Context) {
 			ip, err := getHost(c).Driver.GetIP()
 			if err != nil {
-				log.Errorf("error unable to get IP")
-				os.Exit(1)
+				log.Fatal(err)
 			}
 
 			fmt.Println(ip)
@@ -155,7 +147,9 @@ var Commands = []cli.Command{
 		Name:  "kill",
 		Usage: "Kill a machine",
 		Action: func(c *cli.Context) {
-			getHost(c).Driver.Kill()
+			if err := getHost(c).Driver.Kill(); err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{
@@ -173,8 +167,7 @@ var Commands = []cli.Command{
 
 			hostList, err := store.List()
 			if err != nil {
-				log.Errorf("error unable to list hosts")
-				os.Exit(1)
+				log.Fatal(err)
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
@@ -184,6 +177,7 @@ var Commands = []cli.Command{
 			}
 
 			wg := sync.WaitGroup{}
+			items := []hostListItem{}
 
 			for _, host := range hostList {
 				host := host
@@ -212,19 +206,32 @@ var Commands = []cli.Command{
 								host.Name, err)
 						}
 
-						activeString := ""
-						if isActive {
-							activeString = "*"
-						}
+						items = append(items, hostListItem{
+							Name:       host.Name,
+							Active:     isActive,
+							DriverName: host.Driver.DriverName(),
+							State:      currentState,
+							URL:        url,
+						})
 
-						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-							host.Name, activeString, host.Driver.DriverName(), currentState, url)
 						wg.Done()
 					}()
 				}
 			}
 
 			wg.Wait()
+
+			sort.Sort(hostListItemByName(items))
+
+			for _, item := range items {
+				activeString := ""
+				if item.Active {
+					activeString = "*"
+				}
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+					item.Name, activeString, item.DriverName, item.State, item.URL)
+			}
+
 			w.Flush()
 		},
 	},
@@ -232,7 +239,9 @@ var Commands = []cli.Command{
 		Name:  "restart",
 		Usage: "Restart a machine",
 		Action: func(c *cli.Context) {
-			getHost(c).Driver.Restart()
+			if err := getHost(c).Driver.Restart(); err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{
@@ -262,7 +271,7 @@ var Commands = []cli.Command{
 				}
 			}
 			if isError {
-				log.Errorf("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
+				log.Fatal("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
 			}
 		},
 	},
@@ -283,8 +292,7 @@ var Commands = []cli.Command{
 			if name == "" {
 				host, err := store.GetActive()
 				if err != nil {
-					log.Errorf("error unable to get active host")
-					os.Exit(1)
+					log.Fatalf("unable to get active host: %v", err)
 				}
 
 				name = host.Name
@@ -297,8 +305,7 @@ var Commands = []cli.Command{
 
 			host, err := store.Load(name)
 			if err != nil {
-				log.Errorf("%s", err)
-				os.Exit(1)
+				log.Fatal(err)
 			}
 
 			var sshCmd *exec.Cmd
@@ -308,16 +315,14 @@ var Commands = []cli.Command{
 				sshCmd, err = host.Driver.GetSSHCommand(c.String("command"))
 			}
 			if err != nil {
-				log.Errorf("%s", err)
-				os.Exit(1)
+				log.Fatal(err)
 			}
 
 			sshCmd.Stdin = os.Stdin
 			sshCmd.Stdout = os.Stdout
 			sshCmd.Stderr = os.Stderr
 			if err := sshCmd.Run(); err != nil {
-				log.Errorf("%s", err)
-				os.Exit(1)
+				log.Fatal(err)
 			}
 		},
 	},
@@ -325,21 +330,27 @@ var Commands = []cli.Command{
 		Name:  "start",
 		Usage: "Start a machine",
 		Action: func(c *cli.Context) {
-			getHost(c).Start()
+			if err := getHost(c).Start(); err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{
 		Name:  "stop",
 		Usage: "Stop a machine",
 		Action: func(c *cli.Context) {
-			getHost(c).Stop()
+			if err := getHost(c).Stop(); err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{
 		Name:  "upgrade",
 		Usage: "Upgrade a machine to the latest version of Docker",
 		Action: func(c *cli.Context) {
-			getHost(c).Driver.Upgrade()
+			if err := getHost(c).Upgrade(); err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{
@@ -348,8 +359,7 @@ var Commands = []cli.Command{
 		Action: func(c *cli.Context) {
 			url, err := getHost(c).GetURL()
 			if err != nil {
-				log.Errorf("error unable to get url for host")
-				os.Exit(1)
+				log.Fatal(err)
 			}
 
 			fmt.Println(url)
@@ -364,17 +374,14 @@ func getHost(c *cli.Context) *Host {
 	if name == "" {
 		host, err := store.GetActive()
 		if err != nil {
-			log.Errorf("error unable to get active host")
-			os.Exit(1)
+			log.Fatalf("unable to get active host: %v", err)
 		}
-		name = host.Name
+		return host
 	}
 
 	host, err := store.Load(name)
 	if err != nil {
-		log.Errorf("error unable to load host")
-		os.Exit(1)
+		log.Fatalf("unable to load host: %v", err)
 	}
-
 	return host
 }
