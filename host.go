@@ -78,6 +78,10 @@ func (h *Host) Stop() error {
 	return h.Driver.Stop()
 }
 
+func (h *Host) Upgrade() error {
+	return h.Driver.Upgrade()
+}
+
 func (h *Host) Remove(force bool) error {
 	if err := h.Driver.Remove(); err != nil {
 		if force {
