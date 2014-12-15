@@ -95,7 +95,7 @@ Options:
 
 ### Amazon EC2
 
-Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and Subnet ID.  To find the Subnet ID, login to the AWS console and go to Services -> VPC -> Subnets.  Select the one where you would like to launch the instance.
+Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and a VPC ID.  To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs.  Select the one where you would like to launch the instance.
 
 Options:
 
@@ -105,7 +105,8 @@ Options:
  - `--amazonec2-region`: The region to use when launching the instance.  Default: `us-east-1`
  - `--amazonec2-root-size`: The root disk size of the instance (in GB).  Default: `16`
  - `--amazonec2-secret-key`: Your secret access key for the Amazon Web Services API.
- - `--amazonec2-subnet-id`: Your VPC subnet ID to launch the instance in.
+ - `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
+ - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e).
 
 ## Contributing
 

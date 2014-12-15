@@ -40,11 +40,11 @@ type Driver struct {
 	InstanceId      string
 	InstanceType    string
 	IPAddress       string
-	SubnetId        string
 	SecurityGroupId string
 	ReservationId   string
 	RootSize        int64
 	VpcId           string
+	Zone            string
 	storePath       string
 	keyPath         string
 }
@@ -89,9 +89,16 @@ func GetCreateFlags() []cli.Flag {
 			Value: defaultRegion,
 		},
 		cli.StringFlag{
-			Name:  "amazonec2-subnet-id",
-			Usage: "AWS VPC subnet id",
-			Value: "",
+			Name:   "amazonec2-vpc-id",
+			Usage:  "AWS VPC id",
+			Value:  "",
+			EnvVar: "AMAZONEC2_VPC_ID",
+		},
+		cli.StringFlag{
+			Name:   "amazonec2-zone",
+			Usage:  "AWS zone for instance (i.e. a,b,c,d,e)",
+			Value:  "",
+			EnvVar: "AMAZONEC2_ZONE",
 		},
 		cli.StringFlag{
 			Name:  "amazonec2-instance-type",
@@ -117,7 +124,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AMI = flags.String("amazonec2-ami")
 	d.Region = flags.String("amazonec2-region")
 	d.InstanceType = flags.String("amazonec2-instance-type")
-	d.SubnetId = flags.String("amazonec2-subnet-id")
+	d.VpcId = flags.String("amazonec2-vpc-id")
+	zone := flags.String("amazonec2-zone")
+	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
 
 	if d.AccessKey == "" {
@@ -128,8 +137,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-secret-key option")
 	}
 
-	if d.SubnetId == "" {
-		return fmt.Errorf("amazonec2 driver requires the --amazonec2-subnet-id option")
+	if d.VpcId == "" {
+		return fmt.Errorf("amazonec2 driver requires the --amazonec2-vpc-id option")
+	}
+
+	if d.Zone == "" {
+		return fmt.Errorf("amazonec2 driver requires the --amazonec2-zone option")
 	}
 
 	return nil
@@ -158,8 +171,27 @@ func (d *Driver) Create() error {
 		VolumeType:          "gp2",
 	}
 
-	log.Debugf("launching instance")
-	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, "a", 1, 1, group.GroupId, d.KeyName, d.SubnetId, bdm)
+	// get the subnet id
+	subnets, err := d.getClient().GetSubnets()
+	if err != nil {
+		return err
+	}
+
+	subnetId := ""
+	regionZone := d.Region + d.Zone
+	for _, s := range subnets {
+		if s.AvailabilityZone == regionZone {
+			subnetId = s.SubnetId
+			break
+		}
+	}
+
+	if subnetId == "" {
+		return fmt.Errorf("unable to find a subnet in the zone: %s", regionZone)
+	}
+
+	log.Debugf("launching instance in %s", regionZone)
+	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, group.GroupId, d.KeyName, subnetId, bdm)
 
 	if err != nil {
 		return fmt.Errorf("Error launching instance: %s", err)
@@ -199,7 +231,7 @@ func (d *Driver) Create() error {
 
 	log.Debugf("HACK: Downloading version of Docker with identity auth...")
 
-	cmd, err = d.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth")
+	cmd, err = d.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.0-dev-identity")
 	if err != nil {
 		return err
 	}
@@ -456,14 +488,6 @@ func (d *Driver) terminate() error {
 }
 
 func (d *Driver) createSecurityGroup() (*amz.SecurityGroup, error) {
-	subnets, err := d.getClient().GetSubnets()
-	if err != nil {
-		return nil, err
-	}
-	vpcId := subnets[0].VpcId
-
-	d.VpcId = vpcId
-
 	log.Debugf("creating security group in %s", d.VpcId)
 
 	grpName := fmt.Sprintf("docker-machine-%s", d.Id)
