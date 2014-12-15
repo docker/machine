@@ -66,7 +66,7 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "rackspace-image-id",
-			Usage: "Rackspace image ID. Default: Ubuntu 14.10 (Utopic Unicorn) (PVHVM)",
+			Usage: "Rackspace image ID. Default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)",
 			Value: "",
 		},
 		cli.StringFlag{
@@ -109,6 +109,15 @@ func (d *Driver) DriverName() string {
 	return "rackspace"
 }
 
+func missingEnvOrOption(setting, envVar, opt string) error {
+	return fmt.Errorf(
+		"%s must be specified either using the environment variable %s or the CLI option %s",
+		setting,
+		envVar,
+		opt,
+	)
+}
+
 // SetConfigFromFlags assigns and verifies the command-line arguments presented to the driver.
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Username = flags.String("rackspace-username")
@@ -119,19 +128,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FlavorId = flags.String("rackspace-flavor-id")
 	d.SSHUser = flags.String("rackspace-ssh-user")
 	d.SSHPort = flags.Int("rackspace-ssh-port")
-	return nil
-}
 
-func missingEnvOrOption(setting, envVar, opt string) error {
-	return fmt.Errorf(
-		"%s must be specified either using the environment variable %s or the CLI option %s",
-		setting,
-		envVar,
-		opt,
-	)
-}
-
-func (d *Driver) checkConfig() error {
+	if d.Region == "" {
+		return missingEnvOrOption("Region", "OS_REGION_NAME", "--rackspace-region")
+	}
 	if d.Username == "" {
 		return missingEnvOrOption("Username", "OS_USERNAME", "--rackspace-username")
 	}
@@ -140,10 +140,10 @@ func (d *Driver) checkConfig() error {
 	}
 
 	if d.ImageId == "" {
-		// Default to the Ubuntu 14.10 image.
+		// Default to the Ubuntu 14.04 image.
 		// This is done here, rather than in the option registration, to keep the default value
 		// from making "machine create --help" ugly.
-		d.ImageId = "0766e5df-d60a-4100-ae8c-07f27ec0148f"
+		d.ImageId = "598a4282-f14b-4e50-af4c-b3e52749d9f9"
 	}
 
 	if d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL" {

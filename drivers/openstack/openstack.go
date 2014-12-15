@@ -272,9 +272,6 @@ func (d *Driver) GetState() (state.State, error) {
 	if err := d.initCompute(); err != nil {
 		return state.None, err
 	}
-	if err := d.initNetwork(); err != nil {
-		return state.None, err
-	}
 
 	s, err := d.client.GetInstanceState(d)
 	if err != nil {
