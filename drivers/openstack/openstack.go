@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +41,7 @@ type Driver struct {
 	SSHPort          int
 	Ip               string
 	storePath        string
+	installDocher    bool
 	client           Client
 }
 
@@ -164,6 +166,13 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "OpenStack SSH port",
 			Value: 22,
 		},
+		// Using a StringFlag rather than a BoolFlag because
+		// the BoolFlag default value is always false
+		cli.StringFlag{
+			Name:  "openstack-docker-install",
+			Usage: "Set if docker have to be installed on the machine",
+			Value: "true",
+		},
 	}
 }
 
@@ -206,6 +215,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FloatingIpPool = flags.String("openstack-floatingip-pool")
 	d.SSHUser = flags.String("openstack-ssh-user")
 	d.SSHPort = flags.Int("openstack-ssh-port")
+
+	installDocker, err := strconv.ParseBool(flags.String("openstack-docker-install"))
+	if err != nil {
+		return err
+	}
+	d.installDocher = installDocker
 	return d.checkConfig()
 }
 
@@ -315,8 +330,10 @@ func (d *Driver) Create() error {
 	if err := d.waitForSSHServer(); err != nil {
 		return err
 	}
-	if err := d.installDocker(); err != nil {
-		return err
+	if d.installDocher {
+		if err := d.installDocker(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
