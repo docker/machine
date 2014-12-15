@@ -203,6 +203,8 @@ Options:
    there is no IP address already allocated a new IP will be allocated and assigned to the machine.
  - `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
+ - `--openstack-docker-install`: Boolean flag to indicate if docker have to be installed on the machine. Useful when
+   docker is already installed and configured in the OpenStack image. Default set to `true`
 
 Environment variables:
 
