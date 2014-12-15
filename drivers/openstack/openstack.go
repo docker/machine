@@ -18,31 +18,31 @@ import (
 )
 
 type Driver struct {
-	AuthUrl          string
-	Username         string
-	Password         string
-	TenantName       string
-	TenantId         string
-	Region           string
-	EndpointType     string
-	MachineName      string
-	MachineId        string
-	FlavorName       string
-	FlavorId         string
-	ImageName        string
-	ImageId          string
-	KeyPairName      string
-	NetworkName      string
-	NetworkId        string
-	SecurityGroups   []string
-	FloatingIpPool   string
-	FloatingIpPoolId string
-	SSHUser          string
-	SSHPort          int
-	Ip               string
-	storePath        string
-	installDocher    bool
-	client           Client
+	AuthUrl             string
+	Username            string
+	Password            string
+	TenantName          string
+	TenantId            string
+	Region              string
+	EndpointType        string
+	MachineName         string
+	MachineId           string
+	FlavorName          string
+	FlavorId            string
+	ImageName           string
+	ImageId             string
+	KeyPairName         string
+	NetworkName         string
+	NetworkId           string
+	SecurityGroups      []string
+	FloatingIpPool      string
+	FloatingIpPoolId    string
+	SSHUser             string
+	SSHPort             int
+	Ip                  string
+	EnableDockerInstall bool
+	storePath           string
+	client              Client
 }
 
 type CreateFlags struct {
@@ -220,7 +220,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if err != nil {
 		return err
 	}
-	d.installDocher = installDocker
+	d.EnableDockerInstall = installDocker
 	return d.checkConfig()
 }
 
@@ -327,7 +327,7 @@ func (d *Driver) Create() error {
 	if err := d.waitForSSHServer(); err != nil {
 		return err
 	}
-	if d.installDocher {
+	if d.EnableDockerInstall {
 		if err := d.installDocker(); err != nil {
 			return err
 		}

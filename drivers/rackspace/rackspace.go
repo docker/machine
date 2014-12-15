@@ -150,5 +150,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf(`Invalid endpoint type "%s". Endpoint type must be publicURL, adminURL or internalURL.`, d.EndpointType)
 	}
 
+	d.EnableDockerInstall = true
+
 	return nil
 }
