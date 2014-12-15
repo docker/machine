@@ -84,6 +84,11 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "SSH port for the newly booted machine. Set to 22 by default",
 			Value: 22,
 		},
+		cli.StringFlag{
+			Name:  "rackspace-docker-install",
+			Usage: "Set if docker have to be installed on the machine",
+			Value: "true",
+		},
 	}
 }
 
@@ -128,6 +133,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FlavorId = flags.String("rackspace-flavor-id")
 	d.SSHUser = flags.String("rackspace-ssh-user")
 	d.SSHPort = flags.Int("rackspace-ssh-port")
+	d.EnableDockerInstall = flags.String("rackspace-docker-install") == "true"
 
 	if d.Region == "" {
 		return missingEnvOrOption("Region", "OS_REGION_NAME", "--rackspace-region")
@@ -149,8 +155,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL" {
 		return fmt.Errorf(`Invalid endpoint type "%s". Endpoint type must be publicURL, adminURL or internalURL.`, d.EndpointType)
 	}
-
-	d.EnableDockerInstall = true
 
 	return nil
 }
