@@ -97,6 +97,17 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+func cpIso(src, dest string) error {
+	buf, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(dest, buf, 0600); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *Driver) Create() error {
 	var (
 		err    error
@@ -124,8 +135,26 @@ func (d *Driver) Create() error {
 		// 	return err
 		// }
 	}
-	log.Infof("Downloading boot2docker...")
-	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+
+	// todo: check latest release URL, download if it's new
+	// until then always use "latest"
+
+	// todo: use real constant for .docker
+	rootPath := filepath.Join(drivers.GetHomeDir(), ".docker")
+	imgPath := filepath.Join(rootPath, "images")
+	commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+	if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+		log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+		if err := os.Mkdir(imgPath, 0700); err != nil {
+			return err
+		}
+		if err := downloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+			return err
+		}
+	}
+
+	isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+	if err := cpIso(commonIsoPath, isoDest); err != nil {
 		return err
 	}
 
