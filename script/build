@@ -1,5 +1,12 @@
 #!/bin/sh
 set -e
+
+if [ -z "$1" ]; then
+    OS_ARCH_ARG=(-os="darwin linux windows")
+else
+    OS_ARCH_ARG=($1)
+fi
+
 rm -f machine_*
 docker build -t docker-machine .
-exec docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox -os="darwin linux windows"
+exec docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox "${OS_ARCH_ARG[@]}"
