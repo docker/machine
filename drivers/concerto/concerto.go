@@ -323,7 +323,7 @@ func (d *Driver) Create() error {
 			log.Infof(" + Ip address %s", d.IPAddress)
 			break
 		} else {
-			log.Infof(" + Polling again for Ip address so far %s", newShip.Ip)
+			log.Debugf(" + Polling again for Ip address so far %s", newShip.Ip)
 		}
 
 		time.Sleep(15 * time.Second)
@@ -336,7 +336,7 @@ func (d *Driver) Create() error {
 		if newShip.State == "operational" {
 			break
 		} else {
-			log.Infof(" + Polling again for state currently %s", newShip.State)
+			log.Debugf(" + Polling again for state currently %s", newShip.State)
 		}
 
 		time.Sleep(15 * time.Second)
