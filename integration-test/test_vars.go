@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type (
@@ -18,14 +19,27 @@ var (
 )
 
 func init() {
-	machineTestDrivers = []MachineDriver{
-		MachineDriver{
-			name: "virtualbox",
-		},
-		MachineDriver{
-			name: "digitalocean",
-		},
+	// allow filtering driver tests
+	if machineTests := os.Getenv("MACHINE_TESTS"); machineTests != "" {
+		tests := strings.Split(machineTests, " ")
+		for _, test := range tests {
+			mcn := MachineDriver{
+				name: test,
+			}
+			machineTestDrivers = append(machineTestDrivers, mcn)
+		}
+	} else {
+		machineTestDrivers = []MachineDriver{
+			MachineDriver{
+				name: "virtualbox",
+			},
+			MachineDriver{
+				name: "digitalocean",
+			},
+		}
 	}
+
+	// find machine binary
 	if machineBin := os.Getenv("MACHINE_BINARY"); machineBin != "" {
 		machineBinary = machineBin
 	} else {
