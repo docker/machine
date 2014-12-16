@@ -17,6 +17,8 @@ import (
 )
 
 const (
+	AuthURL      = "https://accounts.google.com/o/oauth2/auth"
+	TokenURL     = "https://accounts.google.com/o/oauth2/token"
 	ClientId     = "22738965389-8arp8bah3uln9eoenproamovfjj1ac33.apps.googleusercontent.com"
 	ClientSecret = "qApc3amTyr5wI74vVrRWAfC_"
 )
@@ -32,8 +34,8 @@ func newOauthClient(storePath string) *http.Client {
 		ClientId:     ClientId,
 		ClientSecret: ClientSecret,
 		Scope:        raw.ComputeScope,
-		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
-		TokenURL:     "https://accounts.google.com/o/oauth2/token",
+		AuthURL:      AuthURL,
+		TokenURL:     TokenURL,
 	}
 	token := token(storePath, config)
 	t := oauth.Transport{
@@ -91,8 +93,9 @@ func tokenFromWeb(config *oauth.Config) *oauth.Token {
 	config.RedirectURL = ts.URL
 	authURL := config.AuthCodeURL(randState)
 
-	log.Infof("Opening auth URL in browser. If the URL doesn't open, please open it manually and copy the code here.")
+	log.Info("Opening auth URL in browser.")
 	log.Info(authURL)
+	log.Info("If the URL doesn't open, please open it manually and copy the code here.")
 	go openURL(authURL)
 	go getCodeFromStdin(ch)
 
