@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"time"
 
-	raw "code.google.com/p/google-api-go-client/compute/v1"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
+	raw "google.golang.org/api/compute/v1"
 )
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
