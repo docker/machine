@@ -19,7 +19,7 @@ import (
 	"os"
 	"strings"
 
-	"code.google.com/p/google-api-go-client/googleapi/internal/uritemplates"
+	"google.golang.org/api/googleapi/internal/uritemplates"
 )
 
 // ContentTyper is an interface for Readers which know (or would like

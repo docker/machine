@@ -8,16 +8,6 @@
 			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
 		},
 		{
-			"ImportPath": "code.google.com/p/google-api-go-client/compute/v1",
-			"Comment": "release-107",
-			"Rev": "6ddfebb10ece847f1ae09c701834f1b15abbd8b2"
-		},
-		{
-			"ImportPath": "code.google.com/p/google-api-go-client/googleapi",
-			"Comment": "release-107",
-			"Rev": "6ddfebb10ece847f1ae09c701834f1b15abbd8b2"
-		},
-		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-14-g814812a",
 			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
@@ -26,6 +16,10 @@
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.6.1",
 			"Rev": "1f2ba2c6317323dd667bd266c1e8ebffc4a4c62f"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Rev": "fbda1ce02d5dabcee952040e5f4025753b6c9ce0"
 		},
 		{
 			"ImportPath": "github.com/digitalocean/godo",
@@ -129,8 +123,12 @@
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		},
 		{
-			"ImportPath": "github.com/codegangsta/cli",
-			"Rev": "fbda1ce02d5dabcee952040e5f4025753b6c9ce0"
+			"ImportPath": "google.golang.org/api/compute/v1",
+			"Rev": "aa91ac681e18e52b1a0dfe29b9d8354e88c0dcf5"
+		},
+		{
+			"ImportPath": "google.golang.org/api/googleapi",
+			"Rev": "aa91ac681e18e52b1a0dfe29b9d8354e88c0dcf5"
 		}
 	]
 }

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
-	raw "code.google.com/p/google-api-go-client/compute/v1"
 	log "github.com/Sirupsen/logrus"
+	raw "google.golang.org/api/compute/v1"
 )
 
 const (
