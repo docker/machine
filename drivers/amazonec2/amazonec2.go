@@ -97,7 +97,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "amazonec2-zone",
 			Usage:  "AWS zone for instance (i.e. a,b,c,d,e)",
-			Value:  "",
+			Value:  "a",
 			EnvVar: "AMAZONEC2_ZONE",
 		},
 		cli.StringFlag{
