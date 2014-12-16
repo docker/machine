@@ -24,10 +24,12 @@ type ComputeUtil struct {
 }
 
 const (
-	apiURL       = "https://www.googleapis.com/compute/v1/projects/"
-	imageName    = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
-	dockerUrl    = "https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth"
-	firewallRule = "docker-machines"
+	apiURL            = "https://www.googleapis.com/compute/v1/projects/"
+	imageName         = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
+	dockerUrl         = "https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth"
+	firewallRule      = "docker-machines"
+	port              = "2376"
+	firewallTargetTag = "docker-machine"
 )
 
 // NewComputeUtil creates and initializes a ComputeUtil.
@@ -79,7 +81,7 @@ func (c *ComputeUtil) createFirewallRule() error {
 			{
 				IPProtocol: "tcp",
 				Ports: []string{
-					"2376",
+					port,
 				},
 			},
 		},
@@ -87,7 +89,7 @@ func (c *ComputeUtil) createFirewallRule() error {
 			"0.0.0.0/0",
 		},
 		TargetTags: []string{
-			"docker-machine",
+			firewallTargetTag,
 		},
 		Name: firewallRule,
 	}
@@ -135,7 +137,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		},
 		Tags: &raw.Tags{
 			Items: []string{
-				"docker-machine",
+				firewallTargetTag,
 			},
 		},
 	}
