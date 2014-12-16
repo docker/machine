@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+docker build -t docker-machine .
+exec docker run --rm docker-machine go test -v $* ./...
