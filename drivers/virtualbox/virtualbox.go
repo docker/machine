@@ -117,8 +117,9 @@ func (d *Driver) Create() error {
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 	} else {
-		// HACK: Docker 1.3 boot2docker image with client/daemon auth
-		isoURL = "https://bfirsh.s3.amazonaws.com/boot2docker/boot2docker-1.3.1-identity-auth.iso"
+		// HACK: boot2docker iso with ident auth built from here:
+		// https://github.com/MSOpenTech/boot2docker/tree/ident-auth
+		isoURL = "https://jlmstore.blob.core.windows.net/boot2docker/boot2docker-ident.iso"
 		// isoURL, err = getLatestReleaseURL()
 		// if err != nil {
 		// 	return err
@@ -281,7 +282,7 @@ func (d *Driver) Create() error {
 
 	log.Debugf("Adding key to authorized-keys.d...")
 
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/root/.docker/authorized-keys.d"); err != nil {
+	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/var/lib/docker/auth.d"); err != nil {
 		return err
 	}
 
