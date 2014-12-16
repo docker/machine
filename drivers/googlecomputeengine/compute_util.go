@@ -26,10 +26,18 @@ type ComputeUtil struct {
 const (
 	apiURL            = "https://www.googleapis.com/compute/v1/projects/"
 	imageName         = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
-	dockerUrl         = "https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth"
 	firewallRule      = "docker-machines"
 	port              = "2376"
 	firewallTargetTag = "docker-machine"
+)
+
+const (
+	stopDocker            = "sudo service docker stop"
+	makeKeysDir           = "sudo mkdir -p /.docker/authorized-keys.d/"
+	setKeysDirPermissions = "sudo chown -R %v /.docker"
+	waitForDockerToStop   = "while [ -e /var/run/docker.pid ]; do sleep 1; done"
+	setDockerOpts         = "sudo sed -i 's/DOCKER_OPTS=.*/DOCKER_OPTS=\"--auth=identity -H unix:\\/\\/\\/var\\/run\\/docker.sock -H 0.0.0.0:2376\"/g' /etc/default/docker"
+	downloadDocker        = "sudo wget https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -O /usr/bin/docker && sudo chmod +x /usr/bin/docker"
 )
 
 // NewComputeUtil creates and initializes a ComputeUtil.
@@ -213,14 +221,14 @@ func (c *ComputeUtil) updateDocker(d *Driver) error {
 		return fmt.Errorf("error retrieving ip: %v", err)
 	}
 	commands := []string{
-		"sudo service docker stop",
+		stopDocker,
 		// The user will need to copy their key to this directory.
-		"sudo mkdir -p /.docker/authorized-keys.d/",
-		fmt.Sprintf("sudo chown -R %v /.docker", d.UserName),
+		makeKeysDir,
+		fmt.Sprintf(setKeysDirPermissions, d.UserName),
 		// Wait for docker to actually stop before modifying the config.
-		"while [ -e /var/run/docker.pid ]; do sleep 1; done",
-		"sudo sed -i 's/DOCKER_OPTS=.*/DOCKER_OPTS=\"--auth=identity -H unix:\\/\\/\\/var\\/run\\/docker.sock -H 0.0.0.0:2376\"/g' /etc/default/docker",
-		fmt.Sprintf("sudo wget %v -O /usr/bin/docker && sudo chmod +x /usr/bin/docker", dockerUrl)}
+		waitForDockerToStop,
+		setDockerOpts,
+		downloadDocker}
 	if err := c.executeCommands(commands, ip, d.sshKeyPath); err != nil {
 		return err
 	}
