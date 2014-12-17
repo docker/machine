@@ -1,4 +1,4 @@
-package googlecomputeengine
+package google
 
 import (
 	"fmt"
@@ -36,7 +36,7 @@ type CreateFlags struct {
 }
 
 func init() {
-	drivers.Register("googlecomputeengine", &drivers.RegisteredDriver{
+	drivers.Register("google", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
@@ -47,27 +47,27 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  "googlecomputeengine-zone",
+			Name:  "google-zone",
 			Usage: "GCE Zone",
 			Value: "us-central1-a",
 		},
 		cli.StringFlag{
-			Name:  "googlecomputeengine-machine-type",
+			Name:  "google-machine-type",
 			Usage: "GCE Machine Type",
 			Value: "f1-micro",
 		},
 		cli.StringFlag{
-			Name:  "googlecomputeengine-username",
+			Name:  "google-username",
 			Usage: "User Name",
 			Value: "docker-user",
 		},
 		cli.StringFlag{
-			Name:  "googlecomputeengine-instance-name",
+			Name:  "google-instance-name",
 			Usage: "GCE Instance Name",
 			Value: "docker-machine",
 		},
 		cli.StringFlag{
-			Name:  "googlecomputeengine-project",
+			Name:  "google-project",
 			Usage: "GCE Project",
 		},
 	}
@@ -83,18 +83,18 @@ func NewDriver(storePath string) (drivers.Driver, error) {
 
 // DriverName returns the name of the driver.
 func (driver *Driver) DriverName() string {
-	return "googlecomputeengine"
+	return "google"
 }
 
 // SetConfigFromFlags initializes the driver based on the command line flags.
 func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	driver.InstanceName = flags.String("googlecomputeengine-instance-name")
-	driver.Zone = flags.String("googlecomputeengine-zone")
-	driver.MachineType = flags.String("googlecomputeengine-machine-type")
-	driver.UserName = flags.String("googlecomputeengine-username")
-	driver.Project = flags.String("googlecomputeengine-project")
+	driver.InstanceName = flags.String("google-instance-name")
+	driver.Zone = flags.String("google-zone")
+	driver.MachineType = flags.String("google-machine-type")
+	driver.UserName = flags.String("google-username")
+	driver.Project = flags.String("google-project")
 	if driver.Project == "" {
-		return fmt.Errorf("Please specify the Google Cloud Project name using the option --googlecomputeengine-project.")
+		return fmt.Errorf("Please specify the Google Cloud Project name using the option --google-project.")
 	}
 	return nil
 }
