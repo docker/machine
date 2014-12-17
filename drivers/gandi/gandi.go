@@ -10,7 +10,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
@@ -26,61 +26,44 @@ type Driver struct {
 	Image      string
 	IPAddress  string
 	Datacenter string
-	SSHKeyName string
-	Size       string
 	storePath  string
-}
-
-type CreateFlags struct {
-	ApiKey     *string
-	Image      *string
-	Datacenter *string
-	SSHKeyName *string
-	Size       *string
-	Url        *string
 }
 
 func init() {
 	drivers.Register("gandi", &drivers.RegisteredDriver{
-		New:                 NewDriver,
-		RegisterCreateFlags: RegisterCreateFlags,
+		New:            NewDriver,
+		GetCreateFlags: GetCreateFlags,
 	})
 }
 
-// RegisterCreateFlags registers the flags this driver adds to
+// GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
-	createFlags := new(CreateFlags)
-	createFlags.ApiKey = cmd.String(
-		[]string{"-gandi-api-key"},
-		"",
-		"Gandi API key",
-	)
-	createFlags.Image = cmd.String(
-		[]string{"-gandi-image"},
-		"Ubuntu 14.04 64 bits LTS (HVM)",
-		"Gandi image",
-	)
-	createFlags.Datacenter = cmd.String(
-		[]string{"-gandi-dc"},
-		"Bissen",
-		"Gandi datacenter",
-	)
-	createFlags.Size = cmd.String(
-		[]string{"-gandi-size"},
-		"small",
-		"Gandi server size",
-	)
-	createFlags.Url = cmd.String(
-		[]string{"-gandi-url"},
-		"https://rpc.gandi.net/xmlrpc/",
-		"Gandi API url")
-	createFlags.SSHKeyName = cmd.String(
-		[]string{"-gandi-ssh-key"},
-		"",
-		"Gandi ssh key name to use")
-
-	return createFlags
+func GetCreateFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			EnvVar: "GANDI_APIKEY",
+			Name:   "gandi-api-key",
+			Usage:  "Gandi Api key",
+		},
+		cli.StringFlag{
+			EnvVar: "GANDI_IMAGE",
+			Name:   "gandi-image",
+			Usage:  "gandi Image",
+			Value:  "Ubuntu 14.04 64 bits LTS (HVM)",
+		},
+		cli.StringFlag{
+			EnvVar: "GANDI_DATACENTER",
+			Name:   "gandi-dc",
+			Usage:  "Gandi datacenter",
+			Value:  "Bissen",
+		},
+		cli.StringFlag{
+			EnvVar: "GANDI_URL",
+			Name:   "gandi-url",
+			Usage:  "Gandi Api url",
+			Value:  "https://rpc.gandi.net/xmlrpc/",
+		},
+	}
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
@@ -91,14 +74,12 @@ func (d *Driver) DriverName() string {
 	return "gandi"
 }
 
-func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
-	flags := flagsInterface.(*CreateFlags)
-	d.ApiKey = *flags.ApiKey
-	d.Image = *flags.Image
-	d.Datacenter = *flags.Datacenter
-	d.Size = *flags.Size
-	d.Url = *flags.Url
-	d.SSHKeyName = *flags.SSHKeyName
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+
+	d.ApiKey = flags.String("gandi-api-key")
+	d.Image = flags.String("gandi-image")
+	d.Datacenter = flags.String("gandi-dc")
+	d.Url = flags.String("gandi-url")
 
 	if d.ApiKey == "" {
 		return fmt.Errorf("gandi driver requires the -gandi-api-key option")
