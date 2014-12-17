@@ -1,8 +1,11 @@
 package googlecomputeengine
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"strings"
+	"text/template"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -24,21 +27,26 @@ type ComputeUtil struct {
 }
 
 const (
-	apiURL            = "https://www.googleapis.com/compute/v1/projects/"
-	imageName         = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
-	firewallRule      = "docker-machines"
-	port              = "2376"
-	firewallTargetTag = "docker-machine"
+	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
+	imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
+	firewallRule       = "docker-machines"
+	port               = "2376"
+	firewallTargetTag  = "docker-machine"
+	dockerStartCommand = "sudo service docker start"
+	dockerStopCommand  = "sudo service docker stop"
 )
 
-const (
-	stopDocker            = "sudo service docker stop"
-	makeKeysDir           = "sudo mkdir -p /.docker/authorized-keys.d/"
-	setKeysDirPermissions = "sudo chown -R %v /.docker"
-	waitForDockerToStop   = "while [ -e /var/run/docker.pid ]; do sleep 1; done"
-	setDockerOpts         = "sudo sed -i 's/DOCKER_OPTS=.*/DOCKER_OPTS=\"--auth=identity -H unix:\\/\\/\\/var\\/run\\/docker.sock -H 0.0.0.0:2376\"/g' /etc/default/docker"
-	downloadDocker        = "sudo wget https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -O /usr/bin/docker && sudo chmod +x /usr/bin/docker"
+var (
+	dockerUpgradeScriptTemplate = template.Must(template.New("upgrade-docker-script").Parse(
+		`sudo mkdir -p /.docker/authorized-keys.d/
+sudo chown -R {{ .Username }} /.docker
+while [ -e /var/run/docker.pid ]; do sleep 1; done
+sudo sed -i 's/DOCKER_OPTS=.*/DOCKER_OPTS=\"--auth=identity -H unix:\\/\\/\\/var\\/run\\/docker.sock -H 0.0.0.0:2376\"/g' /etc/default/docker
+sudo wget https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -O /usr/bin/docker && sudo chmod +x /usr/bin/docker
+`))
 )
+
+const ()
 
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
@@ -220,22 +228,22 @@ func (c *ComputeUtil) updateDocker(d *Driver) error {
 	if err != nil {
 		return fmt.Errorf("error retrieving ip: %v", err)
 	}
-	commands := []string{
-		stopDocker,
-		// The user will need to copy their key to this directory.
-		makeKeysDir,
-		fmt.Sprintf(setKeysDirPermissions, d.UserName),
-		// Wait for docker to actually stop before modifying the config.
-		waitForDockerToStop,
-		setDockerOpts,
-		downloadDocker}
+	if c.executeCommands([]string{dockerStopCommand}, ip, d.sshKeyPath); err != nil {
+		return err
+	}
+	var scriptBuf bytes.Buffer
+
+	if err := dockerUpgradeScriptTemplate.Execute(&scriptBuf, d); err != nil {
+		return fmt.Errorf("error expanding upgrade script template: %v", err)
+	}
+	commands := strings.Split(scriptBuf.String(), "\n")
 	if err := c.executeCommands(commands, ip, d.sshKeyPath); err != nil {
 		return err
 	}
 	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
 		return err
 	}
-	return c.executeCommands([]string{"sudo service docker start"}, ip, d.sshKeyPath)
+	return c.executeCommands([]string{dockerStartCommand}, ip, d.sshKeyPath)
 }
 
 func (c *ComputeUtil) executeCommands(commands []string, ip, sshKeyPath string) error {
