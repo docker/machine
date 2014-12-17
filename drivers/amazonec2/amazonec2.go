@@ -320,7 +320,7 @@ func (d *Driver) Stop() error {
 func (d *Driver) Remove() error {
 
 	if err := d.terminate(); err != nil {
-		return fmt.Errorf("unabme to terminate instance: %s", err)
+		return fmt.Errorf("unable to terminate instance: %s", err)
 	}
 	// wait until terminated so we can remove security group
 	for {
@@ -361,7 +361,17 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("unable to upgrade as we are using the custom docker binary with identity auth")
+	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install -y lxc-docker")
+	if err != nil {
+		return err
+	}
+	sshCmd.Stdin = os.Stdin
+	sshCmd.Stdout = os.Stdout
+	sshCmd.Stderr = os.Stderr
+	if err := sshCmd.Run(); err != nil {
+		return fmt.Errorf("%s", err)
+	}
+	return nil
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
