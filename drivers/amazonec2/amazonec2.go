@@ -368,10 +368,7 @@ func (d *Driver) Upgrade() error {
 	sshCmd.Stdin = os.Stdin
 	sshCmd.Stdout = os.Stdout
 	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	return nil
+	return sshCmd.Run()
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
