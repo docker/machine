@@ -44,6 +44,7 @@ type Driver struct {
 	ReservationId   string
 	RootSize        int64
 	VpcId           string
+	SubnetId        string
 	Zone            string
 	storePath       string
 	keyPath         string
@@ -101,6 +102,11 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "AMAZONEC2_ZONE",
 		},
 		cli.StringFlag{
+			Name:  "amazonec2-subnet-id",
+			Usage: "AWS VPC subnet id",
+			Value: "",
+		},
+		cli.StringFlag{
 			Name:  "amazonec2-instance-type",
 			Usage: "AWS instance type",
 			Value: defaultInstanceType,
@@ -125,6 +131,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Region = flags.String("amazonec2-region")
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
+	d.SubnetId = flags.String("amazonec2-subnet-id")
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
@@ -137,12 +144,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-secret-key option")
 	}
 
-	if d.VpcId == "" {
-		return fmt.Errorf("amazonec2 driver requires the --amazonec2-vpc-id option")
-	}
-
-	if d.Zone == "" {
-		return fmt.Errorf("amazonec2 driver requires the --amazonec2-zone option")
+	if d.SubnetId == "" && d.VpcId == "" {
+		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
 	}
 
 	return nil
@@ -172,25 +175,29 @@ func (d *Driver) Create() error {
 	}
 
 	// get the subnet id
-	subnets, err := d.getClient().GetSubnets()
-	if err != nil {
-		return err
-	}
-
-	subnetId := ""
 	regionZone := d.Region + d.Zone
-	for _, s := range subnets {
-		if s.AvailabilityZone == regionZone {
-			subnetId = s.SubnetId
-			break
+	subnetId := d.SubnetId
+
+	if d.SubnetId == "" {
+		subnets, err := d.getClient().GetSubnets()
+		if err != nil {
+			return err
 		}
+
+		for _, s := range subnets {
+			if s.AvailabilityZone == regionZone {
+				subnetId = s.SubnetId
+				break
+			}
+		}
+
 	}
 
 	if subnetId == "" {
 		return fmt.Errorf("unable to find a subnet in the zone: %s", regionZone)
 	}
 
-	log.Debugf("launching instance in %s", regionZone)
+	log.Debugf("launching instance in subnet %s", subnetId)
 	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, group.GroupId, d.KeyName, subnetId, bdm)
 
 	if err != nil {
