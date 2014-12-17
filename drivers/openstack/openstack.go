@@ -393,7 +393,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("Upgrate is currently not available for the OpenStack driver")
+	return fmt.Errorf("unable to upgrade as we are using the custom docker binary with identity auth")
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
@@ -701,14 +701,33 @@ func (d *Driver) installDocker() error {
 
 	log.WithField("MachineId", d.MachineId).Debug("Installing docker daemon on the machine")
 
-	cmd := "curl -sSL https://gist.githubusercontent.com/smashwilson/1a286139720a28ac6ead/raw/41d93c57ea2e86815cdfbfec42aaa696034afcc8/setup-docker.sh | /bin/bash"
-	sshCmd, err := d.GetSSHCommand(cmd)
-	if err != nil {
+	if err := d.sshExec([]string{
+		`apt-get install -y curl`,
+		`curl -sSL https://get.docker.com | /bin/sh`,
+		`service docker stop`,
+		`curl -sSL https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity -o /usr/bin/docker`,
+		`echo "export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"" >> /etc/default/docker`,
+		`service docker start`,
+	}); err != nil {
+		log.Error("Docker installation failed")
+		log.Error(
+			"The driver assume your instance is running Ubuntu. If this is no the case, you should use the ",
+			"option --openstack-docker-install=false when creating the machine and then install manually",
+		)
 		return err
 	}
-	if err := sshCmd.Run(); err != nil {
-		log.Warnf("Docker installation failed: %v", err)
-		log.Warnf("The machine is not ready to run docker containers")
+	return nil
+}
+
+func (d *Driver) sshExec(commands []string) error {
+	for _, command := range commands {
+		sshCmd, err := d.GetSSHCommand(command)
+		if err != nil {
+			return err
+		}
+		if err := sshCmd.Run(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
