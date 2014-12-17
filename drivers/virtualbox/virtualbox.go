@@ -127,35 +127,45 @@ func (d *Driver) Create() error {
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
+		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+		if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+			return err
+		}
 	} else {
 		// HACK: Docker 1.3 boot2docker image with client/daemon auth
 		isoURL = "https://bfirsh.s3.amazonaws.com/boot2docker/boot2docker-1.3.1-identity-auth.iso"
+
+		// todo: check latest release URL, download if it's new
+		// until then always use "latest"
+
 		// isoURL, err = getLatestReleaseURL()
 		// if err != nil {
 		// 	return err
 		// }
-	}
 
-	// todo: check latest release URL, download if it's new
-	// until then always use "latest"
+		// todo: use real constant for .docker
+		rootPath := filepath.Join(drivers.GetHomeDir(), ".docker")
+		imgPath := filepath.Join(rootPath, "images")
+		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
 
-	// todo: use real constant for .docker
-	rootPath := filepath.Join(drivers.GetHomeDir(), ".docker")
-	imgPath := filepath.Join(rootPath, "images")
-	commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
-	if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-		log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
-		if err := os.Mkdir(imgPath, 0700); err != nil {
+			// just in case boot2docker.iso has been manually deleted
+			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+				if err := os.Mkdir(imgPath, 0700); err != nil {
+					return err
+				}
+			}
+
+			if err := downloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+				return err
+			}
+		}
+
+		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+		if err := cpIso(commonIsoPath, isoDest); err != nil {
 			return err
 		}
-		if err := downloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
-			return err
-		}
-	}
-
-	isoDest := filepath.Join(d.storePath, "boot2docker.iso")
-	if err := cpIso(commonIsoPath, isoDest); err != nil {
-		return err
 	}
 
 	log.Infof("Creating SSH key...")
