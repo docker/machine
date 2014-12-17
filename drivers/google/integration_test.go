@@ -1,4 +1,4 @@
-package googlecomputeengine
+package google
 
 import (
 	"flag"
