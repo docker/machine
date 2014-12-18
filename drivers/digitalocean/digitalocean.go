@@ -50,7 +50,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "DIGITALOCEAN_IMAGE",
 			Name:   "digitalocean-image",
 			Usage:  "Digital Ocean Image",
-			Value:  "docker",
+			Value:  "ubuntu-14-04-x64",
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_REGION",
