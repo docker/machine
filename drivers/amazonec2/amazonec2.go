@@ -23,7 +23,7 @@ import (
 const (
 	driverName          = "amazonec2"
 	defaultRegion       = "us-east-1"
-	defaultAMI          = "ami-a00461c8"
+	defaultAMI          = "ami-4ae27e22"
 	defaultInstanceType = "t2.micro"
 	defaultRootSize     = 16
 	ipRange             = "0.0.0.0/0"
