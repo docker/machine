@@ -196,65 +196,7 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Waiting for SSH...")
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", driver.getHostname(), driver.SSHPort)); err != nil {
-		return err
-	}
-
-	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = driver.GetSSHCommand("sudo stop docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err = driver.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = driver.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --auth-authorized-dir=/root/.docker/authorized-keys.d\"' | sudo tee -a /etc/default/docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	// HACK: temporarily chown to ssh user for providers using non-root accounts
-	cmd, err = driver.GetSSHCommand(fmt.Sprintf("sudo mkdir -p /root/.docker && sudo chown -R %s /root/.docker", driver.UserName))
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	cmdString := fmt.Sprintf("sudo mkdir -p %q && sudo tee -a %q", "/root/.docker/authorized-keys.d", "/root/.docker/authorized-keys.d/docker-host.json")
-	cmd, err = driver.GetSSHCommand(cmdString)
-	cmd.Stdin = f
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// HACK: change back ownership
-	cmd, err = driver.GetSSHCommand("sudo mkdir -p /root/.docker && sudo chown -R root /root/.docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = driver.GetSSHCommand("sudo start docker")
-	if err := cmd.Run(); err != nil {
+	if err := drivers.InstallDocker(driver.getHostname(), driver.SSHPort, driver.UserName, driver.sshKeyPath()); err != nil {
 		return err
 	}
 
