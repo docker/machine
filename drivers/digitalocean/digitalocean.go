@@ -141,51 +141,7 @@ func (d *Driver) Create() error {
 		newDroplet.Droplet.ID,
 		d.IPAddress)
 
-	log.Infof("Waiting for SSH...")
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err := d.GetSSHCommand("stop docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("curl -sS https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity > /usr/bin/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"' >> /etc/default/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("start docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if err := drivers.InstallDocker(d.IPAddress, 22, "root", d.sshKeyPath()); err != nil {
 		return err
 	}
 
