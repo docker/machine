@@ -115,11 +115,30 @@ Options:
 
 Want to hack on Machine? [Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md) apply.
 
+The requirements to build Machine are:
+
+1. A running instance of Docker
+2. The `bash` shell
+
 To build, run:
 
     $ script/build
 
-That will create binaries for various platforms in the current directory.
+From the Machine repository's root.  Machine will run the build inside of a
+Docker container and the compiled binaries will appear in the project directory
+on the host.
+
+By default, Machine will run a build which cross-compiles binaries for a variety
+of architectures and operating systems.  If you know that you are only compiling
+for a particular architecture and/or operating system, you can speed up
+compilation by overriding the default argument that the build script passes
+to [gox](https://github.com/mitchellh/gox).  This is very useful if you want
+to iterate quickly on a new feature, bug fix, etc.
+
+For instance, if you only want to compile for use on OSX with the x86_64 arch,
+run:
+
+    $ script/build -osarch="darwin/amd64"
 
 If you have any questions we're in #docker-machine on Freenode.
 
