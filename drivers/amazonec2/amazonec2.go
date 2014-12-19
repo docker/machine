@@ -26,6 +26,7 @@ const (
 	defaultInstanceType = "t2.micro"
 	defaultRootSize     = 16
 	ipRange             = "0.0.0.0/0"
+	dockerPort          = 2376
 )
 
 type Driver struct {
@@ -45,6 +46,9 @@ type Driver struct {
 	VpcId           string
 	SubnetId        string
 	Zone            string
+	MachineOptions  *drivers.MachineOptions
+	SSHUser         string
+	SSHPort         int
 	storePath       string
 	keyPath         string
 }
@@ -141,6 +145,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
+	d.SSHUser = "ubuntu"
+	d.SSHPort = 22
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -154,11 +160,22 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
 	}
 
+	d.MachineOptions = &drivers.MachineOptions{
+		Auth:          "identity",
+		Host:          fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort),
+		AuthorizedDir: "/root/.docker/authorized-keys.d",
+		Labels:        []string{},
+	}
+
 	return nil
 }
 
 func (d *Driver) DriverName() string {
 	return driverName
+}
+
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return d.MachineOptions, nil
 }
 
 func (d *Driver) Create() error {
@@ -204,7 +221,15 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("launching instance in subnet %s", subnetId)
-	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, group.GroupId, d.KeyName, subnetId, bdm)
+
+	cloudInitData, err := drivers.GetCloudConfig(d)
+	if err != nil {
+		return err
+	}
+
+	encodedCloudInitData := drivers.EncodeToBase64(cloudInitData)
+
+	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, group.GroupId, d.KeyName, subnetId, bdm, encodedCloudInitData)
 
 	if err != nil {
 		return fmt.Errorf("Error launching instance: %s", err)
@@ -218,8 +243,10 @@ func (d *Driver) Create() error {
 		d.InstanceId,
 		d.IPAddress)
 
-	if err := drivers.InstallDocker(d.IPAddress, 22, "ubuntu", d.sshKeyPath()); err != nil {
-		return err
+	log.Infof("Waiting for instance to configure Docker...")
+
+	if !drivers.WaitForDocker(fmt.Sprintf("%s:%d", d.IPAddress, dockerPort), 300) {
+		log.Warnf("Unable to reach the Docker daemon.  Please check the instance.")
 	}
 	return nil
 }
@@ -232,7 +259,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	return fmt.Sprintf("tcp://%s:%d", ip, dockerPort), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -242,6 +269,14 @@ func (d *Driver) GetIP() (string, error) {
 	}
 	d.IPAddress = inst.IpAddress
 	return d.IPAddress, nil
+}
+
+func (d *Driver) GetSSHUser() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -341,7 +376,7 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "ubuntu", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, 22, d.GetSSHUser(), d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *amz.EC2 {
@@ -451,8 +486,8 @@ func (d *Driver) createSecurityGroup() (*amz.SecurityGroup, error) {
 		},
 		{
 			Protocol: "tcp",
-			FromPort: 2376,
-			ToPort:   2376,
+			FromPort: dockerPort,
+			ToPort:   dockerPort,
 			IpRange:  ipRange,
 		},
 	}

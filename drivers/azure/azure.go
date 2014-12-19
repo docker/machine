@@ -32,6 +32,7 @@ type Driver struct {
 	Image                   string
 	SSHPort                 int
 	DockerPort              int
+	MachineOptions          *drivers.MachineOptions
 	storePath               string
 }
 
@@ -165,7 +166,18 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.DockerPort = flags.Int("azure-docker-port")
 	driver.SSHPort = flags.Int("azure-ssh-port")
 
+	driver.MachineOptions = &drivers.MachineOptions{
+		Auth:          "identity",
+		Host:          "tcp://0.0.0.0:2376",
+		AuthorizedDir: "/root/.docker/authorized-keys.d",
+		Labels:        []string{},
+	}
+
 	return nil
+}
+
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return d.MachineOptions, nil
 }
 
 func (driver *Driver) Create() error {
@@ -192,11 +204,11 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	if err := vmClient.CreateAzureVM(vmConfig, driver.Name, driver.Location); err != nil {
+	if err := driver.addCustomData(vmConfig); err != nil {
 		return err
 	}
 
-	if err := drivers.InstallDocker(driver.getHostname(), driver.SSHPort, driver.UserName, driver.sshKeyPath()); err != nil {
+	if err := vmClient.CreateAzureVM(vmConfig, driver.Name, driver.Location); err != nil {
 		return err
 	}
 
@@ -292,6 +304,14 @@ func (driver *Driver) GetURL() (string, error) {
 
 func (driver *Driver) GetIP() (string, error) {
 	return driver.getHostname(), nil
+}
+
+func (driver *Driver) GetSSHUser() string {
+	return driver.UserName
+}
+
+func (driver *Driver) GetSSHPort() int {
+	return driver.SSHPort
 }
 
 func (driver *Driver) GetState() (state.State, error) {
@@ -512,6 +532,33 @@ func (driver *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 		ep.LocalPort = driver.DockerPort
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
 		log.Debugf("added Docker endpoint to configuration")
+	}
+	return nil
+}
+
+func (driver *Driver) addCustomData(vmConfig *vmClient.Role) error {
+	configSets := vmConfig.ConfigurationSets.ConfigurationSet
+	if len(configSets) == 0 {
+		return fmt.Errorf("no configuration set")
+
+	}
+	cloudInitData, err := drivers.GetCloudConfig(driver)
+	if err != nil {
+		return err
+	}
+
+	if cloudInitData == "" {
+		return nil
+	}
+	customData := drivers.EncodeToBase64(cloudInitData)
+
+	for i := 0; i < len(configSets); i++ {
+		if configSets[i].ConfigurationSetType != "LinuxProvisioningConfiguration" {
+			continue
+		}
+		configSets[i].CustomData = customData
+		log.Debugf("added custom data to configuration")
+		break
 	}
 	return nil
 }

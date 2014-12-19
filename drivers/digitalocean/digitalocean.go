@@ -19,15 +19,18 @@ import (
 )
 
 type Driver struct {
-	AccessToken string
-	DropletID   int
-	DropletName string
-	Image       string
-	IPAddress   string
-	Region      string
-	SSHKeyID    int
-	Size        string
-	storePath   string
+	AccessToken    string
+	DropletID      int
+	DropletName    string
+	Image          string
+	IPAddress      string
+	Region         string
+	SSHKeyID       int
+	Size           string
+	MachineOptions *drivers.MachineOptions
+	SSHUser        string
+	SSHPort        int
+	storePath      string
 }
 
 func init() {
@@ -80,12 +83,25 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Image = flags.String("digitalocean-image")
 	d.Region = flags.String("digitalocean-region")
 	d.Size = flags.String("digitalocean-size")
+	d.SSHUser = "root"
+	d.SSHPort = 22
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
 	}
 
+	d.MachineOptions = &drivers.MachineOptions{
+		Auth:          "identity",
+		Host:          "tcp://0.0.0.0:2376",
+		AuthorizedDir: "/root/.docker/authorized-keys.d",
+		Labels:        []string{},
+	}
+
 	return nil
+}
+
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return d.MachineOptions, nil
 }
 
 func (d *Driver) Create() error {
@@ -104,12 +120,18 @@ func (d *Driver) Create() error {
 
 	client := d.getClient()
 
+	cloudInitData, err := drivers.GetCloudConfig(d)
+	if err != nil {
+		return err
+	}
+
 	createRequest := &godo.DropletCreateRequest{
-		Image:   d.Image,
-		Name:    d.DropletName,
-		Region:  d.Region,
-		Size:    d.Size,
-		SSHKeys: []interface{}{d.SSHKeyID},
+		Image:    d.Image,
+		Name:     d.DropletName,
+		Region:   d.Region,
+		Size:     d.Size,
+		SSHKeys:  []interface{}{d.SSHKeyID},
+		UserData: cloudInitData,
 	}
 
 	newDroplet, _, err := client.Droplets.Create(createRequest)
@@ -140,10 +162,6 @@ func (d *Driver) Create() error {
 	log.Debugf("Created droplet ID %d, IP address %s",
 		newDroplet.Droplet.ID,
 		d.IPAddress)
-
-	if err := drivers.InstallDocker(d.IPAddress, 22, "root", d.sshKeyPath()); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -184,6 +202,14 @@ func (d *Driver) GetIP() (string, error) {
 		return "", fmt.Errorf("IP address is not set")
 	}
 	return d.IPAddress, nil
+}
+
+func (d *Driver) GetSSHUser() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
 }
 
 func (d *Driver) GetState() (state.State, error) {
