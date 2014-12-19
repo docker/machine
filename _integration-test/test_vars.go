@@ -30,10 +30,10 @@ func init() {
 		}
 	} else {
 		machineTestDrivers = []MachineDriver{
-			MachineDriver{
+			{
 				name: "virtualbox",
 			},
-			MachineDriver{
+			{
 				name: "digitalocean",
 			},
 		}
