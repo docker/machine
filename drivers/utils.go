@@ -63,7 +63,20 @@ func InstallDocker(host string, port int, user string, sshKey string) error {
 		return err
 	}
 
-	cmd := sshCmd("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
+	log.Infof("Installing and configuring Docker...")
+	installCmd := "curl -s get.docker.io | sudo sh -"
+
+	if os.Getenv("DEBUG") == "" {
+		installCmd += " > /dev/null 2>&1"
+	}
+
+	cmd := sshCmd(fmt.Sprintf("if [ ! -e /usr/bin/docker ]; then %s; fi", installCmd))
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// add host entry for local name to workaround some providers not adding
+	cmd = sshCmd("echo \"127.0.1.2 $(hostname -s)\" | sudo tee -a /etc/hosts > /dev/null 2>&1")
 	if err := cmd.Run(); err != nil {
 		return err
 	}
