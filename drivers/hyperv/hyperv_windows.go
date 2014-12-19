@@ -13,7 +13,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
@@ -31,31 +31,49 @@ type Driver struct {
 	memSize        int
 }
 
-type CreateFlags struct {
-	boot2DockerURL *string
-	boot2DockerLoc *string
-	vSwitch        *string
-	diskSize       *int
-	memSize        *int
-}
-
 func init() {
 	drivers.Register("hyper-v", &drivers.RegisteredDriver{
-		New:                 NewDriver,
-		RegisterCreateFlags: RegisterCreateFlags,
+		New:            NewDriver,
+		GetCreateFlags: GetCreateFlags,
 	})
 }
 
-// RegisterCreateFlags registers the flags this driver adds to
+// GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func RegisterCreateFlags(cmd *flag.FlagSet) interface{} {
-	createFlags := new(CreateFlags)
-	createFlags.boot2DockerURL = cmd.String([]string{"-hyper-v-boot2docker-url"}, "", "The URL of the boot2docker image. Defaults to the latest available version.")
-	createFlags.boot2DockerLoc = cmd.String([]string{"-hyper-v-boot2docker-location"}, "", "Local boot2docker iso. Overrides URL.")
-	createFlags.vSwitch = cmd.String([]string{"-hyper-v-virtual-switch"}, "", "Name of virtual switch. Defaults to first found.")
-	createFlags.diskSize = cmd.Int([]string{"-hyper-v-disk-size"}, 20000, "Size of disk for host in MB.")
-	createFlags.memSize = cmd.Int([]string{"-hyper-v-memory"}, 1024, "Size of memory for host in MB.")
-	return createFlags
+func GetCreateFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "hyper-v-boot2docker-url",
+			Usage: "The URL of the boot2docker image. Defaults to the latest available version.",
+		},
+		cli.StringFlag{
+			Name:  "hyper-v-boot2docker-location",
+			Usage: "Local boot2docker iso. Overrides URL.",
+		},
+		cli.StringFlag{
+			Name:  "hyper-v-virtual-switch",
+			Usage: "Name of virtual switch. Defaults to first found.",
+		},
+		cli.IntFlag{
+			Name:  "hyper-v-disk-size",
+			Usage: "Size of disk for host in MB.",
+			Value: 20000,
+		},
+		cli.IntFlag{
+			Name:  "hyper-v-memory",
+			Usage: "Size of memory for host in MB.",
+			Value: 1024,
+		},
+	}
+}
+
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.boot2DockerURL = flags.String("hyper-v-boot2docker-url")
+	d.boot2DockerLoc = flags.String("hyper-v-boot2docker-location")
+	d.vSwitch = flags.String("hyper-v-virtual-switch")
+	d.diskSize = flags.Int("hyper-v-disk-size")
+	d.memSize = flags.Int("hyper-v-memory")
+	return nil
 }
 
 func NewDriver(storePath string) (drivers.Driver, error) {
@@ -211,12 +229,20 @@ func (d *Driver) Create() error {
 
 	log.Infof("Adding key to authorized-keys.d...")
 
+	cmd, err := d.GetSSHCommand("sudo chown -R docker /var/lib/docker/auth.d")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
 	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/var/lib/docker/auth.d"); err != nil {
 		return err
 	}
 
 	log.Infof("Restart docker...")
-	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker restart")
+	cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart")
 	if err != nil {
 		return err
 	}
@@ -245,23 +271,10 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 	return "", fmt.Errorf("no vswitch found")
 }
 
-func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
-	flags := flagsInterface.(*CreateFlags)
-	d.boot2DockerURL = *flags.boot2DockerURL
-	d.boot2DockerLoc = *flags.boot2DockerLoc
-	d.vSwitch = *flags.vSwitch
-	d.diskSize = *flags.diskSize
-	d.memSize = *flags.memSize
-	return nil
-}
-
 func (d *Driver) wait() error {
 	log.Infof("Waiting for host to start...")
 	for {
-		ip, err := d.GetIP()
-		if err != nil {
-			return err
-		}
+		ip, _ := d.GetIP()
 		if ip != "" {
 			break
 		}
@@ -384,7 +397,7 @@ func (d *Driver) GetIP() (string, error) {
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	ip, err := d.GetIP()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return ssh.GetSSHCommand(ip, 22, "docker", d.sshKeyPath(), args...), nil
 }
