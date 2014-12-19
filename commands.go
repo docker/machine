@@ -94,7 +94,7 @@ var Commands = []cli.Command{
 
 			if name == "" {
 				cli.ShowCommandHelp(c, "create")
-				os.Exit(1)
+				log.Fatalf("You must specify a machine name")
 			}
 
 			keyExists, err := drivers.PublicKeyExists()
@@ -256,7 +256,7 @@ var Commands = []cli.Command{
 		Action: func(c *cli.Context) {
 			if len(c.Args()) == 0 {
 				cli.ShowCommandHelp(c, "rm")
-				os.Exit(1)
+				log.Fatal("You must specify a machine name")
 			}
 
 			force := c.Bool("force")

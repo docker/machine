@@ -1,0 +1,7 @@
+#!/bin/sh
+# HACK: until identity is merged
+curl -sSL -o .docker-identity https://bfirsh.s3.amazonaws.com/docker/linux/docker-1.3.1-dev-identity-auth && chmod +x .docker-identity
+./.docker-identity > /dev/null 2>&1
+godep go build
+go test -v ./integration-test
+
