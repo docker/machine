@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path"
@@ -21,6 +20,7 @@ const (
 	TokenURL     = "https://accounts.google.com/o/oauth2/token"
 	ClientId     = "22738965389-8arp8bah3uln9eoenproamovfjj1ac33.apps.googleusercontent.com"
 	ClientSecret = "qApc3amTyr5wI74vVrRWAfC_"
+	RedirectURI  = "urn:ietf:wg:oauth:2.0:oob"
 )
 
 func newGCEService(storePath string) (*raw.Service, error) {
@@ -67,39 +67,17 @@ func tokenFromCache(storePath string) (*oauth.Token, error) {
 }
 
 func tokenFromWeb(config *oauth.Config) *oauth.Token {
-	ch := make(chan string)
 	randState := fmt.Sprintf("st%d", time.Now().UnixNano())
-	ts := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == "/favicon.ico" {
-			http.Error(rw, "", 404)
-			return
-		}
-		if req.FormValue("state") != randState {
-			log.Debugf("State doesn't match: req = %#v", req)
-			http.Error(rw, "", 500)
-			return
-		}
-		if code := req.FormValue("code"); code != "" {
-			fmt.Fprintf(rw, "<h1>Success</h1>Authorized. Code: %v", code)
-			rw.(http.Flusher).Flush()
-			ch <- code
-			return
-		}
-		log.Fatalf("no code")
-		http.Error(rw, "", 500)
-	}))
-	defer ts.Close()
 
-	config.RedirectURL = ts.URL
+	config.RedirectURL = RedirectURI
 	authURL := config.AuthCodeURL(randState)
 
 	log.Info("Opening auth URL in browser.")
 	log.Info(authURL)
-	log.Info("If the URL doesn't open, please open it manually and copy the code here.")
-	go openURL(authURL)
-	go getCodeFromStdin(ch)
+	log.Info("If the URL doesn't open please open it manually and copy the code here.")
+	openURL(authURL)
+	code := getCodeFromStdin()
 
-	code := <-ch
 	log.Infof("Got code: %s", code)
 
 	t := &oauth.Transport{
@@ -113,15 +91,11 @@ func tokenFromWeb(config *oauth.Config) *oauth.Token {
 	return t.Token
 }
 
-func getCodeFromStdin(ch chan<- string) {
+func getCodeFromStdin() string {
 	fmt.Print("Enter code: ")
 	var code string
 	fmt.Scanln(&code)
-	code = strings.Trim(code, "\n")
-	// Under 'go test', stdin is /dev/null.
-	if code != "" {
-		ch <- code
-	}
+	return strings.Trim(code, "\n")
 }
 
 func openURL(url string) {
