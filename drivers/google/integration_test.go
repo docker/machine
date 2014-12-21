@@ -8,12 +8,12 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
-
 	"github.com/docker/machine/state"
 )
 
 var (
-	project = flag.String("project", "", "Project")
+	project   = flag.String("project", "", "Project")
+	tokenPath = flag.String("token-path", "", "Token path")
 )
 
 var (
@@ -33,10 +33,18 @@ func init() {
 		return
 	}
 
+	if *tokenPath == "" {
+		log.Error("You must specify a token using the --token-path flag. All tests will be skipped.")
+		return
+	}
+
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// go test can't take args from stdin, so the path to an existing token must be passed as a flag.
+	os.Link(*tokenPath, path.Join(tmpDir, "gce_token"))
 
 	driver = &Driver{
 		storePath:        tmpDir,
@@ -48,6 +56,7 @@ func init() {
 		sshKeyPath:       path.Join(tmpDir, "id_rsa"),
 		publicSSHKeyPath: path.Join(tmpDir, "id_rsa.pub"),
 	}
+
 	c, err = newComputeUtil(driver)
 	if err != nil {
 		log.Fatal(err)
@@ -102,8 +111,8 @@ type operation struct {
 }
 
 func TestBasicOperations(t *testing.T) {
-	if *project == "" {
-		t.Skip("Skipping tests because no --project flag was passed.")
+	if *project == "" || *tokenPath == "" {
+		t.Skip("Skipping tests because no --project or --token-path flag was passed.")
 		return
 	}
 	ops := []operation{
