@@ -152,6 +152,11 @@
 		{
 			"ImportPath": "google.golang.org/api/googleapi",
 			"Rev": "aa91ac681e18e52b1a0dfe29b9d8354e88c0dcf5"
+		},
+		{
+			"ImportPath": "github.com/xanzy/go-cloudstack/cloudstack",
+			"Comment": "v1.1.2",
+			"Rev": "c2c4143ae294b5df4b7b5ae6e087ead01264167f"
 		}
 	]
 }
