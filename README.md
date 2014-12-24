@@ -108,6 +108,25 @@ Options:
  - `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
  - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e).
 
+### Cloudstack
+
+Create machines on your [Apache Cloudstack IaaS](http://cloudstack.apache.org/).
+
+You need to have a valid coupl of API Key and Secret Key with the rights associated (see with your Cloudstack admin for more details).
+
+Options :
+
+ - `--cloudstack-api-url`: Complete URL to your Cloudstack instance.
+ - `--cloudstack-api-key`: Your cloudstack API key.
+ - `--cloudstack-secret-key`: Your cloudstack secret key.
+ - `--cloudstack-template`: The template name to use for the VM.
+ - `--cloudstack-offer-id`: The Cloudstack offer's ID to use (VM size). Note that name doesn't work because the underlying CS client doesn't support it yet.
+ - `--cloudstack-zone-id`: The Cloudstack offer's ID to use (VM size). Note that name doesn't work because the underlying CS client doesn't support it yet.
+
+Example :
+
+    $ machine create -d cloudstack --cloudstack-api-url=https://you.cloudstack.priv:443/api/ --cloudstack-secret-key=$CLOUDSTACK_SECRETKEY --cloudstack-api-key=$CLOUDSTACK_APIKEY --cloudstack-offer-id="xxxxxx-yyyyy-zzzzz-rrrr-aaaaaaaaa" --cloudstack-template="boot2docker-latest" dev
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
