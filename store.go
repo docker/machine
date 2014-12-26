@@ -15,8 +15,11 @@ type Store struct {
 	Path string
 }
 
-func NewStore() *Store {
-	rootPath := filepath.Join(drivers.GetHomeDir(), ".docker", "machines")
+func NewStore(rootPath string) *Store {
+	if rootPath == "" {
+		rootPath = filepath.Join(drivers.GetHomeDir(), ".docker", "machines")
+	}
+
 	return &Store{Path: rootPath}
 }
 
