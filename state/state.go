@@ -1,6 +1,6 @@
 package state
 
-// State represents the state of a hosts
+// State represents the state of a host
 type State int
 
 const (
@@ -25,9 +25,11 @@ var states = []string{
 	"Error",
 }
 
+// Given a State type, returns its string representation
 func (s State) String() string {
-	if int(s) < len(states) {
+	if int(s) >= 0 && int(s) < len(states) {
 		return states[s]
+	} else {
+		return ""
 	}
-	return ""
 }
