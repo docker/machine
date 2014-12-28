@@ -103,7 +103,11 @@ func (d *Driver) SetConfigFromFlags(flagsInterface interface{}) error {
 	}
 
 	d.endpoint = "https://clients.concerto.io:886"
-	d.loadCertificates()
+
+	if err := d.loadCertificates(); err != nil {
+		return err
+	}
+
 	d.createConnection()
 
 	return nil
@@ -216,7 +220,7 @@ func (d *Driver) Get(url string) ([]byte, error) {
 	}
 }
 
-func (d *Driver) loadCertificates() {
+func (d *Driver) loadCertificates() error {
 	/**
 	 * Loads Clients Certificates and creates and 509KeyPair
 	 */
@@ -224,7 +228,9 @@ func (d *Driver) loadCertificates() {
 	d.certificate, err = tls.LoadX509KeyPair(d.CaCert, d.PrivateKey)
 	if err != nil {
 		log.Warningf("Load Certificate error (%s, %s): %s", d.CaCert, d.PrivateKey, err.Error())
+		return err
 	}
+	return nil
 }
 
 func (d *Driver) createConnection() {
