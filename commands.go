@@ -50,7 +50,7 @@ var Commands = []cli.Command{
 		Usage: "Get or set the active machine",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
-			store := NewStore()
+			store := NewStore(c.GlobalString("storage-path"))
 
 			if name == "" {
 				host, err := store.GetActive()
@@ -106,7 +106,7 @@ var Commands = []cli.Command{
 				log.Fatalf("Identity authentication public key doesn't exist at %q. Create your public key by running the \"docker\" command.", drivers.PublicKeyPath())
 			}
 
-			store := NewStore()
+			store := NewStore(c.GlobalString("storage-path"))
 
 			host, err := store.Create(name, driver, c)
 			if err != nil {
@@ -163,7 +163,7 @@ var Commands = []cli.Command{
 		Usage: "List machines",
 		Action: func(c *cli.Context) {
 			quiet := c.Bool("quiet")
-			store := NewStore()
+			store := NewStore(c.GlobalString("storage-path"))
 
 			hostList, err := store.List()
 			if err != nil {
@@ -263,7 +263,7 @@ var Commands = []cli.Command{
 
 			isError := false
 
-			store := NewStore()
+			store := NewStore(c.GlobalString("storage-path"))
 			for _, host := range c.Args() {
 				if err := store.Remove(host, force); err != nil {
 					log.Errorf("Error removing machine %s: %s", host, err)
@@ -287,7 +287,7 @@ var Commands = []cli.Command{
 		Usage: "Log into or run a command on a machine with SSH",
 		Action: func(c *cli.Context) {
 			name := c.Args().First()
-			store := NewStore()
+			store := NewStore(c.GlobalString("storage-path"))
 
 			if name == "" {
 				host, err := store.GetActive()
@@ -369,7 +369,7 @@ var Commands = []cli.Command{
 
 func getHost(c *cli.Context) *Host {
 	name := c.Args().First()
-	store := NewStore()
+	store := NewStore(c.GlobalString("storage-path"))
 
 	if name == "" {
 		host, err := store.GetActive()
