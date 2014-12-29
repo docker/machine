@@ -26,6 +26,11 @@ func main() {
 			Name:  "debug, D",
 			Usage: "Enable debug mode",
 		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_STORAGE_PATH",
+			Name:   "storage-path",
+			Usage:  "Configures storage path",
+		},
 	}
 
 	app.Run(os.Args)
