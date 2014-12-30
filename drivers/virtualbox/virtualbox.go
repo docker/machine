@@ -133,7 +133,7 @@ func (d *Driver) Create() error {
 		}
 	} else {
 		// HACK: Docker 1.3 boot2docker image with client/daemon auth
-		isoURL = "https://bfirsh.s3.amazonaws.com/boot2docker/boot2docker-1.3.1-identity-auth.iso"
+		isoURL = "https://ehazlett.s3.amazonaws.com/public/boot2docker/boot2docker-machine-87e3813.iso"
 
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
