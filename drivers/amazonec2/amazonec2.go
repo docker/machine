@@ -376,7 +376,7 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, d.GetSSHUser(), d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, d.GetSSHPort(), d.GetSSHUser(), d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *amz.EC2 {
@@ -480,8 +480,8 @@ func (d *Driver) createSecurityGroup() (*amz.SecurityGroup, error) {
 	perms := []amz.IpPermission{
 		{
 			Protocol: "tcp",
-			FromPort: 22,
-			ToPort:   22,
+			FromPort: d.GetSSHPort(),
+			ToPort:   d.GetSSHPort(),
 			IpRange:  ipRange,
 		},
 		{
