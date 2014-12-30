@@ -94,7 +94,7 @@ var Commands = []cli.Command{
 
 			if name == "" {
 				cli.ShowCommandHelp(c, "create")
-				log.Fatalf("You must specify a machine name")
+				log.Fatal("You must specify a machine name")
 			}
 
 			keyExists, err := drivers.PublicKeyExists()

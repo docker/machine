@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	MACHINE_NAME = "machine-integration-test-%s"
+	machineName = "machine-integration-test-%s"
 )
 
 func machineCreate(name string, t *testing.T, wg *sync.WaitGroup) {
-	mName := fmt.Sprintf(MACHINE_NAME, name)
+	mName := fmt.Sprintf(machineName, name)
 	fmt.Printf(" - testing create for %s (%s)\n", name, mName)
 	runCmd := exec.Command(machineBinary, "create", "-d", name, mName)
 	out, exitCode, err := runCommandWithOutput(runCmd)
@@ -26,7 +26,7 @@ func machineCreate(name string, t *testing.T, wg *sync.WaitGroup) {
 }
 
 func machineStop(name string, t *testing.T, wg *sync.WaitGroup) {
-	mName := fmt.Sprintf(MACHINE_NAME, name)
+	mName := fmt.Sprintf(machineName, name)
 	fmt.Printf(" - testing stop for %s (%s)\n", name, mName)
 	runCmd := exec.Command(machineBinary, "stop", mName)
 	out, exitCode, err := runCommandWithOutput(runCmd)
@@ -40,7 +40,7 @@ func machineStop(name string, t *testing.T, wg *sync.WaitGroup) {
 }
 
 func machineStart(name string, t *testing.T, wg *sync.WaitGroup) {
-	mName := fmt.Sprintf(MACHINE_NAME, name)
+	mName := fmt.Sprintf(machineName, name)
 	fmt.Printf(" - testing start for %s (%s)\n", name, mName)
 	runCmd := exec.Command(machineBinary, "start", mName)
 	out, exitCode, err := runCommandWithOutput(runCmd)
@@ -54,7 +54,7 @@ func machineStart(name string, t *testing.T, wg *sync.WaitGroup) {
 }
 
 func machineKill(name string, t *testing.T, wg *sync.WaitGroup) {
-	mName := fmt.Sprintf(MACHINE_NAME, name)
+	mName := fmt.Sprintf(machineName, name)
 	fmt.Printf(" - testing kill for %s (%s)\n", name, mName)
 	runCmd := exec.Command(machineBinary, "kill", mName)
 	out, exitCode, err := runCommandWithOutput(runCmd)
@@ -68,7 +68,7 @@ func machineKill(name string, t *testing.T, wg *sync.WaitGroup) {
 }
 
 func machineRm(name string, t *testing.T, wg *sync.WaitGroup) {
-	mName := fmt.Sprintf(MACHINE_NAME, name)
+	mName := fmt.Sprintf(machineName, name)
 	fmt.Printf(" - testing rm for %s (%s)\n", name, mName)
 	runCmd := exec.Command(machineBinary, "rm", "-f", mName)
 	out, exitCode, err := runCommandWithOutput(runCmd)
