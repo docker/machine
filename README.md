@@ -142,9 +142,3 @@ run:
 
 If you have any questions we're in #docker-machine on Freenode.
 
-## Creators
-
-**Ben Firshman**
-
-- <https://twitter.com/bfirsh>
-- <https://github.com/bfirsh>
