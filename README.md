@@ -144,3 +144,15 @@ run:
 
 If you have any questions we're in #docker-machine on Freenode.
 
+=======
+## Integration Tests
+There is a suite of integration tests that will run for the drivers.  In order
+to use these you must export the corresponding environment variables for each
+driver as these perform the actual actions (start, stop, restart, kill, etc).
+
+By default, the suite will run tests against all drivers in master.  You can 
+override this by setting the environment variable `MACHINE_TESTS`.  For example,
+`MACHINE_TESTS="virtualbox" ./script/run-integration-tests` will only run the 
+virtualbox driver integration tests.
+
+To run, use the helper script `./script/run-integration-tests`.
