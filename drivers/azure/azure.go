@@ -49,7 +49,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.IntFlag{
 			Name:  "azure-docker-port",
 			Usage: "Azure Docker port",
-			Value: 4243,
+			Value: 2376,
 		},
 		cli.StringFlag{
 			EnvVar: "AZURE_IMAGE",
@@ -82,7 +82,7 @@ func GetCreateFlags() []cli.Flag {
 			Value:  "Small",
 		},
 		cli.IntFlag{
-			Name:  "azure-ssh",
+			Name:  "azure-ssh-port",
 			Usage: "Azure SSH port",
 			Value: 22,
 		},
@@ -100,7 +100,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "azure-username",
 			Usage: "Azure username",
-			Value: "tcuser",
+			Value: "ubuntu",
 		},
 	}
 }
@@ -163,7 +163,7 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.UserName = username
 	driver.UserPassword = flags.String("azure-password")
 	driver.DockerPort = flags.Int("azure-docker-port")
-	driver.SSHPort = flags.Int("azure-docker-port")
+	driver.SSHPort = flags.Int("azure-ssh-port")
 
 	return nil
 }
@@ -188,8 +188,7 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	vmConfig, err = vmClient.SetAzureDockerVMExtension(vmConfig, driver.DockerPort, "0.4")
-	if err != nil {
+	if err := driver.addDockerEndpoint(vmConfig); err != nil {
 		return err
 	}
 
@@ -197,15 +196,65 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	if err := driver.waitForSSH(); err != nil {
+	log.Infof("Waiting for SSH...")
+
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", driver.getHostname(), driver.SSHPort)); err != nil {
 		return err
 	}
 
-	if err := driver.waitForDocker(); err != nil {
+	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 
-	if err := driver.hackForIdentityAuth(); err != nil {
+	cmd, err = driver.GetSSHCommand("sudo stop docker")
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Debugf("HACK: Downloading version of Docker with identity auth...")
+
+	cmd, err = driver.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth")
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Debugf("Updating /etc/default/docker to use identity auth...")
+
+	cmd, err = driver.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --auth-authorized-dir=/root/.docker/authorized-keys.d\"' | sudo tee -a /etc/default/docker")
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Debugf("Adding key to authorized-keys.d...")
+
+	// HACK: temporarily chown to ssh user for providers using non-root accounts
+	cmd, err = driver.GetSSHCommand(fmt.Sprintf("sudo mkdir -p /root/.docker && sudo chown -R %s /root/.docker", driver.UserName))
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	cmdString := fmt.Sprintf("sudo mkdir -p %q && sudo tee -a %q", "/root/.docker/authorized-keys.d", "/root/.docker/authorized-keys.d/docker-host.json")
+	cmd, err = driver.GetSSHCommand(cmdString)
+	cmd.Stdin = f
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// HACK: change back ownership
+	cmd, err = driver.GetSSHCommand("sudo mkdir -p /root/.docker && sudo chown -R root /root/.docker")
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = driver.GetSSHCommand("sudo start docker")
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -295,12 +344,12 @@ func (driver *Driver) runSSHCommand(command string, retries int) error {
 }
 
 func (driver *Driver) GetURL() (string, error) {
-	url := fmt.Sprintf("tcp://%s.cloudapp.net:%v", driver.Name, driver.DockerPort)
+	url := fmt.Sprintf("tcp://%s:%v", driver.getHostname(), driver.DockerPort)
 	return url, nil
 }
 
 func (driver *Driver) GetIP() (string, error) {
-	return fmt.Sprintf("%s.cloudapp.net", driver.Name), nil
+	return driver.getHostname(), nil
 }
 
 func (driver *Driver) GetState() (state.State, error) {
@@ -346,6 +395,8 @@ func (driver *Driver) Start() error {
 		return nil
 	}
 
+	log.Debugf("starting %s", driver.Name)
+
 	err = vmClient.StartRole(driver.Name, driver.Name, driver.Name)
 	if err != nil {
 		return err
@@ -374,6 +425,9 @@ func (driver *Driver) Stop() error {
 		log.Infof("Host is already stopped")
 		return nil
 	}
+
+	log.Debugf("stopping %s", driver.Name)
+
 	err = vmClient.ShutdownRole(driver.Name, driver.Name, driver.Name)
 	if err != nil {
 		return err
@@ -393,6 +447,9 @@ func (driver *Driver) Remove() error {
 	if available {
 		return nil
 	}
+
+	log.Debugf("removing %s", driver.Name)
+
 	err = vmClient.DeleteHostedService(driver.Name)
 	if err != nil {
 		return err
@@ -413,6 +470,9 @@ func (driver *Driver) Restart() error {
 	if vmState == state.Stopped {
 		return fmt.Errorf("Host is already stopped, use start command to run it")
 	}
+
+	log.Debugf("restarting %s", driver.Name)
+
 	err = vmClient.RestartRole(driver.Name, driver.Name, driver.Name)
 	if err != nil {
 		return err
@@ -441,6 +501,9 @@ func (driver *Driver) Kill() error {
 		log.Infof("Host is already stopped")
 		return nil
 	}
+
+	log.Debugf("killing %s", driver.Name)
+
 	err = vmClient.ShutdownRole(driver.Name, driver.Name, driver.Name)
 	if err != nil {
 		return err
@@ -463,7 +526,7 @@ func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("Azure host is stopped. Please start it before using ssh command.")
 	}
 
-	return ssh.GetSSHCommand(driver.Name+".cloudapp.net", driver.SSHPort, driver.UserName, driver.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(driver.getHostname(), driver.SSHPort, driver.UserName, driver.sshKeyPath(), args...), nil
 }
 
 func (driver *Driver) Upgrade() error {
@@ -490,9 +553,30 @@ func (driver *Driver) setUserSubscription() error {
 	return nil
 }
 
+func (driver *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
+	configSets := vmConfig.ConfigurationSets.ConfigurationSet
+	if len(configSets) == 0 {
+		return fmt.Errorf("no configuration set")
+
+	}
+	for i := 0; i < len(configSets); i++ {
+		if configSets[i].ConfigurationSetType != "NetworkConfiguration" {
+			continue
+		}
+		ep := vmClient.InputEndpoint{}
+		ep.Name = "docker"
+		ep.Protocol = "tcp"
+		ep.Port = driver.DockerPort
+		ep.LocalPort = driver.DockerPort
+		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
+		log.Debugf("added Docker endpoint to configuration")
+	}
+	return nil
+}
+
 func (driver *Driver) waitForSSH() error {
 	log.Infof("Waiting for SSH...")
-	err := ssh.WaitForTCP(fmt.Sprintf("%s:%v", driver.Name+".cloudapp.net", driver.SSHPort))
+	err := ssh.WaitForTCP(fmt.Sprintf("%s:%v", driver.getHostname(), driver.SSHPort))
 	if err != nil {
 		return err
 	}
@@ -503,7 +587,7 @@ func (driver *Driver) waitForSSH() error {
 func (driver *Driver) waitForDocker() error {
 	log.Infof("Waiting for docker daemon on host to be available...")
 	maxRepeats := 48
-	url := fmt.Sprintf("%s:%v", driver.Name+".cloudapp.net", driver.DockerPort)
+	url := fmt.Sprintf("%s:%v", driver.getHostname(), driver.DockerPort)
 	success := waitForDockerEndpoint(url, maxRepeats)
 	if !success {
 		return fmt.Errorf("Can not run docker daemon on remote machine. Please try again.")
@@ -552,4 +636,8 @@ func (driver *Driver) publicSSHKeyPath() string {
 
 func (driver *Driver) azureCertPath() string {
 	return filepath.Join(driver.storePath, "azure_cert.pem")
+}
+
+func (driver *Driver) getHostname() string {
+	return driver.Name + ".cloudapp.net"
 }
