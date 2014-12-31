@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/machine",
-	"GoVersion": "go1.3",
+	"GoVersion": "go1.3.3",
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/goauth2/oauth",
@@ -16,6 +16,10 @@
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.6.1",
 			"Rev": "1f2ba2c6317323dd667bd266c1e8ebffc4a4c62f"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Rev": "fbda1ce02d5dabcee952040e5f4025753b6c9ce0"
 		},
 		{
 			"ImportPath": "github.com/digitalocean/godo",
@@ -119,8 +123,12 @@
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		},
 		{
-			"ImportPath": "github.com/codegangsta/cli",
-			"Rev": "fbda1ce02d5dabcee952040e5f4025753b6c9ce0"
+			"ImportPath": "google.golang.org/api/compute/v1",
+			"Rev": "aa91ac681e18e52b1a0dfe29b9d8354e88c0dcf5"
+		},
+		{
+			"ImportPath": "google.golang.org/api/googleapi",
+			"Rev": "aa91ac681e18e52b1a0dfe29b9d8354e88c0dcf5"
 		}
 	]
 }
