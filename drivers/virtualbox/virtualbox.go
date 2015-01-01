@@ -27,12 +27,13 @@ import (
 )
 
 type Driver struct {
-	MachineName    string
-	SSHPort        int
-	Memory         int
-	DiskSize       int
-	Boot2DockerURL string
-	storePath      string
+	MachineName             string
+	SSHPort                 int
+	Memory                  int
+	DiskSize                int
+	Boot2DockerURL          string
+	storePath               string
+	boot2dockerInstanceName string
 }
 
 type CreateFlags struct {
@@ -68,6 +69,11 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  "",
 		},
+		cli.StringFlag{
+			Name:  "virtualbox-migrate-boot2docker-instance",
+			Usage: "The name of the boot2docker instance to migrate",
+			Value: "",
+		},
 	}
 }
 
@@ -94,10 +100,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("virtualbox-memory")
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
+	d.boot2dockerInstanceName = flags.String("virtualbox-migrate-boot2docker-instance")
 	return nil
 }
 
-func cpIso(src, dest string) error {
+func cp(src, dest string) error {
 	buf, err := ioutil.ReadFile(src)
 	if err != nil {
 		return err
@@ -163,21 +170,58 @@ func (d *Driver) Create() error {
 		}
 
 		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
-		if err := cpIso(commonIsoPath, isoDest); err != nil {
+		if err := cp(commonIsoPath, isoDest); err != nil {
 			return err
 		}
 	}
 
-	log.Infof("Creating SSH key...")
-
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
-		return err
-	}
-
 	log.Infof("Creating VirtualBox VM...")
 
-	if err := d.generateDiskImage(d.DiskSize); err != nil {
-		return err
+	if d.boot2dockerInstanceName != "" {
+		log.Infof("Migrating boot2docker instance: %s", d.boot2dockerInstanceName)
+
+		vmState, err := d.getVmState(d.boot2dockerInstanceName)
+		if err != nil {
+			return err
+		}
+
+		// stop vm so we can clone the hd
+		if vmState == state.Running {
+			log.Debug("Stopping boot2docker VM...")
+			if err := vbm("controlvm", d.boot2dockerInstanceName, "poweroff"); err != nil {
+				return err
+			}
+		}
+
+		log.Debug("Copying boot2docker disk...")
+		if err := cloneBoot2DockerVmDisk(d.boot2dockerInstanceName, d.diskPath()); err != nil {
+			return err
+		}
+
+		// restart vm if it was running
+		if vmState == state.Running {
+			log.Debug("Starting boot2docker VM...")
+			if err := vbm("startvm", d.boot2dockerInstanceName, "--type", "headless"); err != nil {
+				return err
+			}
+		}
+
+		// copy ssh keys
+		log.Debug("Copying SSH key...")
+		b2dKeyPath := filepath.Join(drivers.GetHomeDir(), ".ssh/id_boot2docker")
+		if err := cp(b2dKeyPath, d.sshKeyPath()); err != nil {
+			return err
+		}
+	} else {
+		log.Infof("Creating SSH key...")
+
+		if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+			return err
+		}
+
+		if err := d.generateDiskImage(d.DiskSize); err != nil {
+			return err
+		}
 	}
 
 	if err := vbm("createvm",
@@ -443,9 +487,8 @@ func (d *Driver) Upgrade() error {
 
 	return nil
 }
-
-func (d *Driver) GetState() (state.State, error) {
-	stdout, stderr, err := vbmOutErr("showvminfo", d.MachineName,
+func (d *Driver) getVmState(vmName string) (state.State, error) {
+	stdout, stderr, err := vbmOutErr("showvminfo", vmName,
 		"--machinereadable")
 	if err != nil {
 		if reMachineNotFound.FindString(stderr) != "" {
@@ -469,6 +512,10 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Stopped, nil
 	}
 	return state.None, nil
+}
+
+func (d *Driver) GetState() (state.State, error) {
+	return d.getVmState(d.MachineName)
 }
 
 func (d *Driver) setMachineNameIfNotSet() {
