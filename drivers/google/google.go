@@ -47,28 +47,33 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  "google-zone",
-			Usage: "GCE Zone",
-			Value: "us-central1-a",
+			Name:   "google-zone",
+			Usage:  "GCE Zone",
+			Value:  "us-central1-a",
+			EnvVar: "GOOGLE_ZONE",
 		},
 		cli.StringFlag{
-			Name:  "google-machine-type",
-			Usage: "GCE Machine Type",
-			Value: "f1-micro",
+			Name:   "google-machine-type",
+			Usage:  "GCE Machine Type",
+			Value:  "f1-micro",
+			EnvVar: "GOOGLE_MACHINE_TYPE",
 		},
 		cli.StringFlag{
-			Name:  "google-username",
-			Usage: "User Name",
-			Value: "docker-user",
+			Name:   "google-username",
+			Usage:  "User Name",
+			Value:  "docker-user",
+			EnvVar: "GOOGLE_USERNAME",
 		},
 		cli.StringFlag{
-			Name:  "google-instance-name",
-			Usage: "GCE Instance Name",
-			Value: "docker-machine",
+			Name:   "google-instance-name",
+			Usage:  "GCE Instance Name",
+			Value:  "docker-machine",
+			EnvVar: "GOOGLE_INSTANCE_NAME",
 		},
 		cli.StringFlag{
-			Name:  "google-project",
-			Usage: "GCE Project",
+			Name:   "google-project",
+			Usage:  "GCE Project",
+			EnvVar: "GOOGLE_PROJECT",
 		},
 	}
 }
