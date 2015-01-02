@@ -110,6 +110,20 @@ Options:
  - `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
  - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e).
 
+### Google Compute
+
+Create machines on [Google Compute](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
+
+The Google driver uses oAuth.  When creating the machine, you will have your browser opened to authorize.  Once authorized, paste the code given in the prompt to launch the instance.
+
+Options:
+
+ - `--google-zone`: The zone to launch the instance.  Default: `us-central1-a`
+ - `--google-machine-type`: The type of instance.  Default: `f1-micro`
+ - `--google-username`: The username to use for the instance.  Default: `docker-user`
+ - `--google-instance-name`: The name of the instance.  Default: `docker-machine`
+ - `--google-project`: The name of your project to use when launching the instance.
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
