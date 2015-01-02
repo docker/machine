@@ -14,6 +14,10 @@ func GetHomeDir() string {
 	return os.Getenv("HOME")
 }
 
+func GetDockerDir() string {
+	return fmt.Sprintf(filepath.Join(GetHomeDir(), ".docker"))
+}
+
 func PublicKeyPath() string {
 	return filepath.Join(GetHomeDir(), ".docker", "public-key.json")
 }
