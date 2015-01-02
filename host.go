@@ -1,14 +1,19 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/libtrust"
 	"github.com/docker/machine/drivers"
 )
 
@@ -60,13 +65,151 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
+func loadTrustKey(trustKeyPath string) (libtrust.PrivateKey, error) {
+	if err := os.MkdirAll(filepath.Dir(trustKeyPath), 0700); err != nil {
+		return nil, err
+
+	}
+
+	trustKey, err := libtrust.LoadKeyFile(trustKeyPath)
+	if err == libtrust.ErrKeyFileDoesNotExist {
+		trustKey, err = libtrust.GenerateECP256PrivateKey()
+		if err != nil {
+			return nil, fmt.Errorf("error generating key: %s", err)
+		}
+
+		if err := libtrust.SaveKey(trustKeyPath, trustKey); err != nil {
+			return nil, fmt.Errorf("error saving key file: %s", err)
+
+		}
+
+		dir, file := filepath.Split(trustKeyPath)
+		if err := libtrust.SavePublicKey(filepath.Join(dir, "public-"+file), trustKey.PublicKey()); err != nil {
+			return nil, fmt.Errorf("error saving public key file: %s", err)
+
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("error loading key file: %s", err)
+
+	}
+	return trustKey, nil
+}
+
+func (h *Host) addHostToKnownHosts() error {
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS10,
+	}
+
+	trustKeyPath := filepath.Join(drivers.GetDockerDir(), "key.json")
+	knownHostsPath := filepath.Join(drivers.GetDockerDir(), "known-hosts.json")
+
+	driverUrl, err := h.GetURL()
+	if err != nil {
+		return fmt.Errorf("unable to get machine url: %s", err)
+	}
+
+	u, err := url.Parse(driverUrl)
+	if err != nil {
+		return fmt.Errorf("unable to parse machine url")
+	}
+
+	if u.Scheme == "unix" {
+		return nil
+	}
+
+	addr := u.Host
+	proto := "tcp"
+
+	trustKey, err := loadTrustKey(trustKeyPath)
+	if err != nil {
+		return fmt.Errorf("unable to load trust key: %s", err)
+	}
+
+	knownHosts, err := libtrust.LoadKeySetFile(knownHostsPath)
+	if err != nil {
+		return fmt.Errorf("could not load trusted hosts file: %s", err)
+	}
+
+	allowedHosts, err := libtrust.FilterByHosts(knownHosts, addr, false)
+	if err != nil {
+		return fmt.Errorf("error filtering hosts: %s", err)
+	}
+
+	certPool, err := libtrust.GenerateCACertPool(trustKey, allowedHosts)
+	if err != nil {
+		return fmt.Errorf("Could not create CA pool: %s", err)
+	}
+
+	tlsConfig.ServerName = "docker"
+	tlsConfig.RootCAs = certPool
+
+	x509Cert, err := libtrust.GenerateSelfSignedClientCert(trustKey)
+	if err != nil {
+		return fmt.Errorf("certificate generation error: %s", err)
+	}
+
+	tlsConfig.Certificates = []tls.Certificate{{
+		Certificate: [][]byte{x509Cert.Raw},
+		PrivateKey:  trustKey.CryptoPrivateKey(),
+		Leaf:        x509Cert,
+	}}
+
+	tlsConfig.InsecureSkipVerify = true
+
+	testConn, err := tls.Dial(proto, addr, tlsConfig)
+	if err != nil {
+		return fmt.Errorf("tls Handshake error: %s", err)
+	}
+
+	opts := x509.VerifyOptions{
+		Roots:         tlsConfig.RootCAs,
+		CurrentTime:   time.Now(),
+		DNSName:       tlsConfig.ServerName,
+		Intermediates: x509.NewCertPool(),
+	}
+
+	certs := testConn.ConnectionState().PeerCertificates
+	for i, cert := range certs {
+		if i == 0 {
+			continue
+		}
+		opts.Intermediates.AddCert(cert)
+	}
+
+	if _, err := certs[0].Verify(opts); err != nil {
+		if _, ok := err.(x509.UnknownAuthorityError); ok {
+			pubKey, err := libtrust.FromCryptoPublicKey(certs[0].PublicKey)
+			if err != nil {
+				return fmt.Errorf("error extracting public key from cert: %s", err)
+			}
+
+			pubKey.AddExtendedField("hosts", []string{addr})
+
+			log.Debugf("Adding machine to known hosts: %s", addr)
+
+			if err := libtrust.AddKeySetFile(knownHostsPath, pubKey); err != nil {
+				return fmt.Errorf("error adding machine to known hosts: %s", err)
+			}
+		}
+	}
+
+	testConn.Close()
+	return nil
+}
+
 func (h *Host) Create() error {
 	if err := h.Driver.Create(); err != nil {
 		return err
 	}
+
 	if err := h.SaveConfig(); err != nil {
 		return err
 	}
+
+	if err := h.addHostToKnownHosts(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
