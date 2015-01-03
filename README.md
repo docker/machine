@@ -48,8 +48,8 @@ Machine is still in its early stages. If you'd like to try out a preview build, 
 
 You will also need a version of Docker with identity authentication. Builds are available here:
 
- - Mac OS X: https://bfirsh.s3.amazonaws.com/docker/darwin/docker-1.3.1-dev-identity-auth
- - Linux: https://bfirsh.s3.amazonaws.com/docker/linux/docker-1.3.1-dev-identity-auth
+ - Mac OS X: https://ejhazlett.s3.amazonaws.com/public/docker/darwin/docker-1.4.1-136b351e-identity
+ - Linux: https://ejhazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity
 
 ## Drivers
 
