@@ -34,7 +34,7 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
 	return &Driver{}, nil
 }
 

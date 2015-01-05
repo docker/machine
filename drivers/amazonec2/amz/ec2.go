@@ -274,6 +274,34 @@ func (e *EC2) ImportKeyPair(name, publicKey string) error {
 	return nil
 }
 
+func (e *EC2) CreateTags(id string, tags map[string]string) error {
+	v := url.Values{}
+	v.Set("Action", "CreateTags")
+	v.Set("ResourceId.1", id)
+
+	counter := 1
+	for k, val := range tags {
+		v.Set(fmt.Sprintf("Tag.%d.Key", counter), k)
+		v.Set(fmt.Sprintf("Tag.%d.Value", counter), val)
+
+		counter += 1
+	}
+
+	resp, err := e.awsApiCall(v)
+	defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	createTagsResponse := &CreateTagsResponse{}
+
+	if err := getDecodedResponse(resp, &createTagsResponse); err != nil {
+		return fmt.Errorf("Error decoding create tags response: %s", err)
+	}
+
+	return nil
+}
+
 func (e *EC2) CreateSecurityGroup(name string, description string, vpcId string) (*SecurityGroup, error) {
 	v := url.Values{}
 	v.Set("Action", "CreateSecurityGroup")

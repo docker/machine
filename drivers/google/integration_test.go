@@ -46,9 +46,11 @@ func init() {
 	// go test can't take args from stdin, so the path to an existing token must be passed as a flag.
 	os.Link(*tokenPath, path.Join(tmpDir, "gce_token"))
 
+	log.Fatal("hai")
+
 	driver = &Driver{
 		storePath:        tmpDir,
-		InstanceName:     "test-instance",
+		MachineName:      "test-instance",
 		Zone:             "us-central1-a",
 		MachineType:      "n1-standard-1",
 		UserName:         os.Getenv("USER"),
@@ -108,6 +110,7 @@ type operation struct {
 	DiskExpected     bool
 	InstanceExpected bool
 	State            state.State
+	Arguments        []interface{}
 }
 
 func TestBasicOperations(t *testing.T) {
