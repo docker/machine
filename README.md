@@ -149,14 +149,16 @@ Options :
  - `--cloudstack-api-url`: The API endpoint of your CloudStack environment.  Default: $CLOUDSTACK_API_URL
  - `--cloudstack-api-key`: Your CloudStack API key.  Default: CLOUDSTACK_API_KEY
  - `--cloudstack-secret-key`: Your CloudStack secret key.  Default: CLOUDSTACK_SECRET_KEY
- - `--cloudstack-machinename`: The name of the instance.  Default: `docker-host-xxxx`
+ - `--cloudstack-machinename`: The name of the machine.  Default: `docker-host-xxxx`
+ - `--cloudstack-no-public-ip`: Whether or not this machine is behind a public IP. Helpfull when having direct access to the IP addresses assigned by DHCP.
+ - `--cloudstack-public-ip`: The public IP used to connect to the machine.
+ - `--cloudstack-public-port`: The public port to open/forward to connect to the machine.  Default: `2376`
+ - `--cloudstack-source-cidr`: The source CIDR block to give access to the machine.  Default: `0.0.0.0/0`
+ - `--cloudstack-explunge`: Whether or not to explunge the machine upon removal.
  - `--cloudstack-template`: The name of the template to use.
  - `--cloudstack-offering`: The name of the service offering to use.
- - `--cloudstack-network`: The network to attach to the instance. Leave empty when using a basic zone.
- - `--cloudstack-public-ip`: The public IP used to connect to the instance.
- - `--cloudstack-public-port`: The public port to open/forward to connect to the instance.  Default: `2376`
- - `--cloudstack-source-cidr`: The source CIDR block to give access to the instance.  Default: `0.0.0.0/0`
- - `--cloudstack-zone`: The zone in which to create the instance.
+ - `--cloudstack-network`: The network to attach to the machine. Leave empty when using a basic zone.
+ - `--cloudstack-zone`: The zone in which to create the machine.
 
 Example :
 

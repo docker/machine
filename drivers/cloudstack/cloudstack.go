@@ -29,10 +29,13 @@ type Driver struct {
 	ApiKey      string
 	SecretKey   string
 	MachineName string
+	NoPublicIP  bool
 	PublicIP    string
 	PublicPort  int
+	PrivateIP   string
 	SourceCIDR  string
 	FWRuleId    string
+	Explunge    bool
 	Template    string
 	Offering    string
 	Network     string
@@ -69,7 +72,28 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-machinename",
-			Usage: "CloudStack VM name",
+			Usage: "Machine name",
+		},
+		cli.BoolFlag{
+			Name: "cloudstack-no-public-ip",
+			Usage: "Do not use a public IP for this host, helpfull in cases where you have direct " +
+				"access to the IP addresses assigned by DHCP",
+		},
+		cli.StringFlag{
+			Name:  "cloudstack-public-ip",
+			Usage: "Public IP", //leave empty to assign a new public IP to the machine",
+		},
+		cli.IntFlag{
+			Name:  "cloudstack-public-port",
+			Usage: "Public port, if empty matches the private port",
+		},
+		cli.StringFlag{
+			Name:  "cloudstack-source-cidr",
+			Usage: "CIDR block to give access to the new machine, leave empty to use 0.0.0.0/0",
+		},
+		cli.BoolFlag{
+			Name:  "cloudstack-explunge",
+			Usage: "Whether or not to explunge the machine upon removal",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-template",
@@ -82,18 +106,6 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "cloudstack-network",
 			Usage: "CloudStack network",
-		},
-		cli.StringFlag{
-			Name:  "cloudstack-public-ip",
-			Usage: "CloudStack public IP", //leave empty to assign a new public IP to the VM",
-		},
-		cli.IntFlag{
-			Name:  "cloudstack-public-port",
-			Usage: "CloudStack public port, if empty matches the private port",
-		},
-		cli.StringFlag{
-			Name:  "cloudstack-source-cidr",
-			Usage: "CloudStack CIDR block to give access to the new VM, leave empty to use 0.0.0.0/0",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-zone",
@@ -115,9 +127,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ApiKey = flags.String("cloudstack-api-key")
 	d.SecretKey = flags.String("cloudstack-secret-key")
 	d.MachineName = flags.String("cloudstack-machinename")
+	d.NoPublicIP = flags.Bool("cloudstack-no-public-ip")
 	d.PublicIP = flags.String("cloudstack-public-ip")
 	d.PublicPort = flags.Int("cloudstack-public-port")
 	d.SourceCIDR = flags.String("cloudstack-source-cidr")
+	d.Explunge = flags.Bool("cloudstack-explunge")
 	d.Template = flags.String("cloudstack-template")
 	d.Offering = flags.String("cloudstack-offering")
 	d.Network = flags.String("cloudstack-network")
@@ -135,7 +149,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("cloudstack driver requires the --cloudstack-secret-key option")
 	}
 
-	if d.PublicIP == "" {
+	if !d.NoPublicIP && d.PublicIP == "" {
 		return fmt.Errorf("cloudstack driver requires the --cloudstack-public-ip option")
 	}
 
@@ -176,8 +190,8 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	if d.PublicIP == "" {
-		return "", fmt.Errorf("IP address not set")
+	if d.NoPublicIP {
+		return d.PrivateIP, nil
 	}
 	return d.PublicIP, nil
 }
@@ -190,7 +204,7 @@ func (d *Driver) GetState() (state.State, error) {
 	}
 
 	if count == 0 {
-		return state.None, fmt.Errorf("VM doesn not exist, use create command to create it")
+		return state.None, fmt.Errorf("Machine doesn not exist, use create command to create it")
 	}
 
 	switch vm.State {
@@ -267,58 +281,61 @@ func (d *Driver) Create() error {
 	p.SetUserdata(ud)
 
 	// If no IP address is given, make sure we assign one
-	if d.PublicIP == "" {
+	if !d.NoPublicIP && d.PublicIP == "" {
 		// This needs to be implemented, for now we assume a machine is always
 		// created in a network that already has a public IP and so we only need
 		// to open and forward the correct ports in the firewall...
 	}
 
-	// Create the VM
+	// Create the machine
 	vm, err := cs.VirtualMachine.DeployVirtualMachine(p)
 	if err != nil {
 		return err
 	}
 
 	d.Id = vm.Id
+	d.PrivateIP = vm.Nic[0].Ipaddress
 
-	// Make sure the new VM is accessible
-	log.Infof("Retrieving UUID of IP address: %q", d.PublicIP)
-	ip := cs.Address.NewListPublicIpAddressesParams()
-	ip.SetIpaddress(d.PublicIP)
+	if !d.NoPublicIP {
+		// Make sure the new machine is accessible
+		log.Infof("Retrieving UUID of IP address: %q", d.PublicIP)
+		ip := cs.Address.NewListPublicIpAddressesParams()
+		ip.SetIpaddress(d.PublicIP)
 
-	l, err := cs.Address.ListPublicIpAddresses(ip)
-	if err != nil {
-		return err
-	}
-	if l.Count != 1 {
-		return fmt.Errorf("Could not find UUID of IP address: %s", d.PublicIP)
-	}
-	ipaddressid := l.PublicIpAddresses[0].Id
-
-	r := cs.Firewall.NewCreateFirewallRuleParams(ipaddressid, "tcp")
-	r.SetCidrlist([]string{d.SourceCIDR})
-	r.SetStartport(d.PublicPort)
-	r.SetEndport(d.PublicPort)
-
-	rr, err := cs.Firewall.CreateFirewallRule(r)
-	if err != nil {
-		// Check if the error reports the port is already open
-		if !strings.Contains(err.Error(), fmt.Sprintf(
-			"The range specified, %d-%d, conflicts with rule", d.PublicPort, d.PublicPort)) {
+		l, err := cs.Address.ListPublicIpAddresses(ip)
+		if err != nil {
 			return err
 		}
-	} else {
-		// Only set this if there really is anything to set :)
-		d.FWRuleId = rr.Id
-	}
+		if l.Count != 1 {
+			return fmt.Errorf("Could not find UUID of IP address: %s", d.PublicIP)
+		}
+		ipaddressid := l.PublicIpAddresses[0].Id
 
-	f := cs.Firewall.NewCreatePortForwardingRuleParams(
-		ipaddressid, 2376, "tcp", d.PublicPort, d.Id)
-	f.SetOpenfirewall(false)
+		r := cs.Firewall.NewCreateFirewallRuleParams(ipaddressid, "tcp")
+		r.SetCidrlist([]string{d.SourceCIDR})
+		r.SetStartport(d.PublicPort)
+		r.SetEndport(d.PublicPort)
 
-	_, err = cs.Firewall.CreatePortForwardingRule(f)
-	if err != nil {
-		return err
+		rr, err := cs.Firewall.CreateFirewallRule(r)
+		if err != nil {
+			// Check if the error reports the port is already open
+			if !strings.Contains(err.Error(), fmt.Sprintf(
+				"The range specified, %d-%d, conflicts with rule", d.PublicPort, d.PublicPort)) {
+				return err
+			}
+		} else {
+			// Only set this if there really is anything to set :)
+			d.FWRuleId = rr.Id
+		}
+
+		f := cs.Firewall.NewCreatePortForwardingRuleParams(
+			ipaddressid, 2376, "tcp", d.PublicPort, d.Id)
+		f.SetOpenfirewall(false)
+
+		_, err = cs.Firewall.CreatePortForwardingRule(f)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -331,12 +348,12 @@ func (d *Driver) Start() error {
 	}
 
 	if vmstate == state.Running {
-		log.Infof("VM is already running")
+		log.Infof("Machine is already running")
 		return nil
 	}
 
 	if vmstate == state.Starting {
-		log.Infof("VM is already starting")
+		log.Infof("Machine is already starting")
 		return nil
 	}
 
@@ -358,7 +375,7 @@ func (d *Driver) Stop() error {
 	}
 
 	if vmstate == state.Stopped {
-		log.Infof("VM is already stopped")
+		log.Infof("Machine is already stopped")
 		return nil
 	}
 
@@ -376,7 +393,7 @@ func (d *Driver) Stop() error {
 func (d *Driver) Remove() error {
 	cs := d.getClient()
 	p := cs.VirtualMachine.NewDestroyVirtualMachineParams(d.Id)
-	p.SetExpunge(true)
+	p.SetExpunge(d.Explunge)
 
 	_, err := cs.VirtualMachine.DestroyVirtualMachine(p)
 	if err != nil {
@@ -403,7 +420,7 @@ func (d *Driver) Restart() error {
 	}
 
 	if vmstate == state.Stopped {
-		return fmt.Errorf("VM is stopped, use start command to start it")
+		return fmt.Errorf("Machine is stopped, use start command to start it")
 	}
 
 	cs := d.getClient()
