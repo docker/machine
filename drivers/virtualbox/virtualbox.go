@@ -493,6 +493,9 @@ func (d *Driver) GetIP() (string, error) {
 		return "", err
 	}
 
+	// reset to nil as if using from Host Stdout is already set when using DEBUG
+	cmd.Stdout = nil
+
 	b, err := cmd.Output()
 	if err != nil {
 		return "", err
