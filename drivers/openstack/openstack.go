@@ -703,18 +703,24 @@ func (d *Driver) installDocker() error {
 
 	if err := d.sshExec([]string{
 		`apt-get install -y curl`,
-		`curl -sSL https://get.docker.com | /bin/sh`,
+		`curl -sSL https://get.docker.com | /bin/sh >/var/log/docker-install.log 2>&1`,
 		`service docker stop`,
 		`curl -sSL https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity -o /usr/bin/docker`,
 		`echo "export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"" >> /etc/default/docker`,
 		`service docker start`,
 	}); err != nil {
-		log.Error("Docker installation failed")
+		log.Error("The docker installation failed.")
 		log.Error(
-			"The driver assume your instance is running Ubuntu. If this is no the case, you should use the ",
-			"option --openstack-docker-install=false when creating the machine and then install manually",
+			"The driver assumes that your instance is running Ubuntu. If this is not the case, you should ",
+			"use the option --openstack-docker-install=false (or --{provider}-docker-install=false) when ",
+			"creating a machine, and then install and configure docker manually.",
 		)
-		return err
+		log.Error(
+			`Also, you can use "machine ssh" to manually configure docker on this host.`,
+		)
+
+		// Don't return this ssh error so that host creation succeeds and "machine ssh" and "machine rm"
+		// are usable.
 	}
 	return nil
 }
