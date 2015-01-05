@@ -71,8 +71,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{storePath: storePath}, nil
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, storePath: storePath}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -123,7 +123,6 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
-	d.setMachineNameIfNotSet()
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
@@ -341,9 +340,9 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	extraArgs := `EXTRA_ARGS='--auth=identity 
-        --auth-authorized-dir=/var/lib/boot2docker/.docker/authorized-keys.d 
-        --auth-known-hosts=/var/lib/boot2docker/.docker/known-hosts.json 
+	extraArgs := `EXTRA_ARGS='--auth=identity
+        --auth-authorized-dir=/var/lib/boot2docker/.docker/authorized-keys.d
+        --auth-known-hosts=/var/lib/boot2docker/.docker/known-hosts.json
         --identity=/var/lib/boot2docker/.docker/key.json
         -H tcp://0.0.0.0:2376'`
 	sshCmd := fmt.Sprintf("echo \"%s\" | sudo tee -a /var/lib/boot2docker/profile", extraArgs)
@@ -356,6 +355,19 @@ func (d *Driver) Create() error {
 	}
 
 	cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = d.GetSSHCommand(fmt.Sprintf(
+		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
+		d.MachineName,
+		d.MachineName,
+	))
+
 	if err != nil {
 		return err
 	}

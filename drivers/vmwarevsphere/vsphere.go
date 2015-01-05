@@ -18,7 +18,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
 	"github.com/docker/machine/ssh"
@@ -144,8 +143,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{StorePath: storePath}, nil
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, StorePath: storePath}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -153,7 +152,6 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.setMachineNameIfNotSet()
 	d.SSHPort = 22
 	d.CPU = flags.Int("vmwarevsphere-cpu-count")
 	d.Memory = flags.Int("vmwarevsphere-memory-size")
@@ -216,8 +214,6 @@ func (d *Driver) GetState() (state.State, error) {
 // 3. create a virtual machine with the boot2docker ISO mounted;
 // 4. reconfigure the virtual machine network and disk size;
 func (d *Driver) Create() error {
-	d.setMachineNameIfNotSet()
-
 	if err := d.checkVsphereConfig(); err != nil {
 		return err
 	}
@@ -265,6 +261,20 @@ func (d *Driver) Create() error {
 	}
 
 	if err := vcConn.VmAttachNetwork(); err != nil {
+		return err
+	}
+
+	log.Debugf("Setting hostname: %s", d.MachineName)
+	cmd, err := d.GetSSHCommand(fmt.Sprintf(
+		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
+		d.MachineName,
+		d.MachineName,
+		d.MachineName,
+	))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -381,12 +391,6 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return ssh.GetSSHCommand(ip, d.SSHPort, "docker", d.sshKeyPath(), args...), nil
 }
 
-func (d *Driver) setMachineNameIfNotSet() {
-	if d.MachineName == "" {
-		d.MachineName = generateVMName()
-	}
-}
-
 func (d *Driver) sshKeyPath() string {
 	return filepath.Join(d.StorePath, "id_docker_host_vsphere")
 }
@@ -442,9 +446,4 @@ func downloadISO(dir, file, url string) error {
 		return err
 	}
 	return nil
-}
-
-func generateVMName() string {
-	randomID := utils.TruncateID(utils.GenerateRandomID())
-	return fmt.Sprintf("docker-host-%s", randomID)
 }
