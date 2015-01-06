@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
-	"sync"
 	"text/tabwriter"
 
 	log "github.com/Sirupsen/logrus"
@@ -43,6 +42,36 @@ func (h hostListItemByName) Swap(i, j int) {
 
 func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
+}
+
+func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
+	currentState, err := host.Driver.GetState()
+	if err != nil {
+		log.Errorf("error getting state for host %s: %s", host.Name, err)
+	}
+
+	url, err := host.GetURL()
+	if err != nil {
+		if err == drivers.ErrHostIsNotRunning {
+			url = ""
+		} else {
+			log.Errorf("error getting URL for host %s: %s", host.Name, err)
+		}
+	}
+
+	isActive, err := store.IsActive(&host)
+	if err != nil {
+		log.Errorf("error determining whether host %q is active: %s",
+			host.Name, err)
+	}
+
+	hostListItems <- hostListItem{
+		Name:       host.Name,
+		Active:     isActive,
+		DriverName: host.Driver.DriverName(),
+		State:      currentState,
+		URL:        url,
+	}
 }
 
 var Commands = []cli.Command{
@@ -177,50 +206,24 @@ var Commands = []cli.Command{
 				fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL")
 			}
 
-			wg := sync.WaitGroup{}
 			items := []hostListItem{}
+			hostListItems := make(chan hostListItem)
 
 			for _, host := range hostList {
-				host := host
-				if quiet {
-					fmt.Fprintf(w, "%s\n", host.Name)
+				if !quiet {
+					go getHostState(host, *store, hostListItems)
 				} else {
-					wg.Add(1)
-					go func() {
-						currentState, err := host.Driver.GetState()
-						if err != nil {
-							log.Errorf("error getting state for host %s: %s", host.Name, err)
-						}
-
-						url, err := host.GetURL()
-						if err != nil {
-							if err == drivers.ErrHostIsNotRunning {
-								url = ""
-							} else {
-								log.Errorf("error getting URL for host %s: %s", host.Name, err)
-							}
-						}
-
-						isActive, err := store.IsActive(&host)
-						if err != nil {
-							log.Errorf("error determining whether host %q is active: %s",
-								host.Name, err)
-						}
-
-						items = append(items, hostListItem{
-							Name:       host.Name,
-							Active:     isActive,
-							DriverName: host.Driver.DriverName(),
-							State:      currentState,
-							URL:        url,
-						})
-
-						wg.Done()
-					}()
+					fmt.Fprintf(w, "%s\n", host.Name)
 				}
 			}
 
-			wg.Wait()
+			if !quiet {
+				for i := 0; i < len(hostList); i++ {
+					items = append(items, <-hostListItems)
+				}
+			}
+
+			close(hostListItems)
 
 			sort.Sort(hostListItemByName(items))
 
