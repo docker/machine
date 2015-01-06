@@ -120,6 +120,7 @@ Options:
 
  - `--google-zone`: The zone to launch the instance.  Default: `us-central1-a`
  - `--google-machine-type`: The type of instance.  Default: `f1-micro`
+ - `--google-disk-size`: The disk size of the instance (in GiB).  Default: `10`
  - `--google-username`: The username to use for the instance.  Default: `docker-user`
  - `--google-instance-name`: The name of the instance.  Default: `docker-machine`
  - `--google-project`: The name of your project to use when launching the instance.

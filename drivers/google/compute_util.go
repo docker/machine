@@ -46,8 +46,6 @@ sudo wget https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth 
 `))
 )
 
-const ()
-
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 	service, err := newGCEService(driver.storePath)
@@ -162,6 +160,8 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		instance.Disks[0].InitializeParams = &raw.AttachedDiskInitializeParams{
 			DiskName:    c.diskName(),
 			SourceImage: imageName,
+			// The maximum supported disk size is 1000GB, the cast should be fine.
+			DiskSizeGb: int64(d.DiskSize),
 		}
 	} else {
 		instance.Disks[0].Source = c.zoneURL + "/disks/" + c.instanceName + "-disk"
