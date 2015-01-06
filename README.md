@@ -110,9 +110,9 @@ Options:
  - `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
  - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e).
 
-### Google Compute
+### Google Compute Engine
 
-Create machines on [Google Compute](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
+Create machines on [Google Compute Engine](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
 
 The Google driver uses oAuth.  When creating the machine, you will have your browser opened to authorize.  Once authorized, paste the code given in the prompt to launch the instance.
 
