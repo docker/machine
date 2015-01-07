@@ -227,9 +227,7 @@ func (h *Host) Upgrade() error {
 
 func (h *Host) Remove(force bool) error {
 	if err := h.Driver.Remove(); err != nil {
-		if force {
-			log.Errorf("Error removing host, force removing anyway: %s", err)
-		} else {
+		if !force {
 			return err
 		}
 	}
