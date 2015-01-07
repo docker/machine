@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os/exec"
 	"testing"
 
@@ -65,7 +66,10 @@ func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 }
 
 func TestGetHostState(t *testing.T) {
-	storePath := "~/.docker"
+	storePath, err := ioutil.TempDir("", ".docker")
+	if err != nil {
+		t.Fatal("Error creating tmp dir:", err)
+	}
 	hostListItems := make(chan hostListItem)
 	store := NewStore(storePath)
 	hosts := []Host{
