@@ -44,36 +44,6 @@ func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
-func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
-	currentState, err := host.Driver.GetState()
-	if err != nil {
-		log.Errorf("error getting state for host %s: %s", host.Name, err)
-	}
-
-	url, err := host.GetURL()
-	if err != nil {
-		if err == drivers.ErrHostIsNotRunning {
-			url = ""
-		} else {
-			log.Errorf("error getting URL for host %s: %s", host.Name, err)
-		}
-	}
-
-	isActive, err := store.IsActive(&host)
-	if err != nil {
-		log.Errorf("error determining whether host %q is active: %s",
-			host.Name, err)
-	}
-
-	hostListItems <- hostListItem{
-		Name:       host.Name,
-		Active:     isActive,
-		DriverName: host.Driver.DriverName(),
-		State:      currentState,
-		URL:        url,
-	}
-}
-
 var Commands = []cli.Command{
 	{
 		Name:  "active",
@@ -388,4 +358,34 @@ func getHost(c *cli.Context) *Host {
 		log.Fatalf("unable to load host: %v", err)
 	}
 	return host
+}
+
+func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
+	currentState, err := host.Driver.GetState()
+	if err != nil {
+		log.Errorf("error getting state for host %s: %s", host.Name, err)
+	}
+
+	url, err := host.GetURL()
+	if err != nil {
+		if err == drivers.ErrHostIsNotRunning {
+			url = ""
+		} else {
+			log.Errorf("error getting URL for host %s: %s", host.Name, err)
+		}
+	}
+
+	isActive, err := store.IsActive(&host)
+	if err != nil {
+		log.Errorf("error determining whether host %q is active: %s",
+			host.Name, err)
+	}
+
+	hostListItems <- hostListItem{
+		Name:       host.Name,
+		Active:     isActive,
+		DriverName: host.Driver.DriverName(),
+		State:      currentState,
+		URL:        url,
+	}
 }
