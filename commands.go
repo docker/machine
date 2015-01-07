@@ -190,7 +190,16 @@ func cmdCreate(c *cli.Context) {
 
 	host, err := store.Create(name, driver, c)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("Error creating host: %s", err)
+		if c.GlobalBool("debug") {
+			log.Fatal(err)
+		} else {
+			log.Warnf("Removing provisioned machine.  Use --debug to prevent removal.")
+			// we know there was an error so do not check for the error on removal
+			// instead we will Fatal with a message to prevent spamming with error messages
+			store.Remove(name, true)
+			log.Fatalf("You will want to check the provider to make sure the machine and associated resources were properly removed.")
+		}
 	}
 	if err := store.SetActive(host); err != nil {
 		log.Fatalf("error setting active host: %v", err)
