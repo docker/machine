@@ -5,10 +5,13 @@ import (
 	"os/exec"
 	"sync"
 	"testing"
+	"time"
 )
 
 const (
-	machineName = "machine-integration-test-%s"
+	machineName  = "machine-integration-test-%s"
+	waitInterval = 30
+	waitDuration = time.Duration(waitInterval * time.Second)
 )
 
 func machineCreate(name string, t *testing.T, wg *sync.WaitGroup) {
@@ -107,6 +110,7 @@ func TestMachineStop(t *testing.T) {
 		go machineStop(d.name, t, &wg)
 	}
 	wg.Wait()
+	time.Sleep(waitDuration)
 }
 
 // TestMachineCreate will test that the driver starts the machine
@@ -121,6 +125,7 @@ func TestMachineStart(t *testing.T) {
 		go machineStart(d.name, t, &wg)
 	}
 	wg.Wait()
+	time.Sleep(waitDuration)
 }
 
 // TestMachineCreate will test that the driver kills the machine
@@ -135,6 +140,7 @@ func TestMachineKill(t *testing.T) {
 		go machineKill(d.name, t, &wg)
 	}
 	wg.Wait()
+	time.Sleep(waitDuration)
 }
 
 // TestMachineCreate will test that the driver removes the machine
@@ -149,4 +155,5 @@ func TestMachineRemove(t *testing.T) {
 		go machineRm(d.name, t, &wg)
 	}
 	wg.Wait()
+	time.Sleep(waitDuration)
 }
