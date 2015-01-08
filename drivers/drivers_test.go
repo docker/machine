@@ -11,9 +11,24 @@ func TestGetCreateFlags(t *testing.T) {
 		New: func(storePath string) (Driver, error) { return nil, nil },
 		GetCreateFlags: func() []cli.Flag {
 			return []cli.Flag{
-				cli.StringFlag{"a", "", "", ""},
-				cli.StringFlag{"b", "", "", ""},
-				cli.StringFlag{"c", "", "", ""},
+				cli.StringFlag{
+					Name:   "a",
+					Value:  "",
+					Usage:  "",
+					EnvVar: "",
+				},
+				cli.StringFlag{
+					Name:   "b",
+					Value:  "",
+					Usage:  "",
+					EnvVar: "",
+				},
+				cli.StringFlag{
+					Name:   "c",
+					Value:  "",
+					Usage:  "",
+					EnvVar: "",
+				},
 			}
 		},
 	})
@@ -21,9 +36,24 @@ func TestGetCreateFlags(t *testing.T) {
 		New: func(storePath string) (Driver, error) { return nil, nil },
 		GetCreateFlags: func() []cli.Flag {
 			return []cli.Flag{
-				cli.StringFlag{"d", "", "", ""},
-				cli.StringFlag{"e", "", "", ""},
-				cli.StringFlag{"f", "", "", ""},
+				cli.StringFlag{
+					Name:   "d",
+					Value:  "",
+					Usage:  "",
+					EnvVar: "",
+				},
+				cli.StringFlag{
+					Name:   "e",
+					Value:  "",
+					Usage:  "",
+					EnvVar: "",
+				},
+				cli.StringFlag{
+					Name:   "f",
+					Value:  "",
+					Usage:  "",
+					EnvVar: "",
+				},
 			}
 		},
 	})
