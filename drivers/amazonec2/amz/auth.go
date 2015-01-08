@@ -1,9 +1,9 @@
 package amz
 
 type Auth struct {
-	AccessKey, SecretKey string
+	AccessKey, SecretKey, SessionToken string
 }
 
-func GetAuth(accessKey, secretKey string) Auth {
-	return Auth{accessKey, secretKey}
+func GetAuth(accessKey, secretKey, sessionToken string) Auth {
+	return Auth{accessKey, secretKey, sessionToken}
 }
