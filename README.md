@@ -158,7 +158,7 @@ Options:
    
 ### VMware vSphere
 
-Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. Requires a working vSphere (ESXi and optionally vCenter) installation.
+Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. Requires a working vSphere (ESXi and optionally vCenter) installation. The vSphere driver depends on [`govc`](https://github.com/vmware/govmomi/tree/master/govc) (must be in path) and has been tested with [vmware/govmomi@`c848630`](https://github.com/vmware/govmomi/commit/c8486300bfe19427e4f3226e3b3eac067717ef17).
 
 Options:
 
@@ -167,13 +167,13 @@ Options:
  - `--vmwarevsphere-boot2docker-url`: URL for boot2docker image.
  - `--vmwarevsphere-compute-ip`: Compute host IP where the Docker VM will be instantiated.
  - `--vmwarevsphere-cpu-count`: CPU number for Docker VM. Default: `2`
- - `--vmwarevsphere-datacenter`: Datacenter for Docker VM.
+ - `--vmwarevsphere-datacenter`: Datacenter for Docker VM (must be set to `ha-datacenter` when connecting to a single host).
  - `--vmwarevsphere-datastore`: Datastore for Docker VM.
  - `--vmwarevsphere-disk-size`: Size of disk for Docker VM (in MB). Default: `20000`
  - `--vmwarevsphere-memory-size`: Size of memory for Docker VM (in MB). Default: `2048`
  - `--vmwarevsphere-network`: Network where the Docker VM will be attached.
- - `--vmwarevsphere-pool`: Resource pool for Docker VM
- - `--vmwarevsphere-vcenter`: IP/hostname for vCenter (or ESXi if connecting directly to a single host)
+ - `--vmwarevsphere-pool`: Resource pool for Docker VM.
+ - `--vmwarevsphere-vcenter`: IP/hostname for vCenter (or ESXi if connecting directly to a single host).
 
 ## Contributing
 
