@@ -380,6 +380,16 @@ func cmdUrl(c *cli.Context) {
 	fmt.Println(url)
 }
 
+func cmdNotFound(c *cli.Context, command string) {
+	log.Fatalf(
+		"%s: '%s' is not a %s command. See '%s --help'.",
+		c.App.Name,
+		command,
+		c.App.Name,
+		c.App.Name,
+	)
+}
+
 func getHost(c *cli.Context) *Host {
 	name := c.Args().First()
 	store := NewStore(c.GlobalString("storage-path"))
