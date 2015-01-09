@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -149,7 +150,7 @@ var Commands = []cli.Command{
 
 func cmdActive(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -182,25 +183,7 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
-	store := NewStore(c.GlobalString("storage-path"))
-
-	exists, err := store.Exists(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if exists {
-		log.Fatal("There's already a machine with the same name")
-	}
-
-	keyExists, err := drivers.PublicKeyExists()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if !keyExists {
-		log.Fatalf("Identity authentication public key doesn't exist at %q. Create your public key by running the \"docker\" command.", drivers.PublicKeyPath())
-	}
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
 
 	host, err := store.Create(name, driver, c)
 	if err != nil {
@@ -220,7 +203,15 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("error setting active host: %v", err)
 	}
 
-	log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity", name)
+	log.Infof("%q has been created and is now the active machine", name)
+	// TODO @ehazlett - this will change but at least show how to connect for now
+	log.Info("To connect, pass these args to Docker: ")
+	storeDir := c.GlobalString("storage-path")
+	caCert := filepath.Join(storeDir, name, "ca.pem")
+	clientCert := filepath.Join(storeDir, name, "client.pem")
+	clientKey := filepath.Join(storeDir, name, "client-key.pem")
+	log.Infof("--auth=cert --auth-ca=%s --auth-cert=%s --auth-key=%s -H $(machine url)",
+		caCert, clientCert, clientKey)
 }
 
 func cmdInspect(c *cli.Context) {
@@ -249,7 +240,7 @@ func cmdKill(c *cli.Context) {
 
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
 
 	hostList, err := store.List()
 	if err != nil {
@@ -320,7 +311,7 @@ func cmdRm(c *cli.Context) {
 
 	isError := false
 
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
 	for _, host := range c.Args() {
 		if err := store.Remove(host, force); err != nil {
 			log.Errorf("Error removing machine %s: %s", host, err)
@@ -334,7 +325,7 @@ func cmdRm(c *cli.Context) {
 
 func cmdSsh(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -412,7 +403,7 @@ func cmdNotFound(c *cli.Context, command string) {
 
 func getHost(c *cli.Context) *Host {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
