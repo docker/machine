@@ -36,6 +36,10 @@ func GetSSHCommand(host string, port int, user string, sshKey string, args ...st
 }
 
 func GenerateSSHKey(path string) error {
+	if _, err := exec.LookPath("ssh-keygen"); err != nil {
+		return fmt.Errorf("ssh-keygen not found in the path, please install ssh-keygen")
+	}
+
 	if _, err := os.Stat(path); err != nil {
 		if !os.IsNotExist(err) {
 			return err
