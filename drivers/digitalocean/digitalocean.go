@@ -19,15 +19,19 @@ import (
 )
 
 type Driver struct {
-	AccessToken string
-	DropletID   int
-	Image       string
-	IPAddress   string
-	MachineName string
-	Region      string
-	SSHKeyID    int
-	Size        string
-	storePath   string
+	AccessToken    string
+	DropletID      int
+	DropletName    string
+	Image          string
+	MachineName    string
+	IPAddress      string
+	Region         string
+	SSHKeyID       int
+	Size           string
+	CaCertPath     string
+	PrivateKeyPath string
+	DriverKeyPath  string
+	storePath      string
 }
 
 func init() {
@@ -67,8 +71,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath}, nil
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -153,48 +157,6 @@ func (d *Driver) Create() error {
 		d.MachineName,
 	))
 
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err = d.GetSSHCommand("stop docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("curl -sS https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity > /usr/bin/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --host=unix:///var/run/docker.sock\"' >> /etc/default/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("start docker")
 	if err != nil {
 		return err
 	}

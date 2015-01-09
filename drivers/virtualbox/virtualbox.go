@@ -32,6 +32,8 @@ type Driver struct {
 	Memory         int
 	DiskSize       int
 	Boot2DockerURL string
+	CaCertPath     string
+	PrivateKeyPath string
 	storePath      string
 }
 
@@ -71,8 +73,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath}, nil
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
 func (d *Driver) DriverName() string {

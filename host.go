@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,11 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/libtrust"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/utils"
 )
 
 var (
@@ -24,10 +21,15 @@ var (
 )
 
 type Host struct {
-	Name       string `json:"-"`
-	DriverName string
-	Driver     drivers.Driver
-	storePath  string
+	Name           string `json:"-"`
+	DriverName     string
+	Driver         drivers.Driver
+	CaCertPath     string
+	ServerCertPath string
+	ServerKeyPath  string
+	PrivateKeyPath string
+	ClientCertPath string
+	storePath      string
 }
 
 type hostConfig struct {
@@ -47,16 +49,18 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath string) (*Host, error) {
-	driver, err := drivers.NewDriver(driverName, name, storePath)
+func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
+	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
 	}
 	return &Host{
-		Name:       name,
-		DriverName: driverName,
-		Driver:     driver,
-		storePath:  storePath,
+		Name:           name,
+		DriverName:     driverName,
+		Driver:         driver,
+		CaCertPath:     caCert,
+		PrivateKeyPath: privateKey,
+		storePath:      storePath,
 	}, nil
 }
 
@@ -79,139 +83,156 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
-func loadTrustKey(trustKeyPath string) (libtrust.PrivateKey, error) {
-	if err := os.MkdirAll(filepath.Dir(trustKeyPath), 0700); err != nil {
-		return nil, err
+func (h *Host) GenerateCertificates(serverIPs []string) error {
+	var (
+		caPathExists     bool
+		privateKeyExists bool
+		org              = "docker-machine"
+		bits             = 2048
+	)
 
+	caCertPath := filepath.Join(h.storePath, "ca.pem")
+	privateKeyPath := filepath.Join(h.storePath, "private.pem")
+
+	if _, err := os.Stat(h.CaCertPath); os.IsNotExist(err) {
+		caPathExists = false
+	} else {
+		caPathExists = true
 	}
 
-	trustKey, err := libtrust.LoadKeyFile(trustKeyPath)
-	if err == libtrust.ErrKeyFileDoesNotExist {
-		trustKey, err = libtrust.GenerateECP256PrivateKey()
-		if err != nil {
-			return nil, fmt.Errorf("error generating key: %s", err)
-		}
-
-		if err := libtrust.SaveKey(trustKeyPath, trustKey); err != nil {
-			return nil, fmt.Errorf("error saving key file: %s", err)
-
-		}
-
-		dir, file := filepath.Split(trustKeyPath)
-		if err := libtrust.SavePublicKey(filepath.Join(dir, "public-"+file), trustKey.PublicKey()); err != nil {
-			return nil, fmt.Errorf("error saving public key file: %s", err)
-
-		}
-	} else if err != nil {
-		return nil, fmt.Errorf("error loading key file: %s", err)
-
+	if _, err := os.Stat(h.PrivateKeyPath); os.IsNotExist(err) {
+		privateKeyExists = false
+	} else {
+		privateKeyExists = true
 	}
-	return trustKey, nil
+
+	if !caPathExists && !privateKeyExists {
+		log.Debugf("generating self-signed CA cert: %s", caCertPath)
+		if err := utils.GenerateCACert(caCertPath, privateKeyPath, org, bits); err != nil {
+			return fmt.Errorf("error generating self-signed CA cert: %s", err)
+		}
+	} else {
+		if err := utils.CopyFile(h.CaCertPath, caCertPath); err != nil {
+			return fmt.Errorf("unable to copy CA cert: %s", err)
+		}
+		if err := utils.CopyFile(h.PrivateKeyPath, privateKeyPath); err != nil {
+			return fmt.Errorf("unable to copy private key: %s", err)
+		}
+	}
+
+	serverCertPath := filepath.Join(h.storePath, "server.pem")
+	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
+
+	log.Debugf("generating server cert: %s", serverCertPath)
+
+	if err := utils.GenerateCert(serverIPs, serverCertPath, serverKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
+		return fmt.Errorf("error generating server cert: %s", err)
+	}
+
+	clientCertPath := filepath.Join(h.storePath, "client.pem")
+	clientKeyPath := filepath.Join(h.storePath, "client-key.pem")
+	log.Debugf("generating client cert: %s", clientCertPath)
+	if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
+		return fmt.Errorf("error generating client cert: %s", err)
+	}
+
+	return nil
 }
 
-func (h *Host) addHostToKnownHosts() error {
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS10,
-	}
+func (h *Host) ConfigureAuth() error {
+	d := h.Driver
 
-	trustKeyPath := filepath.Join(drivers.GetDockerDir(), "key.json")
-	knownHostsPath := filepath.Join(drivers.GetDockerDir(), "known-hosts.json")
-
-	driverUrl, err := h.GetURL()
+	ip, err := d.GetIP()
 	if err != nil {
-		return fmt.Errorf("unable to get machine url: %s", err)
+		return err
 	}
 
-	u, err := url.Parse(driverUrl)
+	log.Debugf("generating certificates for %s", ip)
+	if err := h.GenerateCertificates([]string{ip}); err != nil {
+		return err
+	}
+
+	serverCertPath := filepath.Join(h.storePath, "server.pem")
+	caCertPath := filepath.Join(h.storePath, "ca.pem")
+	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
+
+	cmd, err := d.GetSSHCommand("sudo stop docker")
 	if err != nil {
-		return fmt.Errorf("unable to parse machine url")
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	if u.Scheme == "unix" {
-		return nil
-	}
-
-	addr := u.Host
-	proto := "tcp"
-
-	trustKey, err := loadTrustKey(trustKeyPath)
+	cmd, err = d.GetSSHCommand("sudo mkdir -p /etc/docker")
 	if err != nil {
-		return fmt.Errorf("unable to load trust key: %s", err)
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	knownHosts, err := libtrust.LoadKeySetFile(knownHostsPath)
+	// upload certs and configure TLS auth
+	caCert, err := ioutil.ReadFile(caCertPath)
 	if err != nil {
-		return fmt.Errorf("could not load trusted hosts file: %s", err)
+		return err
 	}
 
-	allowedHosts, err := libtrust.FilterByHosts(knownHosts, addr, false)
+	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
-		return fmt.Errorf("error filtering hosts: %s", err)
+		return err
 	}
 
-	certPool, err := libtrust.GenerateCACertPool(trustKey, allowedHosts)
+	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
-		return fmt.Errorf("Could not create CA pool: %s", err)
+		return err
 	}
 
-	tlsConfig.ServerName = "docker"
-	tlsConfig.RootCAs = certPool
-
-	x509Cert, err := libtrust.GenerateSelfSignedClientCert(trustKey)
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a /etc/docker/ca.pem", string(caCert)))
 	if err != nil {
-		return fmt.Errorf("certificate generation error: %s", err)
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	tlsConfig.Certificates = []tls.Certificate{{
-		Certificate: [][]byte{x509Cert.Raw},
-		PrivateKey:  trustKey.CryptoPrivateKey(),
-		Leaf:        x509Cert,
-	}}
-
-	tlsConfig.InsecureSkipVerify = true
-
-	log.Debugf("waiting for Docker to become available on %s", addr)
-	if err := waitForDocker(addr); err != nil {
-		return fmt.Errorf("unable to connect to Docker daemon: %s", err)
-	}
-	testConn, err := tls.Dial(proto, addr, tlsConfig)
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a /etc/docker/server-key.pem", string(serverKey)))
 	if err != nil {
-		return fmt.Errorf("tls Handshake error: %s", err)
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	opts := x509.VerifyOptions{
-		Roots:         tlsConfig.RootCAs,
-		CurrentTime:   time.Now(),
-		DNSName:       tlsConfig.ServerName,
-		Intermediates: x509.NewCertPool(),
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a /etc/docker/server.pem", string(serverCert)))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	certs := testConn.ConnectionState().PeerCertificates
-	for i, cert := range certs {
-		if i == 0 {
-			continue
-		}
-		opts.Intermediates.AddCert(cert)
+	cmd, err = d.GetSSHCommand(`echo 'export DOCKER_OPTS=" \
+        --tlsverify \
+        --tlscacert=/etc/docker/ca.pem \
+        --tlskey=/etc/docker/server-key.pem \
+        --tlscert=/etc/docker/server.pem \
+        --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376"' | sudo tee -a /etc/default/docker`)
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	if _, err := certs[0].Verify(opts); err != nil {
-		if _, ok := err.(x509.UnknownAuthorityError); ok {
-			pubKey, err := libtrust.FromCryptoPublicKey(certs[0].PublicKey)
-			if err != nil {
-				return fmt.Errorf("error extracting public key from cert: %s", err)
-			}
-
-			pubKey.AddExtendedField("hosts", []string{addr})
-
-			log.Debugf("Adding machine to known hosts: %s", addr)
-
-			if err := libtrust.AddKeySetFile(knownHostsPath, pubKey); err != nil {
-				return fmt.Errorf("error adding machine to known hosts: %s", err)
-			}
-		}
+	cmd, err = d.GetSSHCommand("sudo start docker")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	testConn.Close()
 	return nil
 }
 
@@ -221,10 +242,6 @@ func (h *Host) Create(name string) error {
 	}
 
 	if err := h.SaveConfig(); err != nil {
-		return err
-	}
-
-	if err := h.addHostToKnownHosts(); err != nil {
 		return err
 	}
 
@@ -279,7 +296,7 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	driver, err := drivers.NewDriver(config.DriverName, h.Name, h.storePath)
+	driver, err := drivers.NewDriver(config.DriverName, h.Name, h.storePath, h.CaCertPath, h.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
