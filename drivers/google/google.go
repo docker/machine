@@ -22,8 +22,10 @@ type Driver struct {
 	storePath        string
 	UserName         string
 	Project          string
+	SSHPort          int
 	sshKeyPath       string
 	publicSSHKeyPath string
+	MachineOptions   *drivers.MachineOptions
 }
 
 // CreateFlags are the command line flags used to create a driver.
@@ -91,6 +93,18 @@ func (driver *Driver) DriverName() string {
 	return "google"
 }
 
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return d.MachineOptions, nil
+}
+
+func (d *Driver) GetSSHUser() string {
+	return d.UserName
+}
+
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
 // SetConfigFromFlags initializes the driver based on the command line flags.
 func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.InstanceName = flags.String("google-instance-name")
@@ -98,9 +112,17 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.MachineType = flags.String("google-machine-type")
 	driver.UserName = flags.String("google-username")
 	driver.Project = flags.String("google-project")
+	driver.SSHPort = 22
 	if driver.Project == "" {
 		return fmt.Errorf("Please specify the Google Cloud Project name using the option --google-project.")
 	}
+	driver.MachineOptions = &drivers.MachineOptions{
+		Auth:          "identity",
+		Host:          "tcp://0.0.0.0:2376",
+		AuthorizedDir: "/root/.docker/authorized-keys.d",
+		Labels:        []string{},
+	}
+
 	return nil
 }
 
@@ -237,7 +259,7 @@ func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ssh.GetSSHCommand(ip, 22, driver.UserName, driver.sshKeyPath, args...), nil
+	return ssh.GetSSHCommand(ip, driver.GetSSHPort(), driver.GetSSHUser(), driver.sshKeyPath, args...), nil
 }
 
 // Upgrade upgrades the docker daemon on the host to the latest version.

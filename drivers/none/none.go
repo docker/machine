@@ -57,12 +57,24 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return nil, nil
+}
+
 func (d *Driver) GetURL() (string, error) {
 	return d.URL, nil
 }
 
 func (d *Driver) GetIP() (string, error) {
 	return "", nil
+}
+
+func (d *Driver) GetSSHUser() string {
+	return ""
+}
+
+func (d *Driver) GetSSHPort() int {
+	return -1
 }
 
 func (d *Driver) GetState() (state.State, error) {

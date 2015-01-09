@@ -29,6 +29,7 @@ import (
 type Driver struct {
 	MachineName    string
 	SSHPort        int
+	SSHUser        string
 	Memory         int
 	DiskSize       int
 	Boot2DockerURL string
@@ -75,6 +76,10 @@ func NewDriver(storePath string) (drivers.Driver, error) {
 	return &Driver{storePath: storePath}, nil
 }
 
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return nil, nil
+}
+
 func (d *Driver) DriverName() string {
 	return "virtualbox"
 }
@@ -94,6 +99,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("virtualbox-memory")
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
+	d.SSHUser = "tcuser"
 	return nil
 }
 
@@ -512,6 +518,14 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	return "", fmt.Errorf("No IP address found %s", out)
+}
+
+func (d *Driver) GetSSHUser() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {

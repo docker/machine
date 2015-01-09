@@ -19,15 +19,18 @@ import (
 )
 
 type Driver struct {
-	AccessToken string
-	DropletID   int
-	DropletName string
-	Image       string
-	IPAddress   string
-	Region      string
-	SSHKeyID    int
-	Size        string
-	storePath   string
+	AccessToken    string
+	DropletID      int
+	DropletName    string
+	Image          string
+	IPAddress      string
+	Region         string
+	SSHKeyID       int
+	Size           string
+	MachineOptions *drivers.MachineOptions
+	SSHUser        string
+	SSHPort        int
+	storePath      string
 }
 
 func init() {
@@ -50,7 +53,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "DIGITALOCEAN_IMAGE",
 			Name:   "digitalocean-image",
 			Usage:  "Digital Ocean Image",
-			Value:  "docker",
+			Value:  "ubuntu-14-04-x64",
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_REGION",
@@ -80,12 +83,25 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Image = flags.String("digitalocean-image")
 	d.Region = flags.String("digitalocean-region")
 	d.Size = flags.String("digitalocean-size")
+	d.SSHUser = "root"
+	d.SSHPort = 22
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
 	}
 
+	d.MachineOptions = &drivers.MachineOptions{
+		Auth:          "identity",
+		Host:          "tcp://0.0.0.0:2376",
+		AuthorizedDir: "/root/.docker/authorized-keys.d",
+		Labels:        []string{},
+	}
+
 	return nil
+}
+
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return d.MachineOptions, nil
 }
 
 func (d *Driver) Create() error {
@@ -104,12 +120,18 @@ func (d *Driver) Create() error {
 
 	client := d.getClient()
 
+	cloudInitData, err := drivers.GetCloudConfig(d)
+	if err != nil {
+		return err
+	}
+
 	createRequest := &godo.DropletCreateRequest{
-		Image:   d.Image,
-		Name:    d.DropletName,
-		Region:  d.Region,
-		Size:    d.Size,
-		SSHKeys: []interface{}{d.SSHKeyID},
+		Image:    d.Image,
+		Name:     d.DropletName,
+		Region:   d.Region,
+		Size:     d.Size,
+		SSHKeys:  []interface{}{d.SSHKeyID},
+		UserData: cloudInitData,
 	}
 
 	newDroplet, _, err := client.Droplets.Create(createRequest)
@@ -140,54 +162,6 @@ func (d *Driver) Create() error {
 	log.Debugf("Created droplet ID %d, IP address %s",
 		newDroplet.Droplet.ID,
 		d.IPAddress)
-
-	log.Infof("Waiting for SSH...")
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err := d.GetSSHCommand("stop docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("curl -sS https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity > /usr/bin/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"' >> /etc/default/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("start docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -228,6 +202,14 @@ func (d *Driver) GetIP() (string, error) {
 		return "", fmt.Errorf("IP address is not set")
 	}
 	return d.IPAddress, nil
+}
+
+func (d *Driver) GetSSHUser() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
 }
 
 func (d *Driver) GetState() (state.State, error) {

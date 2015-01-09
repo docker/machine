@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -23,10 +22,11 @@ import (
 const (
 	driverName          = "amazonec2"
 	defaultRegion       = "us-east-1"
-	defaultAMI          = "ami-a00461c8"
+	defaultAMI          = "ami-4ae27e22"
 	defaultInstanceType = "t2.micro"
 	defaultRootSize     = 16
 	ipRange             = "0.0.0.0/0"
+	dockerPort          = 2376
 )
 
 type Driver struct {
@@ -46,6 +46,9 @@ type Driver struct {
 	VpcId           string
 	SubnetId        string
 	Zone            string
+	MachineOptions  *drivers.MachineOptions
+	SSHUser         string
+	SSHPort         int
 	storePath       string
 	keyPath         string
 }
@@ -142,6 +145,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
+	d.SSHUser = "ubuntu"
+	d.SSHPort = 22
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -155,11 +160,22 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
 	}
 
+	d.MachineOptions = &drivers.MachineOptions{
+		Auth:          "identity",
+		Host:          fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort),
+		AuthorizedDir: "/root/.docker/authorized-keys.d",
+		Labels:        []string{},
+	}
+
 	return nil
 }
 
 func (d *Driver) DriverName() string {
 	return driverName
+}
+
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return d.MachineOptions, nil
 }
 
 func (d *Driver) Create() error {
@@ -205,7 +221,15 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("launching instance in subnet %s", subnetId)
-	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, group.GroupId, d.KeyName, subnetId, bdm)
+
+	cloudInitData, err := drivers.GetCloudConfig(d)
+	if err != nil {
+		return err
+	}
+
+	encodedCloudInitData := drivers.EncodeToBase64(cloudInitData)
+
+	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, group.GroupId, d.KeyName, subnetId, bdm, encodedCloudInitData)
 
 	if err != nil {
 		return fmt.Errorf("Error launching instance: %s", err)
@@ -219,85 +243,11 @@ func (d *Driver) Create() error {
 		d.InstanceId,
 		d.IPAddress)
 
-	log.Infof("Waiting for SSH...")
+	log.Infof("Waiting for instance to configure Docker...")
 
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
-		return err
+	if !drivers.WaitForDocker(fmt.Sprintf("%s:%d", d.IPAddress, dockerPort), 300) {
+		log.Warnf("Unable to reach the Docker daemon.  Please check the instance.")
 	}
-
-	log.Debugf("Installing Docker")
-
-	cmd, err := d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("sudo stop docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err = d.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --host=unix:///var/run/docker.sock --auth-authorized-dir=/root/.docker/authorized-keys.d\"' | sudo tee -a /etc/default/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// HACK: create dir for ubuntu user to access
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	cmd, err = d.GetSSHCommand("sudo mkdir -p /root/.docker && sudo chown -R ubuntu /root/.docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	cmdString := fmt.Sprintf("sudo mkdir -p %q && sudo tee -a %q", "/root/.docker/authorized-keys.d", "/root/.docker/authorized-keys.d/docker-host.json")
-	cmd, err = d.GetSSHCommand(cmdString)
-	if err != nil {
-		return err
-	}
-	cmd.Stdin = f
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("sudo start docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -309,7 +259,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	return fmt.Sprintf("tcp://%s:%d", ip, dockerPort), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -319,6 +269,14 @@ func (d *Driver) GetIP() (string, error) {
 	}
 	d.IPAddress = inst.IpAddress
 	return d.IPAddress, nil
+}
+
+func (d *Driver) GetSSHUser() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -418,7 +376,7 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "ubuntu", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, d.GetSSHPort(), d.GetSSHUser(), d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *amz.EC2 {
@@ -522,14 +480,14 @@ func (d *Driver) createSecurityGroup() (*amz.SecurityGroup, error) {
 	perms := []amz.IpPermission{
 		{
 			Protocol: "tcp",
-			FromPort: 22,
-			ToPort:   22,
+			FromPort: d.GetSSHPort(),
+			ToPort:   d.GetSSHPort(),
 			IpRange:  ipRange,
 		},
 		{
 			Protocol: "tcp",
-			FromPort: 2376,
-			ToPort:   2376,
+			FromPort: dockerPort,
+			ToPort:   dockerPort,
 			IpRange:  ipRange,
 		},
 	}

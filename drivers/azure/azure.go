@@ -32,6 +32,7 @@ type Driver struct {
 	Image                   string
 	SSHPort                 int
 	DockerPort              int
+	MachineOptions          *drivers.MachineOptions
 	storePath               string
 }
 
@@ -165,7 +166,18 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.DockerPort = flags.Int("azure-docker-port")
 	driver.SSHPort = flags.Int("azure-ssh-port")
 
+	driver.MachineOptions = &drivers.MachineOptions{
+		Auth:          "identity",
+		Host:          "tcp://0.0.0.0:2376",
+		AuthorizedDir: "/root/.docker/authorized-keys.d",
+		Labels:        []string{},
+	}
+
 	return nil
+}
+
+func (d *Driver) GetMachineOptions() (*drivers.MachineOptions, error) {
+	return d.MachineOptions, nil
 }
 
 func (driver *Driver) Create() error {
@@ -192,69 +204,11 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
+	if err := driver.addCustomData(vmConfig); err != nil {
+		return err
+	}
+
 	if err := vmClient.CreateAzureVM(vmConfig, driver.Name, driver.Location); err != nil {
-		return err
-	}
-
-	log.Infof("Waiting for SSH...")
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", driver.getHostname(), driver.SSHPort)); err != nil {
-		return err
-	}
-
-	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = driver.GetSSHCommand("sudo stop docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err = driver.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = driver.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --auth-authorized-dir=/root/.docker/authorized-keys.d\"' | sudo tee -a /etc/default/docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	// HACK: temporarily chown to ssh user for providers using non-root accounts
-	cmd, err = driver.GetSSHCommand(fmt.Sprintf("sudo mkdir -p /root/.docker && sudo chown -R %s /root/.docker", driver.UserName))
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	cmdString := fmt.Sprintf("sudo mkdir -p %q && sudo tee -a %q", "/root/.docker/authorized-keys.d", "/root/.docker/authorized-keys.d/docker-host.json")
-	cmd, err = driver.GetSSHCommand(cmdString)
-	cmd.Stdin = f
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// HACK: change back ownership
-	cmd, err = driver.GetSSHCommand("sudo mkdir -p /root/.docker && sudo chown -R root /root/.docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = driver.GetSSHCommand("sudo start docker")
-	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -350,6 +304,14 @@ func (driver *Driver) GetURL() (string, error) {
 
 func (driver *Driver) GetIP() (string, error) {
 	return driver.getHostname(), nil
+}
+
+func (driver *Driver) GetSSHUser() string {
+	return driver.UserName
+}
+
+func (driver *Driver) GetSSHPort() int {
+	return driver.SSHPort
 }
 
 func (driver *Driver) GetState() (state.State, error) {
@@ -570,6 +532,33 @@ func (driver *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 		ep.LocalPort = driver.DockerPort
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
 		log.Debugf("added Docker endpoint to configuration")
+	}
+	return nil
+}
+
+func (driver *Driver) addCustomData(vmConfig *vmClient.Role) error {
+	configSets := vmConfig.ConfigurationSets.ConfigurationSet
+	if len(configSets) == 0 {
+		return fmt.Errorf("no configuration set")
+
+	}
+	cloudInitData, err := drivers.GetCloudConfig(driver)
+	if err != nil {
+		return err
+	}
+
+	if cloudInitData == "" {
+		return nil
+	}
+	customData := drivers.EncodeToBase64(cloudInitData)
+
+	for i := 0; i < len(configSets); i++ {
+		if configSets[i].ConfigurationSetType != "LinuxProvisioningConfiguration" {
+			continue
+		}
+		configSets[i].CustomData = customData
+		log.Debugf("added custom data to configuration")
+		break
 	}
 	return nil
 }

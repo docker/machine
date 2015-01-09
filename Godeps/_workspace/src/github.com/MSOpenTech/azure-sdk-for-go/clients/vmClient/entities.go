@@ -100,6 +100,7 @@ type ConfigurationSet struct {
 	DisableSshPasswordAuthentication bool
 	InputEndpoints                   InputEndpoints `xml:",omitempty"`
 	SSH                              SSH            `xml:",omitempty"`
+	CustomData                       string         `xml:",omitempty"`
 }
 
 type SSH struct {
