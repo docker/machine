@@ -209,6 +209,16 @@ func (d *Driver) Create() error {
 
 	d.VmID = vm.Id
 	d.IPAddress = vm.NetworkInterfaces[0].Ips[0].Ip
+
+	log.Infof("Waiting for SSH...")
+
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
+		return err
+	}
+
+	log.Debugf("Update machine")
+	d.Upgrade()
+
 	return nil
 }
 
@@ -315,7 +325,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Upgrade() error {
-	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install lxc-docker")
+	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install -y docker.io")
 	if err != nil {
 		return err
 	}
@@ -324,6 +334,48 @@ func (d *Driver) Upgrade() error {
 	sshCmd.Stderr = os.Stderr
 	if err := sshCmd.Run(); err != nil {
 		return fmt.Errorf("%s", err)
+	}
+
+	log.Infof("HACK: Downloading version of Docker with identity auth...")
+
+	cmd, err := d.GetSSHCommand("service docker.io stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = d.GetSSHCommand("curl -sS https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /usr/bin/docker")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Infof("Updating /etc/default/docker to use identity auth...")
+
+	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"' >> /etc/default/docker.io")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Debugf("Adding key to authorized-keys.d...")
+
+	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
+		return err
+	}
+
+	cmd, err = d.GetSSHCommand("service docker.io start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 	return nil
 }
