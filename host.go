@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -211,24 +211,31 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	daemonOpts := fmt.Sprintf(`--tlsverify \
-        --tlsverify \
-        --tlscacert=%s \
-        --tlskey=%s \
-        --tlscert=%s \
-        --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376`, machineCaCertPath,
-		machineServerKeyPath, machineServerCertPath)
-
 	var (
+		daemonOpts    string
 		daemonOptsCfg string
 		daemonCfg     string
 	)
 
 	switch d.DriverName() {
 	case "virtualbox", "vmwarefusion", "vmwarevsphere":
+		daemonOpts = "--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376"
 		daemonOptsCfg = filepath.Join(d.GetDockerConfigDir(), "profile")
-		daemonCfg = fmt.Sprintf("EXTRA_ARGS='%s'", daemonOpts)
+		daemonCfg = fmt.Sprintf(`EXTRA_ARGS='%s'
+CACERT=%s
+SERVERCERT=%s
+SERVERKEY=%s
+DOCKER_TLS=auto`, daemonOpts, machineCaCertPath, machineServerCertPath, machineServerKeyPath)
 	default:
+		// TODO @ehazlett - use a template here
+		daemonOpts = fmt.Sprintf(`--tlsverify \
+--tlsverify \
+--tlscacert=%s \
+--tlskey=%s \
+--tlscert=%s \
+--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376`, machineCaCertPath,
+			machineServerKeyPath, machineServerCertPath)
+
 		daemonOptsCfg = "/etc/default/docker"
 		daemonCfg = fmt.Sprintf("export DOCKER_OPTS='%s'", daemonOpts)
 	}

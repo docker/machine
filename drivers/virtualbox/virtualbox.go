@@ -324,50 +324,19 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	//log.Debugf("Adding key to authorized-keys.d...")
+	cmd, err := d.GetSSHCommand(fmt.Sprintf(
+		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
+		d.MachineName,
+		d.MachineName,
+	))
+	if err != nil {
+		return err
 
-	//cmd, err := d.GetSSHCommand("sudo mkdir -p /var/lib/boot2docker/.docker && sudo chown -R docker /var/lib/boot2docker/.docker")
-	//if err != nil {
-	//	return err
-	//}
-	//if err := cmd.Run(); err != nil {
-	//	return err
-	//}
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 
-	//if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/var/lib/boot2docker/.docker/authorized-keys.d"); err != nil {
-	//	return err
-	//}
-
-	//// HACK: configure docker to use persisted auth
-	//cmd, err = d.GetSSHCommand("echo DOCKER_TLS=no | sudo tee -a /var/lib/boot2docker/profile")
-	//if err != nil {
-	//	return err
-	//}
-	//if err := cmd.Run(); err != nil {
-	//	return err
-	//}
-
-	//extraArgs := `EXTRA_ARGS='--auth=identity
-	//--auth-authorized-dir=/var/lib/boot2docker/.docker/authorized-keys.d
-	//--auth-known-hosts=/var/lib/boot2docker/.docker/known-hosts.json
-	//--identity=/var/lib/boot2docker/.docker/key.json
-	//-H tcp://0.0.0.0:2376'`
-	//sshCmd := fmt.Sprintf("echo \"%s\" | sudo tee -a /var/lib/boot2docker/profile", extraArgs)
-	//cmd, err = d.GetSSHCommand(sshCmd)
-	//if err != nil {
-	//	return err
-	//}
-	//if err := cmd.Run(); err != nil {
-	//	return err
-	//}
-
-	//cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart")
-	//if err != nil {
-	//	return err
-	//}
-	//if err := cmd.Run(); err != nil {
-	//	return err
-	//}
+	}
 
 	return nil
 }
