@@ -31,7 +31,6 @@ const (
 
 type Driver struct {
 	Id              string
-	MachineName     string
 	AccessKey       string
 	SecretKey       string
 	SessionToken    string
