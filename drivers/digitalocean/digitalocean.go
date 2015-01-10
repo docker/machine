@@ -167,7 +167,7 @@ func (d *Driver) Create() error {
 
 	log.Debugf("Updating /etc/default/docker to use identity auth...")
 
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"' >> /etc/default/docker")
+	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --host=unix:///var/run/docker.sock\"' >> /etc/default/docker")
 	if err != nil {
 		return err
 	}
