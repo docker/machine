@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -31,6 +32,20 @@ type Host struct {
 
 type hostConfig struct {
 	DriverName string
+}
+
+func waitForDocker(addr string) error {
+	for {
+		log.Debugf("checking if Docker is available on %s", addr)
+		conn, err := net.DialTimeout("tcp", addr, time.Second*5)
+		if err != nil {
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		conn.Close()
+		break
+	}
+	return nil
 }
 
 func NewHost(name, driverName, storePath string) (*Host, error) {
@@ -103,21 +118,15 @@ func (h *Host) addHostToKnownHosts() error {
 	trustKeyPath := filepath.Join(drivers.GetDockerDir(), "key.json")
 	knownHostsPath := filepath.Join(drivers.GetDockerDir(), "known-hosts.json")
 
-	driverUrl, err := h.GetURL()
+	addr, err := h.GetDockerAddr()
 	if err != nil {
-		return fmt.Errorf("unable to get machine url: %s", err)
+		return err
 	}
 
-	u, err := url.Parse(driverUrl)
-	if err != nil {
-		return fmt.Errorf("unable to parse machine url")
-	}
-
-	if u.Scheme == "unix" {
+	if addr == "" {
 		return nil
 	}
 
-	addr := u.Host
 	proto := "tcp"
 
 	trustKey, err := loadTrustKey(trustKeyPath)
@@ -206,8 +215,25 @@ func (h *Host) Create() error {
 		return err
 	}
 
-	if err := h.addHostToKnownHosts(); err != nil {
+	addr, err := h.GetDockerAddr()
+	if err != nil {
 		return err
+	}
+
+	log.Info("Waiting for machine to be provisioned and available. This may take a few minutes...")
+
+	if addr != "" {
+		// wait for provisioning before checking; otherwise
+		// some providers will block the host due to the number of requests
+		time.Sleep(30 * time.Second)
+		if err := waitForDocker(addr); err != nil {
+			return err
+		}
+
+		if err := h.addHostToKnownHosts(); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -249,6 +275,28 @@ func (h *Host) removeStorePath() error {
 
 func (h *Host) GetURL() (string, error) {
 	return h.Driver.GetURL()
+}
+
+func (h *Host) GetIP() (string, error) {
+	return h.Driver.GetIP()
+}
+
+func (h *Host) GetDockerAddr() (string, error) {
+	driverUrl, err := h.GetURL()
+	if err != nil {
+		return "", fmt.Errorf("unable to get machine url: %s", err)
+	}
+
+	u, err := url.Parse(driverUrl)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse machine url")
+	}
+
+	if u.Scheme == "unix" {
+		return "", nil
+	}
+
+	return u.Host, nil
 }
 
 func (h *Host) LoadConfig() error {

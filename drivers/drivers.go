@@ -173,7 +173,7 @@ func GetCloudConfig(driver Driver) (string, error) {
 
 	encodedKey := base64.StdEncoding.EncodeToString(key)
 
-	dockerOpts := fmt.Sprintf("DOCKER_OPTS=\"--auth=%s --host=%s --auth-authorized-dir=%s\"",
+	dockerOpts := fmt.Sprintf("DOCKER_OPTS=\"--auth=%s --host unix:// --host=%s --auth-authorized-dir=%s\"",
 		machineOpts.Auth, machineOpts.Host, machineOpts.AuthorizedDir)
 
 	buf := bytes.NewBufferString(dockerOpts)

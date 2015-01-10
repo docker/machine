@@ -63,10 +63,11 @@ func WaitForTCP(addr string) error {
 		if err != nil {
 			continue
 		}
-		defer conn.Close()
 		if _, err = conn.Read(make([]byte, 1)); err != nil {
+			conn.Close()
 			continue
 		}
+		conn.Close()
 		break
 	}
 	return nil
