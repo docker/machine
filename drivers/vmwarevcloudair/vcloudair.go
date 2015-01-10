@@ -23,6 +23,10 @@ import (
 	"github.com/docker/machine/state"
 )
 
+const (
+	dockerConfigDir = "/etc/docker"
+)
+
 type Driver struct {
 	UserName     string
 	UserPassword string
@@ -748,6 +752,38 @@ func (d *Driver) Kill() error {
 
 	return nil
 
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func (d *Driver) Upgrade() error {

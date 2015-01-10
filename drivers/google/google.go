@@ -14,6 +14,10 @@ import (
 	"github.com/docker/machine/ssh"
 )
 
+const (
+	dockerConfigDir = "/etc/docker"
+)
+
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	MachineName      string
@@ -22,6 +26,8 @@ type Driver struct {
 	storePath        string
 	UserName         string
 	Project          string
+	CaCertPath       string
+	PrivateKeyPath   string
 	sshKeyPath       string
 	publicSSHKeyPath string
 }
@@ -72,10 +78,12 @@ func GetCreateFlags() []cli.Flag {
 }
 
 // NewDriver creates a Driver with the specified storePath.
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	return &Driver{
 		MachineName:      machineName,
 		storePath:        storePath,
+		CaCertPath:       caCert,
+		PrivateKeyPath:   privateKey,
 		sshKeyPath:       path.Join(storePath, "id_rsa"),
 		publicSSHKeyPath: path.Join(storePath, "id_rsa.pub"),
 	}, nil
@@ -223,6 +231,38 @@ func (driver *Driver) Restart() error {
 // Kill deletes the GCE instance, but keeps the disk.
 func (driver *Driver) Kill() error {
 	return driver.Stop()
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 // GetSSHCommand returns a command that will run over SSH on the GCE instance.

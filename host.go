@@ -156,15 +156,11 @@ func (h *Host) ConfigureAuth() error {
 	caCertPath := filepath.Join(h.storePath, "ca.pem")
 	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
 
-	cmd, err := d.GetSSHCommand("sudo stop docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if err := d.StopDocker(); err != nil {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand("sudo mkdir -p /etc/docker")
+	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo mkdir -p %s", d.GetDockerConfigDir()))
 	if err != nil {
 		return err
 	}
@@ -177,18 +173,21 @@ func (h *Host) ConfigureAuth() error {
 	if err != nil {
 		return err
 	}
+	machineCaCertPath := filepath.Join(d.GetDockerConfigDir(), "ca.pem")
 
 	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
 		return err
 	}
+	machineServerCertPath := filepath.Join(d.GetDockerConfigDir(), "server.pem")
 
 	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
 		return err
 	}
+	machineServerKeyPath := filepath.Join(d.GetDockerConfigDir(), "server-key.pem")
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a /etc/docker/ca.pem", string(caCert)))
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(caCert), machineCaCertPath))
 	if err != nil {
 		return err
 	}
@@ -196,7 +195,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a /etc/docker/server-key.pem", string(serverKey)))
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverKey), machineServerKeyPath))
 	if err != nil {
 		return err
 	}
@@ -204,7 +203,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a /etc/docker/server.pem", string(serverCert)))
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverCert), machineServerCertPath))
 	if err != nil {
 		return err
 	}
@@ -212,12 +211,28 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(`echo 'export DOCKER_OPTS=" \
+	daemonOpts := fmt.Sprintf(`--tlsverify \
         --tlsverify \
-        --tlscacert=/etc/docker/ca.pem \
-        --tlskey=/etc/docker/server-key.pem \
-        --tlscert=/etc/docker/server.pem \
-        --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376"' | sudo tee -a /etc/default/docker`)
+        --tlscacert=%s \
+        --tlskey=%s \
+        --tlscert=%s \
+        --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376`, machineCaCertPath,
+		machineServerKeyPath, machineServerCertPath)
+
+	var (
+		daemonOptsCfg string
+		daemonCfg     string
+	)
+
+	switch d.DriverName() {
+	case "virtualbox", "vmwarefusion", "vmwarevsphere":
+		daemonOptsCfg = filepath.Join(d.GetDockerConfigDir(), "profile")
+		daemonCfg = fmt.Sprintf("EXTRA_ARGS='%s'", daemonOpts)
+	default:
+		daemonOptsCfg = "/etc/default/docker"
+		daemonCfg = fmt.Sprintf("export DOCKER_OPTS='%s'", daemonOpts)
+	}
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", daemonCfg, daemonOptsCfg))
 	if err != nil {
 		return err
 	}
@@ -225,11 +240,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand("sudo start docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if err := d.StartDocker(); err != nil {
 		return err
 	}
 

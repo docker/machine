@@ -34,7 +34,7 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	return &Driver{}, nil
 }
 
@@ -91,6 +91,18 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) Kill() error {
 	return fmt.Errorf("hosts without a driver cannot be killed")
+}
+
+func (d *Driver) StartDocker() error {
+	return fmt.Errorf("hosts without a driver cannot start docker")
+}
+
+func (d *Driver) StopDocker() error {
+	return fmt.Errorf("hosts without a driver cannot stop docker")
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return ""
 }
 
 func (d *Driver) Upgrade() error {

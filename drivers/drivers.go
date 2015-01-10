@@ -51,8 +51,17 @@ type Driver interface {
 	// Kill stops a host forcefully
 	Kill() error
 
+	// RestartDocker restarts a Docker daemon on the machine
+	StartDocker() error
+
+	// RestartDocker restarts a Docker daemon on the machine
+	StopDocker() error
+
 	// Upgrade the version of Docker on the host to the latest version
 	Upgrade() error
+
+	// GetDockerConfigDir returns the config directory for storing daemon configs
+	GetDockerConfigDir() string
 
 	// GetSSHCommand returns a command for SSH pointing at the correct user, host
 	// and keys for the host with args appended. If no args are passed, it will

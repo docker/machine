@@ -28,6 +28,7 @@ const (
 	DATASTORE_DIR      = "boot2docker-iso"
 	B2D_ISO_NAME       = "boot2docker.iso"
 	DEFAULT_CPU_NUMBER = 2
+	dockerConfigDir    = "/var/lib/boot2docker"
 )
 
 type Driver struct {
@@ -377,6 +378,38 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) Kill() error {
 	return d.Stop()
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func (d *Driver) Upgrade() error {
