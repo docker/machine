@@ -18,6 +18,10 @@ import (
 	"github.com/docker/machine/state"
 )
 
+const (
+	dockerConfigDir = "/etc/docker"
+)
+
 type Driver struct {
 	AccessToken    string
 	DropletID      int
@@ -258,6 +262,38 @@ func (d *Driver) Restart() error {
 func (d *Driver) Kill() error {
 	_, _, err := d.getClient().DropletActions.PowerOff(d.DropletID)
 	return err
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func (d *Driver) Upgrade() error {

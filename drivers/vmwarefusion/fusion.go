@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	B2D_USER = "docker"
-	B2D_PASS = "tcuser"
+	B2D_USER        = "docker"
+	B2D_PASS        = "tcuser"
+	dockerConfigDir = "/var/lib/boot2docker"
 )
 
 // Driver for VMware Fusion
@@ -37,6 +38,8 @@ type Driver struct {
 	DiskSize       int
 	ISO            string
 	Boot2DockerURL string
+	CaCertPath     string
+	PrivateKeyPath string
 
 	storePath string
 }
@@ -78,8 +81,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath}, nil
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -229,6 +232,13 @@ func (d *Driver) Create() error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
+	//cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
+	//if err != nil {
+	//	return err
+	//}
+	//if err := cmd.Run(); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
@@ -264,6 +274,38 @@ func (d *Driver) Restart() error {
 func (d *Driver) Kill() error {
 	vmrun("stop", d.vmxPath(), "nogui")
 	return nil
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker stop ; exit 0")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func (d *Driver) Upgrade() error {
