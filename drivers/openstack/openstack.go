@@ -454,6 +454,16 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return ssh.GetSSHCommand(ip, d.SSHPort, d.SSHUser, d.sshKeyPath(), args...), nil
 }
 
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
+}
+
 const (
 	errorMandatoryEnvOrOption    string = "%s must be specified either using the environment variable %s or the CLI option %s"
 	errorMandatoryOption         string = "%s must be specified using the CLI option %s"

@@ -79,6 +79,16 @@ var Commands = []cli.Command{
 		Action: cmdConfig,
 	},
 	{
+		Name:   "export",
+		Usage:  "Export a machine to STDOUT",
+		Action: cmdExport,
+	},
+	{
+		Name:   "import",
+		Usage:  "Import a machine to STDOUT",
+		Action: cmdImport,
+	},
+	{
 		Name:   "inspect",
 		Usage:  "Inspect information about a machine",
 		Action: cmdInspect,
@@ -231,6 +241,44 @@ func cmdConfig(c *cli.Context) {
 	}
 	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
 		caCert, clientCert, clientKey, machineUrl)
+}
+
+func cmdExport(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		cli.ShowCommandHelp(c, "export")
+		log.Fatal("You must specify a machine name")
+	}
+
+	name := c.Args().First()
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+
+	buf, err := store.Export(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// do something with buf
+	buf.WriteTo(os.Stdout)
+}
+
+func cmdImport(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		cli.ShowCommandHelp(c, "import")
+		log.Fatal("You must specify a machine name")
+	}
+
+	name := c.Args().First()
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+
+	ok, err := store.Exists(name)
+	if ok || err != nil {
+		log.Fatalf("Machine '%s' already exists", name)
+	}
+
+	err = store.Import(name, os.Stdin)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func cmdInspect(c *cli.Context) {

@@ -77,6 +77,14 @@ func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return &exec.Cmd{}, nil
 }
 
+func (d *FakeDriver) Export() error {
+	return nil
+}
+
+func (d *FakeDriver) Import(name string) error {
+	return nil
+}
+
 func TestGetHostState(t *testing.T) {
 	storePath, err := ioutil.TempDir("", ".docker")
 	if err != nil {

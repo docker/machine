@@ -21,6 +21,7 @@ func init() {
 	drivers.Register("none", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverLocal,
 	})
 }
 
@@ -111,4 +112,12 @@ func (d *Driver) Upgrade() error {
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return nil, fmt.Errorf("hosts without a driver do not support SSH")
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	return nil
 }

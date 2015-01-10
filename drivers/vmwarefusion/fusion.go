@@ -57,6 +57,7 @@ func init() {
 	drivers.Register("vmwarefusion", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverLocal,
 	})
 }
 
@@ -198,7 +199,7 @@ func (d *Driver) Create() error {
 	vmxt.Execute(vmxfile, d)
 
 	// Generate vmdk file
-	diskImg := filepath.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.MachineName))
+	diskImg := d.vmdkPath()
 	if _, err := os.Stat(diskImg); err != nil {
 		if !os.IsNotExist(err) {
 			return err
@@ -357,12 +358,30 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return ssh.GetSSHCommand(ip, 22, "docker", d.sshKeyPath(), args...), nil
 }
 
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	// Generate vmx config file from template
+	vmxt := template.Must(template.New("vmx").Parse(vmx))
+	vmxfile, err := os.Create(d.vmxPath())
+	if err != nil {
+		return err
+	}
+	vmxt.Execute(vmxfile, d)
+
+	return nil
+}
+
 func (d *Driver) vmxPath() string {
-	return path.Join(d.storePath, fmt.Sprintf("%s.vmx", d.MachineName))
+	return path.Join(d.storePath, "vm.vmx")
 }
 
 func (d *Driver) vmdkPath() string {
-	return path.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.MachineName))
+	return path.Join(d.storePath, "vm.vmdk")
 }
 
 // Download boot2docker ISO image for the given tag and save it at dest.

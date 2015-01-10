@@ -49,6 +49,7 @@ func init() {
 	drivers.Register("virtualbox", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    "local",
 	})
 }
 
@@ -175,141 +176,16 @@ func (d *Driver) Create() error {
 
 	log.Infof("Creating VirtualBox VM...")
 
+	if err := os.MkdirAll(filepath.Join(d.storePath, d.MachineName), 0700); err != nil {
+		return err
+	}
+
 	if err := d.generateDiskImage(d.DiskSize); err != nil {
 		return err
 	}
 
-	if err := vbm("createvm",
-		"--basefolder", d.storePath,
-		"--name", d.MachineName,
-		"--register"); err != nil {
-		return err
-	}
-
-	cpus := uint(runtime.NumCPU())
-	if cpus > 32 {
-		cpus = 32
-	}
-
-	if err := vbm("modifyvm", d.MachineName,
-		"--firmware", "bios",
-		"--bioslogofadein", "off",
-		"--bioslogofadeout", "off",
-		"--natdnshostresolver1", "on",
-		"--bioslogodisplaytime", "0",
-		"--biosbootmenu", "disabled",
-
-		"--ostype", "Linux26_64",
-		"--cpus", fmt.Sprintf("%d", cpus),
-		"--memory", fmt.Sprintf("%d", d.Memory),
-
-		"--acpi", "on",
-		"--ioapic", "on",
-		"--rtcuseutc", "on",
-		"--cpuhotplug", "off",
-		"--pae", "on",
-		"--synthcpu", "off",
-		"--hpet", "on",
-		"--hwvirtex", "on",
-		"--nestedpaging", "on",
-		"--largepages", "on",
-		"--vtxvpid", "on",
-		"--accelerate3d", "off",
-		"--boot1", "dvd"); err != nil {
-		return err
-	}
-
-	if err := vbm("modifyvm", d.MachineName,
-		"--nic1", "nat",
-		"--nictype1", "virtio",
-		"--cableconnected1", "on"); err != nil {
-		return err
-	}
-
-	if err := vbm("modifyvm", d.MachineName,
-		"--natpf1", fmt.Sprintf("ssh,tcp,127.0.0.1,%d,,22", d.SSHPort)); err != nil {
-		return err
-	}
-
-	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
-		net.ParseIP("192.168.99.1"),
-		net.IPv4Mask(255, 255, 255, 0),
-		net.ParseIP("192.168.99.2"),
-		net.ParseIP("192.168.99.100"),
-		net.ParseIP("192.168.99.254"))
-	if err != nil {
-		return err
-	}
-	if err := vbm("modifyvm", d.MachineName,
-		"--nic2", "hostonly",
-		"--nictype2", "virtio",
-		"--hostonlyadapter2", hostOnlyNetwork.Name,
-		"--cableconnected2", "on"); err != nil {
-		return err
-	}
-
-	if err := vbm("storagectl", d.MachineName,
-		"--name", "SATA",
-		"--add", "sata",
-		"--hostiocache", "on"); err != nil {
-		return err
-	}
-
-	if err := vbm("storageattach", d.MachineName,
-		"--storagectl", "SATA",
-		"--port", "0",
-		"--device", "0",
-		"--type", "dvddrive",
-		"--medium", filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
-		return err
-	}
-
-	if err := vbm("storageattach", d.MachineName,
-		"--storagectl", "SATA",
-		"--port", "1",
-		"--device", "0",
-		"--type", "hdd",
-		"--medium", d.diskPath()); err != nil {
-		return err
-	}
-
-	// let VBoxService do nice magic automounting (when it's used)
-	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
-		return err
-	}
-	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountDir", "/"); err != nil {
-		return err
-	}
-
-	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-		// TODO "linux" and "windows"
-	}
-
-	if shareDir != "" {
-		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
-			return err
-		} else if !os.IsNotExist(err) {
-			if shareName == "" {
-				// parts of the VBox internal code are buggy with share names that start with "/"
-				shareName = strings.TrimLeft(shareDir, "/")
-				// TODO do some basic Windows -> MSYS path conversion
-				// ie, s!^([a-z]+):[/\\]+!\1/!; s!\\!/!g
-			}
-
-			// woo, shareDir exists!  let's carry on!
-			if err := vbm("sharedfolder", "add", d.MachineName, "--name", shareName, "--hostpath", shareDir, "--automount"); err != nil {
-				return err
-			}
-
-			// enable symlinks
-			if err := vbm("setextradata", d.MachineName, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/"+shareName, "1"); err != nil {
-				return err
-			}
-		}
+	if err := d.createDriverConfig(); err != nil {
+		return nil
 	}
 
 	log.Infof("Starting VirtualBox VM...")
@@ -330,6 +206,20 @@ func (d *Driver) Create() error {
 	if err := cmd.Run(); err != nil {
 		return err
 
+	}
+
+	return nil
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	if err := d.createDriverConfig(); err != nil {
+		return nil
 	}
 
 	return nil
@@ -653,4 +543,145 @@ func getAvailableTCPPort() (int, error) {
 	addr := ln.Addr().String()
 	addrParts := strings.SplitN(addr, ":", 2)
 	return strconv.Atoi(addrParts[1])
+}
+
+func (d *Driver) createDriverConfig() error {
+	if err := vbm("createvm",
+		"--basefolder", d.storePath,
+		"--name", d.MachineName,
+		"--register"); err != nil {
+		return err
+	}
+
+	cpus := uint(runtime.NumCPU())
+	if cpus > 32 {
+		cpus = 32
+	}
+
+	if err := vbm("modifyvm", d.MachineName,
+		"--firmware", "bios",
+		"--bioslogofadein", "off",
+		"--bioslogofadeout", "off",
+		"--natdnshostresolver1", "on",
+		"--bioslogodisplaytime", "0",
+		"--biosbootmenu", "disabled",
+
+		"--ostype", "Linux26_64",
+		"--cpus", fmt.Sprintf("%d", cpus),
+		"--memory", fmt.Sprintf("%d", d.Memory),
+
+		"--acpi", "on",
+		"--ioapic", "on",
+		"--rtcuseutc", "on",
+		"--cpuhotplug", "off",
+		"--pae", "on",
+		"--synthcpu", "off",
+		"--hpet", "on",
+		"--hwvirtex", "on",
+		"--nestedpaging", "on",
+		"--largepages", "on",
+		"--vtxvpid", "on",
+		"--accelerate3d", "off",
+		"--boot1", "dvd"); err != nil {
+		return err
+	}
+
+	if err := vbm("modifyvm", d.MachineName,
+		"--nic1", "nat",
+		"--nictype1", "virtio",
+		"--cableconnected1", "on"); err != nil {
+		return err
+	}
+
+	if err := vbm("modifyvm", d.MachineName,
+		"--natpf1", fmt.Sprintf("ssh,tcp,127.0.0.1,%d,,22", d.SSHPort)); err != nil {
+		return err
+	}
+
+	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
+		net.ParseIP("192.168.99.1"),
+		net.IPv4Mask(255, 255, 255, 0),
+		net.ParseIP("192.168.99.2"),
+		net.ParseIP("192.168.99.100"),
+		net.ParseIP("192.168.99.254"))
+	if err != nil {
+		return err
+	}
+	if err := vbm("modifyvm", d.MachineName,
+		"--nic2", "hostonly",
+		"--nictype2", "virtio",
+		"--hostonlyadapter2", hostOnlyNetwork.Name,
+		"--cableconnected2", "on"); err != nil {
+		return err
+	}
+
+	if err := vbm("storagectl", d.MachineName,
+		"--name", "SATA",
+		"--add", "sata",
+		"--hostiocache", "on"); err != nil {
+		return err
+	}
+
+	if err := vbm("storageattach", d.MachineName,
+		"--storagectl", "SATA",
+		"--port", "0",
+		"--device", "0",
+		"--type", "dvddrive",
+		"--medium", filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
+		return err
+	}
+
+	if err := vbm("internalcommands", "sethduuid", d.diskPath()); err != nil {
+		return err
+	}
+
+	if err := vbm("storageattach", d.MachineName,
+		"--storagectl", "SATA",
+		"--port", "1",
+		"--device", "0",
+		"--type", "hdd",
+		"--medium", d.diskPath()); err != nil {
+		return err
+	}
+
+	// let VBoxService do nice magic automounting (when it's used)
+	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
+		return err
+	}
+	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountDir", "/"); err != nil {
+		return err
+	}
+
+	var shareName, shareDir string // TODO configurable at some point
+	switch runtime.GOOS {
+	case "darwin":
+		shareName = "Users"
+		shareDir = "/Users"
+		// TODO "linux" and "windows"
+	}
+
+	if shareDir != "" {
+		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
+			return err
+		} else if !os.IsNotExist(err) {
+			if shareName == "" {
+				// parts of the VBox internal code are buggy with share names that start with "/"
+				shareName = strings.TrimLeft(shareDir, "/")
+				// TODO do some basic Windows -> MSYS path conversion
+				// ie, s!^([a-z]+):[/\\]+!\1/!; s!\\!/!g
+			}
+
+			// woo, shareDir exists!  let's carry on!
+			if err := vbm("sharedfolder", "add", d.MachineName, "--name", shareName, "--hostpath", shareDir, "--automount"); err != nil {
+				return err
+			}
+
+			// enable symlinks
+			if err := vbm("setextradata", d.MachineName, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/"+shareName, "1"); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

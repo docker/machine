@@ -68,6 +68,7 @@ func init() {
 	drivers.Register(driverName, &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverRemote,
 	})
 }
 
@@ -425,6 +426,16 @@ func (d *Driver) Upgrade() error {
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return ssh.GetSSHCommand(d.IPAddress, 22, "ubuntu", d.sshKeyPath(), args...), nil
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
 }
 
 func (d *Driver) getClient() *amz.EC2 {
