@@ -68,6 +68,11 @@ var Commands = []cli.Command{
 				),
 				Value: "none",
 			},
+			cli.StringFlag{
+				Name: "docker-opts",
+				Usage: "Options to append to the remote Docker Daemon's configuration",
+				Value: "",
+			},
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
@@ -183,6 +188,7 @@ func cmdActive(c *cli.Context) {
 func cmdCreate(c *cli.Context) {
 	driver := c.String("driver")
 	name := c.Args().First()
+	dockerOpts := c.String("docker-opts")
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
@@ -191,7 +197,7 @@ func cmdCreate(c *cli.Context) {
 
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
 
-	host, err := store.Create(name, driver, c)
+	host, err := store.Create(name, driver, dockerOpts, c)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
 		log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
@@ -215,7 +221,7 @@ func cmdConfig(c *cli.Context) {
 	}
 
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
-
+	
 	host, err := store.Load(name)
 	if err != nil {
 		log.Fatalf("Error loading machine config: %s", err)
