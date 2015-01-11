@@ -256,6 +256,15 @@ func cmdLs(c *cli.Context) {
 
 	for _, host := range hostList {
 		if !quiet {
+			tmpHost, err := store.GetActive()
+			if err != nil {
+				log.Errorf("There's a problem with the active host: %s", err)
+			}
+
+			if tmpHost == nil {
+				log.Errorf("There's a problem finding the active host")
+			}
+
 			go getHostState(host, *store, hostListItems)
 		} else {
 			fmt.Fprintf(w, "%s\n", host.Name)
@@ -399,6 +408,10 @@ func getHost(c *cli.Context) *Host {
 		if err != nil {
 			log.Fatalf("unable to get active host: %v", err)
 		}
+
+		if host == nil {
+			log.Fatal("unable to get active host, active file not found")
+		}
 		return host
 	}
 
@@ -426,7 +439,7 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 
 	isActive, err := store.IsActive(&host)
 	if err != nil {
-		log.Errorf("error determining whether host %q is active: %s",
+		log.Debugf("error determining whether host %q is active: %s",
 			host.Name, err)
 	}
 

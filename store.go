@@ -64,6 +64,7 @@ func (s *Store) Remove(name string, force bool) error {
 	if err != nil {
 		return err
 	}
+
 	if active != nil && active.Name == name {
 		if err := s.RemoveActive(); err != nil {
 			return err
