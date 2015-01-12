@@ -482,6 +482,9 @@ func (d *Driver) Create() error {
 
 }
 
+func (d *Driver) Resume() error {return nil}
+func (d *Driver) Save() error {return nil}
+
 func (d *Driver) Remove() error {
 
 	p, err := govcloudair.NewClient()

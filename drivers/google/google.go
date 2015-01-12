@@ -129,6 +129,9 @@ func (driver *Driver) Create() error {
 	return c.createInstance(driver)
 }
 
+func (d *Driver) Resume() error {return nil}
+func (d *Driver) Save() error {return nil}
+
 // GetURL returns the URL of the remote docker daemon.
 func (driver *Driver) GetURL() (string, error) {
 	ip, err := driver.GetIP()
