@@ -23,6 +23,7 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/state"
+	_ "github.com/taoh/machine/drivers/linode"
 )
 
 type hostListItem struct {
