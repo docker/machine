@@ -332,6 +332,14 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	cmd, err = d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop; fi")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
 	// HACK: configure docker to use persisted auth
 	cmd, err = d.GetSSHCommand("echo DOCKER_TLS=no | sudo tee -a /var/lib/boot2docker/profile")
 	if err != nil {
@@ -355,7 +363,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart")
+	cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker start")
 	if err != nil {
 		return err
 	}
