@@ -27,10 +27,13 @@ type Driver struct {
 	LinodeId    int
 	LinodeLabel string
 
-	DataCenterId int
-	PlanId       int
-	PaymentTerm  int
-	RootPassword string
+	DataCenterId   int
+	PlanId         int
+	PaymentTerm    int
+	RootPassword   string
+	SSHPort        int
+	DistributionId int
+	KernelId       int
 
 	storePath string
 }
@@ -74,6 +77,24 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "Linode Payment term",
 			Value:  1, // valid values: 1, 12, 24
 		},
+		cli.IntFlag{
+			EnvVar: "LINODE_SSH_PORT",
+			Name:   "linode-ssh-port",
+			Usage:  "Linode SSH Port",
+			Value:  22,
+		},
+		cli.IntFlag{
+			EnvVar: "LINODE_DISTRIBUTION_ID",
+			Name:   "linode-distribution-id",
+			Usage:  "Linode Distribution Id",
+			Value:  124,
+		},
+		cli.IntFlag{
+			EnvVar: "LINODE_KERNEL_ID",
+			Name:   "linode-kernel-id",
+			Usage:  "Linode Kernel Id",
+			Value:  138, // default kernel, Latest 64 bit (3.18.1-x86_64-linode50),
+		},
 	}
 }
 
@@ -91,6 +112,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.PlanId = flags.Int("linode-plan-id")
 	d.PaymentTerm = flags.Int("linode-payment-term")
 	d.RootPassword = flags.String("linode-root-pass")
+	d.SSHPort = flags.Int("linode-ssh-port")
+	d.DistributionId = flags.Int("linode-distribution-id")
+	d.KernelId = flags.Int("linode-kernel-id")
 
 	if d.APIKey == "" {
 		return fmt.Errorf("linode driver requires the --linode-api-key option")
@@ -210,7 +234,28 @@ func (d *Driver) Upgrade() error {
 // and keys for the host with args appended. If no args are passed, it will
 // initiate an interactive SSH session as if SSH were passed no args.
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, d.SSHPort, "root", d.sshKeyPath(), args...), nil
+}
+
+func (d *Driver) waitForJob(jobId int, jobName string) error {
+	for {
+		clientJobResponse, err := d.getClient().Job.List(d.LinodeId, jobId, false)
+		if err != nil {
+			return err
+		}
+
+		if len(clientJobResponse.Jobs) < 0 || clientJobResponse.Jobs[0].JobId != jobId {
+			return errors.New(fmt.Sprintf("Job %s is not found.", jobName))
+		}
+
+		if clientJobResponse.Jobs[0].HostSuccess.String() == "1" {
+			log.Debugf("Linode job %s completed.", jobName)
+			return nil
+		}
+
+		log.Debugf("Wait for job %s completion...", jobName)
+		time.Sleep(1 * time.Second)
+	}
 }
 
 // Create a host using the driver's config
@@ -261,7 +306,7 @@ func (d *Driver) Create() error {
 	args := make(map[string]string)
 	args["rootPass"] = d.RootPassword
 	args["rootSSHKey"] = publicKey
-	distributionId := 124
+	distributionId := d.DistributionId
 	createDiskJobResponse, err := d.client.Disk.CreateFromDistribution(distributionId, d.LinodeId, "Ubuntu Disk", 24576-256, args)
 
 	if err != nil {
@@ -273,27 +318,12 @@ func (d *Driver) Create() error {
 	log.Debugf("Linode create disk task :%d.", jobId)
 
 	// wait until the creation is finished
-	for {
-		clientJobResponse, err := client.Job.List(d.LinodeId, jobId, false)
-		if err != nil {
-			return err
-		}
-
-		if len(clientJobResponse.Jobs) < 0 || clientJobResponse.Jobs[0].JobId != jobId {
-			return errors.New("Create Disk Job is not created.")
-		}
-
-		if clientJobResponse.Jobs[0].HostSuccess.String() == "1" {
-			log.Debugf("Linode create disk task completed.")
-			break
-		}
-
-		log.Debugf("Wait for creating disk task")
-		time.Sleep(1 * time.Second)
+	err = d.waitForJob(jobId, "Create Disk Task")
+	if err != nil {
+		return err
 	}
 
 	// create swap
-	//
 	createDiskJobResponse, err = d.client.Disk.Create(d.LinodeId, "swap", "Swap Disk", 256, nil)
 	if err != nil {
 		return err
@@ -304,23 +334,9 @@ func (d *Driver) Create() error {
 	log.Debugf("Linode create swap disk task :%d.", jobId)
 
 	// wait until the creation is finished
-	for {
-		clientJobResponse, err := client.Job.List(d.LinodeId, jobId, false)
-		if err != nil {
-			return err
-		}
-
-		if len(clientJobResponse.Jobs) < 0 || clientJobResponse.Jobs[0].JobId != jobId {
-			return errors.New("Create Disk Job is not created.")
-		}
-
-		if clientJobResponse.Jobs[0].HostSuccess.String() == "1" {
-			log.Debugf("Linode create swap disk task completed.")
-			break
-		}
-
-		log.Debugf("Wait for creating swap disk task")
-		time.Sleep(1 * time.Second)
+	err = d.waitForJob(jobId, "Create Swap Disk Task")
+	if err != nil {
+		return err
 	}
 
 	// create config
@@ -328,7 +344,7 @@ func (d *Driver) Create() error {
 	args2["DiskList"] = fmt.Sprintf("%d,%d", diskId, swapDiskId)
 	args2["RootDeviceNum"] = "1"
 	args2["RootDeviceRO"] = "true"
-	kernelId := 138 // default kernel, Latest 64 bit (3.18.1-x86_64-linode50)
+	kernelId := d.KernelId
 	_, err = d.client.Config.Create(d.LinodeId, kernelId, "My Machine Configuration", args2)
 
 	if err != nil {
@@ -342,35 +358,17 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("Booting linode, job id: %v", jobResponse.JobId.JobId)
+	jobId = jobResponse.JobId.JobId
+	log.Debugf("Booting linode, job id: %v", jobId)
 	// wait for boot
-	for {
-		clientJobResponse, err := client.Job.List(d.LinodeId, jobResponse.JobId.JobId, false)
-		if err != nil {
-			return err
-		}
-
-		if len(clientJobResponse.Jobs) < 0 {
-			return errors.New("Boot Job is not created.")
-		}
-
-		hostSuccess := clientJobResponse.Jobs[0].HostSuccess.String()
-		if hostSuccess == "1" {
-			log.Debugf("Linode wait for Boot completed.")
-			break
-		}
-
-		if hostSuccess == "0" {
-			return errors.New("Failed to boot linode")
-		}
-
-		log.Debugf("Wait for boot task")
-		time.Sleep(1 * time.Second)
+	err = d.waitForJob(jobId, "Create Swap Disk Task")
+	if err != nil {
+		return err
 	}
 
 	log.Infof("Waiting for SSH...")
 
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)); err != nil {
 		return err
 	}
 
