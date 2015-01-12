@@ -17,10 +17,10 @@ import (
 	_ "github.com/docker/machine/drivers/azure"
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/google"
-	_ "github.com/taoh/machine/drivers/linode"
 	_ "github.com/docker/machine/drivers/none"
 	_ "github.com/docker/machine/drivers/virtualbox"
 	"github.com/docker/machine/state"
+	_ "github.com/taoh/machine/drivers/linode"
 )
 
 type hostListItem struct {
