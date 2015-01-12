@@ -214,16 +214,16 @@ func (h *Host) Create() error {
 }
 
 func (h *Host) Save() error {
-	if h.Driver.DriverName != "vmwarefusion" {
-		return "This driver does not support saving!"
-	}
+	//if h.Driver.DriverName != "vmwarefusion" {
+	//	return "This driver does not support saving!"
+	//}
 	return h.Driver.Save()
 }
 
 func (h *Host) Resume() error {
-	if h.Driver.DriverName != "vmwarefusion" {
-		return "This driver does not support resuming!"
-	}
+	//if h.Driver.DriverName != "vmwarefusion" {
+	//	return "This driver does not support resuming!"
+	//}
 	return h.Driver.Resume()
 }
 
