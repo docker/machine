@@ -233,6 +233,16 @@ func (d *Driver) Stop() error {
 	return nil
 }
 
+func (d *Driver) Save() error {
+	vmrun("pause", d.vmxPath(), "nogui")
+	return nil
+}
+
+func (d *Driver) Resume() error {
+	vmrun("unpause", d.vmxPath(), "nogui")
+	return nil
+}
+
 func (d *Driver) Remove() error {
 
 	s, _ := d.GetState()

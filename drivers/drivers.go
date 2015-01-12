@@ -41,6 +41,12 @@ type Driver interface {
 	// Start a host
 	Start() error
 
+	// Save state of host
+	Save() error
+
+	// Resume saved host
+	Resume() error
+
 	// Stop a host gracefully
 	Stop() error
 

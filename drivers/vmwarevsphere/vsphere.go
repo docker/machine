@@ -275,6 +275,9 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+func (d *Driver) Resume() error {return nil}
+func (d *Driver) Save() error {return nil}
+
 func (d *Driver) Start() error {
 	machineState, err := d.GetState()
 	if err != nil {

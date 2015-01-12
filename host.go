@@ -213,6 +213,20 @@ func (h *Host) Create() error {
 	return nil
 }
 
+func (h *Host) Save() error {
+	//if h.Driver.DriverName != "vmwarefusion" {
+	//	return "This driver does not support saving!"
+	//}
+	return h.Driver.Save()
+}
+
+func (h *Host) Resume() error {
+	//if h.Driver.DriverName != "vmwarefusion" {
+	//	return "This driver does not support resuming!"
+	//}
+	return h.Driver.Resume()
+}
+
 func (h *Host) Start() error {
 	return h.Driver.Start()
 }
