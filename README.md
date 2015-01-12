@@ -62,6 +62,7 @@ Options:
  - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
  - `--virtualbox-disk-size`: Size of disk for the host in MB. Default: `20000`
  - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
+ - `--virtualbox-migrate-boot2docker-instance`: The name of a boot2docker instance to migrate.  (optional)
 
 ### Digital Ocean
 
