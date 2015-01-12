@@ -224,12 +224,12 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	vmrun("start", d.vmxPath(), "nogui")
+	vmrun("unpause", d.vmxPath(), "nogui")
 	return nil
 }
 
 func (d *Driver) Stop() error {
-	vmrun("stop", d.vmxPath(), "nogui")
+	vmrun("pause", d.vmxPath(), "nogui")
 	return nil
 }
 
