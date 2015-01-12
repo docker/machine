@@ -192,6 +192,9 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+func (d *Driver) Resume() error {return nil}
+func (d *Driver) Save() error {return nil}
+
 func (d *Driver) createSSHKey() (*godo.Key, error) {
 	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
 		return nil, err

@@ -73,6 +73,9 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+func (d *Driver) Resume() error {return nil}
+func (d *Driver) Save() error {return nil}
+
 func (d *Driver) Start() error {
 	return fmt.Errorf("hosts without a driver cannot be started")
 }

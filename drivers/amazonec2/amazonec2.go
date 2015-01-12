@@ -161,6 +161,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 func (d *Driver) DriverName() string {
 	return driverName
 }
+func (d *Driver) Resume() error {return nil}
+func (d *Driver) Save() error {return nil}
 
 func (d *Driver) Create() error {
 	log.Infof("Launching instance...")
