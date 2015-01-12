@@ -180,6 +180,17 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
+	store := NewStore(c.GlobalString("storage-path"))
+
+	exists, err := store.Exists(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if exists {
+		log.Fatal("There's already a machine with the same name")
+	}
+
 	keyExists, err := drivers.PublicKeyExists()
 	if err != nil {
 		log.Fatal(err)
@@ -188,8 +199,6 @@ func cmdCreate(c *cli.Context) {
 	if !keyExists {
 		log.Fatalf("Identity authentication public key doesn't exist at %q. Create your public key by running the \"docker\" command.", drivers.PublicKeyPath())
 	}
-
-	store := NewStore(c.GlobalString("storage-path"))
 
 	host, err := store.Create(name, driver, c)
 	if err != nil {
