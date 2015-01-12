@@ -240,6 +240,7 @@ func (d *Driver) Save() error {
 
 func (d *Driver) Resume() error {
 	vmrun("unpause", d.vmxPath(), "nogui")
+	return nil
 }
 
 func (d *Driver) Remove() error {
