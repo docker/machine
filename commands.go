@@ -101,6 +101,11 @@ var Commands = []cli.Command{
 		Action: cmdRestart,
 	},
 	{
+		Name:	"resume"
+		Usage:	"Resume a saved(suspend) machine (VMWare fusion only!)"
+		Action:	cmdResume
+	},
+	{
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "force, f",
@@ -111,6 +116,12 @@ var Commands = []cli.Command{
 		Usage:  "Remove a machine",
 		Action: cmdRm,
 	},
+	{
+		Name:	"save"
+		Usage:	"Save (suspend) the machine (VMWare fusion only!)"
+		Action:	cmdSave
+	},
+
 	{
 		Flags: []cli.Flag{
 			cli.StringFlag{
@@ -361,6 +372,18 @@ func cmdStart(c *cli.Context) {
 
 func cmdStop(c *cli.Context) {
 	if err := getHost(c).Stop(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdSave(c *cli.Context) {
+	if err := getHost(c).Save(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdResume(c *cli.Context) {
+	if err := getHost(c).Resume(); err != nil {
 		log.Fatal(err)
 	}
 }
