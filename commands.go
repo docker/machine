@@ -101,6 +101,11 @@ var Commands = []cli.Command{
 		Action: cmdRestart,
 	},
 	{
+		Name:	"resume",
+		Usage:	"Resume a saved(suspend) machine (VMWare fusion only!)",
+		Action:	cmdResume,
+	},
+	{
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "force, f",
@@ -112,15 +117,11 @@ var Commands = []cli.Command{
 		Action: cmdRm,
 	},
 	{
-		Name:	"resume"
-		Usage:	"Resume a saved(suspend) machine (VMWare fusion only!)"
-		Action:	cmdResume
+		Name:	"save",
+		Usage:	"Save (suspend) the machine (VMWare fusion only!)",
+		Action:	cmdSave,
 	},
-	{
-		Name:	"save"
-		Usage:	"Save (suspend) the machine (VMWare fusion only!)"
-		Action:	cmdSave
-	},
+
 	{
 		Flags: []cli.Flag{
 			cli.StringFlag{
