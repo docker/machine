@@ -9,9 +9,7 @@ import (
 )
 
 const (
-	machineName  = "machine-integration-test-%s"
-	waitInterval = 30
-	waitDuration = time.Duration(waitInterval * time.Second)
+	machineName = "machine-integration-test-%s"
 )
 
 func machineCreate(name string, t *testing.T, wg *sync.WaitGroup) {
