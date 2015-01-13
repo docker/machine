@@ -152,6 +152,7 @@ func (e *EC2) awsApiCall(v url.Values) (http.Response, error) {
 	awsauth.Sign(req, awsauth.Credentials{
 		AccessKeyID:     e.Auth.AccessKey,
 		SecretAccessKey: e.Auth.SecretKey,
+		SecurityToken:   e.Auth.SessionToken,
 	})
 	resp, err := client.Do(req)
 	if err != nil {

@@ -107,6 +107,7 @@ Options:
  - `--amazonec2-region`: The region to use when launching the instance.  Default: `us-east-1`
  - `--amazonec2-root-size`: The root disk size of the instance (in GB).  Default: `16`
  - `--amazonec2-secret-key`: Your secret access key for the Amazon Web Services API.
+ - `--amazonec2-session-token`: Your session token for the Amazon Web Services API.
  - `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
  - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e).
 
@@ -128,7 +129,7 @@ Options:
 
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.
 
-Options: 
+Options:
 
  - `--vmwarefusion-boot2docker-url`: URL for boot2docker image.
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB). Default: `20000`
@@ -155,7 +156,7 @@ Options:
  - `--vmwarevcloudair-publicip`: Org Public IP to use.
  - `--vmwarevcloudair-ssh-port`: SSH port. Default: `22`
  - `--vmwarevcloudair-vdcid`: Virtual Data Center ID.
-   
+
 ### VMware vSphere
 
 Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. Requires a working vSphere (ESXi and optionally vCenter) installation. The vSphere driver depends on [`govc`](https://github.com/vmware/govmomi/tree/master/govc) (must be in path) and has been tested with [vmware/govmomi@`c848630`](https://github.com/vmware/govmomi/commit/c8486300bfe19427e4f3226e3b3eac067717ef17).
@@ -215,9 +216,9 @@ There is a suite of integration tests that will run for the drivers.  In order
 to use these you must export the corresponding environment variables for each
 driver as these perform the actual actions (start, stop, restart, kill, etc).
 
-By default, the suite will run tests against all drivers in master.  You can 
+By default, the suite will run tests against all drivers in master.  You can
 override this by setting the environment variable `MACHINE_TESTS`.  For example,
-`MACHINE_TESTS="virtualbox" ./script/run-integration-tests` will only run the 
+`MACHINE_TESTS="virtualbox" ./script/run-integration-tests` will only run the
 virtualbox driver integration tests.
 
 To run, use the helper script `./script/run-integration-tests`.
