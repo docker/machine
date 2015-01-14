@@ -67,7 +67,7 @@ type Driver interface {
 // - RegisterCreateFlags: a function that takes the FlagSet for
 //   "docker hosts create" and returns an object to pass to SetConfigFromFlags
 type RegisteredDriver struct {
-	New            func(storePath string) (Driver, error)
+	New            func(machineName string, storePath string) (Driver, error)
 	GetCreateFlags func() []cli.Flag
 }
 
@@ -92,12 +92,12 @@ func Register(name string, registeredDriver *RegisteredDriver) error {
 }
 
 // NewDriver creates a new driver of type "name"
-func NewDriver(name string, storePath string) (Driver, error) {
+func NewDriver(name string, machineName string, storePath string) (Driver, error) {
 	driver, exists := drivers[name]
 	if !exists {
 		return nil, fmt.Errorf("hosts: Unknown driver %q", name)
 	}
-	return driver.New(storePath)
+	return driver.New(machineName, storePath)
 }
 
 // GetCreateFlags runs GetCreateFlags for all of the drivers and

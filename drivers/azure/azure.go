@@ -21,6 +21,7 @@ import (
 )
 
 type Driver struct {
+	MachineName             string
 	SubscriptionID          string
 	SubscriptionCert        string
 	PublishSettingsFilePath string
@@ -105,8 +106,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	driver := &Driver{storePath: storePath}
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+	driver := &Driver{MachineName: machineName, storePath: storePath}
 	return driver, nil
 }
 
@@ -119,7 +120,6 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	cert := flags.String("azure-subscription-cert")
 	publishSettings := flags.String("azure-publish-settings-file")
-	name := flags.String("azure-name")
 	image := flags.String("azure-image")
 	username := flags.String("azure-username")
 
@@ -139,12 +139,6 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if (driver.SubscriptionID == "" || driver.SubscriptionCert == "") && driver.PublishSettingsFilePath == "" {
 		return fmt.Errorf("Please specify azure subscription params using options: --azure-subscription-id and --azure-subscription-cert or --azure-publish-settings-file")
-	}
-
-	if name == "" {
-		driver.Name = generateVMName()
-	} else {
-		driver.Name = name
 	}
 
 	if image == "" {
@@ -173,8 +167,11 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
+	t := time.Now().Format("20060102150405")
+	name := fmt.Sprintf("%s-%s", driver.MachineName, t)
+
 	log.Infof("Creating Azure host...")
-	vmConfig, err := vmClient.CreateAzureVMConfiguration(driver.Name, driver.Size, driver.Image, driver.Location)
+	vmConfig, err := vmClient.CreateAzureVMConfiguration(name, driver.Size, driver.Image, driver.Location)
 	if err != nil {
 		return err
 	}
@@ -192,7 +189,7 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	if err := vmClient.CreateAzureVM(vmConfig, driver.Name, driver.Location); err != nil {
+	if err := vmClient.CreateAzureVM(vmConfig, name, driver.Location); err != nil {
 		return err
 	}
 
@@ -358,7 +355,7 @@ func (driver *Driver) GetState() (state.State, error) {
 		return state.Error, err
 	}
 
-	dockerVM, err := vmClient.GetVMDeployment(driver.Name, driver.Name)
+	dockerVM, err := vmClient.GetVMDeployment(driver.MachineName, driver.MachineName)
 	if err != nil {
 		if strings.Contains(err.Error(), "Code: ResourceNotFound") {
 			return state.Error, fmt.Errorf("Azure host was not found. Please check your Azure subscription.")
@@ -395,9 +392,9 @@ func (driver *Driver) Start() error {
 		return nil
 	}
 
-	log.Debugf("starting %s", driver.Name)
+	log.Debugf("starting %s", driver.MachineName)
 
-	err = vmClient.StartRole(driver.Name, driver.Name, driver.Name)
+	err = vmClient.StartRole(driver.MachineName, driver.MachineName, driver.MachineName)
 	if err != nil {
 		return err
 	}
@@ -426,9 +423,9 @@ func (driver *Driver) Stop() error {
 		return nil
 	}
 
-	log.Debugf("stopping %s", driver.Name)
+	log.Debugf("stopping %s", driver.MachineName)
 
-	err = vmClient.ShutdownRole(driver.Name, driver.Name, driver.Name)
+	err = vmClient.ShutdownRole(driver.MachineName, driver.MachineName, driver.MachineName)
 	if err != nil {
 		return err
 	}
@@ -440,7 +437,7 @@ func (driver *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	available, _, err := vmClient.CheckHostedServiceNameAvailability(driver.Name)
+	available, _, err := vmClient.CheckHostedServiceNameAvailability(driver.MachineName)
 	if err != nil {
 		return err
 	}
@@ -448,9 +445,9 @@ func (driver *Driver) Remove() error {
 		return nil
 	}
 
-	log.Debugf("removing %s", driver.Name)
+	log.Debugf("removing %s", driver.MachineName)
 
-	err = vmClient.DeleteHostedService(driver.Name)
+	err = vmClient.DeleteHostedService(driver.MachineName)
 	if err != nil {
 		return err
 	}
@@ -471,9 +468,9 @@ func (driver *Driver) Restart() error {
 		return fmt.Errorf("Host is already stopped, use start command to run it")
 	}
 
-	log.Debugf("restarting %s", driver.Name)
+	log.Debugf("restarting %s", driver.MachineName)
 
-	err = vmClient.RestartRole(driver.Name, driver.Name, driver.Name)
+	err = vmClient.RestartRole(driver.MachineName, driver.MachineName, driver.MachineName)
 	if err != nil {
 		return err
 	}
@@ -502,9 +499,9 @@ func (driver *Driver) Kill() error {
 		return nil
 	}
 
-	log.Debugf("killing %s", driver.Name)
+	log.Debugf("killing %s", driver.MachineName)
 
-	err = vmClient.ShutdownRole(driver.Name, driver.Name, driver.Name)
+	err = vmClient.ShutdownRole(driver.MachineName, driver.MachineName, driver.MachineName)
 	if err != nil {
 		return err
 	}
@@ -639,5 +636,5 @@ func (driver *Driver) azureCertPath() string {
 }
 
 func (driver *Driver) getHostname() string {
-	return driver.Name + ".cloudapp.net"
+	return driver.MachineName + ".cloudapp.net"
 }
