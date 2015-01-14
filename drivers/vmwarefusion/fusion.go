@@ -20,7 +20,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
@@ -33,7 +32,7 @@ const (
 
 // Driver for VMware Fusion
 type Driver struct {
-	Name           string
+	MachineName    string
 	Memory         int
 	DiskSize       int
 	ISO            string
@@ -43,7 +42,6 @@ type Driver struct {
 }
 
 type CreateFlags struct {
-	Name           *string
 	Boot2DockerURL *string
 	Memory         *int
 	DiskSize       *int
@@ -80,8 +78,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{storePath: storePath}, nil
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, storePath: storePath}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -92,8 +90,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("vmwarefusion-memory-size")
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")
 	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
-	// Autogenerate VM Name
-	d.Name = generateVMName()
 	d.ISO = path.Join(d.storePath, "boot2docker.iso")
 
 	return nil
@@ -164,7 +160,7 @@ func (d *Driver) Create() error {
 	vmxt.Execute(vmxfile, d)
 
 	// Generate vmdk file
-	diskImg := filepath.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.Name))
+	diskImg := filepath.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.MachineName))
 	if _, err := os.Stat(diskImg); err != nil {
 		if !os.IsNotExist(err) {
 			return err
@@ -212,7 +208,21 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
+	log.Debugf("Setting hostname: %s", d.MachineName)
+	cmd, err := d.GetSSHCommand(fmt.Sprintf(
+		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
+		d.MachineName,
+		d.MachineName,
+		d.MachineName,
+	))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
 	if err != nil {
 		return err
 	}
@@ -270,11 +280,11 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 }
 
 func (d *Driver) vmxPath() string {
-	return path.Join(d.storePath, fmt.Sprintf("%s.vmx", d.Name))
+	return path.Join(d.storePath, fmt.Sprintf("%s.vmx", d.MachineName))
 }
 
 func (d *Driver) vmdkPath() string {
-	return path.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.Name))
+	return path.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.MachineName))
 }
 
 // Download boot2docker ISO image for the given tag and save it at dest.
@@ -304,13 +314,7 @@ func downloadISO(dir, file, url string) error {
 	return nil
 }
 
-func generateVMName() string {
-	randomID := utils.TruncateID(utils.GenerateRandomID())
-	return fmt.Sprintf("docker-host-%s", randomID)
-}
-
 func (d *Driver) getIPfromDHCPLease() (string, error) {
-
 	var vmxfh *os.File
 	var dhcpfh *os.File
 	var vmxcontent []byte

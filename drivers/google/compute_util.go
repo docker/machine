@@ -56,7 +56,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 	}
 	c := ComputeUtil{
 		zone:         driver.Zone,
-		instanceName: driver.InstanceName,
+		instanceName: driver.MachineName,
 		userName:     driver.UserName,
 		project:      driver.Project,
 		service:      service,
@@ -204,6 +204,21 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	log.Infof("Waiting for SSH Key")
 	err = c.waitForRegionalOp(op.Name)
 	if err != nil {
+		return err
+	}
+
+	log.Debugf("Setting hostname: %s", d.MachineName)
+	cmd, err := d.GetSSHCommand(fmt.Sprintf(
+		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
+		d.MachineName,
+		d.MachineName,
+		d.MachineName,
+	))
+
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 

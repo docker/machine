@@ -16,7 +16,7 @@ import (
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
-	InstanceName     string
+	MachineName      string
 	Zone             string
 	MachineType      string
 	storePath        string
@@ -28,11 +28,10 @@ type Driver struct {
 
 // CreateFlags are the command line flags used to create a driver.
 type CreateFlags struct {
-	InstanceName *string
-	Zone         *string
-	MachineType  *string
-	UserName     *string
-	Project      *string
+	Zone        *string
+	MachineType *string
+	UserName    *string
+	Project     *string
 }
 
 func init() {
@@ -65,12 +64,6 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "GOOGLE_USERNAME",
 		},
 		cli.StringFlag{
-			Name:   "google-instance-name",
-			Usage:  "GCE Instance Name",
-			Value:  "docker-machine",
-			EnvVar: "GOOGLE_INSTANCE_NAME",
-		},
-		cli.StringFlag{
 			Name:   "google-project",
 			Usage:  "GCE Project",
 			EnvVar: "GOOGLE_PROJECT",
@@ -79,8 +72,10 @@ func GetCreateFlags() []cli.Flag {
 }
 
 // NewDriver creates a Driver with the specified storePath.
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{storePath: storePath,
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+	return &Driver{
+		MachineName:      machineName,
+		storePath:        storePath,
 		sshKeyPath:       path.Join(storePath, "id_rsa"),
 		publicSSHKeyPath: path.Join(storePath, "id_rsa.pub"),
 	}, nil
@@ -93,7 +88,6 @@ func (driver *Driver) DriverName() string {
 
 // SetConfigFromFlags initializes the driver based on the command line flags.
 func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	driver.InstanceName = flags.String("google-instance-name")
 	driver.Zone = flags.String("google-zone")
 	driver.MachineType = flags.String("google-machine-type")
 	driver.UserName = flags.String("google-username")
@@ -118,7 +112,7 @@ func (driver *Driver) Create() error {
 	// Check if the instance already exists. There will be an error if the instance
 	// doesn't exist, so just check instance for nil.
 	if instance, _ := c.instance(); instance != nil {
-		return fmt.Errorf("Instance %v already exists.", driver.InstanceName)
+		return fmt.Errorf("Instance %v already exists.", driver.MachineName)
 	}
 
 	log.Infof("Generating SSH Key")
