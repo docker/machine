@@ -181,6 +181,7 @@ func (d *Driver) Create() error {
 	}
 
 	if err := vbm("createvm",
+		"--basefolder", d.storePath,
 		"--name", d.MachineName,
 		"--register"); err != nil {
 		return err
