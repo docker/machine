@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -31,6 +32,19 @@ type Host struct {
 
 type hostConfig struct {
 	DriverName string
+}
+
+func waitForDocker(addr string) error {
+	for {
+		conn, err := net.DialTimeout("tcp", addr, time.Second*5)
+		if err != nil {
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		conn.Close()
+		break
+	}
+	return nil
 }
 
 func NewHost(name, driverName, storePath string) (*Host, error) {
@@ -156,6 +170,10 @@ func (h *Host) addHostToKnownHosts() error {
 
 	tlsConfig.InsecureSkipVerify = true
 
+	log.Debugf("waiting for Docker to become available on %s", addr)
+	if err := waitForDocker(addr); err != nil {
+		return fmt.Errorf("unable to connect to Docker daemon: %s", err)
+	}
 	testConn, err := tls.Dial(proto, addr, tlsConfig)
 	if err != nil {
 		return fmt.Errorf("tls Handshake error: %s", err)
