@@ -93,13 +93,14 @@ func GetCreateFlags() []cli.Flag {
 }
 
 // NewDriver instantiates a Rackspace driver.
-func NewDriver(storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
 	log.WithFields(log.Fields{
-		"storePath": storePath,
+		"machineName": machineName,
+		"storePath":   storePath,
 	}).Debug("Instantiating Rackspace driver.")
 
 	client := &Client{}
-	inner, err := openstack.NewDerivedDriver(storePath, client)
+	inner, err := openstack.NewDerivedDriver(machineName, storePath, client)
 	if err != nil {
 		return nil, err
 	}
