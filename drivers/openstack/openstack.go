@@ -176,18 +176,20 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
 	log.WithFields(log.Fields{
-		"storePath": storePath,
+		"machineName": machineName,
+		"storePath":   storePath,
 	}).Debug("Instantiating OpenStack driver...")
 
-	return NewDerivedDriver(storePath, &GenericClient{})
+	return NewDerivedDriver(machineName, storePath, &GenericClient{})
 }
 
-func NewDerivedDriver(storePath string, client Client) (*Driver, error) {
+func NewDerivedDriver(machineName string, storePath string, client Client) (*Driver, error) {
 	return &Driver{
-		storePath: storePath,
-		client:    client,
+		MachineName: machineName,
+		storePath:   storePath,
+		client:      client,
 	}, nil
 }
 
@@ -301,8 +303,7 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) Create() error {
-	d.setMachineNameIfNotSet()
-	d.KeyPairName = d.MachineName
+	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, utils.GenerateRandomID())
 
 	if err := d.resolveIds(); err != nil {
 		return err
@@ -744,10 +745,4 @@ func (d *Driver) sshKeyPath() string {
 
 func (d *Driver) publicSSHKeyPath() string {
 	return d.sshKeyPath() + ".pub"
-}
-
-func (d *Driver) setMachineNameIfNotSet() {
-	if d.MachineName == "" {
-		d.MachineName = fmt.Sprintf("docker-host-%s", utils.GenerateRandomID())
-	}
 }
