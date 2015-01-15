@@ -41,7 +41,7 @@ var (
 		`sudo mkdir -p /.docker/authorized-keys.d/
 sudo chown -R {{ .UserName }} /.docker
 while [ -e /var/run/docker.pid ]; do sleep 1; done
-sudo curl -L -o /usr/bin/docker https://get.docker.com/builds/Linux/x86_64/docker-latest
+sudo curl -s -L -o /usr/bin/docker https://get.docker.com/builds/Linux/x86_64/docker-latest
 `))
 )
 
