@@ -133,8 +133,6 @@ func (d *Driver) Create() error {
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 	} else {
-		// HACK: Docker 1.3 boot2docker image with identity auth and vmtoolsd
-		//isoURL = "https://github.com/cloudnativeapps/boot2docker/releases/download/1.3.1_vmw-identity/boot2docker.iso"
 		isoURL = "https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso"
 	}
 	log.Infof("Downloading boot2docker...")
@@ -242,21 +240,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	//cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
-	//if err != nil {
-	//	return err
-	//}
-	//if err := cmd.Run(); err != nil {
-	//	return err
-	//}
-	//cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
-	//if err != nil {
-	//	return err
-	//}
-	//if err := cmd.Run(); err != nil {
-	//	return err
-	//}
-
 	return nil
 }
 
@@ -312,7 +295,7 @@ func (d *Driver) StopDocker() error {
 
 	// TODO @ehazlett - should we add this exit to make sure it doesn't
 	// break if the daemon isn't running or add an arg?
-	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker stop ; exit 0")
+	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
 	if err != nil {
 		return err
 	}

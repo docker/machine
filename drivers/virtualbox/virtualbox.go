@@ -137,9 +137,6 @@ func (d *Driver) Create() error {
 			return err
 		}
 	} else {
-		// HACK: Docker 1.4.1 boot2docker image with client/daemon auth
-		//isoURL = "https://ejhazlett.s3.amazonaws.com/public/boot2docker/machine-b2d-docker-1.4.1-identity.iso"
-
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
 
@@ -510,7 +507,7 @@ func (d *Driver) StartDocker() error {
 func (d *Driver) StopDocker() error {
 	log.Debug("Stopping Docker...")
 
-	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then kill `cat /var/run/docker.pid`; rm /var/run/docker.pid; fi")
+	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
 	if err != nil {
 		return err
 	}
