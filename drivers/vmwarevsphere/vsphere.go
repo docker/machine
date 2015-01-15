@@ -22,6 +22,7 @@ import (
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	cssh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -29,6 +30,8 @@ const (
 	B2D_ISO_NAME       = "boot2docker.iso"
 	DEFAULT_CPU_NUMBER = 2
 	dockerConfigDir    = "/var/lib/boot2docker"
+	B2D_USER           = "docker"
+	B2D_PASS           = "tcuser"
 )
 
 type Driver struct {
@@ -48,6 +51,8 @@ type Driver struct {
 	HostIP         string
 	StorePath      string
 	ISO            string
+	CaCertPath     string
+	PrivateKeyPath string
 
 	storePath string
 }
@@ -144,8 +149,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, StorePath: storePath}, nil
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, StorePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -223,8 +228,7 @@ func (d *Driver) Create() error {
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 	} else {
-		// HACK: Docker 1.3 boot2docker image with identity auth and vmtoolsd
-		isoURL = "https://github.com/cloudnativeapps/boot2docker/releases/download/1.3.1_vmw-identity/boot2docker.iso"
+		isoURL = "https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso"
 	}
 	log.Infof("Downloading boot2docker...")
 	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
@@ -311,31 +315,39 @@ func (d *Driver) Start() error {
 		}
 
 		log.Infof("Configuring virtual machine %s... ", d.MachineName)
-		err = vcConn.GuestMkdir("docker", "tcuser", "/home/docker/.ssh")
+
+		key, err := ioutil.ReadFile(d.publicSSHKeyPath())
 		if err != nil {
 			return err
 		}
 
-		// configure the ssh key pair and download the pem file
-		err = vcConn.GuestUpload("docker", "tcuser", d.publicSSHKeyPath(),
-			"/home/docker/.ssh/authorized_keys")
+		// so, vmrun above will not work without vmtools in b2d.  since getting stuff into TCL
+		// is much more painful, we simply use the b2d password to get the initial public key
+		// onto the machine.  from then on we use the pub key.  meh.
+		sshConfig := &cssh.ClientConfig{
+			User: B2D_USER,
+			Auth: []cssh.AuthMethod{
+				cssh.Password(B2D_PASS),
+			},
+		}
+
+		ip, err := d.GetIP()
 		if err != nil {
 			return err
 		}
 
-		// Add identity authorization keys
-		if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/root/.docker/authorized-keys.d"); err != nil {
-			return err
-		}
-
-		// Restart Docker
-		cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker restart")
+		sshClient, err := cssh.Dial("tcp", fmt.Sprintf("%s:22", ip), sshConfig)
 		if err != nil {
 			return err
 		}
-		if err := cmd.Run(); err != nil {
+		session, err := sshClient.NewSession()
+		if err != nil {
 			return err
 		}
+		if err := session.Run(fmt.Sprintf("mkdir /home/docker/.ssh && echo \"%s\" > /home/docker/.ssh/authorized_keys", string(key))); err != nil {
+			return err
+		}
+		session.Close()
 
 		return nil
 	}
