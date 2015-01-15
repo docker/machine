@@ -15,7 +15,7 @@ import (
 
 func newCertificate(org string) (*x509.Certificate, error) {
 	now := time.Now()
-	// need to set notBefore slightly in the past in to account for time
+	// need to set notBefore slightly in the past to account for time
 	// skew in the VMs otherwise the certs sometimes are not yet valid
 	notBefore := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute()-5, 0, 0, time.Local)
 	notAfter := notBefore.Add(time.Hour * 24 * 1080)

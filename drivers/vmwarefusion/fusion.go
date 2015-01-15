@@ -293,8 +293,6 @@ func (d *Driver) StartDocker() error {
 func (d *Driver) StopDocker() error {
 	log.Debug("Stopping Docker...")
 
-	// TODO @ehazlett - should we add this exit to make sure it doesn't
-	// break if the daemon isn't running or add an arg?
 	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
 	if err != nil {
 		return err

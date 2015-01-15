@@ -176,7 +176,7 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating Azure machine...")
+	log.Info("Creating Azure machine...")
 	vmConfig, err := vmClient.CreateAzureVMConfiguration(driver.MachineName, driver.Size, driver.Image, driver.Location)
 	if err != nil {
 		return err
@@ -203,7 +203,7 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Waiting for SSH...")
+	log.Info("Waiting for SSH...")
 	log.Debugf("Host: %s SSH Port: %d", driver.getHostname(), driver.SSHPort)
 
 	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", driver.getHostname(), driver.SSHPort)); err != nil {
