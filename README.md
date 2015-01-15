@@ -17,9 +17,7 @@ $ machine ls
 NAME  	ACTIVE   DRIVER     	STATE 	URL
 dev   	*    	virtualbox 	Running   tcp://192.168.99.100:2375
 
-$ export DOCKER_HOST=`machine url` DOCKER_AUTH=identity
-
-$ docker run busybox echo hello world
+$ docker $(machine config dev) run busybox echo hello world
 Unable to find image 'busybox' locally
 Pulling repository busybox
 e72ac664f4f0: Download complete
@@ -40,16 +38,11 @@ dev                virtualbox     Running   tcp://192.168.99.108:2376
 staging   *        digitalocean   Running   tcp://104.236.37.134:2376
 ```
 
-Machine creates Docker hosts that are secure by default. The connection between the client and daemon is encrypted and authenticated using new identity-based authentication. If you'd like to learn more about this, it is being worked on in [a pull request on Docker](https://github.com/docker/docker/pull/8265).
+Machine creates Docker hosts that are secure by default. The connection between the client and daemon is encrypted and authenticated using TLS security.  To get the Docker arguments for a machine use the command: `machine config <machine-name>` i.e. `machine config dev`.
 
 ## Try it out
 
 Machine is still in its early stages. If you'd like to try out a preview build, [download it here](https://github.com/docker/machine/releases/latest).
-
-You will also need a version of Docker with identity authentication. Builds are available here:
-
- - Mac OS X: https://ejhazlett.s3.amazonaws.com/public/docker/darwin/docker-1.4.1-136b351e-identity
- - Linux: https://ejhazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity
 
 ## Drivers
 
