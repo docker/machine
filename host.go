@@ -217,27 +217,27 @@ func (h *Host) ConfigureAuth() error {
 		daemonCfg     string
 	)
 
+	// TODO @ehazlett: template?
+	defaultDaemonOpts := fmt.Sprintf(`--tlsverify \
+--tlscacert=%s \
+--tlskey=%s \
+--tlscert=%s`, machineCaCertPath, machineServerKeyPath, machineServerCertPath)
+
 	switch d.DriverName() {
 	case "virtualbox", "vmwarefusion", "vmwarevsphere":
-		daemonOpts = "--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376"
+		daemonOpts = "-H tcp://0.0.0.0:2376"
 		daemonOptsCfg = filepath.Join(d.GetDockerConfigDir(), "profile")
+		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
 		daemonCfg = fmt.Sprintf(`EXTRA_ARGS='%s'
 CACERT=%s
 SERVERCERT=%s
 SERVERKEY=%s
-DOCKER_TLS=auto`, daemonOpts, machineCaCertPath, machineServerCertPath, machineServerKeyPath)
+DOCKER_TLS=no`, opts, machineCaCertPath, machineServerCertPath, machineServerKeyPath)
 	default:
-		// TODO @ehazlett - use a template here
-		daemonOpts = fmt.Sprintf(`--tlsverify \
---tlsverify \
---tlscacert=%s \
---tlskey=%s \
---tlscert=%s \
---host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376`, machineCaCertPath,
-			machineServerKeyPath, machineServerCertPath)
-
+		daemonOpts = "--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376"
 		daemonOptsCfg = "/etc/default/docker"
-		daemonCfg = fmt.Sprintf("export DOCKER_OPTS='%s'", daemonOpts)
+		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
+		daemonCfg = fmt.Sprintf("export DOCKER_OPTS='%s'", opts)
 	}
 	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", daemonCfg, daemonOptsCfg))
 	if err != nil {
