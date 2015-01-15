@@ -149,7 +149,8 @@ func (e *EC2) awsApiCall(v url.Values) (http.Response, error) {
 		return http.Response{}, fmt.Errorf("error creating request from client")
 	}
 	req.Header.Add("Content-type", "application/json")
-	awsauth.Sign(req, awsauth.Credentials{
+
+	awsauth.Sign4(req, awsauth.Credentials{
 		AccessKeyID:     e.Auth.AccessKey,
 		SecretAccessKey: e.Auth.SecretKey,
 		SecurityToken:   e.Auth.SessionToken,
