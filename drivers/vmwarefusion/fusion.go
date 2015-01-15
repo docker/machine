@@ -23,6 +23,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 	cssh "golang.org/x/crypto/ssh"
 )
 
@@ -129,15 +130,48 @@ func (d *Driver) GetState() (state.State, error) {
 
 func (d *Driver) Create() error {
 
-	var isoURL string
+	var (
+		isoURL string
+		err    error
+	)
+
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
+		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+			return err
+		}
 	} else {
-		isoURL = "https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso"
-	}
-	log.Infof("Downloading boot2docker...")
-	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
-		return err
+		// todo: check latest release URL, download if it's new
+		// until then always use "latest"
+		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
+		if err != nil {
+			return err
+		}
+
+		// todo: use real constant for .docker
+		rootPath := filepath.Join(drivers.GetHomeDir(), ".docker")
+		imgPath := filepath.Join(rootPath, "images")
+		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+
+			// just in case boot2docker.iso has been manually deleted
+			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+				if err := os.Mkdir(imgPath, 0700); err != nil {
+					return err
+				}
+			}
+
+			if err := utils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+				return err
+			}
+		}
+
+		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Creating SSH key...")

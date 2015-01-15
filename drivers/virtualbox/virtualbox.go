@@ -3,12 +3,10 @@ package virtualbox
 import (
 	"archive/tar"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,10 +18,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 const (
@@ -133,14 +131,13 @@ func (d *Driver) Create() error {
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 			return err
 		}
 	} else {
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
-
-		isoURL, err = getLatestReleaseURL()
+		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
 		if err != nil {
 			return err
 		}
@@ -159,7 +156,7 @@ func (d *Driver) Create() error {
 				}
 			}
 
-			if err := downloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+			if err := utils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
 				return err
 			}
 		}
@@ -398,13 +395,13 @@ func (d *Driver) Upgrade() error {
 		return err
 	}
 
-	isoURL, err := getLatestReleaseURL()
+	isoURL, err := utils.GetLatestBoot2DockerReleaseURL()
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Downloading boot2docker...")
-	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+	if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 		return err
 	}
 
@@ -445,7 +442,7 @@ func (d *Driver) GetState() (state.State, error) {
 
 func (d *Driver) setMachineNameIfNotSet() {
 	if d.MachineName == "" {
-		d.MachineName = fmt.Sprintf("docker-host-%s", utils.GenerateRandomID())
+		d.MachineName = fmt.Sprintf("docker-machine-unknown")
 	}
 }
 
@@ -532,57 +529,6 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) diskPath() string {
 	return filepath.Join(d.storePath, "disk.vmdk")
-}
-
-// Get the latest boot2docker release tag name (e.g. "v0.6.0").
-// FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
-func getLatestReleaseURL() (string, error) {
-	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
-	if err != nil {
-		return "", err
-	}
-	defer rsp.Body.Close()
-
-	var t []struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
-		return "", err
-	}
-	if len(t) == 0 {
-		return "", fmt.Errorf("no releases found")
-	}
-
-	tag := t[0].TagName
-	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", tag)
-	return url, nil
-}
-
-// Download boot2docker ISO image for the given tag and save it at dest.
-func downloadISO(dir, file, url string) error {
-	rsp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer rsp.Body.Close()
-
-	// Download to a temp file first then rename it to avoid partial download.
-	f, err := ioutil.TempFile(dir, file+".tmp")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(f.Name())
-	if _, err := io.Copy(f, rsp.Body); err != nil {
-		// TODO: display download progress?
-		return err
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
-		return err
-	}
-	return nil
 }
 
 // Make a boot2docker VM disk image.
