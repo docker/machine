@@ -1,4 +1,4 @@
-package main
+package store
 
 import (
 	"os"
@@ -122,7 +122,7 @@ func TestStoreExists(t *testing.T) {
 	}
 
 	store := NewStore("")
-	exists, err := store.Exists("test")
+	exists, err := store.exists("test")
 	if exists {
 		t.Fatal("Exists returned true when it should have been false")
 	}
@@ -130,7 +130,7 @@ func TestStoreExists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	exists, err = store.Exists("test")
+	exists, err = store.exists("test")
 	if err != nil {
 		t.Fatal(err)
 	}

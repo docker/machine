@@ -5,8 +5,10 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/docker/machine/api"
 	drivers "github.com/docker/machine/drivers"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/store"
 )
 
 type FakeDriver struct {
@@ -71,15 +73,15 @@ func TestGetHostState(t *testing.T) {
 		t.Fatal("Error creating tmp dir:", err)
 	}
 	hostListItems := make(chan hostListItem)
-	store := NewStore(storePath)
-	hosts := []Host{
+	api := api.NewApi(storePath)
+	hosts := []store.Host{
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "bar",
@@ -87,7 +89,7 @@ func TestGetHostState(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Stopped,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "baz",
@@ -95,7 +97,7 @@ func TestGetHostState(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 	}
 	expected := map[string]state.State{
@@ -105,7 +107,7 @@ func TestGetHostState(t *testing.T) {
 	}
 	items := []hostListItem{}
 	for _, host := range hosts {
-		go getHostState(host, *store, hostListItems)
+		go getHostState(host, *api, hostListItems)
 	}
 	for i := 0; i < len(hosts); i++ {
 		items = append(items, <-hostListItems)

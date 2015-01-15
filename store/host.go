@@ -1,4 +1,4 @@
-package main
+package store
 
 import (
 	"crypto/tls"
@@ -16,6 +16,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libtrust"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/state"
 )
 
 var (
@@ -27,7 +28,7 @@ type Host struct {
 	Name       string `json:"-"`
 	DriverName string
 	Driver     drivers.Driver
-	storePath  string
+	StorePath  string
 }
 
 type hostConfig struct {
@@ -47,7 +48,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath string) (*Host, error) {
+func newHost(name, driverName, storePath string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath)
 	if err != nil {
 		return nil, err
@@ -56,23 +57,23 @@ func NewHost(name, driverName, storePath string) (*Host, error) {
 		Name:       name,
 		DriverName: driverName,
 		Driver:     driver,
-		storePath:  storePath,
+		StorePath:  storePath,
 	}, nil
 }
 
-func LoadHost(name string, storePath string) (*Host, error) {
+func loadHost(name string, storePath string) (*Host, error) {
 	if _, err := os.Stat(storePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("Host %q does not exist", name)
 	}
 
-	host := &Host{Name: name, storePath: storePath}
-	if err := host.LoadConfig(); err != nil {
+	host := &Host{Name: name, StorePath: storePath}
+	if err := host.loadConfig(); err != nil {
 		return nil, err
 	}
 	return host, nil
 }
 
-func ValidateHostName(name string) (string, error) {
+func validateHostName(name string) (string, error) {
 	if !validHostNamePattern.MatchString(name) {
 		return name, fmt.Errorf("Invalid host name %q, it must match %s", name, validHostNamePattern)
 	}
@@ -215,12 +216,12 @@ func (h *Host) addHostToKnownHosts() error {
 	return nil
 }
 
-func (h *Host) Create(name string) error {
+func (h *Host) create(name string) error {
 	if err := h.Driver.Create(); err != nil {
 		return err
 	}
 
-	if err := h.SaveConfig(); err != nil {
+	if err := h.saveConfig(); err != nil {
 		return err
 	}
 
@@ -231,19 +232,19 @@ func (h *Host) Create(name string) error {
 	return nil
 }
 
-func (h *Host) Start() error {
+func (h *Host) start() error {
 	return h.Driver.Start()
 }
 
-func (h *Host) Stop() error {
+func (h *Host) stop() error {
 	return h.Driver.Stop()
 }
 
-func (h *Host) Upgrade() error {
+func (h *Host) upgrade() error {
 	return h.Driver.Upgrade()
 }
 
-func (h *Host) Remove(force bool) error {
+func (h *Host) remove(force bool) error {
 	if err := h.Driver.Remove(); err != nil {
 		if !force {
 			return err
@@ -253,22 +254,34 @@ func (h *Host) Remove(force bool) error {
 }
 
 func (h *Host) removeStorePath() error {
-	file, err := os.Stat(h.storePath)
+	file, err := os.Stat(h.StorePath)
 	if err != nil {
 		return err
 	}
 	if !file.IsDir() {
-		return fmt.Errorf("%q is not a directory", h.storePath)
+		return fmt.Errorf("%q is not a directory", h.StorePath)
 	}
-	return os.RemoveAll(h.storePath)
+	return os.RemoveAll(h.StorePath)
 }
 
 func (h *Host) GetURL() (string, error) {
 	return h.Driver.GetURL()
 }
 
-func (h *Host) LoadConfig() error {
-	data, err := ioutil.ReadFile(filepath.Join(h.storePath, "config.json"))
+func (h *Host) GetIP() (string, error) {
+	return h.Driver.GetIP()
+}
+
+func (h *Host) GetState() (state.State, error) {
+	return h.Driver.GetState()
+}
+
+func (h *Host) GetDriverName() string {
+	return h.Driver.DriverName()
+}
+
+func (h *Host) loadConfig() error {
+	data, err := ioutil.ReadFile(filepath.Join(h.StorePath, "config.json"))
 	if err != nil {
 		return err
 	}
@@ -279,7 +292,7 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	driver, err := drivers.NewDriver(config.DriverName, h.Name, h.storePath)
+	driver, err := drivers.NewDriver(config.DriverName, h.Name, h.StorePath)
 	if err != nil {
 		return err
 	}
@@ -293,12 +306,12 @@ func (h *Host) LoadConfig() error {
 	return nil
 }
 
-func (h *Host) SaveConfig() error {
+func (h *Host) saveConfig() error {
 	data, err := json.Marshal(h)
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(h.StorePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
 	return nil

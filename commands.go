@@ -12,6 +12,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 
+	"github.com/docker/machine/api"
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/amazonec2"
 	_ "github.com/docker/machine/drivers/azure"
@@ -25,6 +26,7 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/store"
 )
 
 type hostListItem struct {
@@ -149,10 +151,10 @@ var Commands = []cli.Command{
 
 func cmdActive(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
+	api := api.NewApi(c.GlobalString("storage-path"))
 
 	if name == "" {
-		host, err := store.GetActive()
+		host, err := api.GetActive()
 		if err != nil {
 			log.Fatalf("error getting active host: %v", err)
 		}
@@ -160,12 +162,12 @@ func cmdActive(c *cli.Context) {
 			fmt.Println(host.Name)
 		}
 	} else if name != "" {
-		host, err := store.Load(name)
+		host, err := api.Load(name)
 		if err != nil {
 			log.Fatalf("error loading host: %v", err)
 		}
 
-		if err := store.SetActive(host); err != nil {
+		if err := api.SetActive(host); err != nil {
 			log.Fatalf("error setting active host: %v", err)
 		}
 	} else {
@@ -175,13 +177,14 @@ func cmdActive(c *cli.Context) {
 
 func cmdCreate(c *cli.Context) {
 	driver := c.String("driver")
-	name := c.Args().First()
+	name := getHostNameArg(c)
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
 		log.Fatal("You must specify a machine name")
 	}
 
+	// TODO API method?
 	keyExists, err := drivers.PublicKeyExists()
 	if err != nil {
 		log.Fatal(err)
@@ -191,9 +194,9 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("Identity authentication public key doesn't exist at %q. Create your public key by running the \"docker\" command.", drivers.PublicKeyPath())
 	}
 
-	store := NewStore(c.GlobalString("storage-path"))
+	api := api.NewApi(c.GlobalString("storage-path"))
 
-	host, err := store.Create(name, driver, c)
+	host, err := api.Create(name, driver, c)
 	if err != nil {
 		log.Errorf("Error creating host: %s", err)
 		if c.GlobalBool("debug") {
@@ -202,12 +205,12 @@ func cmdCreate(c *cli.Context) {
 			log.Warnf("Removing created machine. You can run machine with the --debug flag to avoid this.")
 			// we know there was an error so do not check for the error on removal
 			// instead we will Fatal with a message to prevent spamming with error messages
-			_ = store.Remove(name, true)
+			_ = api.Remove(name, true)
 			log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
 			log.Fatal("Error creating machine")
 		}
 	}
-	if err := store.SetActive(host); err != nil {
+	if err := api.SetActive(host); err != nil {
 		log.Fatalf("error setting active host: %v", err)
 	}
 
@@ -224,7 +227,7 @@ func cmdInspect(c *cli.Context) {
 }
 
 func cmdIp(c *cli.Context) {
-	ip, err := getHost(c).Driver.GetIP()
+	ip, err := getHost(c).GetIP()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -233,16 +236,18 @@ func cmdIp(c *cli.Context) {
 }
 
 func cmdKill(c *cli.Context) {
-	if err := getHost(c).Driver.Kill(); err != nil {
+	api := api.NewApi(c.GlobalString("storage-path"))
+	name := getHostNameArg(c)
+	if err := api.Kill(name); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
-	store := NewStore(c.GlobalString("storage-path"))
+	api := api.NewApi(c.GlobalString("storage-path"))
 
-	hostList, err := store.List()
+	hostList, err := api.List()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -258,7 +263,7 @@ func cmdLs(c *cli.Context) {
 
 	for _, host := range hostList {
 		if !quiet {
-			go getHostState(host, *store, hostListItems)
+			go getHostState(host, *api, hostListItems)
 		} else {
 			fmt.Fprintf(w, "%s\n", host.Name)
 		}
@@ -287,7 +292,9 @@ func cmdLs(c *cli.Context) {
 }
 
 func cmdRestart(c *cli.Context) {
-	if err := getHost(c).Driver.Restart(); err != nil {
+	api := api.NewApi(c.GlobalString("storage-path"))
+	name := getHostNameArg(c)
+	if err := api.Restart(name); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -302,9 +309,9 @@ func cmdRm(c *cli.Context) {
 
 	isError := false
 
-	store := NewStore(c.GlobalString("storage-path"))
+	api := api.NewApi(c.GlobalString("storage-path"))
 	for _, host := range c.Args() {
-		if err := store.Remove(host, force); err != nil {
+		if err := api.Remove(host, force); err != nil {
 			log.Errorf("Error removing machine %s: %s", host, err)
 			isError = true
 		}
@@ -316,10 +323,10 @@ func cmdRm(c *cli.Context) {
 
 func cmdSsh(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
+	api := api.NewApi(c.GlobalString("storage-path"))
 
 	if name == "" {
-		host, err := store.GetActive()
+		host, err := api.GetActive()
 		if err != nil {
 			log.Fatalf("unable to get active host: %v", err)
 		}
@@ -327,12 +334,13 @@ func cmdSsh(c *cli.Context) {
 		name = host.Name
 	}
 
+	// TODO Does this do anything?
 	i := 1
 	for i < len(os.Args) && os.Args[i-1] != name {
 		i++
 	}
 
-	host, err := store.Load(name)
+	host, err := api.Load(name)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -356,19 +364,25 @@ func cmdSsh(c *cli.Context) {
 }
 
 func cmdStart(c *cli.Context) {
-	if err := getHost(c).Start(); err != nil {
+	api := api.NewApi(c.GlobalString("storage-path"))
+	name := getHostNameArg(c)
+	if err := api.Start(name); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdStop(c *cli.Context) {
-	if err := getHost(c).Stop(); err != nil {
+	api := api.NewApi(c.GlobalString("storage-path"))
+	name := getHostNameArg(c)
+	if err := api.Stop(name); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdUpgrade(c *cli.Context) {
-	if err := getHost(c).Upgrade(); err != nil {
+	api := api.NewApi(c.GlobalString("storage-path"))
+	name := getHostNameArg(c)
+	if err := api.Upgrade(name); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -392,27 +406,31 @@ func cmdNotFound(c *cli.Context, command string) {
 	)
 }
 
-func getHost(c *cli.Context) *Host {
+func getHostNameArg(c *cli.Context) string {
+	return c.Args().First()
+}
+
+func getHost(c *cli.Context) *store.Host {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"))
+	api := api.NewApi(c.GlobalString("storage-path"))
 
 	if name == "" {
-		host, err := store.GetActive()
+		host, err := api.GetActive()
 		if err != nil {
 			log.Fatalf("unable to get active host: %v", err)
 		}
 		return host
 	}
 
-	host, err := store.Load(name)
+	host, err := api.Load(name)
 	if err != nil {
 		log.Fatalf("unable to load host: %v", err)
 	}
 	return host
 }
 
-func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
-	currentState, err := host.Driver.GetState()
+func getHostState(host store.Host, api api.Api, hostListItems chan<- hostListItem) {
+	currentState, err := host.GetState()
 	if err != nil {
 		log.Errorf("error getting state for host %s: %s", host.Name, err)
 	}
@@ -426,7 +444,7 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		}
 	}
 
-	isActive, err := store.IsActive(&host)
+	isActive, err := api.IsActive(&host)
 	if err != nil {
 		log.Errorf("error determining whether host %q is active: %s",
 			host.Name, err)
@@ -435,7 +453,7 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 	hostListItems <- hostListItem{
 		Name:       host.Name,
 		Active:     isActive,
-		DriverName: host.Driver.DriverName(),
+		DriverName: host.GetDriverName(),
 		State:      currentState,
 		URL:        url,
 	}

@@ -1,4 +1,4 @@
-package main
+package store
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ func NewStore(rootPath string) *Store {
 }
 
 func (s *Store) Create(name string, driverName string, flags drivers.DriverOptions) (*Host, error) {
-	exists, err := s.Exists(name)
+	exists, err := s.exists(name)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, hostPath)
+	host, err := newHost(name, driverName, hostPath)
 	if err != nil {
 		return host, err
 	}
@@ -48,11 +48,11 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 		return nil, err
 	}
 
-	if err := host.SaveConfig(); err != nil {
+	if err := host.saveConfig(); err != nil {
 		return host, err
 	}
 
-	if err := host.Create(name); err != nil {
+	if err := host.create(name); err != nil {
 		return host, err
 	}
 
@@ -74,7 +74,7 @@ func (s *Store) Remove(name string, force bool) error {
 	if err != nil {
 		return err
 	}
-	return host.Remove(force)
+	return host.remove(force)
 }
 
 func (s *Store) List() ([]Host, error) {
@@ -98,7 +98,7 @@ func (s *Store) List() ([]Host, error) {
 	return hosts, nil
 }
 
-func (s *Store) Exists(name string) (bool, error) {
+func (s *Store) exists(name string) (bool, error) {
 	_, err := os.Stat(filepath.Join(s.Path, name))
 	if os.IsNotExist(err) {
 		return false, nil
@@ -110,7 +110,7 @@ func (s *Store) Exists(name string) (bool, error) {
 
 func (s *Store) Load(name string) (*Host, error) {
 	hostPath := filepath.Join(s.Path, name)
-	return LoadHost(name, hostPath)
+	return loadHost(name, hostPath)
 }
 
 func (s *Store) GetActive() (*Host, error) {
