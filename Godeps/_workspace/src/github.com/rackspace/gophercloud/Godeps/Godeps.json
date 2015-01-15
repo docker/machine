@@ -1,0 +1,5 @@
+{
+	"ImportPath": "github.com/rackspace/gophercloud",
+	"GoVersion": "go1.3.3",
+	"Deps": []
+}
