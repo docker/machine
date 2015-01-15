@@ -37,6 +37,8 @@ type Driver struct {
 	Image                   string
 	SSHPort                 int
 	DockerPort              int
+	CaCertPath              string
+	PrivateKeyPath          string
 	storePath               string
 }
 
@@ -110,8 +112,11 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
-	driver := &Driver{MachineName: machineName, storePath: storePath}
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	t := time.Now().Format("20060102150405")
+	name := fmt.Sprintf("%s-%s", machineName, t)
+
+	driver := &Driver{MachineName: name, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 	return driver, nil
 }
 
@@ -171,154 +176,45 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	t := time.Now().Format("20060102150405")
-	name := fmt.Sprintf("%s-%s", driver.MachineName, t)
-
-	log.Infof("Creating Azure host...")
-	vmConfig, err := vmClient.CreateAzureVMConfiguration(name, driver.Size, driver.Image, driver.Location)
+	log.Infof("Creating Azure machine...")
+	vmConfig, err := vmClient.CreateAzureVMConfiguration(driver.MachineName, driver.Size, driver.Image, driver.Location)
 	if err != nil {
 		return err
 	}
 
+	log.Debug("Generating certificate for Azure...")
 	if err := driver.generateCertForAzure(); err != nil {
 		return err
 	}
 
+	log.Debug("Adding Linux provisioning...")
 	vmConfig, err = vmClient.AddAzureLinuxProvisioningConfig(vmConfig, driver.UserName, driver.UserPassword, driver.azureCertPath(), driver.SSHPort)
 	if err != nil {
 		return err
 	}
 
+	log.Debug("Authorizing ports...")
 	if err := driver.addDockerEndpoint(vmConfig); err != nil {
 		return err
 	}
 
-	if err := vmClient.CreateAzureVM(vmConfig, name, driver.Location); err != nil {
+	log.Debug("Creating VM...")
+	if err := vmClient.CreateAzureVM(vmConfig, driver.MachineName, driver.Location); err != nil {
 		return err
 	}
 
 	log.Infof("Waiting for SSH...")
+	log.Debugf("Host: %s SSH Port: %d", driver.getHostname(), driver.SSHPort)
 
 	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", driver.getHostname(), driver.SSHPort)); err != nil {
 		return err
 	}
 
-	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = driver.GetSSHCommand("sudo stop docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err = driver.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = driver.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --auth-authorized-dir=/root/.docker/authorized-keys.d\"' | sudo tee -a /etc/default/docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	// HACK: temporarily chown to ssh user for providers using non-root accounts
-	cmd, err = driver.GetSSHCommand(fmt.Sprintf("sudo mkdir -p /root/.docker && sudo chown -R %s /root/.docker", driver.UserName))
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
+	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sh -; fi")
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-
-	cmdString := fmt.Sprintf("sudo mkdir -p %q && sudo tee -a %q", "/root/.docker/authorized-keys.d", "/root/.docker/authorized-keys.d/docker-host.json")
-	cmd, err = driver.GetSSHCommand(cmdString)
-	cmd.Stdin = f
 	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// HACK: change back ownership
-	cmd, err = driver.GetSSHCommand("sudo mkdir -p /root/.docker && sudo chown -R root /root/.docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = driver.GetSSHCommand("sudo start docker")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (driver *Driver) hackForIdentityAuth() error {
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	/* We need to add retries to every SSH call we make, because Azure has some weird networking bug:
-	sometimes when it comes to communication between VMs or with Azure itself, Azure API throws an error.
-	So when we are running remote commands via SSH, sometimes they fail for no reason.
-	This issue is fixed by repeating SSH calls few times before throwing an error.
-	*/
-	numberOfRetries := 3
-	if err := driver.runSSHCommand("sudo stop docker", numberOfRetries); err != nil {
-		return err
-	}
-
-	if err := driver.runSSHCommand("sudo bash -c \"curl -sS https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity > /usr/bin/docker\"", numberOfRetries); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmdString := fmt.Sprintf(`sudo bash -c 'cat <<EOF > /etc/default/docker
-export DOCKER_OPTS="--auth=identity --host=tcp://0.0.0.0:%v"
-EOF'`, driver.DockerPort)
-	if err := driver.runSSHCommand(cmdString, numberOfRetries); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	if err := driver.addPublicKeyToAuthorizedHosts("/tmp/.docker/authorized-keys.d", numberOfRetries); err != nil {
-		return err
-	}
-
-	if err := driver.runSSHCommand("sudo cp -a /tmp/.docker/ /", numberOfRetries); err != nil {
-		return err
-	}
-
-	if err := driver.runSSHCommand("rm -r /tmp/.docker/", numberOfRetries); err != nil {
-		return err
-	}
-
-	if err := driver.runSSHCommand("sudo start docker", numberOfRetries); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (driver *Driver) addPublicKeyToAuthorizedHosts(authorizedKeysPath string, retries int) error {
-	if err := drivers.AddPublicKeyToAuthorizedHosts(driver, authorizedKeysPath); err != nil {
-		if err.Error() == "exit status 255" {
-			if retries == 0 {
-				return err
-			}
-			return driver.addPublicKeyToAuthorizedHosts(authorizedKeysPath, retries-1)
-		}
-
 		return err
 	}
 
@@ -590,7 +486,6 @@ func (driver *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 	configSets := vmConfig.ConfigurationSets.ConfigurationSet
 	if len(configSets) == 0 {
 		return fmt.Errorf("no configuration set")
-
 	}
 	for i := 0; i < len(configSets); i++ {
 		if configSets[i].ConfigurationSetType != "NetworkConfiguration" {
@@ -602,7 +497,7 @@ func (driver *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 		ep.Port = driver.DockerPort
 		ep.LocalPort = driver.DockerPort
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
-		log.Debugf("added Docker endpoint to configuration")
+		log.Debugf("added Docker endpoint (port %d) to configuration", driver.DockerPort)
 	}
 	return nil
 }
