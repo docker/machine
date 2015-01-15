@@ -64,7 +64,6 @@ func init() {
 		out, _, err := runCommandWithOutput(whichCmd)
 		if err == nil {
 			machineBinary = stripTrailingCharacters(out)
-
 		} else {
 			fmt.Printf("ERROR: couldn't resolve full path to the Machine binary")
 			os.Exit(1)
