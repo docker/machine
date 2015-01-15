@@ -61,6 +61,18 @@ func (d *FakeDriver) Upgrade() error {
 	return nil
 }
 
+func (d *FakeDriver) StartDocker() error {
+	return nil
+}
+
+func (d *FakeDriver) StopDocker() error {
+	return nil
+}
+
+func (d *FakeDriver) GetDockerConfigDir() string {
+	return ""
+}
+
 func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return &exec.Cmd{}, nil
 }
@@ -71,7 +83,7 @@ func TestGetHostState(t *testing.T) {
 		t.Fatal("Error creating tmp dir:", err)
 	}
 	hostListItems := make(chan hostListItem)
-	store := NewStore(storePath)
+	store := NewStore(storePath, "", "")
 	hosts := []Host{
 		{
 			Name:       "foo",

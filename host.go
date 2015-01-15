@@ -142,6 +142,10 @@ func (h *Host) GenerateCertificates(serverIPs []string) error {
 func (h *Host) ConfigureAuth() error {
 	d := h.Driver
 
+	if d.DriverName() == "none" {
+		return nil
+	}
+
 	ip, err := d.GetIP()
 	if err != nil {
 		return err
