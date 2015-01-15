@@ -9,6 +9,10 @@ import (
 	"github.com/docker/machine/drivers/openstack"
 )
 
+const (
+	dockerConfigDir = "/etc/docker"
+)
+
 // Driver is a machine driver for Rackspace. It's a specialization of the generic OpenStack one.
 type Driver struct {
 	*openstack.Driver
@@ -18,15 +22,17 @@ type Driver struct {
 
 // CreateFlags stores the command-line arguments given to "machine create".
 type CreateFlags struct {
-	Username     *string
-	APIKey       *string
-	Region       *string
-	MachineName  *string
-	EndpointType *string
-	ImageID      *string
-	FlavorID     *string
-	SSHUser      *string
-	SSHPort      *int
+	Username       *string
+	APIKey         *string
+	Region         *string
+	MachineName    *string
+	EndpointType   *string
+	ImageID        *string
+	FlavorID       *string
+	SSHUser        *string
+	SSHPort        *int
+	CaCertPath     string
+	PrivateKeyPath string
 }
 
 func init() {
@@ -93,14 +99,16 @@ func GetCreateFlags() []cli.Flag {
 }
 
 // NewDriver instantiates a Rackspace driver.
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	log.WithFields(log.Fields{
 		"machineName": machineName,
 		"storePath":   storePath,
+		"caCert":      caCert,
+		"privateKey":  privateKey,
 	}).Debug("Instantiating Rackspace driver.")
 
 	client := &Client{}
-	inner, err := openstack.NewDerivedDriver(machineName, storePath, client)
+	inner, err := openstack.NewDerivedDriver(machineName, storePath, client, caCert, privateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +121,10 @@ func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
 // DriverName is the user-visible name of this driver.
 func (d *Driver) DriverName() string {
 	return "rackspace"
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func missingEnvOrOption(setting, envVar, opt string) error {
