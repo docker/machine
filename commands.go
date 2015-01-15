@@ -76,6 +76,11 @@ var Commands = []cli.Command{
 		Action: cmdCreate,
 	},
 	{
+		Name:   "config",
+		Usage:  "Print the connection config for machine",
+		Action: cmdConfig,
+	},
+	{
 		Name:   "inspect",
 		Usage:  "Inspect information about a machine",
 		Action: cmdInspect,
@@ -207,14 +212,35 @@ func cmdCreate(c *cli.Context) {
 	}
 
 	log.Infof("%q has been created and is now the active machine", name)
-	// TODO @ehazlett - this will change but at least show how to connect for now
-	log.Info("To connect, pass these args to Docker: ")
-	storeDir := c.GlobalString("storage-path")
+	// TODO @ehazlett: this will likely change but at least show how to connect for now
+	log.Infof("To connect, use docker $(machine config %s)", name)
+}
+
+func cmdConfig(c *cli.Context) {
+
+	name := c.Args().First()
+	if name == "" {
+		cli.ShowCommandHelp(c, "config")
+		log.Fatal("You must specify a machine name")
+	}
+
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+
+	host, err := store.Load(name)
+	if err != nil {
+		log.Fatalf("Error loading machine config: %s", err)
+	}
+
+	storeDir := store.Path
 	caCert := filepath.Join(storeDir, name, "ca.pem")
 	clientCert := filepath.Join(storeDir, name, "client.pem")
 	clientKey := filepath.Join(storeDir, name, "client-key.pem")
-	log.Infof("--auth=cert --auth-ca=%s --auth-cert=%s --auth-key=%s -H $(machine url)",
-		caCert, clientCert, clientKey)
+	machineUrl, err := host.GetURL()
+	if err != nil {
+		log.Fatalf("Error getting machine url: %s", err)
+	}
+	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
+		caCert, clientCert, clientKey, machineUrl)
 }
 
 func cmdInspect(c *cli.Context) {

@@ -23,6 +23,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	cssh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -133,7 +134,8 @@ func (d *Driver) Create() error {
 		isoURL = d.Boot2DockerURL
 	} else {
 		// HACK: Docker 1.3 boot2docker image with identity auth and vmtoolsd
-		isoURL = "https://github.com/cloudnativeapps/boot2docker/releases/download/1.3.1_vmw-identity/boot2docker.iso"
+		//isoURL = "https://github.com/cloudnativeapps/boot2docker/releases/download/1.3.1_vmw-identity/boot2docker.iso"
+		isoURL = "https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso"
 	}
 	log.Infof("Downloading boot2docker...")
 	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
@@ -199,17 +201,32 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Machine didn't return an IP after 120 seconds, aborting")
 	}
 
-	// we got an IP, let's copy ssh keys over
-	// Create the dir
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "createDirectoryInGuest", d.vmxPath(), "/home/docker/.ssh")
-
-	// Copy SSH keys
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "CopyFileFromHostToGuest", d.vmxPath(), d.publicSSHKeyPath(), "/home/docker/.ssh/authorized_keys")
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "CopyFileFromHostToGuest", d.vmxPath(), d.publicSSHKeyPath(), "/home/docker/.ssh/authorized_keys2")
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/root/.docker/authorized-keys.d"); err != nil {
+	key, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
 		return err
 	}
+
+	// so, vmrun above will not work without vmtools in b2d.  since getting stuff into TCL
+	// is much more painful, we simply use the b2d password to get the initial public key
+	// onto the machine.  from then on we use the pub key.  meh.
+	sshConfig := &cssh.ClientConfig{
+		User: B2D_USER,
+		Auth: []cssh.AuthMethod{
+			cssh.Password(B2D_PASS),
+		},
+	}
+	sshClient, err := cssh.Dial("tcp", fmt.Sprintf("%s:22", ip), sshConfig)
+	if err != nil {
+		return err
+	}
+	session, err := sshClient.NewSession()
+	if err != nil {
+		return err
+	}
+	if err := session.Run(fmt.Sprintf("mkdir /home/docker/.ssh && echo \"%s\" > /home/docker/.ssh/authorized_keys", string(key))); err != nil {
+		return err
+	}
+	session.Close()
 
 	log.Debugf("Setting hostname: %s", d.MachineName)
 	cmd, err := d.GetSSHCommand(fmt.Sprintf(
@@ -225,13 +242,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
+	//cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
+	//if err != nil {
+	//	return err
+	//}
+	//if err := cmd.Run(); err != nil {
+	//	return err
+	//}
 	//cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker restart; sleep 5")
 	//if err != nil {
 	//	return err
@@ -315,7 +332,6 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-
 	ip, err := d.GetIP()
 	if err != nil {
 		return nil, err
