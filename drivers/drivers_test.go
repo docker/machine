@@ -8,7 +8,9 @@ import (
 
 func TestGetCreateFlags(t *testing.T) {
 	Register("foo", &RegisteredDriver{
-		New: func(machineName string, storePath string) (Driver, error) { return nil, nil },
+		New: func(machineName string, storePath string, caCert string, privateKey string) (Driver, error) {
+			return nil, nil
+		},
 		GetCreateFlags: func() []cli.Flag {
 			return []cli.Flag{
 				cli.StringFlag{
@@ -33,7 +35,9 @@ func TestGetCreateFlags(t *testing.T) {
 		},
 	})
 	Register("bar", &RegisteredDriver{
-		New: func(machineName string, storePath string) (Driver, error) { return nil, nil },
+		New: func(machineName string, storePath string, caCert string, privateKey string) (Driver, error) {
+			return nil, nil
+		},
 		GetCreateFlags: func() []cli.Flag {
 			return []cli.Flag{
 				cli.StringFlag{
