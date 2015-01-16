@@ -6,6 +6,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/state"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 )
 
@@ -21,7 +22,28 @@ func init() {
 }
 
 func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{}
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:   "aws-access-key-id",
+			Usage:  "AWS Access Key",
+			EnvVar: "AWS_ACCESS_KEY_ID",
+		},
+		cli.StringFlag{
+			Name:   "aws-secret-access-key",
+			Usage:  "AWS Secret Access Key",
+			EnvVar: "AWS_SECRET_ACCESS_KEY",
+		},
+		cli.StringFlag{
+			Name:   "aws-session-token",
+			Usage:  "AWS Session Token",
+			EnvVar: "AWS_SESSION_TOKEN",
+		},
+		cli.StringFlag{
+			Name:   "aws-region",
+			Usage:  "AWS Region",
+			EnvVar: "AWS_DEFAULT_REGION",
+		},
+	}
 }
 
 func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
@@ -30,6 +52,11 @@ func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
 
 type Driver struct {
 	MachineName string
+
+	AccessKey    string
+	SecretKey    string
+	SessionToken string
+	Region       string
 
 	storePath string
 }
