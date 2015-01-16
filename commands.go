@@ -220,7 +220,8 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("error setting active host: %v", err)
 	}
 
-	log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity", name)
+	log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run:", name)
+	log.Infof("    export DOCKER_HOST=$(%s url %s) DOCKER_AUTH=identity", os.Args[0], name)
 }
 
 func cmdInspect(c *cli.Context) {
