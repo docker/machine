@@ -66,10 +66,24 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	log.Debug("Setting flags")
+	d.AccessKey = flags.String("aws-access-key-id")
+	d.SecretKey = flags.String("aws-secret-key")
+	d.SessionToken = flags.String("aws-session-token")
+
+	region, err := validateAwsRegion(flags.String("aws-region"))
+	if err != nil {
+		return err
+	}
+
+	d.Region = region
+
 	return nil
 }
 
 func (d *Driver) Create() error {
+	creds := aws.Creds(d.AccessKey, d.SecretKey, d.SessionToken)
+
 	return nil
 }
 
