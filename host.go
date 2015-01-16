@@ -177,19 +177,22 @@ func (h *Host) ConfigureAuth() error {
 	if err != nil {
 		return err
 	}
-	machineCaCertPath := filepath.Join(d.GetDockerConfigDir(), "ca.pem")
+
+	// due to windows clients, we cannot use filepath.Join as the paths
+	// will be mucked on the linux hosts
+	machineCaCertPath := fmt.Sprintf("%s/ca.pem", d.GetDockerConfigDir())
 
 	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
 		return err
 	}
-	machineServerCertPath := filepath.Join(d.GetDockerConfigDir(), "server.pem")
+	machineServerCertPath := fmt.Sprintf("%s/server.pem", d.GetDockerConfigDir())
 
 	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
 		return err
 	}
-	machineServerKeyPath := filepath.Join(d.GetDockerConfigDir(), "server-key.pem")
+	machineServerKeyPath := fmt.Sprintf("%s/server-key.pem", d.GetDockerConfigDir())
 
 	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(caCert), machineCaCertPath))
 	if err != nil {
