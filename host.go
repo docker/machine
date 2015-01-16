@@ -129,8 +129,8 @@ func (h *Host) GenerateCertificates(serverIPs []string) error {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
 
-	clientCertPath := filepath.Join(h.storePath, "client.pem")
-	clientKeyPath := filepath.Join(h.storePath, "client-key.pem")
+	clientCertPath := filepath.Join(h.storePath, "cert.pem")
+	clientKeyPath := filepath.Join(h.storePath, "key.pem")
 	log.Debugf("generating client cert: %s", clientCertPath)
 	if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating client cert: %s", err)
