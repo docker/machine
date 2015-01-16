@@ -145,6 +145,11 @@ var Commands = []cli.Command{
 		Usage:  "Get the URL of a machine",
 		Action: cmdUrl,
 	},
+	{
+		Name:   "shellinit",
+		Usage:  "Display the shell commands to set up the Docker client.",
+		Action: cmdShellInit,
+	},
 }
 
 func cmdActive(c *cli.Context) {
@@ -220,7 +225,16 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("error setting active host: %v", err)
 	}
 
-	log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity", name)
+	log.Infof("%q has been created and is now the active machine. To point Docker at this machine, run:", name)
+	log.Infof("   $(%s shellinit %s)", os.Args[0], name)
+}
+
+func cmdShellInit(c *cli.Context) {
+	url, err := getHost(c).GetURL()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("export DOCKER_HOST=%s DOCKER_AUTH=identity\n", url)
 }
 
 func cmdInspect(c *cli.Context) {
