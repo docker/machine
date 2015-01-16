@@ -189,6 +189,7 @@ func TestStoreGetSetActive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if host != nil {
 		t.Fatalf("GetActive: Active host should not exist")
 	}
@@ -227,6 +228,7 @@ func TestStoreGetSetActive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if host != nil {
 		t.Fatalf("Active host %s is not nil", host.Name)
 	}
