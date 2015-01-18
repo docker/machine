@@ -9,7 +9,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	raw "google.golang.org/api/compute/v1"
 )
@@ -252,9 +251,6 @@ func (c *ComputeUtil) updateDocker(d *Driver) error {
 	}
 	commands := strings.Split(scriptBuf.String(), "\n")
 	if err := c.executeCommands(commands, ip, d.sshKeyPath); err != nil {
-		return err
-	}
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
 		return err
 	}
 	return c.executeCommands([]string{dockerStartCommand}, ip, d.sshKeyPath)

@@ -36,6 +36,7 @@ const (
 // Driver for VMware Fusion
 type Driver struct {
 	MachineName    string
+	IPAddress      string
 	Memory         int
 	DiskSize       int
 	ISO            string
@@ -232,6 +233,8 @@ func (d *Driver) Create() error {
 	if ip == "" {
 		return fmt.Errorf("Machine didn't return an IP after 120 seconds, aborting")
 	}
+
+	d.IPAddress = ip
 
 	key, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
