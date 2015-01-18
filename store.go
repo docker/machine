@@ -34,13 +34,9 @@ func (s *Store) Create(name string, driverName string, remoteDockerOpts string, 
 		return nil, fmt.Errorf("Machine %s already exists", name)
 	}
 
-	if remoteDockerOpts != "" {
-		log.Infof("Found value for docker opts : %q", remoteDockerOpts)
-	}
-
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath)
+	host, err := NewHost(name, driverName, hostPath, remoteDockerOpts, s.CaCertPath, s.PrivateKeyPath)
 	if err != nil {
 		return host, err
 	}

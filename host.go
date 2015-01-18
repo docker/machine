@@ -26,15 +26,16 @@ var (
 )
 
 type Host struct {
-	Name           string `json:"-"`
-	DriverName     string
-	Driver         drivers.Driver
-	CaCertPath     string
-	ServerCertPath string
-	ServerKeyPath  string
-	PrivateKeyPath string
-	ClientCertPath string
-	storePath      string
+	Name           		string `json:"-"`
+	DriverName     		string
+	Driver         		drivers.Driver
+	CaCertPath     		string
+	ServerCertPath 		string
+	ServerKeyPath  		string
+	PrivateKeyPath 		string
+	ClientCertPath 		string
+	storePath      		string
+	RemoteDockerOpts 	string
 }
 
 type DockerConfig struct {
@@ -59,7 +60,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
+func NewHost(name, driverName, storePath, remoteDockerOpts, caCert, privateKey string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -71,6 +72,7 @@ func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, err
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
 		storePath:      storePath,
+		RemoteDockerOpts: 	remoteDockerOpts,
 	}, nil
 }
 
@@ -314,6 +316,10 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
+	if err := h.configureRemoteDockerDaemon(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -387,5 +393,9 @@ func (h *Host) SaveConfig() error {
 	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (h *Host) configureRemoteDockerDaemon() error {
 	return nil
 }
