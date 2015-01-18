@@ -396,6 +396,57 @@ func (h *Host) SaveConfig() error {
 	return nil
 }
 
+func(h *Host) getHostOSType() string {
+	return "boot2docker"
+}
+
+func(h *Host) getDockerConfigFilePath() string {
+	
+	hostOSType := h.getHostOSType()
+
+	switch hostOSType  {
+    case "boot2docker":
+    	return "/var/lib/boot2docker/profile"
+    default:
+    	log.Info(hostOSType, " not implemented")
+    	return ""
+    }
+}
+
+func(h *Host) getDockerRestartCmd() string {
+	hostOSType := h.getHostOSType()
+
+	switch hostOSType  {
+    case "boot2docker":
+    	return "sudo /etc/init.d/docker restart"
+    default:
+    	log.Info(hostOSType, " not implemented")
+    	return ""
+    }
+}
+
+
 func (h *Host) configureRemoteDockerDaemon() error {
+
+	/** 
+	We need to detect :
+	- Which config file to use (absolute path)
+	- Which command as to be used to restart Docker
+	Assuming that :
+	- We are always using sudo to write command
+	- Config file and command should be overwritable by the user (thinks Cloud cases with custom made Docker OSes)
+	- Driver only provide the plumbing to execute remote SSH commands, not the OS/config/command detection
+	- emote Docker daemon is configured in just one file in the remote host
+	**/
+
+	remoteDockerConfigFile := h.getDockerConfigFilePath
+
+	// Cleaning existing values assuming that the remote
+	h.Driver.
+
+	// Writing the new value of DOCKER_OPTS at the end of the file
+
+	// Restart Docker
+
 	return nil
 }
