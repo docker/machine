@@ -3,7 +3,6 @@ package virtualbox
 import (
 	"archive/tar"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -552,26 +551,19 @@ func (d *Driver) diskPath() string {
 }
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
-// FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func getLatestReleaseURL() (string, error) {
-	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
+	rsp, err := http.Get("https://raw.githubusercontent.com/boot2docker/boot2docker/master/VERSION")
 	if err != nil {
 		return "", err
 	}
 	defer rsp.Body.Close()
 
-	var t []struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
+	contents, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
 		return "", err
 	}
-	if len(t) == 0 {
-		return "", fmt.Errorf("no releases found")
-	}
-
-	tag := t[0].TagName
-	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", tag)
+	tag := strings.TrimSpace(string(contents))
+	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/v%s/boot2docker.iso", tag)
 	return url, nil
 }
 
