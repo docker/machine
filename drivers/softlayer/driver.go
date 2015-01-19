@@ -16,15 +16,21 @@ import (
 	"github.com/docker/machine/state"
 )
 
-const ApiEndpoint = "https://api.softlayer.com/rest/v3"
-const DockerInstallUrl = "https://get.docker.com"
+const (
+	dockerConfigDir  = "/etc/docker"
+	ApiEndpoint      = "https://api.softlayer.com/rest/v3"
+	DockerInstallUrl = "https://get.docker.com"
+)
 
 type Driver struct {
-	storePath    string
-	IPAddress    string
-	deviceConfig *deviceConfig
-	Id           int
-	Client       *Client
+	storePath      string
+	IPAddress      string
+	deviceConfig   *deviceConfig
+	Id             int
+	Client         *Client
+	MachineName    string
+	CaCertPath     string
+	PrivateKeyPath string
 }
 
 type deviceConfig struct {
@@ -48,8 +54,8 @@ func init() {
 	})
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{storePath: storePath}, nil
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
 func GetCreateFlags() []cli.Flag {
@@ -210,6 +216,38 @@ func (d *Driver) getClient() *Client {
 
 func (d *Driver) DriverName() string {
 	return "softlayer"
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func (d *Driver) GetURL() (string, error) {
@@ -412,41 +450,6 @@ func (d *Driver) setupHost() error {
 		}
 		time.Sleep(2 * time.Second)
 	}
-	// Remove this once ID auth is released officialy
-	cmd, err := d.GetSSHCommand("service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	cmd, err = d.GetSSHCommand("dbin=$(which docker); wget -O $dbin https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /dev/null 2>&1 && chmod +x $dbin")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
 
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"' >> /etc/default/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("service docker start")
-	if err != nil {
-		return err
-	}
-	return cmd.Run()
+	return nil
 }
