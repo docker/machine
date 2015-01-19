@@ -6,6 +6,8 @@ import (
 
 var (
 	errInvalidRegion = errors.New("invalid region specified")
+	errNoVpcs        = errors.New("No VPCs found in region")
+	errComplete      = errors.New("Complete")
 )
 
 type region struct {
