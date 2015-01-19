@@ -111,7 +111,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("Creating security group")
-	_, err = d.getClient().CreateSecurityGroup(&ec2.CreateSecurityGroupRequest{
+	secGroupResp, err := d.getClient().CreateSecurityGroup(&ec2.CreateSecurityGroupRequest{
 		Description: aws.String(fmt.Sprintf("Docker Machine host: %s", d.MachineName)),
 		GroupName:   aws.String(d.MachineName),
 		VPCID:       aws.String(vpcId),
@@ -120,6 +120,57 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
+
+	log.Debugf("Created security group: %s", *secGroupResp.GroupID)
+
+	log.Debugf("Creating Docker Ingress rule")
+	if err := d.getClient().AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressRequest{
+		CIDRIP:     aws.String("0.0.0.0/0"),
+		DryRun:     aws.Boolean(false),
+		FromPort:   aws.Integer(2376),
+		GroupID:    secGroupResp.GroupID,
+		ToPort:     aws.Integer(2376),
+		IPProtocol: aws.String("tcp"),
+	}); err != nil {
+		return err
+	}
+
+	log.Debugf("Creating SSH Ingress rule")
+	if err := d.getClient().AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressRequest{
+		CIDRIP:     aws.String("0.0.0.0/0"),
+		DryRun:     aws.Boolean(false),
+		FromPort:   aws.Integer(22),
+		GroupID:    secGroupResp.GroupID,
+		ToPort:     aws.Integer(22),
+		IPProtocol: aws.String("tcp"),
+	}); err != nil {
+		return err
+	}
+
+	instResp, err := d.getClient().RunInstances(&ec2.RunInstancesRequest{
+		BlockDeviceMappings: []ec2.BlockDeviceMapping{
+			ec2.BlockDeviceMapping{
+				DeviceName: aws.String("/dev/sda1"),
+				EBS: &ec2.EBSBlockDevice{
+					VolumeSize: aws.Integer(8),
+					VolumeType: aws.String("gp2"),
+				},
+			},
+		},
+		DryRun:           aws.Boolean(false),
+		ImageID:          aws.String(regionDetails[d.Region].AmiId),
+		InstanceType:     aws.String("t2.small"),
+		KeyName:          aws.String(d.MachineName),
+		MinCount:         aws.Integer(1),
+		MaxCount:         aws.Integer(1),
+		SecurityGroupIDs: []string{*secGroupResp.GroupID},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Created instance: %s", *instResp.Instances[0].InstanceID)
 
 	return errComplete
 }
