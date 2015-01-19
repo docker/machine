@@ -1,13 +1,19 @@
 package awsec2
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/docker/machine/drivers"
+	// "github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/stripe/aws-go/aws"
+	"github.com/stripe/aws-go/gen/ec2"
 )
 
 const (
@@ -58,6 +64,8 @@ type Driver struct {
 	SessionToken string
 	Region       string
 
+	KeyPath string
+
 	storePath string
 }
 
@@ -68,7 +76,7 @@ func (d *Driver) DriverName() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	log.Debug("Setting flags")
 	d.AccessKey = flags.String("aws-access-key-id")
-	d.SecretKey = flags.String("aws-secret-key")
+	d.SecretKey = flags.String("aws-secret-access-key")
 	d.SessionToken = flags.String("aws-session-token")
 
 	region, err := validateAwsRegion(flags.String("aws-region"))
@@ -82,9 +90,38 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) Create() error {
-	creds := aws.Creds(d.AccessKey, d.SecretKey, d.SessionToken)
+	resp, err := d.getClient().CreateKeyPair(&ec2.CreateKeyPairRequest{
+		aws.Boolean(false),
+		aws.String(d.MachineName),
+	})
 
-	return nil
+	if err != nil {
+		return err
+	}
+
+	d.KeyPath = filepath.Join(d.storePath, "id_rsa")
+	log.Debugf("Writing private SSH key to: %s", d.KeyPath)
+	if err := ioutil.WriteFile(d.KeyPath, []byte(*resp.KeyMaterial), 0600); err != nil {
+		return err
+	}
+
+	vpcId, err := d.getDefaultVpc()
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Creating security group")
+	_, err = d.getClient().CreateSecurityGroup(&ec2.CreateSecurityGroupRequest{
+		Description: aws.String(fmt.Sprintf("Docker Machine host: %s", d.MachineName)),
+		GroupName:   aws.String(d.MachineName),
+		VPCID:       aws.String(vpcId),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return errComplete
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -124,4 +161,42 @@ func (d *Driver) Stop() error {
 
 func (d *Driver) Upgrade() error {
 	return nil
+}
+
+func (d *Driver) getClient() *ec2.EC2 {
+	creds := aws.Creds(d.AccessKey, d.SecretKey, d.SessionToken)
+	cli := ec2.New(creds, d.Region, nil)
+
+	return cli
+}
+
+func (d *Driver) getDefaultVpc() (string, error) {
+	log.Debugf("Trying to find default VPC for %s", d.Region)
+	resp, err := d.getClient().DescribeVPCs(&ec2.DescribeVPCsRequest{
+		DryRun: aws.Boolean(false),
+		Filters: []ec2.Filter{
+			ec2.Filter{
+				Name:   aws.String("isDefault"),
+				Values: []string{"true"},
+			},
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.VPCs) == 0 {
+		return "", errNoVpcs
+	}
+
+	var vpcId string
+
+	for _, v := range resp.VPCs {
+		vpcId = *v.VPCID
+	}
+
+	log.Debugf("Found default VPC: %s", vpcId)
+
+	return vpcId, nil
 }
