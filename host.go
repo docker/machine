@@ -83,13 +83,18 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
-func (h *Host) GenerateCertificates(serverIPs []string) error {
+func (h *Host) GenerateCertificates() error {
 	var (
 		caPathExists     bool
 		privateKeyExists bool
 		org              = "docker-machine"
 		bits             = 2048
 	)
+
+	ip, err := h.Driver.GetIP()
+	if err != nil {
+		return err
+	}
 
 	caCertPath := filepath.Join(h.storePath, "ca.pem")
 	privateKeyPath := filepath.Join(h.storePath, "private.pem")
@@ -125,7 +130,7 @@ func (h *Host) GenerateCertificates(serverIPs []string) error {
 
 	log.Debugf("generating server cert: %s", serverCertPath)
 
-	if err := utils.GenerateCert(serverIPs, serverCertPath, serverKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
+	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
 
@@ -146,13 +151,8 @@ func (h *Host) ConfigureAuth() error {
 		return nil
 	}
 
-	ip, err := d.GetIP()
-	if err != nil {
-		return err
-	}
-
-	log.Debugf("generating certificates for %s", ip)
-	if err := h.GenerateCertificates([]string{ip}); err != nil {
+	log.Debugf("generating certificates for %s", h.Name)
+	if err := h.GenerateCertificates(); err != nil {
 		return err
 	}
 
