@@ -46,7 +46,7 @@ Now you should be able to check the version with `machine -v`:
 
 ```
 $ machine -v
-machine version 0.0.2
+machine version 0.0.3
 ```
 
 ## Getting started with Docker Machine using a local VM
@@ -81,7 +81,8 @@ INFO[0000] Creating SSH key...
 INFO[0000] Creating VirtualBox VM...
 INFO[0007] Starting VirtualBox VM...
 INFO[0007] Waiting for VM to start...
-INFO[0038] "dev" has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity
+INFO[0038] "dev" has been created and is now the active machine
+INFO[0038] To connect: docker $(machine config dev) ps
 ```
 
 You can see the machine you have created by running the `machine ls` command 
@@ -96,17 +97,20 @@ dev       *        virtualbox   Running   tcp://192.168.99.100:2375
 The `*` next to `dev` indicates that it is the active host.
 
 Next, as noted in the output of the `machine create` command, we have to tell 
-Docker to talk to that machine directly by setting the `DOCKER_HOST` 
-and `DOCKER_AUTH` environment variables:
+Docker to talk to that machine.  You can do this with the `machine config`
+command.  For example,
 
 ```
-$ export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity
+$ docker $(machine config dev) ps
 ```
+
+This will pass arguments to the Docker client that specify the TLS settings.
+To see what will be passed, run `machine config dev`.
 
 You can now run Docker commands on this host:
 
 ```
-$ docker run busybox echo hello world
+$ docker $(machine config dev) run busybox echo hello world
 Unable to find image 'busybox' locally
 Pulling repository busybox
 e72ac664f4f0: Download complete
@@ -184,7 +188,8 @@ $ machine create \
 INFO[0000] Creating SSH key...
 INFO[0000] Creating Digital Ocean droplet...
 INFO[0002] Waiting for SSH...
-INFO[0085] "staging" has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity
+INFO[0085] "staging" has been created and is now the active machine
+INFO[0085] To connect: docker $(machine config dev) staging
 ```
 
 For convenience, `machine` will use sensible defaults for choosing settings such
@@ -200,15 +205,8 @@ host (initially for provisioning, then directly later if the user runs the
 `machine ssh` command) will be created automatically and stored in the client's 
 directory in `~/.docker/machines`.  After the creation of the SSH key, Docker 
 will be installed on the remote machine and the daemon will be configured to 
-accept remote connections over TCP using 
-[libtrust](https://github.com/docker/libtrust) for authentication.  Once this 
+accept remote connections over TCP using TLS for authentication.  Once this 
 is finished, the host is ready for connection.
-
-Just like with in the last section, we must run:
-
-```
-$ export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity
-```
 
 And then from this point, the remote host behaves much like the local host we 
 created in the last section. If we look at `machine`, we’ll see it is now the 
@@ -222,12 +220,10 @@ dev                virtualbox     Running   tcp://192.168.99.103:2375
 staging   *        digitalocean   Running   tcp://104.236.50.118:2375
 ```
 
-To select an active host, you can use the `machine active` command.  You must 
-re-run the `export` commands previously mentioned.
+To select an active host, you can use the `machine active` command.
 
 ```
 $ machine active dev
-$ export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity
 $ machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
 dev       *        virtualbox     Running   tcp://192.168.99.103:2375
@@ -250,7 +246,6 @@ every time you run a Docker command.
 
 ```
 $ machine create --url=tcp://50.134.234.20:2376 custombox
-$ export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity
 $ machine ls
 NAME        ACTIVE   DRIVER    STATE     URL
 custombox   *        none      Running   tcp://50.134.234.20:2376
@@ -285,6 +280,15 @@ INFO[0000] Creating VirtualBox VM...
 INFO[0007] Starting VirtualBox VM...
 INFO[0007] Waiting for VM to start...
 INFO[0038] "dev" has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(machine url) DOCKER_AUTH=identity
+```
+
+#### config
+
+Show the Docker client configuration for a machine.
+
+```
+$ machine config dev
+--tls --tlscacert=/Users/ehazlett/.docker/machines/dev/ca.pem --tlscert=/Users/ehazlett/.docker/machines/dev/cert.pem --tlskey=/Users/ehazlett/.docker/machines/dev/key.pem -H tcp://192.168.99.103:2376
 ```
 
 #### inspect
@@ -427,6 +431,10 @@ dev    *        virtualbox   Stopped
 
 Upgrade a machine to the latest version of Docker.
 
+```
+$ machine upgrade dev
+```
+
 #### url
 
 Get the URL of a host
@@ -441,9 +449,14 @@ tcp://192.168.99.109:2376
 TODO: List all possible values (where applicable) for all flags for every 
 driver.
 
-#### VirtualBox
-#### Digital Ocean
-#### Microsoft Azure
-#### Google Compute Engine
 #### Amazon Web Services
+#### Digital Ocean
+#### Google Compute Engine
 #### IBM Softlayer
+#### Microsoft Azure
+#### Openstack
+#### Rackspace
+#### VirtualBox
+#### VMware Fusion
+#### VMware vCloud Air
+#### VMware vSphere
