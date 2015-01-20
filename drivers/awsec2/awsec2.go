@@ -385,6 +385,21 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
+	for {
+		instState, err := d.GetState()
+		if err != nil {
+			return nil
+		}
+
+		if instState == state.Stopped {
+			break
+		}
+
+		if instState == state.Error {
+			return errMachineFailure
+		}
+	}
+
 	err = d.getClient().DeleteSecurityGroup(&ec2.DeleteSecurityGroupRequest{
 		DryRun:  aws.Boolean(false),
 		GroupID: aws.String(d.SecurityGroupID),
