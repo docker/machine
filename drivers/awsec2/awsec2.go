@@ -62,6 +62,11 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "aws-ec2-image-id",
 			Usage: "EC2 AMI ID",
 		},
+		cli.StringFlag{
+			Name:  "aws-ec2-disk-size",
+			Usage: "Size of the volume",
+			Value: 16,
+		},
 	}
 }
 
@@ -83,6 +88,7 @@ type Driver struct {
 
 	ImageID      string
 	InstanceType string
+	DiskSize     int
 
 	storePath string
 }
@@ -111,6 +117,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.InstanceType = flags.String("aws-ec2-instance-type")
 	d.ImageID = image
+	d.DiskSize = flags.Int("aws-ec2-disk-size")
 
 	return nil
 }
@@ -179,7 +186,7 @@ func (d *Driver) Create() error {
 				DeviceName: aws.String("/dev/sda1"),
 				EBS: &ec2.EBSBlockDevice{
 					DeleteOnTermination: aws.Boolean(false),
-					VolumeSize:          aws.Integer(8),
+					VolumeSize:          aws.Integer(d.DiskSize),
 					VolumeType:          aws.String("gp2"),
 				},
 			},
