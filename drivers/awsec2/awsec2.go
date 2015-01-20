@@ -156,8 +156,9 @@ func (d *Driver) Create() error {
 			{
 				DeviceName: aws.String("/dev/sda1"),
 				EBS: &ec2.EBSBlockDevice{
-					VolumeSize: aws.Integer(8),
-					VolumeType: aws.String("gp2"),
+					DeleteOnTermination: aws.Boolean(false),
+					VolumeSize:          aws.Integer(8),
+					VolumeType:          aws.String("gp2"),
 				},
 			},
 		},
@@ -330,13 +331,6 @@ func (d *Driver) GetState() (state.State, error) {
 		}
 
 		instance := resp.Reservations[0].Instances[0]
-
-		// // This typically means that the instance doesn't exist or isn't booted yet
-		// if insta.InstanceStatuses == nil {
-		// 	time.Sleep(1 * time.Second)
-		// 	continue
-		// }
-
 		instState := *instance.State.Name
 
 		log.Debugf("Instance: state: %s", instState)
