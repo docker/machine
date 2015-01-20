@@ -19,14 +19,17 @@ import (
 )
 
 type Driver struct {
-	ApiKey     string
-	Url        string
-	VmID       int
-	VmName     string
-	Image      string
-	IPAddress  string
-	Datacenter string
-	storePath  string
+	MachineName      string
+	ApiKey           string
+	Url              string
+	VmID             int
+	VmName           string
+	Image            string
+	IPAddress        string
+	Datacenter       string
+	storePath        string
+	sshKeyPath       string
+	publicSSHKeyPath string
 }
 
 func init() {
@@ -66,8 +69,13 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{storePath: storePath}, nil
+func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+	return &Driver{
+		MachineName:      machineName,
+		storePath:        storePath,
+		sshKeyPath:       path.Join(storePath, "id_rsa"),
+		publicSSHKeyPath: path.Join(storePath, "id_rsa.pub"),
+	}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -381,7 +389,7 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath, args...), nil
 }
 
 func (d *Driver) setVmNameIfNotSet() {
@@ -400,22 +408,14 @@ func (d *Driver) getClient() *xmlrpc.Client {
 }
 
 func (d *Driver) createSSHKey() (string, error) {
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.sshKeyPath); err != nil {
 		return "", err
 	}
 
-	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath)
 	if err != nil {
 		return "", err
 	}
 
 	return string(publicKey), nil
-}
-
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
 }
