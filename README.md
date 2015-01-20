@@ -241,6 +241,29 @@ variable and CLI option are provided the CLI option takes the precedence.
 | `OS_REGION_NAME`     | `--rackspace-region`        |
 | `OS_ENDPOINT_TYPE`   | `--rackspace-endpoint-type` |
 
+### Softlayer
+
+Create machines on [Softlayer](http://softlayer.com).
+
+You need to generate an API key in the softlayer control panel.  
+[Retrieve your API key](http://knowledgelayer.softlayer.com/procedure/retrieve-your-api-key)
+
+Options:
+  - `--softlayer-api-endpoint=`: Change softlayer API endpoint
+  - `--softlayer-user`: **required** username for your softlayer account, api key needs to match this user.
+  - `--softlayer-api-key`: **required** API key for your user account
+  - `--softlayer-cpu`: Number of CPU's for the machine.
+  - `--softlayer-disk-size: Size of the disk in MB. `0` sets the softlayer default.
+  - `--softlayer-domain`: **required** domain name for the machine
+  - `--softlayer-hostname`: hostname for the machine
+  - `--softlayer-hourly-billing`: Sets the hourly billing flag (default), otherwise uses monthly billing
+  - `--softlayer-image`: OS Image to use
+  - `--softlayer-install-script`: custom install script to use for installing Docker, other setup actions
+  - `--softlayer-local-disk`: Use local machine disk instead of softlayer SAN.
+  - `--softlayer-memory`: Memory for host in MB
+  - `--softlayer-private-net-only`: Disable public networking
+  - `--softlayer-region`: softlayer region
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
