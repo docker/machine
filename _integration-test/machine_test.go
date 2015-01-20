@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-const (
-	machineName = "machine-integration-test-%s"
+var (
+	machineName = fmt.Sprintf("machine-test-%d", time.Now().UnixNano()) + "-%s"
 )
 
 func machineCreate(name string, t *testing.T, wg *sync.WaitGroup) {

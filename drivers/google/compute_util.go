@@ -9,7 +9,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	raw "google.golang.org/api/compute/v1"
 )
@@ -41,8 +40,7 @@ var (
 		`sudo mkdir -p /.docker/authorized-keys.d/
 sudo chown -R {{ .UserName }} /.docker
 while [ -e /var/run/docker.pid ]; do sleep 1; done
-sudo sed -i 's@DOCKER_OPTS=.*@DOCKER_OPTS=\"--auth=identity -H unix://var/run/docker.sock -H 0.0.0.0:2376\"@g' /etc/default/docker
-sudo wget https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -O /usr/bin/docker && sudo chmod +x /usr/bin/docker
+sudo curl -s -L -o /usr/bin/docker https://get.docker.com/builds/Linux/x86_64/docker-latest
 `))
 )
 
@@ -253,9 +251,6 @@ func (c *ComputeUtil) updateDocker(d *Driver) error {
 	}
 	commands := strings.Split(scriptBuf.String(), "\n")
 	if err := c.executeCommands(commands, ip, d.sshKeyPath); err != nil {
-		return err
-	}
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
 		return err
 	}
 	return c.executeCommands([]string{dockerStartCommand}, ip, d.sshKeyPath)
