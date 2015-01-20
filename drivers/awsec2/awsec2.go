@@ -70,8 +70,13 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath}, nil
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	return &Driver{
+		MachineName:    machineName,
+		storePath:      storePath,
+		CaCertPath:     caCert,
+		PrivateKeyPath: privateKey,
+	}, nil
 }
 
 type Driver struct {
@@ -85,6 +90,8 @@ type Driver struct {
 	InstanceID      string
 	SecurityGroupID string
 	KeyPath         string
+	CaCertPath      string
+	PrivateKeyPath  string
 
 	ImageID      string
 	InstanceType string
@@ -263,70 +270,11 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand("sudo stop docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err = d.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --host=unix:///var/run/docker.sock --auth-authorized-dir=/root/.docker/authorized-keys.d\"' | sudo tee -a /etc/default/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// HACK: create dir for ubuntu user to access
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	cmd, err = d.GetSSHCommand("sudo mkdir -p /root/.docker && sudo chown -R ubuntu /root/.docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	cmdString := fmt.Sprintf("sudo mkdir -p %q && sudo tee -a %q", "/root/.docker/authorized-keys.d", "/root/.docker/authorized-keys.d/docker-host.json")
-	cmd, err = d.GetSSHCommand(cmdString)
-	if err != nil {
-		return err
-	}
-	cmd.Stdin = f
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("sudo start docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return "/etc/docker"
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -504,6 +452,34 @@ func (d *Driver) Upgrade() error {
 	sshCmd.Stderr = os.Stderr
 
 	return sshCmd.Run()
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Driver) getClient() *ec2.EC2 {
