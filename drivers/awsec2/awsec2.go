@@ -209,6 +209,17 @@ func (d *Driver) Create() error {
 	d.InstanceID = *instResp.Instances[0].InstanceID
 	d.SecurityGroupID = *secGroupResp.GroupID
 
+	d.getClient().CreateTags(&ec2.CreateTagsRequest{
+		DryRun:    aws.Boolean(false),
+		Resources: []string{d.InstanceID, d.SecurityGroupID},
+		Tags: []Tags{
+			{
+				Key:   aws.String("Name"),
+				Value: aws.String(d.MachineName),
+			},
+		},
+	})
+
 	machineState, err := d.GetState()
 	if err != nil {
 		return err
