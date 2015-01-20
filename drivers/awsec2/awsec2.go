@@ -3,11 +3,13 @@ package awsec2
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/docker/machine/drivers"
-	// "github.com/docker/machine/ssh"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 
 	log "github.com/Sirupsen/logrus"
@@ -64,7 +66,9 @@ type Driver struct {
 	SessionToken string
 	Region       string
 
-	KeyPath string
+	InstanceID      string
+	SecurityGroupID string
+	KeyPath         string
 
 	storePath string
 }
@@ -99,7 +103,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	d.KeyPath = filepath.Join(d.storePath, "id_rsa")
+	d.KeyPath = d.sshKeyPath()
 	log.Debugf("Writing private SSH key to: %s", d.KeyPath)
 	if err := ioutil.WriteFile(d.KeyPath, []byte(*resp.KeyMaterial), 0600); err != nil {
 		return err
@@ -172,46 +176,262 @@ func (d *Driver) Create() error {
 
 	log.Debugf("Created instance: %s", *instResp.Instances[0].InstanceID)
 
-	return errComplete
+	d.InstanceID = *instResp.Instances[0].InstanceID
+	d.SecurityGroupID = *secGroupResp.GroupID
+
+	machineState, err := d.GetState()
+	if err != nil {
+		return err
+	}
+
+	if machineState != state.Running {
+		return errMachineFailure
+	}
+
+	ip, err := d.GetIP()
+	if err != nil {
+		return err
+	}
+
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, 22)); err != nil {
+		return err
+	}
+
+	log.Debugf("Setting hostname: %s", d.MachineName)
+	cmd, err := d.GetSSHCommand(fmt.Sprintf(
+		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
+		d.MachineName,
+		d.MachineName,
+		d.MachineName,
+	))
+
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Debugf("Installing Docker")
+
+	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = d.GetSSHCommand("sudo stop docker")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Debugf("HACK: Downloading version of Docker with identity auth...")
+
+	cmd, err = d.GetSSHCommand("sudo curl -sS -o /usr/bin/docker https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	log.Debugf("Updating /etc/default/docker to use identity auth...")
+
+	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376 --host=unix:///var/run/docker.sock --auth-authorized-dir=/root/.docker/authorized-keys.d\"' | sudo tee -a /etc/default/docker")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// HACK: create dir for ubuntu user to access
+	log.Debugf("Adding key to authorized-keys.d...")
+
+	cmd, err = d.GetSSHCommand("sudo mkdir -p /root/.docker && sudo chown -R ubuntu /root/.docker")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".docker/public-key.json"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	cmdString := fmt.Sprintf("sudo mkdir -p %q && sudo tee -a %q", "/root/.docker/authorized-keys.d", "/root/.docker/authorized-keys.d/docker-host.json")
+	cmd, err = d.GetSSHCommand(cmdString)
+	if err != nil {
+		return err
+	}
+	cmd.Stdin = f
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = d.GetSSHCommand("sudo start docker")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Driver) GetIP() (string, error) {
-	return "127.0.0.1", nil
+	descInstResp, err := d.getClient().DescribeInstances(&ec2.DescribeInstancesRequest{
+		DryRun:      aws.Boolean(false),
+		InstanceIDs: []string{d.InstanceID},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	ip := *descInstResp.Reservations[0].Instances[0].PublicIPAddress
+	log.Infof("Instance IP Address: %s", ip)
+
+	return ip, nil
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return &exec.Cmd{}, nil
+	ip, err := d.GetIP()
+	if err != nil {
+		return &exec.Cmd{}, err
+	}
+
+	return ssh.GetSSHCommand(ip, 22, "ubuntu", d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
+	for {
+		log.Debugf("Polling instance status for %s", d.InstanceID)
+		resp, err := d.getClient().DescribeInstanceStatus(&ec2.DescribeInstanceStatusRequest{
+			DryRun:      aws.Boolean(false),
+			InstanceIDs: []string{d.InstanceID},
+		})
+
+		if err != nil {
+			return state.Error, err
+		}
+
+		// This typically means that the instance doesn't exist or isn't booted yet
+		if resp.InstanceStatuses == nil {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		instState := *resp.InstanceStatuses[0].InstanceState.Name
+		instStatus := *resp.InstanceStatuses[0].InstanceStatus.Status
+
+		log.Debugf("Instance: state: %s, status: %s", instState, instStatus)
+
+		if "running" == instState && "ok" == instStatus {
+			return state.Running, nil
+		}
+
+		if "stopping" == instState || "shutting-down" == instState {
+			return state.Stopping, nil
+		}
+
+		if "stopped" == instState {
+			return state.Stopped, nil
+		}
+
+		if "terminated" == instState {
+			return state.Stopped, nil
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
 	return state.None, nil
 }
 
 func (d *Driver) GetURL() (string, error) {
-	return "tcp://localhost:2376", nil
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 func (d *Driver) Kill() error {
 	return nil
 }
 
 func (d *Driver) Remove() error {
+	_, err := d.getClient().TerminateInstances(&ec2.TerminateInstancesRequest{
+		DryRun:      aws.Boolean(false),
+		InstanceIDs: []string{d.InstanceID},
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Driver) Restart() error {
+	_, err := d.getClient().RebootInstances(&ec2.RebootInstances{
+		DryRun:      aws.Boolean(false),
+		InstanceIDs: []string{d.InstanceID},
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Driver) Start() error {
+	_, err := d.getClient().StartInstances(&ec2.StartInstances{
+		DryRun:      aws.Boolean(false),
+		InstanceIDs: []string{d.InstanceID},
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Driver) Stop() error {
+	_, err := d.getClient().StopInstances(&ec2.StopInstances{
+		DryRun:      aws.Boolean(false),
+		InstanceIDs: []string{d.InstanceID},
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Driver) Upgrade() error {
-	return nil
+	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install -y lxc-docker")
+	if err != nil {
+		return err
+	}
+	sshCmd.Stdin = os.Stdin
+	sshCmd.Stdout = os.Stdout
+	sshCmd.Stderr = os.Stderr
+
+	return sshCmd.Run()
 }
 
 func (d *Driver) getClient() *ec2.EC2 {
@@ -250,4 +470,8 @@ func (d *Driver) getDefaultVpc() (string, error) {
 	log.Debugf("Found default VPC: %s", vpcId)
 
 	return vpcId, nil
+}
+
+func (d *Driver) sshKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
 }
