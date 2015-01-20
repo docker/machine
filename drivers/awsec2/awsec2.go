@@ -298,6 +298,10 @@ func (d *Driver) GetIP() (string, error) {
 		return "", err
 	}
 
+	if descInstResp.Reservations[0].Instances[0].PublicIPAddress == nil {
+		return "", errNoIP
+	}
+
 	ip := *descInstResp.Reservations[0].Instances[0].PublicIPAddress
 	log.Infof("Instance IP Address: %s", ip)
 
@@ -316,7 +320,7 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 func (d *Driver) GetState() (state.State, error) {
 	for {
 		log.Debugf("Polling instance status for %s", d.InstanceID)
-		resp, err := d.getClient().DescribeInstanceStatus(&ec2.DescribeInstanceStatusRequest{
+		resp, err := d.getClient().DescribeInstances(&ec2.DescribeInstancesRequest{
 			DryRun:      aws.Boolean(false),
 			InstanceIDs: []string{d.InstanceID},
 		})
@@ -325,18 +329,19 @@ func (d *Driver) GetState() (state.State, error) {
 			return state.Error, err
 		}
 
-		// This typically means that the instance doesn't exist or isn't booted yet
-		if resp.InstanceStatuses == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
+		instance := resp.Reservations[0].Instances[0]
 
-		instState := *resp.InstanceStatuses[0].InstanceState.Name
-		instStatus := *resp.InstanceStatuses[0].InstanceStatus.Status
+		// // This typically means that the instance doesn't exist or isn't booted yet
+		// if insta.InstanceStatuses == nil {
+		// 	time.Sleep(1 * time.Second)
+		// 	continue
+		// }
 
-		log.Debugf("Instance: state: %s, status: %s", instState, instStatus)
+		instState := *instance.State.Name
 
-		if "running" == instState && "ok" == instStatus {
+		log.Debugf("Instance: state: %s", instState)
+
+		if "running" == instState {
 			return state.Running, nil
 		}
 
@@ -380,11 +385,29 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
+	err = d.getClient().DeleteSecurityGroup(&ec2.DeleteSecurityGroupRequest{
+		DryRun:  aws.Boolean(false),
+		GroupID: aws.String(d.SecurityGroupID),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	err = d.getClient().DeleteKeyPair(&ec2.DeleteKeyPairRequest{
+		DryRun:  aws.Boolean(false),
+		KeyName: aws.String(d.MachineName),
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Driver) Restart() error {
-	_, err := d.getClient().RebootInstances(&ec2.RebootInstances{
+	err := d.getClient().RebootInstances(&ec2.RebootInstancesRequest{
 		DryRun:      aws.Boolean(false),
 		InstanceIDs: []string{d.InstanceID},
 	})
@@ -397,7 +420,7 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Start() error {
-	_, err := d.getClient().StartInstances(&ec2.StartInstances{
+	_, err := d.getClient().StartInstances(&ec2.StartInstancesRequest{
 		DryRun:      aws.Boolean(false),
 		InstanceIDs: []string{d.InstanceID},
 	})
@@ -410,7 +433,7 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	_, err := d.getClient().StopInstances(&ec2.StopInstances{
+	_, err := d.getClient().StopInstances(&ec2.StopInstancesRequest{
 		DryRun:      aws.Boolean(false),
 		InstanceIDs: []string{d.InstanceID},
 	})
