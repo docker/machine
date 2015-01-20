@@ -49,7 +49,18 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "aws-region",
 			Usage:  "AWS Region",
+			Value:  "eu-central-1",
 			EnvVar: "AWS_DEFAULT_REGION",
+		},
+
+		cli.StringFlag{
+			Name:  "aws-ec2-instance-type",
+			Usage: "EC2 instance type",
+			Value: "t2.small",
+		},
+		cli.StringFlag{
+			Name:  "aws-ec2-image-id",
+			Usage: "EC2 AMI ID",
 		},
 	}
 }
@@ -70,6 +81,9 @@ type Driver struct {
 	SecurityGroupID string
 	KeyPath         string
 
+	ImageID      string
+	InstanceType string
+
 	storePath string
 }
 
@@ -89,6 +103,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	d.Region = region
+
+	image := flags.String("aws-ec2-image-id")
+	if len(image) == 0 {
+		image = regionDetails[d.Region].AmiId
+	}
+
+	d.InstanceType = flags.String("aws-ec2-instance-type")
+	d.ImageID = image
 
 	return nil
 }
@@ -163,8 +185,8 @@ func (d *Driver) Create() error {
 			},
 		},
 		DryRun:           aws.Boolean(false),
-		ImageID:          aws.String(regionDetails[d.Region].AmiId),
-		InstanceType:     aws.String("t2.small"),
+		ImageID:          aws.String(d.ImageID),
+		InstanceType:     aws.String(d.InstanceType),
 		KeyName:          aws.String(d.MachineName),
 		MinCount:         aws.Integer(1),
 		MaxCount:         aws.Integer(1),
