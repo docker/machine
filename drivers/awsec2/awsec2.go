@@ -62,7 +62,7 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "aws-ec2-image-id",
 			Usage: "EC2 AMI ID",
 		},
-		cli.StringFlag{
+		cli.IntFlag{
 			Name:  "aws-ec2-disk-size",
 			Usage: "Size of the volume",
 			Value: 16,
@@ -212,7 +212,7 @@ func (d *Driver) Create() error {
 	d.getClient().CreateTags(&ec2.CreateTagsRequest{
 		DryRun:    aws.Boolean(false),
 		Resources: []string{d.InstanceID, d.SecurityGroupID},
-		Tags: []Tags{
+		Tags: []ec2.Tag{
 			{
 				Key:   aws.String("Name"),
 				Value: aws.String(d.MachineName),
