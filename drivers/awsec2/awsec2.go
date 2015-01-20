@@ -299,7 +299,7 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	if descInstResp.Reservations[0].Instances[0].PublicIPAddress == nil {
-		return "", errNoIP
+		return "unset", errNoIP
 	}
 
 	ip := *descInstResp.Reservations[0].Instances[0].PublicIPAddress
