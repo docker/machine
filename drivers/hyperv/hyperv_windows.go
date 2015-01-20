@@ -4,9 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,10 +12,14 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
+)
+
+const (
+	dockerConfigDir = "/var/lib/boot2docker"
 )
 
 type Driver struct {
@@ -29,6 +31,8 @@ type Driver struct {
 	diskImage      string
 	diskSize       int
 	memSize        int
+	CaCertPath     string
+	PrivateKeyPath string
 }
 
 func init() {
@@ -76,8 +80,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{storePath: storePath}, nil
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -120,25 +124,6 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-func copyFile(inFile, outFile string) error {
-	in, err := os.Open(inFile)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-	out, err := os.Create(outFile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	err = out.Sync()
-	return err
-}
-
 func (d *Driver) Create() error {
 	err := hypervAvailable()
 	if err != nil {
@@ -153,18 +138,21 @@ func (d *Driver) Create() error {
 		if d.boot2DockerURL != "" {
 			isoURL = d.boot2DockerURL
 		} else {
-			isoURL, err = getLatestReleaseURL()
+			isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
 			if err != nil {
 				return err
 			}
 		}
 		log.Infof("Downloading boot2docker...")
+		// todo: use common iso location
 
-		if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 			return err
 		}
 	} else {
-		copyFile(d.boot2DockerLoc, filepath.Join(d.storePath, "boot2docker.iso"))
+		if err := utils.CopyFile(d.boot2DockerLoc, filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Creating SSH key...")
@@ -227,27 +215,19 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Adding key to authorized-keys.d...")
-
-	cmd, err := d.GetSSHCommand("sudo chown -R docker /var/lib/docker/auth.d")
+	log.Infof("Setting hostname...")
+	cmd, err := d.GetSSHCommand(fmt.Sprintf(
+		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
+		d.MachineName,
+		d.MachineName,
+	))
 	if err != nil {
 		return err
+
 	}
 	if err := cmd.Run(); err != nil {
 		return err
-	}
 
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/var/lib/docker/auth.d"); err != nil {
-		return err
-	}
-
-	log.Infof("Restart docker...")
-	cmd, err = d.GetSSHCommand("sudo /etc/init.d/docker restart")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
 	}
 
 	return nil
@@ -373,7 +353,7 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) setMachineNameIfNotSet() {
 	if d.MachineName == "" {
-		d.MachineName = fmt.Sprintf("docker-host-%s", utils.TruncateID(utils.GenerateRandomID()))
+		d.MachineName = fmt.Sprintf("docker-machine-unknown")
 	}
 }
 
@@ -408,13 +388,14 @@ func (d *Driver) Upgrade() error {
 		return err
 	}
 
-	isoURL, err := getLatestReleaseURL()
+	//todo update common iso location here as well?
+	isoURL, err := utils.GetLatestBoot2DockerReleaseURL()
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Downloading boot2docker...")
-	if err := downloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+	if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 		return err
 	}
 
@@ -426,66 +407,44 @@ func (d *Driver) Upgrade() error {
 	return nil
 }
 
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
+}
+
 func (d *Driver) sshKeyPath() string {
 	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
 	return d.sshKeyPath() + ".pub"
-}
-
-// Get the latest boot2docker release tag name (e.g. "v0.6.0").
-// FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
-func getLatestReleaseURL() (string, error) {
-	// HACK: boot2docker iso with ident auth built from here:
-	// https://github.com/MSOpenTech/boot2docker/tree/ident-auth
-	return "https://jlmstore.blob.core.windows.net/boot2docker/boot2docker-ident.iso", nil
-	// 	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-	// 	defer rsp.Body.Close()
-
-	// 	var t []struct {
-	// 		TagName string `json:"tag_name"`
-	// 	}
-	// 	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
-	// 		return "", err
-	// 	}
-	// 	if len(t) == 0 {
-	// 		return "", fmt.Errorf("no releases found")
-	// 	}
-
-	// 	tag := t[0].TagName
-	// 	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", tag)
-	// 	return url, nil
-}
-
-// Download boot2docker ISO image for the given tag and save it at dest.
-func downloadISO(dir, file, url string) error {
-	rsp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer rsp.Body.Close()
-
-	// Download to a temp file first then rename it to avoid partial download.
-	f, err := ioutil.TempFile(dir, file+".tmp")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(f.Name())
-	if _, err := io.Copy(f, rsp.Body); err != nil {
-		// TODO: display download progress?
-		return err
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d *Driver) generateDiskImage() error {
