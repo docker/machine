@@ -354,7 +354,7 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 func (d *Driver) Kill() error {
-	return nil
+	return d.Stop()
 }
 
 func (d *Driver) Remove() error {
