@@ -153,7 +153,7 @@ func (d *Driver) Create() error {
 
 	instResp, err := d.getClient().RunInstances(&ec2.RunInstancesRequest{
 		BlockDeviceMappings: []ec2.BlockDeviceMapping{
-			ec2.BlockDeviceMapping{
+			{
 				DeviceName: aws.String("/dev/sda1"),
 				EBS: &ec2.EBSBlockDevice{
 					VolumeSize: aws.Integer(8),
@@ -484,7 +484,7 @@ func (d *Driver) getDefaultVpc() (string, error) {
 	resp, err := d.getClient().DescribeVPCs(&ec2.DescribeVPCsRequest{
 		DryRun: aws.Boolean(false),
 		Filters: []ec2.Filter{
-			ec2.Filter{
+			{
 				Name:   aws.String("isDefault"),
 				Values: []string{"true"},
 			},
