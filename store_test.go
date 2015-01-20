@@ -41,7 +41,7 @@ func TestStoreCreate(t *testing.T) {
 		},
 	}
 
-	store := NewStore("")
+	store := NewStore("", "", "")
 
 	host, err := store.Create("test", "none", flags)
 	if err != nil {
@@ -67,7 +67,7 @@ func TestStoreRemove(t *testing.T) {
 		},
 	}
 
-	store := NewStore("")
+	store := NewStore("", "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestStoreList(t *testing.T) {
 		},
 	}
 
-	store := NewStore("")
+	store := NewStore("", "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
@@ -121,7 +121,7 @@ func TestStoreExists(t *testing.T) {
 		},
 	}
 
-	store := NewStore("")
+	store := NewStore("", "", "")
 	exists, err := store.Exists("test")
 	if exists {
 		t.Fatal("Exists returned true when it should have been false")
@@ -151,13 +151,13 @@ func TestStoreLoad(t *testing.T) {
 		},
 	}
 
-	store := NewStore("")
+	store := NewStore("", "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	store = NewStore("")
+	store = NewStore("", "", "")
 	host, err := store.Load("test")
 	if host.Name != "test" {
 		t.Fatal("Host name is incorrect")
@@ -182,7 +182,7 @@ func TestStoreGetSetActive(t *testing.T) {
 		},
 	}
 
-	store := NewStore("")
+	store := NewStore("", "", "")
 
 	// No hosts set
 	host, err := store.GetActive()

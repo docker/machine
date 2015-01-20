@@ -12,15 +12,17 @@ import (
 
 // Store persists hosts on the filesystem
 type Store struct {
-	Path string
+	Path           string
+	CaCertPath     string
+	PrivateKeyPath string
 }
 
-func NewStore(rootPath string) *Store {
+func NewStore(rootPath string, caCert string, privateKey string) *Store {
 	if rootPath == "" {
 		rootPath = filepath.Join(drivers.GetHomeDir(), ".docker", "machines")
 	}
 
-	return &Store{Path: rootPath}
+	return &Store{Path: rootPath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 }
 
 func (s *Store) Create(name string, driverName string, flags drivers.DriverOptions) (*Host, error) {
@@ -34,7 +36,7 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, hostPath)
+	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath)
 	if err != nil {
 		return host, err
 	}
@@ -53,6 +55,10 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 	}
 
 	if err := host.Create(name); err != nil {
+		return host, err
+	}
+
+	if err := host.ConfigureAuth(); err != nil {
 		return host, err
 	}
 

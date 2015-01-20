@@ -32,6 +32,16 @@ func main() {
 			Name:   "storage-path",
 			Usage:  "Configures storage path",
 		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_AUTH_CA",
+			Name:   "auth-ca",
+			Usage:  "CA to verify remotes against",
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_AUTH_PRIVATE_KEY",
+			Name:   "auth-key",
+			Usage:  "Private key to generate certificates",
+		},
 	}
 
 	app.Run(os.Args)

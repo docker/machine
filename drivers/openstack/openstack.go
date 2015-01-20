@@ -17,6 +17,10 @@ import (
 	"github.com/docker/machine/state"
 )
 
+const (
+	dockerConfigDir = "/etc/docker"
+)
+
 type Driver struct {
 	AuthUrl             string
 	Username            string
@@ -41,6 +45,8 @@ type Driver struct {
 	SSHPort             int
 	Ip                  string
 	EnableDockerInstall bool
+	CaCertPath          string
+	PrivateKeyPath      string
 	storePath           string
 	client              Client
 }
@@ -176,20 +182,24 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	log.WithFields(log.Fields{
 		"machineName": machineName,
 		"storePath":   storePath,
+		"caCert":      caCert,
+		"privateKey":  privateKey,
 	}).Debug("Instantiating OpenStack driver...")
 
-	return NewDerivedDriver(machineName, storePath, &GenericClient{})
+	return NewDerivedDriver(machineName, storePath, &GenericClient{}, caCert, privateKey)
 }
 
-func NewDerivedDriver(machineName string, storePath string, client Client) (*Driver, error) {
+func NewDerivedDriver(machineName string, storePath string, client Client, caCert string, privateKey string) (*Driver, error) {
 	return &Driver{
-		MachineName: machineName,
-		storePath:   storePath,
-		client:      client,
+		MachineName:    machineName,
+		storePath:      storePath,
+		client:         client,
+		CaCertPath:     caCert,
+		PrivateKeyPath: privateKey,
 	}, nil
 }
 
@@ -395,6 +405,38 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) Upgrade() error {
 	return fmt.Errorf("unable to upgrade as we are using the custom docker binary with identity auth")
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
@@ -694,21 +736,11 @@ func (d *Driver) waitForInstanceToStart() error {
 }
 
 func (d *Driver) installDocker() error {
-	log.WithField("MachineId", d.MachineId).Debug("Adding key to authorized-keys.d...")
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
 	log.WithField("MachineId", d.MachineId).Debug("Installing docker daemon on the machine")
 
 	if err := d.sshExec([]string{
 		`apt-get install -y curl`,
 		`curl -sSL https://get.docker.com | /bin/sh >/var/log/docker-install.log 2>&1`,
-		`service docker stop`,
-		`curl -sSL https://ehazlett.s3.amazonaws.com/public/docker/linux/docker-1.4.1-136b351e-identity -o /usr/bin/docker`,
-		`echo "export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"" >> /etc/default/docker`,
-		`service docker start`,
 	}); err != nil {
 		log.Error("The docker installation failed.")
 		log.Error(
