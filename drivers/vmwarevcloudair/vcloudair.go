@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/vmware/govcloudair"
@@ -23,22 +22,28 @@ import (
 	"github.com/docker/machine/state"
 )
 
+const (
+	dockerConfigDir = "/etc/docker"
+)
+
 type Driver struct {
-	UserName     string
-	UserPassword string
-	ComputeID    string
-	VDCID        string
-	OrgVDCNet    string
-	EdgeGateway  string
-	PublicIP     string
-	Catalog      string
-	CatalogItem  string
-	MachineName  string
-	SSHPort      int
-	DockerPort   int
-	Provision    bool
-	CPUCount     int
-	MemorySize   int
+	UserName       string
+	UserPassword   string
+	ComputeID      string
+	VDCID          string
+	OrgVDCNet      string
+	EdgeGateway    string
+	PublicIP       string
+	Catalog        string
+	CatalogItem    string
+	MachineName    string
+	SSHPort        int
+	DockerPort     int
+	Provision      bool
+	CPUCount       int
+	MemorySize     int
+	CaCertPath     string
+	PrivateKeyPath string
 
 	VAppID    string
 	storePath string
@@ -155,8 +160,8 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
-	driver := &Driver{MachineName: machineName, storePath: storePath}
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+	driver := &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 	return driver, nil
 }
 
@@ -225,7 +230,7 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Error, err
 	}
 
-	log.Infof("Connecting to vCloud Air to fetch vApp Status...")
+	log.Debug("Connecting to vCloud Air to fetch vApp Status...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -419,52 +424,6 @@ func (d *Driver) Create() error {
 		}
 
 		if err = cmd.Run(); err != nil {
-			return err
-		}
-
-		log.Debugf("Stopping Docker")
-
-		cmd, err = d.GetSSHCommand("stop docker")
-		if err != nil {
-			return err
-		}
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-
-		log.Debugf("Replacing docker binary with a version that supports identity authentication")
-		cmd, err = d.GetSSHCommand("curl -sS https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /usr/bin/docker")
-		if err != nil {
-			return err
-		}
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-
-		dockerListen := "echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:" + strconv.Itoa(d.DockerPort) + "\"' >> /etc/default/docker"
-
-		log.Infof("Updating /etc/default/docker to listen on all interfaces...")
-
-		cmd, err = d.GetSSHCommand(dockerListen)
-		if err != nil {
-			return err
-		}
-
-		if err = cmd.Run(); err != nil {
-			return err
-		}
-
-		log.Debugf("Adding key to authorized-keys.d...")
-
-		if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-			return err
-		}
-
-		cmd, err = d.GetSSHCommand("start docker")
-		if err != nil {
-			return err
-		}
-		if err := cmd.Run(); err != nil {
 			return err
 		}
 
@@ -748,6 +707,38 @@ func (d *Driver) Kill() error {
 
 	return nil
 
+}
+
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
 }
 
 func (d *Driver) Upgrade() error {

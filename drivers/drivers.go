@@ -51,8 +51,17 @@ type Driver interface {
 	// Kill stops a host forcefully
 	Kill() error
 
+	// RestartDocker restarts a Docker daemon on the machine
+	StartDocker() error
+
+	// RestartDocker restarts a Docker daemon on the machine
+	StopDocker() error
+
 	// Upgrade the version of Docker on the host to the latest version
 	Upgrade() error
+
+	// GetDockerConfigDir returns the config directory for storing daemon configs
+	GetDockerConfigDir() string
 
 	// GetSSHCommand returns a command for SSH pointing at the correct user, host
 	// and keys for the host with args appended. If no args are passed, it will
@@ -67,7 +76,7 @@ type Driver interface {
 // - RegisterCreateFlags: a function that takes the FlagSet for
 //   "docker hosts create" and returns an object to pass to SetConfigFromFlags
 type RegisteredDriver struct {
-	New            func(machineName string, storePath string) (Driver, error)
+	New            func(machineName string, storePath string, caCert string, privateKey string) (Driver, error)
 	GetCreateFlags func() []cli.Flag
 }
 
@@ -92,12 +101,12 @@ func Register(name string, registeredDriver *RegisteredDriver) error {
 }
 
 // NewDriver creates a new driver of type "name"
-func NewDriver(name string, machineName string, storePath string) (Driver, error) {
+func NewDriver(name string, machineName string, storePath string, caCert string, privateKey string) (Driver, error) {
 	driver, exists := drivers[name]
 	if !exists {
 		return nil, fmt.Errorf("hosts: Unknown driver %q", name)
 	}
-	return driver.New(machineName, storePath)
+	return driver.New(machineName, storePath, caCert, privateKey)
 }
 
 // GetCreateFlags runs GetCreateFlags for all of the drivers and
