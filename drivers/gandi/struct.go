@@ -21,12 +21,13 @@ type VmInfo struct {
 }
 
 type VmCreateRequest struct {
-	DcId      int    `xmlrpc:"datacenter_id"`
-	Hostname  string `xmlrpc:"hostname"`
-	Memory    int    `xmlrpc:"memory"`
-	Cores     int    `xmlrpc:"cores"`
-	IpVersion int    `xmlrpc:"ip_version"`
-	SshKey    string `xmlrpc:"ssh_key"`
+	DcId       int    `xmlrpc:"datacenter_id"`
+	Hostname   string `xmlrpc:"hostname"`
+	Memory     int    `xmlrpc:"memory"`
+	Cores      int    `xmlrpc:"cores"`
+	IpVersion  int    `xmlrpc:"ip_version"`
+	SshKey     string `xmlrpc:"ssh_key"`
+	RunCommand string `xmlrpc:"run"`
 }
 
 type DiskCreateRequest struct {

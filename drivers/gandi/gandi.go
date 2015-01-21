@@ -4,9 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,18 +18,22 @@ import (
 )
 
 type Driver struct {
-	MachineName      string
-	ApiKey           string
-	Url              string
-	VmID             int
-	VmName           string
-	Image            string
-	IPAddress        string
-	Datacenter       string
-	storePath        string
-	sshKeyPath       string
-	publicSSHKeyPath string
+	MachineName    string
+	ApiKey         string
+	Url            string
+	VmID           int
+	VmName         string
+	Image          string
+	IPAddress      string
+	Datacenter     string
+	storePath      string
+	CaCertPath     string
+	PrivateKeyPath string
 }
+
+const (
+	dockerConfigDir = "/etc/docker"
+)
 
 func init() {
 	drivers.Register("gandi", &drivers.RegisteredDriver{
@@ -69,12 +72,12 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string) (drivers.Driver, error) {
+func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	return &Driver{
-		MachineName:      machineName,
-		storePath:        storePath,
-		sshKeyPath:       path.Join(storePath, "id_rsa"),
-		publicSSHKeyPath: path.Join(storePath, "id_rsa.pub"),
+		MachineName:    machineName,
+		storePath:      storePath,
+		CaCertPath:     caCert,
+		PrivateKeyPath: privateKey,
 	}, nil
 }
 
@@ -155,17 +158,17 @@ func (d *Driver) waitForOp(op int) error {
 		return err
 	}
 	for res.Status != "DONE" {
-		log.Printf("Waiting for operation #%d", op)
+		log.Debugf("Waiting for operation #%d", op)
 		time.Sleep(5 * time.Second)
 		if err := d.getClient().Call("operation.info", params, &res); err != nil {
-			log.Printf("Got compute.Operation, err: %#v, %v", op, err)
+			log.Errorf("Got compute.Operation, err: %#v, %v", op, err)
 			return err
 		}
 		if res.Status == "DONE" {
 			return nil
 		}
 		if res.Status != "BILL" && res.Status != "WAIT" && res.Status != "RUN" {
-			log.Printf("Error waiting for operation: %d\n", op)
+			log.Errorf("Error waiting for operation: %d\n", op)
 			return errors.New(fmt.Sprintf("Bad operation: %d", op))
 		}
 	}
@@ -190,12 +193,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 	vmReq := VmCreateRequest{
-		DcId:      dc.Id,
-		Hostname:  d.VmName,
-		Memory:    512,
-		Cores:     1,
-		IpVersion: 4,
-		SshKey:    sshKey,
+		DcId:       dc.Id,
+		Hostname:   d.VmName,
+		Memory:     512,
+		Cores:      1,
+		IpVersion:  4,
+		SshKey:     sshKey,
+		RunCommand: "apt-get install -y sudo",
 	}
 	diskReq := DiskCreateRequest{
 		Name: d.VmName,
@@ -224,10 +228,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Update machine")
-	d.Upgrade()
-
-	return nil
+	return d.Upgrade()
 }
 
 func (d *Driver) GetURL() (string, error) {
@@ -332,64 +333,55 @@ func (d *Driver) Kill() error {
 	return d.Stop()
 }
 
+func (d *Driver) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("service docker start")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("service docker stop")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d *Driver) Upgrade() error {
-	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install -y docker.io")
+	log.Debugf("Installing Docker")
+
+	cmd, err := d.GetSSHCommand("curl get.docker.io | sudo sh -")
 	if err != nil {
 		return err
-	}
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		return fmt.Errorf("%s", err)
-	}
 
-	log.Infof("HACK: Downloading version of Docker with identity auth...")
-
-	cmd, err := d.GetSSHCommand("service docker.io stop")
-	if err != nil {
-		return err
 	}
 	if err := cmd.Run(); err != nil {
 		return err
-	}
 
-	cmd, err = d.GetSSHCommand("curl -sS https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /usr/bin/docker")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Infof("Updating /etc/default/docker to use identity auth...")
-
-	cmd, err = d.GetSSHCommand("echo 'export DOCKER_OPTS=\"--auth=identity --host=tcp://0.0.0.0:2376\"' >> /etc/default/docker.io")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Adding key to authorized-keys.d...")
-
-	if err := drivers.AddPublicKeyToAuthorizedHosts(d, "/.docker/authorized-keys.d"); err != nil {
-		return err
-	}
-
-	cmd, err = d.GetSSHCommand("service docker.io start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
 	}
 	return nil
 }
 
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath, args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) setVmNameIfNotSet() {
@@ -408,14 +400,22 @@ func (d *Driver) getClient() *xmlrpc.Client {
 }
 
 func (d *Driver) createSSHKey() (string, error) {
-	if err := ssh.GenerateSSHKey(d.sshKeyPath); err != nil {
+	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
 		return "", err
 	}
 
-	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath)
+	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return "", err
 	}
 
 	return string(publicKey), nil
+}
+
+func (d *Driver) sshKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) publicSSHKeyPath() string {
+	return d.sshKeyPath() + ".pub"
 }
