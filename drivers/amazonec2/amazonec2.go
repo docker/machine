@@ -28,6 +28,7 @@ const (
 	ipRange                  = "0.0.0.0/0"
 	dockerConfigDir          = "/etc/docker"
 	machineSecurityGroupName = "docker-machine"
+	dockerPort               = 2376
 )
 
 type Driver struct {
@@ -283,7 +284,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	return fmt.Sprintf("tcp://%s:%d", ip, dockerPort), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -528,28 +529,57 @@ func (d *Driver) configureSecurityGroup() error {
 
 	d.SecurityGroupId = securityGroup.GroupId
 
-	perms := []amz.IpPermission{
-		{
+	log.Debugf("configuring authorization %s", ipRange)
+
+	perms := configureSecurityGroupPermissions(securityGroup)
+
+	if len(perms) != 0 {
+		if err := d.getClient().AuthorizeSecurityGroup(d.SecurityGroupId, perms); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func configureSecurityGroupPermissions(group *amz.SecurityGroup) []amz.IpPermission {
+	hasSshPort := false
+	hasDockerPort := false
+	for _, p := range group.IpPermissions {
+		switch p.FromPort {
+		case 22:
+			hasSshPort = true
+		case dockerPort:
+			hasDockerPort = true
+		}
+	}
+
+	perms := []amz.IpPermission{}
+
+	if !hasSshPort {
+		perm := amz.IpPermission{
 			Protocol: "tcp",
 			FromPort: 22,
 			ToPort:   22,
 			IpRange:  ipRange,
-		},
-		{
+		}
+
+		perms = append(perms, perm)
+	}
+
+	if !hasDockerPort {
+		perm := amz.IpPermission{
 			Protocol: "tcp",
-			FromPort: 2376,
-			ToPort:   2376,
+			FromPort: dockerPort,
+			ToPort:   dockerPort,
 			IpRange:  ipRange,
-		},
+		}
+
+		perms = append(perms, perm)
 	}
 
-	log.Debugf("authorizing %s", ipRange)
-
-	if err := d.getClient().AuthorizeSecurityGroup(d.SecurityGroupId, perms); err != nil {
-		return err
-	}
-
-	return nil
+	return perms
 }
 
 func (d *Driver) deleteSecurityGroup() error {

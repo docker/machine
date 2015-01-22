@@ -12,7 +12,9 @@ type DeleteSecurityGroupResponse struct {
 }
 
 type SecurityGroup struct {
-	GroupName string `xml:"groupName"`
-	GroupId   string `xml:"groupId"`
-	VpcId     string `xml:"vpcId"`
+	GroupName           string         `xml:"groupName"`
+	GroupId             string         `xml:"groupId"`
+	VpcId               string         `xml:"vpcId"`
+	IpPermissions       []IpPermission `xml:"ipPermissions,omitempty"`
+	IpPermissionsEgress []IpPermission `xml:"ipPermissionsEgress,omitempty"`
 }
