@@ -347,7 +347,7 @@ func (e *EC2) AuthorizeSecurityGroup(groupId string, permissions []IpPermission)
 
 	for index, perm := range permissions {
 		n := index + 1 // amazon starts counting from 1 not 0
-		v.Set(fmt.Sprintf("IpPermissions.%d.IpProtocol", n), perm.Protocol)
+		v.Set(fmt.Sprintf("IpPermissions.%d.IpProtocol", n), perm.IpProtocol)
 		v.Set(fmt.Sprintf("IpPermissions.%d.FromPort", n), strconv.Itoa(perm.FromPort))
 		v.Set(fmt.Sprintf("IpPermissions.%d.ToPort", n), strconv.Itoa(perm.ToPort))
 		v.Set(fmt.Sprintf("IpPermissions.%d.IpRanges.1.CidrIp", n), perm.IpRange)
@@ -401,6 +401,21 @@ func (e *EC2) GetSecurityGroups() ([]SecurityGroup, error) {
 
 	return sgs, nil
 }
+
+func (e *EC2) GetSecurityGroupById(id string) (*SecurityGroup, error) {
+	groups, err := e.GetSecurityGroups()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, g := range groups {
+		if g.GroupId == id {
+			return &g, nil
+		}
+	}
+	return nil, nil
+}
+
 func (e *EC2) GetSubnets() ([]Subnet, error) {
 	subnets := []Subnet{}
 	resp, err := e.performStandardAction("DescribeSubnets")

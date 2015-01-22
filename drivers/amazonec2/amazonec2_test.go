@@ -32,9 +32,9 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 
 	group.IpPermissions = []amz.IpPermission{
 		{
-			Protocol: "tcp",
-			FromPort: testSshPort,
-			ToPort:   testSshPort,
+			IpProtocol: "tcp",
+			FromPort:   testSshPort,
+			ToPort:     testSshPort,
 		},
 	}
 
@@ -54,9 +54,9 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 
 	group.IpPermissions = []amz.IpPermission{
 		{
-			Protocol: "tcp",
-			FromPort: testDockerPort,
-			ToPort:   testDockerPort,
+			IpProtocol: "tcp",
+			FromPort:   testDockerPort,
+			ToPort:     testDockerPort,
 		},
 	}
 
@@ -76,14 +76,14 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 
 	group.IpPermissions = []amz.IpPermission{
 		{
-			Protocol: "tcp",
-			FromPort: testSshPort,
-			ToPort:   testSshPort,
+			IpProtocol: "tcp",
+			FromPort:   testSshPort,
+			ToPort:     testSshPort,
 		},
 		{
-			Protocol: "tcp",
-			FromPort: testDockerPort,
-			ToPort:   testDockerPort,
+			IpProtocol: "tcp",
+			FromPort:   testDockerPort,
+			ToPort:     testDockerPort,
 		},
 	}
 
