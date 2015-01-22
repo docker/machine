@@ -16,7 +16,7 @@ func main() {
 	}
 
 	app := cli.NewApp()
-	app.Name = "machine"
+	app.Name = os.Args[0]
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
