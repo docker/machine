@@ -20,13 +20,14 @@ import (
 )
 
 const (
-	driverName          = "amazonec2"
-	defaultRegion       = "us-east-1"
-	defaultAMI          = "ami-4ae27e22"
-	defaultInstanceType = "t2.micro"
-	defaultRootSize     = 16
-	ipRange             = "0.0.0.0/0"
-	dockerConfigDir     = "/etc/docker"
+	driverName               = "amazonec2"
+	defaultRegion            = "us-east-1"
+	defaultAMI               = "ami-4ae27e22"
+	defaultInstanceType      = "t2.micro"
+	defaultRootSize          = 16
+	ipRange                  = "0.0.0.0/0"
+	dockerConfigDir          = "/etc/docker"
+	machineSecurityGroupName = "docker-machine"
 )
 
 type Driver struct {
@@ -177,12 +178,11 @@ func (d *Driver) Create() error {
 	log.Infof("Launching instance...")
 
 	if err := d.createKeyPair(); err != nil {
-		fmt.Errorf("unable to create key pair: %s", err)
+		return fmt.Errorf("unable to create key pair: %s", err)
 	}
 
-	group, err := d.createSecurityGroup()
-	if err != nil {
-		log.Fatalf("Please make sure you don't have a security group named: %s", d.MachineName)
+	if err := d.configureSecurityGroup(); err != nil {
+		return err
 	}
 
 	bdm := &amz.BlockDeviceMapping{
@@ -216,7 +216,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("launching instance in subnet %s", subnetId)
-	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, group.GroupId, d.KeyName, subnetId, bdm)
+	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, subnetId, bdm)
 
 	if err != nil {
 		return fmt.Errorf("Error launching instance: %s", err)
@@ -341,21 +341,6 @@ func (d *Driver) Remove() error {
 
 	if err := d.terminate(); err != nil {
 		return fmt.Errorf("unable to terminate instance: %s", err)
-	}
-	// wait until terminated so we can remove security group
-	for {
-		st, err := d.GetState()
-		if err != nil {
-			break
-		}
-		if st == state.None {
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	if err := d.deleteSecurityGroup(); err != nil {
-		return fmt.Errorf("unable to remove security group: %s", err)
 	}
 
 	// remove keypair
@@ -514,16 +499,34 @@ func (d *Driver) terminate() error {
 	return nil
 }
 
-func (d *Driver) createSecurityGroup() (*amz.SecurityGroup, error) {
-	log.Debugf("creating security group in %s", d.VpcId)
+func (d *Driver) configureSecurityGroup() error {
+	log.Debugf("configuring security group in %s", d.VpcId)
 
-	grpName := d.MachineName
-	group, err := d.getClient().CreateSecurityGroup(grpName, "Docker Machine", d.VpcId)
+	groups, err := d.getClient().GetSecurityGroups()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	d.SecurityGroupId = group.GroupId
+	var securityGroup *amz.SecurityGroup
+	for _, grp := range groups {
+		if grp.GroupName == machineSecurityGroupName {
+			log.Debugf("found existing security group (%s) in %s", machineSecurityGroupName, d.VpcId)
+			securityGroup = &grp
+			break
+		}
+	}
+
+	// if not found, create
+	if securityGroup == nil {
+		log.Debugf("creating security group (%s) in %s", machineSecurityGroupName, d.VpcId)
+		group, err := d.getClient().CreateSecurityGroup(machineSecurityGroupName, "Docker Machine", d.VpcId)
+		if err != nil {
+			return err
+		}
+		securityGroup = group
+	}
+
+	d.SecurityGroupId = securityGroup.GroupId
 
 	perms := []amz.IpPermission{
 		{
@@ -543,10 +546,10 @@ func (d *Driver) createSecurityGroup() (*amz.SecurityGroup, error) {
 	log.Debugf("authorizing %s", ipRange)
 
 	if err := d.getClient().AuthorizeSecurityGroup(d.SecurityGroupId, perms); err != nil {
-		return nil, err
+		return err
 	}
 
-	return group, nil
+	return nil
 }
 
 func (d *Driver) deleteSecurityGroup() error {
