@@ -203,7 +203,7 @@ func cmdCreate(c *cli.Context) {
 
 	log.Infof("%q has been created and is now the active machine", name)
 	// TODO @ehazlett: this will likely change but at least show how to connect for now
-	log.Infof("To connect: docker $(machine config %s) ps", name)
+	log.Infof("To connect: docker $(%s config %s) ps", c.App.Name, name)
 }
 
 func cmdConfig(c *cli.Context) {
