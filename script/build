@@ -7,6 +7,6 @@ else
     OS_ARCH_ARG=($1)
 fi
 
-rm -f machine_*
+rm -f docker-machine*
 docker build -t docker-machine .
-exec docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox "${OS_ARCH_ARG[@]}"
+exec docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox "${OS_ARCH_ARG[@]}" -output="docker-machine_{{.OS}}-{{.Arch}}"
