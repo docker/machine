@@ -19,6 +19,6 @@ There are two main areas for future development:
 
  - **Swarm integration:** Machine should be able to create and manage [Swarm](https://github.com/docker/swarm) clusters. Perhaps it's even the default. Imagine this:
 
-        $ machine create -d digitalocean production
-        $ machine scale production=100
+        $ docker-machine create -d digitalocean production
+        $ docker-machine scale production=100
 
