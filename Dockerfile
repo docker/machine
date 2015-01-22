@@ -4,6 +4,6 @@ RUN go get github.com/mitchellh/gox
 RUN go get github.com/aktau/github-release
 RUN go get github.com/tools/godep
 ENV GOPATH /go/src/github.com/docker/machine/Godeps/_workspace:/go
-ENV MACHINE_BINARY /go/src/github.com/docker/machine/machine
+ENV MACHINE_BINARY /go/src/github.com/docker/machine/docker-machine
 WORKDIR /go/src/github.com/docker/machine
 ADD . /go/src/github.com/docker/machine

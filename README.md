@@ -5,7 +5,7 @@ Machine makes it really easy to create Docker hosts on local hypervisors and clo
 It works a bit like this:
 
 ```console
-$ machine create -d virtualbox dev
+$ docker-machine create -d virtualbox dev
 [info] Downloading boot2docker...
 [info] Creating SSH key...
 [info] Creating VirtualBox VM...
@@ -13,11 +13,11 @@ $ machine create -d virtualbox dev
 [info] Waiting for VM to start...
 [info] "dev" has been created and is now the active host. Docker commands will now run against that host.
 
-$ machine ls
+$ docker-machine ls
 NAME  	ACTIVE   DRIVER     	STATE 	URL
 dev   	*    	virtualbox 	Running   tcp://192.168.99.100:2375
 
-$ docker $(machine config dev) run busybox echo hello world
+$ docker $(docker-machine config dev) run busybox echo hello world
 Unable to find image 'busybox' locally
 Pulling repository busybox
 e72ac664f4f0: Download complete
@@ -26,19 +26,19 @@ df7546f9f060: Download complete
 e433a6c5b276: Download complete
 hello world
 
-$ machine create -d digitalocean --digitalocean-access-token=... staging
+$ docker-machine create -d digitalocean --digitalocean-access-token=... staging
 [info] Creating SSH key...
 [info] Creating Digital Ocean droplet...
 [info] Waiting for SSH...
 [info] "staging" has been created and is now the active host. Docker commands will now run against that host.
 
-$ machine ls
+$ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
 dev                virtualbox     Running   tcp://192.168.99.108:2376
 staging   *        digitalocean   Running   tcp://104.236.37.134:2376
 ```
 
-Machine creates Docker hosts that are secure by default. The connection between the client and daemon is encrypted and authenticated using TLS security.  To get the Docker arguments for a machine use the command: `machine config <machine-name>` i.e. `machine config dev`.
+Machine creates Docker hosts that are secure by default. The connection between the client and daemon is encrypted and authenticated using TLS security.  To get the Docker arguments for a machine use the command: `docker-machine config <machine-name>` i.e. `docker-machine config dev`.
 
 ## Try it out
 
@@ -58,7 +58,7 @@ Options:
 
 ### Digital Ocean
 
-Creates machines on [Digital Ocean](https://www.digitalocean.com/). You need to create a personal access token under "Apps & API" in the Digital Ocean Control Panel and pass that to `machine create` with the `--digitalocean-access-token` option.
+Creates machines on [Digital Ocean](https://www.digitalocean.com/). You need to create a personal access token under "Apps & API" in the Digital Ocean Control Panel and pass that to `docker-machine create` with the `--digitalocean-access-token` option.
 
 Options:
 
@@ -79,9 +79,9 @@ You need to create a subscription with a cert. Run these commands:
 
 Go to the Azure portal, go to the "Settings" page, then "Manage Certificates" and upload `mycert.cer`.
 
-Grab your subscription ID from the portal, then run `machine create` with these details:
+Grab your subscription ID from the portal, then run `docker-machine create` with these details:
 
-    $ machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem"
+    $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem"
 
 Options:
 
@@ -245,7 +245,7 @@ variable and CLI option are provided the CLI option takes the precedence.
 
 Create machines on [Softlayer](http://softlayer.com).
 
-You need to generate an API key in the softlayer control panel.  
+You need to generate an API key in the softlayer control panel.
 [Retrieve your API key](http://knowledgelayer.softlayer.com/procedure/retrieve-your-api-key)
 
 Options:
