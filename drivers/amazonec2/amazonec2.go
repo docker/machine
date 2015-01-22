@@ -125,10 +125,10 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "AWS_SUBNET_ID",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-security-group-name",
-			Usage:  "AWS VPC security group name",
+			Name:   "amazonec2-security-group",
+			Usage:  "AWS VPC security group",
 			Value:  "docker-machine",
-			EnvVar: "AWS_SECURITY_GROUP_NAME",
+			EnvVar: "AWS_SECURITY_GROUP",
 		},
 		cli.StringFlag{
 			Name:   "amazonec2-instance-type",
@@ -159,7 +159,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
 	d.SubnetId = flags.String("amazonec2-subnet-id")
-	d.SecurityGroupName = flags.String("amazonec2-security-group-name")
+	d.SecurityGroupName = flags.String("amazonec2-security-group")
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))

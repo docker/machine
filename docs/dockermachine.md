@@ -454,15 +454,17 @@ Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need 
 
 Options:
 
- - `--amazonec2-access-key`: Your access key id for the Amazon Web Services API.
- - `--amazonec2-ami`: The AMI ID of the instance to use  Default: `ami-a00461c8`
+ - `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
+ - `--amazonec2-ami`: The AMI ID of the instance to use  Default: `ami-4ae27e22`
  - `--amazonec2-instance-type`: The instance type to run.  Default: `t2.micro`
  - `--amazonec2-region`: The region to use when launching the instance.  Default: `us-east-1`
  - `--amazonec2-root-size`: The root disk size of the instance (in GB).  Default: `16`
- - `--amazonec2-secret-key`: Your secret access key for the Amazon Web Services API.
+ - `--amazonec2-secret-key`: **required** Your secret access key for the Amazon Web Services API.
+ - `--amazonec2-security-group`: AWS VPC security group name. Default: `docker-machine`
  - `--amazonec2-session-token`: Your session token for the Amazon Web Services API.
- - `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
- - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e).
+ - `--amazonec2-subnet-id`: AWS VPC subnet id
+ - `--amazonec2-vpc-id`: **required** Your VPC ID to launch the instance in.
+ - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e). Default: `a`
 
 #### Digital Ocean
 Creates machines on [Digital Ocean](https://www.digitalocean.com/). You need to create a personal access token under "Apps & API" in the Digital Ocean Control Panel and pass that to `docker-machine create` with the `--digitalocean-access-token` option.
