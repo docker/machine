@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -16,8 +17,9 @@ import (
 )
 
 var (
-	validHostNameChars   = `[a-zA-Z0-9_]`
+	validHostNameChars   = `[a-zA-Z0-9\-\.]`
 	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	ErrInvalidHostname   = errors.New("Invalid hostname specified")
 )
 
 type Host struct {
@@ -78,7 +80,7 @@ func LoadHost(name string, storePath string) (*Host, error) {
 
 func ValidateHostName(name string) (string, error) {
 	if !validHostNamePattern.MatchString(name) {
-		return name, fmt.Errorf("Invalid host name %q, it must match %s", name, validHostNamePattern)
+		return name, ErrInvalidHostname
 	}
 	return name, nil
 }
@@ -262,6 +264,11 @@ DOCKER_TLS=no`, opts, machineCaCertPath, machineServerCertPath, machineServerKey
 }
 
 func (h *Host) Create(name string) error {
+	name, err := ValidateHostName(name)
+	if err != nil {
+		return err
+	}
+
 	if err := h.Driver.Create(); err != nil {
 		return err
 	}
