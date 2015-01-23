@@ -1,11 +1,8 @@
 package google
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
-	"strings"
-	"text/template"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -28,21 +25,12 @@ type ComputeUtil struct {
 const (
 	apiURL = "https://www.googleapis.com/compute/v1/projects/"
 	//imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/ubuntu-1404"
+	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20141212"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
 	dockerStartCommand = "sudo service docker start"
 	dockerStopCommand  = "sudo service docker stop"
-)
-
-var (
-	dockerUpgradeScriptTemplate = template.Must(template.New("upgrade-docker-script").Parse(
-		`sudo mkdir -p /.docker/authorized-keys.d/
-sudo chown -R {{ .UserName }} /.docker
-while [ -e /var/run/docker.pid ]; do sleep 1; done
-curl -sL https://get.docker.com | sh
-`))
 )
 
 const ()
@@ -221,7 +209,35 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 
-	return c.updateDocker(d)
+	log.Debugf("Installing Docker")
+
+	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sudo sh -; fi")
+	if err != nil {
+		return err
+
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+
+	}
+
+	return nil
+}
+
+func (c *ComputeUtil) updateDocker(d *Driver) error {
+	log.Debugf("Upgrading Docker")
+
+	cmd, err := d.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
+	if err != nil {
+		return err
+
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+
+	}
+
+	return nil
 }
 
 // deleteInstance deletes the instance, leaving the persistent disk.
@@ -233,28 +249,6 @@ func (c *ComputeUtil) deleteInstance() error {
 	}
 	log.Infof("Waiting for instance to delete.")
 	return c.waitForRegionalOp(op.Name)
-}
-
-// updateDocker updates the docker daemon to the latest version.
-func (c *ComputeUtil) updateDocker(d *Driver) error {
-	log.Infof("Updating docker.")
-	ip, err := d.GetIP()
-	if err != nil {
-		return fmt.Errorf("error retrieving ip: %v", err)
-	}
-	if c.executeCommands([]string{dockerStopCommand}, ip, d.sshKeyPath); err != nil {
-		return err
-	}
-	var scriptBuf bytes.Buffer
-
-	if err := dockerUpgradeScriptTemplate.Execute(&scriptBuf, d); err != nil {
-		return fmt.Errorf("error expanding upgrade script template: %v", err)
-	}
-	commands := strings.Split(scriptBuf.String(), "\n")
-	if err := c.executeCommands(commands, ip, d.sshKeyPath); err != nil {
-		return err
-	}
-	return c.executeCommands([]string{dockerStartCommand}, ip, d.sshKeyPath)
 }
 
 func (c *ComputeUtil) executeCommands(commands []string, ip, sshKeyPath string) error {

@@ -404,7 +404,19 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("unable to upgrade as we are using the custom docker binary with identity auth")
+	log.Debugf("Upgrading Docker")
+
+	cmd, err := d.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
+	if err != nil {
+		return err
+
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+
+	}
+
+	return cmd.Run()
 }
 
 func (d *Driver) StartDocker() error {
@@ -740,7 +752,7 @@ func (d *Driver) installDocker() error {
 
 	if err := d.sshExec([]string{
 		`apt-get install -y curl`,
-		`curl -sSL https://get.docker.com | /bin/sh >/var/log/docker-install.log 2>&1`,
+		`curl -sSL https://get.docker.com | sh`,
 	}); err != nil {
 		log.Error("The docker installation failed.")
 		log.Error(
