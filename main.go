@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -16,7 +17,7 @@ func main() {
 	}
 
 	app := cli.NewApp()
-	app.Name = os.Args[0]
+	app.Name = path.Base(os.Args[0])
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
