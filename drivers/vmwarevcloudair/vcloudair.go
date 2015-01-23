@@ -7,7 +7,6 @@ package vmwarevcloudair
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path"
 	"strings"
@@ -414,7 +413,7 @@ func (d *Driver) Create() error {
 	}
 
 	if d.Provision {
-		dockerInstall := "curl -sSL https://get.docker.com/ | sudo sh"
+		dockerInstall := "curl -sSL https://get.docker.com | sudo sh"
 
 		log.Infof("Installing Docker...")
 
@@ -742,19 +741,19 @@ func (d *Driver) GetDockerConfigDir() string {
 }
 
 func (d *Driver) Upgrade() error {
-	// Stolen from DigitalOcean ;-)
-	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install lxc-docker")
+	log.Debugf("Upgrading Docker")
+
+	cmd, err := d.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
 	if err != nil {
 		return err
-	}
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	return nil
 
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+
+	}
+
+	return cmd.Run()
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
