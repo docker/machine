@@ -21,7 +21,6 @@ import (
 const (
 	driverName               = "amazonec2"
 	defaultRegion            = "us-east-1"
-	defaultAMI               = "ami-4ae27e22"
 	defaultInstanceType      = "t2.micro"
 	defaultRootSize          = 16
 	ipRange                  = "0.0.0.0/0"
@@ -96,7 +95,6 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "amazonec2-ami",
 			Usage:  "AWS machine image",
-			Value:  defaultAMI,
 			EnvVar: "AWS_AMI",
 		},
 		cli.StringFlag{
@@ -150,11 +148,21 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	region, err := validateAwsRegion(flags.String("amazonec2-region"))
+	if err != nil {
+		return nil
+	}
+
+	image := flags.String("amazonec2-ami")
+	if len(image) == 0 {
+		image = regionDetails[region].AmiId
+	}
+
 	d.AccessKey = flags.String("amazonec2-access-key")
 	d.SecretKey = flags.String("amazonec2-secret-key")
 	d.SessionToken = flags.String("amazonec2-session-token")
-	d.AMI = flags.String("amazonec2-ami")
-	d.Region = flags.String("amazonec2-region")
+	d.Region = region
+	d.AMI = image
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
 	d.SubnetId = flags.String("amazonec2-subnet-id")
