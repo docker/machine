@@ -58,7 +58,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "DIGITALOCEAN_IMAGE",
 			Name:   "digitalocean-image",
 			Usage:  "Digital Ocean Image",
-			Value:  "docker",
+			Value:  "ubuntu-14-04-x64",
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_REGION",
@@ -166,6 +166,18 @@ func (d *Driver) Create() error {
 	}
 	if err := cmd.Run(); err != nil {
 		return err
+	}
+
+	log.Debugf("Installing Docker")
+
+	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
+	if err != nil {
+		return err
+
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+
 	}
 
 	return nil
