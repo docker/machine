@@ -26,8 +26,9 @@ type ComputeUtil struct {
 }
 
 const (
-	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
+	apiURL = "https://www.googleapis.com/compute/v1/projects/"
+	//imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
+	imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/ubuntu-1404"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
@@ -40,7 +41,7 @@ var (
 		`sudo mkdir -p /.docker/authorized-keys.d/
 sudo chown -R {{ .UserName }} /.docker
 while [ -e /var/run/docker.pid ]; do sleep 1; done
-sudo curl -s -L -o /usr/bin/docker https://get.docker.com/builds/Linux/x86_64/docker-latest
+curl -sL https://get.docker.com | sh
 `))
 )
 
