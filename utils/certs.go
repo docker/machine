@@ -40,10 +40,10 @@ func newCertificate(org string) (*x509.Certificate, error) {
 
 }
 
-// GenerateCACert generates a new certificate authority from the specified org
+// GenerateCACertificate generates a new certificate authority from the specified org
 // and bit size and stores the resulting certificate and key file
 // in the arguments.
-func GenerateCACert(certFile, keyFile, org string, bits int) error {
+func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
 	template, err := newCertificate(org)
 	if err != nil {
 		return err

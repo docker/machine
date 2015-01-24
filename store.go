@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/utils"
 )
 
 // Store persists hosts on the filesystem
@@ -19,7 +20,7 @@ type Store struct {
 
 func NewStore(rootPath string, caCert string, privateKey string) *Store {
 	if rootPath == "" {
-		rootPath = filepath.Join(drivers.GetHomeDir(), ".docker", "machines")
+		rootPath = utils.GetMachineDir()
 	}
 
 	return &Store{Path: rootPath, CaCertPath: caCert, PrivateKeyPath: privateKey}
