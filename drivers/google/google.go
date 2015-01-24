@@ -110,6 +110,10 @@ func (driver *Driver) initApis() (*ComputeUtil, error) {
 	return newComputeUtil(driver)
 }
 
+func (d *Driver) PreCreateCheck() error {
+	return nil
+}
+
 // Create creates a GCE VM instance acting as a docker host.
 func (driver *Driver) Create() error {
 	c, err := newComputeUtil(driver)

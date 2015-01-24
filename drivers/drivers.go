@@ -32,6 +32,9 @@ type Driver interface {
 	// GetState returns the state that the host is in (running, stopped, etc)
 	GetState() (state.State, error)
 
+	// PreCreate allows for pre-create operations to make sure a driver is ready for creation
+	PreCreateCheck() error
+
 	// Create a host using the driver's config
 	Create() error
 
