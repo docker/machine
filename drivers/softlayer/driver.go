@@ -289,6 +289,10 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
 }
 
+func (d *Driver) PreCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 	waitForStart := func() {
 		log.Infof("Waiting for host to become available")

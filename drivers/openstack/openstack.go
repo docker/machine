@@ -312,6 +312,10 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) PreCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, utils.GenerateRandomID())
 

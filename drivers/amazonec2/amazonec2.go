@@ -182,7 +182,28 @@ func (d *Driver) DriverName() string {
 	return driverName
 }
 
+func (d *Driver) checkPrereqs() error {
+	// check for existing keypair
+	key, err := d.getClient().GetKeyPair(d.MachineName)
+	if err != nil {
+		return err
+	}
+
+	if key != nil {
+		return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name.", d.MachineName)
+	}
+	return nil
+}
+
+func (d *Driver) PreCreateCheck() error {
+	return d.checkPrereqs()
+}
+
 func (d *Driver) Create() error {
+	if err := d.checkPrereqs(); err != nil {
+		return err
+	}
+
 	log.Infof("Launching instance...")
 
 	if err := d.createKeyPair(); err != nil {

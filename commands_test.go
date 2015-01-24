@@ -33,6 +33,10 @@ func (d *FakeDriver) GetState() (state.State, error) {
 	return d.MockState, nil
 }
 
+func (d *FakeDriver) PreCreateCheck() error {
+	return nil
+}
+
 func (d *FakeDriver) Create() error {
 	return nil
 }

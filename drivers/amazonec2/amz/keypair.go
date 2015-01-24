@@ -11,3 +11,8 @@ type ImportKeyPairResponse struct {
 	KeyFingerprint string `xml:"keyFingerprint"`
 	KeyMaterial    []byte `xml:"keyMaterial"`
 }
+
+type KeyPair struct {
+	KeyFingerprint string `xml:"keyFingerprint"`
+	KeyName        string `xml:"keyName"`
+}
