@@ -19,8 +19,18 @@ func before(c *cli.Context) error {
 	org := "docker"
 	bits := 2048
 
+	if _, err := os.Stat(utils.GetMachineDir()); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir(utils.GetMachineDir(), 0700); err != nil {
+				log.Fatalf("Error creating machine config dir: %s", err)
+			}
+		} else {
+			log.Fatal(err)
+		}
+	}
+
 	if _, err := os.Stat(caCertPath); os.IsNotExist(err) {
-		log.Debugf("Creating CA: %s", caCertPath)
+		log.Infof("Creating CA: %s", caCertPath)
 
 		// check if the key path exists; if so, error
 		if _, err := os.Stat(caKeyPath); err == nil {
@@ -28,12 +38,22 @@ func before(c *cli.Context) error {
 		}
 
 		if err := utils.GenerateCACertificate(caCertPath, caKeyPath, org, bits); err != nil {
-			log.Fatalf("Error generating CA certificate: %s", err)
+			log.Infof("Error generating CA certificate: %s", err)
 		}
 	}
 
 	if _, err := os.Stat(clientCertPath); os.IsNotExist(err) {
 		log.Debugf("Creating client certificate: %s", clientCertPath)
+
+		if _, err := os.Stat(utils.GetMachineClientCertDir()); err != nil {
+			if os.IsNotExist(err) {
+				if err := os.Mkdir(utils.GetMachineClientCertDir(), 0700); err != nil {
+					log.Fatalf("Error creating machine client cert dir: %s", err)
+				}
+			} else {
+				log.Fatal(err)
+			}
+		}
 
 		// check if the key path exists; if so, error
 		if _, err := os.Stat(clientKeyPath); err == nil {
@@ -42,6 +62,11 @@ func before(c *cli.Context) error {
 
 		if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
 			log.Fatalf("Error generating client certificate: %s", err)
+		}
+
+		// copy ca.pem to client cert dir for docker client
+		if err := utils.CopyFile(caCertPath, filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")); err != nil {
+			log.Fatalf("Error copying ca.pem to client cert dir: %s", err)
 		}
 	}
 
@@ -90,13 +115,13 @@ func main() {
 			EnvVar: "MACHINE_TLS_CLIENT_CERT",
 			Name:   "tls-client-cert",
 			Usage:  "Client cert to use for TLS",
-			Value:  filepath.Join(utils.GetMachineDir(), "client.pem"),
+			Value:  filepath.Join(utils.GetMachineClientCertDir(), "cert.pem"),
 		},
 		cli.StringFlag{
 			EnvVar: "MACHINE_TLS_CLIENT_KEY",
 			Name:   "tls-client-key",
 			Usage:  "Private key used in client TLS auth",
-			Value:  filepath.Join(utils.GetMachineDir(), "client-key.pem"),
+			Value:  filepath.Join(utils.GetMachineClientCertDir(), "key.pem"),
 		},
 	}
 
