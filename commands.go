@@ -27,6 +27,7 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 type hostListItem struct {
@@ -156,7 +157,7 @@ var Commands = []cli.Command{
 
 func cmdActive(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -221,10 +222,9 @@ func cmdConfig(c *cli.Context) {
 		log.Fatalf("Error loading machine config: %s", err)
 	}
 
-	storeDir := store.Path
-	caCert := filepath.Join(storeDir, name, "ca.pem")
-	clientCert := filepath.Join(storeDir, name, "cert.pem")
-	clientKey := filepath.Join(storeDir, name, "key.pem")
+	caCert := filepath.Join(utils.GetMachineDir(), "ca.pem")
+	clientCert := filepath.Join(utils.GetMachineDir(), "client.pem")
+	clientKey := filepath.Join(utils.GetMachineDir(), "client-key.pem")
 	machineUrl, err := host.GetURL()
 	if err != nil {
 		log.Fatalf("Error getting machine url: %s", err)

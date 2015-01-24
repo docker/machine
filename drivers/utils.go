@@ -4,22 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
+
+	"github.com/docker/machine/utils"
 )
 
-func GetHomeDir() string {
-	if runtime.GOOS == "windows" {
-		return os.Getenv("USERPROFILE")
-	}
-	return os.Getenv("HOME")
-}
-
-func GetDockerDir() string {
-	return fmt.Sprintf(filepath.Join(GetHomeDir(), ".docker"))
-}
-
 func PublicKeyPath() string {
-	return filepath.Join(GetHomeDir(), ".docker", "public-key.json")
+	return filepath.Join(utils.GetHomeDir(), ".docker", "public-key.json")
 }
 
 func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {

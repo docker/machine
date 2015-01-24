@@ -3,10 +3,50 @@ package main
 import (
 	"os"
 	"path"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/utils"
 )
+
+func before(c *cli.Context) error {
+
+	caCertPath := c.GlobalString("tls-ca-cert")
+	caKeyPath := c.GlobalString("tls-ca-key")
+	clientCertPath := c.GlobalString("tls-client-cert")
+	clientKeyPath := c.GlobalString("tls-client-key")
+	org := "docker"
+	bits := 2048
+
+	if _, err := os.Stat(caCertPath); os.IsNotExist(err) {
+		log.Debugf("Creating CA: %s", caCertPath)
+
+		// check if the key path exists; if so, error
+		if _, err := os.Stat(caKeyPath); err == nil {
+			log.Fatalf("The CA key already exists.  Please remove it or specify a different key/cert.")
+		}
+
+		if err := utils.GenerateCACertificate(caCertPath, caKeyPath, org, bits); err != nil {
+			log.Fatalf("Error generating CA certificate: %s", err)
+		}
+	}
+
+	if _, err := os.Stat(clientCertPath); os.IsNotExist(err) {
+		log.Debugf("Creating client certificate: %s", clientCertPath)
+
+		// check if the key path exists; if so, error
+		if _, err := os.Stat(clientKeyPath); err == nil {
+			log.Fatalf("The client key already exists.  Please remove it or specify a different key/cert.")
+		}
+
+		if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
+			log.Fatalf("Error generating client certificate: %s", err)
+		}
+	}
+
+	return nil
+}
 
 func main() {
 	for _, f := range os.Args {
@@ -21,6 +61,7 @@ func main() {
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
+	app.Before = before
 	app.Version = VERSION
 
 	app.Flags = []cli.Flag{
@@ -34,14 +75,28 @@ func main() {
 			Usage:  "Configures storage path",
 		},
 		cli.StringFlag{
-			EnvVar: "MACHINE_AUTH_CA",
-			Name:   "auth-ca",
+			EnvVar: "MACHINE_TLS_CA_CERT",
+			Name:   "tls-ca-cert",
 			Usage:  "CA to verify remotes against",
+			Value:  filepath.Join(utils.GetMachineDir(), "ca.pem"),
 		},
 		cli.StringFlag{
-			EnvVar: "MACHINE_AUTH_PRIVATE_KEY",
-			Name:   "auth-key",
+			EnvVar: "MACHINE_TLS_CA_KEY",
+			Name:   "tls-ca-key",
 			Usage:  "Private key to generate certificates",
+			Value:  filepath.Join(utils.GetMachineDir(), "key.pem"),
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_TLS_CLIENT_CERT",
+			Name:   "tls-client-cert",
+			Usage:  "Client cert to use for TLS",
+			Value:  filepath.Join(utils.GetMachineDir(), "client.pem"),
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_TLS_CLIENT_KEY",
+			Name:   "tls-client-key",
+			Usage:  "Private key used in client TLS auth",
+			Value:  filepath.Join(utils.GetMachineDir(), "client-key.pem"),
 		},
 	}
 
