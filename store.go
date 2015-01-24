@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -94,7 +95,8 @@ func (s *Store) List() ([]Host, error) {
 	hosts := []Host{}
 
 	for _, file := range dir {
-		if file.IsDir() {
+		// don't load hidden dirs; used for configs
+		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
 			host, err := s.Load(file.Name())
 			if err != nil {
 				log.Errorf("error loading host %q: %s", file.Name(), err)

@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,11 +15,15 @@ func GetHomeDir() string {
 }
 
 func GetDockerDir() string {
-	return fmt.Sprintf(filepath.Join(GetHomeDir(), ".docker"))
+	return filepath.Join(GetHomeDir(), ".docker")
 }
 
 func GetMachineDir() string {
-	return fmt.Sprintf(filepath.Join(GetDockerDir(), "machines"))
+	return filepath.Join(GetDockerDir(), "machines")
+}
+
+func GetMachineClientCertDir() string {
+	return filepath.Join(GetMachineDir(), ".client")
 }
 
 func CopyFile(src, dst string) error {

@@ -208,7 +208,6 @@ func cmdCreate(c *cli.Context) {
 }
 
 func cmdConfig(c *cli.Context) {
-
 	name := c.Args().First()
 	if name == "" {
 		cli.ShowCommandHelp(c, "config")
@@ -222,9 +221,9 @@ func cmdConfig(c *cli.Context) {
 		log.Fatalf("Error loading machine config: %s", err)
 	}
 
-	caCert := filepath.Join(utils.GetMachineDir(), "ca.pem")
-	clientCert := filepath.Join(utils.GetMachineDir(), "client.pem")
-	clientKey := filepath.Join(utils.GetMachineDir(), "client-key.pem")
+	caCert := filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")
+	clientCert := filepath.Join(utils.GetMachineClientCertDir(), "cert.pem")
+	clientKey := filepath.Join(utils.GetMachineClientCertDir(), "key.pem")
 	machineUrl, err := host.GetURL()
 	if err != nil {
 		log.Fatalf("Error getting machine url: %s", err)
