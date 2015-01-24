@@ -93,7 +93,7 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	}
 	// client
 	if len(hosts) == 1 && hosts[0] == "" {
-		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
 		template.KeyUsage = x509.KeyUsageDigitalSignature
 	} else { // server
 		for _, h := range hosts {
