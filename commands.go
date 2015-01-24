@@ -135,6 +135,29 @@ var Commands = []cli.Command{
 				),
 				Value: "none",
 			},
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Configure Machine with Swarm",
+			},
+			cli.BoolFlag{
+				Name:  "swarm-master",
+				Usage: "Configure Machine to be a Swarm master",
+			},
+			cli.StringFlag{
+				Name:  "swarm-discovery",
+				Usage: "Discovery service to use with Swarm",
+				Value: "",
+			},
+			cli.StringFlag{
+				Name:  "swarm-host",
+				Usage: "ip/socket to listen on for Swarm master",
+				Value: "tcp://0.0.0.0:3376",
+			},
+			cli.StringFlag{
+				Name:  "swarm-addr",
+				Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
+				Value: "",
+			},
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
