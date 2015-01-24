@@ -24,6 +24,10 @@ var (
 	ErrInvalidHostname   = errors.New("Invalid hostname specified")
 )
 
+const (
+	swarmDockerImage = "ehazlett/swarm:latest"
+)
+
 type Host struct {
 	Name           string `json:"-"`
 	DriverName     string
@@ -97,6 +101,70 @@ func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
 		return fmt.Errorf("error generating client cert: %s", err)
 	}
 
+	return nil
+}
+
+func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string) error {
+	d := h.Driver
+
+	if d.DriverName() == "none" {
+		return nil
+	}
+
+	if addr == "" {
+		ip, err := d.GetIP()
+		if err != nil {
+			return err
+		}
+		// TODO: remove hardcoded port
+		addr = fmt.Sprintf("%s:2376", ip)
+	}
+
+	var (
+		role string
+		args string
+	)
+
+	if master {
+		role = "manage"
+		// TODO: remove hardcoded paths
+		args = fmt.Sprintf("--tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server.pem --tlskey=/etc/docker/server-key.pem -H %s",
+			host)
+	} else {
+		role = "join"
+		args = fmt.Sprintf("--addr %s", addr)
+	}
+
+	args = fmt.Sprintf("%s %s", args, discovery)
+
+	u, err := url.Parse(host)
+	if err != nil {
+		return err
+	}
+
+	parts := strings.Split(u.Host, ":")
+	port := parts[1]
+
+	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent -v /etc/docker:/etc/docker %s %s %s",
+		port, port, swarmDockerImage, role, args))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	// TODO:
+	// - configure swarm to start / autostart
+	// - configure node to join cluster
+	// - configure node to run with IP of machine and URL to Docker
 	return nil
 }
 
