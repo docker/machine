@@ -342,7 +342,7 @@ func cmdShellinit(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_URL=%s\n",
+	fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
 		utils.GetMachineClientCertDir(), cfg.machineUrl)
 }
 
