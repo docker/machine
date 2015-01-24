@@ -19,6 +19,16 @@ func before(c *cli.Context) error {
 	org := "docker"
 	bits := 2048
 
+	if _, err := os.Stat(utils.GetDockerDir()); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir(utils.GetDockerDir(), 0700); err != nil {
+				log.Fatalf("Error creating docker config dir: %s", err)
+			}
+		} else {
+			log.Fatal(err)
+		}
+	}
+
 	if _, err := os.Stat(utils.GetMachineDir()); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir(utils.GetMachineDir(), 0700); err != nil {
