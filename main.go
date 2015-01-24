@@ -43,7 +43,7 @@ func before(c *cli.Context) error {
 	}
 
 	if _, err := os.Stat(clientCertPath); os.IsNotExist(err) {
-		log.Debugf("Creating client certificate: %s", clientCertPath)
+		log.Infof("Creating client certificate: %s", clientCertPath)
 
 		if _, err := os.Stat(utils.GetMachineClientCertDir()); err != nil {
 			if os.IsNotExist(err) {

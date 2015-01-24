@@ -30,6 +30,13 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+type machineConfig struct {
+	caCertPath     string
+	clientCertPath string
+	clientKeyPath  string
+	machineUrl     string
+}
+
 type hostListItem struct {
 	Name       string
 	Active     bool
@@ -122,6 +129,11 @@ var Commands = []cli.Command{
 		Action: cmdRm,
 	},
 	{
+		Name:   "shellinit",
+		Usage:  "Display the shell commands to set up the Docker client",
+		Action: cmdShellinit,
+	},
+	{
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "command, c",
@@ -190,7 +202,7 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	host, err := store.Create(name, driver, c)
 	if err != nil {
@@ -208,28 +220,12 @@ func cmdCreate(c *cli.Context) {
 }
 
 func cmdConfig(c *cli.Context) {
-	name := c.Args().First()
-	if name == "" {
-		cli.ShowCommandHelp(c, "config")
-		log.Fatal("You must specify a machine name")
-	}
-
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
-
-	host, err := store.Load(name)
+	cfg, err := getMachineConfig(c)
 	if err != nil {
-		log.Fatalf("Error loading machine config: %s", err)
-	}
-
-	caCert := filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")
-	clientCert := filepath.Join(utils.GetMachineClientCertDir(), "cert.pem")
-	clientKey := filepath.Join(utils.GetMachineClientCertDir(), "key.pem")
-	machineUrl, err := host.GetURL()
-	if err != nil {
-		log.Fatalf("Error getting machine url: %s", err)
+		log.Fatal(err)
 	}
 	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
-		caCert, clientCert, clientKey, machineUrl)
+		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, cfg.machineUrl)
 }
 
 func cmdInspect(c *cli.Context) {
@@ -258,7 +254,7 @@ func cmdKill(c *cli.Context) {
 
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	hostList, err := store.List()
 	if err != nil {
@@ -329,7 +325,7 @@ func cmdRm(c *cli.Context) {
 
 	isError := false
 
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 	for _, host := range c.Args() {
 		if err := store.Remove(host, force); err != nil {
 			log.Errorf("Error removing machine %s: %s", host, err)
@@ -341,9 +337,18 @@ func cmdRm(c *cli.Context) {
 	}
 }
 
+func cmdShellinit(c *cli.Context) {
+	cfg, err := getMachineConfig(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_URL=%s\n",
+		utils.GetMachineClientCertDir(), cfg.machineUrl)
+}
+
 func cmdSsh(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -421,7 +426,7 @@ func cmdNotFound(c *cli.Context, command string) {
 
 func getHost(c *cli.Context) *Host {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -470,4 +475,38 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		State:      currentState,
 		URL:        url,
 	}
+}
+
+func getMachineConfig(c *cli.Context) (*machineConfig, error) {
+	name := c.Args().First()
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	var machine *Host
+
+	if name == "" {
+		m, err := store.GetActive()
+		if err != nil {
+			log.Fatalf("error getting active host: %v", err)
+		}
+		machine = m
+	} else {
+		m, err := store.Load(name)
+		if err != nil {
+			return nil, fmt.Errorf("Error loading machine config: %s", err)
+		}
+		machine = m
+	}
+
+	caCert := filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")
+	clientCert := filepath.Join(utils.GetMachineClientCertDir(), "cert.pem")
+	clientKey := filepath.Join(utils.GetMachineClientCertDir(), "key.pem")
+	machineUrl, err := machine.GetURL()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting machine url: %s", err)
+	}
+	return &machineConfig{
+		caCertPath:     caCert,
+		clientCertPath: clientCert,
+		clientKeyPath:  clientKey,
+		machineUrl:     machineUrl,
+	}, nil
 }
