@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
+	"errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -20,17 +21,23 @@ var (
 	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
 )
 
+var HostOSTypeNotKnown = errors.New("Host OS type is not known")
+
 type Host struct {
-	Name           		string `json:"-"`
-	DriverName     		string
-	Driver         		drivers.Driver
-	CaCertPath     		string
-	ServerCertPath 		string
-	ServerKeyPath  		string
-	PrivateKeyPath 		string
-	ClientCertPath 		string
-	storePath      		string
-	RemoteDockerOpts 	string
+	Name           			string `json:"-"`
+	DriverName     			string
+	Driver         			drivers.Driver
+	CaCertPath     			string
+	ServerCertPath 			string
+	ServerKeyPath  			string
+	PrivateKeyPath 			string
+	ClientCertPath 			string
+	storePath      			string
+	RemoteDockerOpts 		string
+	HostOSType				string
+	HostDockerConfigFile	string
+	HostDockerRestartCmd	string
+	HostDockerConfigKey		string
 }
 
 type hostConfig struct {
@@ -268,11 +275,15 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
+	if err := h.setHostOSDockerAttributes(); err != nil {
+		return err
+	}
+
 	if err := h.SaveConfig(); err != nil {
 		return err
 	}
 
-	if err := h.configureRemoteDockerDaemon(); err != nil {
+	if err := h.ConfigureRemoteDockerDaemon(); err != nil {
 		return err
 	}
 
@@ -352,53 +363,120 @@ func (h *Host) SaveConfig() error {
 	return nil
 }
 
-func(h *Host) getHostOSType() string {
-	return "boot2docker"
-}
+func(h *Host) setHostOSDockerAttributes() error {
 
-func(h *Host) getDockerConfigFilePath() string {
+	hostOsType, err := h.getHostOSType()
+	if err != nil {
+		return err
+	} else {
+		h.HostOSType = hostOsType
+	}
+
+	hostDockerConfigFile, err := h.getDockerConfigFilePath()
+	if err != nil {
+		return err
+	} else {
+		h.HostDockerConfigFile = hostDockerConfigFile
+	}
+
 	
-	hostOSType := h.getHostOSType()
+	hostDockerRestartCmd, err := h.getDockerRestartCmd()
+	if err != nil {
+		return err
+	} else {
+		h.HostDockerRestartCmd = hostDockerRestartCmd
+	}
 
-	switch hostOSType  {
+	
+	hostDockerConfigKey, err := h.getDockerOptsVarName()
+	if err != nil {
+		return err
+	} else {
+		h.HostDockerConfigKey = hostDockerConfigKey
+	}
+
+
+	return nil
+
+}
+
+func(h *Host) getHostOSType() (string, error) {
+	// Will have to do somme h.Driver.GetSSHComand to determine the OS type
+	return "boot2docker", nil
+}
+
+func(h *Host) getDockerConfigFilePath() (string, error) {
+	
+	switch h.HostOSType  {
     case "boot2docker":
-    	return "/var/lib/boot2docker/profile"
+    	return "/var/lib/boot2docker/profile", nil
     default:
-    	log.Info(hostOSType, " not implemented")
-    	return ""
+    	return "", HostOSTypeNotKnown
     }
 }
 
-func(h *Host) getDockerRestartCmd() string {
-	hostOSType := h.getHostOSType()
+func(h *Host) getDockerRestartCmd() (string, error) {
 
-	switch hostOSType  {
+	switch h.HostOSType  {
     case "boot2docker":
-    	return "sudo /etc/init.d/docker restart"
+    	return "sudo /etc/init.d/docker restart", nil
     default:
-    	log.Info(hostOSType, " not implemented")
-    	return ""
+    	return "", HostOSTypeNotKnown
     }
 }
 
+func(h *Host) getDockerOptsVarName() (string, error) {
 
-func (h *Host) configureRemoteDockerDaemon() error {
+	switch h.HostOSType  {
+    case "boot2docker":
+    	return "EXTRA_ARGS", nil
+    default:
+    	return "", HostOSTypeNotKnown
+    }
+}
 
-	/** 
-	We need to detect :
-	- Which config file to use (absolute path)
-	- Which command as to be used to restart Docker
-	Assuming that :
-	- We are always using sudo to write command
-	- Config file and command should be overwritable by the user (thinks Cloud cases with custom made Docker OSes)
-	- Driver only provide the plumbing to execute remote SSH commands, not the OS/config/command detection
-	- emote Docker daemon is configured in just one file in the remote host
-	**/
+func(h *Host) WriteDaemonKVPConfig(configKey, configValue string) error {
 
-	remoteDockerConfigFile := h.getDockerConfigFilePath
+	kvpString := configKey + "=" + configValue
+	sshCmd := fmt.Sprintf("echo \"%s\" | sudo tee -a %s", kvpString, h.HostDockerConfigFile)
+	cmd, err := h.Driver.GetSSHCommand(sshCmd)
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func(h *Host) RestartHostDockerDaemon() error {
+
+	cmd, err := h.Driver.GetSSHCommand(h.HostDockerRestartCmd)
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) ConfigureRemoteDockerDaemon() error {
+
+	err := h.WriteDaemonKVPConfig(h.HostDockerConfigKey, h.RemoteDockerOpts)
+	if err != nil {
+		return err
+	}
+
+	err = h.RestartHostDockerDaemon()
+	if err != nil {
+		return err
+	}
 
 	// Cleaning existing values assuming that the remote
-	h.Driver.
+	// h.Driver.
 
 	// Writing the new value of DOCKER_OPTS at the end of the file
 
