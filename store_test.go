@@ -36,7 +36,9 @@ func TestStoreCreate(t *testing.T) {
 
 	flags := &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
+			"url":             "unix:///var/run/docker.sock",
+			"swarm-master-ip": "",
+			"swarm":           false,
 		},
 	}
 
@@ -62,7 +64,9 @@ func TestStoreRemove(t *testing.T) {
 
 	flags := &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
+			"url":             "unix:///var/run/docker.sock",
+			"swarm-master-ip": "",
+			"swarm":           false,
 		},
 	}
 
@@ -91,7 +95,9 @@ func TestStoreList(t *testing.T) {
 
 	flags := &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
+			"url":             "unix:///var/run/docker.sock",
+			"swarm-master-ip": "",
+			"swarm":           false,
 		},
 	}
 
@@ -116,7 +122,9 @@ func TestStoreExists(t *testing.T) {
 
 	flags := &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
+			"url":             "unix:///var/run/docker.sock",
+			"swarm-master-ip": "",
+			"swarm":           false,
 		},
 	}
 
@@ -146,7 +154,9 @@ func TestStoreLoad(t *testing.T) {
 	expectedURL := "unix:///foo/baz"
 	flags := &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"url": expectedURL,
+			"url":             expectedURL,
+			"swarm-master-ip": "",
+			"swarm":           false,
 		},
 	}
 
@@ -177,7 +187,9 @@ func TestStoreGetSetActive(t *testing.T) {
 
 	flags := &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
+			"url":             "unix:///var/run/docker.sock",
+			"swarm-master-ip": "",
+			"swarm":           false,
 		},
 	}
 

@@ -62,7 +62,7 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 
 	log.WithFields(log.Fields{
 		"Name": d.MachineName,
-	}).Info("Creating server...")
+	}).Info("Creating machine...")
 
 	server, err := servers.Create(c.Compute, keypairs.CreateOptsExt{
 		serverOpts,

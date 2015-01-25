@@ -390,6 +390,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	log.Info("Configuring Machine...")
+
 	log.Debugf("Setting hostname: %s", d.MachineName)
 	cmd, err := d.GetSSHCommand(fmt.Sprintf(
 		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
