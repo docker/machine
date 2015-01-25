@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -473,7 +473,7 @@ func (h *Host) ConfigureRemoteDockerDaemon() error {
 
 	log.Infof("Configuring the remote docker daemon...")
 
-	err := h.WriteDaemonKVPConfig(h.HostDockerConfigKey, strings.Join(h.RemoteDockerOpts," "))
+	err := h.WriteDaemonKVPConfig(h.HostDockerConfigKey, strings.Join(h.RemoteDockerOpts, " "))
 	if err != nil {
 		return err
 	}
@@ -501,12 +501,12 @@ func parseDockerOpts(dockerOptsToParse string) []string {
 			thirdPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], "-")
 			for j := 0; j < len(thirdPassParsedDockerOpts); j++ {
 				if len(thirdPassParsedDockerOpts[j]) > 0 {
-					parsedDockerOpts = append(parsedDockerOpts, "-" + thirdPassParsedDockerOpts[j])
+					parsedDockerOpts = append(parsedDockerOpts, "-"+thirdPassParsedDockerOpts[j])
 				}
 			}
 		} else {
 			if len(firstPassParsedDockerOpts[i]) > 0 {
-				parsedDockerOpts = append(parsedDockerOpts, "--" + firstPassParsedDockerOpts[i])
+				parsedDockerOpts = append(parsedDockerOpts, "--"+firstPassParsedDockerOpts[i])
 			}
 		}
 	}
