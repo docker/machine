@@ -69,7 +69,7 @@ var Commands = []cli.Command{
 				Value: "none",
 			},
 			cli.StringFlag{
-				Name: "docker-opts",
+				Name:  "docker-opts",
 				Usage: "Options to append to the remote Docker Daemon's configuration",
 				Value: "",
 			},
@@ -221,7 +221,7 @@ func cmdConfig(c *cli.Context) {
 	}
 
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("auth-ca"), c.GlobalString("auth-key"))
-	
+
 	host, err := store.Load(name)
 	if err != nil {
 		log.Fatalf("Error loading machine config: %s", err)

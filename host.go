@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -9,7 +10,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
-	"errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -24,20 +24,20 @@ var (
 var HostOSTypeNotKnown = errors.New("Host OS type is not known")
 
 type Host struct {
-	Name           			string `json:"-"`
-	DriverName     			string
-	Driver         			drivers.Driver
-	CaCertPath     			string
-	ServerCertPath 			string
-	ServerKeyPath  			string
-	PrivateKeyPath 			string
-	ClientCertPath 			string
-	storePath      			string
-	RemoteDockerOpts 		string
-	HostOSType				string
-	HostDockerConfigFile	string
-	HostDockerRestartCmd	string
-	HostDockerConfigKey		string
+	Name                 string `json:"-"`
+	DriverName           string
+	Driver               drivers.Driver
+	CaCertPath           string
+	ServerCertPath       string
+	ServerKeyPath        string
+	PrivateKeyPath       string
+	ClientCertPath       string
+	storePath            string
+	RemoteDockerOpts     string
+	HostOSType           string
+	HostDockerConfigFile string
+	HostDockerRestartCmd string
+	HostDockerConfigKey  string
 }
 
 type hostConfig struct {
@@ -63,13 +63,13 @@ func NewHost(name, driverName, storePath, remoteDockerOpts, caCert, privateKey s
 		return nil, err
 	}
 	return &Host{
-		Name:           name,
-		DriverName:     driverName,
-		Driver:         driver,
-		CaCertPath:     caCert,
-		PrivateKeyPath: privateKey,
-		storePath:      storePath,
-		RemoteDockerOpts: 	remoteDockerOpts,
+		Name:             name,
+		DriverName:       driverName,
+		Driver:           driver,
+		CaCertPath:       caCert,
+		PrivateKeyPath:   privateKey,
+		storePath:        storePath,
+		RemoteDockerOpts: remoteDockerOpts,
 	}, nil
 }
 
@@ -363,7 +363,7 @@ func (h *Host) SaveConfig() error {
 	return nil
 }
 
-func(h *Host) setHostOSDockerAttributes() error {
+func (h *Host) setHostOSDockerAttributes() error {
 
 	hostOsType, err := h.getHostOSType()
 	if err != nil {
@@ -379,7 +379,6 @@ func(h *Host) setHostOSDockerAttributes() error {
 		h.HostDockerConfigFile = hostDockerConfigFile
 	}
 
-	
 	hostDockerRestartCmd, err := h.getDockerRestartCmd()
 	if err != nil {
 		return err
@@ -387,7 +386,6 @@ func(h *Host) setHostOSDockerAttributes() error {
 		h.HostDockerRestartCmd = hostDockerRestartCmd
 	}
 
-	
 	hostDockerConfigKey, err := h.getDockerOptsVarName()
 	if err != nil {
 		return err
@@ -395,47 +393,46 @@ func(h *Host) setHostOSDockerAttributes() error {
 		h.HostDockerConfigKey = hostDockerConfigKey
 	}
 
-
 	return nil
 
 }
 
-func(h *Host) getHostOSType() (string, error) {
+func (h *Host) getHostOSType() (string, error) {
 	// Will have to do somme h.Driver.GetSSHComand to determine the OS type
 	return "boot2docker", nil
 }
 
-func(h *Host) getDockerConfigFilePath() (string, error) {
-	
-	switch h.HostOSType  {
-    case "boot2docker":
-    	return "/var/lib/boot2docker/profile", nil
-    default:
-    	return "", HostOSTypeNotKnown
-    }
+func (h *Host) getDockerConfigFilePath() (string, error) {
+
+	switch h.HostOSType {
+	case "boot2docker":
+		return "/var/lib/boot2docker/profile", nil
+	default:
+		return "", HostOSTypeNotKnown
+	}
 }
 
-func(h *Host) getDockerRestartCmd() (string, error) {
+func (h *Host) getDockerRestartCmd() (string, error) {
 
-	switch h.HostOSType  {
-    case "boot2docker":
-    	return "sudo /etc/init.d/docker restart", nil
-    default:
-    	return "", HostOSTypeNotKnown
-    }
+	switch h.HostOSType {
+	case "boot2docker":
+		return "sudo /etc/init.d/docker restart", nil
+	default:
+		return "", HostOSTypeNotKnown
+	}
 }
 
-func(h *Host) getDockerOptsVarName() (string, error) {
+func (h *Host) getDockerOptsVarName() (string, error) {
 
-	switch h.HostOSType  {
-    case "boot2docker":
-    	return "EXTRA_ARGS", nil
-    default:
-    	return "", HostOSTypeNotKnown
-    }
+	switch h.HostOSType {
+	case "boot2docker":
+		return "EXTRA_ARGS", nil
+	default:
+		return "", HostOSTypeNotKnown
+	}
 }
 
-func(h *Host) WriteDaemonKVPConfig(configKey, configValue string) error {
+func (h *Host) WriteDaemonKVPConfig(configKey, configValue string) error {
 
 	kvpString := configKey + "=" + configValue
 	sshCmd := fmt.Sprintf("echo \"%s\" | sudo tee -a %s", kvpString, h.HostDockerConfigFile)
@@ -450,7 +447,7 @@ func(h *Host) WriteDaemonKVPConfig(configKey, configValue string) error {
 	return nil
 }
 
-func(h *Host) RestartHostDockerDaemon() error {
+func (h *Host) RestartHostDockerDaemon() error {
 
 	cmd, err := h.Driver.GetSSHCommand(h.HostDockerRestartCmd)
 	if err != nil {
