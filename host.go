@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -33,7 +34,7 @@ type Host struct {
 	PrivateKeyPath       string
 	ClientCertPath       string
 	storePath            string
-	RemoteDockerOpts     string
+	RemoteDockerOpts     []string
 	HostOSType           string
 	HostDockerConfigFile string
 	HostDockerRestartCmd string
@@ -69,7 +70,7 @@ func NewHost(name, driverName, storePath, remoteDockerOpts, caCert, privateKey s
 		CaCertPath:       caCert,
 		PrivateKeyPath:   privateKey,
 		storePath:        storePath,
-		RemoteDockerOpts: remoteDockerOpts,
+		RemoteDockerOpts: parseDockerOpts(remoteDockerOpts),
 	}, nil
 }
 
@@ -283,10 +284,6 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
-	if err := h.ConfigureRemoteDockerDaemon(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -434,6 +431,18 @@ func (h *Host) getDockerOptsVarName() (string, error) {
 
 func (h *Host) WriteDaemonKVPConfig(configKey, configValue string) error {
 
+	log.Infof("Writing " + configKey + " with value " + configValue)
+
+	// We should delete the old value of the KVP before all
+	sshDelCmd := fmt.Sprintf("[ ! -f %s ] || sudo sed -i '/%s/d' %s", h.HostDockerConfigFile, configKey, h.HostDockerConfigFile)
+	delCmd, err := h.Driver.GetSSHCommand(sshDelCmd)
+	if err != nil {
+		return err
+	}
+	if err := delCmd.Run(); err != nil {
+		return err
+	}
+
 	kvpString := configKey + "=" + configValue
 	sshCmd := fmt.Sprintf("echo \"%s\" | sudo tee -a %s", kvpString, h.HostDockerConfigFile)
 	cmd, err := h.Driver.GetSSHCommand(sshCmd)
@@ -462,7 +471,9 @@ func (h *Host) RestartHostDockerDaemon() error {
 
 func (h *Host) ConfigureRemoteDockerDaemon() error {
 
-	err := h.WriteDaemonKVPConfig(h.HostDockerConfigKey, h.RemoteDockerOpts)
+	log.Infof("Configuring the remote docker daemon...")
+
+	err := h.WriteDaemonKVPConfig(h.HostDockerConfigKey, strings.Join(h.RemoteDockerOpts," "))
 	if err != nil {
 		return err
 	}
@@ -472,12 +483,33 @@ func (h *Host) ConfigureRemoteDockerDaemon() error {
 		return err
 	}
 
-	// Cleaning existing values assuming that the remote
-	// h.Driver.
-
-	// Writing the new value of DOCKER_OPTS at the end of the file
-
-	// Restart Docker
-
 	return nil
+}
+
+func parseDockerOpts(dockerOptsToParse string) []string {
+
+	var parsedDockerOpts []string
+
+	// First pass will detect "--" prefixed arguments
+	firstPassParsedDockerOpts := strings.Split(dockerOptsToParse, "--")
+
+	for i := 0; i < len(firstPassParsedDockerOpts); i++ {
+		// Second pass will detect " " prefixed arguments
+		secondPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], " ")
+		if len(secondPassParsedDockerOpts) > 1 {
+			// 3rd pass is run only when we detect space elements : we have obvioulsy single slashed args
+			thirdPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], "-")
+			for j := 0; j < len(thirdPassParsedDockerOpts); j++ {
+				if len(thirdPassParsedDockerOpts[j]) > 0 {
+					parsedDockerOpts = append(parsedDockerOpts, "-" + thirdPassParsedDockerOpts[j])
+				}
+			}
+		} else {
+			if len(firstPassParsedDockerOpts[i]) > 0 {
+				parsedDockerOpts = append(parsedDockerOpts, "--" + firstPassParsedDockerOpts[i])
+			}
+		}
+	}
+
+	return parsedDockerOpts
 }

@@ -62,6 +62,10 @@ func (s *Store) Create(name string, driverName string, remoteDockerOpts string, 
 		return host, err
 	}
 
+	if err := host.ConfigureRemoteDockerDaemon(); err != nil {
+		return host, err
+	}
+
 	return host, nil
 }
 
