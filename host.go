@@ -161,10 +161,7 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	// TODO:
-	// - configure swarm to start / autostart
-	// - configure node to join cluster
-	// - configure node to run with IP of machine and URL to Docker
+
 	return nil
 }
 

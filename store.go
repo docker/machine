@@ -69,7 +69,7 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 	}
 
 	if flags.Bool("swarm") {
-		log.Info("Configuring Swarm")
+		log.Info("Configuring Swarm...")
 
 		discovery := flags.String("swarm-discovery")
 		master := flags.Bool("swarm-master")

@@ -273,6 +273,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	log.Info("Configuring Machine...")
+
 	log.Debug("Settings tags for instance")
 	tags := map[string]string{
 		"Name": d.MachineName,
@@ -593,6 +595,8 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 	}
 
 	d.SecurityGroupId = securityGroup.GroupId
+
+	// configure swarm permission if needed
 
 	log.Debugf("configuring security group authorization for %s", ipRange)
 
