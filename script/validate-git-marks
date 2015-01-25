@@ -1,0 +1,24 @@
+#!/bin/sh
+
+IN_MARK=$(grep -r "^<<<<<<<" *)
+if [ $? -eq 0 ]; then
+	echo "-- Git conflict marks have been found, please correct them :"
+	echo "$IN_MARK"
+	exit 1
+fi
+
+OUT_MARK=$(grep -r "^>>>>>>>" *)
+if [ $? -eq 0 ]; then
+	echo "-- Git conflict marks have been found, please correct them :"
+	echo "$OUT_MARK"
+	exit 1
+fi
+
+SEPARATE_MARK=$(grep -r "^=======$" *)
+if [ $? -eq 0 ]; then
+	echo "-- Git conflict marks have been found, please correct them :"
+	echo "$SEPARATE_MARK"
+	exit 1
+fi
+
+echo "-- Congratulations : no git conflict marks have been found !"
