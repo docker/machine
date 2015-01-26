@@ -112,6 +112,10 @@ func cpIso(src, dest string) error {
 	return nil
 }
 
+func (d *Driver) PreCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 	var (
 		err    error

@@ -438,6 +438,42 @@ func (e *EC2) GetSubnets() ([]Subnet, error) {
 	return subnets, nil
 }
 
+func (e *EC2) GetKeyPairs() ([]KeyPair, error) {
+	keyPairs := []KeyPair{}
+	resp, err := e.performStandardAction("DescribeKeyPairs")
+	if err != nil {
+		return keyPairs, err
+	}
+	defer resp.Body.Close()
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return keyPairs, fmt.Errorf("Error reading AWS response body: %s", err)
+	}
+
+	unmarshalledResponse := DescribeKeyPairsResponse{}
+	if err = xml.Unmarshal(contents, &unmarshalledResponse); err != nil {
+		return keyPairs, fmt.Errorf("Error unmarshalling AWS response XML: %s", err)
+	}
+
+	keyPairs = unmarshalledResponse.KeySet
+
+	return keyPairs, nil
+}
+
+func (e *EC2) GetKeyPair(name string) (*KeyPair, error) {
+	keyPairs, err := e.GetKeyPairs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range keyPairs {
+		if key.KeyName == name {
+			return &key, nil
+		}
+	}
+	return nil, nil
+}
+
 func (e *EC2) GetInstanceState(instanceId string) (state.State, error) {
 	resp, err := e.performInstanceAction(instanceId, "DescribeInstances", nil)
 	if err != nil {

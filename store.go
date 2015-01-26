@@ -31,7 +31,7 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 		return nil, err
 	}
 	if exists {
-		return nil, fmt.Errorf("Host %q already exists", name)
+		return nil, fmt.Errorf("Machine %s already exists", name)
 	}
 
 	hostPath := filepath.Join(s.Path, name)
@@ -44,6 +44,10 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 		if err := host.Driver.SetConfigFromFlags(flags); err != nil {
 			return host, err
 		}
+	}
+
+	if err := host.Driver.PreCreateCheck(); err != nil {
+		return nil, err
 	}
 
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
