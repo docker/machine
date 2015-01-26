@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/utils"
 )
 
 // Store persists hosts on the filesystem
@@ -19,7 +21,7 @@ type Store struct {
 
 func NewStore(rootPath string, caCert string, privateKey string) *Store {
 	if rootPath == "" {
-		rootPath = filepath.Join(drivers.GetHomeDir(), ".docker", "machines")
+		rootPath = utils.GetMachineDir()
 	}
 
 	return &Store{Path: rootPath, CaCertPath: caCert, PrivateKeyPath: privateKey}
@@ -97,7 +99,8 @@ func (s *Store) List() ([]Host, error) {
 	hosts := []Host{}
 
 	for _, file := range dir {
-		if file.IsDir() {
+		// don't load hidden dirs; used for configs
+		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
 			host, err := s.Load(file.Name())
 			if err != nil {
 				log.Errorf("error loading host %q: %s", file.Name(), err)
