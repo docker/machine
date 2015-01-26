@@ -40,6 +40,10 @@ func (p *AddResourceDetailParams) toURLValues() url.Values {
 			i++
 		}
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["resourceid"]; found {
 		u.Set("resourceid", v.(string))
 	}
@@ -54,6 +58,14 @@ func (p *AddResourceDetailParams) SetDetails(v map[string]string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["details"] = v
+	return
+}
+
+func (p *AddResourceDetailParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -263,6 +275,9 @@ func (p *ListResourceDetailsParams) toURLValues() url.Values {
 	if v, found := p.p["resourcetype"]; found {
 		u.Set("resourcetype", v.(string))
 	}
+	if v, found := p.p["value"]; found {
+		u.Set("value", v.(string))
+	}
 	return u
 }
 
@@ -362,12 +377,19 @@ func (p *ListResourceDetailsParams) SetResourcetype(v string) {
 	return
 }
 
+func (p *ListResourceDetailsParams) SetValue(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["value"] = v
+	return
+}
+
 // You should always use this function to get a new ListResourceDetailsParams instance,
 // as then you are sure you have configured all required params
-func (s *ResourcemetadataService) NewListResourceDetailsParams(resourceid string, resourcetype string) *ListResourceDetailsParams {
+func (s *ResourcemetadataService) NewListResourceDetailsParams(resourcetype string) *ListResourceDetailsParams {
 	p := &ListResourceDetailsParams{}
 	p.p = make(map[string]interface{})
-	p.p["resourceid"] = resourceid
 	p.p["resourcetype"] = resourcetype
 	return p
 }

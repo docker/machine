@@ -670,6 +670,14 @@ func (p *UpdateTemplateParams) toURLValues() url.Values {
 		vv := strconv.FormatBool(v.(bool))
 		u.Set("bootable", vv)
 	}
+	if v, found := p.p["details"]; found {
+		i := 0
+		for k, vv := range v.(map[string]string) {
+			u.Set(fmt.Sprintf("details[%d].key", i), k)
+			u.Set(fmt.Sprintf("details[%d].value", i), vv)
+			i++
+		}
+	}
 	if v, found := p.p["displaytext"]; found {
 		u.Set("displaytext", v.(string))
 	}
@@ -709,6 +717,14 @@ func (p *UpdateTemplateParams) SetBootable(v bool) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["bootable"] = v
+	return
+}
+
+func (p *UpdateTemplateParams) SetDetails(v map[string]string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["details"] = v
 	return
 }
 
@@ -1957,206 +1973,4 @@ func (s *TemplateService) UpgradeRouterTemplate(p *UpgradeRouterTemplateParams) 
 type UpgradeRouterTemplateResponse struct {
 	Jobid     string `json:"jobid,omitempty"`
 	Jobstatus int    `json:"jobstatus,omitempty"`
-}
-
-type ListUcsTemplatesParams struct {
-	p map[string]interface{}
-}
-
-func (p *ListUcsTemplatesParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["keyword"]; found {
-		u.Set("keyword", v.(string))
-	}
-	if v, found := p.p["page"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("page", vv)
-	}
-	if v, found := p.p["pagesize"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("pagesize", vv)
-	}
-	if v, found := p.p["ucsmanagerid"]; found {
-		u.Set("ucsmanagerid", v.(string))
-	}
-	return u
-}
-
-func (p *ListUcsTemplatesParams) SetKeyword(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["keyword"] = v
-	return
-}
-
-func (p *ListUcsTemplatesParams) SetPage(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["page"] = v
-	return
-}
-
-func (p *ListUcsTemplatesParams) SetPagesize(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["pagesize"] = v
-	return
-}
-
-func (p *ListUcsTemplatesParams) SetUcsmanagerid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["ucsmanagerid"] = v
-	return
-}
-
-// You should always use this function to get a new ListUcsTemplatesParams instance,
-// as then you are sure you have configured all required params
-func (s *TemplateService) NewListUcsTemplatesParams(ucsmanagerid string) *ListUcsTemplatesParams {
-	p := &ListUcsTemplatesParams{}
-	p.p = make(map[string]interface{})
-	p.p["ucsmanagerid"] = ucsmanagerid
-	return p
-}
-
-// List templates in ucs manager
-func (s *TemplateService) ListUcsTemplates(p *ListUcsTemplatesParams) (*ListUcsTemplatesResponse, error) {
-	resp, err := s.cs.newRequest("listUcsTemplates", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r ListUcsTemplatesResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-	return &r, nil
-}
-
-type ListUcsTemplatesResponse struct {
-	Count        int            `json:"count"`
-	UcsTemplates []*UcsTemplate `json:"ucstemplate"`
-}
-
-type UcsTemplate struct {
-	Ucsdn string `json:"ucsdn,omitempty"`
-}
-
-type InstantiateUcsTemplateAndAssocaciateToBladeParams struct {
-	p map[string]interface{}
-}
-
-func (p *InstantiateUcsTemplateAndAssocaciateToBladeParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["bladeid"]; found {
-		u.Set("bladeid", v.(string))
-	}
-	if v, found := p.p["profilename"]; found {
-		u.Set("profilename", v.(string))
-	}
-	if v, found := p.p["templatedn"]; found {
-		u.Set("templatedn", v.(string))
-	}
-	if v, found := p.p["ucsmanagerid"]; found {
-		u.Set("ucsmanagerid", v.(string))
-	}
-	return u
-}
-
-func (p *InstantiateUcsTemplateAndAssocaciateToBladeParams) SetBladeid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["bladeid"] = v
-	return
-}
-
-func (p *InstantiateUcsTemplateAndAssocaciateToBladeParams) SetProfilename(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["profilename"] = v
-	return
-}
-
-func (p *InstantiateUcsTemplateAndAssocaciateToBladeParams) SetTemplatedn(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["templatedn"] = v
-	return
-}
-
-func (p *InstantiateUcsTemplateAndAssocaciateToBladeParams) SetUcsmanagerid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["ucsmanagerid"] = v
-	return
-}
-
-// You should always use this function to get a new InstantiateUcsTemplateAndAssocaciateToBladeParams instance,
-// as then you are sure you have configured all required params
-func (s *TemplateService) NewInstantiateUcsTemplateAndAssocaciateToBladeParams(bladeid string, templatedn string, ucsmanagerid string) *InstantiateUcsTemplateAndAssocaciateToBladeParams {
-	p := &InstantiateUcsTemplateAndAssocaciateToBladeParams{}
-	p.p = make(map[string]interface{})
-	p.p["bladeid"] = bladeid
-	p.p["templatedn"] = templatedn
-	p.p["ucsmanagerid"] = ucsmanagerid
-	return p
-}
-
-// create a profile of template and associate to a blade
-func (s *TemplateService) InstantiateUcsTemplateAndAssocaciateToBlade(p *InstantiateUcsTemplateAndAssocaciateToBladeParams) (*InstantiateUcsTemplateAndAssocaciateToBladeResponse, error) {
-	resp, err := s.cs.newRequest("instantiateUcsTemplateAndAssocaciateToBlade", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r InstantiateUcsTemplateAndAssocaciateToBladeResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-
-	// If we have a async client, we need to wait for the async result
-	if s.cs.async {
-		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
-		if err != nil {
-			return nil, err
-		}
-		// If 'warn' has a value it means the job is running longer than the configured
-		// timeout, the resonse will contain the jobid of the running async job
-		if warn != nil {
-			return &r, warn
-		}
-
-		b, err = getRawValue(b)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := json.Unmarshal(b, &r); err != nil {
-			return nil, err
-		}
-	}
-	return &r, nil
-}
-
-type InstantiateUcsTemplateAndAssocaciateToBladeResponse struct {
-	JobID        string `json:"jobid,omitempty"`
-	Bladedn      string `json:"bladedn,omitempty"`
-	Hostid       string `json:"hostid,omitempty"`
-	Id           string `json:"id,omitempty"`
-	Profiledn    string `json:"profiledn,omitempty"`
-	Ucsmanagerid string `json:"ucsmanagerid,omitempty"`
 }

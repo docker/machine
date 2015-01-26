@@ -270,7 +270,7 @@ Create machines on your [Apache Cloudstack IaaS](http://cloudstack.apache.org/).
 
 You have a lot of freedom within CloudStack to define what type of OS you want to use for your docker machines. This makes a plugin like this kind of hard since you can use a wide variety of operating systems (e.g. CentOS, Ubuntu, CoreOS). So currently this driver expects a CoreOS template. Other templates may also work, but CoreOS templates are currently the only ones that are properly tested. To build a CoreOS template for your CloudStack installation, follow these simple steps:
 
-- Download the latest beta (you need a CoreOS 500+ build) CoreOS ISO and upload it to CS as an ISO for OS type `Other (64-bit)`
+- Download a CoreOS ISO (you need a CoreOS 500+ build) and upload it to CS as an ISO for OS type `Other (64-bit)`
 - Create and boot a new VM with the uploaded ISO set as it’s bootable media
 - After it's booted open the console and install CoreOS to disk using the command: `sudo coreos-install -d /dev/xvda -C beta -o cloudstack`
 - Now after this step the image is done, except for the fact that we need the custom (auth identity) docker binary on there. So next follow these steps:
@@ -278,7 +278,7 @@ You have a lot of freedom within CloudStack to define what type of OS you want t
   - curl -sS https://raw.githubusercontent.com/BlueDragonX/coreos-image-tools/master/coreos-rw > coreos-rw
   - sh coreos-rw enable /dev/xvda3
   - mount /dev/xvda3 /mnt
-  - curl -sS https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth > /mnt/bin/docker
+  - curl -sS https://bfirsh.s3.amazonaws.com/docker/linux/docker-1.4.1-dev-identity-auth > /mnt/bin/docker
   - umount /mnt
   - sh coreos-rw disable /dev/xvda3
   - exit
@@ -289,10 +289,11 @@ Options :
  - `--cloudstack-api-url`: The API endpoint of your CloudStack environment.  Default: $CLOUDSTACK_API_URL
  - `--cloudstack-api-key`: Your CloudStack API key.  Default: CLOUDSTACK_API_KEY
  - `--cloudstack-secret-key`: Your CloudStack secret key.  Default: CLOUDSTACK_SECRET_KEY
- - `--cloudstack-machinename`: The name of the machine.  Default: `docker-host-xxxx`
  - `--cloudstack-no-public-ip`: Whether or not this machine is behind a public IP. Helpfull when having direct access to the IP addresses assigned by DHCP.
  - `--cloudstack-public-ip`: The public IP used to connect to the machine.
- - `--cloudstack-public-port`: The public port to open/forward to connect to the machine.  Default: `2376`
+ - `--cloudstack-public-port`: The public port to open/forward to connect to Docker, if empty it matches the private port.
+ - `--cloudstack-public-ssh-port`: The public port to open/forward to connect to SSH.  Default: `22`
+ - `--cloudstack-private-port`: The private port for Docker to listen on.  Default: `2376`
  - `--cloudstack-source-cidr`: The source CIDR block to give access to the machine.  Default: `0.0.0.0/0`
  - `--cloudstack-explunge`: Whether or not to explunge the machine upon removal.
  - `--cloudstack-template`: The name of the template to use.
@@ -302,7 +303,7 @@ Options :
 
 Example :
 
-    $ machine create -d cloudstack --cloudstack-template="CoreOS 522.2.0" --cloudstack-offering="some offering" --cloudstack-public-ip="x.x.x.x" --cloudstack-zone="zone-1" dev
+    $ machine create -d cloudstack --cloudstack-template="CoreOS 557.0.0" --cloudstack-offering="some offering" --cloudstack-public-ip="x.x.x.x" --cloudstack-zone="zone-1" dev
 
 ## Contributing
 

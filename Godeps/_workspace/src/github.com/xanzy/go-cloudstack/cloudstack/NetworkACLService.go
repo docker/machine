@@ -47,6 +47,10 @@ func (p *CreateNetworkACLParams) toURLValues() url.Values {
 		vv := strconv.Itoa(v.(int))
 		u.Set("endport", vv)
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["icmpcode"]; found {
 		vv := strconv.Itoa(v.(int))
 		u.Set("icmpcode", vv)
@@ -104,6 +108,14 @@ func (p *CreateNetworkACLParams) SetEndport(v int) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["endport"] = v
+	return
+}
+
+func (p *CreateNetworkACLParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -209,19 +221,20 @@ func (s *NetworkACLService) CreateNetworkACL(p *CreateNetworkACLParams) (*Create
 }
 
 type CreateNetworkACLResponse struct {
-	JobID     string `json:"jobid,omitempty"`
-	Aclid     string `json:"aclid,omitempty"`
-	Action    string `json:"action,omitempty"`
-	Cidrlist  string `json:"cidrlist,omitempty"`
-	Endport   string `json:"endport,omitempty"`
-	Icmpcode  int    `json:"icmpcode,omitempty"`
-	Icmptype  int    `json:"icmptype,omitempty"`
-	Id        string `json:"id,omitempty"`
-	Number    int    `json:"number,omitempty"`
-	Protocol  string `json:"protocol,omitempty"`
-	Startport string `json:"startport,omitempty"`
-	State     string `json:"state,omitempty"`
-	Tags      []struct {
+	JobID      string `json:"jobid,omitempty"`
+	Aclid      string `json:"aclid,omitempty"`
+	Action     string `json:"action,omitempty"`
+	Cidrlist   string `json:"cidrlist,omitempty"`
+	Endport    string `json:"endport,omitempty"`
+	Fordisplay bool   `json:"fordisplay,omitempty"`
+	Icmpcode   int    `json:"icmpcode,omitempty"`
+	Icmptype   int    `json:"icmptype,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Number     int    `json:"number,omitempty"`
+	Protocol   string `json:"protocol,omitempty"`
+	Startport  string `json:"startport,omitempty"`
+	State      string `json:"state,omitempty"`
+	Tags       []struct {
 		Account      string `json:"account,omitempty"`
 		Customer     string `json:"customer,omitempty"`
 		Domain       string `json:"domain,omitempty"`
@@ -252,9 +265,16 @@ func (p *UpdateNetworkACLItemParams) toURLValues() url.Values {
 		vv := strings.Join(v.([]string), ", ")
 		u.Set("cidrlist", vv)
 	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
 	if v, found := p.p["endport"]; found {
 		vv := strconv.Itoa(v.(int))
 		u.Set("endport", vv)
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
 	if v, found := p.p["icmpcode"]; found {
 		vv := strconv.Itoa(v.(int))
@@ -300,11 +320,27 @@ func (p *UpdateNetworkACLItemParams) SetCidrlist(v []string) {
 	return
 }
 
+func (p *UpdateNetworkACLItemParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
 func (p *UpdateNetworkACLItemParams) SetEndport(v int) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
 	}
 	p.p["endport"] = v
+	return
+}
+
+func (p *UpdateNetworkACLItemParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -410,19 +446,20 @@ func (s *NetworkACLService) UpdateNetworkACLItem(p *UpdateNetworkACLItemParams) 
 }
 
 type UpdateNetworkACLItemResponse struct {
-	JobID     string `json:"jobid,omitempty"`
-	Aclid     string `json:"aclid,omitempty"`
-	Action    string `json:"action,omitempty"`
-	Cidrlist  string `json:"cidrlist,omitempty"`
-	Endport   string `json:"endport,omitempty"`
-	Icmpcode  int    `json:"icmpcode,omitempty"`
-	Icmptype  int    `json:"icmptype,omitempty"`
-	Id        string `json:"id,omitempty"`
-	Number    int    `json:"number,omitempty"`
-	Protocol  string `json:"protocol,omitempty"`
-	Startport string `json:"startport,omitempty"`
-	State     string `json:"state,omitempty"`
-	Tags      []struct {
+	JobID      string `json:"jobid,omitempty"`
+	Aclid      string `json:"aclid,omitempty"`
+	Action     string `json:"action,omitempty"`
+	Cidrlist   string `json:"cidrlist,omitempty"`
+	Endport    string `json:"endport,omitempty"`
+	Fordisplay bool   `json:"fordisplay,omitempty"`
+	Icmpcode   int    `json:"icmpcode,omitempty"`
+	Icmptype   int    `json:"icmptype,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Number     int    `json:"number,omitempty"`
+	Protocol   string `json:"protocol,omitempty"`
+	Startport  string `json:"startport,omitempty"`
+	State      string `json:"state,omitempty"`
+	Tags       []struct {
 		Account      string `json:"account,omitempty"`
 		Customer     string `json:"customer,omitempty"`
 		Domain       string `json:"domain,omitempty"`
@@ -527,6 +564,10 @@ func (p *ListNetworkACLsParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -601,6 +642,14 @@ func (p *ListNetworkACLsParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListNetworkACLsParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -747,18 +796,19 @@ type ListNetworkACLsResponse struct {
 }
 
 type NetworkACL struct {
-	Aclid     string `json:"aclid,omitempty"`
-	Action    string `json:"action,omitempty"`
-	Cidrlist  string `json:"cidrlist,omitempty"`
-	Endport   string `json:"endport,omitempty"`
-	Icmpcode  int    `json:"icmpcode,omitempty"`
-	Icmptype  int    `json:"icmptype,omitempty"`
-	Id        string `json:"id,omitempty"`
-	Number    int    `json:"number,omitempty"`
-	Protocol  string `json:"protocol,omitempty"`
-	Startport string `json:"startport,omitempty"`
-	State     string `json:"state,omitempty"`
-	Tags      []struct {
+	Aclid      string `json:"aclid,omitempty"`
+	Action     string `json:"action,omitempty"`
+	Cidrlist   string `json:"cidrlist,omitempty"`
+	Endport    string `json:"endport,omitempty"`
+	Fordisplay bool   `json:"fordisplay,omitempty"`
+	Icmpcode   int    `json:"icmpcode,omitempty"`
+	Icmptype   int    `json:"icmptype,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Number     int    `json:"number,omitempty"`
+	Protocol   string `json:"protocol,omitempty"`
+	Startport  string `json:"startport,omitempty"`
+	State      string `json:"state,omitempty"`
+	Tags       []struct {
 		Account      string `json:"account,omitempty"`
 		Customer     string `json:"customer,omitempty"`
 		Domain       string `json:"domain,omitempty"`
@@ -785,6 +835,10 @@ func (p *CreateNetworkACLListParams) toURLValues() url.Values {
 	if v, found := p.p["description"]; found {
 		u.Set("description", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["name"]; found {
 		u.Set("name", v.(string))
 	}
@@ -799,6 +853,14 @@ func (p *CreateNetworkACLListParams) SetDescription(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["description"] = v
+	return
+}
+
+func (p *CreateNetworkACLListParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -867,6 +929,7 @@ func (s *NetworkACLService) CreateNetworkACLList(p *CreateNetworkACLListParams) 
 type CreateNetworkACLListResponse struct {
 	JobID       string `json:"jobid,omitempty"`
 	Description string `json:"description,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Id          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Vpcid       string `json:"vpcid,omitempty"`
@@ -1047,6 +1110,10 @@ func (p *ListNetworkACLListsParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -1097,6 +1164,14 @@ func (p *ListNetworkACLListsParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListNetworkACLListsParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -1280,7 +1355,100 @@ type ListNetworkACLListsResponse struct {
 
 type NetworkACLList struct {
 	Description string `json:"description,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Id          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Vpcid       string `json:"vpcid,omitempty"`
+}
+
+type UpdateNetworkACLListParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateNetworkACLListParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateNetworkACLListParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateNetworkACLListParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateNetworkACLListParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateNetworkACLListParams instance,
+// as then you are sure you have configured all required params
+func (s *NetworkACLService) NewUpdateNetworkACLListParams(id string) *UpdateNetworkACLListParams {
+	p := &UpdateNetworkACLListParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates Network ACL list
+func (s *NetworkACLService) UpdateNetworkACLList(p *UpdateNetworkACLListParams) (*UpdateNetworkACLListResponse, error) {
+	resp, err := s.cs.newRequest("updateNetworkACLList", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateNetworkACLListResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateNetworkACLListResponse struct {
+	JobID       string `json:"jobid,omitempty"`
+	Displaytext string `json:"displaytext,omitempty"`
+	Success     bool   `json:"success,omitempty"`
 }

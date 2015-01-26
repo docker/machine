@@ -173,6 +173,7 @@ type LdapCreateAccountResponse struct {
 	Defaultzoneid             string            `json:"defaultzoneid,omitempty"`
 	Domain                    string            `json:"domain,omitempty"`
 	Domainid                  string            `json:"domainid,omitempty"`
+	Groups                    []string          `json:"groups,omitempty"`
 	Id                        string            `json:"id,omitempty"`
 	Ipavailable               string            `json:"ipavailable,omitempty"`
 	Iplimit                   string            `json:"iplimit,omitempty"`

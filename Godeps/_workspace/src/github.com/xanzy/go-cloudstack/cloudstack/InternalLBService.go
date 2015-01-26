@@ -434,22 +434,24 @@ type StopInternalLoadBalancerVMResponse struct {
 	Name                string `json:"name,omitempty"`
 	Networkdomain       string `json:"networkdomain,omitempty"`
 	Nic                 []struct {
-		Broadcasturi string   `json:"broadcasturi,omitempty"`
-		Gateway      string   `json:"gateway,omitempty"`
-		Id           string   `json:"id,omitempty"`
-		Ip6address   string   `json:"ip6address,omitempty"`
-		Ip6cidr      string   `json:"ip6cidr,omitempty"`
-		Ip6gateway   string   `json:"ip6gateway,omitempty"`
-		Ipaddress    string   `json:"ipaddress,omitempty"`
-		Isdefault    bool     `json:"isdefault,omitempty"`
-		Isolationuri string   `json:"isolationuri,omitempty"`
-		Macaddress   string   `json:"macaddress,omitempty"`
-		Netmask      string   `json:"netmask,omitempty"`
-		Networkid    string   `json:"networkid,omitempty"`
-		Networkname  string   `json:"networkname,omitempty"`
-		Secondaryip  []string `json:"secondaryip,omitempty"`
-		Traffictype  string   `json:"traffictype,omitempty"`
-		Type         string   `json:"type,omitempty"`
+		Broadcasturi     string   `json:"broadcasturi,omitempty"`
+		Deviceid         string   `json:"deviceid,omitempty"`
+		Gateway          string   `json:"gateway,omitempty"`
+		Id               string   `json:"id,omitempty"`
+		Ip6address       string   `json:"ip6address,omitempty"`
+		Ip6cidr          string   `json:"ip6cidr,omitempty"`
+		Ip6gateway       string   `json:"ip6gateway,omitempty"`
+		Ipaddress        string   `json:"ipaddress,omitempty"`
+		Isdefault        bool     `json:"isdefault,omitempty"`
+		Isolationuri     string   `json:"isolationuri,omitempty"`
+		Macaddress       string   `json:"macaddress,omitempty"`
+		Netmask          string   `json:"netmask,omitempty"`
+		Networkid        string   `json:"networkid,omitempty"`
+		Networkname      string   `json:"networkname,omitempty"`
+		Secondaryip      []string `json:"secondaryip,omitempty"`
+		Traffictype      string   `json:"traffictype,omitempty"`
+		Type             string   `json:"type,omitempty"`
+		Virtualmachineid string   `json:"virtualmachineid,omitempty"`
 	} `json:"nic,omitempty"`
 	Podid               string `json:"podid,omitempty"`
 	Project             string `json:"project,omitempty"`
@@ -566,22 +568,24 @@ type StartInternalLoadBalancerVMResponse struct {
 	Name                string `json:"name,omitempty"`
 	Networkdomain       string `json:"networkdomain,omitempty"`
 	Nic                 []struct {
-		Broadcasturi string   `json:"broadcasturi,omitempty"`
-		Gateway      string   `json:"gateway,omitempty"`
-		Id           string   `json:"id,omitempty"`
-		Ip6address   string   `json:"ip6address,omitempty"`
-		Ip6cidr      string   `json:"ip6cidr,omitempty"`
-		Ip6gateway   string   `json:"ip6gateway,omitempty"`
-		Ipaddress    string   `json:"ipaddress,omitempty"`
-		Isdefault    bool     `json:"isdefault,omitempty"`
-		Isolationuri string   `json:"isolationuri,omitempty"`
-		Macaddress   string   `json:"macaddress,omitempty"`
-		Netmask      string   `json:"netmask,omitempty"`
-		Networkid    string   `json:"networkid,omitempty"`
-		Networkname  string   `json:"networkname,omitempty"`
-		Secondaryip  []string `json:"secondaryip,omitempty"`
-		Traffictype  string   `json:"traffictype,omitempty"`
-		Type         string   `json:"type,omitempty"`
+		Broadcasturi     string   `json:"broadcasturi,omitempty"`
+		Deviceid         string   `json:"deviceid,omitempty"`
+		Gateway          string   `json:"gateway,omitempty"`
+		Id               string   `json:"id,omitempty"`
+		Ip6address       string   `json:"ip6address,omitempty"`
+		Ip6cidr          string   `json:"ip6cidr,omitempty"`
+		Ip6gateway       string   `json:"ip6gateway,omitempty"`
+		Ipaddress        string   `json:"ipaddress,omitempty"`
+		Isdefault        bool     `json:"isdefault,omitempty"`
+		Isolationuri     string   `json:"isolationuri,omitempty"`
+		Macaddress       string   `json:"macaddress,omitempty"`
+		Netmask          string   `json:"netmask,omitempty"`
+		Networkid        string   `json:"networkid,omitempty"`
+		Networkname      string   `json:"networkname,omitempty"`
+		Secondaryip      []string `json:"secondaryip,omitempty"`
+		Traffictype      string   `json:"traffictype,omitempty"`
+		Type             string   `json:"type,omitempty"`
+		Virtualmachineid string   `json:"virtualmachineid,omitempty"`
 	} `json:"nic,omitempty"`
 	Podid               string `json:"podid,omitempty"`
 	Project             string `json:"project,omitempty"`
@@ -931,22 +935,24 @@ type InternalLoadBalancerVM struct {
 	Name                string `json:"name,omitempty"`
 	Networkdomain       string `json:"networkdomain,omitempty"`
 	Nic                 []struct {
-		Broadcasturi string   `json:"broadcasturi,omitempty"`
-		Gateway      string   `json:"gateway,omitempty"`
-		Id           string   `json:"id,omitempty"`
-		Ip6address   string   `json:"ip6address,omitempty"`
-		Ip6cidr      string   `json:"ip6cidr,omitempty"`
-		Ip6gateway   string   `json:"ip6gateway,omitempty"`
-		Ipaddress    string   `json:"ipaddress,omitempty"`
-		Isdefault    bool     `json:"isdefault,omitempty"`
-		Isolationuri string   `json:"isolationuri,omitempty"`
-		Macaddress   string   `json:"macaddress,omitempty"`
-		Netmask      string   `json:"netmask,omitempty"`
-		Networkid    string   `json:"networkid,omitempty"`
-		Networkname  string   `json:"networkname,omitempty"`
-		Secondaryip  []string `json:"secondaryip,omitempty"`
-		Traffictype  string   `json:"traffictype,omitempty"`
-		Type         string   `json:"type,omitempty"`
+		Broadcasturi     string   `json:"broadcasturi,omitempty"`
+		Deviceid         string   `json:"deviceid,omitempty"`
+		Gateway          string   `json:"gateway,omitempty"`
+		Id               string   `json:"id,omitempty"`
+		Ip6address       string   `json:"ip6address,omitempty"`
+		Ip6cidr          string   `json:"ip6cidr,omitempty"`
+		Ip6gateway       string   `json:"ip6gateway,omitempty"`
+		Ipaddress        string   `json:"ipaddress,omitempty"`
+		Isdefault        bool     `json:"isdefault,omitempty"`
+		Isolationuri     string   `json:"isolationuri,omitempty"`
+		Macaddress       string   `json:"macaddress,omitempty"`
+		Netmask          string   `json:"netmask,omitempty"`
+		Networkid        string   `json:"networkid,omitempty"`
+		Networkname      string   `json:"networkname,omitempty"`
+		Secondaryip      []string `json:"secondaryip,omitempty"`
+		Traffictype      string   `json:"traffictype,omitempty"`
+		Type             string   `json:"type,omitempty"`
+		Virtualmachineid string   `json:"virtualmachineid,omitempty"`
 	} `json:"nic,omitempty"`
 	Podid               string `json:"podid,omitempty"`
 	Project             string `json:"project,omitempty"`

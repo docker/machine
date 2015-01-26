@@ -188,8 +188,15 @@ func (p *ListNicsParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["keyword"]; found {
 		u.Set("keyword", v.(string))
+	}
+	if v, found := p.p["networkid"]; found {
+		u.Set("networkid", v.(string))
 	}
 	if v, found := p.p["nicid"]; found {
 		u.Set("nicid", v.(string))
@@ -208,11 +215,27 @@ func (p *ListNicsParams) toURLValues() url.Values {
 	return u
 }
 
+func (p *ListNicsParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
 func (p *ListNicsParams) SetKeyword(v string) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
 	}
 	p.p["keyword"] = v
+	return
+}
+
+func (p *ListNicsParams) SetNetworkid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["networkid"] = v
 	return
 }
 
@@ -277,20 +300,22 @@ type ListNicsResponse struct {
 }
 
 type Nic struct {
-	Broadcasturi string   `json:"broadcasturi,omitempty"`
-	Gateway      string   `json:"gateway,omitempty"`
-	Id           string   `json:"id,omitempty"`
-	Ip6address   string   `json:"ip6address,omitempty"`
-	Ip6cidr      string   `json:"ip6cidr,omitempty"`
-	Ip6gateway   string   `json:"ip6gateway,omitempty"`
-	Ipaddress    string   `json:"ipaddress,omitempty"`
-	Isdefault    bool     `json:"isdefault,omitempty"`
-	Isolationuri string   `json:"isolationuri,omitempty"`
-	Macaddress   string   `json:"macaddress,omitempty"`
-	Netmask      string   `json:"netmask,omitempty"`
-	Networkid    string   `json:"networkid,omitempty"`
-	Networkname  string   `json:"networkname,omitempty"`
-	Secondaryip  []string `json:"secondaryip,omitempty"`
-	Traffictype  string   `json:"traffictype,omitempty"`
-	Type         string   `json:"type,omitempty"`
+	Broadcasturi     string   `json:"broadcasturi,omitempty"`
+	Deviceid         string   `json:"deviceid,omitempty"`
+	Gateway          string   `json:"gateway,omitempty"`
+	Id               string   `json:"id,omitempty"`
+	Ip6address       string   `json:"ip6address,omitempty"`
+	Ip6cidr          string   `json:"ip6cidr,omitempty"`
+	Ip6gateway       string   `json:"ip6gateway,omitempty"`
+	Ipaddress        string   `json:"ipaddress,omitempty"`
+	Isdefault        bool     `json:"isdefault,omitempty"`
+	Isolationuri     string   `json:"isolationuri,omitempty"`
+	Macaddress       string   `json:"macaddress,omitempty"`
+	Netmask          string   `json:"netmask,omitempty"`
+	Networkid        string   `json:"networkid,omitempty"`
+	Networkname      string   `json:"networkname,omitempty"`
+	Secondaryip      []string `json:"secondaryip,omitempty"`
+	Traffictype      string   `json:"traffictype,omitempty"`
+	Type             string   `json:"type,omitempty"`
+	Virtualmachineid string   `json:"virtualmachineid,omitempty"`
 }

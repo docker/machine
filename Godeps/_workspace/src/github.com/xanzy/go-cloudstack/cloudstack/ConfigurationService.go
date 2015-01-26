@@ -326,6 +326,7 @@ type Capability struct {
 	Apilimitmax               int    `json:"apilimitmax,omitempty"`
 	Cloudstackversion         string `json:"cloudstackversion,omitempty"`
 	Customdiskofferingmaxsize int    `json:"customdiskofferingmaxsize,omitempty"`
+	Customdiskofferingminsize int    `json:"customdiskofferingminsize,omitempty"`
 	Kvmsnapshotenabled        bool   `json:"kvmsnapshotenabled,omitempty"`
 	Projectinviterequired     bool   `json:"projectinviterequired,omitempty"`
 	Regionsecondaryenabled    bool   `json:"regionsecondaryenabled,omitempty"`

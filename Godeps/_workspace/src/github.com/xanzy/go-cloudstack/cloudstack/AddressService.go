@@ -39,6 +39,10 @@ func (p *AssociateIpAddressParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["isportable"]; found {
 		vv := strconv.FormatBool(v.(bool))
 		u.Set("isportable", vv)
@@ -75,6 +79,14 @@ func (p *AssociateIpAddressParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *AssociateIpAddressParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -178,6 +190,7 @@ type AssociateIpAddressResponse struct {
 	Associatednetworkname string `json:"associatednetworkname,omitempty"`
 	Domain                string `json:"domain,omitempty"`
 	Domainid              string `json:"domainid,omitempty"`
+	Fordisplay            bool   `json:"fordisplay,omitempty"`
 	Forvirtualnetwork     bool   `json:"forvirtualnetwork,omitempty"`
 	Id                    string `json:"id,omitempty"`
 	Ipaddress             string `json:"ipaddress,omitempty"`
@@ -305,6 +318,10 @@ func (p *ListPublicIpAddressesParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["forloadbalancing"]; found {
 		vv := strconv.FormatBool(v.(bool))
 		u.Set("forloadbalancing", vv)
@@ -401,6 +418,14 @@ func (p *ListPublicIpAddressesParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListPublicIpAddressesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -601,6 +626,143 @@ type PublicIpAddress struct {
 	Associatednetworkname string `json:"associatednetworkname,omitempty"`
 	Domain                string `json:"domain,omitempty"`
 	Domainid              string `json:"domainid,omitempty"`
+	Fordisplay            bool   `json:"fordisplay,omitempty"`
+	Forvirtualnetwork     bool   `json:"forvirtualnetwork,omitempty"`
+	Id                    string `json:"id,omitempty"`
+	Ipaddress             string `json:"ipaddress,omitempty"`
+	Isportable            bool   `json:"isportable,omitempty"`
+	Issourcenat           bool   `json:"issourcenat,omitempty"`
+	Isstaticnat           bool   `json:"isstaticnat,omitempty"`
+	Issystem              bool   `json:"issystem,omitempty"`
+	Networkid             string `json:"networkid,omitempty"`
+	Physicalnetworkid     string `json:"physicalnetworkid,omitempty"`
+	Project               string `json:"project,omitempty"`
+	Projectid             string `json:"projectid,omitempty"`
+	Purpose               string `json:"purpose,omitempty"`
+	State                 string `json:"state,omitempty"`
+	Tags                  []struct {
+		Account      string `json:"account,omitempty"`
+		Customer     string `json:"customer,omitempty"`
+		Domain       string `json:"domain,omitempty"`
+		Domainid     string `json:"domainid,omitempty"`
+		Key          string `json:"key,omitempty"`
+		Project      string `json:"project,omitempty"`
+		Projectid    string `json:"projectid,omitempty"`
+		Resourceid   string `json:"resourceid,omitempty"`
+		Resourcetype string `json:"resourcetype,omitempty"`
+		Value        string `json:"value,omitempty"`
+	} `json:"tags,omitempty"`
+	Virtualmachinedisplayname string `json:"virtualmachinedisplayname,omitempty"`
+	Virtualmachineid          string `json:"virtualmachineid,omitempty"`
+	Virtualmachinename        string `json:"virtualmachinename,omitempty"`
+	Vlanid                    string `json:"vlanid,omitempty"`
+	Vlanname                  string `json:"vlanname,omitempty"`
+	Vmipaddress               string `json:"vmipaddress,omitempty"`
+	Vpcid                     string `json:"vpcid,omitempty"`
+	Zoneid                    string `json:"zoneid,omitempty"`
+	Zonename                  string `json:"zonename,omitempty"`
+}
+
+type UpdateIpAddressParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateIpAddressParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateIpAddressParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateIpAddressParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateIpAddressParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateIpAddressParams instance,
+// as then you are sure you have configured all required params
+func (s *AddressService) NewUpdateIpAddressParams(id string) *UpdateIpAddressParams {
+	p := &UpdateIpAddressParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates an ip address
+func (s *AddressService) UpdateIpAddress(p *UpdateIpAddressParams) (*UpdateIpAddressResponse, error) {
+	resp, err := s.cs.newRequest("updateIpAddress", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateIpAddressResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateIpAddressResponse struct {
+	JobID                 string `json:"jobid,omitempty"`
+	Account               string `json:"account,omitempty"`
+	Allocated             string `json:"allocated,omitempty"`
+	Associatednetworkid   string `json:"associatednetworkid,omitempty"`
+	Associatednetworkname string `json:"associatednetworkname,omitempty"`
+	Domain                string `json:"domain,omitempty"`
+	Domainid              string `json:"domainid,omitempty"`
+	Fordisplay            bool   `json:"fordisplay,omitempty"`
 	Forvirtualnetwork     bool   `json:"forvirtualnetwork,omitempty"`
 	Id                    string `json:"id,omitempty"`
 	Ipaddress             string `json:"ipaddress,omitempty"`

@@ -241,6 +241,7 @@ func (s *NATService) CreateIpForwardingRule(p *CreateIpForwardingRuleParams) (*C
 type CreateIpForwardingRuleResponse struct {
 	JobID          string `json:"jobid,omitempty"`
 	Cidrlist       string `json:"cidrlist,omitempty"`
+	Fordisplay     bool   `json:"fordisplay,omitempty"`
 	Id             string `json:"id,omitempty"`
 	Ipaddress      string `json:"ipaddress,omitempty"`
 	Ipaddressid    string `json:"ipaddressid,omitempty"`
@@ -531,6 +532,7 @@ type ListIpForwardingRulesResponse struct {
 
 type IpForwardingRule struct {
 	Cidrlist       string `json:"cidrlist,omitempty"`
+	Fordisplay     bool   `json:"fordisplay,omitempty"`
 	Id             string `json:"id,omitempty"`
 	Ipaddress      string `json:"ipaddress,omitempty"`
 	Ipaddressid    string `json:"ipaddressid,omitempty"`

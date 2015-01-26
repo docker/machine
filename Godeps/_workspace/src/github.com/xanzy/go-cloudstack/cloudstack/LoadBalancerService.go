@@ -49,6 +49,10 @@ func (p *CreateLoadBalancerRuleParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["name"]; found {
 		u.Set("name", v.(string))
 	}
@@ -116,6 +120,14 @@ func (p *CreateLoadBalancerRuleParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *CreateLoadBalancerRuleParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -239,6 +251,7 @@ type CreateLoadBalancerRuleResponse struct {
 	Description string `json:"description,omitempty"`
 	Domain      string `json:"domain,omitempty"`
 	Domainid    string `json:"domainid,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Id          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Networkid   string `json:"networkid,omitempty"`
@@ -350,6 +363,14 @@ func (p *RemoveFromLoadBalancerRuleParams) toURLValues() url.Values {
 		vv := strings.Join(v.([]string), ", ")
 		u.Set("virtualmachineids", vv)
 	}
+	if v, found := p.p["vmidipmap"]; found {
+		i := 0
+		for k, vv := range v.(map[string]string) {
+			u.Set(fmt.Sprintf("vmidipmap[%d].key", i), k)
+			u.Set(fmt.Sprintf("vmidipmap[%d].value", i), vv)
+			i++
+		}
+	}
 	return u
 }
 
@@ -369,13 +390,20 @@ func (p *RemoveFromLoadBalancerRuleParams) SetVirtualmachineids(v []string) {
 	return
 }
 
+func (p *RemoveFromLoadBalancerRuleParams) SetVmidipmap(v map[string]string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["vmidipmap"] = v
+	return
+}
+
 // You should always use this function to get a new RemoveFromLoadBalancerRuleParams instance,
 // as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewRemoveFromLoadBalancerRuleParams(id string, virtualmachineids []string) *RemoveFromLoadBalancerRuleParams {
+func (s *LoadBalancerService) NewRemoveFromLoadBalancerRuleParams(id string) *RemoveFromLoadBalancerRuleParams {
 	p := &RemoveFromLoadBalancerRuleParams{}
 	p.p = make(map[string]interface{})
 	p.p["id"] = id
-	p.p["virtualmachineids"] = virtualmachineids
 	return p
 }
 
@@ -432,6 +460,14 @@ func (p *AssignToLoadBalancerRuleParams) toURLValues() url.Values {
 		vv := strings.Join(v.([]string), ", ")
 		u.Set("virtualmachineids", vv)
 	}
+	if v, found := p.p["vmidipmap"]; found {
+		i := 0
+		for k, vv := range v.(map[string]string) {
+			u.Set(fmt.Sprintf("vmidipmap[%d].key", i), k)
+			u.Set(fmt.Sprintf("vmidipmap[%d].value", i), vv)
+			i++
+		}
+	}
 	return u
 }
 
@@ -451,13 +487,20 @@ func (p *AssignToLoadBalancerRuleParams) SetVirtualmachineids(v []string) {
 	return
 }
 
+func (p *AssignToLoadBalancerRuleParams) SetVmidipmap(v map[string]string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["vmidipmap"] = v
+	return
+}
+
 // You should always use this function to get a new AssignToLoadBalancerRuleParams instance,
 // as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewAssignToLoadBalancerRuleParams(id string, virtualmachineids []string) *AssignToLoadBalancerRuleParams {
+func (s *LoadBalancerService) NewAssignToLoadBalancerRuleParams(id string) *AssignToLoadBalancerRuleParams {
 	p := &AssignToLoadBalancerRuleParams{}
 	p.p = make(map[string]interface{})
 	p.p["id"] = id
-	p.p["virtualmachineids"] = virtualmachineids
 	return p
 }
 
@@ -510,6 +553,10 @@ func (p *CreateLBStickinessPolicyParams) toURLValues() url.Values {
 	if v, found := p.p["description"]; found {
 		u.Set("description", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["lbruleid"]; found {
 		u.Set("lbruleid", v.(string))
 	}
@@ -535,6 +582,14 @@ func (p *CreateLBStickinessPolicyParams) SetDescription(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["description"] = v
+	return
+}
+
+func (p *CreateLBStickinessPolicyParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -628,6 +683,119 @@ type CreateLBStickinessPolicyResponse struct {
 	State            string `json:"state,omitempty"`
 	Stickinesspolicy []struct {
 		Description string            `json:"description,omitempty"`
+		Fordisplay  bool              `json:"fordisplay,omitempty"`
+		Id          string            `json:"id,omitempty"`
+		Methodname  string            `json:"methodname,omitempty"`
+		Name        string            `json:"name,omitempty"`
+		Params      map[string]string `json:"params,omitempty"`
+		State       string            `json:"state,omitempty"`
+	} `json:"stickinesspolicy,omitempty"`
+	Zoneid string `json:"zoneid,omitempty"`
+}
+
+type UpdateLBStickinessPolicyParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateLBStickinessPolicyParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateLBStickinessPolicyParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateLBStickinessPolicyParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateLBStickinessPolicyParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateLBStickinessPolicyParams instance,
+// as then you are sure you have configured all required params
+func (s *LoadBalancerService) NewUpdateLBStickinessPolicyParams(id string) *UpdateLBStickinessPolicyParams {
+	p := &UpdateLBStickinessPolicyParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates LB Stickiness policy
+func (s *LoadBalancerService) UpdateLBStickinessPolicy(p *UpdateLBStickinessPolicyParams) (*UpdateLBStickinessPolicyResponse, error) {
+	resp, err := s.cs.newRequest("updateLBStickinessPolicy", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateLBStickinessPolicyResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateLBStickinessPolicyResponse struct {
+	JobID            string `json:"jobid,omitempty"`
+	Account          string `json:"account,omitempty"`
+	Description      string `json:"description,omitempty"`
+	Domain           string `json:"domain,omitempty"`
+	Domainid         string `json:"domainid,omitempty"`
+	Lbruleid         string `json:"lbruleid,omitempty"`
+	Name             string `json:"name,omitempty"`
+	State            string `json:"state,omitempty"`
+	Stickinesspolicy []struct {
+		Description string            `json:"description,omitempty"`
+		Fordisplay  bool              `json:"fordisplay,omitempty"`
 		Id          string            `json:"id,omitempty"`
 		Methodname  string            `json:"methodname,omitempty"`
 		Name        string            `json:"name,omitempty"`
@@ -721,6 +889,10 @@ func (p *ListLoadBalancerRulesParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -785,6 +957,14 @@ func (p *ListLoadBalancerRulesParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListLoadBalancerRulesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -997,6 +1177,7 @@ type LoadBalancerRule struct {
 	Description string `json:"description,omitempty"`
 	Domain      string `json:"domain,omitempty"`
 	Domainid    string `json:"domainid,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Id          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Networkid   string `json:"networkid,omitempty"`
@@ -1032,6 +1213,13 @@ func (p *ListLBStickinessPoliciesParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
 	if v, found := p.p["keyword"]; found {
 		u.Set("keyword", v.(string))
 	}
@@ -1047,6 +1235,22 @@ func (p *ListLBStickinessPoliciesParams) toURLValues() url.Values {
 		u.Set("pagesize", vv)
 	}
 	return u
+}
+
+func (p *ListLBStickinessPoliciesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *ListLBStickinessPoliciesParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
 }
 
 func (p *ListLBStickinessPoliciesParams) SetKeyword(v string) {
@@ -1083,11 +1287,37 @@ func (p *ListLBStickinessPoliciesParams) SetPagesize(v int) {
 
 // You should always use this function to get a new ListLBStickinessPoliciesParams instance,
 // as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewListLBStickinessPoliciesParams(lbruleid string) *ListLBStickinessPoliciesParams {
+func (s *LoadBalancerService) NewListLBStickinessPoliciesParams() *ListLBStickinessPoliciesParams {
 	p := &ListLBStickinessPoliciesParams{}
 	p.p = make(map[string]interface{})
-	p.p["lbruleid"] = lbruleid
 	return p
+}
+
+// This is a courtesy helper function, which in some cases may not work as expected!
+func (s *LoadBalancerService) GetLBStickinessPolicyByID(id string) (*LBStickinessPolicy, int, error) {
+	p := &ListLBStickinessPoliciesParams{}
+	p.p = make(map[string]interface{})
+
+	p.p["id"] = id
+
+	l, err := s.ListLBStickinessPolicies(p)
+	if err != nil {
+		if strings.Contains(err.Error(), fmt.Sprintf(
+			"Invalid parameter id value=%s due to incorrect long value format, "+
+				"or entity does not exist", id)) {
+			return nil, 0, fmt.Errorf("No match found for %s: %+v", id, l)
+		}
+		return nil, -1, err
+	}
+
+	if l.Count == 0 {
+		return nil, l.Count, fmt.Errorf("No match found for %s: %+v", id, l)
+	}
+
+	if l.Count == 1 {
+		return l.LBStickinessPolicies[0], l.Count, nil
+	}
+	return nil, l.Count, fmt.Errorf("There is more then one result for LBStickinessPolicy UUID: %s!", id)
 }
 
 // Lists LBStickiness policies.
@@ -1119,6 +1349,7 @@ type LBStickinessPolicy struct {
 	State            string `json:"state,omitempty"`
 	Stickinesspolicy []struct {
 		Description string            `json:"description,omitempty"`
+		Fordisplay  bool              `json:"fordisplay,omitempty"`
 		Id          string            `json:"id,omitempty"`
 		Methodname  string            `json:"methodname,omitempty"`
 		Name        string            `json:"name,omitempty"`
@@ -1137,6 +1368,13 @@ func (p *ListLBHealthCheckPoliciesParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
 	if v, found := p.p["keyword"]; found {
 		u.Set("keyword", v.(string))
 	}
@@ -1152,6 +1390,22 @@ func (p *ListLBHealthCheckPoliciesParams) toURLValues() url.Values {
 		u.Set("pagesize", vv)
 	}
 	return u
+}
+
+func (p *ListLBHealthCheckPoliciesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *ListLBHealthCheckPoliciesParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
 }
 
 func (p *ListLBHealthCheckPoliciesParams) SetKeyword(v string) {
@@ -1188,11 +1442,37 @@ func (p *ListLBHealthCheckPoliciesParams) SetPagesize(v int) {
 
 // You should always use this function to get a new ListLBHealthCheckPoliciesParams instance,
 // as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewListLBHealthCheckPoliciesParams(lbruleid string) *ListLBHealthCheckPoliciesParams {
+func (s *LoadBalancerService) NewListLBHealthCheckPoliciesParams() *ListLBHealthCheckPoliciesParams {
 	p := &ListLBHealthCheckPoliciesParams{}
 	p.p = make(map[string]interface{})
-	p.p["lbruleid"] = lbruleid
 	return p
+}
+
+// This is a courtesy helper function, which in some cases may not work as expected!
+func (s *LoadBalancerService) GetLBHealthCheckPolicyByID(id string) (*LBHealthCheckPolicy, int, error) {
+	p := &ListLBHealthCheckPoliciesParams{}
+	p.p = make(map[string]interface{})
+
+	p.p["id"] = id
+
+	l, err := s.ListLBHealthCheckPolicies(p)
+	if err != nil {
+		if strings.Contains(err.Error(), fmt.Sprintf(
+			"Invalid parameter id value=%s due to incorrect long value format, "+
+				"or entity does not exist", id)) {
+			return nil, 0, fmt.Errorf("No match found for %s: %+v", id, l)
+		}
+		return nil, -1, err
+	}
+
+	if l.Count == 0 {
+		return nil, l.Count, fmt.Errorf("No match found for %s: %+v", id, l)
+	}
+
+	if l.Count == 1 {
+		return l.LBHealthCheckPolicies[0], l.Count, nil
+	}
+	return nil, l.Count, fmt.Errorf("There is more then one result for LBHealthCheckPolicy UUID: %s!", id)
 }
 
 // Lists load balancer HealthCheck policies.
@@ -1220,6 +1500,7 @@ type LBHealthCheckPolicy struct {
 	Domainid          string `json:"domainid,omitempty"`
 	Healthcheckpolicy []struct {
 		Description             string `json:"description,omitempty"`
+		Fordisplay              bool   `json:"fordisplay,omitempty"`
 		Healthcheckinterval     int    `json:"healthcheckinterval,omitempty"`
 		Healthcheckthresshold   int    `json:"healthcheckthresshold,omitempty"`
 		Id                      string `json:"id,omitempty"`
@@ -1243,6 +1524,10 @@ func (p *CreateLBHealthCheckPolicyParams) toURLValues() url.Values {
 	}
 	if v, found := p.p["description"]; found {
 		u.Set("description", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
 	if v, found := p.p["healthythreshold"]; found {
 		vv := strconv.Itoa(v.(int))
@@ -1274,6 +1559,14 @@ func (p *CreateLBHealthCheckPolicyParams) SetDescription(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["description"] = v
+	return
+}
+
+func (p *CreateLBHealthCheckPolicyParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -1377,6 +1670,118 @@ type CreateLBHealthCheckPolicyResponse struct {
 	Domainid          string `json:"domainid,omitempty"`
 	Healthcheckpolicy []struct {
 		Description             string `json:"description,omitempty"`
+		Fordisplay              bool   `json:"fordisplay,omitempty"`
+		Healthcheckinterval     int    `json:"healthcheckinterval,omitempty"`
+		Healthcheckthresshold   int    `json:"healthcheckthresshold,omitempty"`
+		Id                      string `json:"id,omitempty"`
+		Pingpath                string `json:"pingpath,omitempty"`
+		Responsetime            int    `json:"responsetime,omitempty"`
+		State                   string `json:"state,omitempty"`
+		Unhealthcheckthresshold int    `json:"unhealthcheckthresshold,omitempty"`
+	} `json:"healthcheckpolicy,omitempty"`
+	Lbruleid string `json:"lbruleid,omitempty"`
+	Zoneid   string `json:"zoneid,omitempty"`
+}
+
+type UpdateLBHealthCheckPolicyParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateLBHealthCheckPolicyParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateLBHealthCheckPolicyParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateLBHealthCheckPolicyParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateLBHealthCheckPolicyParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateLBHealthCheckPolicyParams instance,
+// as then you are sure you have configured all required params
+func (s *LoadBalancerService) NewUpdateLBHealthCheckPolicyParams(id string) *UpdateLBHealthCheckPolicyParams {
+	p := &UpdateLBHealthCheckPolicyParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates LB HealthCheck policy
+func (s *LoadBalancerService) UpdateLBHealthCheckPolicy(p *UpdateLBHealthCheckPolicyParams) (*UpdateLBHealthCheckPolicyResponse, error) {
+	resp, err := s.cs.newRequest("updateLBHealthCheckPolicy", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateLBHealthCheckPolicyResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateLBHealthCheckPolicyResponse struct {
+	JobID             string `json:"jobid,omitempty"`
+	Account           string `json:"account,omitempty"`
+	Domain            string `json:"domain,omitempty"`
+	Domainid          string `json:"domainid,omitempty"`
+	Healthcheckpolicy []struct {
+		Description             string `json:"description,omitempty"`
+		Fordisplay              bool   `json:"fordisplay,omitempty"`
 		Healthcheckinterval     int    `json:"healthcheckinterval,omitempty"`
 		Healthcheckthresshold   int    `json:"healthcheckthresshold,omitempty"`
 		Id                      string `json:"id,omitempty"`
@@ -1477,6 +1882,10 @@ func (p *ListLoadBalancerRuleInstancesParams) toURLValues() url.Values {
 	if v, found := p.p["keyword"]; found {
 		u.Set("keyword", v.(string))
 	}
+	if v, found := p.p["lbvmips"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("lbvmips", vv)
+	}
 	if v, found := p.p["page"]; found {
 		vv := strconv.Itoa(v.(int))
 		u.Set("page", vv)
@@ -1512,6 +1921,14 @@ func (p *ListLoadBalancerRuleInstancesParams) SetKeyword(v string) {
 	return
 }
 
+func (p *ListLoadBalancerRuleInstancesParams) SetLbvmips(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["lbvmips"] = v
+	return
+}
+
 func (p *ListLoadBalancerRuleInstancesParams) SetPage(v int) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
@@ -1537,6 +1954,34 @@ func (s *LoadBalancerService) NewListLoadBalancerRuleInstancesParams(id string) 
 	return p
 }
 
+// This is a courtesy helper function, which in some cases may not work as expected!
+func (s *LoadBalancerService) GetLoadBalancerRuleInstanceByID(id string) (*LoadBalancerRuleInstance, int, error) {
+	p := &ListLoadBalancerRuleInstancesParams{}
+	p.p = make(map[string]interface{})
+
+	p.p["id"] = id
+	p.p["id"] = id
+
+	l, err := s.ListLoadBalancerRuleInstances(p)
+	if err != nil {
+		if strings.Contains(err.Error(), fmt.Sprintf(
+			"Invalid parameter id value=%s due to incorrect long value format, "+
+				"or entity does not exist", id)) {
+			return nil, 0, fmt.Errorf("No match found for %s: %+v", id, l)
+		}
+		return nil, -1, err
+	}
+
+	if l.Count == 0 {
+		return nil, l.Count, fmt.Errorf("No match found for %s: %+v", id, l)
+	}
+
+	if l.Count == 1 {
+		return l.LoadBalancerRuleInstances[0], l.Count, nil
+	}
+	return nil, l.Count, fmt.Errorf("There is more then one result for LoadBalancerRuleInstance UUID: %s!", id)
+}
+
 // List all virtual machine instances that are assigned to a load balancer rule.
 func (s *LoadBalancerService) ListLoadBalancerRuleInstances(p *ListLoadBalancerRuleInstancesParams) (*ListLoadBalancerRuleInstancesResponse, error) {
 	resp, err := s.cs.newRequest("listLoadBalancerRuleInstances", p.toURLValues())
@@ -1557,140 +2002,8 @@ type ListLoadBalancerRuleInstancesResponse struct {
 }
 
 type LoadBalancerRuleInstance struct {
-	Account       string `json:"account,omitempty"`
-	Affinitygroup []struct {
-		Account           string   `json:"account,omitempty"`
-		Description       string   `json:"description,omitempty"`
-		Domain            string   `json:"domain,omitempty"`
-		Domainid          string   `json:"domainid,omitempty"`
-		Id                string   `json:"id,omitempty"`
-		Name              string   `json:"name,omitempty"`
-		Type              string   `json:"type,omitempty"`
-		VirtualmachineIds []string `json:"virtualmachineIds,omitempty"`
-	} `json:"affinitygroup,omitempty"`
-	Cpunumber             int               `json:"cpunumber,omitempty"`
-	Cpuspeed              int               `json:"cpuspeed,omitempty"`
-	Cpuused               string            `json:"cpuused,omitempty"`
-	Created               string            `json:"created,omitempty"`
-	Details               map[string]string `json:"details,omitempty"`
-	Diskioread            int               `json:"diskioread,omitempty"`
-	Diskiowrite           int               `json:"diskiowrite,omitempty"`
-	Diskkbsread           int               `json:"diskkbsread,omitempty"`
-	Diskkbswrite          int               `json:"diskkbswrite,omitempty"`
-	Displayname           string            `json:"displayname,omitempty"`
-	Displayvm             bool              `json:"displayvm,omitempty"`
-	Domain                string            `json:"domain,omitempty"`
-	Domainid              string            `json:"domainid,omitempty"`
-	Forvirtualnetwork     bool              `json:"forvirtualnetwork,omitempty"`
-	Group                 string            `json:"group,omitempty"`
-	Groupid               string            `json:"groupid,omitempty"`
-	Guestosid             string            `json:"guestosid,omitempty"`
-	Haenable              bool              `json:"haenable,omitempty"`
-	Hostid                string            `json:"hostid,omitempty"`
-	Hostname              string            `json:"hostname,omitempty"`
-	Hypervisor            string            `json:"hypervisor,omitempty"`
-	Id                    string            `json:"id,omitempty"`
-	Instancename          string            `json:"instancename,omitempty"`
-	Isdynamicallyscalable bool              `json:"isdynamicallyscalable,omitempty"`
-	Isodisplaytext        string            `json:"isodisplaytext,omitempty"`
-	Isoid                 string            `json:"isoid,omitempty"`
-	Isoname               string            `json:"isoname,omitempty"`
-	Keypair               string            `json:"keypair,omitempty"`
-	Memory                int               `json:"memory,omitempty"`
-	Name                  string            `json:"name,omitempty"`
-	Networkkbsread        int               `json:"networkkbsread,omitempty"`
-	Networkkbswrite       int               `json:"networkkbswrite,omitempty"`
-	Nic                   []struct {
-		Broadcasturi string   `json:"broadcasturi,omitempty"`
-		Gateway      string   `json:"gateway,omitempty"`
-		Id           string   `json:"id,omitempty"`
-		Ip6address   string   `json:"ip6address,omitempty"`
-		Ip6cidr      string   `json:"ip6cidr,omitempty"`
-		Ip6gateway   string   `json:"ip6gateway,omitempty"`
-		Ipaddress    string   `json:"ipaddress,omitempty"`
-		Isdefault    bool     `json:"isdefault,omitempty"`
-		Isolationuri string   `json:"isolationuri,omitempty"`
-		Macaddress   string   `json:"macaddress,omitempty"`
-		Netmask      string   `json:"netmask,omitempty"`
-		Networkid    string   `json:"networkid,omitempty"`
-		Networkname  string   `json:"networkname,omitempty"`
-		Secondaryip  []string `json:"secondaryip,omitempty"`
-		Traffictype  string   `json:"traffictype,omitempty"`
-		Type         string   `json:"type,omitempty"`
-	} `json:"nic,omitempty"`
-	Password        string `json:"password,omitempty"`
-	Passwordenabled bool   `json:"passwordenabled,omitempty"`
-	Project         string `json:"project,omitempty"`
-	Projectid       string `json:"projectid,omitempty"`
-	Publicip        string `json:"publicip,omitempty"`
-	Publicipid      string `json:"publicipid,omitempty"`
-	Rootdeviceid    int    `json:"rootdeviceid,omitempty"`
-	Rootdevicetype  string `json:"rootdevicetype,omitempty"`
-	Securitygroup   []struct {
-		Account     string `json:"account,omitempty"`
-		Description string `json:"description,omitempty"`
-		Domain      string `json:"domain,omitempty"`
-		Domainid    string `json:"domainid,omitempty"`
-		Egressrule  []struct {
-			Account           string `json:"account,omitempty"`
-			Cidr              string `json:"cidr,omitempty"`
-			Endport           int    `json:"endport,omitempty"`
-			Icmpcode          int    `json:"icmpcode,omitempty"`
-			Icmptype          int    `json:"icmptype,omitempty"`
-			Protocol          string `json:"protocol,omitempty"`
-			Ruleid            string `json:"ruleid,omitempty"`
-			Securitygroupname string `json:"securitygroupname,omitempty"`
-			Startport         int    `json:"startport,omitempty"`
-		} `json:"egressrule,omitempty"`
-		Id          string `json:"id,omitempty"`
-		Ingressrule []struct {
-			Account           string `json:"account,omitempty"`
-			Cidr              string `json:"cidr,omitempty"`
-			Endport           int    `json:"endport,omitempty"`
-			Icmpcode          int    `json:"icmpcode,omitempty"`
-			Icmptype          int    `json:"icmptype,omitempty"`
-			Protocol          string `json:"protocol,omitempty"`
-			Ruleid            string `json:"ruleid,omitempty"`
-			Securitygroupname string `json:"securitygroupname,omitempty"`
-			Startport         int    `json:"startport,omitempty"`
-		} `json:"ingressrule,omitempty"`
-		Name      string `json:"name,omitempty"`
-		Project   string `json:"project,omitempty"`
-		Projectid string `json:"projectid,omitempty"`
-		Tags      []struct {
-			Account      string `json:"account,omitempty"`
-			Customer     string `json:"customer,omitempty"`
-			Domain       string `json:"domain,omitempty"`
-			Domainid     string `json:"domainid,omitempty"`
-			Key          string `json:"key,omitempty"`
-			Project      string `json:"project,omitempty"`
-			Projectid    string `json:"projectid,omitempty"`
-			Resourceid   string `json:"resourceid,omitempty"`
-			Resourcetype string `json:"resourcetype,omitempty"`
-			Value        string `json:"value,omitempty"`
-		} `json:"tags,omitempty"`
-	} `json:"securitygroup,omitempty"`
-	Serviceofferingid   string `json:"serviceofferingid,omitempty"`
-	Serviceofferingname string `json:"serviceofferingname,omitempty"`
-	Servicestate        string `json:"servicestate,omitempty"`
-	State               string `json:"state,omitempty"`
-	Tags                []struct {
-		Account      string `json:"account,omitempty"`
-		Customer     string `json:"customer,omitempty"`
-		Domain       string `json:"domain,omitempty"`
-		Domainid     string `json:"domainid,omitempty"`
-		Key          string `json:"key,omitempty"`
-		Project      string `json:"project,omitempty"`
-		Projectid    string `json:"projectid,omitempty"`
-		Resourceid   string `json:"resourceid,omitempty"`
-		Resourcetype string `json:"resourcetype,omitempty"`
-		Value        string `json:"value,omitempty"`
-	} `json:"tags,omitempty"`
-	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
-	Templateid          string `json:"templateid,omitempty"`
-	Templatename        string `json:"templatename,omitempty"`
-	Zoneid              string `json:"zoneid,omitempty"`
-	Zonename            string `json:"zonename,omitempty"`
+	Lbvmipaddresses          []string `json:"lbvmipaddresses,omitempty"`
+	Loadbalancerruleinstance string   `json:"loadbalancerruleinstance,omitempty"`
 }
 
 type UpdateLoadBalancerRuleParams struct {
@@ -1705,8 +2018,15 @@ func (p *UpdateLoadBalancerRuleParams) toURLValues() url.Values {
 	if v, found := p.p["algorithm"]; found {
 		u.Set("algorithm", v.(string))
 	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
 	if v, found := p.p["description"]; found {
 		u.Set("description", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
@@ -1725,11 +2045,27 @@ func (p *UpdateLoadBalancerRuleParams) SetAlgorithm(v string) {
 	return
 }
 
+func (p *UpdateLoadBalancerRuleParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
 func (p *UpdateLoadBalancerRuleParams) SetDescription(v string) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
 	}
 	p.p["description"] = v
+	return
+}
+
+func (p *UpdateLoadBalancerRuleParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -1802,6 +2138,7 @@ type UpdateLoadBalancerRuleResponse struct {
 	Description string `json:"description,omitempty"`
 	Domain      string `json:"domain,omitempty"`
 	Domainid    string `json:"domainid,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Id          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Networkid   string `json:"networkid,omitempty"`
@@ -1837,11 +2174,17 @@ func (p *UploadSslCertParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["account"]; found {
+		u.Set("account", v.(string))
+	}
 	if v, found := p.p["certchain"]; found {
 		u.Set("certchain", v.(string))
 	}
 	if v, found := p.p["certificate"]; found {
 		u.Set("certificate", v.(string))
+	}
+	if v, found := p.p["domainid"]; found {
+		u.Set("domainid", v.(string))
 	}
 	if v, found := p.p["password"]; found {
 		u.Set("password", v.(string))
@@ -1849,7 +2192,18 @@ func (p *UploadSslCertParams) toURLValues() url.Values {
 	if v, found := p.p["privatekey"]; found {
 		u.Set("privatekey", v.(string))
 	}
+	if v, found := p.p["projectid"]; found {
+		u.Set("projectid", v.(string))
+	}
 	return u
+}
+
+func (p *UploadSslCertParams) SetAccount(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["account"] = v
+	return
 }
 
 func (p *UploadSslCertParams) SetCertchain(v string) {
@@ -1868,6 +2222,14 @@ func (p *UploadSslCertParams) SetCertificate(v string) {
 	return
 }
 
+func (p *UploadSslCertParams) SetDomainid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["domainid"] = v
+	return
+}
+
 func (p *UploadSslCertParams) SetPassword(v string) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
@@ -1881,6 +2243,14 @@ func (p *UploadSslCertParams) SetPrivatekey(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["privatekey"] = v
+	return
+}
+
+func (p *UploadSslCertParams) SetProjectid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["projectid"] = v
 	return
 }
 
@@ -1912,10 +2282,13 @@ type UploadSslCertResponse struct {
 	Account              string   `json:"account,omitempty"`
 	Certchain            string   `json:"certchain,omitempty"`
 	Certificate          string   `json:"certificate,omitempty"`
+	Domain               string   `json:"domain,omitempty"`
+	Domainid             string   `json:"domainid,omitempty"`
 	Fingerprint          string   `json:"fingerprint,omitempty"`
 	Id                   string   `json:"id,omitempty"`
 	Loadbalancerrulelist []string `json:"loadbalancerrulelist,omitempty"`
-	Privatekey           string   `json:"privatekey,omitempty"`
+	Project              string   `json:"project,omitempty"`
+	Projectid            string   `json:"projectid,omitempty"`
 }
 
 type DeleteSslCertParams struct {
@@ -1987,6 +2360,9 @@ func (p *ListSslCertsParams) toURLValues() url.Values {
 	if v, found := p.p["lbruleid"]; found {
 		u.Set("lbruleid", v.(string))
 	}
+	if v, found := p.p["projectid"]; found {
+		u.Set("projectid", v.(string))
+	}
 	return u
 }
 
@@ -2011,6 +2387,14 @@ func (p *ListSslCertsParams) SetLbruleid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["lbruleid"] = v
+	return
+}
+
+func (p *ListSslCertsParams) SetProjectid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["projectid"] = v
 	return
 }
 
@@ -2045,10 +2429,13 @@ type SslCert struct {
 	Account              string   `json:"account,omitempty"`
 	Certchain            string   `json:"certchain,omitempty"`
 	Certificate          string   `json:"certificate,omitempty"`
+	Domain               string   `json:"domain,omitempty"`
+	Domainid             string   `json:"domainid,omitempty"`
 	Fingerprint          string   `json:"fingerprint,omitempty"`
 	Id                   string   `json:"id,omitempty"`
 	Loadbalancerrulelist []string `json:"loadbalancerrulelist,omitempty"`
-	Privatekey           string   `json:"privatekey,omitempty"`
+	Project              string   `json:"project,omitempty"`
+	Projectid            string   `json:"projectid,omitempty"`
 }
 
 type AssignCertToLoadBalancerParams struct {
@@ -2199,408 +2586,6 @@ type RemoveCertFromLoadBalancerResponse struct {
 	JobID       string `json:"jobid,omitempty"`
 	Displaytext string `json:"displaytext,omitempty"`
 	Success     bool   `json:"success,omitempty"`
-}
-
-type AddF5LoadBalancerParams struct {
-	p map[string]interface{}
-}
-
-func (p *AddF5LoadBalancerParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["networkdevicetype"]; found {
-		u.Set("networkdevicetype", v.(string))
-	}
-	if v, found := p.p["password"]; found {
-		u.Set("password", v.(string))
-	}
-	if v, found := p.p["physicalnetworkid"]; found {
-		u.Set("physicalnetworkid", v.(string))
-	}
-	if v, found := p.p["url"]; found {
-		u.Set("url", v.(string))
-	}
-	if v, found := p.p["username"]; found {
-		u.Set("username", v.(string))
-	}
-	return u
-}
-
-func (p *AddF5LoadBalancerParams) SetNetworkdevicetype(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["networkdevicetype"] = v
-	return
-}
-
-func (p *AddF5LoadBalancerParams) SetPassword(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["password"] = v
-	return
-}
-
-func (p *AddF5LoadBalancerParams) SetPhysicalnetworkid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["physicalnetworkid"] = v
-	return
-}
-
-func (p *AddF5LoadBalancerParams) SetUrl(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["url"] = v
-	return
-}
-
-func (p *AddF5LoadBalancerParams) SetUsername(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["username"] = v
-	return
-}
-
-// You should always use this function to get a new AddF5LoadBalancerParams instance,
-// as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewAddF5LoadBalancerParams(networkdevicetype string, password string, physicalnetworkid string, url string, username string) *AddF5LoadBalancerParams {
-	p := &AddF5LoadBalancerParams{}
-	p.p = make(map[string]interface{})
-	p.p["networkdevicetype"] = networkdevicetype
-	p.p["password"] = password
-	p.p["physicalnetworkid"] = physicalnetworkid
-	p.p["url"] = url
-	p.p["username"] = username
-	return p
-}
-
-// Adds a F5 BigIP load balancer device
-func (s *LoadBalancerService) AddF5LoadBalancer(p *AddF5LoadBalancerParams) (*AddF5LoadBalancerResponse, error) {
-	resp, err := s.cs.newRequest("addF5LoadBalancer", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r AddF5LoadBalancerResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-
-	// If we have a async client, we need to wait for the async result
-	if s.cs.async {
-		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
-		if err != nil {
-			return nil, err
-		}
-		// If 'warn' has a value it means the job is running longer than the configured
-		// timeout, the resonse will contain the jobid of the running async job
-		if warn != nil {
-			return &r, warn
-		}
-
-		b, err = getRawValue(b)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := json.Unmarshal(b, &r); err != nil {
-			return nil, err
-		}
-	}
-	return &r, nil
-}
-
-type AddF5LoadBalancerResponse struct {
-	JobID             string `json:"jobid,omitempty"`
-	Ipaddress         string `json:"ipaddress,omitempty"`
-	Lbdevicecapacity  int    `json:"lbdevicecapacity,omitempty"`
-	Lbdevicededicated bool   `json:"lbdevicededicated,omitempty"`
-	Lbdeviceid        string `json:"lbdeviceid,omitempty"`
-	Lbdevicename      string `json:"lbdevicename,omitempty"`
-	Lbdevicestate     string `json:"lbdevicestate,omitempty"`
-	Physicalnetworkid string `json:"physicalnetworkid,omitempty"`
-	Privateinterface  string `json:"privateinterface,omitempty"`
-	Provider          string `json:"provider,omitempty"`
-	Publicinterface   string `json:"publicinterface,omitempty"`
-}
-
-type ConfigureF5LoadBalancerParams struct {
-	p map[string]interface{}
-}
-
-func (p *ConfigureF5LoadBalancerParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["lbdevicecapacity"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("lbdevicecapacity", vv)
-	}
-	if v, found := p.p["lbdeviceid"]; found {
-		u.Set("lbdeviceid", v.(string))
-	}
-	return u
-}
-
-func (p *ConfigureF5LoadBalancerParams) SetLbdevicecapacity(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["lbdevicecapacity"] = v
-	return
-}
-
-func (p *ConfigureF5LoadBalancerParams) SetLbdeviceid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["lbdeviceid"] = v
-	return
-}
-
-// You should always use this function to get a new ConfigureF5LoadBalancerParams instance,
-// as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewConfigureF5LoadBalancerParams(lbdeviceid string) *ConfigureF5LoadBalancerParams {
-	p := &ConfigureF5LoadBalancerParams{}
-	p.p = make(map[string]interface{})
-	p.p["lbdeviceid"] = lbdeviceid
-	return p
-}
-
-// configures a F5 load balancer device
-func (s *LoadBalancerService) ConfigureF5LoadBalancer(p *ConfigureF5LoadBalancerParams) (*ConfigureF5LoadBalancerResponse, error) {
-	resp, err := s.cs.newRequest("configureF5LoadBalancer", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r ConfigureF5LoadBalancerResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-
-	// If we have a async client, we need to wait for the async result
-	if s.cs.async {
-		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
-		if err != nil {
-			return nil, err
-		}
-		// If 'warn' has a value it means the job is running longer than the configured
-		// timeout, the resonse will contain the jobid of the running async job
-		if warn != nil {
-			return &r, warn
-		}
-
-		b, err = getRawValue(b)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := json.Unmarshal(b, &r); err != nil {
-			return nil, err
-		}
-	}
-	return &r, nil
-}
-
-type ConfigureF5LoadBalancerResponse struct {
-	JobID             string `json:"jobid,omitempty"`
-	Ipaddress         string `json:"ipaddress,omitempty"`
-	Lbdevicecapacity  int    `json:"lbdevicecapacity,omitempty"`
-	Lbdevicededicated bool   `json:"lbdevicededicated,omitempty"`
-	Lbdeviceid        string `json:"lbdeviceid,omitempty"`
-	Lbdevicename      string `json:"lbdevicename,omitempty"`
-	Lbdevicestate     string `json:"lbdevicestate,omitempty"`
-	Physicalnetworkid string `json:"physicalnetworkid,omitempty"`
-	Privateinterface  string `json:"privateinterface,omitempty"`
-	Provider          string `json:"provider,omitempty"`
-	Publicinterface   string `json:"publicinterface,omitempty"`
-}
-
-type DeleteF5LoadBalancerParams struct {
-	p map[string]interface{}
-}
-
-func (p *DeleteF5LoadBalancerParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["lbdeviceid"]; found {
-		u.Set("lbdeviceid", v.(string))
-	}
-	return u
-}
-
-func (p *DeleteF5LoadBalancerParams) SetLbdeviceid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["lbdeviceid"] = v
-	return
-}
-
-// You should always use this function to get a new DeleteF5LoadBalancerParams instance,
-// as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewDeleteF5LoadBalancerParams(lbdeviceid string) *DeleteF5LoadBalancerParams {
-	p := &DeleteF5LoadBalancerParams{}
-	p.p = make(map[string]interface{})
-	p.p["lbdeviceid"] = lbdeviceid
-	return p
-}
-
-//  delete a F5 load balancer device
-func (s *LoadBalancerService) DeleteF5LoadBalancer(p *DeleteF5LoadBalancerParams) (*DeleteF5LoadBalancerResponse, error) {
-	resp, err := s.cs.newRequest("deleteF5LoadBalancer", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r DeleteF5LoadBalancerResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-
-	// If we have a async client, we need to wait for the async result
-	if s.cs.async {
-		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
-		if err != nil {
-			return nil, err
-		}
-		// If 'warn' has a value it means the job is running longer than the configured
-		// timeout, the resonse will contain the jobid of the running async job
-		if warn != nil {
-			return &r, warn
-		}
-
-		if err := json.Unmarshal(b, &r); err != nil {
-			return nil, err
-		}
-	}
-	return &r, nil
-}
-
-type DeleteF5LoadBalancerResponse struct {
-	JobID       string `json:"jobid,omitempty"`
-	Displaytext string `json:"displaytext,omitempty"`
-	Success     bool   `json:"success,omitempty"`
-}
-
-type ListF5LoadBalancersParams struct {
-	p map[string]interface{}
-}
-
-func (p *ListF5LoadBalancersParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["keyword"]; found {
-		u.Set("keyword", v.(string))
-	}
-	if v, found := p.p["lbdeviceid"]; found {
-		u.Set("lbdeviceid", v.(string))
-	}
-	if v, found := p.p["page"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("page", vv)
-	}
-	if v, found := p.p["pagesize"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("pagesize", vv)
-	}
-	if v, found := p.p["physicalnetworkid"]; found {
-		u.Set("physicalnetworkid", v.(string))
-	}
-	return u
-}
-
-func (p *ListF5LoadBalancersParams) SetKeyword(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["keyword"] = v
-	return
-}
-
-func (p *ListF5LoadBalancersParams) SetLbdeviceid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["lbdeviceid"] = v
-	return
-}
-
-func (p *ListF5LoadBalancersParams) SetPage(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["page"] = v
-	return
-}
-
-func (p *ListF5LoadBalancersParams) SetPagesize(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["pagesize"] = v
-	return
-}
-
-func (p *ListF5LoadBalancersParams) SetPhysicalnetworkid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["physicalnetworkid"] = v
-	return
-}
-
-// You should always use this function to get a new ListF5LoadBalancersParams instance,
-// as then you are sure you have configured all required params
-func (s *LoadBalancerService) NewListF5LoadBalancersParams() *ListF5LoadBalancersParams {
-	p := &ListF5LoadBalancersParams{}
-	p.p = make(map[string]interface{})
-	return p
-}
-
-// lists F5 load balancer devices
-func (s *LoadBalancerService) ListF5LoadBalancers(p *ListF5LoadBalancersParams) (*ListF5LoadBalancersResponse, error) {
-	resp, err := s.cs.newRequest("listF5LoadBalancers", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r ListF5LoadBalancersResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-	return &r, nil
-}
-
-type ListF5LoadBalancersResponse struct {
-	Count           int               `json:"count"`
-	F5LoadBalancers []*F5LoadBalancer `json:"f5loadbalancer"`
-}
-
-type F5LoadBalancer struct {
-	Ipaddress         string `json:"ipaddress,omitempty"`
-	Lbdevicecapacity  int    `json:"lbdevicecapacity,omitempty"`
-	Lbdevicededicated bool   `json:"lbdevicededicated,omitempty"`
-	Lbdeviceid        string `json:"lbdeviceid,omitempty"`
-	Lbdevicename      string `json:"lbdevicename,omitempty"`
-	Lbdevicestate     string `json:"lbdevicestate,omitempty"`
-	Physicalnetworkid string `json:"physicalnetworkid,omitempty"`
-	Privateinterface  string `json:"privateinterface,omitempty"`
-	Provider          string `json:"provider,omitempty"`
-	Publicinterface   string `json:"publicinterface,omitempty"`
 }
 
 type AddNetscalerLoadBalancerParams struct {
@@ -3280,6 +3265,7 @@ type CreateGlobalLoadBalancerRuleResponse struct {
 		Description string `json:"description,omitempty"`
 		Domain      string `json:"domain,omitempty"`
 		Domainid    string `json:"domainid,omitempty"`
+		Fordisplay  bool   `json:"fordisplay,omitempty"`
 		Id          string `json:"id,omitempty"`
 		Name        string `json:"name,omitempty"`
 		Networkid   string `json:"networkid,omitempty"`
@@ -3499,6 +3485,7 @@ type UpdateGlobalLoadBalancerRuleResponse struct {
 		Description string `json:"description,omitempty"`
 		Domain      string `json:"domain,omitempty"`
 		Domainid    string `json:"domainid,omitempty"`
+		Fordisplay  bool   `json:"fordisplay,omitempty"`
 		Id          string `json:"id,omitempty"`
 		Name        string `json:"name,omitempty"`
 		Networkid   string `json:"networkid,omitempty"`
@@ -3788,6 +3775,7 @@ type GlobalLoadBalancerRule struct {
 		Description string `json:"description,omitempty"`
 		Domain      string `json:"domain,omitempty"`
 		Domainid    string `json:"domainid,omitempty"`
+		Fordisplay  bool   `json:"fordisplay,omitempty"`
 		Id          string `json:"id,omitempty"`
 		Name        string `json:"name,omitempty"`
 		Networkid   string `json:"networkid,omitempty"`
@@ -4014,6 +4002,10 @@ func (p *CreateLoadBalancerParams) toURLValues() url.Values {
 	if v, found := p.p["description"]; found {
 		u.Set("description", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["instanceport"]; found {
 		vv := strconv.Itoa(v.(int))
 		u.Set("instanceport", vv)
@@ -4053,6 +4045,14 @@ func (p *CreateLoadBalancerParams) SetDescription(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["description"] = v
+	return
+}
+
+func (p *CreateLoadBalancerParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -4170,6 +4170,7 @@ type CreateLoadBalancerResponse struct {
 	Description          string `json:"description,omitempty"`
 	Domain               string `json:"domain,omitempty"`
 	Domainid             string `json:"domainid,omitempty"`
+	Fordisplay           bool   `json:"fordisplay,omitempty"`
 	Id                   string `json:"id,omitempty"`
 	Loadbalancerinstance []struct {
 		Id        string `json:"id,omitempty"`
@@ -4216,6 +4217,10 @@ func (p *ListLoadBalancersParams) toURLValues() url.Values {
 	}
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
@@ -4281,6 +4286,14 @@ func (p *ListLoadBalancersParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListLoadBalancersParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -4492,6 +4505,7 @@ type LoadBalancer struct {
 	Description          string `json:"description,omitempty"`
 	Domain               string `json:"domain,omitempty"`
 	Domainid             string `json:"domainid,omitempty"`
+	Fordisplay           bool   `json:"fordisplay,omitempty"`
 	Id                   string `json:"id,omitempty"`
 	Loadbalancerinstance []struct {
 		Id        string `json:"id,omitempty"`
@@ -4591,4 +4605,135 @@ type DeleteLoadBalancerResponse struct {
 	JobID       string `json:"jobid,omitempty"`
 	Displaytext string `json:"displaytext,omitempty"`
 	Success     bool   `json:"success,omitempty"`
+}
+
+type UpdateLoadBalancerParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateLoadBalancerParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateLoadBalancerParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateLoadBalancerParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateLoadBalancerParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateLoadBalancerParams instance,
+// as then you are sure you have configured all required params
+func (s *LoadBalancerService) NewUpdateLoadBalancerParams(id string) *UpdateLoadBalancerParams {
+	p := &UpdateLoadBalancerParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates a Load Balancer
+func (s *LoadBalancerService) UpdateLoadBalancer(p *UpdateLoadBalancerParams) (*UpdateLoadBalancerResponse, error) {
+	resp, err := s.cs.newRequest("updateLoadBalancer", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateLoadBalancerResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateLoadBalancerResponse struct {
+	JobID                string `json:"jobid,omitempty"`
+	Account              string `json:"account,omitempty"`
+	Algorithm            string `json:"algorithm,omitempty"`
+	Description          string `json:"description,omitempty"`
+	Domain               string `json:"domain,omitempty"`
+	Domainid             string `json:"domainid,omitempty"`
+	Fordisplay           bool   `json:"fordisplay,omitempty"`
+	Id                   string `json:"id,omitempty"`
+	Loadbalancerinstance []struct {
+		Id        string `json:"id,omitempty"`
+		Ipaddress string `json:"ipaddress,omitempty"`
+		Name      string `json:"name,omitempty"`
+		State     string `json:"state,omitempty"`
+	} `json:"loadbalancerinstance,omitempty"`
+	Loadbalancerrule []struct {
+		Instanceport int    `json:"instanceport,omitempty"`
+		Sourceport   int    `json:"sourceport,omitempty"`
+		State        string `json:"state,omitempty"`
+	} `json:"loadbalancerrule,omitempty"`
+	Name                     string `json:"name,omitempty"`
+	Networkid                string `json:"networkid,omitempty"`
+	Project                  string `json:"project,omitempty"`
+	Projectid                string `json:"projectid,omitempty"`
+	Sourceipaddress          string `json:"sourceipaddress,omitempty"`
+	Sourceipaddressnetworkid string `json:"sourceipaddressnetworkid,omitempty"`
+	Tags                     []struct {
+		Account      string `json:"account,omitempty"`
+		Customer     string `json:"customer,omitempty"`
+		Domain       string `json:"domain,omitempty"`
+		Domainid     string `json:"domainid,omitempty"`
+		Key          string `json:"key,omitempty"`
+		Project      string `json:"project,omitempty"`
+		Projectid    string `json:"projectid,omitempty"`
+		Resourceid   string `json:"resourceid,omitempty"`
+		Resourcetype string `json:"resourcetype,omitempty"`
+		Value        string `json:"value,omitempty"`
+	} `json:"tags,omitempty"`
 }
