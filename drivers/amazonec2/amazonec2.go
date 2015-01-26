@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os/exec"
 	"path"
+	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -42,8 +45,8 @@ type Driver struct {
 	InstanceType      string
 	IPAddress         string
 	MachineName       string
-	SecurityGroupName string
 	SecurityGroupId   string
+	SecurityGroupName string
 	ReservationId     string
 	RootSize          int64
 	VpcId             string
@@ -53,6 +56,8 @@ type Driver struct {
 	PrivateKeyPath    string
 	storePath         string
 	keyPath           string
+	swarmMaster       bool
+	swarmHost         string
 }
 
 type CreateFlags struct {
@@ -170,6 +175,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
+	d.swarmMaster = flags.Bool("swarm-master")
+	d.swarmHost = flags.String("swarm-host")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -556,6 +563,10 @@ func (d *Driver) terminate() error {
 	return nil
 }
 
+func (d *Driver) isSwarmMaster() bool {
+	return d.swarmMaster
+}
+
 func (d *Driver) configureSecurityGroup(groupName string) error {
 	log.Debugf("configuring security group in %s", d.VpcId)
 
@@ -596,11 +607,32 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 
 	d.SecurityGroupId = securityGroup.GroupId
 
+	perms := configureSecurityGroupPermissions(securityGroup)
+
 	// configure swarm permission if needed
+	if d.isSwarmMaster() {
+		u, err := url.Parse(d.swarmHost)
+		if err != nil {
+			return fmt.Errorf("error authorizing port for swarm: %s", err)
+		}
+
+		parts := strings.Split(u.Host, ":")
+		port, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return err
+		}
+
+		log.Debugf("authorizing swarm on port %d", port)
+
+		perms = append(perms, amz.IpPermission{
+			IpProtocol: "tcp",
+			FromPort:   port,
+			ToPort:     port,
+			IpRange:    ipRange,
+		})
+	}
 
 	log.Debugf("configuring security group authorization for %s", ipRange)
-
-	perms := configureSecurityGroupPermissions(securityGroup)
 
 	if len(perms) != 0 {
 		log.Debugf("authorizing group %s with permissions: %v", securityGroup.GroupName, perms)
