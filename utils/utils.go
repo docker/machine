@@ -3,6 +3,7 @@ package utils
 import (
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 )
@@ -24,6 +25,15 @@ func GetMachineDir() string {
 
 func GetMachineClientCertDir() string {
 	return filepath.Join(GetMachineDir(), ".client")
+}
+
+func GetUsername() (string, error) {
+	u, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return u.Username, nil
 }
 
 func CopyFile(src, dst string) error {

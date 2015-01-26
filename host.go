@@ -117,7 +117,8 @@ func (h *Host) ConfigureAuth() error {
 	caKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
 	serverCertPath := filepath.Join(h.storePath, "server.pem")
 	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
-	org := "docker"
+
+	org := h.Name
 	bits := 2048
 
 	log.Debugf("generating server cert: %s", serverCertPath)
