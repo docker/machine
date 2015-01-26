@@ -3,7 +3,6 @@ package digitalocean
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
@@ -58,7 +57,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "DIGITALOCEAN_IMAGE",
 			Name:   "digitalocean-image",
 			Usage:  "Digital Ocean Image",
-			Value:  "docker",
+			Value:  "ubuntu-14-04-x64",
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_REGION",
@@ -166,6 +165,18 @@ func (d *Driver) Create() error {
 	}
 	if err := cmd.Run(); err != nil {
 		return err
+	}
+
+	log.Debugf("Installing Docker")
+
+	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
+	if err != nil {
+		return err
+
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+
 	}
 
 	return nil
@@ -297,17 +308,19 @@ func (d *Driver) GetDockerConfigDir() string {
 }
 
 func (d *Driver) Upgrade() error {
-	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install lxc-docker")
+	log.Debugf("Upgrading Docker")
+
+	cmd, err := d.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
 	if err != nil {
 		return err
+
 	}
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		return fmt.Errorf("%s", err)
+	if err := cmd.Run(); err != nil {
+		return err
+
 	}
-	return nil
+
+	return cmd.Run()
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
