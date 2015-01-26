@@ -68,10 +68,9 @@ var Commands = []cli.Command{
 				),
 				Value: "none",
 			},
-			cli.StringFlag{
-				Name:  "docker-opts",
-				Usage: "Options to append to the remote Docker Daemon's configuration",
-				Value: "",
+			cli.StringSliceFlag{
+				Name:  "docker-opt",
+				Usage: "Option to append to the remote Docker Daemon's configuration",
 			},
 		),
 		Name:   "create",
@@ -188,7 +187,7 @@ func cmdActive(c *cli.Context) {
 func cmdCreate(c *cli.Context) {
 	driver := c.String("driver")
 	name := c.Args().First()
-	dockerOpts := c.String("docker-opts")
+	dockerOpts := c.StringSlice("docker-opt")
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")

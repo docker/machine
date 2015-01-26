@@ -25,7 +25,7 @@ func NewStore(rootPath string, caCert string, privateKey string) *Store {
 	return &Store{Path: rootPath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 }
 
-func (s *Store) Create(name string, driverName string, remoteDockerOpts string, flags drivers.DriverOptions) (*Host, error) {
+func (s *Store) Create(name string, driverName string, remoteDockerOpts []string, flags drivers.DriverOptions) (*Host, error) {
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (s *Store) Create(name string, driverName string, remoteDockerOpts string, 
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, hostPath, remoteDockerOpts, s.CaCertPath, s.PrivateKeyPath)
+	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath, remoteDockerOpts)
 	if err != nil {
 		return host, err
 	}

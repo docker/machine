@@ -66,7 +66,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath, remoteDockerOpts, caCert, privateKey string) (*Host, error) {
+func NewHost(name, driverName, storePath, caCert, privateKey string, remoteDockerOpts []string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func NewHost(name, driverName, storePath, remoteDockerOpts, caCert, privateKey s
 		CaCertPath:       caCert,
 		PrivateKeyPath:   privateKey,
 		storePath:        storePath,
-		RemoteDockerOpts: parseDockerOpts(remoteDockerOpts),
+		RemoteDockerOpts: remoteDockerOpts,
 	}, nil
 }
 
@@ -532,30 +532,30 @@ func (h *Host) ConfigureRemoteDockerDaemon() error {
 	return nil
 }
 
-func parseDockerOpts(dockerOptsToParse string) []string {
+// func parseDockerOpts(dockerOptsToParse string) []string {
 
-	var parsedDockerOpts []string
+// 	var parsedDockerOpts []string
 
-	// First pass will detect "--" prefixed arguments
-	firstPassParsedDockerOpts := strings.Split(dockerOptsToParse, "--")
+// 	// First pass will detect "--" prefixed arguments
+// 	firstPassParsedDockerOpts := strings.Split(dockerOptsToParse, "--")
 
-	for i := 0; i < len(firstPassParsedDockerOpts); i++ {
-		// Second pass will detect " " prefixed arguments
-		secondPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], " ")
-		if len(secondPassParsedDockerOpts) > 1 {
-			// 3rd pass is run only when we detect space elements : we have obvioulsy single slashed args
-			thirdPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], "-")
-			for j := 0; j < len(thirdPassParsedDockerOpts); j++ {
-				if len(thirdPassParsedDockerOpts[j]) > 0 {
-					parsedDockerOpts = append(parsedDockerOpts, "-"+thirdPassParsedDockerOpts[j])
-				}
-			}
-		} else {
-			if len(firstPassParsedDockerOpts[i]) > 0 {
-				parsedDockerOpts = append(parsedDockerOpts, "--"+firstPassParsedDockerOpts[i])
-			}
-		}
-	}
+// 	for i := 0; i < len(firstPassParsedDockerOpts); i++ {
+// 		// Second pass will detect " " prefixed arguments
+// 		secondPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], " ")
+// 		if len(secondPassParsedDockerOpts) > 1 {
+// 			// 3rd pass is run only when we detect space elements : we have obvioulsy single slashed args
+// 			thirdPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], "-")
+// 			for j := 0; j < len(thirdPassParsedDockerOpts); j++ {
+// 				if len(thirdPassParsedDockerOpts[j]) > 0 {
+// 					parsedDockerOpts = append(parsedDockerOpts, "-"+thirdPassParsedDockerOpts[j])
+// 				}
+// 			}
+// 		} else {
+// 			if len(firstPassParsedDockerOpts[i]) > 0 {
+// 				parsedDockerOpts = append(parsedDockerOpts, "--"+firstPassParsedDockerOpts[i])
+// 			}
+// 		}
+// 	}
 
-	return parsedDockerOpts
-}
+// 	return parsedDockerOpts
+// }
