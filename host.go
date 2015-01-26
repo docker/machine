@@ -25,7 +25,7 @@ var (
 	ErrInvalidHostname   = errors.New("Invalid hostname specified")
 )
 
-var HostOSTypeNotKnown = errors.New("Host OS type is not known")
+var ErrHostOSTypeNotKnown = errors.New("Host OS type is not known")
 
 type Host struct {
 	Name                 string `json:"-"`
@@ -451,7 +451,7 @@ func (h *Host) getDockerConfigFilePath() (string, error) {
 	case "boot2docker":
 		return "/var/lib/boot2docker/profile", nil
 	default:
-		return "", HostOSTypeNotKnown
+		return "", ErrHostOSTypeNotKnown
 	}
 }
 
@@ -461,7 +461,7 @@ func (h *Host) getDockerRestartCmd() (string, error) {
 	case "boot2docker":
 		return "sudo /etc/init.d/docker restart", nil
 	default:
-		return "", HostOSTypeNotKnown
+		return "", ErrHostOSTypeNotKnown
 	}
 }
 
@@ -471,7 +471,7 @@ func (h *Host) getDockerOptsVarName() (string, error) {
 	case "boot2docker":
 		return "EXTRA_ARGS", nil
 	default:
-		return "", HostOSTypeNotKnown
+		return "", ErrHostOSTypeNotKnown
 	}
 }
 
