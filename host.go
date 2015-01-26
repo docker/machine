@@ -10,9 +10,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+<<<<<<< HEAD
 	"strconv"
 	"strings"
 	"time"
+=======
+	"strings"
+>>>>>>> 25fab12a72f66e413984b5bc384c7fcb0d3ab42d
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -43,11 +47,14 @@ type Host struct {
 	HostDockerConfigFile string
 	HostDockerRestartCmd string
 	HostDockerConfigKey  string
+<<<<<<< HEAD
 }
 
 type DockerConfig struct {
 	EngineConfig     string
 	EngineConfigPath string
+=======
+>>>>>>> 25fab12a72f66e413984b5bc384c7fcb0d3ab42d
 }
 
 type hostConfig struct {
@@ -316,6 +323,10 @@ func (h *Host) Create(name string) error {
 	}
 
 	if err := h.Driver.Create(); err != nil {
+		return err
+	}
+
+	if err := h.setHostOSDockerAttributes(); err != nil {
 		return err
 	}
 
