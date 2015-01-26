@@ -215,6 +215,10 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) PreCreateCheck() error {
+	return nil
+}
+
 // the current implementation does the following:
 // 1. check whether the docker directory contains the boot2docker ISO
 // 2. generate an SSH keypair

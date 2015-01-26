@@ -171,6 +171,10 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+func (driver *Driver) PreCreateCheck() error {
+	return nil
+}
+
 func (driver *Driver) Create() error {
 	if err := driver.setUserSubscription(); err != nil {
 		return err
