@@ -248,8 +248,7 @@ func (d *Driver) Create() error {
 			return err
 		}
 
-		// todo: use real constant for .docker
-		rootPath := filepath.Join(drivers.GetHomeDir(), ".docker")
+		rootPath := utils.GetDockerDir()
 		imgPath := filepath.Join(rootPath, "images")
 		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {

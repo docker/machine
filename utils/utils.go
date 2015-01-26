@@ -3,7 +3,38 @@ package utils
 import (
 	"io"
 	"os"
+	"os/user"
+	"path/filepath"
+	"runtime"
 )
+
+func GetHomeDir() string {
+	if runtime.GOOS == "windows" {
+		return os.Getenv("USERPROFILE")
+	}
+	return os.Getenv("HOME")
+}
+
+func GetDockerDir() string {
+	return filepath.Join(GetHomeDir(), ".docker")
+}
+
+func GetMachineDir() string {
+	return filepath.Join(GetDockerDir(), "machines")
+}
+
+func GetMachineClientCertDir() string {
+	return filepath.Join(GetMachineDir(), ".client")
+}
+
+func GetUsername() (string, error) {
+	u, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return u.Username, nil
+}
 
 func CopyFile(src, dst string) error {
 	in, err := os.Open(src)

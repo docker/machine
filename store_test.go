@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/utils"
 )
 
 type DriverOptionsMock struct {
@@ -27,7 +27,7 @@ func (d DriverOptionsMock) Bool(key string) bool {
 }
 
 func clearHosts() error {
-	return os.RemoveAll(path.Join(drivers.GetHomeDir(), ".docker", "machines"))
+	return os.RemoveAll(path.Join(utils.GetHomeDir(), ".docker", "machines"))
 }
 
 func TestStoreCreate(t *testing.T) {
@@ -50,7 +50,7 @@ func TestStoreCreate(t *testing.T) {
 	if host.Name != "test" {
 		t.Fatal("Host name is incorrect")
 	}
-	path := filepath.Join(drivers.GetHomeDir(), ".docker", "machines", "test")
+	path := filepath.Join(utils.GetHomeDir(), ".docker", "machines", "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -72,7 +72,7 @@ func TestStoreRemove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(drivers.GetHomeDir(), ".docker", "machines", "test")
+	path := filepath.Join(utils.GetHomeDir(), ".docker", "machines", "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}

@@ -40,10 +40,10 @@ func newCertificate(org string) (*x509.Certificate, error) {
 
 }
 
-// GenerateCACert generates a new certificate authority from the specified org
+// GenerateCACertificate generates a new certificate authority from the specified org
 // and bit size and stores the resulting certificate and key file
 // in the arguments.
-func GenerateCACert(certFile, keyFile, org string, bits int) error {
+func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
 	template, err := newCertificate(org)
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	}
 	// client
 	if len(hosts) == 1 && hosts[0] == "" {
-		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
 		template.KeyUsage = x509.KeyUsageDigitalSignature
 	} else { // server
 		for _, h := range hosts {

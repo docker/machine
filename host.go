@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -93,59 +94,15 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
-func (h *Host) GenerateCertificates() error {
+func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
 	var (
-		caPathExists     bool
-		privateKeyExists bool
-		org              = "docker-machine"
-		bits             = 2048
+		org  = "docker-machine"
+		bits = 2048
 	)
 
-	ip, err := h.Driver.GetIP()
-	if err != nil {
-		return err
-	}
+	clientCertPath := filepath.Join(utils.GetMachineDir(), "cert.pem")
+	clientKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
 
-	caCertPath := filepath.Join(h.storePath, "ca.pem")
-	privateKeyPath := filepath.Join(h.storePath, "private.pem")
-
-	if _, err := os.Stat(h.CaCertPath); os.IsNotExist(err) {
-		caPathExists = false
-	} else {
-		caPathExists = true
-	}
-
-	if _, err := os.Stat(h.PrivateKeyPath); os.IsNotExist(err) {
-		privateKeyExists = false
-	} else {
-		privateKeyExists = true
-	}
-
-	if !caPathExists && !privateKeyExists {
-		log.Debugf("generating self-signed CA cert: %s", caCertPath)
-		if err := utils.GenerateCACert(caCertPath, privateKeyPath, org, bits); err != nil {
-			return fmt.Errorf("error generating self-signed CA cert: %s", err)
-		}
-	} else {
-		if err := utils.CopyFile(h.CaCertPath, caCertPath); err != nil {
-			return fmt.Errorf("unable to copy CA cert: %s", err)
-		}
-		if err := utils.CopyFile(h.PrivateKeyPath, privateKeyPath); err != nil {
-			return fmt.Errorf("unable to copy private key: %s", err)
-		}
-	}
-
-	serverCertPath := filepath.Join(h.storePath, "server.pem")
-	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
-
-	log.Debugf("generating server cert: %s", serverCertPath)
-
-	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
-		return fmt.Errorf("error generating server cert: %s", err)
-	}
-
-	clientCertPath := filepath.Join(h.storePath, "cert.pem")
-	clientKeyPath := filepath.Join(h.storePath, "key.pem")
 	log.Debugf("generating client cert: %s", clientCertPath)
 	if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating client cert: %s", err)
@@ -161,14 +118,24 @@ func (h *Host) ConfigureAuth() error {
 		return nil
 	}
 
-	log.Debugf("generating certificates for %s", h.Name)
-	if err := h.GenerateCertificates(); err != nil {
+	ip, err := h.Driver.GetIP()
+	if err != nil {
 		return err
 	}
 
+	caCertPath := filepath.Join(utils.GetMachineDir(), "ca.pem")
+	caKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
 	serverCertPath := filepath.Join(h.storePath, "server.pem")
-	caCertPath := filepath.Join(h.storePath, "ca.pem")
 	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
+
+	org := h.Name
+	bits := 2048
+
+	log.Debugf("generating server cert: %s", serverCertPath)
+
+	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
+		return fmt.Errorf("error generating server cert: %s", err)
+	}
 
 	if err := d.StopDocker(); err != nil {
 		return err
@@ -190,19 +157,19 @@ func (h *Host) ConfigureAuth() error {
 
 	// due to windows clients, we cannot use filepath.Join as the paths
 	// will be mucked on the linux hosts
-	machineCaCertPath := fmt.Sprintf("%s/ca.pem", d.GetDockerConfigDir())
+	machineCaCertPath := path.Join(d.GetDockerConfigDir(), "ca.pem")
 
 	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
 		return err
 	}
-	machineServerCertPath := fmt.Sprintf("%s/server.pem", d.GetDockerConfigDir())
+	machineServerCertPath := path.Join(d.GetDockerConfigDir(), "server.pem")
 
 	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
 		return err
 	}
-	machineServerKeyPath := fmt.Sprintf("%s/server-key.pem", d.GetDockerConfigDir())
+	machineServerKeyPath := path.Join(d.GetDockerConfigDir(), "server-key.pem")
 
 	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(caCert), machineCaCertPath))
 	if err != nil {
