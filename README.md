@@ -298,7 +298,6 @@ run:
 
 If you have any questions we're in #docker-machine on Freenode.
 
-=======
 ## Integration Tests
 There is a suite of integration tests that will run for the drivers.  In order
 to use these you must export the corresponding environment variables for each
