@@ -16,7 +16,11 @@ func before(c *cli.Context) error {
 	caKeyPath := c.GlobalString("tls-ca-key")
 	clientCertPath := c.GlobalString("tls-client-cert")
 	clientKeyPath := c.GlobalString("tls-client-key")
-	org := "docker"
+
+	org, err := utils.GetUsername()
+	if err != nil {
+		return err
+	}
 	bits := 2048
 
 	if _, err := os.Stat(utils.GetMachineDir()); err != nil {
