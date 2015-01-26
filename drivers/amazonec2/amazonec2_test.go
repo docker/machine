@@ -92,3 +92,36 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 		t.Fatalf("expected 0 permissions; received %d", len(perms))
 	}
 }
+
+func TestAwsRegionList(t *testing.T) {
+}
+
+func TestValidateAwsRegionValid(t *testing.T) {
+	regions := []string{"eu-west-1", "eu-central-1"}
+
+	for _, v := range regions {
+		r, err := validateAwsRegion(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if v != r {
+			t.Fatal("Wrong region returned")
+		}
+	}
+}
+
+func TestValidateAwsRegionInvalid(t *testing.T) {
+	regions := []string{"eu-west-2", "eu-central-2"}
+
+	for _, v := range regions {
+		r, err := validateAwsRegion(v)
+		if err == nil {
+			t.Fatal("No error returned")
+		}
+
+		if v == r {
+			t.Fatal("Wrong region returned")
+		}
+	}
+}
