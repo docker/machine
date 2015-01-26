@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -32,6 +35,11 @@ type Host struct {
 	PrivateKeyPath string
 	ClientCertPath string
 	storePath      string
+}
+
+type DockerConfig struct {
+	EngineConfig     string
+	EngineConfigPath string
 }
 
 type hostConfig struct {
@@ -220,35 +228,27 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	var (
-		daemonOpts    string
-		daemonOptsCfg string
-		daemonCfg     string
-	)
-
-	// TODO @ehazlett: template?
-	defaultDaemonOpts := fmt.Sprintf(`--tlsverify \
---tlscacert=%s \
---tlskey=%s \
---tlscert=%s`, machineCaCertPath, machineServerKeyPath, machineServerCertPath)
-
-	switch d.DriverName() {
-	case "virtualbox", "vmwarefusion", "vmwarevsphere":
-		daemonOpts = "-H tcp://0.0.0.0:2376"
-		daemonOptsCfg = filepath.Join(d.GetDockerConfigDir(), "profile")
-		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
-		daemonCfg = fmt.Sprintf(`EXTRA_ARGS='%s'
-CACERT=%s
-SERVERCERT=%s
-SERVERKEY=%s
-DOCKER_TLS=no`, opts, machineCaCertPath, machineServerCertPath, machineServerKeyPath)
-	default:
-		daemonOpts = "--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2376"
-		daemonOptsCfg = "/etc/default/docker"
-		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
-		daemonCfg = fmt.Sprintf("export DOCKER_OPTS='%s'", opts)
+	dockerUrl, err := h.Driver.GetURL()
+	if err != nil {
+		return err
 	}
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", daemonCfg, daemonOptsCfg))
+	u, err := url.Parse(dockerUrl)
+	if err != nil {
+		return err
+	}
+	dockerPort := 2376
+	parts := strings.Split(u.Host, ":")
+	if len(parts) == 2 {
+		dPort, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return err
+		}
+		dockerPort = dPort
+	}
+
+	cfg := h.generateDockerConfig(dockerPort, machineCaCertPath, machineServerKeyPath, machineServerCertPath)
+
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", cfg.EngineConfig, cfg.EngineConfigPath))
 	if err != nil {
 		return err
 	}
@@ -261,6 +261,43 @@ DOCKER_TLS=no`, opts, machineCaCertPath, machineServerCertPath, machineServerKey
 	}
 
 	return nil
+}
+
+func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKeyPath string, serverCertPath string) *DockerConfig {
+	d := h.Driver
+	var (
+		daemonOpts    string
+		daemonOptsCfg string
+		daemonCfg     string
+	)
+
+	// TODO @ehazlett: template?
+	defaultDaemonOpts := fmt.Sprintf(`--tlsverify \
+--tlscacert=%s \
+--tlskey=%s \
+--tlscert=%s`, caCertPath, serverKeyPath, serverCertPath)
+
+	switch d.DriverName() {
+	case "virtualbox", "vmwarefusion", "vmwarevsphere":
+		daemonOpts = fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
+		daemonOptsCfg = filepath.Join(d.GetDockerConfigDir(), "profile")
+		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
+		daemonCfg = fmt.Sprintf(`EXTRA_ARGS='%s'
+CACERT=%s
+SERVERCERT=%s
+SERVERKEY=%s
+DOCKER_TLS=no`, opts, caCertPath, serverKeyPath, serverCertPath)
+	default:
+		daemonOpts = fmt.Sprintf("--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:%d", dockerPort)
+		daemonOptsCfg = "/etc/default/docker"
+		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
+		daemonCfg = fmt.Sprintf("export DOCKER_OPTS='%s'", opts)
+	}
+
+	return &DockerConfig{
+		EngineConfig:     daemonCfg,
+		EngineConfigPath: daemonOptsCfg,
+	}
 }
 
 func (h *Host) Create(name string) error {
