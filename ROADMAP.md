@@ -1,15 +1,13 @@
-Roadmap
-=======
+# Roadmap
 
-Machine 1.0
------------
+
+## Machine 1.0
 
 This will be a stable version of the current design with additional drivers and complete documentation.
 
 You can follow progress towards this release with the [GitHub milestone](https://github.com/docker/machine/milestones/1.0).
 
-Future
-------
+## Future
 
 There are two main areas for future development:
 
