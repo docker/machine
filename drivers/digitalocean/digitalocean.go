@@ -42,6 +42,7 @@ func init() {
 	drivers.Register("digitalocean", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverRemote,
 	})
 }
 
@@ -328,4 +329,14 @@ func (d *Driver) sshKeyPath() string {
 
 func (d *Driver) publicSSHKeyPath() string {
 	return d.sshKeyPath() + ".pub"
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
 }

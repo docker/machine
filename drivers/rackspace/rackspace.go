@@ -171,3 +171,13 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	return nil
 }
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
+}

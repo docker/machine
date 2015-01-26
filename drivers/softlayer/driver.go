@@ -436,6 +436,16 @@ func (d *Driver) Upgrade() error {
 	return nil
 }
 
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
+}
+
 func (d *Driver) setupHost() error {
 	log.Infof("Configuring host OS")
 	ssh.WaitForTCP(d.IPAddress + ":22")

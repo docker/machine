@@ -71,6 +71,7 @@ func init() {
 	drivers.Register("vmwarevcloudair", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverRemote,
 	})
 }
 
@@ -759,6 +760,16 @@ func (d *Driver) Upgrade() error {
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return ssh.GetSSHCommand(d.PublicIP, d.SSHPort, "root", d.sshKeyPath(), args...), nil
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
 }
 
 // Helpers

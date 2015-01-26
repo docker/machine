@@ -26,6 +26,7 @@ type Host struct {
 	Name           string `json:"-"`
 	DriverName     string
 	Driver         drivers.Driver
+	Type           string
 	CaCertPath     string
 	ServerCertPath string
 	ServerKeyPath  string
@@ -56,10 +57,12 @@ func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, err
 	if err != nil {
 		return nil, err
 	}
+
 	return &Host{
 		Name:           name,
 		DriverName:     driverName,
 		Driver:         driver,
+		Type:           drivers.DriverType(driverName),
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
 		storePath:      storePath,

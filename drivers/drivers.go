@@ -10,6 +10,11 @@ import (
 	"github.com/docker/machine/state"
 )
 
+const (
+	DriverRemote = "remote"
+	DriverLocal  = "local"
+)
+
 // Driver defines how a host is created and controlled. Different types of
 // driver represent different ways hosts can be created (e.g. different
 // hypervisors, different cloud providers)
@@ -34,6 +39,11 @@ type Driver interface {
 
 	// Create a host using the driver's config
 	Create() error
+
+	// Export a host
+	Export() error
+
+	Import(name string) error
 
 	// Remove a host
 	Remove() error
@@ -78,6 +88,7 @@ type Driver interface {
 type RegisteredDriver struct {
 	New            func(machineName string, storePath string, caCert string, privateKey string) (Driver, error)
 	GetCreateFlags func() []cli.Flag
+	MachineType    string
 }
 
 var ErrHostIsNotRunning = errors.New("host is not running")
@@ -107,6 +118,10 @@ func NewDriver(name string, machineName string, storePath string, caCert string,
 		return nil, fmt.Errorf("hosts: Unknown driver %q", name)
 	}
 	return driver.New(machineName, storePath, caCert, privateKey)
+}
+
+func DriverType(name string) string {
+	return drivers[name].MachineType
 }
 
 // GetCreateFlags runs GetCreateFlags for all of the drivers and

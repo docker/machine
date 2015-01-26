@@ -77,6 +77,7 @@ func init() {
 	drivers.Register("vmwarevsphere", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverRemote,
 	})
 }
 
@@ -468,6 +469,16 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 		return nil, err
 	}
 	return ssh.GetSSHCommand(ip, d.SSHPort, "docker", d.sshKeyPath(), args...), nil
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
 }
 
 func (d *Driver) sshKeyPath() string {

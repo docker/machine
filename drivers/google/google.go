@@ -44,6 +44,7 @@ func init() {
 	drivers.Register("google", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverRemote,
 	})
 }
 
@@ -281,4 +282,14 @@ func (driver *Driver) Upgrade() error {
 		return err
 	}
 	return c.updateDocker(driver)
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
+	return nil
 }

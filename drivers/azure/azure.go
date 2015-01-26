@@ -46,6 +46,7 @@ func init() {
 	drivers.Register("azure", &drivers.RegisteredDriver{
 		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
+		MachineType:    drivers.DriverRemote,
 	})
 }
 
@@ -459,6 +460,16 @@ func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 }
 
 func (driver *Driver) Upgrade() error {
+	return nil
+}
+
+func (d *Driver) Export() error {
+	return nil
+}
+
+func (d *Driver) Import(name string) error {
+	d.MachineName = name
+
 	return nil
 }
 
