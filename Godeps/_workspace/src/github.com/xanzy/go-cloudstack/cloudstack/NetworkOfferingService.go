@@ -328,12 +328,13 @@ type CreateNetworkOfferingResponse struct {
 			State                        string   `json:"state,omitempty"`
 		} `json:"provider,omitempty"`
 	} `json:"service,omitempty"`
-	Serviceofferingid string `json:"serviceofferingid,omitempty"`
-	Specifyipranges   bool   `json:"specifyipranges,omitempty"`
-	Specifyvlan       bool   `json:"specifyvlan,omitempty"`
-	State             string `json:"state,omitempty"`
-	Tags              string `json:"tags,omitempty"`
-	Traffictype       string `json:"traffictype,omitempty"`
+	Serviceofferingid        string `json:"serviceofferingid,omitempty"`
+	Specifyipranges          bool   `json:"specifyipranges,omitempty"`
+	Specifyvlan              bool   `json:"specifyvlan,omitempty"`
+	State                    string `json:"state,omitempty"`
+	Supportsstrechedl2subnet bool   `json:"supportsstrechedl2subnet,omitempty"`
+	Tags                     string `json:"tags,omitempty"`
+	Traffictype              string `json:"traffictype,omitempty"`
 }
 
 type UpdateNetworkOfferingParams struct {
@@ -493,12 +494,13 @@ type UpdateNetworkOfferingResponse struct {
 			State                        string   `json:"state,omitempty"`
 		} `json:"provider,omitempty"`
 	} `json:"service,omitempty"`
-	Serviceofferingid string `json:"serviceofferingid,omitempty"`
-	Specifyipranges   bool   `json:"specifyipranges,omitempty"`
-	Specifyvlan       bool   `json:"specifyvlan,omitempty"`
-	State             string `json:"state,omitempty"`
-	Tags              string `json:"tags,omitempty"`
-	Traffictype       string `json:"traffictype,omitempty"`
+	Serviceofferingid        string `json:"serviceofferingid,omitempty"`
+	Specifyipranges          bool   `json:"specifyipranges,omitempty"`
+	Specifyvlan              bool   `json:"specifyvlan,omitempty"`
+	State                    string `json:"state,omitempty"`
+	Supportsstrechedl2subnet bool   `json:"supportsstrechedl2subnet,omitempty"`
+	Tags                     string `json:"tags,omitempty"`
+	Traffictype              string `json:"traffictype,omitempty"`
 }
 
 type DeleteNetworkOfferingParams struct {
@@ -923,10 +925,11 @@ type NetworkOffering struct {
 			State                        string   `json:"state,omitempty"`
 		} `json:"provider,omitempty"`
 	} `json:"service,omitempty"`
-	Serviceofferingid string `json:"serviceofferingid,omitempty"`
-	Specifyipranges   bool   `json:"specifyipranges,omitempty"`
-	Specifyvlan       bool   `json:"specifyvlan,omitempty"`
-	State             string `json:"state,omitempty"`
-	Tags              string `json:"tags,omitempty"`
-	Traffictype       string `json:"traffictype,omitempty"`
+	Serviceofferingid        string `json:"serviceofferingid,omitempty"`
+	Specifyipranges          bool   `json:"specifyipranges,omitempty"`
+	Specifyvlan              bool   `json:"specifyvlan,omitempty"`
+	State                    string `json:"state,omitempty"`
+	Supportsstrechedl2subnet bool   `json:"supportsstrechedl2subnet,omitempty"`
+	Tags                     string `json:"tags,omitempty"`
+	Traffictype              string `json:"traffictype,omitempty"`
 }

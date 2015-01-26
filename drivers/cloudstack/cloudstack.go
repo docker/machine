@@ -4,12 +4,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
-	"strings"
-	"time"
-
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -20,26 +17,47 @@ import (
 )
 
 const (
-	driverName = "cloudstack"
+	driverName      = "cloudstack"
+	dockerConfigDir = "/etc/docker"
 )
 
+type configError struct {
+	option string
+}
+
+func (e *configError) Error() string {
+	return fmt.Sprintf("cloudstack driver requires the --cloudstack-%s option", e.option)
+}
+
+type unsupportedError struct {
+	operation string
+}
+
+func (e *unsupportedError) Error() string {
+	return fmt.Sprintf("CloudStack does not currently support the %q operation", e.operation)
+}
+
 type Driver struct {
-	Id          string
-	ApiURL      string
-	ApiKey      string
-	SecretKey   string
-	MachineName string
-	NoPublicIP  bool
-	PublicIP    string
-	PublicPort  int
-	PrivateIP   string
-	SourceCIDR  string
-	FWRuleId    string
-	Explunge    bool
-	Template    string
-	Offering    string
-	Network     string
-	Zone        string
+	Id             string
+	ApiURL         string
+	ApiKey         string
+	SecretKey      string
+	MachineName    string
+	NoPublicIP     bool
+	PublicIP       string
+	PublicPort     int
+	PublicSSHPort  int
+	PrivateIP      string
+	PrivatePort    int
+	SourceCIDR     string
+	FWRuleIds      []string
+	Explunge       bool
+	Template       string
+	Offering       string
+	Network        string
+	Zone           string
+	CaCertPath     string
+	PrivateKeyPath string
 
 	storePath string
 }
@@ -70,10 +88,6 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "cloudstack-secret-key",
 			Usage:  "CloudStack API secret key",
 		},
-		cli.StringFlag{
-			Name:  "cloudstack-machinename",
-			Usage: "Machine name",
-		},
 		cli.BoolFlag{
 			Name: "cloudstack-no-public-ip",
 			Usage: "Do not use a public IP for this host, helpfull in cases where you have direct " +
@@ -86,6 +100,14 @@ func GetCreateFlags() []cli.Flag {
 		cli.IntFlag{
 			Name:  "cloudstack-public-port",
 			Usage: "Public port, if empty matches the private port",
+		},
+		cli.IntFlag{
+			Name:  "cloudstack-public-ssh-port",
+			Usage: "Public SSH port, if empty defaults to port 22",
+		},
+		cli.IntFlag{
+			Name:  "cloudstack-private-port",
+			Usage: "Private port, if empty defaults to port 2376",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-source-cidr",
@@ -114,8 +136,20 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(storePath string) (drivers.Driver, error) {
-	return &Driver{storePath: storePath}, nil
+func NewDriver(
+	machineName string,
+	storePath string,
+	caCertPath string,
+	privateKeyPath string) (drivers.Driver, error) {
+
+	driver := &Driver{
+		MachineName:    machineName,
+		FWRuleIds: 			[]string{},
+		storePath:      storePath,
+		CaCertPath:     caCertPath,
+		PrivateKeyPath: privateKeyPath,
+	}
+	return driver, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -126,10 +160,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ApiURL = flags.String("cloudstack-api-url")
 	d.ApiKey = flags.String("cloudstack-api-key")
 	d.SecretKey = flags.String("cloudstack-secret-key")
-	d.MachineName = flags.String("cloudstack-machinename")
 	d.NoPublicIP = flags.Bool("cloudstack-no-public-ip")
 	d.PublicIP = flags.String("cloudstack-public-ip")
 	d.PublicPort = flags.Int("cloudstack-public-port")
+	d.PublicSSHPort = flags.Int("cloudstack-public-ssh-port")
+	d.PrivatePort = flags.Int("cloudstack-private-port")
 	d.SourceCIDR = flags.String("cloudstack-source-cidr")
 	d.Explunge = flags.Bool("cloudstack-explunge")
 	d.Template = flags.String("cloudstack-template")
@@ -138,40 +173,43 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Zone = flags.String("cloudstack-zone")
 
 	if d.ApiURL == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-api-url option")
+		return &configError{option: "api-url"}
 	}
 
 	if d.ApiKey == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-api-key option")
+		return &configError{option: "api-key"}
 	}
 
 	if d.SecretKey == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-secret-key option")
+		return &configError{option: "secret-key"}
 	}
 
 	if !d.NoPublicIP && d.PublicIP == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-public-ip option")
+		return &configError{option: "public-ip"}
 	}
 
 	if d.Template == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-template option")
+		return &configError{option: "template"}
 	}
 
 	if d.Offering == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-offering option")
+		return &configError{option: "offering"}
 	}
 
 	if d.Zone == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-zone option")
+		return &configError{option: "zone"}
 	}
 
-	if d.MachineName == "" {
-		rand.Seed(time.Now().UnixNano())
-		d.MachineName = fmt.Sprintf("docker-host-%04x", rand.Intn(65535))
+	if d.PrivatePort == 0 {
+		d.PrivatePort = 2376
 	}
 
 	if d.PublicPort == 0 {
-		d.PublicPort = 2376
+		d.PublicPort = d.PrivatePort
+	}
+
+	if d.PublicSSHPort == 0 {
+		d.PublicSSHPort = 22
 	}
 
 	if d.SourceCIDR == "" {
@@ -186,7 +224,7 @@ func (d *Driver) GetURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	return fmt.Sprintf("tcp://%s:%d", ip, d.PublicPort), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -234,7 +272,7 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Creating CloudStack instance...")
+	log.Info("Creating CloudStack instance...")
 
 	cs := d.getClient()
 
@@ -250,7 +288,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Error retrieving UUID of service offering %q: %v", d.Offering, err)
 	}
 
-	log.Infof("Retrieving UUID of zone: %q", d.Template)
+	log.Infof("Retrieving UUID of zone: %q", d.Zone)
 	zoneid, err := cs.Zone.GetZoneID(d.Zone)
 	if err != nil {
 		return fmt.Errorf("Error retrieving UUID of zone %q: %v", d.Zone, err)
@@ -311,12 +349,13 @@ func (d *Driver) Create() error {
 		}
 		ipaddressid := l.PublicIpAddresses[0].Id
 
+		// Open the firewall for docker traffic
 		r := cs.Firewall.NewCreateFirewallRuleParams(ipaddressid, "tcp")
 		r.SetCidrlist([]string{d.SourceCIDR})
 		r.SetStartport(d.PublicPort)
 		r.SetEndport(d.PublicPort)
 
-		rr, err := cs.Firewall.CreateFirewallRule(r)
+		fr, err := cs.Firewall.CreateFirewallRule(r)
 		if err != nil {
 			// Check if the error reports the port is already open
 			if !strings.Contains(err.Error(), fmt.Sprintf(
@@ -325,13 +364,37 @@ func (d *Driver) Create() error {
 			}
 		} else {
 			// Only set this if there really is anything to set :)
-			d.FWRuleId = rr.Id
+			d.FWRuleIds = append(d.FWRuleIds, fr.Id)
 		}
 
+		// And of course also for SSH traffic
+		r.SetStartport(d.PublicSSHPort)
+		r.SetEndport(d.PublicSSHPort)
+		fr, err = cs.Firewall.CreateFirewallRule(r)
+		if err != nil {
+			// Check if the error reports the port is already open
+			if !strings.Contains(err.Error(), fmt.Sprintf(
+				"The range specified, %d-%d, conflicts with rule", d.PublicSSHPort, d.PublicSSHPort)) {
+				return err
+			}
+		} else {
+			// Only set this if there really is anything to set :)
+			d.FWRuleIds = append(d.FWRuleIds, fr.Id)
+		}
+
+		// Create a port forward for the docker port
 		f := cs.Firewall.NewCreatePortForwardingRuleParams(
-			ipaddressid, 2376, "tcp", d.PublicPort, d.Id)
+			ipaddressid, d.PrivatePort, "tcp", d.PublicPort, d.Id)
 		f.SetOpenfirewall(false)
 
+		_, err = cs.Firewall.CreatePortForwardingRule(f)
+		if err != nil {
+			return err
+		}
+
+		// And another one for the SSH port
+		f.SetPrivateport(22)
+		f.SetPublicport(d.PublicSSHPort)
 		_, err = cs.Firewall.CreatePortForwardingRule(f)
 		if err != nil {
 			return err
@@ -348,12 +411,12 @@ func (d *Driver) Start() error {
 	}
 
 	if vmstate == state.Running {
-		log.Infof("Machine is already running")
+		log.Info("Machine is already running")
 		return nil
 	}
 
 	if vmstate == state.Starting {
-		log.Infof("Machine is already starting")
+		log.Info("Machine is already starting")
 		return nil
 	}
 
@@ -375,7 +438,7 @@ func (d *Driver) Stop() error {
 	}
 
 	if vmstate == state.Stopped {
-		log.Infof("Machine is already stopped")
+		log.Info("Machine is already stopped")
 		return nil
 	}
 
@@ -402,11 +465,13 @@ func (d *Driver) Remove() error {
 
 	// Not sure if this should be here, I can imagine some use cases
 	// where does shouldn't be executed
-	if d.FWRuleId != "" {
-		f := cs.Firewall.NewDeleteFirewallRuleParams(d.FWRuleId)
-		_, err = cs.Firewall.DeleteFirewallRule(f)
-		if err != nil {
-			return err
+	if len(d.FWRuleIds) > 0 {
+		for _, id := range d.FWRuleIds {
+			f := cs.Firewall.NewDeleteFirewallRuleParams(id)
+			_, err = cs.Firewall.DeleteFirewallRule(f)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -438,12 +503,48 @@ func (d *Driver) Kill() error {
 	return d.Stop()
 }
 
+func (d *Driver) StartDocker() error {
+	log.Info("Starting Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo systemctl start docker.service")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) StopDocker() error {
+	log.Info("Stopping Docker...")
+
+	cmd, err := d.GetSSHCommand("sudo systemctl stop docker.service")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
+}
+
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("hosts without a driver cannot be upgraded")
+	return &unsupportedError{operation: "upgrade"}
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return nil, fmt.Errorf("hosts without a driver do not support SSH")
+	ipaddress, err := d.GetIP()
+	if err != nil {
+		return nil, err
+	}
+	return ssh.GetSSHCommand(ipaddress, d.PublicSSHPort, "core", d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *cloudstack.CloudStackClient {
@@ -465,12 +566,15 @@ write_files:
     permissions: 0644
     content: |
       [Service]
-      Environment="DOCKER_OPTS='--auth=identity --host=tcp://0.0.0.0:2376'"
+      Environment="DOCKER_OPTS='--auth=identity --host=tcp://0.0.0.0:%d'"
   - path: /.docker/authorized-keys.d/docker-host.json
-    owner: root:root
+    owner: core:core
     permissions: '0644'
     content: |
       %s
+
+ssh-authorized-keys:
+  - %s
 
 coreos:
   units:
@@ -482,7 +586,7 @@ coreos:
         Description=Docker Socket for the API
 
         [Socket]
-        ListenStream=2376
+        ListenStream=%d
         BindIPv6Only=both
         Service=docker.service
 
@@ -499,13 +603,13 @@ coreos:
         ExecStart=/usr/bin/systemctl enable docker-tcp.socket
     - name: docker.service
       command: start
-`, pubKey)
+`, d.PrivatePort, pubKey, pubKey, d.PrivatePort)
 
 	ud := base64.StdEncoding.EncodeToString([]byte(cc))
-	if len(ud) > 2048 {
+	if len(ud) > 32768 {
 		return "", fmt.Errorf(
 			"The created user_data contains %d bytes after encoding, "+
-				"this exeeds the limit of 2048 bytes", len(ud))
+				"this exeeds the limit of 32768 bytes", len(ud))
 	}
 
 	return ud, nil

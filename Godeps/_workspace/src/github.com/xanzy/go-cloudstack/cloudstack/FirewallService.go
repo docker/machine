@@ -39,6 +39,10 @@ func (p *ListPortForwardingRulesParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -94,6 +98,14 @@ func (p *ListPortForwardingRulesParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListPortForwardingRulesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -233,6 +245,7 @@ type ListPortForwardingRulesResponse struct {
 
 type PortForwardingRule struct {
 	Cidrlist       string `json:"cidrlist,omitempty"`
+	Fordisplay     bool   `json:"fordisplay,omitempty"`
 	Id             string `json:"id,omitempty"`
 	Ipaddress      string `json:"ipaddress,omitempty"`
 	Ipaddressid    string `json:"ipaddressid,omitempty"`
@@ -273,6 +286,10 @@ func (p *CreatePortForwardingRuleParams) toURLValues() url.Values {
 	if v, found := p.p["cidrlist"]; found {
 		vv := strings.Join(v.([]string), ", ")
 		u.Set("cidrlist", vv)
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
 	if v, found := p.p["ipaddressid"]; found {
 		u.Set("ipaddressid", v.(string))
@@ -317,6 +334,14 @@ func (p *CreatePortForwardingRuleParams) SetCidrlist(v []string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["cidrlist"] = v
+	return
+}
+
+func (p *CreatePortForwardingRuleParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -452,6 +477,7 @@ func (s *FirewallService) CreatePortForwardingRule(p *CreatePortForwardingRulePa
 type CreatePortForwardingRuleResponse struct {
 	JobID          string `json:"jobid,omitempty"`
 	Cidrlist       string `json:"cidrlist,omitempty"`
+	Fordisplay     bool   `json:"fordisplay,omitempty"`
 	Id             string `json:"id,omitempty"`
 	Ipaddress      string `json:"ipaddress,omitempty"`
 	Ipaddressid    string `json:"ipaddressid,omitempty"`
@@ -558,6 +584,16 @@ func (p *UpdatePortForwardingRuleParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
 	if v, found := p.p["ipaddressid"]; found {
 		u.Set("ipaddressid", v.(string))
 	}
@@ -577,6 +613,30 @@ func (p *UpdatePortForwardingRuleParams) toURLValues() url.Values {
 		u.Set("virtualmachineid", v.(string))
 	}
 	return u
+}
+
+func (p *UpdatePortForwardingRuleParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdatePortForwardingRuleParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdatePortForwardingRuleParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
 }
 
 func (p *UpdatePortForwardingRuleParams) SetIpaddressid(v string) {
@@ -629,13 +689,10 @@ func (p *UpdatePortForwardingRuleParams) SetVirtualmachineid(v string) {
 
 // You should always use this function to get a new UpdatePortForwardingRuleParams instance,
 // as then you are sure you have configured all required params
-func (s *FirewallService) NewUpdatePortForwardingRuleParams(ipaddressid string, privateport string, protocol string, publicport string) *UpdatePortForwardingRuleParams {
+func (s *FirewallService) NewUpdatePortForwardingRuleParams(id string) *UpdatePortForwardingRuleParams {
 	p := &UpdatePortForwardingRuleParams{}
 	p.p = make(map[string]interface{})
-	p.p["ipaddressid"] = ipaddressid
-	p.p["privateport"] = privateport
-	p.p["protocol"] = protocol
-	p.p["publicport"] = publicport
+	p.p["id"] = id
 	return p
 }
 
@@ -678,6 +735,7 @@ func (s *FirewallService) UpdatePortForwardingRule(p *UpdatePortForwardingRulePa
 type UpdatePortForwardingRuleResponse struct {
 	JobID          string `json:"jobid,omitempty"`
 	Cidrlist       string `json:"cidrlist,omitempty"`
+	Fordisplay     bool   `json:"fordisplay,omitempty"`
 	Id             string `json:"id,omitempty"`
 	Ipaddress      string `json:"ipaddress,omitempty"`
 	Ipaddressid    string `json:"ipaddressid,omitempty"`
@@ -723,6 +781,10 @@ func (p *CreateFirewallRuleParams) toURLValues() url.Values {
 		vv := strconv.Itoa(v.(int))
 		u.Set("endport", vv)
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["icmpcode"]; found {
 		vv := strconv.Itoa(v.(int))
 		u.Set("icmpcode", vv)
@@ -760,6 +822,14 @@ func (p *CreateFirewallRuleParams) SetEndport(v int) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["endport"] = v
+	return
+}
+
+func (p *CreateFirewallRuleParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -861,6 +931,7 @@ type CreateFirewallRuleResponse struct {
 	JobID       string `json:"jobid,omitempty"`
 	Cidrlist    string `json:"cidrlist,omitempty"`
 	Endport     string `json:"endport,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Icmpcode    int    `json:"icmpcode,omitempty"`
 	Icmptype    int    `json:"icmptype,omitempty"`
 	Id          string `json:"id,omitempty"`
@@ -968,6 +1039,10 @@ func (p *ListFirewallRulesParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -1023,6 +1098,14 @@ func (p *ListFirewallRulesParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListFirewallRulesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -1163,6 +1246,126 @@ type ListFirewallRulesResponse struct {
 type FirewallRule struct {
 	Cidrlist    string `json:"cidrlist,omitempty"`
 	Endport     string `json:"endport,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
+	Icmpcode    int    `json:"icmpcode,omitempty"`
+	Icmptype    int    `json:"icmptype,omitempty"`
+	Id          string `json:"id,omitempty"`
+	Ipaddress   string `json:"ipaddress,omitempty"`
+	Ipaddressid string `json:"ipaddressid,omitempty"`
+	Networkid   string `json:"networkid,omitempty"`
+	Protocol    string `json:"protocol,omitempty"`
+	Startport   string `json:"startport,omitempty"`
+	State       string `json:"state,omitempty"`
+	Tags        []struct {
+		Account      string `json:"account,omitempty"`
+		Customer     string `json:"customer,omitempty"`
+		Domain       string `json:"domain,omitempty"`
+		Domainid     string `json:"domainid,omitempty"`
+		Key          string `json:"key,omitempty"`
+		Project      string `json:"project,omitempty"`
+		Projectid    string `json:"projectid,omitempty"`
+		Resourceid   string `json:"resourceid,omitempty"`
+		Resourcetype string `json:"resourcetype,omitempty"`
+		Value        string `json:"value,omitempty"`
+	} `json:"tags,omitempty"`
+}
+
+type UpdateFirewallRuleParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateFirewallRuleParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateFirewallRuleParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateFirewallRuleParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateFirewallRuleParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateFirewallRuleParams instance,
+// as then you are sure you have configured all required params
+func (s *FirewallService) NewUpdateFirewallRuleParams(id string) *UpdateFirewallRuleParams {
+	p := &UpdateFirewallRuleParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates firewall rule
+func (s *FirewallService) UpdateFirewallRule(p *UpdateFirewallRuleParams) (*UpdateFirewallRuleResponse, error) {
+	resp, err := s.cs.newRequest("updateFirewallRule", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateFirewallRuleResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateFirewallRuleResponse struct {
+	JobID       string `json:"jobid,omitempty"`
+	Cidrlist    string `json:"cidrlist,omitempty"`
+	Endport     string `json:"endport,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Icmpcode    int    `json:"icmpcode,omitempty"`
 	Icmptype    int    `json:"icmptype,omitempty"`
 	Id          string `json:"id,omitempty"`
@@ -1203,6 +1406,10 @@ func (p *CreateEgressFirewallRuleParams) toURLValues() url.Values {
 		vv := strconv.Itoa(v.(int))
 		u.Set("endport", vv)
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["icmpcode"]; found {
 		vv := strconv.Itoa(v.(int))
 		u.Set("icmpcode", vv)
@@ -1240,6 +1447,14 @@ func (p *CreateEgressFirewallRuleParams) SetEndport(v int) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["endport"] = v
+	return
+}
+
+func (p *CreateEgressFirewallRuleParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -1341,6 +1556,7 @@ type CreateEgressFirewallRuleResponse struct {
 	JobID       string `json:"jobid,omitempty"`
 	Cidrlist    string `json:"cidrlist,omitempty"`
 	Endport     string `json:"endport,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Icmpcode    int    `json:"icmpcode,omitempty"`
 	Icmptype    int    `json:"icmptype,omitempty"`
 	Id          string `json:"id,omitempty"`
@@ -1448,6 +1664,10 @@ func (p *ListEgressFirewallRulesParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -1509,6 +1729,14 @@ func (p *ListEgressFirewallRulesParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListEgressFirewallRulesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -1643,12 +1871,13 @@ func (s *FirewallService) ListEgressFirewallRules(p *ListEgressFirewallRulesPara
 
 type ListEgressFirewallRulesResponse struct {
 	Count               int                   `json:"count"`
-	EgressFirewallRules []*EgressFirewallRule `json:"egressfirewallrule"`
+	EgressFirewallRules []*EgressFirewallRule `json:"firewallrule"`
 }
 
 type EgressFirewallRule struct {
 	Cidrlist    string `json:"cidrlist,omitempty"`
 	Endport     string `json:"endport,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
 	Icmpcode    int    `json:"icmpcode,omitempty"`
 	Icmptype    int    `json:"icmptype,omitempty"`
 	Id          string `json:"id,omitempty"`
@@ -1672,94 +1901,69 @@ type EgressFirewallRule struct {
 	} `json:"tags,omitempty"`
 }
 
-type AddSrxFirewallParams struct {
+type UpdateEgressFirewallRuleParams struct {
 	p map[string]interface{}
 }
 
-func (p *AddSrxFirewallParams) toURLValues() url.Values {
+func (p *UpdateEgressFirewallRuleParams) toURLValues() url.Values {
 	u := url.Values{}
 	if p.p == nil {
 		return u
 	}
-	if v, found := p.p["networkdevicetype"]; found {
-		u.Set("networkdevicetype", v.(string))
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
 	}
-	if v, found := p.p["password"]; found {
-		u.Set("password", v.(string))
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
-	if v, found := p.p["physicalnetworkid"]; found {
-		u.Set("physicalnetworkid", v.(string))
-	}
-	if v, found := p.p["url"]; found {
-		u.Set("url", v.(string))
-	}
-	if v, found := p.p["username"]; found {
-		u.Set("username", v.(string))
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
 	}
 	return u
 }
 
-func (p *AddSrxFirewallParams) SetNetworkdevicetype(v string) {
+func (p *UpdateEgressFirewallRuleParams) SetCustomid(v string) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
 	}
-	p.p["networkdevicetype"] = v
+	p.p["customid"] = v
 	return
 }
 
-func (p *AddSrxFirewallParams) SetPassword(v string) {
+func (p *UpdateEgressFirewallRuleParams) SetFordisplay(v bool) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
 	}
-	p.p["password"] = v
+	p.p["fordisplay"] = v
 	return
 }
 
-func (p *AddSrxFirewallParams) SetPhysicalnetworkid(v string) {
+func (p *UpdateEgressFirewallRuleParams) SetId(v string) {
 	if p.p == nil {
 		p.p = make(map[string]interface{})
 	}
-	p.p["physicalnetworkid"] = v
+	p.p["id"] = v
 	return
 }
 
-func (p *AddSrxFirewallParams) SetUrl(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["url"] = v
-	return
-}
-
-func (p *AddSrxFirewallParams) SetUsername(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["username"] = v
-	return
-}
-
-// You should always use this function to get a new AddSrxFirewallParams instance,
+// You should always use this function to get a new UpdateEgressFirewallRuleParams instance,
 // as then you are sure you have configured all required params
-func (s *FirewallService) NewAddSrxFirewallParams(networkdevicetype string, password string, physicalnetworkid string, url string, username string) *AddSrxFirewallParams {
-	p := &AddSrxFirewallParams{}
+func (s *FirewallService) NewUpdateEgressFirewallRuleParams(id string) *UpdateEgressFirewallRuleParams {
+	p := &UpdateEgressFirewallRuleParams{}
 	p.p = make(map[string]interface{})
-	p.p["networkdevicetype"] = networkdevicetype
-	p.p["password"] = password
-	p.p["physicalnetworkid"] = physicalnetworkid
-	p.p["url"] = url
-	p.p["username"] = username
+	p.p["id"] = id
 	return p
 }
 
-// Adds a SRX firewall device
-func (s *FirewallService) AddSrxFirewall(p *AddSrxFirewallParams) (*AddSrxFirewallResponse, error) {
-	resp, err := s.cs.newRequest("addSrxFirewall", p.toURLValues())
+// Updates egress firewall rule
+func (s *FirewallService) UpdateEgressFirewallRule(p *UpdateEgressFirewallRuleParams) (*UpdateEgressFirewallRuleResponse, error) {
+	resp, err := s.cs.newRequest("updateEgressFirewallRule", p.toURLValues())
 	if err != nil {
 		return nil, err
 	}
 
-	var r AddSrxFirewallResponse
+	var r UpdateEgressFirewallRuleResponse
 	if err := json.Unmarshal(resp, &r); err != nil {
 		return nil, err
 	}
@@ -1788,308 +1992,32 @@ func (s *FirewallService) AddSrxFirewall(p *AddSrxFirewallParams) (*AddSrxFirewa
 	return &r, nil
 }
 
-type AddSrxFirewallResponse struct {
-	JobID             string `json:"jobid,omitempty"`
-	Fwdevicecapacity  int    `json:"fwdevicecapacity,omitempty"`
-	Fwdeviceid        string `json:"fwdeviceid,omitempty"`
-	Fwdevicename      string `json:"fwdevicename,omitempty"`
-	Fwdevicestate     string `json:"fwdevicestate,omitempty"`
-	Ipaddress         string `json:"ipaddress,omitempty"`
-	Numretries        string `json:"numretries,omitempty"`
-	Physicalnetworkid string `json:"physicalnetworkid,omitempty"`
-	Privateinterface  string `json:"privateinterface,omitempty"`
-	Privatezone       string `json:"privatezone,omitempty"`
-	Provider          string `json:"provider,omitempty"`
-	Publicinterface   string `json:"publicinterface,omitempty"`
-	Publiczone        string `json:"publiczone,omitempty"`
-	Timeout           string `json:"timeout,omitempty"`
-	Usageinterface    string `json:"usageinterface,omitempty"`
-	Username          string `json:"username,omitempty"`
-	Zoneid            string `json:"zoneid,omitempty"`
-}
-
-type DeleteSrxFirewallParams struct {
-	p map[string]interface{}
-}
-
-func (p *DeleteSrxFirewallParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["fwdeviceid"]; found {
-		u.Set("fwdeviceid", v.(string))
-	}
-	return u
-}
-
-func (p *DeleteSrxFirewallParams) SetFwdeviceid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["fwdeviceid"] = v
-	return
-}
-
-// You should always use this function to get a new DeleteSrxFirewallParams instance,
-// as then you are sure you have configured all required params
-func (s *FirewallService) NewDeleteSrxFirewallParams(fwdeviceid string) *DeleteSrxFirewallParams {
-	p := &DeleteSrxFirewallParams{}
-	p.p = make(map[string]interface{})
-	p.p["fwdeviceid"] = fwdeviceid
-	return p
-}
-
-//  delete a SRX firewall device
-func (s *FirewallService) DeleteSrxFirewall(p *DeleteSrxFirewallParams) (*DeleteSrxFirewallResponse, error) {
-	resp, err := s.cs.newRequest("deleteSrxFirewall", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r DeleteSrxFirewallResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-
-	// If we have a async client, we need to wait for the async result
-	if s.cs.async {
-		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
-		if err != nil {
-			return nil, err
-		}
-		// If 'warn' has a value it means the job is running longer than the configured
-		// timeout, the resonse will contain the jobid of the running async job
-		if warn != nil {
-			return &r, warn
-		}
-
-		if err := json.Unmarshal(b, &r); err != nil {
-			return nil, err
-		}
-	}
-	return &r, nil
-}
-
-type DeleteSrxFirewallResponse struct {
+type UpdateEgressFirewallRuleResponse struct {
 	JobID       string `json:"jobid,omitempty"`
-	Displaytext string `json:"displaytext,omitempty"`
-	Success     bool   `json:"success,omitempty"`
-}
-
-type ConfigureSrxFirewallParams struct {
-	p map[string]interface{}
-}
-
-func (p *ConfigureSrxFirewallParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["fwdevicecapacity"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("fwdevicecapacity", vv)
-	}
-	if v, found := p.p["fwdeviceid"]; found {
-		u.Set("fwdeviceid", v.(string))
-	}
-	return u
-}
-
-func (p *ConfigureSrxFirewallParams) SetFwdevicecapacity(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["fwdevicecapacity"] = v
-	return
-}
-
-func (p *ConfigureSrxFirewallParams) SetFwdeviceid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["fwdeviceid"] = v
-	return
-}
-
-// You should always use this function to get a new ConfigureSrxFirewallParams instance,
-// as then you are sure you have configured all required params
-func (s *FirewallService) NewConfigureSrxFirewallParams(fwdeviceid string) *ConfigureSrxFirewallParams {
-	p := &ConfigureSrxFirewallParams{}
-	p.p = make(map[string]interface{})
-	p.p["fwdeviceid"] = fwdeviceid
-	return p
-}
-
-// Configures a SRX firewall device
-func (s *FirewallService) ConfigureSrxFirewall(p *ConfigureSrxFirewallParams) (*ConfigureSrxFirewallResponse, error) {
-	resp, err := s.cs.newRequest("configureSrxFirewall", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r ConfigureSrxFirewallResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-
-	// If we have a async client, we need to wait for the async result
-	if s.cs.async {
-		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
-		if err != nil {
-			return nil, err
-		}
-		// If 'warn' has a value it means the job is running longer than the configured
-		// timeout, the resonse will contain the jobid of the running async job
-		if warn != nil {
-			return &r, warn
-		}
-
-		b, err = getRawValue(b)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := json.Unmarshal(b, &r); err != nil {
-			return nil, err
-		}
-	}
-	return &r, nil
-}
-
-type ConfigureSrxFirewallResponse struct {
-	JobID             string `json:"jobid,omitempty"`
-	Fwdevicecapacity  int    `json:"fwdevicecapacity,omitempty"`
-	Fwdeviceid        string `json:"fwdeviceid,omitempty"`
-	Fwdevicename      string `json:"fwdevicename,omitempty"`
-	Fwdevicestate     string `json:"fwdevicestate,omitempty"`
-	Ipaddress         string `json:"ipaddress,omitempty"`
-	Numretries        string `json:"numretries,omitempty"`
-	Physicalnetworkid string `json:"physicalnetworkid,omitempty"`
-	Privateinterface  string `json:"privateinterface,omitempty"`
-	Privatezone       string `json:"privatezone,omitempty"`
-	Provider          string `json:"provider,omitempty"`
-	Publicinterface   string `json:"publicinterface,omitempty"`
-	Publiczone        string `json:"publiczone,omitempty"`
-	Timeout           string `json:"timeout,omitempty"`
-	Usageinterface    string `json:"usageinterface,omitempty"`
-	Username          string `json:"username,omitempty"`
-	Zoneid            string `json:"zoneid,omitempty"`
-}
-
-type ListSrxFirewallsParams struct {
-	p map[string]interface{}
-}
-
-func (p *ListSrxFirewallsParams) toURLValues() url.Values {
-	u := url.Values{}
-	if p.p == nil {
-		return u
-	}
-	if v, found := p.p["fwdeviceid"]; found {
-		u.Set("fwdeviceid", v.(string))
-	}
-	if v, found := p.p["keyword"]; found {
-		u.Set("keyword", v.(string))
-	}
-	if v, found := p.p["page"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("page", vv)
-	}
-	if v, found := p.p["pagesize"]; found {
-		vv := strconv.Itoa(v.(int))
-		u.Set("pagesize", vv)
-	}
-	if v, found := p.p["physicalnetworkid"]; found {
-		u.Set("physicalnetworkid", v.(string))
-	}
-	return u
-}
-
-func (p *ListSrxFirewallsParams) SetFwdeviceid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["fwdeviceid"] = v
-	return
-}
-
-func (p *ListSrxFirewallsParams) SetKeyword(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["keyword"] = v
-	return
-}
-
-func (p *ListSrxFirewallsParams) SetPage(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["page"] = v
-	return
-}
-
-func (p *ListSrxFirewallsParams) SetPagesize(v int) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["pagesize"] = v
-	return
-}
-
-func (p *ListSrxFirewallsParams) SetPhysicalnetworkid(v string) {
-	if p.p == nil {
-		p.p = make(map[string]interface{})
-	}
-	p.p["physicalnetworkid"] = v
-	return
-}
-
-// You should always use this function to get a new ListSrxFirewallsParams instance,
-// as then you are sure you have configured all required params
-func (s *FirewallService) NewListSrxFirewallsParams() *ListSrxFirewallsParams {
-	p := &ListSrxFirewallsParams{}
-	p.p = make(map[string]interface{})
-	return p
-}
-
-// lists SRX firewall devices in a physical network
-func (s *FirewallService) ListSrxFirewalls(p *ListSrxFirewallsParams) (*ListSrxFirewallsResponse, error) {
-	resp, err := s.cs.newRequest("listSrxFirewalls", p.toURLValues())
-	if err != nil {
-		return nil, err
-	}
-
-	var r ListSrxFirewallsResponse
-	if err := json.Unmarshal(resp, &r); err != nil {
-		return nil, err
-	}
-	return &r, nil
-}
-
-type ListSrxFirewallsResponse struct {
-	Count        int            `json:"count"`
-	SrxFirewalls []*SrxFirewall `json:"srxfirewall"`
-}
-
-type SrxFirewall struct {
-	Fwdevicecapacity  int    `json:"fwdevicecapacity,omitempty"`
-	Fwdeviceid        string `json:"fwdeviceid,omitempty"`
-	Fwdevicename      string `json:"fwdevicename,omitempty"`
-	Fwdevicestate     string `json:"fwdevicestate,omitempty"`
-	Ipaddress         string `json:"ipaddress,omitempty"`
-	Numretries        string `json:"numretries,omitempty"`
-	Physicalnetworkid string `json:"physicalnetworkid,omitempty"`
-	Privateinterface  string `json:"privateinterface,omitempty"`
-	Privatezone       string `json:"privatezone,omitempty"`
-	Provider          string `json:"provider,omitempty"`
-	Publicinterface   string `json:"publicinterface,omitempty"`
-	Publiczone        string `json:"publiczone,omitempty"`
-	Timeout           string `json:"timeout,omitempty"`
-	Usageinterface    string `json:"usageinterface,omitempty"`
-	Username          string `json:"username,omitempty"`
-	Zoneid            string `json:"zoneid,omitempty"`
+	Cidrlist    string `json:"cidrlist,omitempty"`
+	Endport     string `json:"endport,omitempty"`
+	Fordisplay  bool   `json:"fordisplay,omitempty"`
+	Icmpcode    int    `json:"icmpcode,omitempty"`
+	Icmptype    int    `json:"icmptype,omitempty"`
+	Id          string `json:"id,omitempty"`
+	Ipaddress   string `json:"ipaddress,omitempty"`
+	Ipaddressid string `json:"ipaddressid,omitempty"`
+	Networkid   string `json:"networkid,omitempty"`
+	Protocol    string `json:"protocol,omitempty"`
+	Startport   string `json:"startport,omitempty"`
+	State       string `json:"state,omitempty"`
+	Tags        []struct {
+		Account      string `json:"account,omitempty"`
+		Customer     string `json:"customer,omitempty"`
+		Domain       string `json:"domain,omitempty"`
+		Domainid     string `json:"domainid,omitempty"`
+		Key          string `json:"key,omitempty"`
+		Project      string `json:"project,omitempty"`
+		Projectid    string `json:"projectid,omitempty"`
+		Resourceid   string `json:"resourceid,omitempty"`
+		Resourcetype string `json:"resourcetype,omitempty"`
+		Value        string `json:"value,omitempty"`
+	} `json:"tags,omitempty"`
 }
 
 type AddPaloAltoFirewallParams struct {

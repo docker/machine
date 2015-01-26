@@ -562,6 +562,10 @@ func (p *CreateSnapshotPolicyParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["intervaltype"]; found {
 		u.Set("intervaltype", v.(string))
 	}
@@ -579,6 +583,14 @@ func (p *CreateSnapshotPolicyParams) toURLValues() url.Values {
 		u.Set("volumeid", v.(string))
 	}
 	return u
+}
+
+func (p *CreateSnapshotPolicyParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
 }
 
 func (p *CreateSnapshotPolicyParams) SetIntervaltype(v string) {
@@ -649,6 +661,108 @@ func (s *SnapshotService) CreateSnapshotPolicy(p *CreateSnapshotPolicyParams) (*
 }
 
 type CreateSnapshotPolicyResponse struct {
+	Fordisplay   bool   `json:"fordisplay,omitempty"`
+	Id           string `json:"id,omitempty"`
+	Intervaltype int    `json:"intervaltype,omitempty"`
+	Maxsnaps     int    `json:"maxsnaps,omitempty"`
+	Schedule     string `json:"schedule,omitempty"`
+	Timezone     string `json:"timezone,omitempty"`
+	Volumeid     string `json:"volumeid,omitempty"`
+}
+
+type UpdateSnapshotPolicyParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateSnapshotPolicyParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateSnapshotPolicyParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateSnapshotPolicyParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateSnapshotPolicyParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateSnapshotPolicyParams instance,
+// as then you are sure you have configured all required params
+func (s *SnapshotService) NewUpdateSnapshotPolicyParams() *UpdateSnapshotPolicyParams {
+	p := &UpdateSnapshotPolicyParams{}
+	p.p = make(map[string]interface{})
+	return p
+}
+
+// Updates the snapshot policy.
+func (s *SnapshotService) UpdateSnapshotPolicy(p *UpdateSnapshotPolicyParams) (*UpdateSnapshotPolicyResponse, error) {
+	resp, err := s.cs.newRequest("updateSnapshotPolicy", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateSnapshotPolicyResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateSnapshotPolicyResponse struct {
+	JobID        string `json:"jobid,omitempty"`
+	Fordisplay   bool   `json:"fordisplay,omitempty"`
 	Id           string `json:"id,omitempty"`
 	Intervaltype int    `json:"intervaltype,omitempty"`
 	Maxsnaps     int    `json:"maxsnaps,omitempty"`
@@ -728,6 +842,13 @@ func (p *ListSnapshotPoliciesParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
 	if v, found := p.p["keyword"]; found {
 		u.Set("keyword", v.(string))
 	}
@@ -743,6 +864,22 @@ func (p *ListSnapshotPoliciesParams) toURLValues() url.Values {
 		u.Set("volumeid", v.(string))
 	}
 	return u
+}
+
+func (p *ListSnapshotPoliciesParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *ListSnapshotPoliciesParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
 }
 
 func (p *ListSnapshotPoliciesParams) SetKeyword(v string) {
@@ -779,11 +916,37 @@ func (p *ListSnapshotPoliciesParams) SetVolumeid(v string) {
 
 // You should always use this function to get a new ListSnapshotPoliciesParams instance,
 // as then you are sure you have configured all required params
-func (s *SnapshotService) NewListSnapshotPoliciesParams(volumeid string) *ListSnapshotPoliciesParams {
+func (s *SnapshotService) NewListSnapshotPoliciesParams() *ListSnapshotPoliciesParams {
 	p := &ListSnapshotPoliciesParams{}
 	p.p = make(map[string]interface{})
-	p.p["volumeid"] = volumeid
 	return p
+}
+
+// This is a courtesy helper function, which in some cases may not work as expected!
+func (s *SnapshotService) GetSnapshotPolicyByID(id string) (*SnapshotPolicy, int, error) {
+	p := &ListSnapshotPoliciesParams{}
+	p.p = make(map[string]interface{})
+
+	p.p["id"] = id
+
+	l, err := s.ListSnapshotPolicies(p)
+	if err != nil {
+		if strings.Contains(err.Error(), fmt.Sprintf(
+			"Invalid parameter id value=%s due to incorrect long value format, "+
+				"or entity does not exist", id)) {
+			return nil, 0, fmt.Errorf("No match found for %s: %+v", id, l)
+		}
+		return nil, -1, err
+	}
+
+	if l.Count == 0 {
+		return nil, l.Count, fmt.Errorf("No match found for %s: %+v", id, l)
+	}
+
+	if l.Count == 1 {
+		return l.SnapshotPolicies[0], l.Count, nil
+	}
+	return nil, l.Count, fmt.Errorf("There is more then one result for SnapshotPolicy UUID: %s!", id)
 }
 
 // Lists snapshot policies.
@@ -806,6 +969,7 @@ type ListSnapshotPoliciesResponse struct {
 }
 
 type SnapshotPolicy struct {
+	Fordisplay   bool   `json:"fordisplay,omitempty"`
 	Id           string `json:"id,omitempty"`
 	Intervaltype int    `json:"intervaltype,omitempty"`
 	Maxsnaps     int    `json:"maxsnaps,omitempty"`
@@ -1449,6 +1613,8 @@ type RevertToVMSnapshotResponse struct {
 	Diskiowrite           int               `json:"diskiowrite,omitempty"`
 	Diskkbsread           int               `json:"diskkbsread,omitempty"`
 	Diskkbswrite          int               `json:"diskkbswrite,omitempty"`
+	Diskofferingid        string            `json:"diskofferingid,omitempty"`
+	Diskofferingname      string            `json:"diskofferingname,omitempty"`
 	Displayname           string            `json:"displayname,omitempty"`
 	Displayvm             bool              `json:"displayvm,omitempty"`
 	Domain                string            `json:"domain,omitempty"`
@@ -1473,23 +1639,26 @@ type RevertToVMSnapshotResponse struct {
 	Networkkbsread        int               `json:"networkkbsread,omitempty"`
 	Networkkbswrite       int               `json:"networkkbswrite,omitempty"`
 	Nic                   []struct {
-		Broadcasturi string   `json:"broadcasturi,omitempty"`
-		Gateway      string   `json:"gateway,omitempty"`
-		Id           string   `json:"id,omitempty"`
-		Ip6address   string   `json:"ip6address,omitempty"`
-		Ip6cidr      string   `json:"ip6cidr,omitempty"`
-		Ip6gateway   string   `json:"ip6gateway,omitempty"`
-		Ipaddress    string   `json:"ipaddress,omitempty"`
-		Isdefault    bool     `json:"isdefault,omitempty"`
-		Isolationuri string   `json:"isolationuri,omitempty"`
-		Macaddress   string   `json:"macaddress,omitempty"`
-		Netmask      string   `json:"netmask,omitempty"`
-		Networkid    string   `json:"networkid,omitempty"`
-		Networkname  string   `json:"networkname,omitempty"`
-		Secondaryip  []string `json:"secondaryip,omitempty"`
-		Traffictype  string   `json:"traffictype,omitempty"`
-		Type         string   `json:"type,omitempty"`
+		Broadcasturi     string   `json:"broadcasturi,omitempty"`
+		Deviceid         string   `json:"deviceid,omitempty"`
+		Gateway          string   `json:"gateway,omitempty"`
+		Id               string   `json:"id,omitempty"`
+		Ip6address       string   `json:"ip6address,omitempty"`
+		Ip6cidr          string   `json:"ip6cidr,omitempty"`
+		Ip6gateway       string   `json:"ip6gateway,omitempty"`
+		Ipaddress        string   `json:"ipaddress,omitempty"`
+		Isdefault        bool     `json:"isdefault,omitempty"`
+		Isolationuri     string   `json:"isolationuri,omitempty"`
+		Macaddress       string   `json:"macaddress,omitempty"`
+		Netmask          string   `json:"netmask,omitempty"`
+		Networkid        string   `json:"networkid,omitempty"`
+		Networkname      string   `json:"networkname,omitempty"`
+		Secondaryip      []string `json:"secondaryip,omitempty"`
+		Traffictype      string   `json:"traffictype,omitempty"`
+		Type             string   `json:"type,omitempty"`
+		Virtualmachineid string   `json:"virtualmachineid,omitempty"`
 	} `json:"nic,omitempty"`
+	Ostypeid        int    `json:"ostypeid,omitempty"`
 	Password        string `json:"password,omitempty"`
 	Passwordenabled bool   `json:"passwordenabled,omitempty"`
 	Project         string `json:"project,omitempty"`
@@ -1513,6 +1682,18 @@ type RevertToVMSnapshotResponse struct {
 			Ruleid            string `json:"ruleid,omitempty"`
 			Securitygroupname string `json:"securitygroupname,omitempty"`
 			Startport         int    `json:"startport,omitempty"`
+			Tags              []struct {
+				Account      string `json:"account,omitempty"`
+				Customer     string `json:"customer,omitempty"`
+				Domain       string `json:"domain,omitempty"`
+				Domainid     string `json:"domainid,omitempty"`
+				Key          string `json:"key,omitempty"`
+				Project      string `json:"project,omitempty"`
+				Projectid    string `json:"projectid,omitempty"`
+				Resourceid   string `json:"resourceid,omitempty"`
+				Resourcetype string `json:"resourcetype,omitempty"`
+				Value        string `json:"value,omitempty"`
+			} `json:"tags,omitempty"`
 		} `json:"egressrule,omitempty"`
 		Id          string `json:"id,omitempty"`
 		Ingressrule []struct {
@@ -1525,6 +1706,18 @@ type RevertToVMSnapshotResponse struct {
 			Ruleid            string `json:"ruleid,omitempty"`
 			Securitygroupname string `json:"securitygroupname,omitempty"`
 			Startport         int    `json:"startport,omitempty"`
+			Tags              []struct {
+				Account      string `json:"account,omitempty"`
+				Customer     string `json:"customer,omitempty"`
+				Domain       string `json:"domain,omitempty"`
+				Domainid     string `json:"domainid,omitempty"`
+				Key          string `json:"key,omitempty"`
+				Project      string `json:"project,omitempty"`
+				Projectid    string `json:"projectid,omitempty"`
+				Resourceid   string `json:"resourceid,omitempty"`
+				Resourcetype string `json:"resourcetype,omitempty"`
+				Value        string `json:"value,omitempty"`
+			} `json:"tags,omitempty"`
 		} `json:"ingressrule,omitempty"`
 		Name      string `json:"name,omitempty"`
 		Project   string `json:"project,omitempty"`
@@ -1561,6 +1754,7 @@ type RevertToVMSnapshotResponse struct {
 	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
 	Templateid          string `json:"templateid,omitempty"`
 	Templatename        string `json:"templatename,omitempty"`
+	Vgpu                string `json:"vgpu,omitempty"`
 	Zoneid              string `json:"zoneid,omitempty"`
 	Zonename            string `json:"zonename,omitempty"`
 }

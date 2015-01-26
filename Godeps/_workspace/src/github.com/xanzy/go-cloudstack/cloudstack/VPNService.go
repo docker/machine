@@ -39,6 +39,10 @@ func (p *CreateRemoteAccessVpnParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["iprange"]; found {
 		u.Set("iprange", v.(string))
 	}
@@ -65,6 +69,14 @@ func (p *CreateRemoteAccessVpnParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *CreateRemoteAccessVpnParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -142,6 +154,7 @@ type CreateRemoteAccessVpnResponse struct {
 	Account      string `json:"account,omitempty"`
 	Domain       string `json:"domain,omitempty"`
 	Domainid     string `json:"domainid,omitempty"`
+	Fordisplay   bool   `json:"fordisplay,omitempty"`
 	Id           string `json:"id,omitempty"`
 	Iprange      string `json:"iprange,omitempty"`
 	Presharedkey string `json:"presharedkey,omitempty"`
@@ -236,6 +249,10 @@ func (p *ListRemoteAccessVpnsParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -283,6 +300,14 @@ func (p *ListRemoteAccessVpnsParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListRemoteAccessVpnsParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -416,6 +441,114 @@ type RemoteAccessVpn struct {
 	Account      string `json:"account,omitempty"`
 	Domain       string `json:"domain,omitempty"`
 	Domainid     string `json:"domainid,omitempty"`
+	Fordisplay   bool   `json:"fordisplay,omitempty"`
+	Id           string `json:"id,omitempty"`
+	Iprange      string `json:"iprange,omitempty"`
+	Presharedkey string `json:"presharedkey,omitempty"`
+	Project      string `json:"project,omitempty"`
+	Projectid    string `json:"projectid,omitempty"`
+	Publicip     string `json:"publicip,omitempty"`
+	Publicipid   string `json:"publicipid,omitempty"`
+	State        string `json:"state,omitempty"`
+}
+
+type UpdateRemoteAccessVpnParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateRemoteAccessVpnParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateRemoteAccessVpnParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateRemoteAccessVpnParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateRemoteAccessVpnParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateRemoteAccessVpnParams instance,
+// as then you are sure you have configured all required params
+func (s *VPNService) NewUpdateRemoteAccessVpnParams(id string) *UpdateRemoteAccessVpnParams {
+	p := &UpdateRemoteAccessVpnParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates remote access vpn
+func (s *VPNService) UpdateRemoteAccessVpn(p *UpdateRemoteAccessVpnParams) (*UpdateRemoteAccessVpnResponse, error) {
+	resp, err := s.cs.newRequest("updateRemoteAccessVpn", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateRemoteAccessVpnResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateRemoteAccessVpnResponse struct {
+	JobID        string `json:"jobid,omitempty"`
+	Account      string `json:"account,omitempty"`
+	Domain       string `json:"domain,omitempty"`
+	Domainid     string `json:"domainid,omitempty"`
+	Fordisplay   bool   `json:"fordisplay,omitempty"`
 	Id           string `json:"id,omitempty"`
 	Iprange      string `json:"iprange,omitempty"`
 	Presharedkey string `json:"presharedkey,omitempty"`
@@ -1059,10 +1192,22 @@ func (p *CreateVpnGatewayParams) toURLValues() url.Values {
 	if p.p == nil {
 		return u
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["vpcid"]; found {
 		u.Set("vpcid", v.(string))
 	}
 	return u
+}
+
+func (p *CreateVpnGatewayParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
 }
 
 func (p *CreateVpnGatewayParams) SetVpcid(v string) {
@@ -1119,16 +1264,17 @@ func (s *VPNService) CreateVpnGateway(p *CreateVpnGatewayParams) (*CreateVpnGate
 }
 
 type CreateVpnGatewayResponse struct {
-	JobID     string `json:"jobid,omitempty"`
-	Account   string `json:"account,omitempty"`
-	Domain    string `json:"domain,omitempty"`
-	Domainid  string `json:"domainid,omitempty"`
-	Id        string `json:"id,omitempty"`
-	Project   string `json:"project,omitempty"`
-	Projectid string `json:"projectid,omitempty"`
-	Publicip  string `json:"publicip,omitempty"`
-	Removed   string `json:"removed,omitempty"`
-	Vpcid     string `json:"vpcid,omitempty"`
+	JobID      string `json:"jobid,omitempty"`
+	Account    string `json:"account,omitempty"`
+	Domain     string `json:"domain,omitempty"`
+	Domainid   string `json:"domainid,omitempty"`
+	Fordisplay bool   `json:"fordisplay,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Project    string `json:"project,omitempty"`
+	Projectid  string `json:"projectid,omitempty"`
+	Publicip   string `json:"publicip,omitempty"`
+	Removed    string `json:"removed,omitempty"`
+	Vpcid      string `json:"vpcid,omitempty"`
 }
 
 type CreateVpnConnectionParams struct {
@@ -1139,6 +1285,10 @@ func (p *CreateVpnConnectionParams) toURLValues() url.Values {
 	u := url.Values{}
 	if p.p == nil {
 		return u
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
 	if v, found := p.p["passive"]; found {
 		vv := strconv.FormatBool(v.(bool))
@@ -1151,6 +1301,14 @@ func (p *CreateVpnConnectionParams) toURLValues() url.Values {
 		u.Set("s2svpngatewayid", v.(string))
 	}
 	return u
+}
+
+func (p *CreateVpnConnectionParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
 }
 
 func (p *CreateVpnConnectionParams) SetPassive(v bool) {
@@ -1233,6 +1391,7 @@ type CreateVpnConnectionResponse struct {
 	Dpd                  bool   `json:"dpd,omitempty"`
 	Esplifetime          int    `json:"esplifetime,omitempty"`
 	Esppolicy            string `json:"esppolicy,omitempty"`
+	Fordisplay           bool   `json:"fordisplay,omitempty"`
 	Gateway              string `json:"gateway,omitempty"`
 	Id                   string `json:"id,omitempty"`
 	Ikelifetime          int    `json:"ikelifetime,omitempty"`
@@ -1773,6 +1932,7 @@ type ResetVpnConnectionResponse struct {
 	Dpd                  bool   `json:"dpd,omitempty"`
 	Esplifetime          int    `json:"esplifetime,omitempty"`
 	Esppolicy            string `json:"esppolicy,omitempty"`
+	Fordisplay           bool   `json:"fordisplay,omitempty"`
 	Gateway              string `json:"gateway,omitempty"`
 	Id                   string `json:"id,omitempty"`
 	Ikelifetime          int    `json:"ikelifetime,omitempty"`
@@ -2036,6 +2196,10 @@ func (p *ListVpnGatewaysParams) toURLValues() url.Values {
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
 	}
@@ -2080,6 +2244,14 @@ func (p *ListVpnGatewaysParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListVpnGatewaysParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -2202,15 +2374,16 @@ type ListVpnGatewaysResponse struct {
 }
 
 type VpnGateway struct {
-	Account   string `json:"account,omitempty"`
-	Domain    string `json:"domain,omitempty"`
-	Domainid  string `json:"domainid,omitempty"`
-	Id        string `json:"id,omitempty"`
-	Project   string `json:"project,omitempty"`
-	Projectid string `json:"projectid,omitempty"`
-	Publicip  string `json:"publicip,omitempty"`
-	Removed   string `json:"removed,omitempty"`
-	Vpcid     string `json:"vpcid,omitempty"`
+	Account    string `json:"account,omitempty"`
+	Domain     string `json:"domain,omitempty"`
+	Domainid   string `json:"domainid,omitempty"`
+	Fordisplay bool   `json:"fordisplay,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Project    string `json:"project,omitempty"`
+	Projectid  string `json:"projectid,omitempty"`
+	Publicip   string `json:"publicip,omitempty"`
+	Removed    string `json:"removed,omitempty"`
+	Vpcid      string `json:"vpcid,omitempty"`
 }
 
 type ListVpnConnectionsParams struct {
@@ -2227,6 +2400,10 @@ func (p *ListVpnConnectionsParams) toURLValues() url.Values {
 	}
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
 	}
 	if v, found := p.p["id"]; found {
 		u.Set("id", v.(string))
@@ -2272,6 +2449,14 @@ func (p *ListVpnConnectionsParams) SetDomainid(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["domainid"] = v
+	return
+}
+
+func (p *ListVpnConnectionsParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
 	return
 }
 
@@ -2402,6 +2587,7 @@ type VpnConnection struct {
 	Dpd                  bool   `json:"dpd,omitempty"`
 	Esplifetime          int    `json:"esplifetime,omitempty"`
 	Esppolicy            string `json:"esppolicy,omitempty"`
+	Fordisplay           bool   `json:"fordisplay,omitempty"`
 	Gateway              string `json:"gateway,omitempty"`
 	Id                   string `json:"id,omitempty"`
 	Ikelifetime          int    `json:"ikelifetime,omitempty"`
@@ -2415,4 +2601,226 @@ type VpnConnection struct {
 	S2scustomergatewayid string `json:"s2scustomergatewayid,omitempty"`
 	S2svpngatewayid      string `json:"s2svpngatewayid,omitempty"`
 	State                string `json:"state,omitempty"`
+}
+
+type UpdateVpnConnectionParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateVpnConnectionParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateVpnConnectionParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateVpnConnectionParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateVpnConnectionParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateVpnConnectionParams instance,
+// as then you are sure you have configured all required params
+func (s *VPNService) NewUpdateVpnConnectionParams(id string) *UpdateVpnConnectionParams {
+	p := &UpdateVpnConnectionParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates site to site vpn connection
+func (s *VPNService) UpdateVpnConnection(p *UpdateVpnConnectionParams) (*UpdateVpnConnectionResponse, error) {
+	resp, err := s.cs.newRequest("updateVpnConnection", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateVpnConnectionResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateVpnConnectionResponse struct {
+	JobID                string `json:"jobid,omitempty"`
+	Account              string `json:"account,omitempty"`
+	Cidrlist             string `json:"cidrlist,omitempty"`
+	Created              string `json:"created,omitempty"`
+	Domain               string `json:"domain,omitempty"`
+	Domainid             string `json:"domainid,omitempty"`
+	Dpd                  bool   `json:"dpd,omitempty"`
+	Esplifetime          int    `json:"esplifetime,omitempty"`
+	Esppolicy            string `json:"esppolicy,omitempty"`
+	Fordisplay           bool   `json:"fordisplay,omitempty"`
+	Gateway              string `json:"gateway,omitempty"`
+	Id                   string `json:"id,omitempty"`
+	Ikelifetime          int    `json:"ikelifetime,omitempty"`
+	Ikepolicy            string `json:"ikepolicy,omitempty"`
+	Ipsecpsk             string `json:"ipsecpsk,omitempty"`
+	Passive              bool   `json:"passive,omitempty"`
+	Project              string `json:"project,omitempty"`
+	Projectid            string `json:"projectid,omitempty"`
+	Publicip             string `json:"publicip,omitempty"`
+	Removed              string `json:"removed,omitempty"`
+	S2scustomergatewayid string `json:"s2scustomergatewayid,omitempty"`
+	S2svpngatewayid      string `json:"s2svpngatewayid,omitempty"`
+	State                string `json:"state,omitempty"`
+}
+
+type UpdateVpnGatewayParams struct {
+	p map[string]interface{}
+}
+
+func (p *UpdateVpnGatewayParams) toURLValues() url.Values {
+	u := url.Values{}
+	if p.p == nil {
+		return u
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
+	}
+	if v, found := p.p["fordisplay"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("fordisplay", vv)
+	}
+	if v, found := p.p["id"]; found {
+		u.Set("id", v.(string))
+	}
+	return u
+}
+
+func (p *UpdateVpnGatewayParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
+}
+
+func (p *UpdateVpnGatewayParams) SetFordisplay(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["fordisplay"] = v
+	return
+}
+
+func (p *UpdateVpnGatewayParams) SetId(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["id"] = v
+	return
+}
+
+// You should always use this function to get a new UpdateVpnGatewayParams instance,
+// as then you are sure you have configured all required params
+func (s *VPNService) NewUpdateVpnGatewayParams(id string) *UpdateVpnGatewayParams {
+	p := &UpdateVpnGatewayParams{}
+	p.p = make(map[string]interface{})
+	p.p["id"] = id
+	return p
+}
+
+// Updates site to site vpn local gateway
+func (s *VPNService) UpdateVpnGateway(p *UpdateVpnGatewayParams) (*UpdateVpnGatewayResponse, error) {
+	resp, err := s.cs.newRequest("updateVpnGateway", p.toURLValues())
+	if err != nil {
+		return nil, err
+	}
+
+	var r UpdateVpnGatewayResponse
+	if err := json.Unmarshal(resp, &r); err != nil {
+		return nil, err
+	}
+
+	// If we have a async client, we need to wait for the async result
+	if s.cs.async {
+		b, warn, err := s.cs.GetAsyncJobResult(r.JobID, s.cs.timeout)
+		if err != nil {
+			return nil, err
+		}
+		// If 'warn' has a value it means the job is running longer than the configured
+		// timeout, the resonse will contain the jobid of the running async job
+		if warn != nil {
+			return &r, warn
+		}
+
+		b, err = getRawValue(b)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, err
+		}
+	}
+	return &r, nil
+}
+
+type UpdateVpnGatewayResponse struct {
+	JobID      string `json:"jobid,omitempty"`
+	Account    string `json:"account,omitempty"`
+	Domain     string `json:"domain,omitempty"`
+	Domainid   string `json:"domainid,omitempty"`
+	Fordisplay bool   `json:"fordisplay,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Project    string `json:"project,omitempty"`
+	Projectid  string `json:"projectid,omitempty"`
+	Publicip   string `json:"publicip,omitempty"`
+	Removed    string `json:"removed,omitempty"`
+	Vpcid      string `json:"vpcid,omitempty"`
 }

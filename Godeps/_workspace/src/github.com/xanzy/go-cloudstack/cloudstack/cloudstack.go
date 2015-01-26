@@ -64,9 +64,6 @@ type CloudStackClient struct {
 	DiskOffering     *DiskOfferingService
 	Domain           *DomainService
 	Event            *EventService
-	ExtFirewall      *ExtFirewallService
-	ExtLoadBalancer  *ExtLoadBalancerService
-	ExternalDevice   *ExternalDeviceService
 	Firewall         *FirewallService
 	GuestOS          *GuestOSService
 	Host             *HostService
@@ -86,6 +83,7 @@ type CloudStackClient struct {
 	Network          *NetworkService
 	Nic              *NicService
 	NiciraNVP        *NiciraNVPService
+	OvsElement       *OvsElementService
 	Pod              *PodService
 	Pool             *PoolService
 	PortableIP       *PortableIPService
@@ -100,7 +98,6 @@ type CloudStackClient struct {
 	ServiceOffering  *ServiceOfferingService
 	Snapshot         *SnapshotService
 	StoragePool      *StoragePoolService
-	Storage          *StorageService
 	StratosphereSSP  *StratosphereSSPService
 	Swift            *SwiftService
 	SystemCapacity   *SystemCapacityService
@@ -149,9 +146,6 @@ func newClient(apiurl string, apikey string, secret string, async bool, verifyss
 	cs.DiskOffering = NewDiskOfferingService(cs)
 	cs.Domain = NewDomainService(cs)
 	cs.Event = NewEventService(cs)
-	cs.ExtFirewall = NewExtFirewallService(cs)
-	cs.ExtLoadBalancer = NewExtLoadBalancerService(cs)
-	cs.ExternalDevice = NewExternalDeviceService(cs)
 	cs.Firewall = NewFirewallService(cs)
 	cs.GuestOS = NewGuestOSService(cs)
 	cs.Host = NewHostService(cs)
@@ -171,6 +165,7 @@ func newClient(apiurl string, apikey string, secret string, async bool, verifyss
 	cs.Network = NewNetworkService(cs)
 	cs.Nic = NewNicService(cs)
 	cs.NiciraNVP = NewNiciraNVPService(cs)
+	cs.OvsElement = NewOvsElementService(cs)
 	cs.Pod = NewPodService(cs)
 	cs.Pool = NewPoolService(cs)
 	cs.PortableIP = NewPortableIPService(cs)
@@ -185,7 +180,6 @@ func newClient(apiurl string, apikey string, secret string, async bool, verifyss
 	cs.ServiceOffering = NewServiceOfferingService(cs)
 	cs.Snapshot = NewSnapshotService(cs)
 	cs.StoragePool = NewStoragePoolService(cs)
-	cs.Storage = NewStorageService(cs)
 	cs.StratosphereSSP = NewStratosphereSSPService(cs)
 	cs.Swift = NewSwiftService(cs)
 	cs.SystemCapacity = NewSystemCapacityService(cs)
@@ -279,12 +273,25 @@ func (cs *CloudStackClient) newRequest(api string, params url.Values) (json.RawM
 	mac := hmac.New(sha1.New, []byte(cs.secret))
 	mac.Write([]byte(s3))
 	signature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	signature = url.QueryEscape(signature)
 
-	// Create the final URL before we issue the request
-	url := cs.baseURL + "?" + s + "&signature=" + signature
+	var err error
+	var resp *http.Response
+	if api == "deployVirtualMachine" {
+		// The deployVirtualMachine API should be called using a POST call
+		// so we don't have to worry about the userdata size
 
-	resp, err := cs.client.Get(url)
+		// Add the unescaped signature to the POST params
+		params.Set("signature", signature)
+
+		// Make a POST call
+		resp, err = cs.client.PostForm(cs.baseURL, params)
+	} else {
+		// Create the final URL before we issue the request
+		url := cs.baseURL + "?" + s + "&signature=" + url.QueryEscape(signature)
+
+		// Make a GET call
+		resp, err = cs.client.Get(url)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -451,30 +458,6 @@ func NewEventService(cs *CloudStackClient) *EventService {
 	return &EventService{cs: cs}
 }
 
-type ExtFirewallService struct {
-	cs *CloudStackClient
-}
-
-func NewExtFirewallService(cs *CloudStackClient) *ExtFirewallService {
-	return &ExtFirewallService{cs: cs}
-}
-
-type ExtLoadBalancerService struct {
-	cs *CloudStackClient
-}
-
-func NewExtLoadBalancerService(cs *CloudStackClient) *ExtLoadBalancerService {
-	return &ExtLoadBalancerService{cs: cs}
-}
-
-type ExternalDeviceService struct {
-	cs *CloudStackClient
-}
-
-func NewExternalDeviceService(cs *CloudStackClient) *ExternalDeviceService {
-	return &ExternalDeviceService{cs: cs}
-}
-
 type FirewallService struct {
 	cs *CloudStackClient
 }
@@ -627,6 +610,14 @@ func NewNiciraNVPService(cs *CloudStackClient) *NiciraNVPService {
 	return &NiciraNVPService{cs: cs}
 }
 
+type OvsElementService struct {
+	cs *CloudStackClient
+}
+
+func NewOvsElementService(cs *CloudStackClient) *OvsElementService {
+	return &OvsElementService{cs: cs}
+}
+
 type PodService struct {
 	cs *CloudStackClient
 }
@@ -737,14 +728,6 @@ type StoragePoolService struct {
 
 func NewStoragePoolService(cs *CloudStackClient) *StoragePoolService {
 	return &StoragePoolService{cs: cs}
-}
-
-type StorageService struct {
-	cs *CloudStackClient
-}
-
-func NewStorageService(cs *CloudStackClient) *StorageService {
-	return &StorageService{cs: cs}
 }
 
 type StratosphereSSPService struct {

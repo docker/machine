@@ -194,6 +194,7 @@ type EnableStorageMaintenanceResponse struct {
 	Id                   string            `json:"id,omitempty"`
 	Ipaddress            string            `json:"ipaddress,omitempty"`
 	Name                 string            `json:"name,omitempty"`
+	Overprovisionfactor  string            `json:"overprovisionfactor,omitempty"`
 	Path                 string            `json:"path,omitempty"`
 	Podid                string            `json:"podid,omitempty"`
 	Podname              string            `json:"podname,omitempty"`
@@ -288,6 +289,7 @@ type CancelStorageMaintenanceResponse struct {
 	Id                   string            `json:"id,omitempty"`
 	Ipaddress            string            `json:"ipaddress,omitempty"`
 	Name                 string            `json:"name,omitempty"`
+	Overprovisionfactor  string            `json:"overprovisionfactor,omitempty"`
 	Path                 string            `json:"path,omitempty"`
 	Podid                string            `json:"podid,omitempty"`
 	Podname              string            `json:"podname,omitempty"`

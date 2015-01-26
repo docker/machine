@@ -120,6 +120,7 @@ type AttachVolumeResponse struct {
 	JobID                      string `json:"jobid,omitempty"`
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -136,6 +137,9 @@ type AttachVolumeResponse struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -165,13 +169,16 @@ type AttachVolumeResponse struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
 
 type UploadVolumeParams struct {
@@ -188,6 +195,9 @@ func (p *UploadVolumeParams) toURLValues() url.Values {
 	}
 	if v, found := p.p["checksum"]; found {
 		u.Set("checksum", v.(string))
+	}
+	if v, found := p.p["diskofferingid"]; found {
+		u.Set("diskofferingid", v.(string))
 	}
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
@@ -226,6 +236,14 @@ func (p *UploadVolumeParams) SetChecksum(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["checksum"] = v
+	return
+}
+
+func (p *UploadVolumeParams) SetDiskofferingid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["diskofferingid"] = v
 	return
 }
 
@@ -337,6 +355,7 @@ type UploadVolumeResponse struct {
 	JobID                      string `json:"jobid,omitempty"`
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -353,6 +372,9 @@ type UploadVolumeResponse struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -382,13 +404,16 @@ type UploadVolumeResponse struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
 
 type DetachVolumeParams struct {
@@ -485,6 +510,7 @@ type DetachVolumeResponse struct {
 	JobID                      string `json:"jobid,omitempty"`
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -501,6 +527,9 @@ type DetachVolumeResponse struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -530,13 +559,16 @@ type DetachVolumeResponse struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
 
 type CreateVolumeParams struct {
@@ -550,6 +582,9 @@ func (p *CreateVolumeParams) toURLValues() url.Values {
 	}
 	if v, found := p.p["account"]; found {
 		u.Set("account", v.(string))
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
 	}
 	if v, found := p.p["diskofferingid"]; found {
 		u.Set("diskofferingid", v.(string))
@@ -596,6 +631,14 @@ func (p *CreateVolumeParams) SetAccount(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["account"] = v
+	return
+}
+
+func (p *CreateVolumeParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
 	return
 }
 
@@ -736,6 +779,7 @@ type CreateVolumeResponse struct {
 	JobID                      string `json:"jobid,omitempty"`
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -752,6 +796,9 @@ type CreateVolumeResponse struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -781,13 +828,16 @@ type CreateVolumeResponse struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
 
 type DeleteVolumeParams struct {
@@ -853,6 +903,13 @@ func (p *ListVolumesParams) toURLValues() url.Values {
 	if v, found := p.p["account"]; found {
 		u.Set("account", v.(string))
 	}
+	if v, found := p.p["diskofferingid"]; found {
+		u.Set("diskofferingid", v.(string))
+	}
+	if v, found := p.p["displayvolume"]; found {
+		vv := strconv.FormatBool(v.(bool))
+		u.Set("displayvolume", vv)
+	}
 	if v, found := p.p["domainid"]; found {
 		u.Set("domainid", v.(string))
 	}
@@ -887,8 +944,14 @@ func (p *ListVolumesParams) toURLValues() url.Values {
 	if v, found := p.p["podid"]; found {
 		u.Set("podid", v.(string))
 	}
+	if v, found := p.p["podid"]; found {
+		u.Set("podid", v.(string))
+	}
 	if v, found := p.p["projectid"]; found {
 		u.Set("projectid", v.(string))
+	}
+	if v, found := p.p["storageid"]; found {
+		u.Set("storageid", v.(string))
 	}
 	if v, found := p.p["storageid"]; found {
 		u.Set("storageid", v.(string))
@@ -918,6 +981,22 @@ func (p *ListVolumesParams) SetAccount(v string) {
 		p.p = make(map[string]interface{})
 	}
 	p.p["account"] = v
+	return
+}
+
+func (p *ListVolumesParams) SetDiskofferingid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["diskofferingid"] = v
+	return
+}
+
+func (p *ListVolumesParams) SetDisplayvolume(v bool) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["displayvolume"] = v
 	return
 }
 
@@ -1150,6 +1229,7 @@ type ListVolumesResponse struct {
 type Volume struct {
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -1166,6 +1246,9 @@ type Volume struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -1195,13 +1278,16 @@ type Volume struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
 
 type ExtractVolumeParams struct {
@@ -1421,6 +1507,7 @@ type MigrateVolumeResponse struct {
 	JobID                      string `json:"jobid,omitempty"`
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -1437,6 +1524,9 @@ type MigrateVolumeResponse struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -1466,13 +1556,16 @@ type MigrateVolumeResponse struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
 
 type ResizeVolumeParams struct {
@@ -1535,9 +1628,10 @@ func (p *ResizeVolumeParams) SetSize(v int) {
 
 // You should always use this function to get a new ResizeVolumeParams instance,
 // as then you are sure you have configured all required params
-func (s *VolumeService) NewResizeVolumeParams() *ResizeVolumeParams {
+func (s *VolumeService) NewResizeVolumeParams(id string) *ResizeVolumeParams {
 	p := &ResizeVolumeParams{}
 	p.p = make(map[string]interface{})
+	p.p["id"] = id
 	return p
 }
 
@@ -1581,6 +1675,7 @@ type ResizeVolumeResponse struct {
 	JobID                      string `json:"jobid,omitempty"`
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -1597,6 +1692,9 @@ type ResizeVolumeResponse struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -1626,13 +1724,16 @@ type ResizeVolumeResponse struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
 
 type UpdateVolumeParams struct {
@@ -1643,6 +1744,12 @@ func (p *UpdateVolumeParams) toURLValues() url.Values {
 	u := url.Values{}
 	if p.p == nil {
 		return u
+	}
+	if v, found := p.p["chaininfo"]; found {
+		u.Set("chaininfo", v.(string))
+	}
+	if v, found := p.p["customid"]; found {
+		u.Set("customid", v.(string))
 	}
 	if v, found := p.p["displayvolume"]; found {
 		vv := strconv.FormatBool(v.(bool))
@@ -1661,6 +1768,22 @@ func (p *UpdateVolumeParams) toURLValues() url.Values {
 		u.Set("storageid", v.(string))
 	}
 	return u
+}
+
+func (p *UpdateVolumeParams) SetChaininfo(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["chaininfo"] = v
+	return
+}
+
+func (p *UpdateVolumeParams) SetCustomid(v string) {
+	if p.p == nil {
+		p.p = make(map[string]interface{})
+	}
+	p.p["customid"] = v
+	return
 }
 
 func (p *UpdateVolumeParams) SetDisplayvolume(v bool) {
@@ -1751,6 +1874,7 @@ type UpdateVolumeResponse struct {
 	JobID                      string `json:"jobid,omitempty"`
 	Account                    string `json:"account,omitempty"`
 	Attached                   string `json:"attached,omitempty"`
+	Chaininfo                  string `json:"chaininfo,omitempty"`
 	Created                    string `json:"created,omitempty"`
 	Destroyed                  bool   `json:"destroyed,omitempty"`
 	Deviceid                   int    `json:"deviceid,omitempty"`
@@ -1767,6 +1891,9 @@ type UpdateVolumeResponse struct {
 	Hypervisor                 string `json:"hypervisor,omitempty"`
 	Id                         string `json:"id,omitempty"`
 	Isextractable              bool   `json:"isextractable,omitempty"`
+	Isodisplaytext             string `json:"isodisplaytext,omitempty"`
+	Isoid                      string `json:"isoid,omitempty"`
+	Isoname                    string `json:"isoname,omitempty"`
 	Maxiops                    int    `json:"maxiops,omitempty"`
 	Miniops                    int    `json:"miniops,omitempty"`
 	Name                       string `json:"name,omitempty"`
@@ -1796,11 +1923,14 @@ type UpdateVolumeResponse struct {
 		Resourcetype string `json:"resourcetype,omitempty"`
 		Value        string `json:"value,omitempty"`
 	} `json:"tags,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Virtualmachineid string `json:"virtualmachineid,omitempty"`
-	Vmdisplayname    string `json:"vmdisplayname,omitempty"`
-	Vmname           string `json:"vmname,omitempty"`
-	Vmstate          string `json:"vmstate,omitempty"`
-	Zoneid           string `json:"zoneid,omitempty"`
-	Zonename         string `json:"zonename,omitempty"`
+	Templatedisplaytext string `json:"templatedisplaytext,omitempty"`
+	Templateid          string `json:"templateid,omitempty"`
+	Templatename        string `json:"templatename,omitempty"`
+	Type                string `json:"type,omitempty"`
+	Virtualmachineid    string `json:"virtualmachineid,omitempty"`
+	Vmdisplayname       string `json:"vmdisplayname,omitempty"`
+	Vmname              string `json:"vmname,omitempty"`
+	Vmstate             string `json:"vmstate,omitempty"`
+	Zoneid              string `json:"zoneid,omitempty"`
+	Zonename            string `json:"zonename,omitempty"`
 }
