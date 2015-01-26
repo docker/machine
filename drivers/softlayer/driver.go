@@ -423,17 +423,19 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Upgrade() error {
-	sshCmd, err := d.GetSSHCommand("curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-latest > /tmp/docker && chmod +x /tmp/docker && mv /tmp/docker $(which docker)")
+	log.Debugf("Upgrading Docker")
+
+	cmd, err := d.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
 	if err != nil {
 		return err
+
 	}
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		return fmt.Errorf("%s", err)
+	if err := cmd.Run(); err != nil {
+		return err
+
 	}
-	return nil
+
+	return cmd.Run()
 }
 
 func (d *Driver) setupHost() error {

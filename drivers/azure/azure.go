@@ -210,7 +210,7 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sh -; fi")
+	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
 	if err != nil {
 		return err
 	}
@@ -459,7 +459,19 @@ func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 }
 
 func (driver *Driver) Upgrade() error {
-	return nil
+	log.Debugf("Upgrading Docker")
+
+	cmd, err := driver.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
+	if err != nil {
+		return err
+
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+
+	}
+
+	return cmd.Run()
 }
 
 func generateVMName() string {
