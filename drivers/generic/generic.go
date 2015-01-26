@@ -91,7 +91,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Copying SSH key...")
+	log.Infof("Importing SSH key...")
 
 	if err := utils.CopyFile(d.SSHKey, d.sshKeyPath()); err != nil {
 		return fmt.Errorf("unable to copy ssh key: %s", err)
