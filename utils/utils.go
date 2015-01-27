@@ -3,7 +3,6 @@ package utils
 import (
 	"io"
 	"os"
-	"os/user"
 	"path/filepath"
 	"runtime"
 )
@@ -27,13 +26,22 @@ func GetMachineClientCertDir() string {
 	return filepath.Join(GetMachineDir(), ".client")
 }
 
-func GetUsername() (string, error) {
-	u, err := user.Current()
-	if err != nil {
-		return "", err
+func GetUsername() string {
+	u := "unknown"
+	osUser := ""
+
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		osUser = os.Getenv("USER")
+	case "windows":
+		osUser = os.Getenv("USERNAME")
 	}
 
-	return u.Username, nil
+	if osUser != "" {
+		u = osUser
+	}
+
+	return u
 }
 
 func CopyFile(src, dst string) error {
