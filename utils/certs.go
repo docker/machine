@@ -7,10 +7,14 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
+	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
 	"time"
+
+	"github.com/howeyc/gopass"
 )
 
 func newCertificate(org string) (*x509.Certificate, error) {
@@ -107,10 +111,9 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 		}
 	}
 
-	tlsCert, err := tls.LoadX509KeyPair(caFile, caKeyFile)
+	tlsCert, err := LoadX509KeyPair(caFile, caKeyFile)
 	if err != nil {
 		return err
-
 	}
 
 	priv, err := rsa.GenerateKey(rand.Reader, bits)
@@ -148,4 +151,35 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	keyOut.Close()
 
 	return nil
+}
+
+// Attempts to load an encrypted X509 certificate
+// If the key file is not encrypted it falls back to the default tls package implementation
+func LoadX509KeyPair(caFile, caKeyFile string) (cert tls.Certificate, err error) {
+	var caByt, encKeyByt []byte
+
+	if encKeyByt, err = ioutil.ReadFile(caKeyFile); err != nil {
+		return
+	}
+
+	pemBlock, _ := pem.Decode(encKeyByt)
+	if pemBlock == nil {
+		return cert, fmt.Errorf("Unable to parse certificate key file")
+	}
+
+	if !x509.IsEncryptedPEMBlock(pemBlock) {
+		return tls.LoadX509KeyPair(caFile, caKeyFile)
+	}
+
+	// Decrypt the key with a given password
+	fmt.Printf("CA Key password: ")
+	if pemBlock.Bytes, err = x509.DecryptPEMBlock(pemBlock, gopass.GetPasswd()); err != nil {
+		return
+	}
+
+	if caByt, err = ioutil.ReadFile(caFile); err != nil {
+		return
+	}
+
+	return tls.X509KeyPair(caByt, pem.EncodeToMemory(pemBlock))
 }
