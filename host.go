@@ -123,8 +123,6 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	caCertPath := filepath.Join(utils.GetMachineDir(), "ca.pem")
-	caKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
 	serverCertPath := filepath.Join(h.storePath, "server.pem")
 	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
 
@@ -133,7 +131,7 @@ func (h *Host) ConfigureAuth() error {
 
 	log.Debugf("generating server cert: %s", serverCertPath)
 
-	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
+	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, h.CaCertPath, h.PrivateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
 
@@ -150,7 +148,7 @@ func (h *Host) ConfigureAuth() error {
 	}
 
 	// upload certs and configure TLS auth
-	caCert, err := ioutil.ReadFile(caCertPath)
+	caCert, err := ioutil.ReadFile(h.CaCertPath)
 	if err != nil {
 		return err
 	}
