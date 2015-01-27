@@ -10,10 +10,14 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+var (
+	caCertPath, caKeyPath string
+)
+
 func before(c *cli.Context) error {
 
-	caCertPath := c.GlobalString("tls-ca-cert")
-	caKeyPath := c.GlobalString("tls-ca-key")
+	caCertPath = c.GlobalString("tls-ca-cert")
+	caKeyPath = c.GlobalString("tls-ca-key")
 	clientCertPath := c.GlobalString("tls-client-cert")
 	clientKeyPath := c.GlobalString("tls-client-key")
 

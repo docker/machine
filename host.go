@@ -123,8 +123,6 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	caCertPath := filepath.Join(utils.GetMachineDir(), "ca.pem")
-	caKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
 	serverCertPath := filepath.Join(h.storePath, "server.pem")
 	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
 
