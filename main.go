@@ -11,16 +11,12 @@ import (
 )
 
 func before(c *cli.Context) error {
-
 	caCertPath := c.GlobalString("tls-ca-cert")
 	caKeyPath := c.GlobalString("tls-ca-key")
 	clientCertPath := c.GlobalString("tls-client-cert")
 	clientKeyPath := c.GlobalString("tls-client-key")
 
-	org, err := utils.GetUsername()
-	if err != nil {
-		return err
-	}
+	org := utils.GetUsername()
 	bits := 2048
 
 	if _, err := os.Stat(utils.GetMachineDir()); err != nil {
