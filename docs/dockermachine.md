@@ -587,6 +587,15 @@ and CLI option are provided the CLI option takes the precedence.
 | `OS_REGION_NAME`     | `--openstack-region`        |
 | `OS_ENDPOINT_TYPE`   | `--openstack-endpoint-type` |
 
+#### Parallels
+Creates machines locally on [Parallels Desktop for Mac](http://www.parallels.com/products/desktop/). Requires _Parallels Desktop for Mac_ to be installed.
+
+Options:
+
+ - `--parallels-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
+ - `--parallels-disk-size`: Size of disk for the host in MB. Default: `20000`
+ - `--parallels-memory`: Size of memory for the host in MB. Default: `1024`
+
 #### Rackspace
 Create machines on [Rackspace cloud](http://www.rackspace.com/cloud)
 
