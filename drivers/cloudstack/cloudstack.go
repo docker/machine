@@ -279,7 +279,7 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 // PreCreate allows for pre-create operations to make sure a driver is ready for creation
-func PreCreateCheck() error {
+func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
