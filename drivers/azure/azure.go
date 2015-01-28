@@ -111,6 +111,12 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	t := time.Now().Format("20060102150405")
 	name := fmt.Sprintf("%s-%s", machineName, t)
 
+	// trim name to 24 chars due to the azure dns name limit
+	if len(name) > 24 {
+		name = name[0:24]
+
+	}
+
 	driver := &Driver{MachineName: name, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 	return driver, nil
 }
