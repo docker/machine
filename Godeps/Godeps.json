@@ -143,6 +143,11 @@
 			"Rev": "9672590d5e5795b2d29fce97084fd5810665fc27"
 		},
 		{
+			"ImportPath": "github.com/xanzy/go-cloudstack/cloudstack",
+			"Comment": "v1.2.0",
+			"Rev": "6f5951088b74a98bd81e44cc5e8218170988c4a0"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/ssh",
 			"Rev": "1fbbd62cfec66bd39d91e97749579579d4d3037e"
 		},
