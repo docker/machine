@@ -356,6 +356,9 @@ func cmdSsh(c *cli.Context) {
 			log.Fatalf("unable to get active host: %v", err)
 		}
 
+		if host == nil {
+			log.Fatal("unable to get active host, active file not found")
+		}
 		name = host.Name
 	}
 
@@ -486,6 +489,10 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		m, err := store.GetActive()
 		if err != nil {
 			log.Fatalf("error getting active host: %v", err)
+		}
+
+		if m == nil {
+			log.Fatal("unable to get active host, active file not found")
 		}
 		machine = m
 	} else {
