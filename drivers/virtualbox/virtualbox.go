@@ -426,7 +426,7 @@ func (d *Driver) GetState() (state.State, error) {
 		}
 		return state.Error, err
 	}
-	re := regexp.MustCompile(`(?m)^VMState="(\w+)"$`)
+	re := regexp.MustCompile(`(?m)^VMState="(\w+)"`)
 	groups := re.FindStringSubmatch(stdout)
 	if len(groups) < 1 {
 		return state.None, nil
