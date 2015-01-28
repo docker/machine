@@ -31,6 +31,8 @@ type Driver struct {
 	MachineName    string
 	CaCertPath     string
 	PrivateKeyPath string
+	SwarmMaster    bool
+	SwarmHost      string
 }
 
 type deviceConfig struct {
@@ -189,6 +191,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		User:     flags.String("softlayer-user"),
 		ApiKey:   flags.String("softlayer-api-key"),
 	}
+
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
 
 	if err := validateClientConfig(d.Client); err != nil {
 		return err

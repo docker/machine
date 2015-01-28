@@ -46,6 +46,50 @@ You can also get the commands to export environment variables to use with the Do
 
 Machine is still in its early stages. If you'd like to try out a preview build, [download it here](https://github.com/docker/machine/releases/latest).
 
+## Swarm
+
+Machine can create [Docker Swarm](https://github.com/docker/swarm) clusters.
+
+First, create a Swarm token using `docker-machine create-swarm-token`.  Optionally, you can use another discovery service.  See the Swarm docs for details.
+
+Once you have the token, you can create the cluster.
+
+### Swarm Master
+
+Create the Swarm master:
+
+`docker-machine create -d virtualbox --swarm --swarm-master --swarm-discovery token://<TOKEN-FROM-ABOVE> swarm-master`
+
+Replace `<TOKEN-FROM-ABOVE>` with your random token.  This will create the Swarm master.
+
+### Swarm Nodes
+
+Now, create one or more Swarm nodes:
+
+`docker-machine create -d virtualbox --swarm --swarm-discovery token://<TOKEN-FROM-ABOVE> swarm-node-00`
+
+You now have a Swarm cluster.  To connect to the Swarm master, you can use `docker-machine env --swarm swarm-master`
+
+For example:
+
+```
+$ docker-machine env --swarm swarm-master
+export DOCKER_TLS_VERIFY=yes
+export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
+export DOCKER_HOST=tcp://192.168.99.100:3376
+```
+
+You can load this into your environment using `$(docker-machine env --swarm swarm-master)`.
+
+Now you can use the Docker CLI to query:
+
+```
+$ docker info
+Containers: 1
+Nodes: 1
+ swarm-node-00: 192.168.99.101:2376
+```
+
 ## Drivers
 
 ### VirtualBox

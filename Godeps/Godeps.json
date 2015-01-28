@@ -116,6 +116,11 @@
 			"Rev": "6b7834910dcbb3021adc193411d01f65595445fb"
 		},
 		{
+			"ImportPath": "github.com/docker/swarm/discovery",
+			"Comment": "v0.1.0-rc1-75-g86a028d",
+			"Rev": "86a028d7c1cb593744dfc8d9e3c1b6b22fbc18b8"
+		},
+		{
 			"ImportPath": "github.com/google/go-querystring/query",
 			"Rev": "30f7a39f4a218feb5325f3aebc60c32a572a8274"
 		},

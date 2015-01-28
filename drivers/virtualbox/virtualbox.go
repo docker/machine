@@ -36,6 +36,8 @@ type Driver struct {
 	Boot2DockerURL string
 	CaCertPath     string
 	PrivateKeyPath string
+	SwarmMaster    bool
+	SwarmHost      string
 	storePath      string
 }
 
@@ -98,6 +100,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("virtualbox-memory")
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+
 	return nil
 }
 

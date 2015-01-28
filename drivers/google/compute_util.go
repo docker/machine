@@ -22,8 +22,8 @@ type ComputeUtil struct {
 	zoneURL      string
 	globalURL    string
 	ipAddress    string
-	swarmMaster  bool
-	swarmHost    string
+	SwarmMaster  bool
+	SwarmHost    string
 }
 
 const (
@@ -53,8 +53,8 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		service:      service,
 		zoneURL:      apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:    apiURL + driver.Project + "/global",
-		swarmMaster:  driver.swarmMaster,
-		swarmHost:    driver.swarmHost,
+		SwarmMaster:  driver.SwarmMaster,
+		SwarmHost:    driver.SwarmHost,
 	}
 	return &c, nil
 }
@@ -95,8 +95,8 @@ func (c *ComputeUtil) createFirewallRule() error {
 		},
 	}
 
-	if c.swarmMaster {
-		u, err := url.Parse(c.swarmHost)
+	if c.SwarmMaster {
+		u, err := url.Parse(c.SwarmHost)
 		if err != nil {
 			return fmt.Errorf("error authorizing port for swarm: %s", err)
 		}

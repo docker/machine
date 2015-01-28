@@ -36,15 +36,18 @@ func getTestDriverFlags() *DriverOptionsMock {
 	name := hostTestName
 	flags := &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"name": name,
-			"url":  "unix:///var/run/docker.sock",
+			"name":         name,
+			"url":          "unix:///var/run/docker.sock",
+			"swarm":        false,
+			"swarm-host":   "",
+			"swarm-master": false,
 		},
 	}
 	return flags
 }
 
 func getDefaultTestHost() (*Host, error) {
-	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey)
+	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, false, "")
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +150,7 @@ func TestGenerateClientCertificate(t *testing.T) {
 }
 
 func TestGenerateDockerConfigNonLocal(t *testing.T) {
-	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey)
+	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, false, "")
 	if err != nil {
 		t.Fatal(err)
 	}

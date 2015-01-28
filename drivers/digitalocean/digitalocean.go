@@ -33,6 +33,8 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 	DriverKeyPath  string
+	SwarmMaster    bool
+	SwarmHost      string
 	storePath      string
 }
 
@@ -86,6 +88,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Image = flags.String("digitalocean-image")
 	d.Region = flags.String("digitalocean-region")
 	d.Size = flags.String("digitalocean-size")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
