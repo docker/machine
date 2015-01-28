@@ -29,7 +29,6 @@ type Driver struct {
 	SubscriptionID          string
 	SubscriptionCert        string
 	PublishSettingsFilePath string
-	Name                    string
 	Location                string
 	Size                    string
 	UserName                string
@@ -68,10 +67,6 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "azure-location",
 			Usage:  "Azure location",
 			Value:  "West US",
-		},
-		cli.StringFlag{
-			Name:  "azure-name",
-			Usage: "Azure cloud service name",
 		},
 		cli.StringFlag{
 			Name:  "azure-password",
