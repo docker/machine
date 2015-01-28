@@ -3,6 +3,8 @@ package google
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -20,6 +22,8 @@ type ComputeUtil struct {
 	zoneURL      string
 	globalURL    string
 	ipAddress    string
+	swarmMaster  bool
+	swarmHost    string
 }
 
 const (
@@ -49,6 +53,8 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		service:      service,
 		zoneURL:      apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:    apiURL + driver.Project + "/global",
+		swarmMaster:  driver.swarmMaster,
+		swarmHost:    driver.swarmHost,
 	}
 	return &c, nil
 }
@@ -79,15 +85,33 @@ func (c *ComputeUtil) firewallRule() (*raw.Firewall, error) {
 
 func (c *ComputeUtil) createFirewallRule() error {
 	log.Infof("Creating firewall rule.")
-	rule := &raw.Firewall{
-		Allowed: []*raw.FirewallAllowed{
-			{
-				IPProtocol: "tcp",
-				Ports: []string{
-					port,
-				},
+	allowed := []*raw.FirewallAllowed{
+
+		{
+			IPProtocol: "tcp",
+			Ports: []string{
+				port,
 			},
 		},
+	}
+
+	if c.swarmMaster {
+		u, err := url.Parse(c.swarmHost)
+		if err != nil {
+			return fmt.Errorf("error authorizing port for swarm: %s", err)
+		}
+
+		parts := strings.Split(u.Host, ":")
+		swarmPort := parts[1]
+		allowed = append(allowed, &raw.FirewallAllowed{
+			IPProtocol: "tcp",
+			Ports: []string{
+				swarmPort,
+			},
+		})
+	}
+	rule := &raw.Firewall{
+		Allowed: allowed,
 		SourceRanges: []string{
 			"0.0.0.0/0",
 		},

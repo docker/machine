@@ -31,6 +31,8 @@ type Driver struct {
 	PrivateKeyPath   string
 	sshKeyPath       string
 	publicSSHKeyPath string
+	swarmMaster      bool
+	swarmHost        string
 }
 
 // CreateFlags are the command line flags used to create a driver.
@@ -109,6 +111,8 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.DiskSize = flags.Int("google-disk-size")
 	driver.UserName = flags.String("google-username")
 	driver.Project = flags.String("google-project")
+	driver.swarmMaster = flags.Bool("swarm-master")
+	driver.swarmHost = flags.String("swarm-host")
 	if driver.Project == "" {
 		return fmt.Errorf("Please specify the Google Cloud Project name using the option --google-project.")
 	}
