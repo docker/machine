@@ -266,22 +266,13 @@ Options:
 
 ### Cloudstack
 
-Create machines on your [Apache Cloudstack IaaS](http://cloudstack.apache.org/). You need to have a valid couple of API Key and Secret Key with the rights associated (see with your Cloudstack admin for more details).
+Create machines on your [Apache Cloudstack IaaS](http://cloudstack.apache.org/). You need to have a valid couple of API Key and Secret Key with the required rights associated (see with your Cloudstack admin or the [docs](http://cloudstack.apache.org/docs/en-US/index.html) for more details).
 
 You have a lot of freedom within CloudStack to define what type of OS you want to use for your docker machines. This makes a plugin like this kind of hard since you can use a wide variety of operating systems (e.g. CentOS, Ubuntu, CoreOS). So currently this driver expects a CoreOS template. Other templates may also work, but CoreOS templates are currently the only ones that are properly tested. To build a CoreOS template for your CloudStack installation, follow these simple steps:
 
-- Download a CoreOS ISO (you need a CoreOS 500+ build) and upload it to CS as an ISO for OS type `Other (64-bit)`
+- Download the latest CoreOS ISO and upload it to CS as an ISO for OS type `Other (64-bit)`
 - Create and boot a new VM with the uploaded ISO set as it’s bootable media
-- After it's booted open the console and install CoreOS to disk using the command: `sudo coreos-install -d /dev/xvda -C beta -o cloudstack`
-- Now after this step the image is done, except for the fact that we need the custom (auth identity) docker binary on there. So next follow these steps:
-  - sudo su -
-  - curl -sS https://raw.githubusercontent.com/BlueDragonX/coreos-image-tools/master/coreos-rw > coreos-rw
-  - sh coreos-rw enable /dev/xvda3
-  - mount /dev/xvda3 /mnt
-  - curl -sS https://bfirsh.s3.amazonaws.com/docker/linux/docker-1.4.1-dev-identity-auth > /mnt/bin/docker
-  - umount /mnt
-  - sh coreos-rw disable /dev/xvda3
-  - exit
+- After it's booted open the console and install CoreOS to disk using the command: `sudo coreos-install -d /dev/xvda -C stable -o cloudstack`
 - Once done, shutdown the newly created VM and create a template from it’s root volume. Again make sure you set the OS type to `Other (64-bit)`
 
 Options :

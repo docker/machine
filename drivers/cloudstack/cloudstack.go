@@ -144,7 +144,7 @@ func NewDriver(
 
 	driver := &Driver{
 		MachineName:    machineName,
-		FWRuleIds: 			[]string{},
+		FWRuleIds:      []string{},
 		storePath:      storePath,
 		CaCertPath:     caCertPath,
 		PrivateKeyPath: privateKeyPath,
@@ -152,10 +152,13 @@ func NewDriver(
 	return driver, nil
 }
 
+// DriverName returns the name of the driver as it is registered
 func (d *Driver) DriverName() string {
 	return driverName
 }
 
+// SetConfigFromFlags configures the driver with the object that was returned
+// by RegisterCreateFlags
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ApiURL = flags.String("cloudstack-api-url")
 	d.ApiKey = flags.String("cloudstack-api-key")
@@ -219,6 +222,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+// GetURL returns a Docker compatible host URL for connecting to this host
+// e.g. tcp://1.2.3.4:2376
 func (d *Driver) GetURL() (string, error) {
 	ip, err := d.GetIP()
 	if err != nil {
@@ -227,6 +232,7 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s:%d", ip, d.PublicPort), nil
 }
 
+// GetIP returns the IP that this host is available at
 func (d *Driver) GetIP() (string, error) {
 	if d.NoPublicIP {
 		return d.PrivateIP, nil
@@ -234,6 +240,7 @@ func (d *Driver) GetIP() (string, error) {
 	return d.PublicIP, nil
 }
 
+// GetState returns the state that the host is in (running, stopped, etc)
 func (d *Driver) GetState() (state.State, error) {
 	cs := d.getClient()
 	vm, count, err := cs.VirtualMachine.GetVirtualMachineByID(d.Id)
@@ -271,24 +278,28 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-func (d *Driver) Create() error {
-	log.Info("Creating CloudStack instance...")
+// PreCreate allows for pre-create operations to make sure a driver is ready for creation
+func PreCreateCheck() error {
+	return nil
+}
 
+// Create a host using the driver's config
+func (d *Driver) Create() error {
 	cs := d.getClient()
 
-	log.Infof("Retrieving UUID of template: %q", d.Template)
+	log.Debugf("Retrieving UUID of template: %q", d.Template)
 	templateid, err := cs.Template.GetTemplateID(d.Template, "executable")
 	if err != nil {
 		return fmt.Errorf("Error retrieving UUID of template %q: %v", d.Template, err)
 	}
 
-	log.Infof("Retrieving UUID of service offering: %q", d.Offering)
+	log.Debugf("Retrieving UUID of service offering: %q", d.Offering)
 	offeringid, err := cs.ServiceOffering.GetServiceOfferingID(d.Offering)
 	if err != nil {
 		return fmt.Errorf("Error retrieving UUID of service offering %q: %v", d.Offering, err)
 	}
 
-	log.Infof("Retrieving UUID of zone: %q", d.Zone)
+	log.Debugf("Retrieving UUID of zone: %q", d.Zone)
 	zoneid, err := cs.Zone.GetZoneID(d.Zone)
 	if err != nil {
 		return fmt.Errorf("Error retrieving UUID of zone %q: %v", d.Zone, err)
@@ -299,7 +310,7 @@ func (d *Driver) Create() error {
 	p.SetDisplayname(d.MachineName)
 
 	if d.Network != "" {
-		log.Infof("Retrieving UUID of network: %q", d.Network)
+		log.Debugf("Retrieving UUID of network: %q", d.Network)
 		networkid, err := cs.Network.GetNetworkID(d.Network)
 		if err != nil {
 			return fmt.Errorf("Error retrieving UUID of network %q: %v", d.Network, err)
@@ -326,6 +337,7 @@ func (d *Driver) Create() error {
 	}
 
 	// Create the machine
+	log.Info("Creating CloudStack instance...")
 	vm, err := cs.VirtualMachine.DeployVirtualMachine(p)
 	if err != nil {
 		return err
@@ -336,7 +348,7 @@ func (d *Driver) Create() error {
 
 	if !d.NoPublicIP {
 		// Make sure the new machine is accessible
-		log.Infof("Retrieving UUID of IP address: %q", d.PublicIP)
+		log.Debugf("Retrieving UUID of IP address: %q", d.PublicIP)
 		ip := cs.Address.NewListPublicIpAddressesParams()
 		ip.SetIpaddress(d.PublicIP)
 
@@ -350,6 +362,7 @@ func (d *Driver) Create() error {
 		ipaddressid := l.PublicIpAddresses[0].Id
 
 		// Open the firewall for docker traffic
+		log.Info("Creating firewall rules...")
 		r := cs.Firewall.NewCreateFirewallRuleParams(ipaddressid, "tcp")
 		r.SetCidrlist([]string{d.SourceCIDR})
 		r.SetStartport(d.PublicPort)
@@ -383,6 +396,7 @@ func (d *Driver) Create() error {
 		}
 
 		// Create a port forward for the docker port
+		log.Info("Creating port forwarding rules...")
 		f := cs.Firewall.NewCreatePortForwardingRuleParams(
 			ipaddressid, d.PrivatePort, "tcp", d.PublicPort, d.Id)
 		f.SetOpenfirewall(false)
@@ -404,6 +418,35 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+// Remove a host
+func (d *Driver) Remove() error {
+	cs := d.getClient()
+	p := cs.VirtualMachine.NewDestroyVirtualMachineParams(d.Id)
+	p.SetExpunge(d.Explunge)
+
+	log.Info("Removing CloudStack instance...")
+	_, err := cs.VirtualMachine.DestroyVirtualMachine(p)
+	if err != nil {
+		return err
+	}
+
+	// Not sure if this should be here, I can imagine some use cases
+	// where does shouldn't be executed
+	if len(d.FWRuleIds) > 0 {
+		log.Info("Removing firewall rules...")
+		for _, id := range d.FWRuleIds {
+			f := cs.Firewall.NewDeleteFirewallRuleParams(id)
+			_, err = cs.Firewall.DeleteFirewallRule(f)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// Start a host
 func (d *Driver) Start() error {
 	vmstate, err := d.GetState()
 	if err != nil {
@@ -431,6 +474,7 @@ func (d *Driver) Start() error {
 	return nil
 }
 
+// Stop a host gracefully
 func (d *Driver) Stop() error {
 	vmstate, err := d.GetState()
 	if err != nil {
@@ -453,31 +497,7 @@ func (d *Driver) Stop() error {
 	return nil
 }
 
-func (d *Driver) Remove() error {
-	cs := d.getClient()
-	p := cs.VirtualMachine.NewDestroyVirtualMachineParams(d.Id)
-	p.SetExpunge(d.Explunge)
-
-	_, err := cs.VirtualMachine.DestroyVirtualMachine(p)
-	if err != nil {
-		return err
-	}
-
-	// Not sure if this should be here, I can imagine some use cases
-	// where does shouldn't be executed
-	if len(d.FWRuleIds) > 0 {
-		for _, id := range d.FWRuleIds {
-			f := cs.Firewall.NewDeleteFirewallRuleParams(id)
-			_, err = cs.Firewall.DeleteFirewallRule(f)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
+// Restart a host.
 func (d *Driver) Restart() error {
 	vmstate, err := d.GetState()
 	if err != nil {
@@ -499,10 +519,12 @@ func (d *Driver) Restart() error {
 	return nil
 }
 
+// Kill stops a host forcefully
 func (d *Driver) Kill() error {
 	return d.Stop()
 }
 
+// StartDocker starts the Docker daemon on the machine
 func (d *Driver) StartDocker() error {
 	log.Info("Starting Docker...")
 
@@ -517,6 +539,7 @@ func (d *Driver) StartDocker() error {
 	return nil
 }
 
+// StopDocker stops the Docker daemon on the machine
 func (d *Driver) StopDocker() error {
 	log.Info("Stopping Docker...")
 
@@ -531,14 +554,19 @@ func (d *Driver) StopDocker() error {
 	return nil
 }
 
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
+// Upgrade the version of Docker on the host to the latest version
 func (d *Driver) Upgrade() error {
 	return &unsupportedError{operation: "upgrade"}
 }
 
+// GetDockerConfigDir returns the config directory for storing daemon configs
+func (d *Driver) GetDockerConfigDir() string {
+	return dockerConfigDir
+}
+
+// GetSSHCommand returns a command for SSH pointing at the correct user, host
+// and keys for the host with args appended. If no args are passed, it will
+// initiate an interactive SSH session as if SSH were passed no args.
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	ipaddress, err := d.GetIP()
 	if err != nil {
@@ -560,50 +588,35 @@ func (d *Driver) getUserData() (string, error) {
 	}
 
 	cc := fmt.Sprintf(`#cloud-config
-write_files:
-  - path: /etc/systemd/system/docker.service.d/auth-identity.conf
-    owner: core:core
-    permissions: 0644
-    content: |
-      [Service]
-      Environment="DOCKER_OPTS='--auth=identity --host=tcp://0.0.0.0:%d'"
-  - path: /.docker/authorized-keys.d/docker-host.json
-    owner: core:core
-    permissions: '0644'
-    content: |
-      %s
-
 ssh-authorized-keys:
   - %s
 
 coreos:
   units:
-    - name: docker-tcp.socket
-      command: start
-      enable: yes
-      content: |
-        [Unit]
-        Description=Docker Socket for the API
-
-        [Socket]
-        ListenStream=%d
-        BindIPv6Only=both
-        Service=docker.service
-
-        [Install]
-        WantedBy=sockets.target
-    - name: enable-docker-tcp.service
-      command: start
-      content: |
-        [Unit]
-        Description=Enable the Docker Socket for the API
-
-        [Service]
-        Type=oneshot
-        ExecStart=/usr/bin/systemctl enable docker-tcp.socket
     - name: docker.service
       command: start
-`, d.PrivatePort, pubKey, pubKey, d.PrivatePort)
+      content: |
+        [Unit]
+        Description=Docker Application Container Engine
+        Documentation=http://docs.docker.com
+        After=docker.socket early-docker.target network.target
+        Requires=docker.socket early-docker.target
+
+        [Service]
+        Environment=TMPDIR=/var/tmp
+        EnvironmentFile=-/run/docker_opts.env
+        LimitNOFILE=1048576
+        LimitNPROC=1048576
+        ExecStart=/usr/lib/coreos/dockerd --daemon \
+        --tlsverify \
+        --tlscacert=/etc/docker/ca.pem \
+        --tlskey=/etc/docker/server-key.pem \
+        --tlscert=/etc/docker/server.pem \
+        --host=tcp://0.0.0.0:%d
+
+        [Install]
+        WantedBy=multi-user.target
+`, pubKey, d.PrivatePort)
 
 	ud := base64.StdEncoding.EncodeToString([]byte(cc))
 	if len(ud) > 32768 {
