@@ -127,9 +127,12 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 
 	if master {
 		role = "manage"
-		// TODO: remove hardcoded paths
-		args = fmt.Sprintf("--tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server.pem --tlskey=/etc/docker/server-key.pem -H %s",
-			host)
+		basePath := d.GetDockerConfigDir()
+		tlsCaCert := path.Join(basePath, "ca.pem")
+		tlsCert := path.Join(basePath, "server.pem")
+		tlsKey := path.Join(basePath, "server-key.pem")
+		args = fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
+			tlsCaCert, tlsCert, tlsKey, host)
 	} else {
 		role = "join"
 		args = fmt.Sprintf("--addr %s", addr)
@@ -153,8 +156,8 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent -v /etc/docker:/etc/docker %s %s %s",
-		port, port, swarmDockerImage, role, args))
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent -v %s:%s %s %s %s",
+		port, port, d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, role, args))
 	if err != nil {
 		return err
 	}
