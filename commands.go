@@ -129,9 +129,9 @@ var Commands = []cli.Command{
 		Action: cmdRm,
 	},
 	{
-		Name:   "shellinit",
-		Usage:  "Display the shell commands to set up the Docker client",
-		Action: cmdShellinit,
+		Name:   "env",
+		Usage:  "Display the commands to set up the environment for the Docker client",
+		Action: cmdEnv,
 	},
 	{
 		Flags: []cli.Flag{
@@ -337,7 +337,7 @@ func cmdRm(c *cli.Context) {
 	}
 }
 
-func cmdShellinit(c *cli.Context) {
+func cmdEnv(c *cli.Context) {
 	cfg, err := getMachineConfig(c)
 	if err != nil {
 		log.Fatal(err)
