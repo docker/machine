@@ -391,6 +391,10 @@ func (d *Driver) Start() error {
 	return errors.NewInvalidStateError(d.MachineName)
 }
 
+func (d *Driver) Suspend() error {
+	return nil
+}
+
 func (d *Driver) Stop() error {
 	vcConn := NewVcConn(d)
 	err := vcConn.VmPowerOff()

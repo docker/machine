@@ -568,6 +568,10 @@ func (d *Driver) Start() error {
 
 }
 
+func (d *Driver) Suspend() error {
+	return nil
+}
+
 func (d *Driver) Stop() error {
 
 	p, err := govcloudair.NewClient()

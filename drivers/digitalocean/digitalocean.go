@@ -245,6 +245,10 @@ func (d *Driver) Start() error {
 	return err
 }
 
+func (d *Driver) Suspend() error {
+	return nil
+}
+
 func (d *Driver) Stop() error {
 	_, _, err := d.getClient().DropletActions.Shutdown(d.DropletID)
 	return err

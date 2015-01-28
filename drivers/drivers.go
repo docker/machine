@@ -44,6 +44,9 @@ type Driver interface {
 	// Start a host
 	Start() error
 
+	// Suspend a host
+	Suspend() error
+
 	// Stop a host gracefully
 	Stop() error
 

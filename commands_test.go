@@ -49,6 +49,10 @@ func (d *FakeDriver) Start() error {
 	return nil
 }
 
+func (d *FakeDriver) Suspend() error {
+	return nil
+}
+
 func (d *FakeDriver) Stop() error {
 	return nil
 }

@@ -422,6 +422,9 @@ func (d *Driver) Restart() error {
 func (d *Driver) Start() error {
 	return d.getClient().VirtualGuest().PowerOn(d.Id)
 }
+func (d *Driver) Suspend() error {
+	return nil
+}
 func (d *Driver) Stop() error {
 	return d.getClient().VirtualGuest().PowerOff(d.Id)
 }

@@ -81,6 +81,10 @@ func (d *Driver) Start() error {
 	return fmt.Errorf("hosts without a driver cannot be started")
 }
 
+func (d *Driver) Suspend() error {
+	return fmt.Errorf("hosts without a driver cannot be suspended")
+}
+
 func (d *Driver) Stop() error {
 	return fmt.Errorf("hosts without a driver cannot be stopped")
 }

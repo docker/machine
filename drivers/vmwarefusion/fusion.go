@@ -122,7 +122,22 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	// VMRUN only tells use if the vm is running or not
+	// VMRUN only tells us if the vm is running or not
+	// the hack here is check checkpoint.vmState in the vmx file,
+	// whose value is the filename of the suspended state file,
+	// or empty if the vm is running
+	vmxContent, err := d.vmxContent()
+	if err != nil {
+		return state.Error, err
+	}
+
+	for _, line := range strings.Split(vmxContent, "\n") {
+		if strings.Contains(line, "checkpoint.vmState") {
+			if line != "checkpoint.vmState = \"\"" {
+				return state.Saved, nil
+			}
+		}
+	}
 	if stdout, _, _ := vmrun("list"); strings.Contains(stdout, d.vmxPath()) {
 		return state.Running, nil
 	}
@@ -289,6 +304,11 @@ func (d *Driver) Start() error {
 	return nil
 }
 
+func (d *Driver) Suspend() error {
+	vmrun("suspend", d.vmxPath())
+	return nil
+}
+
 func (d *Driver) Stop() error {
 	vmrun("stop", d.vmxPath(), "nogui")
 	return nil
@@ -369,6 +389,22 @@ func (d *Driver) vmdkPath() string {
 	return path.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.MachineName))
 }
 
+func (d *Driver) vmxContent() (string, error) {
+	var vmxfh *os.File
+	var vmxcontent []byte
+	var err error
+
+	if vmxfh, err = os.Open(d.vmxPath()); err != nil {
+		return "", err
+	}
+	defer vmxfh.Close()
+
+	if vmxcontent, err = ioutil.ReadAll(vmxfh); err != nil {
+		return "", err
+	}
+	return string(vmxcontent), nil
+}
+
 // Download boot2docker ISO image for the given tag and save it at dest.
 func downloadISO(dir, file, url string) error {
 	rsp, err := http.Get(url)
@@ -397,9 +433,7 @@ func downloadISO(dir, file, url string) error {
 }
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
-	var vmxfh *os.File
 	var dhcpfh *os.File
-	var vmxcontent []byte
 	var dhcpcontent []byte
 	var macaddr string
 	var err error
@@ -411,18 +445,13 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 	// DHCP lease table for NAT vmnet interface
 	var dhcpfile = "/var/db/vmware/vmnet-dhcpd-vmnet8.leases"
 
-	if vmxfh, err = os.Open(d.vmxPath()); err != nil {
-		return "", err
-	}
-	defer vmxfh.Close()
-
-	if vmxcontent, err = ioutil.ReadAll(vmxfh); err != nil {
-		return "", err
-	}
-
 	// Look for generatedAddress as we're passing a VMX with addressType = "generated".
 	vmxparse := regexp.MustCompile(`^ethernet0.generatedAddress\s*=\s*"(.*?)"\s*$`)
-	for _, line := range strings.Split(string(vmxcontent), "\n") {
+	vmxContent, err := d.vmxContent()
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(vmxContent, "\n") {
 		if matches := vmxparse.FindStringSubmatch(line); matches == nil {
 			continue
 		} else {

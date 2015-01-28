@@ -192,6 +192,10 @@ func (driver *Driver) Start() error {
 	return c.createInstance(driver)
 }
 
+func (d *Driver) Suspend() error {
+	return nil
+}
+
 // Stop deletes the GCE instance, but keeps the disk.
 func (driver *Driver) Stop() error {
 	c, err := newComputeUtil(driver)

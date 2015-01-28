@@ -361,6 +361,10 @@ func (d *Driver) Start() error {
 	return d.waitForInstanceToStart()
 }
 
+func (d *Driver) Suspend() error {
+	return nil
+}
+
 func (d *Driver) Stop() error {
 	log.WithField("MachineId", d.MachineId).Info("Stopping OpenStack instance...")
 	if err := d.initCompute(); err != nil {

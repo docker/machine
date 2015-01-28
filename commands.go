@@ -151,6 +151,11 @@ var Commands = []cli.Command{
 		Action: cmdStart,
 	},
 	{
+		Name:   "suspend",
+		Usage:  "Suspend a machine",
+		Action: cmdSuspend,
+	},
+	{
 		Name:   "stop",
 		Usage:  "Stop a machine",
 		Action: cmdStop,
@@ -389,6 +394,12 @@ func cmdSsh(c *cli.Context) {
 
 func cmdStart(c *cli.Context) {
 	if err := getHost(c).Start(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdSuspend(c *cli.Context) {
+	if err := getHost(c).Suspend(); err != nil {
 		log.Fatal(err)
 	}
 }

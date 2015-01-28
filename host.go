@@ -288,6 +288,10 @@ func (h *Host) Start() error {
 	return h.Driver.Start()
 }
 
+func (h *Host) Suspend() error {
+	return h.Driver.Suspend()
+}
+
 func (h *Host) Stop() error {
 	return h.Driver.Stop()
 }

@@ -367,6 +367,10 @@ func (d *Driver) Start() error {
 	return nil
 }
 
+func (d *Driver) Suspend() error {
+	return nil
+}
+
 func (d *Driver) Stop() error {
 	if err := d.getClient().StopInstance(d.InstanceId, false); err != nil {
 		return err

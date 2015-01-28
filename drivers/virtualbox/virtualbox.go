@@ -347,6 +347,10 @@ func (d *Driver) Start() error {
 	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
 }
 
+func (d *Driver) Suspend() error {
+	return vbm("controlvm", d.MachineName, "savestate")
+}
+
 func (d *Driver) Stop() error {
 	if err := vbm("controlvm", d.MachineName, "acpipowerbutton"); err != nil {
 		return err

@@ -413,6 +413,16 @@ $ docker-machine restart
 INFO[0005] Waiting for VM to start...
 ```
 
+#### suspend
+
+Suspend a machine.
+
+It works on Vmware Fusion and VirtualBox currently.
+
+```
+$ docker-machine suspend
+```
+
 #### stop
 
 Gracefully stop a machine.
