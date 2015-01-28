@@ -54,10 +54,10 @@ type Driver struct {
 	Zone              string
 	CaCertPath        string
 	PrivateKeyPath    string
+	SwarmMaster       bool
+	SwarmHost         string
 	storePath         string
 	keyPath           string
-	swarmMaster       bool
-	swarmHost         string
 }
 
 type CreateFlags struct {
@@ -175,8 +175,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
-	d.swarmMaster = flags.Bool("swarm-master")
-	d.swarmHost = flags.String("swarm-host")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -564,7 +564,7 @@ func (d *Driver) terminate() error {
 }
 
 func (d *Driver) isSwarmMaster() bool {
-	return d.swarmMaster
+	return d.SwarmMaster
 }
 
 func (d *Driver) configureSecurityGroup(groupName string) error {
@@ -611,7 +611,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 
 	// configure swarm permission if needed
 	if d.isSwarmMaster() {
-		u, err := url.Parse(d.swarmHost)
+		u, err := url.Parse(d.SwarmHost)
 		if err != nil {
 			return fmt.Errorf("error authorizing port for swarm: %s", err)
 		}

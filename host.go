@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -25,7 +27,8 @@ var (
 )
 
 const (
-	swarmDockerImage = "ehazlett/swarm:latest"
+	swarmDockerImage              = "ehazlett/swarm:latest"
+	swarmDiscoveryServiceEndpoint = "https://discovery-stage.hub.docker.com/v1"
 )
 
 type Host struct {
@@ -37,6 +40,8 @@ type Host struct {
 	ServerKeyPath  string
 	PrivateKeyPath string
 	ClientCertPath string
+	SwarmMaster    bool
+	SwarmHost      string
 	storePath      string
 }
 
@@ -49,7 +54,20 @@ type hostConfig struct {
 	DriverName string
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
+func waitForDocker(addr string) error {
+	for {
+		conn, err := net.DialTimeout("tcp", addr, time.Second*5)
+		if err != nil {
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		conn.Close()
+		break
+	}
+	return nil
+}
+
+func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster bool, swarmHost string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -60,6 +78,8 @@ func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, err
 		Driver:         driver,
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
+		SwarmMaster:    swarmMaster,
+		SwarmHost:      swarmHost,
 		storePath:      storePath,
 	}, nil
 }
