@@ -40,6 +40,8 @@ staging   *        digitalocean   Running   tcp://104.236.37.134:2376
 
 Machine creates Docker hosts that are secure by default. The connection between the client and daemon is encrypted and authenticated using TLS security.  To get the Docker arguments for a machine use the command: `docker-machine config <machine-name>` i.e. `docker-machine config dev`.
 
+You can also get the commands to export environment variables to use with the Docker CLI:  `docker-machine env <machine-name>` i.e. `docker-machine env dev` to show or `$(docker-machine env dev)` to load in your environment.
+
 ## Try it out
 
 Machine is still in its early stages. If you'd like to try out a preview build, [download it here](https://github.com/docker/machine/releases/latest).

@@ -46,7 +46,7 @@ Now you should be able to check the version with `docker-machine -v`:
 
 ```
 $ docker-machine -v
-machine version 0.0.3
+machine version 0.1.0
 ```
 
 ## Getting started with Docker Machine using a local VM
@@ -85,13 +85,24 @@ INFO[0038] "dev" has been created and is now the active machine
 INFO[0038] To connect: docker $(docker-machine config dev) ps
 ```
 
+To use the Docker CLI, you can use the `env` command to list the commands
+needed to connect to the instance.
+
+```
+$ docker-machine env dev
+export DOCKER_TLS_VERIFY=yes
+export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
+export DOCKER_HOST=tcp://192.168.99.100:2376
+
+```
+
 You can see the machine you have created by running the `docker-machine ls` command
 again:
 
 ```
 $ docker-machine ls
 NAME      ACTIVE   DRIVER       STATE     URL
-dev       *        virtualbox   Running   tcp://192.168.99.100:2375
+dev       *        virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
 The `*` next to `dev` indicates that it is the active host.
@@ -216,8 +227,8 @@ active host:
 $ docker-machine active dev
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev                virtualbox     Running   tcp://192.168.99.103:2375
-staging   *        digitalocean   Running   tcp://104.236.50.118:2375
+dev                virtualbox     Running   tcp://192.168.99.103:2376
+staging   *        digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
 To select an active host, you can use the `docker-machine active` command.
@@ -226,8 +237,8 @@ To select an active host, you can use the `docker-machine active` command.
 $ docker-machine active dev
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev       *        virtualbox     Running   tcp://192.168.99.103:2375
-staging            digitalocean   Running   tcp://104.236.50.118:2375
+dev       *        virtualbox     Running   tcp://192.168.99.103:2376
+staging            digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
 To remove a host and all of its containers and images, use `docker-machine rm`:
@@ -260,13 +271,13 @@ Get or set the active machine.
 ```
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev                virtualbox     Running   tcp://192.168.99.103:2375
-staging   *        digitalocean   Running   tcp://104.236.50.118:2375
+dev                virtualbox     Running   tcp://192.168.99.103:2376
+staging   *        digitalocean   Running   tcp://104.236.50.118:2376
 $ docker-machine active dev
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev       *        virtualbox     Running   tcp://192.168.99.103:2375
-staging            digitalocean   Running   tcp://104.236.50.118:2375
+dev       *        virtualbox     Running   tcp://192.168.99.103:2376
+staging            digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
 #### create
