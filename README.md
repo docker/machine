@@ -46,6 +46,11 @@ You can also get the commands to export environment variables to use with the Do
 
 Machine is still in its early stages. If you'd like to try out a preview build, [download it here](https://github.com/docker/machine/releases/latest).
 
+For information about getting started and an overview of all the Machine
+commands available to you, [please refer to the
+documentation](https://github.com/docker/machine/blob/master/docs/dockermachine.md).
+Note that the documentation in its current state is an incomplete "rough draft".
+
 ## Drivers
 
 ### VirtualBox

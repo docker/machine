@@ -262,6 +262,81 @@ NAME        ACTIVE   DRIVER    STATE     URL
 custombox   *        none      Running   tcp://50.134.234.20:2376
 ```
 
+## Shell Function Shortcut
+
+When you start using Machine, it is likely that you will want to create a few
+different hosts and run Docker commands against them using the subshell method
+suggested by Machine's console output, i.e. `docker $(docker-machine config dev)
+ps`.  However, that is a fair bit of typing and it can be difficult to remember
+which host is considered "active" by Machine.
+
+Therefore, we suggest that you may want to use a shell function such as
+the following to make switching machines and running commands against them
+easier and more fluid:
+
+```
+dkr () {
+    if [[ "$1" == "which" ]]; then
+        echo $(docker-machine active)
+        return
+    fi
+    if [[ "$1" == "use" ]]; then
+        docker-machine active "$2"
+        return
+    fi
+    docker $(docker-machine config $(docker-machine active)) "$@"
+}
+```
+
+To make this function available to you at all times, simply add it to your
+`.bashrc` or `.zshrc` file. This has been tested on `bash` and `zsh` and should
+work well with both (assuming there is no existing alias or function for `dkr`).
+
+With this function, you can run Docker commands as you normally would, except
+that you simply type `dkr` instead of `docker` and they will automatically run
+against the active machine.  For example:
+
+```
+$ dkr version
+Client version: 1.4.1
+Client API version: 1.16
+Go version (client): go1.3.3
+Git commit (client): 5bc2ff8
+OS/Arch (client): darwin/amd64
+Server version: 1.4.1
+Server API version: 1.16
+Go version (server): go1.3.3
+Git commit (server): 136b351
+
+$ dkr run busybox echo hello world
+Unable to find image 'busybox:latest' locally
+busybox:latest: The image you are pulling has been verified
+
+511136ea3c5a: Pull complete
+df7546f9f060: Pull complete
+ea13149945cb: Pull complete
+4986bf8c1536: Pull complete
+Status: Downloaded newer image for busybox:latest
+hello world
+```
+
+To see the active machine you simply run `dkr which`:
+
+```
+$ dkr which
+dev
+```
+
+To switch the active machine, you can run `dkr use $MACHINE`:
+
+```
+$ dkr which
+dev
+$ dkr use staging
+$ dkr which
+staging
+```
+
 ## Subcommands
 
 #### active
