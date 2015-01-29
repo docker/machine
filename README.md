@@ -90,6 +90,8 @@ Options:
  - `--azure-subscription-id`: Your Azure subscription ID.
  - `--azure-subscription-cert`: Your Azure subscription cert.
 
+Note: the machine name will be used as DNS name for the Cloud Service (e.g. machinename.cloudapp.net)
+
 ### Amazon EC2
 
 Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and a VPC ID.  To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs.  Select the one where you would like to launch the instance.

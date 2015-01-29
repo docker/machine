@@ -108,16 +108,7 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	t := time.Now().Format("20060102150405")
-	name := fmt.Sprintf("%s-%s", machineName, t)
-
-	// trim name to 24 chars due to the azure dns name limit
-	if len(name) > 24 {
-		name = name[0:24]
-
-	}
-
-	driver := &Driver{MachineName: name, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
+	driver := &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 	return driver, nil
 }
 
@@ -173,6 +164,20 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (driver *Driver) PreCreateCheck() error {
+	if err := driver.setUserSubscription(); err != nil {
+		return err
+	}
+
+	// check azure DNS to make sure name is available
+	available, response, err := vmClient.CheckHostedServiceNameAvailability(driver.MachineName)
+	if err != nil {
+		return err
+	}
+
+	if !available {
+		return fmt.Errorf(response)
+	}
+
 	return nil
 }
 
