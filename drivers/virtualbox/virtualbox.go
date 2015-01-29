@@ -28,6 +28,11 @@ const (
 	dockerConfigDir = "/var/lib/boot2docker"
 )
 
+var (
+	errNoIso              = fmt.Errorf("There was no boot2docker.iso found locally")
+	errReleaseCallTimeout = fmt.Errorf("Network call for boot2docker release timed out")
+)
+
 type Driver struct {
 	MachineName    string
 	SSHPort        int
@@ -120,6 +125,11 @@ func (d *Driver) Create() error {
 	var (
 		err    error
 		isoURL string
+
+		// todo: use real constant for .docker
+		rootPath      = filepath.Join(drivers.GetHomeDir(), ".docker")
+		imgPath       = filepath.Join(rootPath, "images")
+		commonIsoPath = filepath.Join(imgPath, "boot2docker.iso")
 	)
 
 	// Check that VBoxManage exists and works
@@ -143,13 +153,19 @@ func (d *Driver) Create() error {
 		// until then always use "latest"
 		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
 		if err != nil {
-			return err
+			// TODO: Is there a more elegant way to do this?
+			// I looked for a typed error but the timeoutErr
+			// from net package is unexported.
+			if strings.Contains(err.Error(), "timeout") {
+				log.Warn(errReleaseCallTimeout)
+				if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+					return errNoIso
+				}
+				log.Info("Local boot2docker.iso found, going ahead with creation...")
+			} else {
+				return err
+			}
 		}
-
-		// todo: use real constant for .docker
-		rootPath := filepath.Join(utils.GetHomeDir(), ".docker")
-		imgPath := filepath.Join(rootPath, "images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
 
