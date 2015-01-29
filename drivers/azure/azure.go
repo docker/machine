@@ -169,13 +169,13 @@ func (driver *Driver) PreCreateCheck() error {
 	}
 
 	// check azure DNS to make sure name is available
-	available, res, err := vmClient.CheckHostedServiceNameAvailability(driver.MachineName)
+	available, response, err := vmClient.CheckHostedServiceNameAvailability(driver.MachineName)
 	if err != nil {
 		return err
 	}
 
 	if !available {
-		return fmt.Errorf(res)
+		return fmt.Errorf(response)
 	}
 
 	return nil
