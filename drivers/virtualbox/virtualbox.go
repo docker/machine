@@ -143,7 +143,7 @@ func (d *Driver) Create() error {
 		// until then always use "latest"
 		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
 		if err != nil {
-			return err
+			log.Warnf("Unable to check for the latest release: %s", err)
 		}
 
 		// todo: use real constant for .docker
