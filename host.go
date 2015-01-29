@@ -35,6 +35,7 @@ type Host struct {
 	ServerKeyPath  string
 	PrivateKeyPath string
 	ClientCertPath string
+	Environment    *[]string
 	storePath      string
 }
 
@@ -60,7 +61,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
+func NewHost(name, driverName, storePath, caCert, privateKey string, environment *[]string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -71,6 +72,7 @@ func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, err
 		Driver:         driver,
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
+		Environment:    environment,
 		storePath:      storePath,
 	}, nil
 }
@@ -247,11 +249,18 @@ func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKey
 		daemonOpts = fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
 		daemonOptsCfg = filepath.Join(d.GetDockerConfigDir(), "profile")
 		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
+		additionalVars := ""
+		if h.Environment != nil {
+			for _, v := range *h.Environment {
+				additionalVars += fmt.Sprintf("export %s\n", v)
+			}
+		}
 		daemonCfg = fmt.Sprintf(`EXTRA_ARGS='%s'
 CACERT=%s
 SERVERCERT=%s
 SERVERKEY=%s
-DOCKER_TLS=no`, opts, caCertPath, serverKeyPath, serverCertPath)
+DOCKER_TLS=no
+%s`, opts, caCertPath, serverKeyPath, serverCertPath, additionalVars)
 	default:
 		daemonOpts = fmt.Sprintf("--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:%d", dockerPort)
 		daemonOptsCfg = "/etc/default/docker"
