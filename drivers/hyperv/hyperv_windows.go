@@ -137,17 +137,19 @@ func (d *Driver) Create() error {
 	if d.boot2DockerLoc == "" {
 		if d.boot2DockerURL != "" {
 			isoURL = d.boot2DockerURL
+			log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+			if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+				return err
+			}
 		} else {
-			isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
+			commonIsoPath, err := utils.DownloadUpdateB2D()
 			if err != nil {
 				return err
 			}
-		}
-		log.Infof("Downloading boot2docker...")
-		// todo: use common iso location
-
-		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
-			return err
+			isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+			if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+				return err
+			}
 		}
 	} else {
 		if err := utils.CopyFile(d.boot2DockerLoc, filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
