@@ -87,10 +87,19 @@ Grab your subscription ID from the portal, then run `docker-machine create` with
 
 Options:
 
- - `--azure-subscription-id`: Your Azure subscription ID.
- - `--azure-subscription-cert`: Your Azure subscription cert.
+ - `--azure-subscription-id`: **required** Your Azure subscription ID.
+ - `--azure-subscription-cert`: **required** Your Azure subscription cert.
+ - `--azure-docker-port`: Azure Docker port. Default '2376'
+ - `--azure-image`: Azure image name. Default is Ubuntu 14.04 LTS x64 [$AZURE_IMAGE]
+ - `--azure-location`: Azure location. Default is 'West US' [$AZURE_LOCATION]
+ - `--azure-name`: Azure cloud service name
+ - `--azure-password`: Azure user password
+ - `--azure-publish-settings-file`: Azure publish settings file [$AZURE_PUBLISH_SETTINGS_FILE]
+ - `--azure-size`: Azure size. Default 'Small' [$AZURE_SIZE]
+ - `--azure-ssh-port`: Azure SSH port. Default '22'
+ - `--azure-username`: Azure username. Default 'ubuntu'
 
-Note: the machine name will be used as DNS name for the Cloud Service (e.g. machinename.cloudapp.net)
+Note: the machine name will be used as DNS name for the Cloud Service (e.g. machinename.cloudapp.net) and needs to be unique within Azure.
 
 ### Amazon EC2
 
