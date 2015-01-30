@@ -134,13 +134,6 @@ var Commands = []cli.Command{
 		Action: cmdEnv,
 	},
 	{
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "command, c",
-				Usage: "SSH Command",
-				Value: "",
-			},
-		},
 		Name:   "ssh",
 		Usage:  "Log into or run a command on a machine with SSH",
 		Action: cmdSsh,
@@ -358,9 +351,16 @@ func cmdSsh(c *cli.Context) {
 		name = host.Name
 	}
 
-	i := 1
-	for i < len(os.Args) && os.Args[i-1] != name {
-		i++
+	var cmd string
+
+	var args []string = c.Args()
+
+	for i, arg := range args {
+		if arg == "--" {
+			i++
+			cmd = strings.Join(args[i:], " ")
+			break
+		}
 	}
 
 	host, err := store.Load(name)
@@ -369,10 +369,10 @@ func cmdSsh(c *cli.Context) {
 	}
 
 	var sshCmd *exec.Cmd
-	if c.String("command") == "" {
+	if len(cmd) == 0 {
 		sshCmd, err = host.Driver.GetSSHCommand()
 	} else {
-		sshCmd, err = host.Driver.GetSSHCommand(c.String("command"))
+		sshCmd, err = host.Driver.GetSSHCommand(cmd)
 	}
 	if err != nil {
 		log.Fatal(err)
