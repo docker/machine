@@ -8,7 +8,35 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	log "github.com/Sirupsen/logrus"
 )
+
+func DownloadUpdateB2D() (string, error) {
+	//todo make this func update the already downloaded b2d if there is a newer version
+	isoURL, err := GetLatestBoot2DockerReleaseURL()
+	if err != nil {
+		return "", err
+	}
+
+	imgPath := filepath.Join(GetDockerDir(), "images")
+	commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+	if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+		log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+
+		// just in case boot2docker.iso has been manually deleted
+		if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+			if err := os.Mkdir(imgPath, 0700); err != nil {
+				return "", err
+			}
+		}
+
+		if err := DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+			return "", err
+		}
+	}
+	return commonIsoPath, nil
+}
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
