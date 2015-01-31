@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -56,6 +57,73 @@ func DownloadISO(dir, file, url string) error {
 		return err
 	}
 	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetBoot2DockerISO(skipUpdate bool, boot2DockerURL string, storePath string) error {
+	if !skipUpdate {
+
+		if boot2DockerURL != "" {
+			isoURL := boot2DockerURL
+			log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+			if err := DownloadISO(storePath, "boot2docker.iso", isoURL); err != nil {
+				return err
+			}
+		} else {
+			// todo: check latest release URL, download if it's new
+			// until then always use "latest"
+			isoURL, err := GetLatestBoot2DockerReleaseURL()
+			if err != nil {
+				return err
+			}
+
+			// todo: use real constant for .docker
+			rootPath := filepath.Join(GetHomeDir(), ".docker")
+			imgPath := filepath.Join(rootPath, "images")
+			commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+			if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+				log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+
+				// just in case boot2docker.iso has been manually deleted
+				if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+					if err := os.Mkdir(imgPath, 0700); err != nil {
+						return err
+					}
+				}
+
+				if err := DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+					return err
+				}
+			}
+
+			isoDest := filepath.Join(storePath, "boot2docker.iso")
+			if err := cpIso(commonIsoPath, isoDest); err != nil {
+				return err
+			}
+		}
+	} else {
+
+		rootPath := filepath.Join(GetHomeDir(), ".docker")
+		imgPath := filepath.Join(rootPath, "images")
+		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+
+		isoDest := filepath.Join(storePath, "boot2docker.iso")
+		if err := cpIso(commonIsoPath, isoDest); err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func cpIso(src, dest string) error {
+	buf, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(dest, buf, 0600); err != nil {
 		return err
 	}
 	return nil

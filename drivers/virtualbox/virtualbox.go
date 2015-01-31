@@ -37,12 +37,14 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 	storePath      string
+	SkipUpdate     bool
 }
 
 type CreateFlags struct {
 	Memory         *int
 	DiskSize       *int
 	Boot2DockerURL *string
+	SkipUpdate     *bool
 }
 
 func init() {
@@ -65,6 +67,10 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "virtualbox-disk-size",
 			Usage: "Size of disk for host in MB",
 			Value: 20000,
+		},
+		cli.BoolFlag{
+			Name:  "virtualbox-skip-update",
+			Usage: "Skip check for ISO updates, uses cached ISO file",
 		},
 		cli.StringFlag{
 			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
@@ -98,17 +104,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("virtualbox-memory")
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
-	return nil
-}
+	d.SkipUpdate = flags.Bool("virtualbox-skip-update")
 
-func cpIso(src, dest string) error {
-	buf, err := ioutil.ReadFile(src)
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(dest, buf, 0600); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -118,8 +115,7 @@ func (d *Driver) PreCreateCheck() error {
 
 func (d *Driver) Create() error {
 	var (
-		err    error
-		isoURL string
+		err error
 	)
 
 	// Check that VBoxManage exists and works
@@ -132,43 +128,9 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if d.Boot2DockerURL != "" {
-		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
-			return err
-		}
-	} else {
-		// todo: check latest release URL, download if it's new
-		// until then always use "latest"
-		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
-		if err != nil {
-			return err
-		}
-
-		// todo: use real constant for .docker
-		rootPath := filepath.Join(utils.GetHomeDir(), ".docker")
-		imgPath := filepath.Join(rootPath, "images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
-		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
-
-			// just in case boot2docker.iso has been manually deleted
-			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
-				if err := os.Mkdir(imgPath, 0700); err != nil {
-					return err
-				}
-			}
-
-			if err := utils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
-				return err
-			}
-		}
-
-		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
-		if err := cpIso(commonIsoPath, isoDest); err != nil {
-			return err
-		}
+	// I have to ingnore ISO download if cmd has --virtualbox-skip-update
+	if err := utils.GetBoot2DockerISO(d.SkipUpdate, d.Boot2DockerURL, d.storePath); err != nil {
+		return err
 	}
 
 	log.Infof("Creating SSH key...")

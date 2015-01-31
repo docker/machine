@@ -44,13 +44,15 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 
-	storePath string
+	storePath  string
+	SkipUpdate bool
 }
 
 type CreateFlags struct {
 	Boot2DockerURL *string
 	Memory         *int
 	DiskSize       *int
+	SkipUpdate     *bool
 }
 
 func init() {
@@ -68,6 +70,10 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "FUSION_BOOT2DOCKER_URL",
 			Name:   "vmwarefusion-boot2docker-url",
 			Usage:  "Fusion URL for boot2docker image",
+		},
+		cli.BoolFlag{
+			Name:  "vmwarefusion-skip-update",
+			Usage: "Skip check for ISO updates, uses cached ISO file",
 		},
 		cli.IntFlag{
 			EnvVar: "FUSION_MEMORY_SIZE",
@@ -97,6 +103,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")
 	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
 	d.ISO = path.Join(d.storePath, "boot2docker.iso")
+	d.SkipUpdate = flags.Bool("vmwarefusion-skip-update")
 
 	return nil
 }
@@ -136,47 +143,12 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) Create() error {
 
 	var (
-		isoURL string
-		err    error
+		err error
 	)
 
-	if d.Boot2DockerURL != "" {
-		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
-			return err
-		}
-	} else {
-		// todo: check latest release URL, download if it's new
-		// until then always use "latest"
-		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
-		if err != nil {
-			return err
-		}
-
-		// todo: use real constant for .docker
-		rootPath := filepath.Join(utils.GetHomeDir(), ".docker")
-		imgPath := filepath.Join(rootPath, "images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
-		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
-
-			// just in case boot2docker.iso has been manually deleted
-			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
-				if err := os.Mkdir(imgPath, 0700); err != nil {
-					return err
-				}
-			}
-
-			if err := utils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
-				return err
-			}
-		}
-
-		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
-		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
-			return err
-		}
+	// I have to ingnore ISO download if cmd has --virtualbox-skip-update
+	if err := utils.GetBoot2DockerISO(d.SkipUpdate, d.Boot2DockerURL, d.storePath); err != nil {
+		return err
 	}
 
 	log.Infof("Creating SSH key...")

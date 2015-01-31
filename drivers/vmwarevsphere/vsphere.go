@@ -55,7 +55,8 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 
-	storePath string
+	storePath  string
+	SkipUpdate bool
 }
 
 type CreateFlags struct {
@@ -71,6 +72,7 @@ type CreateFlags struct {
 	Datacenter     *string
 	Pool           *string
 	HostIP         *string
+	SkipUpdate     *bool
 }
 
 func init() {
@@ -106,6 +108,10 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VSPHERE_BOOT2DOCKER_URL",
 			Name:   "vmwarevsphere-boot2docker-url",
 			Usage:  "vSphere URL for boot2docker image",
+		},
+		cli.BoolFlag{
+			Name:  "vmwarevsphere-skip-update",
+			Usage: "Skip check for ISO updates, uses cached ISO file",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_VCENTER",
@@ -174,6 +180,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostIP = flags.String("vmwarevsphere-compute-ip")
 
 	d.ISO = path.Join(d.storePath, "boot2docker.iso")
+	d.SkipUpdate = flags.Bool("vmwarevsphere-skip-update")
 
 	return nil
 }
@@ -230,46 +237,12 @@ func (d *Driver) Create() error {
 	}
 
 	var (
-		isoURL string
-		err    error
+		err error
 	)
 
-	if d.Boot2DockerURL != "" {
-		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
-			return err
-		}
-	} else {
-		// todo: check latest release URL, download if it's new
-		// until then always use "latest"
-		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
-		if err != nil {
-			return err
-		}
-
-		rootPath := utils.GetDockerDir()
-		imgPath := filepath.Join(rootPath, "images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
-		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
-
-			// just in case boot2docker.iso has been manually deleted
-			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
-				if err := os.Mkdir(imgPath, 0700); err != nil {
-					return err
-				}
-			}
-
-			if err := utils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
-				return err
-			}
-		}
-
-		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
-		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
-			return err
-		}
+	// I have to ingnore ISO download if cmd has --virtualbox-skip-update
+	if err := utils.GetBoot2DockerISO(d.SkipUpdate, d.Boot2DockerURL, d.storePath); err != nil {
+		return err
 	}
 
 	log.Infof("Generating SSH Keypair...")
