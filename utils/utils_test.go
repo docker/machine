@@ -136,7 +136,7 @@ func TestCopyFile(t *testing.T) {
 func TestGetUsername(t *testing.T) {
 	currentUser := "unknown"
 	switch runtime.GOOS {
-	case "darwin,linux":
+	case "darwin", "linux":
 		currentUser = os.Getenv("USER")
 	case "windows":
 		currentUser = os.Getenv("USERNAME")
