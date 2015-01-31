@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+docker build -t docker-machine .
+
+if [[ "$1" == "serve" ]]; then
+    SERVE=yes
+else
+    SERVE=no
+fi
+
+docker run -it \
+    -e IN_CONTAINER=yes \
+    -e SERVE=${SERVE} \
+    -p 8000:8000 \
+    --rm docker-machine \
+    ./script/generate-coverage

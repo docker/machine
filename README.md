@@ -330,6 +330,28 @@ pass an argument to that script to specify which directory, e.g.:
 If you make a pull request, it is highly encouraged that you submit tests for
 the code that you have added or modified in the same pull request.
 
+## Code Coverage
+
+Machine includes a script to check for missing `*_test.go` files and to generate
+an [HTML-based repesentation of which code is covered by tests](http://blog.golang.org/cover#TOC_5.).
+
+To run the code coverage script, execute:
+
+```console
+$ ./script/coverage serve
+```
+
+You will see the results of the code coverage check as they come in.
+
+This will also generate the code coverage website and serve it from a container
+on port 8000.  By default, `/` will show you the source files from the base
+directory, and you can navigate to the coverage for any particular subdirectory
+of the Docker Machine repo's root by going to that path.  For instance, to see
+the coverage for the VirtualBox driver's package, browse to `/drivers/virtualbox`.
+
+![](/docs/img/coverage.png)
+
+You can hit `CTRL+C` to stop the server.
 
 ## Integration Tests
 There is a suite of integration tests that will run for the drivers.  In order
