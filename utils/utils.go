@@ -7,14 +7,17 @@ import (
 	"runtime"
 )
 
+func GetHomeDir() string {
+	if runtime.GOOS == "windows" {
+		return os.Getenv("USERPROFILE")
+	}
+	return os.Getenv("HOME")
+}
+
 func GetBaseDir() string {
 	baseDir := os.Getenv("MACHINE_DIR")
 	if baseDir == "" {
-		if runtime.GOOS == "windows" {
-			baseDir = os.Getenv("USERPROFILE")
-		} else {
-			baseDir = os.Getenv("HOME")
-		}
+		baseDir = GetHomeDir()
 	}
 	return baseDir
 }

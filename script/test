@@ -1,4 +1,12 @@
 #!/bin/sh
 set -e
+
+ARGS=$@
+if [ -z "$ARGS" ]; then
+    ARGS="./..."
+fi
+
+echo $ARGS
+
 docker build -t docker-machine .
-exec docker run --rm docker-machine go test -v -short ./...
+exec docker run --rm docker-machine godep go test -v -short $ARGS
