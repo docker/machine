@@ -13,38 +13,49 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+const (
+	hostTestName       = "test-host"
+	hostTestDriverName = "none"
+	hostTestStorePath  = "/test/path"
+	hostTestCaCert     = "test-cert"
+	hostTestPrivateKey = "test-key"
+)
+
+func getDefaultTestHost() (*Host, error) {
+	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return host, nil
+}
+
 func TestLoadHostDoesNotExist(t *testing.T) {
 	_, err := LoadHost("nope-not-here", "/nope/doesnotexist")
 	if err == nil {
-		t.Fatal("Expected error for non-existent host")
+		t.Fatalf("expected error for non-existent host")
 	}
 }
 
 func TestLoadHostExists(t *testing.T) {
-	name := "test-host"
-	driver := "none"
-	storePath := "/test/path"
-	caCert := "test-cert"
-	privateKey := "test-key"
-	host, err := NewHost(name, driver, storePath, caCert, privateKey)
+	host, err := getDefaultTestHost()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if host.Name != name {
-		t.Fatal("expected name %s received %s", name, host.Name)
+	if host.Name != hostTestName {
+		t.Fatalf("expected name %s; received %s", hostTestName, host.Name)
 	}
 
-	if host.DriverName != driver {
-		t.Fatal("expected driver %s received %s", driver, host.DriverName)
+	if host.DriverName != hostTestDriverName {
+		t.Fatalf("expected driver %s; received %s", hostTestDriverName, host.DriverName)
 	}
 
-	if host.CaCertPath != caCert {
-		t.Fatal("expected ca cert path %s received %s", caCert, host.CaCertPath)
+	if host.CaCertPath != hostTestCaCert {
+		t.Fatalf("expected ca cert path %s; received %s", hostTestCaCert, host.CaCertPath)
 	}
 
-	if host.PrivateKeyPath != privateKey {
-		t.Fatal("expected key path %s received %s", privateKey, host.PrivateKeyPath)
+	if host.PrivateKeyPath != hostTestPrivateKey {
+		t.Fatalf("expected key path %s; received %s", hostTestPrivateKey, host.PrivateKeyPath)
 	}
 }
 
@@ -113,6 +124,41 @@ func TestGenerateClientCertificate(t *testing.T) {
 
 	// cleanup
 	_ = os.RemoveAll(tmpDir)
+}
+
+func TestGenerateDockerConfigNonLocal(t *testing.T) {
+	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dockerPort := 1234
+	caCertPath := "/test/ca-cert"
+	serverKeyPath := "/test/server-key"
+	serverCertPath := "/test/server-cert"
+	engineConfigPath := "/etc/default/docker"
+
+	dockerCfg := host.generateDockerConfig(dockerPort, caCertPath, serverKeyPath, serverCertPath)
+
+	if dockerCfg.EngineConfigPath != engineConfigPath {
+		t.Fatalf("expected engine path %s; received %s", engineConfigPath, dockerCfg.EngineConfigPath)
+	}
+
+	if strings.Index(dockerCfg.EngineConfig, fmt.Sprintf("--host=tcp://0.0.0.0:%d", dockerPort)) == -1 {
+		t.Fatalf("--host docker port invalid; expected %d", dockerPort)
+	}
+
+	if strings.Index(dockerCfg.EngineConfig, fmt.Sprintf("--tlscacert=%s", caCertPath)) == -1 {
+		t.Fatalf("--tlscacert option invalid; expected %s", caCertPath)
+	}
+
+	if strings.Index(dockerCfg.EngineConfig, fmt.Sprintf("--tlskey=%s", serverKeyPath)) == -1 {
+		t.Fatalf("--tlskey option invalid; expected %s", serverKeyPath)
+	}
+
+	if strings.Index(dockerCfg.EngineConfig, fmt.Sprintf("--tlscert=%s", serverCertPath)) == -1 {
+		t.Fatalf("--tlscert option invalid; expected %s", serverCertPath)
+	}
 }
 
 func TestMachinePort(t *testing.T) {
