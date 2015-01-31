@@ -76,6 +76,11 @@ var Commands = []cli.Command{
 				),
 				Value: "none",
 			},
+			cli.StringSliceFlag{
+				Name:  "environment, e",
+				Usage: "Environment variables to export. e.g. -e HTTP_PROXY=http://example.org:8080 -e HTTPS_PROXY=http://example.org:8080",
+				Value: &cli.StringSlice{},
+			},
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
@@ -189,6 +194,7 @@ func cmdActive(c *cli.Context) {
 func cmdCreate(c *cli.Context) {
 	driver := c.String("driver")
 	name := c.Args().First()
+	environment := c.StringSlice("environment")
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
@@ -197,7 +203,7 @@ func cmdCreate(c *cli.Context) {
 
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
-	host, err := store.Create(name, driver, c)
+	host, err := store.Create(name, driver, c, &environment)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
 		log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
