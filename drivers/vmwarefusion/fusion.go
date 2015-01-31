@@ -147,32 +147,10 @@ func (d *Driver) Create() error {
 			return err
 		}
 	} else {
-		// todo: check latest release URL, download if it's new
-		// until then always use "latest"
-		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
+		commonIsoPath, err := utils.DownloadUpdateB2D()
 		if err != nil {
 			return err
 		}
-
-		// todo: use real constant for .docker
-		rootPath := filepath.Join(utils.GetHomeDir(), ".docker")
-		imgPath := filepath.Join(rootPath, "images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
-		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
-
-			// just in case boot2docker.iso has been manually deleted
-			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
-				if err := os.Mkdir(imgPath, 0700); err != nil {
-					return err
-				}
-			}
-
-			if err := utils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
-				return err
-			}
-		}
-
 		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
 		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 			return err
