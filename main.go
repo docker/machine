@@ -94,6 +94,11 @@ func main() {
 			Name:  "debug, D",
 			Usage: "Enable debug mode",
 		},
+		cli.BoolFlag{
+			Name:  "ignoreISOUpdate",
+			Usage: "Don't check for ISO updates",
+		},
+
 		cli.StringFlag{
 			EnvVar: "MACHINE_STORAGE_PATH",
 			Name:   "storage-path",
