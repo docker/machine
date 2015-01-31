@@ -11,6 +11,7 @@ import (
 )
 
 func TestGetBaseDir(t *testing.T) {
+	// reset any override env var
 	homeDir := GetHomeDir()
 	baseDir := GetBaseDir()
 
@@ -27,6 +28,7 @@ func TestGetCustomBaseDir(t *testing.T) {
 	if strings.Index(root, baseDir) != 0 {
 		t.Fatalf("expected base dir with prefix %s; received %s", root, baseDir)
 	}
+	os.Setenv("MACHINE_DIR", "")
 }
 
 func TestGetDockerDir(t *testing.T) {
@@ -45,6 +47,7 @@ func TestGetDockerDir(t *testing.T) {
 	if filename != ".docker" {
 		t.Fatalf("expected docker dir \".docker\"; received %s", filename)
 	}
+	os.Setenv("MACHINE_DIR", "")
 }
 
 func TestGetMachineDir(t *testing.T) {
@@ -63,6 +66,7 @@ func TestGetMachineDir(t *testing.T) {
 	if filename != "machines" {
 		t.Fatalf("expected machine dir \"machines\"; received %s", filename)
 	}
+	os.Setenv("MACHINE_DIR", "")
 }
 
 func TestGetMachineClientCertDir(t *testing.T) {
@@ -81,6 +85,7 @@ func TestGetMachineClientCertDir(t *testing.T) {
 	if filename != ".client" {
 		t.Fatalf("expected machine client dir \".client\"; received %s", filename)
 	}
+	os.Setenv("MACHINE_DIR", "")
 }
 
 func TestCopyFile(t *testing.T) {

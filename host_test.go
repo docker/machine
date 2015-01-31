@@ -21,11 +21,7 @@ const (
 	hostTestPrivateKey = "test-key"
 )
 
-var (
-	tmpDir string
-)
-
-func init() {
+func getTestStore() (*Store, error) {
 	tmpDir, err := ioutil.TempDir("", "machine-test-")
 	if err != nil {
 		fmt.Println(err)
@@ -33,9 +29,6 @@ func init() {
 	}
 
 	os.Setenv("MACHINE_DIR", tmpDir)
-}
-
-func getTestStore() (*Store, error) {
 	return NewStore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
 }
 
@@ -123,6 +116,14 @@ func TestValidateHostnameInvalid(t *testing.T) {
 }
 
 func TestGenerateClientCertificate(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	os.Setenv("MACHINE_DIR", tmpDir)
+
 	caCertPath := filepath.Join(tmpDir, "ca.pem")
 	caKeyPath := filepath.Join(tmpDir, "key.pem")
 	testOrg := "test-org"
