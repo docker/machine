@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 )
@@ -35,12 +36,33 @@ func GetLatestBoot2DockerReleaseURL() (string, error) {
 }
 
 // Download boot2docker ISO image for the given tag and save it at dest.
-func DownloadISO(dir, file, url string) error {
-	rsp, err := http.Get(url)
+func DownloadISO(dir, file, u string) error {
+
+	uri, err := url.Parse(u)
 	if err != nil {
 		return err
 	}
-	defer rsp.Body.Close()
+
+	if uri.Scheme == "file" || uri.Scheme == "" {
+		src, err := os.Open(uri.Path)
+		if err != nil {
+			return err
+		}
+		defer src.Close()
+		return cp(dir, file, src)
+
+	} else {
+
+		rsp, err := http.Get(u)
+		if err != nil {
+			return err
+		}
+		defer rsp.Body.Close()
+		return cp(dir, file, rsp.Body)
+	}
+}
+
+func cp(dir, file string, src io.Reader) error {
 
 	// Download to a temp file first then rename it to avoid partial download.
 	f, err := ioutil.TempFile(dir, file+".tmp")
@@ -48,8 +70,9 @@ func DownloadISO(dir, file, url string) error {
 		return err
 	}
 	defer os.Remove(f.Name())
-	if _, err := io.Copy(f, rsp.Body); err != nil {
-		// TODO: display download progress?
+
+	// TODO: display download progress?
+	if _, err := io.Copy(f, src); err != nil {
 		return err
 	}
 	if err := f.Close(); err != nil {
