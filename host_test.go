@@ -21,6 +21,35 @@ const (
 	hostTestPrivateKey = "test-key"
 )
 
+var (
+	tmpDir string
+)
+
+func init() {
+	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	os.Setenv("MACHINE_DIR", tmpDir)
+}
+
+func getTestStore() (*Store, error) {
+	return NewStore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
+}
+
+func getTestDriverFlags() *DriverOptionsMock {
+	name := hostTestName
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"name": name,
+			"url":  "unix:///var/run/docker.sock",
+		},
+	}
+	return flags
+}
+
 func getDefaultTestHost() (*Host, error) {
 	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey)
 	if err != nil {
@@ -94,13 +123,6 @@ func TestValidateHostnameInvalid(t *testing.T) {
 }
 
 func TestGenerateClientCertificate(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "machine-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	os.Setenv("MACHINE_DIR", tmpDir)
-
 	caCertPath := filepath.Join(tmpDir, "ca.pem")
 	caKeyPath := filepath.Join(tmpDir, "key.pem")
 	testOrg := "test-org"
@@ -121,9 +143,6 @@ func TestGenerateClientCertificate(t *testing.T) {
 	if _, err := os.Stat(clientKeyPath); err != nil {
 		t.Fatal(err)
 	}
-
-	// cleanup
-	_ = os.RemoveAll(tmpDir)
 }
 
 func TestGenerateDockerConfigNonLocal(t *testing.T) {
@@ -164,20 +183,21 @@ func TestGenerateDockerConfigNonLocal(t *testing.T) {
 func TestMachinePort(t *testing.T) {
 	dockerPort := 2376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": bindUrl,
-		},
+	store, err := getTestStore()
+	if err != nil {
+		t.Fatal(err)
 	}
+	flags := getTestDriverFlags()
 
-	store := NewStore("", "", "")
-
-	_, err := store.Create("test", "none", flags)
+	_, err = store.Create(hostTestName, hostTestDriverName, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load("test")
+	host, err := store.Load(hostTestName)
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg := host.generateDockerConfig(dockerPort, "", "", "")
 
 	re := regexp.MustCompile("--host=tcp://.*:(.+)")
@@ -194,7 +214,7 @@ func TestMachinePort(t *testing.T) {
 		t.Errorf("expected url %s; received %s", bindUrl, url)
 	}
 
-	if err := store.Remove("test", true); err != nil {
+	if err := store.Remove(hostTestName, true); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -202,20 +222,21 @@ func TestMachinePort(t *testing.T) {
 func TestMachineCustomPort(t *testing.T) {
 	dockerPort := 3376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": bindUrl,
-		},
+	store, err := getTestStore()
+	if err != nil {
+		t.Fatal(err)
 	}
+	flags := getTestDriverFlags()
 
-	store := NewStore("", "", "")
-
-	_, err := store.Create("test", "none", flags)
+	_, err = store.Create(hostTestName, hostTestDriverName, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load("test")
+	host, err := store.Load(hostTestName)
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg := host.generateDockerConfig(dockerPort, "", "", "")
 
 	re := regexp.MustCompile("--host=tcp://.*:(.+)")
@@ -232,7 +253,33 @@ func TestMachineCustomPort(t *testing.T) {
 		t.Errorf("expected url %s; received %s", bindUrl, url)
 	}
 
-	if err := store.Remove("test", true); err != nil {
+	if err := store.Remove(hostTestName, true); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestHostConfig(t *testing.T) {
+	store, err := getTestStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	flags := getTestDriverFlags()
+	host, err := store.Create(hostTestName, hostTestDriverName, flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := host.SaveConfig(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := host.LoadConfig(); err != nil {
+		t.Fatal(err)
+	}
+
+	// cleanup
+	if err := store.Remove(hostTestName, true); err != nil {
 		t.Fatal(err)
 	}
 }
