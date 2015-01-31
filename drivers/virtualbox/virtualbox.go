@@ -38,7 +38,6 @@ type Driver struct {
 	PrivateKeyPath string
 	storePath      string
 	SkipUpdate     bool
-
 }
 
 type CreateFlags struct {
@@ -110,14 +109,13 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
-
 func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
 func (d *Driver) Create() error {
 	var (
-		err    error
+		err error
 	)
 
 	// Check that VBoxManage exists and works

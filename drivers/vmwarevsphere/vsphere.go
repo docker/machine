@@ -22,9 +22,8 @@ import (
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
-	cssh "golang.org/x/crypto/ssh"
 	"github.com/docker/machine/utils"
-
+	cssh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -56,9 +55,8 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 
-	storePath string
-	SkipUpdate     bool
-
+	storePath  string
+	SkipUpdate bool
 }
 
 type CreateFlags struct {
@@ -239,14 +237,13 @@ func (d *Driver) Create() error {
 	}
 
 	var (
-		err    error
+		err error
 	)
 
 	// I have to ingnore ISO download if cmd has --virtualbox-skip-update
 	if err := utils.GetBoot2DockerISO(d.SkipUpdate, d.Boot2DockerURL, d.storePath); err != nil {
 		return err
 	}
-
 
 	log.Infof("Generating SSH Keypair...")
 	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {

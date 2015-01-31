@@ -3,14 +3,12 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	log "github.com/Sirupsen/logrus"
-
-
 )
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
@@ -130,5 +128,3 @@ func cpIso(src, dest string) error {
 	}
 	return nil
 }
-
-

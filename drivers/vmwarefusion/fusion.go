@@ -23,9 +23,8 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
-	cssh "golang.org/x/crypto/ssh"
 	"github.com/docker/machine/utils"
-
+	cssh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -45,8 +44,8 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 
-	storePath string
-	SkipUpdate     bool
+	storePath  string
+	SkipUpdate bool
 }
 
 type CreateFlags struct {
@@ -54,7 +53,6 @@ type CreateFlags struct {
 	Memory         *int
 	DiskSize       *int
 	SkipUpdate     *bool
-
 }
 
 func init() {
@@ -145,7 +143,7 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) Create() error {
 
 	var (
-		err    error
+		err error
 	)
 
 	// I have to ingnore ISO download if cmd has --virtualbox-skip-update
