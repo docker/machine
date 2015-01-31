@@ -2,7 +2,14 @@ language: go
 sudo: false
 go:
 - 1.3
+install:
+- export GOPATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH
+- export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
+- go get -t -v ./...
+- go get code.google.com/p/go.tools/cmd/cover
 script:
 - script/validate-dco
 - script/validate-gofmt
 - go test -v -short ./...
+- rm -rf $HOME/.docker
+- script/generate-coverage
