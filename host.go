@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/url"
 	"os"
 	"path"
@@ -13,7 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -45,19 +43,6 @@ type DockerConfig struct {
 
 type hostConfig struct {
 	DriverName string
-}
-
-func waitForDocker(addr string) error {
-	for {
-		conn, err := net.DialTimeout("tcp", addr, time.Second*5)
-		if err != nil {
-			time.Sleep(time.Second * 5)
-			continue
-		}
-		conn.Close()
-		break
-	}
-	return nil
 }
 
 func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
@@ -102,6 +87,10 @@ func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
 
 	clientCertPath := filepath.Join(utils.GetMachineDir(), "cert.pem")
 	clientKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
+
+	if err := os.MkdirAll(utils.GetMachineDir(), 0700); err != nil {
+		return err
+	}
 
 	log.Debugf("generating client cert: %s", clientCertPath)
 	if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {

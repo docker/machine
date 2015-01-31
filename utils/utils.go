@@ -7,15 +7,20 @@ import (
 	"runtime"
 )
 
-func GetHomeDir() string {
-	if runtime.GOOS == "windows" {
-		return os.Getenv("USERPROFILE")
+func GetBaseDir() string {
+	baseDir := os.Getenv("MACHINE_DIR")
+	if baseDir == "" {
+		if runtime.GOOS == "windows" {
+			baseDir = os.Getenv("USERPROFILE")
+		} else {
+			baseDir = os.Getenv("HOME")
+		}
 	}
-	return os.Getenv("HOME")
+	return baseDir
 }
 
 func GetDockerDir() string {
-	return filepath.Join(GetHomeDir(), ".docker")
+	return filepath.Join(GetBaseDir(), ".docker")
 }
 
 func GetMachineDir() string {

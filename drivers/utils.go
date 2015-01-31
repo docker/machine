@@ -9,7 +9,7 @@ import (
 )
 
 func PublicKeyPath() string {
-	return filepath.Join(utils.GetHomeDir(), ".docker", "public-key.json")
+	return filepath.Join(utils.GetDockerDir(), "public-key.json")
 }
 
 func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {
