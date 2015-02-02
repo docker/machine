@@ -313,6 +313,24 @@ run:
 
 If you have any questions we're in #docker-machine on Freenode.
 
+## Unit Tests
+
+To run the unit tests for the whole project, using the following script:
+
+    $ script/test
+
+This will run the unit tests inside of a container, so you don't have to worry
+about configuring your environment properly before doing so.
+
+To run the unit tests for only a specific subdirectory of the project, you can
+pass an argument to that script to specify which directory, e.g.:
+
+    $ script/test ./drivers/amazonec2
+
+If you make a pull request, it is highly encouraged that you submit tests for
+the code that you have added or modified in the same pull request.
+
+
 ## Integration Tests
 There is a suite of integration tests that will run for the drivers.  In order
 to use these you must export the corresponding environment variables for each
