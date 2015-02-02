@@ -323,4 +323,7 @@ override this by setting the environment variable `MACHINE_TESTS`.  For example,
 `MACHINE_TESTS="virtualbox" ./script/run-integration-tests` will only run the
 virtualbox driver integration tests.
 
+You can set the path to the machine binary under test using the `MACHINE_BINARY`
+environment variable.
+
 To run, use the helper script `./script/run-integration-tests`.
