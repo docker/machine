@@ -214,6 +214,7 @@ func cmdCreate(c *cli.Context) {
 func cmdConfig(c *cli.Context) {
 	cfg, err := getMachineConfig(c)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err)
 		os.Exit(1)
 	}
 
