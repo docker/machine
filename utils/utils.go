@@ -14,8 +14,16 @@ func GetHomeDir() string {
 	return os.Getenv("HOME")
 }
 
+func GetBaseDir() string {
+	baseDir := os.Getenv("MACHINE_DIR")
+	if baseDir == "" {
+		baseDir = GetHomeDir()
+	}
+	return baseDir
+}
+
 func GetDockerDir() string {
-	return filepath.Join(GetHomeDir(), ".docker")
+	return filepath.Join(GetBaseDir(), ".docker")
 }
 
 func GetMachineDir() string {
