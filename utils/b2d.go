@@ -5,15 +5,39 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
+
+const (
+	timeout = time.Second * 5
+)
+
+func defaultTimeout(network, addr string) (net.Conn, error) {
+	return net.DialTimeout(network, addr, timeout)
+}
+
+func getClient() *http.Client {
+	transport := http.Transport{
+		Dial: defaultTimeout,
+	}
+
+	client := http.Client{
+		Transport: &transport,
+	}
+
+	return &client
+}
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func GetLatestBoot2DockerReleaseURL() (string, error) {
-	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
+	client := getClient()
+
+	rsp, err := client.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +60,9 @@ func GetLatestBoot2DockerReleaseURL() (string, error) {
 
 // Download boot2docker ISO image for the given tag and save it at dest.
 func DownloadISO(dir, file, url string) error {
-	rsp, err := http.Get(url)
+	client := getClient()
+
+	rsp, err := client.Get(url)
 	if err != nil {
 		return err
 	}
