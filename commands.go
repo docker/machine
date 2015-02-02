@@ -403,6 +403,10 @@ func cmdEnv(c *cli.Context) {
 }
 
 func cmdSsh(c *cli.Context) {
+	var (
+		err    error
+		sshCmd *exec.Cmd
+	)
 	name := c.Args().First()
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
@@ -415,28 +419,15 @@ func cmdSsh(c *cli.Context) {
 		name = host.Name
 	}
 
-	var cmd string
-
-	var args []string = c.Args()
-
-	for i, arg := range args {
-		if arg == "--" {
-			i++
-			cmd = strings.Join(args[i:], " ")
-			break
-		}
-	}
-
 	host, err := store.Load(name)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var sshCmd *exec.Cmd
-	if len(cmd) == 0 {
+	if len(c.Args()) <= 1 {
 		sshCmd, err = host.Driver.GetSSHCommand()
 	} else {
-		sshCmd, err = host.Driver.GetSSHCommand(cmd)
+		sshCmd, err = host.Driver.GetSSHCommand(c.Args()[1:]...)
 	}
 	if err != nil {
 		log.Fatal(err)
