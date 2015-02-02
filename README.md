@@ -184,6 +184,25 @@ Options:
  - `--vmwarevsphere-pool`: Resource pool for Docker VM.
  - `--vmwarevsphere-vcenter`: IP/hostname for vCenter (or ESXi if connecting directly to a single host).
 
+## Configuring the Docker options and environment
+
+
+### Docker's daemon specific options :
+
+Maybe you'll want to fine-tune your Docker Daemon inside the newly created Docker's machine.
+
+Use for that the switch ```--docker-opts``` which will append the content of $DOCKER_OPTS inside your newly created machine and restart the Docker daemon to apply yyour configuration :
+
+```
+machine create --docker-opts="--insecure-registry=registry.priv.my.dns --storage=btrfs" -d virtualbox dev
+```
+
+### Passing custom env vars to the machine
+
+If you want to pass some environment variables to your machine, use the ```--env``` switch :
+```
+machine create --env http_proxy="http::/myproxy.private.here:3128" --env no_proxy="localhost,.private.here" -d virtualbox dev
+```
 ### OpenStack
 
 Create machines on [Openstack](http://www.openstack.org/software/)

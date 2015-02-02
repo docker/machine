@@ -26,16 +26,23 @@ var (
 	ErrInvalidHostname   = errors.New("Invalid hostname specified")
 )
 
+var ErrHostOSTypeNotKnown = errors.New("Host OS type is not known")
+
 type Host struct {
-	Name           string `json:"-"`
-	DriverName     string
-	Driver         drivers.Driver
-	CaCertPath     string
-	ServerCertPath string
-	ServerKeyPath  string
-	PrivateKeyPath string
-	ClientCertPath string
-	storePath      string
+	Name                 string `json:"-"`
+	DriverName           string
+	Driver               drivers.Driver
+	CaCertPath           string
+	ServerCertPath       string
+	ServerKeyPath        string
+	PrivateKeyPath       string
+	ClientCertPath       string
+	storePath            string
+	RemoteDockerOpts     []string
+	HostOSType           string
+	HostDockerConfigFile string
+	HostDockerRestartCmd string
+	HostDockerConfigKey  string
 }
 
 type DockerConfig struct {
@@ -60,18 +67,19 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
+func NewHost(name, driverName, storePath, caCert, privateKey string, remoteDockerOpts []string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
 	}
 	return &Host{
-		Name:           name,
-		DriverName:     driverName,
-		Driver:         driver,
-		CaCertPath:     caCert,
-		PrivateKeyPath: privateKey,
-		storePath:      storePath,
+		Name:             name,
+		DriverName:       driverName,
+		Driver:           driver,
+		CaCertPath:       caCert,
+		PrivateKeyPath:   privateKey,
+		storePath:        storePath,
+		RemoteDockerOpts: remoteDockerOpts,
 	}, nil
 }
 
@@ -275,6 +283,14 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
+	if err := h.setHostOSDockerAttributes(); err != nil {
+		return err
+	}
+
+	if err := h.setHostOSDockerAttributes(); err != nil {
+		return err
+	}
+
 	if err := h.SaveConfig(); err != nil {
 		return err
 	}
@@ -354,3 +370,157 @@ func (h *Host) SaveConfig() error {
 	}
 	return nil
 }
+
+func (h *Host) setHostOSDockerAttributes() error {
+
+	hostOsType, err := h.getHostOSType()
+	if err != nil {
+		return err
+	} else {
+		h.HostOSType = hostOsType
+	}
+
+	hostDockerConfigFile, err := h.getDockerConfigFilePath()
+	if err != nil {
+		return err
+	} else {
+		h.HostDockerConfigFile = hostDockerConfigFile
+	}
+
+	hostDockerRestartCmd, err := h.getDockerRestartCmd()
+	if err != nil {
+		return err
+	} else {
+		h.HostDockerRestartCmd = hostDockerRestartCmd
+	}
+
+	hostDockerConfigKey, err := h.getDockerOptsVarName()
+	if err != nil {
+		return err
+	} else {
+		h.HostDockerConfigKey = hostDockerConfigKey
+	}
+
+	return nil
+
+}
+
+func (h *Host) getHostOSType() (string, error) {
+	// Will have to do somme h.Driver.GetSSHComand to determine the OS type
+	return "boot2docker", nil
+}
+
+func (h *Host) getDockerConfigFilePath() (string, error) {
+
+	switch h.HostOSType {
+	case "boot2docker":
+		return "/var/lib/boot2docker/profile", nil
+	default:
+		return "", ErrHostOSTypeNotKnown
+	}
+}
+
+func (h *Host) getDockerRestartCmd() (string, error) {
+
+	switch h.HostOSType {
+	case "boot2docker":
+		return "sudo /etc/init.d/docker restart", nil
+	default:
+		return "", ErrHostOSTypeNotKnown
+	}
+}
+
+func (h *Host) getDockerOptsVarName() (string, error) {
+
+	switch h.HostOSType {
+	case "boot2docker":
+		return "EXTRA_ARGS", nil
+	default:
+		return "", ErrHostOSTypeNotKnown
+	}
+}
+
+func (h *Host) WriteDaemonKVPConfig(configKey, configValue string) error {
+
+	log.Infof("Writing " + configKey + " with value " + configValue)
+
+	// We should delete the old value of the KVP before all
+	sshDelCmd := fmt.Sprintf("[ ! -f %s ] || sudo sed -i '/%s/d' %s", h.HostDockerConfigFile, configKey, h.HostDockerConfigFile)
+	delCmd, err := h.Driver.GetSSHCommand(sshDelCmd)
+	if err != nil {
+		return err
+	}
+	if err := delCmd.Run(); err != nil {
+		return err
+	}
+
+	kvpString := configKey + "=" + configValue
+	sshCmd := fmt.Sprintf("echo \"%s\" | sudo tee -a %s", kvpString, h.HostDockerConfigFile)
+	cmd, err := h.Driver.GetSSHCommand(sshCmd)
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) RestartHostDockerDaemon() error {
+
+	cmd, err := h.Driver.GetSSHCommand(h.HostDockerRestartCmd)
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) ConfigureRemoteDockerDaemon() error {
+
+	log.Infof("Configuring the remote docker daemon...")
+
+	err := h.WriteDaemonKVPConfig(h.HostDockerConfigKey, strings.Join(h.RemoteDockerOpts, " "))
+	if err != nil {
+		return err
+	}
+
+	err = h.RestartHostDockerDaemon()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// func parseDockerOpts(dockerOptsToParse string) []string {
+
+// 	var parsedDockerOpts []string
+
+// 	// First pass will detect "--" prefixed arguments
+// 	firstPassParsedDockerOpts := strings.Split(dockerOptsToParse, "--")
+
+// 	for i := 0; i < len(firstPassParsedDockerOpts); i++ {
+// 		// Second pass will detect " " prefixed arguments
+// 		secondPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], " ")
+// 		if len(secondPassParsedDockerOpts) > 1 {
+// 			// 3rd pass is run only when we detect space elements : we have obvioulsy single slashed args
+// 			thirdPassParsedDockerOpts := strings.Split(firstPassParsedDockerOpts[i], "-")
+// 			for j := 0; j < len(thirdPassParsedDockerOpts); j++ {
+// 				if len(thirdPassParsedDockerOpts[j]) > 0 {
+// 					parsedDockerOpts = append(parsedDockerOpts, "-"+thirdPassParsedDockerOpts[j])
+// 				}
+// 			}
+// 		} else {
+// 			if len(firstPassParsedDockerOpts[i]) > 0 {
+// 				parsedDockerOpts = append(parsedDockerOpts, "--"+firstPassParsedDockerOpts[i])
+// 			}
+// 		}
+// 	}
+
+// 	return parsedDockerOpts
+// }
