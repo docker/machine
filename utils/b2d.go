@@ -3,41 +3,18 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 )
-
-const (
-	timeout = time.Second * 5
-)
-
-func defaultTimeout(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, timeout)
-}
-
-func getClient() *http.Client {
-	transport := http.Transport{
-		Dial: defaultTimeout,
-	}
-
-	client := http.Client{
-		Transport: &transport,
-	}
-
-	return &client
-}
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func GetLatestBoot2DockerReleaseURL() (string, error) {
-	client := getClient()
-
-	rsp, err := client.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
+	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
 	if err != nil {
 		return "", err
 	}
@@ -60,9 +37,7 @@ func GetLatestBoot2DockerReleaseURL() (string, error) {
 
 // Download boot2docker ISO image for the given tag and save it at dest.
 func DownloadISO(dir, file, url string) error {
-	client := getClient()
-
-	rsp, err := client.Get(url)
+	rsp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
@@ -82,6 +57,73 @@ func DownloadISO(dir, file, url string) error {
 		return err
 	}
 	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetBoot2DockerISO(skipUpdate bool, boot2DockerURL string, storePath string) error {
+	if !skipUpdate {
+
+		if boot2DockerURL != "" {
+			isoURL := boot2DockerURL
+			log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+			if err := DownloadISO(storePath, "boot2docker.iso", isoURL); err != nil {
+				return err
+			}
+		} else {
+			// todo: check latest release URL, download if it's new
+			// until then always use "latest"
+			isoURL, err := GetLatestBoot2DockerReleaseURL()
+			if err != nil {
+				return err
+			}
+
+			// todo: use real constant for .docker
+			rootPath := filepath.Join(GetHomeDir(), ".docker")
+			imgPath := filepath.Join(rootPath, "images")
+			commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+			if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+				log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+
+				// just in case boot2docker.iso has been manually deleted
+				if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+					if err := os.Mkdir(imgPath, 0700); err != nil {
+						return err
+					}
+				}
+
+				if err := DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+					return err
+				}
+			}
+
+			isoDest := filepath.Join(storePath, "boot2docker.iso")
+			if err := cpIso(commonIsoPath, isoDest); err != nil {
+				return err
+			}
+		}
+	} else {
+
+		rootPath := filepath.Join(GetHomeDir(), ".docker")
+		imgPath := filepath.Join(rootPath, "images")
+		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+
+		isoDest := filepath.Join(storePath, "boot2docker.iso")
+		if err := cpIso(commonIsoPath, isoDest); err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func cpIso(src, dest string) error {
+	buf, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(dest, buf, 0600); err != nil {
 		return err
 	}
 	return nil
