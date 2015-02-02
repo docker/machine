@@ -140,22 +140,23 @@ func (d *Driver) Create() error {
 		err    error
 	)
 
+	b2dutils := utils.NewB2dUtils("", "")
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+		if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 			return err
 		}
 	} else {
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
-		isoURL, err = utils.GetLatestBoot2DockerReleaseURL()
+		isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
 		if err != nil {
 			log.Warnf("Unable to check for the latest release: %s", err)
 		}
 
 		// todo: use real constant for .docker
-		rootPath := filepath.Join(utils.GetHomeDir(), ".docker")
+		rootPath := filepath.Join(utils.GetDockerDir())
 		imgPath := filepath.Join(rootPath, "images")
 		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
@@ -168,7 +169,7 @@ func (d *Driver) Create() error {
 				}
 			}
 
-			if err := utils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+			if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
 				return err
 			}
 		}
