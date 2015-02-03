@@ -279,7 +279,7 @@ func cmdConfig(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
+	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H=%q",
 		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, cfg.machineUrl)
 }
 
@@ -554,7 +554,11 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	clientKey := filepath.Join(utils.GetMachineClientCertDir(), "key.pem")
 	machineUrl, err := machine.GetURL()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting machine url: %s", err)
+		if err == drivers.ErrHostIsNotRunning {
+			machineUrl = ""
+		} else {
+			return nil, fmt.Errorf("Unexpected error getting machine url: %s", err)
+		}
 	}
 	return &machineConfig{
 		caCertPath:     caCert,
