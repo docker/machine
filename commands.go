@@ -59,12 +59,7 @@ func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
-func beforeCreate(c *cli.Context) error {
-	caCertPath := c.GlobalString("tls-ca-cert")
-	caKeyPath := c.GlobalString("tls-ca-key")
-	clientCertPath := c.GlobalString("tls-client-cert")
-	clientKeyPath := c.GlobalString("tls-client-key")
-
+func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath string) error {
 	org := utils.GetUsername()
 	bits := 2048
 
@@ -129,7 +124,6 @@ var Commands = []cli.Command{
 		Action: cmdActive,
 	},
 	{
-		Before: beforeCreate,
 		Flags: append(
 			drivers.GetCreateFlags(),
 			cli.StringFlag{
@@ -257,6 +251,11 @@ func cmdCreate(c *cli.Context) {
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
 		log.Fatal("You must specify a machine name")
+	}
+
+	if err := setupCertificates(c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"),
+		c.GlobalString("tls-client-cert"), c.GlobalString("tls-client-key")); err != nil {
+		log.Fatalf("Error generating certificates: %s", err)
 	}
 
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
