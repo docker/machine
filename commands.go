@@ -277,8 +277,10 @@ func cmdCreate(c *cli.Context) {
 func cmdConfig(c *cli.Context) {
 	cfg, err := getMachineConfig(c)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "%s", err)
+		os.Exit(1)
 	}
+
 	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
 		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, cfg.machineUrl)
 }
