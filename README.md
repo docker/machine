@@ -345,3 +345,38 @@ You can set the path to the machine binary under test using the `MACHINE_BINARY`
 environment variable.
 
 To run, use the helper script `./script/run-integration-tests`.
+
+## Working with Godep
+This is basically copied from the [Godep Docs](https://github.com/tools/godep)
+so consult those for details.  These will serve as a quick start to working
+with dependencies in Machine.
+
+#### Add a Dependency
+
+To add a new package foo/bar, do this:
+
+1. Run `go get foo/bar`
+2. Edit your code to import foo/bar.
+3. Run `godep save` (or `godep save ./...`).
+
+#### Update a Dependency
+
+To update a package from your `$GOPATH`, do this:
+
+1. Run `go get -u foo/bar`
+2. Run `godep update foo/bar`. (You can use the `...` wildcard,
+for example `godep update foo/...`).
+
+Before committing the change, you'll probably want to inspect
+the changes to Godeps, for example with `git diff`,
+and make sure it looks reasonable.
+
+#### Multiple Packages
+
+If your repository has more than one package, you're probably
+accustomed to running commands like `go test ./...`,
+`go install ./...`, and `go fmt ./...`.
+Similarly, you should run `godep save ./...` to capture the
+dependencies of all packages.
+
+If in doubt, please feel free to reach out on IRC.
