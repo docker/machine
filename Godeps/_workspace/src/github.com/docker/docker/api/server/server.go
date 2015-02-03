@@ -3,7 +3,7 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"crypto/tls"
+
 	"encoding/base64"
 	"encoding/json"
 	"expvar"
@@ -17,6 +17,9 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+
+	"crypto/tls"
+	"crypto/x509"
 
 	"code.google.com/p/go.net/websocket"
 	"github.com/docker/libcontainer/user"
@@ -60,6 +63,18 @@ func hijackServer(w http.ResponseWriter) (io.ReadCloser, io.Writer, error) {
 	// Flush the options to make sure the client sets the raw mode
 	conn.Write([]byte{})
 	return conn, conn, nil
+}
+
+func closeStreams(streams ...interface{}) {
+	for _, stream := range streams {
+		if tcpc, ok := stream.(interface {
+			CloseWrite() error
+		}); ok {
+			tcpc.CloseWrite()
+		} else if closer, ok := stream.(io.Closer); ok {
+			closer.Close()
+		}
+	}
 }
 
 // Check to make sure request's Content-Type is application/json
@@ -312,6 +327,7 @@ func getEvents(eng *engine.Engine, version version.Version, w http.ResponseWrite
 	streamJSON(job, w, true)
 	job.Setenv("since", r.Form.Get("since"))
 	job.Setenv("until", r.Form.Get("until"))
+	job.Setenv("filters", r.Form.Get("filters"))
 	return job.Run()
 }
 
@@ -867,20 +883,7 @@ func postContainersAttach(eng *engine.Engine, version version.Version, w http.Re
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if tcpc, ok := inStream.(*net.TCPConn); ok {
-			tcpc.CloseWrite()
-		} else {
-			inStream.Close()
-		}
-	}()
-	defer func() {
-		if tcpc, ok := outStream.(*net.TCPConn); ok {
-			tcpc.CloseWrite()
-		} else if closer, ok := outStream.(io.Closer); ok {
-			closer.Close()
-		}
-	}()
+	defer closeStreams(inStream, outStream)
 
 	var errStream io.Writer
 
@@ -949,6 +952,15 @@ func getContainersByName(eng *engine.Engine, version version.Version, w http.Res
 	if version.LessThan("1.12") {
 		job.SetenvBool("raw", true)
 	}
+	streamJSON(job, w, false)
+	return job.Run()
+}
+
+func getExecByID(eng *engine.Engine, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter 'id'")
+	}
+	var job = eng.Job("execInspect", vars["id"])
 	streamJSON(job, w, false)
 	return job.Run()
 }
@@ -1121,21 +1133,7 @@ func postContainerExecStart(eng *engine.Engine, version version.Version, w http.
 		if err != nil {
 			return err
 		}
-
-		defer func() {
-			if tcpc, ok := inStream.(*net.TCPConn); ok {
-				tcpc.CloseWrite()
-			} else {
-				inStream.Close()
-			}
-		}()
-		defer func() {
-			if tcpc, ok := outStream.(*net.TCPConn); ok {
-				tcpc.CloseWrite()
-			} else if closer, ok := outStream.(io.Closer); ok {
-				closer.Close()
-			}
-		}()
+		defer closeStreams(inStream, outStream)
 
 		var errStream io.Writer
 
@@ -1246,6 +1244,7 @@ func AttachProfiler(router *mux.Router) {
 	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/block", pprof.Handler("block").ServeHTTP)
 	router.HandleFunc("/debug/pprof/heap", pprof.Handler("heap").ServeHTTP)
 	router.HandleFunc("/debug/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
 	router.HandleFunc("/debug/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
@@ -1277,6 +1276,7 @@ func createRouter(eng *engine.Engine, logging, enableCors bool, dockerVersion st
 			"/containers/{name:.*}/top":       getContainersTop,
 			"/containers/{name:.*}/logs":      getContainersLogs,
 			"/containers/{name:.*}/attach/ws": wsContainersAttach,
+			"/exec/{id:.*}/json":              getExecByID,
 		},
 		"POST": {
 			"/auth":                         postAuth,
@@ -1405,6 +1405,33 @@ func lookupGidByName(nameOrGid string) (int, error) {
 	return -1, fmt.Errorf("Group %s not found", nameOrGid)
 }
 
+func setupTls(cert, key, ca string, l net.Listener) (net.Listener, error) {
+	tlsCert, err := tls.LoadX509KeyPair(cert, key)
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't load X509 key pair (%s, %s): %s. Key encrypted?",
+			cert, key, err)
+	}
+	tlsConfig := &tls.Config{
+		NextProtos:   []string{"http/1.1"},
+		Certificates: []tls.Certificate{tlsCert},
+		// Avoid fallback on insecure SSL protocols
+		MinVersion: tls.VersionTLS10,
+	}
+
+	if ca != "" {
+		certPool := x509.NewCertPool()
+		file, err := ioutil.ReadFile(ca)
+		if err != nil {
+			return nil, fmt.Errorf("Couldn't read CA certificate: %s", err)
+		}
+		certPool.AppendCertsFromPEM(file)
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+		tlsConfig.ClientCAs = certPool
+	}
+
+	return tls.NewListener(l, tlsConfig), nil
+}
+
 func newListener(proto, addr string, bufferRequests bool) (net.Listener, error) {
 	if bufferRequests {
 		return listenbuffer.NewListenBuffer(proto, addr, activationLock)
@@ -1467,6 +1494,10 @@ func setupUnixHttp(addr string, job *engine.Job) (*HttpServer, error) {
 }
 
 func setupTcpHttp(addr string, job *engine.Job) (*HttpServer, error) {
+	if !strings.HasPrefix(addr, "127.0.0.1") && !job.GetenvBool("TlsVerify") {
+		log.Infof("/!\\ DON'T BIND ON ANOTHER IP ADDRESS THAN 127.0.0.1 IF YOU DON'T KNOW WHAT YOU'RE DOING /!\\")
+	}
+
 	r, err := createRouter(job.Eng, job.GetenvBool("Logging"), job.GetenvBool("EnableCors"), job.Getenv("Version"))
 	if err != nil {
 		return nil, err
@@ -1477,37 +1508,16 @@ func setupTcpHttp(addr string, job *engine.Job) (*HttpServer, error) {
 		return nil, err
 	}
 
-	var tlsConfig *tls.Config
-
-	switch job.Getenv("Auth") {
-	case "identity":
-		trustKey, err := api.LoadOrCreateTrustKey(job.Getenv("TrustKey"))
+	if job.GetenvBool("Tls") || job.GetenvBool("TlsVerify") {
+		var tlsCa string
+		if job.GetenvBool("TlsVerify") {
+			tlsCa = job.Getenv("TlsCa")
+		}
+		l, err = setupTls(job.Getenv("TlsCert"), job.Getenv("TlsKey"), tlsCa, l)
 		if err != nil {
 			return nil, err
 		}
-		manager, err := NewClientKeyManager(trustKey, job.Getenv("TrustClients"), job.Getenv("TrustDir"))
-		if err != nil {
-			return nil, err
-		}
-		if tlsConfig, err = NewIdentityAuthTLSConfig(trustKey, manager, addr); err != nil {
-			return nil, fmt.Errorf("Error creating TLS config: %s", err)
-		}
-	case "cert":
-		if tlsConfig, err = NewCertAuthTLSConfig(job.Getenv("AuthCa"), job.Getenv("AuthCert"), job.Getenv("AuthKey")); err != nil {
-			return nil, fmt.Errorf("Error creating TLS config: %s", err)
-		}
-	case "none":
-		tlsConfig = nil
-	default:
-		return nil, fmt.Errorf("Unknown auth method: %s", job.Getenv("Auth"))
 	}
-
-	if tlsConfig == nil {
-		log.Infof("/!\\ DON'T BIND INSECURELY ON A TCP ADDRESS IF YOU DON'T KNOW WHAT YOU'RE DOING /!\\")
-	} else {
-		l = tls.NewListener(l, tlsConfig)
-	}
-
 	return &HttpServer{&http.Server{Addr: addr, Handler: r}, l}, nil
 }
 
