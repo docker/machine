@@ -546,14 +546,11 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		machine = m
 	} else {
 		m, err := store.Load(name)
-		fmt.Println(err)
 		if err != nil {
 			return nil, fmt.Errorf("Error loading machine config: %s", err)
 		}
 		machine = m
 	}
-
-	fmt.Println(machine)
 
 	caCert := filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")
 	clientCert := filepath.Join(utils.GetMachineClientCertDir(), "cert.pem")
