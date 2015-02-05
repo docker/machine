@@ -283,6 +283,8 @@ Options:
 
 Creates a Boot2Docker virtual machine locally on your Windows machine using Hyper-V. [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines) for instructions to enable Hyper-V.
 
+Note: you will need an existing virtual switch to use the driver.
+
 Options:
 
  - `--hyper-v-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
