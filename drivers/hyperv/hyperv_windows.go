@@ -88,6 +88,10 @@ func (d *Driver) DriverName() string {
 	return "hyper-v"
 }
 
+func (d *Driver) PreCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) GetURL() (string, error) {
 	ip, err := d.GetIP()
 	if err != nil {
@@ -134,21 +138,47 @@ func (d *Driver) Create() error {
 
 	var isoURL string
 
+	b2dutils := utils.NewB2dUtils("", "")
+
 	if d.boot2DockerLoc == "" {
 		if d.boot2DockerURL != "" {
 			isoURL = d.boot2DockerURL
 			log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-			if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+			if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 				return err
 			}
 		} else {
-			commonIsoPath, err := utils.DownloadUpdateB2D()
+			// todo: check latest release URL, download if it's new
+			// until then always use "latest"
+			isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
 			if err != nil {
-				return err
+				log.Warnf("Unable to check for the latest release: %s", err)
+
+			}
+			// todo: use real constant for .docker
+			rootPath := filepath.Join(utils.GetDockerDir())
+			imgPath := filepath.Join(rootPath, "images")
+			commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+			if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+				log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+				// just in case boot2docker.iso has been manually deleted
+				if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+					if err := os.Mkdir(imgPath, 0700); err != nil {
+						return err
+
+					}
+
+				}
+				if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+					return err
+
+				}
+
 			}
 			isoDest := filepath.Join(d.storePath, "boot2docker.iso")
 			if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 				return err
+
 			}
 		}
 	} else {
@@ -390,14 +420,14 @@ func (d *Driver) Upgrade() error {
 		return err
 	}
 
-	//todo update common iso location here as well?
-	isoURL, err := utils.GetLatestBoot2DockerReleaseURL()
+	b2dutils := utils.NewB2dUtils("", "")
+	isoURL, err := b2dutils.GetLatestBoot2DockerReleaseURL()
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Downloading boot2docker...")
-	if err := utils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+	if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 		return err
 	}
 
