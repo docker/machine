@@ -101,17 +101,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
-func cpIso(src, dest string) error {
-	buf, err := ioutil.ReadFile(src)
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(dest, buf, 0600); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (d *Driver) PreCreateCheck() error {
 	return nil
 }
@@ -139,38 +128,43 @@ func (d *Driver) Create() error {
 		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
 		if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 			return err
+
 		}
+
 	} else {
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
 		isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
 		if err != nil {
 			log.Warnf("Unable to check for the latest release: %s", err)
-		}
 
+		}
 		// todo: use real constant for .docker
 		rootPath := filepath.Join(utils.GetDockerDir())
 		imgPath := filepath.Join(rootPath, "images")
 		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
-
 			// just in case boot2docker.iso has been manually deleted
 			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 				if err := os.Mkdir(imgPath, 0700); err != nil {
 					return err
-				}
-			}
 
+				}
+
+			}
 			if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
 				return err
+
 			}
+
+		}
+		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+			return err
+
 		}
 
-		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
-		if err := cpIso(commonIsoPath, isoDest); err != nil {
-			return err
-		}
 	}
 
 	log.Infof("Creating SSH key...")
