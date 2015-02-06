@@ -328,15 +328,6 @@ func cmdLs(c *cli.Context) {
 
 	for _, host := range hostList {
 		if !quiet {
-			tmpHost, err := store.GetActive()
-			if err != nil {
-				log.Errorf("There's a problem with the active host: %s", err)
-			}
-
-			if tmpHost == nil {
-				log.Errorf("There's a problem finding the active host")
-			}
-
 			go getHostState(host, *store, hostListItems)
 		} else {
 			fmt.Fprintf(w, "%s\n", host.Name)
@@ -504,7 +495,13 @@ func getHost(c *cli.Context) *Host {
 func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 	currentState, err := host.Driver.GetState()
 	if err != nil {
-		log.Errorf("error getting state for host %s: %s", host.Name, err)
+		// If the currentState returned by the driver is state.Error,
+		// we will inform user that machine is in "Error" state,
+		// so no need to log.  Otherwise they should know because
+		// possibly something weird happened.
+		if currentState != state.Error {
+			log.Errorf("Unexpected error getting state for host %s: %s", host.Name, err)
+		}
 	}
 
 	url, err := host.GetURL()
@@ -512,16 +509,23 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 		if err == drivers.ErrHostIsNotRunning {
 			url = ""
 		} else {
-			log.Errorf("error getting URL for host %s: %s", host.Name, err)
+			// If machine can't deduce the URL and the error in unexpected, all
+			// bets are off and the machine is in an error state.
+			// Something weird might have happened.
+			// (network is bad, create process was ruined, etc.).
+			currentState = state.Error
 		}
 	}
 
 	isActive, err := store.IsActive(&host)
 	if err != nil {
-		log.Debugf("error determining whether host %q is active: %s",
+		log.Debugf("Error determining whether host %q is active: %s",
 			host.Name, err)
 	}
 
+	// Always, always send on this channel for every machine
+	// or else the goroutine that expects to receive will block
+	// forever.
 	hostListItems <- hostListItem{
 		Name:       host.Name,
 		Active:     isActive,
