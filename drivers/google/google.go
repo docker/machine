@@ -23,6 +23,7 @@ type Driver struct {
 	MachineName      string
 	Zone             string
 	MachineType      string
+	DiskSize         int
 	storePath        string
 	UserName         string
 	Project          string
@@ -38,6 +39,7 @@ type CreateFlags struct {
 	MachineType *string
 	UserName    *string
 	Project     *string
+	DiskSize    *int
 }
 
 func init() {
@@ -74,6 +76,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "GCE Project",
 			EnvVar: "GOOGLE_PROJECT",
 		},
+		cli.IntFlag{
+			Name:   "google-disk-size",
+			Usage:  "GCE Instance Disk Size (in GB)",
+			Value:  10,
+			EnvVar: "GOOGLE_DISK_SIZE",
+		},
 	}
 }
 
@@ -98,6 +106,7 @@ func (driver *Driver) DriverName() string {
 func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.Zone = flags.String("google-zone")
 	driver.MachineType = flags.String("google-machine-type")
+	driver.DiskSize = flags.Int("google-disk-size")
 	driver.UserName = flags.String("google-username")
 	driver.Project = flags.String("google-project")
 	if driver.Project == "" {
