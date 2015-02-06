@@ -281,7 +281,8 @@ Options:
 
 ## Running on Windows
 Machine needs some helper applications to be installed (`ssh`, etc).  The easiest way to get started on Windows
-is to install [msysGit](https://msysgit.github.io/).  After this, you should have a working setup to use Machine.
+is to install [msysGit](https://msysgit.github.io/) and [OpenSSL on Windows](http://slproweb.com/products/Win32OpenSSL.html).
+After this, you should have a working setup to use Machine.
 
 ## Contributing
 
