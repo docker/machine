@@ -46,7 +46,7 @@ Now you should be able to check the version with `docker-machine -v`:
 
 ```
 $ docker-machine -v
-machine version 0.0.3
+machine version 0.1.0
 ```
 
 ## Getting started with Docker Machine using a local VM
@@ -85,13 +85,24 @@ INFO[0038] "dev" has been created and is now the active machine
 INFO[0038] To connect: docker $(docker-machine config dev) ps
 ```
 
+To use the Docker CLI, you can use the `env` command to list the commands
+needed to connect to the instance.
+
+```
+$ docker-machine env dev
+export DOCKER_TLS_VERIFY=yes
+export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
+export DOCKER_HOST=tcp://192.168.99.100:2376
+
+```
+
 You can see the machine you have created by running the `docker-machine ls` command
 again:
 
 ```
 $ docker-machine ls
 NAME      ACTIVE   DRIVER       STATE     URL
-dev       *        virtualbox   Running   tcp://192.168.99.100:2375
+dev       *        virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
 The `*` next to `dev` indicates that it is the active host.
@@ -216,8 +227,8 @@ active host:
 $ docker-machine active dev
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev                virtualbox     Running   tcp://192.168.99.103:2375
-staging   *        digitalocean   Running   tcp://104.236.50.118:2375
+dev                virtualbox     Running   tcp://192.168.99.103:2376
+staging   *        digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
 To select an active host, you can use the `docker-machine active` command.
@@ -226,8 +237,8 @@ To select an active host, you can use the `docker-machine active` command.
 $ docker-machine active dev
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev       *        virtualbox     Running   tcp://192.168.99.103:2375
-staging            digitalocean   Running   tcp://104.236.50.118:2375
+dev       *        virtualbox     Running   tcp://192.168.99.103:2376
+staging            digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
 To remove a host and all of its containers and images, use `docker-machine rm`:
@@ -260,13 +271,13 @@ Get or set the active machine.
 ```
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev                virtualbox     Running   tcp://192.168.99.103:2375
-staging   *        digitalocean   Running   tcp://104.236.50.118:2375
+dev                virtualbox     Running   tcp://192.168.99.103:2376
+staging   *        digitalocean   Running   tcp://104.236.50.118:2376
 $ docker-machine active dev
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
-dev       *        virtualbox     Running   tcp://192.168.99.103:2375
-staging            digitalocean   Running   tcp://104.236.50.118:2375
+dev       *        virtualbox     Running   tcp://192.168.99.103:2376
+staging            digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
 #### create
@@ -446,7 +457,7 @@ $ docker-machine url
 tcp://192.168.99.109:2376
 ```
 
-## Driver Options
+## Drivers
 
 TODO: List all possible values (where applicable) for all flags for every
 driver.
@@ -468,6 +479,22 @@ Options:
  - `--amazonec2-vpc-id`: **required** Your VPC ID to launch the instance in.
  - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e). Default: `a`
 
+By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
+
+ | Region        | AMI ID     |
+ |:--------------|:-----------|
+	|ap-northeast-1 |ami-44f1e245|
+	|ap-southeast-1 |ami-f95875ab|
+	|ap-southeast-2 |ami-890b62b3|
+	|cn-north-1     |ami-fe7ae8c7|
+	|eu-west-1      |ami-823686f5|
+	|eu-central-1   |ami-ac1524b1|
+	|sa-east-1      |ami-c770c1da|
+	|us-east-1      |ami-4ae27e22|
+	|us-west-1      |ami-d1180894|
+	|us-west-2      |ami-898dd9b9|
+	|us-gov-west-1  |ami-cf5630ec|
+
 #### Digital Ocean
 Creates machines on [Digital Ocean](https://www.digitalocean.com/). You need to create a personal access token under "Apps & API" in the Digital Ocean Control Panel and pass that to `docker-machine create` with the `--digitalocean-access-token` option.
 
@@ -477,6 +504,8 @@ Options:
  - `--digitalocean-image`: The name of the Digital Ocean image to use. Default: `docker`
  - `--digitalocean-region`: The region to create the droplet in. Default: `nyc3`
  - `--digitalocean-size`: The size of the Digital Ocean driver. Default: `512mb`
+
+The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
 #### Google Compute Engine
 Create machines on [Google Compute Engine](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
@@ -490,6 +519,8 @@ Options:
  - `--google-username`: The username to use for the instance.  Default: `docker-user`
  - `--google-instance-name`: The name of the instance.  Default: `docker-machine`
  - `--google-project`: The name of your project to use when launching the instance.
+
+The GCE driver will use the `ubuntu-1404-trusty-v20141212` instance type unless otherwise specified.
 
 #### IBM Softlayer
 
@@ -514,6 +545,9 @@ Options:
   - `--softlayer-private-net-only`: Disable public networking
   - `--softlayer-region`: softlayer region
 
+The SoftLayer driver will use `UBUNTU_LATEST` as the image type by default.
+
+
 #### Microsoft Azure
 Create machines on [Microsoft Azure](http://azure.microsoft.com/).
 
@@ -533,6 +567,8 @@ Options:
 
  - `--azure-subscription-id`: Your Azure subscription ID.
  - `--azure-subscription-cert`: Your Azure subscription cert.
+
+The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB` image by default. Note, this image is not available in the Chinese regions. In China you should specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
 
 #### Openstack
 Create machines on [Openstack](http://www.openstack.org/software/)
@@ -604,6 +640,8 @@ variable and CLI option are provided the CLI option takes the precedence.
 | `OS_REGION_NAME`     | `--rackspace-region`        |
 | `OS_ENDPOINT_TYPE`   | `--rackspace-endpoint-type` |
 
+The Rackspace driver will use `598a4282-f14b-4e50-af4c-b3e52749d9f9` (Ubuntu 14.04 LTS) by default.
+
 #### VirtualBox
 Creates machines locally on [VirtualBox](https://www.virtualbox.org/). Requires VirtualBox to be installed.
 
@@ -613,6 +651,8 @@ Options:
  - `--virtualbox-disk-size`: Size of disk for the host in MB. Default: `20000`
  - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
 
+The VirtualBox driver uses the latest boot2docker image.
+
 #### VMware Fusion
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.
 
@@ -621,6 +661,8 @@ Options:
  - `--vmwarefusion-boot2docker-url`: URL for boot2docker image.
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB). Default: `20000`
  - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB). Default: `1024`
+
+The VMware Fusion driver uses the latest boot2docker image.
 
 #### VMware vCloud Air
 Creates machines on [vCloud Air](http://vcloud.vmware.com) subscription service. You need an account within an existing subscription of vCloud Air VPC or Dedicated Cloud.
@@ -643,6 +685,8 @@ Options:
  - `--vmwarevcloudair-ssh-port`: SSH port. Default: `22`
  - `--vmwarevcloudair-vdcid`: Virtual Data Center ID.
 
+The VMware vCloud Air driver will use the `Ubuntu Server 12.04 LTS (amd64 20140927)` image by default. 
+
 #### VMware vSphere
 Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. Requires a working vSphere (ESXi and optionally vCenter) installation. The vSphere driver depends on [`govc`](https://github.com/vmware/govmomi/tree/master/govc) (must be in path) and has been tested with [vmware/govmomi@`c848630`](https://github.com/vmware/govmomi/commit/c8486300bfe19427e4f3226e3b3eac067717ef17).
 
@@ -661,3 +705,4 @@ Options:
  - `--vmwarevsphere-pool`: Resource pool for Docker VM.
  - `--vmwarevsphere-vcenter`: IP/hostname for vCenter (or ESXi if connecting directly to a single host).
 
+The VMware vSphere driver uses the latest boot2docker image.

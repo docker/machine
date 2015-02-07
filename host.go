@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/url"
 	"os"
 	"path"
@@ -13,7 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -45,19 +43,6 @@ type DockerConfig struct {
 
 type hostConfig struct {
 	DriverName string
-}
-
-func waitForDocker(addr string) error {
-	for {
-		conn, err := net.DialTimeout("tcp", addr, time.Second*5)
-		if err != nil {
-			time.Sleep(time.Second * 5)
-			continue
-		}
-		conn.Close()
-		break
-	}
-	return nil
 }
 
 func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
@@ -103,6 +88,10 @@ func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
 	clientCertPath := filepath.Join(utils.GetMachineDir(), "cert.pem")
 	clientKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
 
+	if err := os.MkdirAll(utils.GetMachineDir(), 0700); err != nil {
+		return err
+	}
+
 	log.Debugf("generating client cert: %s", clientCertPath)
 	if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating client cert: %s", err)
@@ -123,8 +112,6 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	caCertPath := filepath.Join(utils.GetMachineDir(), "ca.pem")
-	caKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
 	serverCertPath := filepath.Join(h.storePath, "server.pem")
 	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
 
@@ -133,7 +120,7 @@ func (h *Host) ConfigureAuth() error {
 
 	log.Debugf("generating server cert: %s", serverCertPath)
 
-	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
+	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, h.CaCertPath, h.PrivateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
 
@@ -150,7 +137,7 @@ func (h *Host) ConfigureAuth() error {
 	}
 
 	// upload certs and configure TLS auth
-	caCert, err := ioutil.ReadFile(caCertPath)
+	caCert, err := ioutil.ReadFile(h.CaCertPath)
 	if err != nil {
 		return err
 	}
@@ -245,9 +232,10 @@ func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKey
 --tlscert=%s`, caCertPath, serverKeyPath, serverCertPath)
 
 	switch d.DriverName() {
-	case "virtualbox", "vmwarefusion", "vmwarevsphere":
+
+	case "virtualbox", "vmwarefusion", "vmwarevsphere", "hyper-v":
 		daemonOpts = fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
-		daemonOptsCfg = filepath.Join(d.GetDockerConfigDir(), "profile")
+		daemonOptsCfg = path.Join(d.GetDockerConfigDir(), "profile")
 		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
 		daemonCfg = fmt.Sprintf(`EXTRA_ARGS='%s'
 CACERT=%s

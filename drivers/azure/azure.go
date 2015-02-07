@@ -29,7 +29,6 @@ type Driver struct {
 	SubscriptionID          string
 	SubscriptionCert        string
 	PublishSettingsFilePath string
-	Name                    string
 	Location                string
 	Size                    string
 	UserName                string
@@ -68,10 +67,6 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "azure-location",
 			Usage:  "Azure location",
 			Value:  "West US",
-		},
-		cli.StringFlag{
-			Name:  "azure-name",
-			Usage: "Azure cloud service name",
 		},
 		cli.StringFlag{
 			Name:  "azure-password",
@@ -113,10 +108,7 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	t := time.Now().Format("20060102150405")
-	name := fmt.Sprintf("%s-%s", machineName, t)
-
-	driver := &Driver{MachineName: name, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
+	driver := &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 	return driver, nil
 }
 
@@ -172,6 +164,20 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (driver *Driver) PreCreateCheck() error {
+	if err := driver.setUserSubscription(); err != nil {
+		return err
+	}
+
+	// check azure DNS to make sure name is available
+	available, response, err := vmClient.CheckHostedServiceNameAvailability(driver.MachineName)
+	if err != nil {
+		return err
+	}
+
+	if !available {
+		return fmt.Errorf(response)
+	}
+
 	return nil
 }
 

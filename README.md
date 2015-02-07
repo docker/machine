@@ -40,6 +40,8 @@ staging   *        digitalocean   Running   tcp://104.236.37.134:2376
 
 Machine creates Docker hosts that are secure by default. The connection between the client and daemon is encrypted and authenticated using TLS security.  To get the Docker arguments for a machine use the command: `docker-machine config <machine-name>` i.e. `docker-machine config dev`.
 
+You can also get the commands to export environment variables to use with the Docker CLI:  `docker-machine env <machine-name>` i.e. `docker-machine env dev` to show or `$(docker-machine env dev)` to load in your environment.
+
 ## Try it out
 
 Machine is still in its early stages. If you'd like to try out a preview build, [download it here](https://github.com/docker/machine/releases/latest).
@@ -85,8 +87,19 @@ Grab your subscription ID from the portal, then run `docker-machine create` with
 
 Options:
 
- - `--azure-subscription-id`: Your Azure subscription ID.
- - `--azure-subscription-cert`: Your Azure subscription cert.
+ - `--azure-subscription-id`: **required** Your Azure subscription ID.
+ - `--azure-subscription-cert`: **required** Your Azure subscription cert.
+ - `--azure-docker-port`: Azure Docker port. Default '2376'
+ - `--azure-image`: Azure image name. Default is Ubuntu 14.04 LTS x64 [$AZURE_IMAGE]
+ - `--azure-location`: Azure location. Default is 'West US' [$AZURE_LOCATION]
+ - `--azure-name`: Azure cloud service name
+ - `--azure-password`: Azure user password
+ - `--azure-publish-settings-file`: Azure publish settings file [$AZURE_PUBLISH_SETTINGS_FILE]
+ - `--azure-size`: Azure size. Default 'Small' [$AZURE_SIZE]
+ - `--azure-ssh-port`: Azure SSH port. Default '22'
+ - `--azure-username`: Azure username. Default 'ubuntu'
+
+Note: the machine name will be used as DNS name for the Cloud Service (e.g. machinename.cloudapp.net) and needs to be unique within Azure.
 
 ### Amazon EC2
 
@@ -266,6 +279,25 @@ Options:
   - `--softlayer-private-net-only`: Disable public networking
   - `--softlayer-region`: softlayer region
 
+### Hyper-V
+
+Creates a Boot2Docker virtual machine locally on your Windows machine using Hyper-V. [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines) for instructions to enable Hyper-V.
+
+Note: you will need an existing virtual switch to use the driver.
+
+Options:
+
+ - `--hyper-v-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
+ - `--hyper-v-boot2docker-url`: The URL of the boot2docker iso. Defaults to the latest available version.
+ - `--hyper-v-disk-size`: Size of disk for the host in MB. Defaults to `20000`.
+ - `--hyper-v-memory`: Size of memory for the host in MB. Defaults to `1024`. The machine is setup to use dynamic memory.
+ - `--hyper-v-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
+
+## Running on Windows
+Machine needs some helper applications to be installed (`ssh`, etc).  The easiest way to get started on Windows
+is to install [msysGit](https://msysgit.github.io/) and [OpenSSL on Windows](http://slproweb.com/products/Win32OpenSSL.html).
+After this, you should have a working setup to use Machine.
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
@@ -300,6 +332,24 @@ run:
 
 If you have any questions we're in #docker-machine on Freenode.
 
+## Unit Tests
+
+To run the unit tests for the whole project, using the following script:
+
+    $ script/test
+
+This will run the unit tests inside of a container, so you don't have to worry
+about configuring your environment properly before doing so.
+
+To run the unit tests for only a specific subdirectory of the project, you can
+pass an argument to that script to specify which directory, e.g.:
+
+    $ script/test ./drivers/amazonec2
+
+If you make a pull request, it is highly encouraged that you submit tests for
+the code that you have added or modified in the same pull request.
+
+
 ## Integration Tests
 There is a suite of integration tests that will run for the drivers.  In order
 to use these you must export the corresponding environment variables for each
@@ -309,5 +359,8 @@ By default, the suite will run tests against all drivers in master.  You can
 override this by setting the environment variable `MACHINE_TESTS`.  For example,
 `MACHINE_TESTS="virtualbox" ./script/run-integration-tests` will only run the
 virtualbox driver integration tests.
+
+You can set the path to the machine binary under test using the `MACHINE_BINARY`
+environment variable.
 
 To run, use the helper script `./script/run-integration-tests`.

@@ -18,6 +18,7 @@ import (
 	_ "github.com/docker/machine/drivers/azure"
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/google"
+	_ "github.com/docker/machine/drivers/hyperv"
 	_ "github.com/docker/machine/drivers/none"
 	_ "github.com/docker/machine/drivers/openstack"
 	_ "github.com/docker/machine/drivers/rackspace"
@@ -57,6 +58,64 @@ func (h hostListItemByName) Swap(i, j int) {
 
 func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
+}
+
+func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath string) error {
+	org := utils.GetUsername()
+	bits := 2048
+
+	if _, err := os.Stat(utils.GetMachineDir()); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(utils.GetMachineDir(), 0700); err != nil {
+				log.Fatalf("Error creating machine config dir: %s", err)
+			}
+		} else {
+			log.Fatal(err)
+		}
+	}
+
+	if _, err := os.Stat(caCertPath); os.IsNotExist(err) {
+		log.Infof("Creating CA: %s", caCertPath)
+
+		// check if the key path exists; if so, error
+		if _, err := os.Stat(caKeyPath); err == nil {
+			log.Fatalf("The CA key already exists.  Please remove it or specify a different key/cert.")
+		}
+
+		if err := utils.GenerateCACertificate(caCertPath, caKeyPath, org, bits); err != nil {
+			log.Infof("Error generating CA certificate: %s", err)
+		}
+	}
+
+	if _, err := os.Stat(clientCertPath); os.IsNotExist(err) {
+		log.Infof("Creating client certificate: %s", clientCertPath)
+
+		if _, err := os.Stat(utils.GetMachineClientCertDir()); err != nil {
+			if os.IsNotExist(err) {
+				if err := os.Mkdir(utils.GetMachineClientCertDir(), 0700); err != nil {
+					log.Fatalf("Error creating machine client cert dir: %s", err)
+				}
+			} else {
+				log.Fatal(err)
+			}
+		}
+
+		// check if the key path exists; if so, error
+		if _, err := os.Stat(clientKeyPath); err == nil {
+			log.Fatalf("The client key already exists.  Please remove it or specify a different key/cert.")
+		}
+
+		if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
+			log.Fatalf("Error generating client certificate: %s", err)
+		}
+
+		// copy ca.pem to client cert dir for docker client
+		if err := utils.CopyFile(caCertPath, filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")); err != nil {
+			log.Fatalf("Error copying ca.pem to client cert dir: %s", err)
+		}
+	}
+
+	return nil
 }
 
 var Commands = []cli.Command{
@@ -129,18 +188,11 @@ var Commands = []cli.Command{
 		Action: cmdRm,
 	},
 	{
-		Name:   "shellinit",
-		Usage:  "Display the shell commands to set up the Docker client",
-		Action: cmdShellinit,
+		Name:   "env",
+		Usage:  "Display the commands to set up the environment for the Docker client",
+		Action: cmdEnv,
 	},
 	{
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "command, c",
-				Usage: "SSH Command",
-				Value: "",
-			},
-		},
 		Name:   "ssh",
 		Usage:  "Log into or run a command on a machine with SSH",
 		Action: cmdSsh,
@@ -208,6 +260,11 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
+	if err := setupCertificates(c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"),
+		c.GlobalString("tls-client-cert"), c.GlobalString("tls-client-key")); err != nil {
+		log.Fatalf("Error generating certificates: %s", err)
+	}
+
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	host, err := store.Create(name, driver, c)
@@ -221,8 +278,7 @@ func cmdCreate(c *cli.Context) {
 	}
 
 	log.Infof("%q has been created and is now the active machine", name)
-	// TODO @ehazlett: this will likely change but at least show how to connect for now
-	log.Infof("To connect: docker $(%s config %s) ps", c.App.Name, name)
+	log.Infof("Configure docker client with: $(%s env %s)", c.App.Name, name)
 }
 
 func cmdConfig(c *cli.Context) {
@@ -230,7 +286,7 @@ func cmdConfig(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
+	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H=%q",
 		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, cfg.machineUrl)
 }
 
@@ -343,7 +399,7 @@ func cmdRm(c *cli.Context) {
 	}
 }
 
-func cmdShellinit(c *cli.Context) {
+func cmdEnv(c *cli.Context) {
 	cfg, err := getMachineConfig(c)
 	if err != nil {
 		log.Fatal(err)
@@ -353,6 +409,10 @@ func cmdShellinit(c *cli.Context) {
 }
 
 func cmdSsh(c *cli.Context) {
+	var (
+		err    error
+		sshCmd *exec.Cmd
+	)
 	name := c.Args().First()
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
@@ -365,21 +425,15 @@ func cmdSsh(c *cli.Context) {
 		name = host.Name
 	}
 
-	i := 1
-	for i < len(os.Args) && os.Args[i-1] != name {
-		i++
-	}
-
 	host, err := store.Load(name)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var sshCmd *exec.Cmd
-	if c.String("command") == "" {
+	if len(c.Args()) <= 1 {
 		sshCmd, err = host.Driver.GetSSHCommand()
 	} else {
-		sshCmd, err = host.Driver.GetSSHCommand(c.String("command"))
+		sshCmd, err = host.Driver.GetSSHCommand(c.Args()[1:]...)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -494,6 +548,9 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		if err != nil {
 			log.Fatalf("error getting active host: %v", err)
 		}
+		if m == nil {
+			return nil, fmt.Errorf("There is no active host")
+		}
 		machine = m
 	} else {
 		m, err := store.Load(name)
@@ -508,7 +565,11 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	clientKey := filepath.Join(utils.GetMachineClientCertDir(), "key.pem")
 	machineUrl, err := machine.GetURL()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting machine url: %s", err)
+		if err == drivers.ErrHostIsNotRunning {
+			machineUrl = ""
+		} else {
+			return nil, fmt.Errorf("Unexpected error getting machine url: %s", err)
+		}
 	}
 	return &machineConfig{
 		caCertPath:     caCert,

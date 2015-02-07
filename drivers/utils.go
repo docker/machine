@@ -3,13 +3,14 @@ package drivers
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/docker/machine/utils"
 )
 
 func PublicKeyPath() string {
-	return filepath.Join(utils.GetHomeDir(), ".docker", "public-key.json")
+	return filepath.Join(utils.GetDockerDir(), "public-key.json")
 }
 
 func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {
@@ -19,7 +20,9 @@ func AddPublicKeyToAuthorizedHosts(d Driver, authorizedKeysPath string) error {
 	}
 	defer f.Close()
 
-	cmdString := fmt.Sprintf("mkdir -p %q && cat > %q", authorizedKeysPath, filepath.Join(authorizedKeysPath, "docker-host.json"))
+	// Use path.Join here, want to create unix path even when running on Windows.
+	cmdString := fmt.Sprintf("mkdir -p %q && cat > %q", authorizedKeysPath,
+		path.Join(authorizedKeysPath, "docker-host.json"))
 	cmd, err := d.GetSSHCommand(cmdString)
 	if err != nil {
 		return err
