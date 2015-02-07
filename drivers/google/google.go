@@ -192,12 +192,8 @@ func (driver *Driver) Start() error {
 	return c.createInstance(driver)
 }
 
-func (d *Driver) Suspend() error {
-	return nil
-}
-
 // Stop deletes the GCE instance, but keeps the disk.
-func (driver *Driver) Stop() error {
+func (driver *Driver) Stop(save bool) error {
 	c, err := newComputeUtil(driver)
 	if err != nil {
 		return err
@@ -238,7 +234,7 @@ func (driver *Driver) Restart() error {
 
 // Kill deletes the GCE instance, but keeps the disk.
 func (driver *Driver) Kill() error {
-	return driver.Stop()
+	return driver.Stop(false)
 }
 
 func (d *Driver) StartDocker() error {

@@ -413,16 +413,6 @@ $ docker-machine restart
 INFO[0005] Waiting for VM to start...
 ```
 
-#### suspend
-
-Suspend a machine.
-
-It works on Vmware Fusion and VirtualBox currently.
-
-```
-$ docker-machine suspend
-```
-
 #### stop
 
 Gracefully stop a machine.
@@ -436,6 +426,8 @@ $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL
 dev    *        virtualbox   Stopped
 ```
+
+Some drivers support `--save` option, like VirtualBox, VMware Fusion.
 
 #### upgrade
 

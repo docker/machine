@@ -347,12 +347,14 @@ func (d *Driver) Start() error {
 	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
 }
 
-func (d *Driver) Suspend() error {
-	return vbm("controlvm", d.MachineName, "savestate")
-}
-
-func (d *Driver) Stop() error {
-	if err := vbm("controlvm", d.MachineName, "acpipowerbutton"); err != nil {
+func (d *Driver) Stop(save bool) error {
+	var command string
+	if save {
+		command = "savestate"
+	} else {
+		command = "acpipowerbutton"
+	}
+	if err := vbm("controlvm", d.MachineName, command); err != nil {
 		return err
 	}
 	for {
@@ -387,7 +389,7 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
-	if err := d.Stop(); err != nil {
+	if err := d.Stop(false); err != nil {
 		return err
 	}
 	return d.Start()
@@ -399,7 +401,7 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) Upgrade() error {
 	log.Infof("Stopping machine...")
-	if err := d.Stop(); err != nil {
+	if err := d.Stop(false); err != nil {
 		return err
 	}
 

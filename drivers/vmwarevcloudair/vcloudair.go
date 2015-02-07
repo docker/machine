@@ -572,7 +572,7 @@ func (d *Driver) Suspend() error {
 	return nil
 }
 
-func (d *Driver) Stop() error {
+func (d *Driver) Stop(save bool) error {
 
 	p, err := govcloudair.NewClient()
 	if err != nil {

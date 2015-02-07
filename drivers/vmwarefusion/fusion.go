@@ -305,12 +305,17 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Suspend() error {
-	vmrun("suspend", d.vmxPath())
 	return nil
 }
 
-func (d *Driver) Stop() error {
-	vmrun("stop", d.vmxPath(), "nogui")
+func (d *Driver) Stop(save bool) error {
+	var command string
+	if save {
+		command = "suspend"
+	} else {
+		command = "stop"
+	}
+	vmrun(command, d.vmxPath())
 	return nil
 }
 
