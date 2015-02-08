@@ -1,23 +1,22 @@
 package drivers
 
-import "fmt"
 import "github.com/codegangsta/cli"
 
 func DistinctFlags(flags *[]cli.Flag) {
 	var unique []cli.Flag
 
-	find := func(flag cli.Flag) error {
+	isInCollection := func(flag cli.Flag) bool {
 		for _, v := range unique {
 			if flag == v {
-				return nil
+				return true
 			}
 		}
 
-		return fmt.Errorf("Not found")
+		return false
 	}
 
 	for _, v := range *flags {
-		if err := find(v); err != nil {
+		if ok := isInCollection(v); !ok {
 			unique = append(unique, v)
 		}
 	}

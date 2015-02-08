@@ -57,7 +57,7 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
-			Name:  "memory",
+			Name:  "memory-size",
 			Usage: "Size of memory for host in MB",
 			Value: 1024,
 		},
@@ -95,7 +95,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Memory = flags.Int("memory")
+	d.Memory = flags.Int("memory-size")
 	d.DiskSize = flags.Int("disk-size")
 	d.Boot2DockerURL = flags.String("boot2docker-url")
 	return nil

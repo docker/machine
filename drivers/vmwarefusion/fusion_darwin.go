@@ -65,7 +65,7 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
-			Name:  "memory",
+			Name:  "memory-size",
 			Usage: "Size of memory for host in MB",
 			Value: 1024,
 		},
