@@ -125,6 +125,7 @@ func GetCreateFlags() []cli.Flag {
 	}
 
 	sort.Sort(ByFlagName(flags))
+	DistinctFlags(&flags)
 
 	return flags
 }
