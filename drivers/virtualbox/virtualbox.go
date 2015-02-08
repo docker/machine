@@ -57,18 +57,18 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
-			Name:  "virtualbox-memory",
+			Name:  "memory",
 			Usage: "Size of memory for host in MB",
 			Value: 1024,
 		},
 		cli.IntFlag{
-			Name:  "virtualbox-disk-size",
+			Name:  "disk-size",
 			Usage: "Size of disk for host in MB",
 			Value: 20000,
 		},
 		cli.StringFlag{
-			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
-			Name:   "virtualbox-boot2docker-url",
+			EnvVar: "BOOT2DOCKER_URL",
+			Name:   "boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  "",
 		},
@@ -95,9 +95,9 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Memory = flags.Int("virtualbox-memory")
-	d.DiskSize = flags.Int("virtualbox-disk-size")
-	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
+	d.Memory = flags.Int("memory")
+	d.DiskSize = flags.Int("disk-size")
+	d.Boot2DockerURL = flags.String("boot2docker-url")
 	return nil
 }
 
