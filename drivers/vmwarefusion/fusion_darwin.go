@@ -31,6 +31,7 @@ const (
 	B2D_USER        = "docker"
 	B2D_PASS        = "tcuser"
 	dockerConfigDir = "/var/lib/boot2docker"
+	isoFilename     = "boot2docker-vmw.iso"
 )
 
 // Driver for VMware Fusion
@@ -96,7 +97,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("vmwarefusion-memory-size")
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")
 	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
-	d.ISO = path.Join(d.storePath, "boot2docker.iso")
+	d.ISO = path.Join(d.storePath, isoFilename)
 
 	return nil
 }
@@ -145,45 +146,41 @@ func (d *Driver) Create() error {
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+		if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
 			return err
-
 		}
 
 	} else {
-		// todo: check latest release URL, download if it's new
-		// until then always use "latest"
-		isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
-		if err != nil {
-			log.Warnf("Unable to check for the latest release: %s", err)
+		// TODO: until vmw tools are merged into b2d master
+		// we will use the iso from the vmware team
+		//// todo: check latest release URL, download if it's new
+		//// until then always use "latest"
+		//isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
+		//if err != nil {
+		//	log.Warnf("Unable to check for the latest release: %s", err)
+		//}
 
-		}
-		// todo: use real constant for .docker
+		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.4.1-vmw/boot2docker-1.4.1-vmw.iso"
+
 		rootPath := filepath.Join(utils.GetDockerDir())
 		imgPath := filepath.Join(rootPath, "images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+		commonIsoPath := filepath.Join(imgPath, isoFilename)
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
 			// just in case boot2docker.iso has been manually deleted
 			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 				if err := os.Mkdir(imgPath, 0700); err != nil {
 					return err
-
 				}
-
 			}
-			if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+			if err := b2dutils.DownloadISO(imgPath, isoFilename, isoURL); err != nil {
 				return err
-
 			}
-
 		}
-		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+		isoDest := filepath.Join(d.storePath, isoFilename)
 		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 			return err
-
 		}
-
 	}
 
 	log.Infof("Creating SSH key...")
