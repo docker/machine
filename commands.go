@@ -271,8 +271,8 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("error setting active host: %v", err)
 	}
 
-	log.Infof("%q has been created and is now the active machine", name)
-	log.Infof("Configure docker client with: $(%s env %s)", c.App.Name, name)
+	log.Infof("%q has been created and is now the active machine.", name)
+	log.Infof("To point your Docker client at it, run this in your shell: $(%s env %s)", c.App.Name, name)
 }
 
 func cmdConfig(c *cli.Context) {
