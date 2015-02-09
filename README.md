@@ -281,9 +281,14 @@ Options:
 
 ### Hyper-V
 
-Creates a Boot2Docker virtual machine locally on your Windows machine using Hyper-V. [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines) for instructions to enable Hyper-V.
+Creates a Boot2Docker virtual machine locally on your Windows machine using Hyper-V.
+[See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines)
+for instructions to enable Hyper-V.
 
-Note: you will need an existing virtual switch to use the driver.
+> **Note**: you will need an existing virtual switch to use the driver.
+> If you don't have a spare network interface to dedicate to Hyper-V, then you
+> can create a new internal network, and then share your internet connection with
+> using "Control Panel -> Network and Internet -> Network Connections"
 
 Options:
 
