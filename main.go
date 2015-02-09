@@ -20,6 +20,8 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
+	app.Author = "Docker Machine Contributors"
+	app.Email = "https://github.com/docker/machine"
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
