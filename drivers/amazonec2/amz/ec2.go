@@ -140,13 +140,13 @@ func NewEC2(auth Auth, region string) *EC2 {
 	}
 }
 
-func (e *EC2) awsApiCall(v url.Values) (http.Response, error) {
+func (e *EC2) awsApiCall(v url.Values) (*http.Response, error) {
 	v.Set("Version", "2014-06-15")
 	client := &http.Client{}
 	finalEndpoint := fmt.Sprintf("%s?%s", e.Endpoint, v.Encode())
 	req, err := http.NewRequest("GET", finalEndpoint, nil)
 	if err != nil {
-		return http.Response{}, fmt.Errorf("error creating request from client")
+		return &http.Response{}, fmt.Errorf("error creating request from client")
 	}
 	req.Header.Add("Content-type", "application/json")
 
@@ -157,12 +157,13 @@ func (e *EC2) awsApiCall(v url.Values) (http.Response, error) {
 	})
 	resp, err := client.Do(req)
 	if err != nil {
-		return *resp, fmt.Errorf("client encountered error while doing the request: %s", err)
+		fmt.Printf("client encountered error while doing the request: %s", err.Error())
+		return resp, fmt.Errorf("client encountered error while doing the request: %s", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return *resp, newAwsApiResponseError(*resp)
+		return resp, newAwsApiResponseError(*resp)
 	}
-	return *resp, nil
+	return resp, nil
 }
 
 func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCount int, maxCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping) (EC2Instance, error) {
@@ -297,7 +298,7 @@ func (e *EC2) CreateTags(id string, tags map[string]string) error {
 
 	createTagsResponse := &CreateTagsResponse{}
 
-	if err := getDecodedResponse(resp, &createTagsResponse); err != nil {
+	if err := getDecodedResponse(*resp, &createTagsResponse); err != nil {
 		return fmt.Errorf("Error decoding create tags response: %s", err)
 	}
 
@@ -317,7 +318,7 @@ func (e *EC2) CreateSecurityGroup(name string, description string, vpcId string)
 		// ugly hack since API has no way to check if SG already exists
 		if resp.StatusCode == http.StatusBadRequest {
 			var errorResponse ErrorResponse
-			if err := getDecodedResponse(resp, &errorResponse); err != nil {
+			if err := getDecodedResponse(*resp, &errorResponse); err != nil {
 				return nil, fmt.Errorf("Error decoding error response: %s", err)
 			}
 			if errorResponse.Errors[0].Code == ErrorDuplicateGroup {
@@ -329,7 +330,7 @@ func (e *EC2) CreateSecurityGroup(name string, description string, vpcId string)
 
 	createSecurityGroupResponse := CreateSecurityGroupResponse{}
 
-	if err := getDecodedResponse(resp, &createSecurityGroupResponse); err != nil {
+	if err := getDecodedResponse(*resp, &createSecurityGroupResponse); err != nil {
 		return nil, fmt.Errorf("Error decoding create security groups response: %s", err)
 	}
 
@@ -373,7 +374,7 @@ func (e *EC2) DeleteSecurityGroup(groupId string) error {
 
 	deleteSecurityGroupResponse := DeleteSecurityGroupResponse{}
 
-	if err := getDecodedResponse(resp, &deleteSecurityGroupResponse); err != nil {
+	if err := getDecodedResponse(*resp, &deleteSecurityGroupResponse); err != nil {
 		return fmt.Errorf("Error decoding delete security groups response: %s", err)
 	}
 
@@ -563,7 +564,7 @@ func (e *EC2) TerminateInstance(instanceId string) error {
 	return nil
 }
 
-func (e *EC2) performStandardAction(action string) (http.Response, error) {
+func (e *EC2) performStandardAction(action string) (*http.Response, error) {
 	v := url.Values{}
 	v.Set("Action", action)
 	resp, err := e.awsApiCall(v)
@@ -573,7 +574,7 @@ func (e *EC2) performStandardAction(action string) (http.Response, error) {
 	return resp, nil
 }
 
-func (e *EC2) performInstanceAction(instanceId, action string, extraVars *map[string]string) (http.Response, error) {
+func (e *EC2) performInstanceAction(instanceId, action string, extraVars *map[string]string) (*http.Response, error) {
 	v := url.Values{}
 	v.Set("Action", action)
 	v.Set("InstanceId.1", instanceId)
