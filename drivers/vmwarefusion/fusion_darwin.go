@@ -64,22 +64,21 @@ func init() {
 // "docker hosts create"
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
+		cli.IntFlag{
+			Name:  "memory-size",
+			Usage: "Size of memory for host in MB",
+			Value: 1024,
+		},
+		cli.IntFlag{
+			Name:  "disk-size",
+			Usage: "Size of disk for host in MB",
+			Value: 20000,
+		},
 		cli.StringFlag{
-			EnvVar: "FUSION_BOOT2DOCKER_URL",
-			Name:   "vmwarefusion-boot2docker-url",
-			Usage:  "Fusion URL for boot2docker image",
-		},
-		cli.IntFlag{
-			EnvVar: "FUSION_MEMORY_SIZE",
-			Name:   "vmwarefusion-memory-size",
-			Usage:  "Fusion size of memory for host VM (in MB)",
-			Value:  1024,
-		},
-		cli.IntFlag{
-			EnvVar: "FUSION_DISK_SIZE",
-			Name:   "vmwarefusion-disk-size",
-			Usage:  "Fusion size of disk for host VM (in MB)",
-			Value:  20000,
+			EnvVar: "BOOT2DOCKER_URL",
+			Name:   "boot2docker-url",
+			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
+			Value:  "",
 		},
 	}
 }
@@ -93,9 +92,9 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Memory = flags.Int("vmwarefusion-memory-size")
-	d.DiskSize = flags.Int("vmwarefusion-disk-size")
-	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
+	d.Memory = flags.Int("memory-size")
+	d.DiskSize = flags.Int("disk-size")
+	d.Boot2DockerURL = flags.String("boot2docker-url")
 	d.ISO = path.Join(d.storePath, "boot2docker.iso")
 
 	return nil
