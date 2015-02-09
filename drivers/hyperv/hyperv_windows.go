@@ -48,24 +48,24 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "hyper-v-boot2docker-url",
-			Usage: "The URL of the boot2docker image. Defaults to the latest available version.",
+			Usage: "Hyper-V URL of the boot2docker image. Defaults to the latest available version.",
 		},
 		cli.StringFlag{
 			Name:  "hyper-v-boot2docker-location",
-			Usage: "Local boot2docker iso. Overrides URL.",
+			Usage: "Hyper-V local boot2docker iso. Overrides URL.",
 		},
 		cli.StringFlag{
 			Name:  "hyper-v-virtual-switch",
-			Usage: "Name of virtual switch. Defaults to first found.",
+			Usage: "Hyper-V virtual switch name. Defaults to first found.",
 		},
 		cli.IntFlag{
 			Name:  "hyper-v-disk-size",
-			Usage: "Size of disk for host in MB.",
+			Usage: "Hyper-V disk size for host in MB.",
 			Value: 20000,
 		},
 		cli.IntFlag{
 			Name:  "hyper-v-memory",
-			Usage: "Size of memory for host in MB.",
+			Usage: "Hyper-V memory size for host in MB.",
 			Value: 1024,
 		},
 	}

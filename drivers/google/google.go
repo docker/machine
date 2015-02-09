@@ -65,7 +65,7 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:   "google-username",
-			Usage:  "User Name",
+			Usage:  "GCE User Name",
 			Value:  "docker-user",
 			EnvVar: "GOOGLE_USERNAME",
 		},
