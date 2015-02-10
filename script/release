@@ -19,7 +19,7 @@ docker run --rm -e GITHUB_TOKEN docker-machine github-release release \
     --tag $VERSION \
     --name $VERSION \
     --description "" \
-    --pre-release \
+    --pre-release
 for BINARY in docker-machine_*; do
     docker run --rm -e GITHUB_TOKEN -v `pwd`:/go/src/github.com/docker/machine \
         docker-machine github-release upload \
