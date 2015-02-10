@@ -28,7 +28,7 @@ import (
 
 const (
 	DATASTORE_DIR      = "boot2docker-iso"
-	B2D_ISO_NAME       = "boot2docker.iso"
+	B2D_ISO_NAME       = "boot2docker-vmw.iso"
 	DEFAULT_CPU_NUMBER = 2
 	dockerConfigDir    = "/var/lib/boot2docker"
 	B2D_USER           = "docker"
@@ -245,17 +245,21 @@ func (d *Driver) Create() error {
 		}
 
 	} else {
-		// todo: check latest release URL, download if it's new
-		// until then always use "latest"
-		isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
-		if err != nil {
-			log.Warnf("Unable to check for the latest release: %s", err)
+		// TODO: until vmw tools are merged into b2d master
+		// we will use the iso from the vmware team
+		//// todo: check latest release URL, download if it's new
+		//// until then always use "latest"
+		//isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
+		//if err != nil {
+		//	log.Warnf("Unable to check for the latest release: %s", err)
 
-		}
-		// todo: use real constant for .docker
+		//}
+
+		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.4.1-vmw/boot2docker-1.4.1-vmw.iso"
+
 		rootPath := filepath.Join(utils.GetDockerDir())
 		imgPath := filepath.Join(rootPath, "images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+		commonIsoPath := filepath.Join(imgPath, B2D_ISO_NAME)
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
 			// just in case boot2docker.iso has been manually deleted
@@ -266,13 +270,13 @@ func (d *Driver) Create() error {
 				}
 
 			}
-			if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+			if err := b2dutils.DownloadISO(imgPath, B2D_ISO_NAME, isoURL); err != nil {
 				return err
 
 			}
 
 		}
-		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+		isoDest := filepath.Join(d.storePath, B2D_ISO_NAME)
 		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 			return err
 
