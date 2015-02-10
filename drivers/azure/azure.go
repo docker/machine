@@ -319,7 +319,7 @@ func (driver *Driver) Start() error {
 	return nil
 }
 
-func (driver *Driver) Stop() error {
+func (driver *Driver) Stop(save bool) error {
 	err := driver.setUserSubscription()
 	if err != nil {
 		return err

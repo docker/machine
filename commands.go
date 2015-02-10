@@ -203,6 +203,12 @@ var Commands = []cli.Command{
 		Action: cmdStart,
 	},
 	{
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "save",
+				Usage: "Save the current state to be restored",
+			},
+		},
 		Name:   "stop",
 		Usage:  "Stop a machine",
 		Action: cmdStop,
@@ -448,7 +454,8 @@ func cmdStart(c *cli.Context) {
 }
 
 func cmdStop(c *cli.Context) {
-	if err := getHost(c).Stop(); err != nil {
+	save := c.Bool("save")
+	if err := getHost(c).Stop(save); err != nil {
 		log.Fatal(err)
 	}
 }

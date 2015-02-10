@@ -422,7 +422,7 @@ func (d *Driver) Restart() error {
 func (d *Driver) Start() error {
 	return d.getClient().VirtualGuest().PowerOn(d.Id)
 }
-func (d *Driver) Stop() error {
+func (d *Driver) Stop(save bool) error {
 	return d.getClient().VirtualGuest().PowerOff(d.Id)
 }
 

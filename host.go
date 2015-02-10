@@ -276,8 +276,8 @@ func (h *Host) Start() error {
 	return h.Driver.Start()
 }
 
-func (h *Host) Stop() error {
-	return h.Driver.Stop()
+func (h *Host) Stop(save bool) error {
+	return h.Driver.Stop(save)
 }
 
 func (h *Host) Upgrade() error {

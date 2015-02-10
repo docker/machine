@@ -403,7 +403,7 @@ func (d *Driver) Start() error {
 	return errors.NewInvalidStateError(d.MachineName)
 }
 
-func (d *Driver) Stop() error {
+func (d *Driver) Stop(save bool) error {
 	vcConn := NewVcConn(d)
 	err := vcConn.VmPowerOff()
 	if err != nil {
@@ -418,7 +418,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	if machineState == state.Running {
-		if err = d.Stop(); err != nil {
+		if err = d.Stop(false); err != nil {
 			return fmt.Errorf("can't stop VM: %s", err)
 		}
 	}
@@ -431,14 +431,14 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
-	if err := d.Stop(); err != nil {
+	if err := d.Stop(false); err != nil {
 		return err
 	}
 	return d.Start()
 }
 
 func (d *Driver) Kill() error {
-	return d.Stop()
+	return d.Stop(false)
 }
 
 func (d *Driver) StartDocker() error {

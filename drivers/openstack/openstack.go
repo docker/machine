@@ -361,7 +361,7 @@ func (d *Driver) Start() error {
 	return d.waitForInstanceToStart()
 }
 
-func (d *Driver) Stop() error {
+func (d *Driver) Stop(save bool) error {
 	log.WithField("MachineId", d.MachineId).Info("Stopping OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
@@ -404,7 +404,7 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	return d.Stop()
+	return d.Stop(false)
 }
 
 func (d *Driver) Upgrade() error {

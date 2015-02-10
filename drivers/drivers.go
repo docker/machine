@@ -45,7 +45,7 @@ type Driver interface {
 	Start() error
 
 	// Stop a host gracefully
-	Stop() error
+	Stop(save bool) error
 
 	// Restart a host. This may just call Stop(); Start() if the provider does not
 	// have any special restart behaviour.

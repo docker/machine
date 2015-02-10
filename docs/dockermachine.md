@@ -438,6 +438,8 @@ NAME   ACTIVE   DRIVER       STATE     URL
 dev    *        virtualbox   Stopped
 ```
 
+Some drivers support `--save` option, like VirtualBox, VMware Fusion.
+
 #### upgrade
 
 Upgrade a machine to the latest version of Docker.
