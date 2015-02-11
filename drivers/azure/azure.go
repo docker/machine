@@ -471,7 +471,7 @@ func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 func (driver *Driver) Upgrade() error {
 	log.Debugf("Upgrading Docker")
 
-	cmd, err := driver.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
+	cmd, err := driver.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
 	if err != nil {
 		return err
 
