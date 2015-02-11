@@ -27,7 +27,7 @@ var (
 )
 
 const (
-	swarmDockerImage              = "ehazlett/swarm:latest"
+	swarmDockerImage              = "swarm:latest"
 	swarmDiscoveryServiceEndpoint = "https://discovery-stage.hub.docker.com/v1"
 )
 
