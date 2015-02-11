@@ -379,8 +379,15 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
-	if err := d.Stop(); err != nil {
+	s, err := d.GetState()
+	if err != nil {
 		return err
+	}
+
+	if s == state.Running {
+		if err := d.Stop(); err != nil {
+			return err
+		}
 	}
 	return d.Start()
 }
