@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -23,8 +25,34 @@ var (
 	ErrMachineExist    = errors.New("machine already exists")
 	ErrMachineNotExist = errors.New("machine does not exist")
 	ErrVBMNotFound     = errors.New("VBoxManage not found")
-	vboxManageCmd      = "VBoxManage"
+	vboxManageCmd      = setVBoxManageCmd()
 )
+
+// detect the VBoxManage cmd's path if needed
+func setVBoxManageCmd() string {
+	cmd := "VBoxManage"
+	if path, err := exec.LookPath(cmd); err == nil {
+		return path
+	}
+	if runtime.GOOS == "windows" {
+		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" {
+			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+				return path
+			}
+		}
+		if p := os.Getenv("VBOX_MSI_INSTALL_PATH"); p != "" {
+			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+				return path
+			}
+		}
+		// look at HKEY_LOCAL_MACHINE\SOFTWARE\Oracle\VirtualBox\InstallDir
+		p := "C:\\Program Files\\Oracle\\VirtualBox"
+		if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+			return path
+		}
+	}
+	return cmd
+}
 
 func vbm(args ...string) error {
 	cmd := exec.Command(vboxManageCmd, args...)
