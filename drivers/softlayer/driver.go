@@ -429,7 +429,7 @@ func (d *Driver) Stop() error {
 func (d *Driver) Upgrade() error {
 	log.Debugf("Upgrading Docker")
 
-	cmd, err := d.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
+	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
 	if err != nil {
 		return err
 
