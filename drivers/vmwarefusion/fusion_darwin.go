@@ -40,6 +40,7 @@ type Driver struct {
 	IPAddress      string
 	Memory         int
 	DiskSize       int
+	NumCPU         int
 	ISO            string
 	Boot2DockerURL string
 	CaCertPath     string
@@ -52,6 +53,7 @@ type CreateFlags struct {
 	Boot2DockerURL *string
 	Memory         *int
 	DiskSize       *int
+	NumCPU         *int
 }
 
 func init() {
@@ -82,6 +84,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "Fusion size of disk for host VM (in MB)",
 			Value:  20000,
 		},
+		cli.IntFlag{
+			EnvVar: "FUSION_CPU_COUNT",
+			Name:   "vmwarefusion-cpu-count",
+			Usage:  "Fusion CPU number for host VM",
+			Value:  1,
+		},
 	}
 }
 
@@ -96,6 +104,7 @@ func (d *Driver) DriverName() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("vmwarefusion-memory-size")
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")
+	d.NumCPU = flags.Int("vmwarefusion-cpu-count")
 	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
 	d.ISO = path.Join(d.storePath, isoFilename)
 
