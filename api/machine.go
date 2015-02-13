@@ -1,8 +1,7 @@
-package main
+package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -21,36 +20,36 @@ import (
 var (
 	validHostNameChars   = `[a-zA-Z0-9\-\.]`
 	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
-	ErrInvalidHostname   = errors.New("Invalid hostname specified")
 )
 
-type Host struct {
-	Name           string `json:"-"`
-	DriverName     string
-	Driver         drivers.Driver
-	CaCertPath     string
-	ServerCertPath string
-	ServerKeyPath  string
-	PrivateKeyPath string
-	ClientCertPath string
-	storePath      string
-}
+type (
+	Machine struct {
+		Name           string `json:"-"`
+		DriverName     string
+		Driver         drivers.Driver
+		CaCertPath     string
+		PrivateKeyPath string
+		ClientCertPath string
+		storePath      string
+	}
 
-type DockerConfig struct {
-	EngineConfig     string
-	EngineConfigPath string
-}
+	DockerConfig struct {
+		EngineConfig     string
+		EngineConfigPath string
+	}
 
-type hostConfig struct {
-	DriverName string
-}
+	machineConfig struct {
+		DriverName string
+	}
+)
 
-func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
+func NewMachine(name, driverName, storePath, caCert, privateKey string) (*Machine, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
 	}
-	return &Host{
+
+	return &Machine{
 		Name:           name,
 		DriverName:     driverName,
 		Driver:         driver,
@@ -60,16 +59,17 @@ func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, err
 	}, nil
 }
 
-func LoadHost(name string, storePath string) (*Host, error) {
+func LoadMachine(name string, storePath string) (*Machine, error) {
 	if _, err := os.Stat(storePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Host %q does not exist", name)
+		return nil, ErrMachineDoesNotExist
 	}
 
-	host := &Host{Name: name, storePath: storePath}
-	if err := host.LoadConfig(); err != nil {
+	machine := &Machine{Name: name, storePath: storePath}
+	if err := machine.LoadConfig(); err != nil {
 		return nil, err
 	}
-	return host, nil
+
+	return machine, nil
 }
 
 func ValidateHostName(name string) (string, error) {
@@ -100,27 +100,27 @@ func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
 	return nil
 }
 
-func (h *Host) ConfigureAuth() error {
-	d := h.Driver
+func (m *Machine) ConfigureAuth() error {
+	d := m.Driver
 
 	if d.DriverName() == "none" {
 		return nil
 	}
 
-	ip, err := h.Driver.GetIP()
+	ip, err := m.Driver.GetIP()
 	if err != nil {
 		return err
 	}
 
-	serverCertPath := filepath.Join(h.storePath, "server.pem")
-	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
+	serverCertPath := filepath.Join(m.storePath, "server.pem")
+	serverKeyPath := filepath.Join(m.storePath, "server-key.pem")
 
-	org := h.Name
+	org := m.Name
 	bits := 2048
 
 	log.Debugf("generating server cert: %s", serverCertPath)
 
-	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, h.CaCertPath, h.PrivateKeyPath, org, bits); err != nil {
+	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, m.CaCertPath, m.PrivateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
 
@@ -137,7 +137,7 @@ func (h *Host) ConfigureAuth() error {
 	}
 
 	// upload certs and configure TLS auth
-	caCert, err := ioutil.ReadFile(h.CaCertPath)
+	caCert, err := ioutil.ReadFile(m.CaCertPath)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	dockerUrl, err := h.Driver.GetURL()
+	dockerUrl, err := m.Driver.GetURL()
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (h *Host) ConfigureAuth() error {
 		dockerPort = dPort
 	}
 
-	cfg := h.generateDockerConfig(dockerPort, machineCaCertPath, machineServerKeyPath, machineServerCertPath)
+	cfg := m.generateDockerConfig(dockerPort, machineCaCertPath, machineServerKeyPath, machineServerCertPath)
 
 	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", cfg.EngineConfig, cfg.EngineConfigPath))
 	if err != nil {
@@ -217,8 +217,8 @@ func (h *Host) ConfigureAuth() error {
 	return nil
 }
 
-func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKeyPath string, serverCertPath string) *DockerConfig {
-	d := h.Driver
+func (m *Machine) generateDockerConfig(dockerPort int, caCertPath string, serverKeyPath string, serverCertPath string) *DockerConfig {
+	d := m.Driver
 	var (
 		daemonOpts    string
 		daemonOptsCfg string
@@ -255,91 +255,91 @@ DOCKER_TLS=no`, opts, caCertPath, serverKeyPath, serverCertPath)
 	}
 }
 
-func (h *Host) Create(name string) error {
+func (m *Machine) Create(name string) error {
 	name, err := ValidateHostName(name)
 	if err != nil {
 		return err
 	}
 
-	if err := h.Driver.Create(); err != nil {
+	if err := m.Driver.Create(); err != nil {
 		return err
 	}
 
-	if err := h.SaveConfig(); err != nil {
+	if err := m.SaveConfig(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Host) Start() error {
-	return h.Driver.Start()
+func (m *Machine) Start() error {
+	return m.Driver.Start()
 }
 
-func (h *Host) Stop() error {
-	return h.Driver.Stop()
+func (m *Machine) Stop() error {
+	return m.Driver.Stop()
 }
 
-func (h *Host) Upgrade() error {
-	return h.Driver.Upgrade()
+func (m *Machine) Upgrade() error {
+	return m.Driver.Upgrade()
 }
 
-func (h *Host) Remove(force bool) error {
-	if err := h.Driver.Remove(); err != nil {
+func (m *Machine) Remove(force bool) error {
+	if err := m.Driver.Remove(); err != nil {
 		if !force {
 			return err
 		}
 	}
-	return h.removeStorePath()
+	return m.removeStorePath()
 }
 
-func (h *Host) removeStorePath() error {
-	file, err := os.Stat(h.storePath)
+func (m *Machine) removeStorePath() error {
+	file, err := os.Stat(m.storePath)
 	if err != nil {
 		return err
 	}
 	if !file.IsDir() {
-		return fmt.Errorf("%q is not a directory", h.storePath)
+		return fmt.Errorf("%q is not a directory", m.storePath)
 	}
-	return os.RemoveAll(h.storePath)
+	return os.RemoveAll(m.storePath)
 }
 
-func (h *Host) GetURL() (string, error) {
-	return h.Driver.GetURL()
+func (m *Machine) GetURL() (string, error) {
+	return m.Driver.GetURL()
 }
 
-func (h *Host) LoadConfig() error {
-	data, err := ioutil.ReadFile(filepath.Join(h.storePath, "config.json"))
+func (m *Machine) LoadConfig() error {
+	data, err := ioutil.ReadFile(filepath.Join(m.storePath, "config.json"))
 	if err != nil {
 		return err
 	}
 
 	// First pass: find the driver name and load the driver
-	var config hostConfig
+	var config machineConfig
 	if err := json.Unmarshal(data, &config); err != nil {
 		return err
 	}
 
-	driver, err := drivers.NewDriver(config.DriverName, h.Name, h.storePath, h.CaCertPath, h.PrivateKeyPath)
+	driver, err := drivers.NewDriver(config.DriverName, m.Name, m.storePath, m.CaCertPath, m.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
-	h.Driver = driver
+	m.Driver = driver
 
 	// Second pass: unmarshal driver config into correct driver
-	if err := json.Unmarshal(data, &h); err != nil {
+	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Host) SaveConfig() error {
-	data, err := json.Marshal(h)
+func (m *Machine) SaveConfig() error {
+	data, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(m.storePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
 	return nil
