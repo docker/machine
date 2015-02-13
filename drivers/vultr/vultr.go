@@ -259,10 +259,10 @@ func (d *Driver) Stop() error {
 
 func (d *Driver) Remove() error {
 	client := d.getClient()
-	if err := client.DeleteSSHKey(d.SSHKeyID); err != nil {
+	if err := client.DeleteServer(d.MachineID); err != nil {
 		return err
 	}
-	if err := client.DeleteServer(d.MachineID); err != nil {
+	if err := client.DeleteSSHKey(d.SSHKeyID); err != nil {
 		return err
 	}
 	return nil
