@@ -23,6 +23,8 @@ import (
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
+
+	_ "github.com/docker/machine/machine/os"
 )
 
 var (
