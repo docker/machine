@@ -18,6 +18,10 @@
 			"Rev": "1f2ba2c6317323dd667bd266c1e8ebffc4a4c62f"
 		},
 		{
+			"ImportPath": "github.com/cenkalti/backoff",
+			"Rev": "9831e1e25c874e0a0601b6dc43641071414eec7a"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-64-ge1712f3",
 			"Rev": "e1712f381785e32046927f64a7c86fe569203196"
@@ -139,8 +143,8 @@
 		},
 		{
 			"ImportPath": "github.com/vmware/govcloudair",
-			"Comment": "v0.0.1-1-g9672590",
-			"Rev": "9672590d5e5795b2d29fce97084fd5810665fc27"
+			"Comment": "v0.0.2",
+			"Rev": "66a23eaabc61518f91769939ff541886fe1dceef"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",

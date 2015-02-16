@@ -15,6 +15,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
@@ -163,7 +164,6 @@ func (c *Client) vaacquirecompute(s url.URL, vid string) (u url.URL, err error) 
 	// Set Authorization Header
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	// TODO: wrap into checkresp to parse error
 	resp, err := checkResp(c.Http.Do(req))
 	if err != nil {
 		return url.URL{}, fmt.Errorf("error processing compute action: %s", err)
@@ -204,11 +204,30 @@ func (c *Client) vagetbackendauth(s url.URL, cid string) error {
 	// Set Authorization Header
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	// TODO: wrap into checkresp to parse error
-	resp, err := checkResp(c.Http.Do(req))
+	// Adding exponential backoff to retry
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = time.Duration(30 * time.Second)
+
+	ticker := backoff.NewTicker(b)
+
+	var err error
+	var resp *http.Response
+
+	for t := range ticker.C {
+		resp, err = checkResp(c.Http.Do(req))
+		if err != nil {
+			fmt.Println(err, "retrying...", t)
+			continue
+		}
+		ticker.Stop()
+		break
+
+	}
+
 	if err != nil {
 		return fmt.Errorf("error processing backend url action: %s", err)
 	}
+
 	defer resp.Body.Close()
 
 	vcloudsession := new(vCloudSession)
