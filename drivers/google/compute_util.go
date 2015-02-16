@@ -24,8 +24,8 @@ type ComputeUtil struct {
 
 const (
 	apiURL = "https://www.googleapis.com/compute/v1/projects/"
-	//imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20141212"
+	//imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20150129"
+	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
