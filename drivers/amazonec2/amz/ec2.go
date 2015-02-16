@@ -158,6 +158,7 @@ func (e *EC2) awsApiCall(v url.Values) (*http.Response, error) {
 		fmt.Printf("client encountered error while doing the request: %s", err.Error())
 		return resp, fmt.Errorf("client encountered error while doing the request: %s", err)
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		return resp, newAwsApiResponseError(*resp)
 	}

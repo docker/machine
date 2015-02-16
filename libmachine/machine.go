@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/utils"
 )
 
@@ -19,10 +19,16 @@ func New(store Store) (*Machine, error) {
 	}, nil
 }
 
-func (m *Machine) Create(name string, driverName string, options *HostOptions) (*Host, error) {
-	driverOptions := options.DriverOptions
-	engineOptions := options.EngineOptions
-	swarmOptions := options.SwarmOptions
+func (m *Machine) Create(name string, driverName string, options *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
+	engineConfig := options.EngineConfig
+	swarmConfig := options.SwarmConfig
+	authConfig := options.AuthConfig
+
+	hostConfig := HostOptions{
+		AuthConfig:   authConfig,
+		EngineConfig: engineConfig,
+		SwarmConfig:  swarmConfig,
+	}
 
 	exists, err := m.store.Exists(name)
 	if err != nil {
@@ -34,22 +40,12 @@ func (m *Machine) Create(name string, driverName string, options *HostOptions) (
 
 	hostPath := filepath.Join(utils.GetMachineDir(), name)
 
-	caCert, err := m.store.GetCACertificatePath()
-	if err != nil {
-		return nil, err
-	}
-
-	privateKey, err := m.store.GetPrivateKeyPath()
-	if err != nil {
-		return nil, err
-	}
-
-	host, err := NewHost(name, driverName, hostPath, caCert, privateKey, engineOptions, swarmOptions)
+	host, err := NewHost(name, driverName, hostConfig)
 	if err != nil {
 		return host, err
 	}
-	if driverOptions != nil {
-		if err := host.Driver.SetConfigFromFlags(driverOptions); err != nil {
+	if driverConfig != nil {
+		if err := host.Driver.SetConfigFromFlags(driverConfig); err != nil {
 			return host, err
 		}
 	}
@@ -68,22 +64,6 @@ func (m *Machine) Create(name string, driverName string, options *HostOptions) (
 
 	if err := host.Create(name); err != nil {
 		return host, err
-	}
-
-	if err := host.ConfigureAuth(); err != nil {
-		return host, err
-	}
-
-	if swarmOptions.Host != "" {
-		log.Info("Configuring Swarm...")
-
-		discovery := swarmOptions.Discovery
-		master := swarmOptions.Master
-		swarmHost := swarmOptions.Host
-		addr := swarmOptions.Address
-		if err := host.ConfigureSwarm(discovery, master, swarmHost, addr); err != nil {
-			log.Errorf("Error configuring Swarm: %s", err)
-		}
 	}
 
 	if err := m.store.SetActive(host); err != nil {
