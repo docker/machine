@@ -5,5 +5,6 @@ import (
 )
 
 var (
-	ErrDetectionFailed = errors.New("Runtime detection failed")
+	ErrDetectionFailed  = errors.New("Runtime detection failed")
+	ErrSSHCommandFailed = errors.New("SSH command failure")
 )

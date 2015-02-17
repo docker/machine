@@ -1,5 +1,9 @@
 package os
 
+import (
+	"github.com/docker/machine/drivers"
+)
+
 type ServiceState int
 
 const (
@@ -67,4 +71,22 @@ func RegisterRuntime(name string, runtime *RegisteredRuntime) error {
 	return nil
 }
 
-type DetectionFunc func() (*Runtime, error)
+type DetectionFunc func(d drivers.Driver) (*Runtime, error)
+
+func sshCommand(d drivers.Driver, args ...string) (string, error) {
+	cmd, err := d.GetSSHCommand(args...)
+	if err != nil {
+		return "", ErrSSHCommandFailed
+	}
+
+	if err := cmd.Run(); err != nil {
+		return "", ErrSSHCommandFailed
+	}
+
+	out, err := cmd.Output()
+	if err != nil {
+		return "", ErrSSHCommandFailed
+	}
+
+	return string(out), nil
+}
