@@ -138,6 +138,10 @@
 			"Rev": "1f0db8c0ee6362470abe06a94e3385927ed72a4b"
 		},
 		{
+			"ImportPath": "github.com/taoh/linodego",
+			"Rev": "d292db6e8b4783de5e3b1c3ced162f936139a94b"
+		},
+		{
 			"ImportPath": "github.com/tent/http-link-go",
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		},

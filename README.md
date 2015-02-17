@@ -69,6 +69,22 @@ Options:
  - `--digitalocean-region`: The region to create the droplet in. Default: `nyc3`
  - `--digitalocean-size`: The size of the Digital Ocean driver. Default: `512mb`
 
+### Linode
+
+Creates machines on [Linode](https://www.linode.com/). You need to create an account and create an API Key under "API Keys" in "my profile" in Linode Manager and pass that to `machine create` with the `--linode-api-key` option.
+
+Options:
+
+ - `--linode-api-key`: (Required) Your API Key for the Linode API.
+ - `--linode-root-pass`: (Required). Select a root password for the linode machine
+ - `--linode-datacenter-id`: (Optional). The datacenter Id for the created linode. Default: `2`
+ - `--linode-plan-id`: (Optional). The linode Plan Id. Default: `1`
+ - `--linode-payment-term`: (Optional). The linode Payment Term. Valid values are 1, 12, 24. Default: `1`
+ - `--linode-ssh-port`: (Optional). The Port number for SSH. Default: `22`
+ - `--linode-distribution-id`: (Optional). The Linode Distribution Id. Default: `124`
+ - `--linode-kernel-id`: (Optional). The Linode Kernel Id. Default: `138`
+ 
+ 
 ### Microsoft Azure
 
 Create machines on [Microsoft Azure](http://azure.microsoft.com/).
