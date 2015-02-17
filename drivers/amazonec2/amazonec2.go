@@ -450,8 +450,12 @@ func (d *Driver) Upgrade() error {
 	return cmd.Run()
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return "ubuntu"
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "ubuntu", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, 22, d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *amz.EC2 {
@@ -459,7 +463,7 @@ func (d *Driver) getClient() *amz.EC2 {
 	return amz.NewEC2(auth, d.Region)
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
 
@@ -487,7 +491,7 @@ func (d *Driver) updateDriver() error {
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 func (d *Driver) getInstance() (*amz.EC2Instance, error) {
@@ -520,7 +524,7 @@ func (d *Driver) waitForInstance() error {
 
 func (d *Driver) createKeyPair() error {
 
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 

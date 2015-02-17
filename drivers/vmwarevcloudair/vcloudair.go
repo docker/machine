@@ -760,8 +760,12 @@ func (d *Driver) Upgrade() error {
 	return cmd.Run()
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return "root"
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.PublicIP, d.SSHPort, "root", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.PublicIP, d.SSHPort, d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 // Helpers
@@ -773,7 +777,7 @@ func generateVMName() string {
 
 func (d *Driver) createSSHKey() (string, error) {
 
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return "", err
 	}
 
@@ -785,10 +789,10 @@ func (d *Driver) createSSHKey() (string, error) {
 	return string(publicKey), nil
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }

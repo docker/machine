@@ -103,7 +103,10 @@ func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
 func (h *Host) ConfigureAuth() error {
 	d := h.Driver
 
-	if d.DriverName() == "none" {
+	// TODO: Move Host to interface to avoid having to resort
+	// to this kind of thing (testing for "fake", which is the driver
+	// name we will use for unit tests)
+	if d.DriverName() == "none" || d.DriverName() == "fake" {
 		return nil
 	}
 

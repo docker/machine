@@ -66,6 +66,12 @@ type Driver interface {
 	// GetDockerConfigDir returns the config directory for storing daemon configs
 	GetDockerConfigDir() string
 
+	// GetSSHUsername returns the UNIX user the driver uses for SSH
+	GetSSHUsername() string
+
+	// Return the path where the SSH private key for this instance is located.
+	GetSSHKeyPath() string
+
 	// GetSSHCommand returns a command for SSH pointing at the correct user, host
 	// and keys for the host with args appended. If no args are passed, it will
 	// initiate an interactive SSH session as if SSH were passed no args.

@@ -113,6 +113,14 @@ func (d *Driver) Upgrade() error {
 	return fmt.Errorf("hosts without a driver cannot be upgraded")
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return ""
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return nil, fmt.Errorf("hosts without a driver do not support SSH")
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return ""
 }

@@ -193,6 +193,11 @@ var Commands = []cli.Command{
 		Action: cmdEnv,
 	},
 	{
+		Name:   "scp",
+		Usage:  "Move files from one machine to another.",
+		Action: cmdScp,
+	},
+	{
 		Name:   "ssh",
 		Usage:  "Log into or run a command on a machine with SSH",
 		Action: cmdSsh,
@@ -408,6 +413,34 @@ func cmdEnv(c *cli.Context) {
 	}
 }
 
+func runCmdWithStdIo(cmd exec.Cmd) error {
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+	return nil
+}
+
+func cmdScp(c *cli.Context) {
+	args := c.Args()
+	if len(args) != 2 {
+		cli.ShowCommandHelp(c, "scp")
+		log.Fatal("Improper number of arguments.  Usage: machine scp [src] [dest]")
+	}
+	src := args[0]
+	dest := args[1]
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	cmd, err := GetScpCmd(src, dest, *store)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := runCmdWithStdIo(*cmd); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func cmdSsh(c *cli.Context) {
 	var (
 		err    error
@@ -438,11 +471,7 @@ func cmdSsh(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
+	if err := runCmdWithStdIo(*sshCmd); err != nil {
 		log.Fatal(err)
 	}
 }

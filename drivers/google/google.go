@@ -278,13 +278,21 @@ func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
 }
 
+func (d *Driver) GetSSHKeyPath() string {
+	return d.sshKeyPath
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return d.UserName
+}
+
 // GetSSHCommand returns a command that will run over SSH on the GCE instance.
 func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	ip, err := driver.GetIP()
 	if err != nil {
 		return nil, err
 	}
-	return ssh.GetSSHCommand(ip, 22, driver.UserName, driver.sshKeyPath, args...), nil
+	return ssh.GetSSHCommand(ip, 22, driver.GetSSHUsername(), driver.sshKeyPath, args...), nil
 }
 
 // Upgrade upgrades the docker daemon on the host to the latest version.
