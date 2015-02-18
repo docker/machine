@@ -1,38 +1,37 @@
 package api
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/docker/machine"
 	"github.com/docker/machine/drivers"
 )
 
 type Api struct {
-	store *Store
+	store *machine.Store
 }
 
 func NewApi(storePath, caCertPath, privateKeyPath string) (*Api, error) {
-	st := NewStore(storePath, caCertPath, privateKeyPath)
+	st := machine.NewStore(storePath, caCertPath, privateKeyPath)
 	api := &Api{
 		store: st,
 	}
 	return api, nil
 }
 
-func (m *Api) Create(name string, driverName string, flags drivers.DriverOptions) (*Machine, error) {
+func (m *Api) Create(name string, driverName string, flags drivers.DriverOptions) (*machine.Machine, error) {
 	exists, err := m.store.Exists(name)
 	if err != nil {
 		return nil, err
 	}
 	if exists {
-		return nil, ErrMachineExists
+		return nil, machine.ErrMachineExists
 	}
 
 	machinePath := filepath.Join(m.store.Path, name)
 
-	machine, err := NewMachine(name, driverName, machinePath, m.store.CaCertPath, m.store.PrivateKeyPath)
+	machine, err := machine.NewMachine(name, driverName, machinePath, m.store.CaCertPath, m.store.PrivateKeyPath)
 	if err != nil {
 		return machine, err
 	}
@@ -50,7 +49,7 @@ func (m *Api) Create(name string, driverName string, flags drivers.DriverOptions
 		return nil, err
 	}
 
-	if err := machine.SaveConfig(); err != nil {
+	if err := m.store.Save(machine); err != nil {
 		return machine, err
 	}
 
@@ -85,48 +84,28 @@ func (m *Api) Remove(name string, force bool) error {
 	return machine.Remove(force)
 }
 
-func (m *Api) List() ([]Machine, []error) {
-	dir, err := ioutil.ReadDir(m.store.Path)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, []error{err}
-	}
-
-	machines := []Machine{}
-	errors := []error{}
-
-	for _, file := range dir {
-		// don't load hidden dirs; used for configs
-		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
-			machine, err := m.Get(file.Name())
-			if err != nil {
-				errors = append(errors, err)
-				continue
-			}
-			machines = append(machines, *machine)
-		}
-	}
-	return machines, nil
+func (m *Api) List() ([]machine.Machine, []error) {
+	return m.store.List()
 }
 
 func (m *Api) Exists(name string) (bool, error) {
 	return m.store.Exists(name)
 }
 
-func (m *Api) Get(name string) (*Machine, error) {
-	machinePath := filepath.Join(m.store.Path, name)
-	return LoadMachine(name, machinePath)
+func (m *Api) Get(name string) (*machine.Machine, error) {
+	return m.store.Get(name)
 }
 
-func (m *Api) GetActive() (*Machine, error) {
+func (m *Api) GetActive() (*machine.Machine, error) {
 	return m.store.GetActive()
 }
 
-func (m *Api) IsActive(machine *Machine) (bool, error) {
-	return m.store.IsActive(machine)
+func (m *Api) IsActive(mcn *machine.Machine) (bool, error) {
+	return m.store.IsActive(mcn)
 }
 
-func (m *Api) SetActive(machine *Machine) error {
-	return m.store.SetActive(machine)
+func (m *Api) SetActive(mcn *machine.Machine) error {
+	return m.store.SetActive(mcn)
 }
 
 func (m *Api) RemoveActive() error {

@@ -13,6 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 
+	"github.com/docker/machine"
 	"github.com/docker/machine/api"
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/amazonec2"
@@ -230,7 +231,7 @@ func cmdActive(c *cli.Context) {
 	if name == "" {
 		machine, err := mApi.GetActive()
 		if err != nil {
-			log.Fatalf("error getting active host: %v", err)
+			log.Fatalf("error getting active machine: %v", err)
 		}
 		if machine != nil {
 			fmt.Println(machine.Name)
@@ -238,11 +239,11 @@ func cmdActive(c *cli.Context) {
 	} else if name != "" {
 		machine, err := mApi.Get(name)
 		if err != nil {
-			log.Fatalf("error loading host: %v", err)
+			log.Fatalf("error loading machine: %v", err)
 		}
 
 		if err := mApi.SetActive(machine); err != nil {
-			log.Fatalf("error setting active host: %v", err)
+			log.Fatalf("error setting active machine: %v", err)
 		}
 	} else {
 		cli.ShowCommandHelp(c, "active")
@@ -275,7 +276,7 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("Error creating machine")
 	}
 	if err := mApi.SetActive(machine); err != nil {
-		log.Fatalf("error setting active host: %v", err)
+		log.Fatalf("error setting active machine: %v", err)
 	}
 
 	log.Infof("%q has been created and is now the active machine.", name)
@@ -322,13 +323,11 @@ func cmdLs(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	machineList, errs := mApi.List()
-	if errs != nil {
-		e := []string{}
-		for _, err := range errs {
-			e = append(e, err.Error())
+	machineList, errList := mApi.List()
+	if errList != nil {
+		for _, e := range errList {
+			log.Warn(e.Error())
 		}
-		log.Fatal(e)
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
@@ -342,12 +341,12 @@ func cmdLs(c *cli.Context) {
 
 	for _, machine := range machineList {
 		if !quiet {
-			tmpHost, err := mApi.GetActive()
+			tmpMachine, err := mApi.GetActive()
 			if err != nil {
 				log.Errorf("There's a problem with the active machine: %s", err)
 			}
 
-			if tmpHost == nil {
+			if tmpMachine == nil {
 				log.Errorf("There's a problem finding the active machine")
 			}
 
@@ -499,7 +498,7 @@ func cmdNotFound(c *cli.Context, command string) {
 	)
 }
 
-func getMachine(c *cli.Context) *api.Machine {
+func getMachine(c *cli.Context) *machine.Machine {
 	name := c.Args().First()
 	mApi, err := api.NewApi(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 	if err != nil {
@@ -525,7 +524,7 @@ func getMachine(c *cli.Context) *api.Machine {
 	return machine
 }
 
-func getMachineState(machine api.Machine, mApi api.Api, machineListItems chan<- machineListItem) {
+func getMachineState(machine machine.Machine, api api.Api, machineListItems chan<- machineListItem) {
 	currentState, err := machine.Driver.GetState()
 	if err != nil {
 		log.Errorf("error getting state for machine %s: %s", machine.Name, err)
@@ -536,13 +535,13 @@ func getMachineState(machine api.Machine, mApi api.Api, machineListItems chan<- 
 		if err == drivers.ErrHostIsNotRunning {
 			url = ""
 		} else {
-			log.Errorf("error getting URL for host %s: %s", machine.Name, err)
+			log.Errorf("error getting URL for machine %s: %s", machine.Name, err)
 		}
 	}
 
-	isActive, err := mApi.IsActive(&machine)
+	isActive, err := api.IsActive(&machine)
 	if err != nil {
-		log.Debugf("error determining whether host %q is active: %s",
+		log.Debugf("error determining whether machine %q is active: %s",
 			machine.Name, err)
 	}
 
@@ -557,21 +556,20 @@ func getMachineState(machine api.Machine, mApi api.Api, machineListItems chan<- 
 
 func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	name := c.Args().First()
-
 	mApi, err := api.NewApi(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var machine *api.Machine
+	var machine *machine.Machine
 
 	if name == "" {
 		m, err := mApi.GetActive()
 		if err != nil {
-			log.Fatalf("error getting active host: %v", err)
+			log.Fatalf("error getting active machine: %v", err)
 		}
 		if m == nil {
-			return nil, fmt.Errorf("There is no active host")
+			return nil, fmt.Errorf("There is no active machine")
 		}
 		machine = m
 	} else {

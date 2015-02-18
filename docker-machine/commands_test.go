@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/docker/machine"
+	"github.com/docker/machine/api"
 	drivers "github.com/docker/machine/drivers"
 	"github.com/docker/machine/state"
 )
@@ -81,21 +83,24 @@ func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return &exec.Cmd{}, nil
 }
 
-func TestGetHostState(t *testing.T) {
+func TestGetMachineState(t *testing.T) {
 	storePath, err := ioutil.TempDir("", ".docker")
 	if err != nil {
 		t.Fatal("Error creating tmp dir:", err)
 	}
-	hostListItems := make(chan hostListItem)
-	store := NewStore(storePath, "", "")
-	hosts := []Host{
+	machineListItems := make(chan machineListItem)
+	mApi, err := api.NewApi(storePath, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machines := []machine.Machine{
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "bar",
@@ -103,7 +108,7 @@ func TestGetHostState(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Stopped,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "baz",
@@ -111,7 +116,7 @@ func TestGetHostState(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 	}
 	expected := map[string]state.State{
@@ -119,12 +124,12 @@ func TestGetHostState(t *testing.T) {
 		"bar": state.Stopped,
 		"baz": state.Running,
 	}
-	items := []hostListItem{}
-	for _, host := range hosts {
-		go getHostState(host, *store, hostListItems)
+	items := []machineListItem{}
+	for _, machine := range machines {
+		go getMachineState(machine, *mApi, machineListItems)
 	}
-	for i := 0; i < len(hosts); i++ {
-		items = append(items, <-hostListItems)
+	for i := 0; i < len(machines); i++ {
+		items = append(items, <-machineListItems)
 	}
 	for _, item := range items {
 		if expected[item.Name] != item.State {

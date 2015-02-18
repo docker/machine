@@ -1,4 +1,4 @@
-package api
+package machine
 
 import (
 	"encoding/json"
@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	validHostNameChars   = `[a-zA-Z0-9\-\.]`
-	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	validHostnameChars   = `[a-zA-Z0-9\-\.]`
+	validHostnamePattern = regexp.MustCompile(`^` + validHostnameChars + `+$`)
 )
 
 type (
@@ -30,7 +30,7 @@ type (
 		CaCertPath     string
 		PrivateKeyPath string
 		ClientCertPath string
-		storePath      string
+		StorePath      string
 	}
 
 	DockerConfig struct {
@@ -55,25 +55,12 @@ func NewMachine(name, driverName, storePath, caCert, privateKey string) (*Machin
 		Driver:         driver,
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
-		storePath:      storePath,
+		StorePath:      storePath,
 	}, nil
 }
 
-func LoadMachine(name string, storePath string) (*Machine, error) {
-	if _, err := os.Stat(storePath); os.IsNotExist(err) {
-		return nil, ErrMachineDoesNotExist
-	}
-
-	machine := &Machine{Name: name, storePath: storePath}
-	if err := machine.LoadConfig(); err != nil {
-		return nil, err
-	}
-
-	return machine, nil
-}
-
-func ValidateHostName(name string) (string, error) {
-	if !validHostNamePattern.MatchString(name) {
+func ValidateHostname(name string) (string, error) {
+	if !validHostnamePattern.MatchString(name) {
 		return name, ErrInvalidHostname
 	}
 	return name, nil
@@ -112,8 +99,8 @@ func (m *Machine) ConfigureAuth() error {
 		return err
 	}
 
-	serverCertPath := filepath.Join(m.storePath, "server.pem")
-	serverKeyPath := filepath.Join(m.storePath, "server-key.pem")
+	serverCertPath := filepath.Join(m.StorePath, "server.pem")
+	serverKeyPath := filepath.Join(m.StorePath, "server-key.pem")
 
 	org := m.Name
 	bits := 2048
@@ -233,7 +220,7 @@ func (m *Machine) generateDockerConfig(dockerPort int, caCertPath string, server
 
 	switch d.DriverName() {
 
-	case "virtualbox", "vmwarefusion", "vmwarevsphere", "hyper-v":
+	case "virtualbox", "vmwarefusion", "vmwarevsphere", "hyper-v", "none":
 		daemonOpts = fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
 		daemonOptsCfg = path.Join(d.GetDockerConfigDir(), "profile")
 		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
@@ -256,7 +243,7 @@ DOCKER_TLS=no`, opts, caCertPath, serverKeyPath, serverCertPath)
 }
 
 func (m *Machine) Create(name string) error {
-	name, err := ValidateHostName(name)
+	name, err := ValidateHostname(name)
 	if err != nil {
 		return err
 	}
@@ -294,14 +281,14 @@ func (m *Machine) Remove(force bool) error {
 }
 
 func (m *Machine) removeStorePath() error {
-	file, err := os.Stat(m.storePath)
+	file, err := os.Stat(m.StorePath)
 	if err != nil {
 		return err
 	}
 	if !file.IsDir() {
-		return fmt.Errorf("%q is not a directory", m.storePath)
+		return fmt.Errorf("%q is not a directory", m.StorePath)
 	}
-	return os.RemoveAll(m.storePath)
+	return os.RemoveAll(m.StorePath)
 }
 
 func (m *Machine) GetURL() (string, error) {
@@ -309,7 +296,7 @@ func (m *Machine) GetURL() (string, error) {
 }
 
 func (m *Machine) LoadConfig() error {
-	data, err := ioutil.ReadFile(filepath.Join(m.storePath, "config.json"))
+	data, err := ioutil.ReadFile(filepath.Join(m.StorePath, "config.json"))
 	if err != nil {
 		return err
 	}
@@ -320,7 +307,7 @@ func (m *Machine) LoadConfig() error {
 		return err
 	}
 
-	driver, err := drivers.NewDriver(config.DriverName, m.Name, m.storePath, m.CaCertPath, m.PrivateKeyPath)
+	driver, err := drivers.NewDriver(config.DriverName, m.Name, m.StorePath, m.CaCertPath, m.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -339,7 +326,7 @@ func (m *Machine) SaveConfig() error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(m.storePath, "config.json"), data, 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(m.StorePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
 	return nil

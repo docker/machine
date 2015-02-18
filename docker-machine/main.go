@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine"
 	"github.com/docker/machine/utils"
 )
 
@@ -25,7 +26,7 @@ func main() {
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
-	app.Version = VERSION
+	app.Version = machine.VERSION
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
