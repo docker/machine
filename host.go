@@ -24,7 +24,7 @@ import (
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 
-	_ "github.com/docker/machine/machine/os"
+	mos "github.com/docker/machine/machine/os"
 )
 
 var (
