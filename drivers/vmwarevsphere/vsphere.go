@@ -255,7 +255,7 @@ func (d *Driver) Create() error {
 
 		//}
 
-		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.4.1-vmw/boot2docker-1.4.1-vmw.iso"
+		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.5.0-vmw/boot2docker-1.5.0-vmw.iso"
 
 		rootPath := filepath.Join(utils.GetDockerDir())
 		imgPath := filepath.Join(rootPath, "images")
