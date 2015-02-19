@@ -49,11 +49,16 @@ func (conn VcConn) DatastoreMkdir(dirName string) error {
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
 	args = append(args, dirName)
 	_, stderr, err := govcOutErr(args...)
-	if stderr == "" && err == nil {
-		return nil
-	} else {
+
+	if stderr != "" {
 		return errors.NewDatastoreError(conn.driver.Datastore, "mkdir", stderr)
 	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (conn VcConn) DatastoreUpload(localPath string) error {
