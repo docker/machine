@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/racker/perigee"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/pagination"
 )
@@ -136,6 +135,12 @@ type CreateOpts struct {
 	// AdminPass [optional] sets the root user password. If not set, a randomly-generated
 	// password will be created and returned in the response.
 	AdminPass string
+
+	// AccessIPv4 [optional] specifies an IPv4 address for the instance.
+	AccessIPv4 string
+
+	// AccessIPv6 [optional] specifies an IPv6 address for the instance.
+	AccessIPv6 string
 }
 
 // ToServerCreateMap assembles a request body based on the contents of a CreateOpts.
@@ -165,6 +170,12 @@ func (opts CreateOpts) ToServerCreateMap() (map[string]interface{}, error) {
 	}
 	if opts.AdminPass != "" {
 		server["adminPass"] = opts.AdminPass
+	}
+	if opts.AccessIPv4 != "" {
+		server["accessIPv4"] = opts.AccessIPv4
+	}
+	if opts.AccessIPv6 != "" {
+		server["accessIPv6"] = opts.AccessIPv6
 	}
 
 	if len(opts.SecurityGroups) > 0 {
@@ -205,11 +216,10 @@ func Create(client *gophercloud.ServiceClient, opts CreateOptsBuilder) CreateRes
 		return res
 	}
 
-	_, res.Err = perigee.Request("POST", listURL(client), perigee.Options{
-		Results:     &res.Body,
-		ReqBody:     reqBody,
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{202},
+	_, res.Err = client.Request("POST", listURL(client), gophercloud.RequestOpts{
+		JSONResponse: &res.Body,
+		JSONBody:     reqBody,
+		OkCodes:      []int{202},
 	})
 	return res
 }
@@ -217,9 +227,8 @@ func Create(client *gophercloud.ServiceClient, opts CreateOptsBuilder) CreateRes
 // Delete requests that a server previously provisioned be removed from your account.
 func Delete(client *gophercloud.ServiceClient, id string) DeleteResult {
 	var res DeleteResult
-	_, res.Err = perigee.Request("DELETE", deleteURL(client, id), perigee.Options{
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{204},
+	_, res.Err = client.Request("DELETE", deleteURL(client, id), gophercloud.RequestOpts{
+		OkCodes: []int{204},
 	})
 	return res
 }
@@ -227,9 +236,9 @@ func Delete(client *gophercloud.ServiceClient, id string) DeleteResult {
 // Get requests details on a single server, by ID.
 func Get(client *gophercloud.ServiceClient, id string) GetResult {
 	var result GetResult
-	_, result.Err = perigee.Request("GET", getURL(client, id), perigee.Options{
-		Results:     &result.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, result.Err = client.Request("GET", getURL(client, id), gophercloud.RequestOpts{
+		JSONResponse: &result.Body,
+		OkCodes:      []int{200, 203},
 	})
 	return result
 }
@@ -271,10 +280,9 @@ func (opts UpdateOpts) ToServerUpdateMap() map[string]interface{} {
 // Update requests that various attributes of the indicated server be changed.
 func Update(client *gophercloud.ServiceClient, id string, opts UpdateOptsBuilder) UpdateResult {
 	var result UpdateResult
-	_, result.Err = perigee.Request("PUT", updateURL(client, id), perigee.Options{
-		Results:     &result.Body,
-		ReqBody:     opts.ToServerUpdateMap(),
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, result.Err = client.Request("PUT", updateURL(client, id), gophercloud.RequestOpts{
+		JSONResponse: &result.Body,
+		JSONBody:     opts.ToServerUpdateMap(),
 	})
 	return result
 }
@@ -291,10 +299,9 @@ func ChangeAdminPassword(client *gophercloud.ServiceClient, id, newPassword stri
 
 	var res ActionResult
 
-	_, res.Err = perigee.Request("POST", actionURL(client, id), perigee.Options{
-		ReqBody:     req,
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{202},
+	_, res.Err = client.Request("POST", actionURL(client, id), gophercloud.RequestOpts{
+		JSONBody: req,
+		OkCodes:  []int{202},
 	})
 
 	return res
@@ -360,14 +367,13 @@ func Reboot(client *gophercloud.ServiceClient, id string, how RebootMethod) Acti
 		return res
 	}
 
-	_, res.Err = perigee.Request("POST", actionURL(client, id), perigee.Options{
-		ReqBody: struct {
+	_, res.Err = client.Request("POST", actionURL(client, id), gophercloud.RequestOpts{
+		JSONBody: struct {
 			C map[string]string `json:"reboot"`
 		}{
 			map[string]string{"type": string(how)},
 		},
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{202},
+		OkCodes: []int{202},
 	})
 
 	return res
@@ -462,11 +468,10 @@ func Rebuild(client *gophercloud.ServiceClient, id string, opts RebuildOptsBuild
 		return result
 	}
 
-	_, result.Err = perigee.Request("POST", actionURL(client, id), perigee.Options{
-		ReqBody:     &reqBody,
-		Results:     &result.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{202},
+	_, result.Err = client.Request("POST", actionURL(client, id), gophercloud.RequestOpts{
+		JSONBody:     &reqBody,
+		JSONResponse: &result.Body,
+		OkCodes:      []int{202},
 	})
 
 	return result
@@ -509,10 +514,9 @@ func Resize(client *gophercloud.ServiceClient, id string, opts ResizeOptsBuilder
 		return res
 	}
 
-	_, res.Err = perigee.Request("POST", actionURL(client, id), perigee.Options{
-		ReqBody:     reqBody,
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{202},
+	_, res.Err = client.Request("POST", actionURL(client, id), gophercloud.RequestOpts{
+		JSONBody: reqBody,
+		OkCodes:  []int{202},
 	})
 
 	return res
@@ -523,10 +527,9 @@ func Resize(client *gophercloud.ServiceClient, id string, opts ResizeOptsBuilder
 func ConfirmResize(client *gophercloud.ServiceClient, id string) ActionResult {
 	var res ActionResult
 
-	_, res.Err = perigee.Request("POST", actionURL(client, id), perigee.Options{
-		ReqBody:     map[string]interface{}{"confirmResize": nil},
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{204},
+	_, res.Err = client.Request("POST", actionURL(client, id), gophercloud.RequestOpts{
+		JSONBody: map[string]interface{}{"confirmResize": nil},
+		OkCodes:  []int{204},
 	})
 
 	return res
@@ -537,10 +540,9 @@ func ConfirmResize(client *gophercloud.ServiceClient, id string) ActionResult {
 func RevertResize(client *gophercloud.ServiceClient, id string) ActionResult {
 	var res ActionResult
 
-	_, res.Err = perigee.Request("POST", actionURL(client, id), perigee.Options{
-		ReqBody:     map[string]interface{}{"revertResize": nil},
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{202},
+	_, res.Err = client.Request("POST", actionURL(client, id), gophercloud.RequestOpts{
+		JSONBody: map[string]interface{}{"revertResize": nil},
+		OkCodes:  []int{202},
 	})
 
 	return res
@@ -584,11 +586,10 @@ func Rescue(client *gophercloud.ServiceClient, id string, opts RescueOptsBuilder
 		return result
 	}
 
-	_, result.Err = perigee.Request("POST", actionURL(client, id), perigee.Options{
-		Results:     &result.Body,
-		ReqBody:     &reqBody,
-		MoreHeaders: client.AuthenticatedHeaders(),
-		OkCodes:     []int{200},
+	_, result.Err = client.Request("POST", actionURL(client, id), gophercloud.RequestOpts{
+		JSONResponse: &result.Body,
+		JSONBody:     &reqBody,
+		OkCodes:      []int{200},
 	})
 
 	return result
@@ -624,10 +625,9 @@ func ResetMetadata(client *gophercloud.ServiceClient, id string, opts ResetMetad
 		res.Err = err
 		return res
 	}
-	_, res.Err = perigee.Request("PUT", metadataURL(client, id), perigee.Options{
-		ReqBody:     metadata,
-		Results:     &res.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, res.Err = client.Request("PUT", metadataURL(client, id), gophercloud.RequestOpts{
+		JSONBody:     metadata,
+		JSONResponse: &res.Body,
 	})
 	return res
 }
@@ -635,9 +635,8 @@ func ResetMetadata(client *gophercloud.ServiceClient, id string, opts ResetMetad
 // Metadata requests all the metadata for the given server ID.
 func Metadata(client *gophercloud.ServiceClient, id string) GetMetadataResult {
 	var res GetMetadataResult
-	_, res.Err = perigee.Request("GET", metadataURL(client, id), perigee.Options{
-		Results:     &res.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, res.Err = client.Request("GET", metadataURL(client, id), gophercloud.RequestOpts{
+		JSONResponse: &res.Body,
 	})
 	return res
 }
@@ -658,10 +657,9 @@ func UpdateMetadata(client *gophercloud.ServiceClient, id string, opts UpdateMet
 		res.Err = err
 		return res
 	}
-	_, res.Err = perigee.Request("POST", metadataURL(client, id), perigee.Options{
-		ReqBody:     metadata,
-		Results:     &res.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, res.Err = client.Request("POST", metadataURL(client, id), gophercloud.RequestOpts{
+		JSONBody:     metadata,
+		JSONResponse: &res.Body,
 	})
 	return res
 }
@@ -697,10 +695,9 @@ func CreateMetadatum(client *gophercloud.ServiceClient, id string, opts Metadatu
 		return res
 	}
 
-	_, res.Err = perigee.Request("PUT", metadatumURL(client, id, key), perigee.Options{
-		ReqBody:     metadatum,
-		Results:     &res.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, res.Err = client.Request("PUT", metadatumURL(client, id, key), gophercloud.RequestOpts{
+		JSONBody:     metadatum,
+		JSONResponse: &res.Body,
 	})
 	return res
 }
@@ -708,9 +705,8 @@ func CreateMetadatum(client *gophercloud.ServiceClient, id string, opts Metadatu
 // Metadatum requests the key-value pair with the given key for the given server ID.
 func Metadatum(client *gophercloud.ServiceClient, id, key string) GetMetadatumResult {
 	var res GetMetadatumResult
-	_, res.Err = perigee.Request("GET", metadatumURL(client, id, key), perigee.Options{
-		Results:     &res.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, res.Err = client.Request("GET", metadatumURL(client, id, key), gophercloud.RequestOpts{
+		JSONResponse: &res.Body,
 	})
 	return res
 }
@@ -718,9 +714,8 @@ func Metadatum(client *gophercloud.ServiceClient, id, key string) GetMetadatumRe
 // DeleteMetadatum will delete the key-value pair with the given key for the given server ID.
 func DeleteMetadatum(client *gophercloud.ServiceClient, id, key string) DeleteMetadatumResult {
 	var res DeleteMetadatumResult
-	_, res.Err = perigee.Request("DELETE", metadatumURL(client, id, key), perigee.Options{
-		Results:     &res.Body,
-		MoreHeaders: client.AuthenticatedHeaders(),
+	_, res.Err = client.Request("DELETE", metadatumURL(client, id, key), gophercloud.RequestOpts{
+		JSONResponse: &res.Body,
 	})
 	return res
 }

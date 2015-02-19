@@ -124,14 +124,9 @@
 			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
 		},
 		{
-			"ImportPath": "github.com/racker/perigee",
-			"Comment": "v0.0.0-18-g0c00cb0",
-			"Rev": "0c00cb0a026b71034ebc8205263c77dad3577db5"
-		},
-		{
 			"ImportPath": "github.com/rackspace/gophercloud",
-			"Comment": "v1.0.0-232-g2e7ab37",
-			"Rev": "2e7ab378257b8723e02cbceac7410be4db286436"
+			"Comment": "v1.0.0-473-g7ca169d",
+			"Rev": "7ca169d371b29e3dbab9e631c3a6151896b06330"
 		},
 		{
 			"ImportPath": "github.com/smartystreets/go-aws-auth",
