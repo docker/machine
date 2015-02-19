@@ -142,25 +142,13 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		addr = fmt.Sprintf("%s:2376", ip)
 	}
 
-	var (
-		role string
-		args string
-	)
-
-	if master {
-		role = "manage"
-		basePath := d.GetDockerConfigDir()
-		tlsCaCert := path.Join(basePath, "ca.pem")
-		tlsCert := path.Join(basePath, "server.pem")
-		tlsKey := path.Join(basePath, "server-key.pem")
-		args = fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s",
-			tlsCaCert, tlsCert, tlsKey, host)
-	} else {
-		role = "join"
-		args = fmt.Sprintf("--addr %s", addr)
-	}
-
-	args = fmt.Sprintf("%s %s", args, discovery)
+	basePath := d.GetDockerConfigDir()
+	tlsCaCert := path.Join(basePath, "ca.pem")
+	tlsCert := path.Join(basePath, "server.pem")
+	tlsKey := path.Join(basePath, "server-key.pem")
+	masterArgs := fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s %s",
+		tlsCaCert, tlsCert, tlsKey, host, discovery)
+	nodeArgs := fmt.Sprintf("--addr %s %s", addr, discovery)
 
 	u, err := url.Parse(host)
 	if err != nil {
@@ -182,8 +170,25 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent -v %s:%s %s %s %s",
-		port, port, d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, role, args))
+	// if master start master agent
+	if master {
+		log.Debug("launching swarm master")
+		log.Debugf("master args: %s", masterArgs)
+		cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
+			port, port, d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, masterArgs))
+		if err != nil {
+			return err
+		}
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	// start node agent
+	log.Debug("launching swarm node")
+	log.Debugf("node args: %s", nodeArgs)
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
+		d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, nodeArgs))
 	if err != nil {
 		return err
 	}
