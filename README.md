@@ -50,7 +50,7 @@ Machine is still in its early stages. If you'd like to try out a preview build, 
 
 Machine can create [Docker Swarm](https://github.com/docker/swarm) clusters.
 
-First, create a Swarm token using `docker-machine create-swarm-token`.  Optionally, you can use another discovery service.  See the Swarm docs for details.
+First, create a Swarm token using `docker-machine generate-swarm-token`.  Optionally, you can use another discovery service.  See the Swarm docs for details.
 
 Once you have the token, you can create the cluster.
 
@@ -64,7 +64,7 @@ Replace `<TOKEN-FROM-ABOVE>` with your random token.  This will create the Swarm
 
 ### Swarm Nodes
 
-Now, create one or more Swarm nodes:
+Now, create more Swarm nodes:
 
 `docker-machine create -d virtualbox --swarm --swarm-discovery token://<TOKEN-FROM-ABOVE> swarm-node-00`
 

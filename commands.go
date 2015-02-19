@@ -172,14 +172,20 @@ var Commands = []cli.Command{
 		Action: cmdCreate,
 	},
 	{
-		Name:   "create-swarm-token",
+		Name:   "generate-swarm-token",
 		Usage:  "Generate a Swarm Cluster Token",
-		Action: cmdCreateSwarmToken,
+		Action: cmdGenerateSwarmToken,
 	},
 	{
 		Name:   "config",
 		Usage:  "Print the connection config for machine",
 		Action: cmdConfig,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+		},
 	},
 	{
 		Name:   "inspect",
@@ -317,7 +323,7 @@ func cmdCreate(c *cli.Context) {
 	log.Infof("To point your Docker client at it, run this in your shell: $(%s env %s)", c.App.Name, name)
 }
 
-func cmdCreateSwarmToken(c *cli.Context) {
+func cmdGenerateSwarmToken(c *cli.Context) {
 	discovery := &token.TokenDiscoveryService{}
 	discovery.Initialize("", 0)
 	token, err := discovery.CreateCluster()
@@ -333,8 +339,30 @@ func cmdConfig(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	dockerHost := cfg.machineUrl
+	if c.Bool("swarm") {
+		if !cfg.swarmMaster {
+			log.Fatalf("%s is not a swarm master", cfg.machineName)
+		}
+		u, err := url.Parse(cfg.swarmHost)
+		if err != nil {
+			log.Fatal(err)
+		}
+		parts := strings.Split(u.Host, ":")
+		swarmPort := parts[1]
+
+		// get IP of machine to replace in case swarm host is 0.0.0.0
+		mUrl, err := url.Parse(cfg.machineUrl)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mParts := strings.Split(mUrl.Host, ":")
+		machineIp := mParts[0]
+
+		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+	}
 	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H=%q",
-		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, cfg.machineUrl)
+		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, dockerHost)
 }
 
 func cmdInspect(c *cli.Context) {
