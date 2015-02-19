@@ -41,14 +41,17 @@ type machineConfig struct {
 	machineUrl     string
 	swarmMaster    bool
 	swarmHost      string
+	swarmDiscovery string
 }
 
 type hostListItem struct {
-	Name       string
-	Active     bool
-	DriverName string
-	State      state.State
-	URL        string
+	Name           string
+	Active         bool
+	DriverName     string
+	State          state.State
+	URL            string
+	SwarmMaster    bool
+	SwarmDiscovery string
 }
 
 type hostListItemByName []hostListItem
@@ -370,17 +373,28 @@ func cmdLs(c *cli.Context) {
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
 
 	if !quiet {
-		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL")
+		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM")
 	}
 
 	items := []hostListItem{}
 	hostListItems := make(chan hostListItem)
+
+	swarmMasters := make(map[string]string)
+	swarmInfo := make(map[string]string)
 
 	for _, host := range hostList {
 		if !quiet {
 			tmpHost, err := store.GetActive()
 			if err != nil {
 				log.Errorf("There's a problem with the active host: %s", err)
+			}
+
+			if host.SwarmMaster {
+				swarmMasters[host.SwarmDiscovery] = host.Name
+			}
+
+			if host.SwarmDiscovery != "" {
+				swarmInfo[host.Name] = host.SwarmDiscovery
 			}
 
 			if tmpHost == nil {
@@ -408,8 +422,17 @@ func cmdLs(c *cli.Context) {
 		if item.Active {
 			activeString = "*"
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL)
+
+		swarmInfo := ""
+
+		if item.SwarmDiscovery != "" {
+			swarmInfo = swarmMasters[item.SwarmDiscovery]
+			if item.SwarmMaster {
+				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
+			}
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo)
 	}
 
 	w.Flush()
@@ -603,11 +626,13 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 	}
 
 	hostListItems <- hostListItem{
-		Name:       host.Name,
-		Active:     isActive,
-		DriverName: host.Driver.DriverName(),
-		State:      currentState,
-		URL:        url,
+		Name:           host.Name,
+		Active:         isActive,
+		DriverName:     host.Driver.DriverName(),
+		State:          currentState,
+		URL:            url,
+		SwarmMaster:    host.SwarmMaster,
+		SwarmDiscovery: host.SwarmDiscovery,
 	}
 }
 
@@ -652,5 +677,6 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		machineUrl:     machineUrl,
 		swarmMaster:    machine.SwarmMaster,
 		swarmHost:      machine.SwarmHost,
+		swarmDiscovery: machine.SwarmDiscovery,
 	}, nil
 }

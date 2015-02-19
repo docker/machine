@@ -45,6 +45,7 @@ type Driver struct {
 	PrivateKeyPath string
 	SwarmMaster    bool
 	SwarmHost      string
+	SwarmDiscovery string
 	VAppID         string
 	storePath      string
 }
@@ -178,6 +179,7 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.PublicIP = flags.String("vmwarevcloudair-publicip")
 	driver.SwarmMaster = flags.Bool("swarm-master")
 	driver.SwarmHost = flags.String("swarm-host")
+	driver.SwarmDiscovery = flags.String("swarm-discovery")
 
 	// Check for required Params
 	if driver.UserName == "" || driver.UserPassword == "" || driver.VDCID == "" || driver.PublicIP == "" {

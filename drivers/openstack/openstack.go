@@ -50,6 +50,7 @@ type Driver struct {
 	storePath           string
 	SwarmMaster         bool
 	SwarmHost           string
+	SwarmDiscovery      string
 	client              Client
 }
 
@@ -231,6 +232,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = flags.Int("openstack-ssh-port")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	installDocker, err := strconv.ParseBool(flags.String("openstack-docker-install"))
 	if err != nil {

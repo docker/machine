@@ -56,6 +56,7 @@ type Driver struct {
 	PrivateKeyPath    string
 	SwarmMaster       bool
 	SwarmHost         string
+	SwarmDiscovery    string
 	storePath         string
 	keyPath           string
 }
@@ -177,6 +178,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")

@@ -33,6 +33,7 @@ type Driver struct {
 	PrivateKeyPath string
 	SwarmMaster    bool
 	SwarmHost      string
+	SwarmDiscovery string
 }
 
 type deviceConfig struct {
@@ -194,6 +195,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	if err := validateClientConfig(d.Client); err != nil {
 		return err

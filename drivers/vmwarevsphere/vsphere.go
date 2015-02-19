@@ -56,6 +56,7 @@ type Driver struct {
 	PrivateKeyPath string
 	SwarmMaster    bool
 	SwarmHost      string
+	SwarmDiscovery string
 
 	storePath string
 }
@@ -176,6 +177,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostIP = flags.String("vmwarevsphere-compute-ip")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	d.ISO = path.Join(d.storePath, "boot2docker.iso")
 
