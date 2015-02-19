@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -e
+
+COVERAGE_DIR=/tmp/coverage
+
+generate_coverage_for_dir () {
+    echo
+    echo "Generating coverage report for $1..."
+    cd "$1" >/dev/null
+    PKG_COVERAGE_DIR=${COVERAGE_DIR}/"$1"
+    PKG_PROFILE=${PKG_COVERAGE_DIR}/profile.txt
+    mkdir -p ${PKG_COVERAGE_DIR}
+    go test -covermode=set -coverprofile=${PKG_PROFILE}
+    go tool cover -html=${PKG_PROFILE} -o ${PKG_COVERAGE_DIR}/index.html
+    cd - >/dev/null
+    echo "Done generating coverage for $1."
+    for f in $(ls "$1"); do
+        REL_PATH="$1/$f"
+        for exclude in ${EXCLUDED_DIRS}; do
+            if [[ "$REL_PATH" == "$exclude" ]]; then
+                continue 2
+            fi
+        done
+        # If file is directory and not Godeps
+        # (don't worry about generating 3rd party code coverage)
+        if [[ -d "$REL_PATH" ]]; then
+            # invoke recursively
+            generate_coverage_for_dir ${REL_PATH}
+        fi
+    done
+    echo
+}
+
+if [[ "$IN_CONTAINER" == "yes" ]]; then
+    cd /go/src/github.com/docker
+    DIR="machine"
+else
+    DIR="."
+fi
+
+# Script will bomb out on some dirs if there are no buildable source files,
+# we shouldn't be checking these anyway so skip over them.
+EXCLUDED_DIRS="${DIR}/Godeps ${DIR}/_integration-test ${DIR}/docs ${DIR}/script"
+
+generate_coverage_for_dir ${DIR}
+echo "Done checking and generating coverage!"
+
+if [[ "$SERVE" == "yes" ]]; then
+    cd ${COVERAGE_DIR}/machine
+    echo "*****************************************"
+    echo "* Serving coverage file on port 8000... *"
+    echo "*****************************************"
+    python -m SimpleHTTPServer 8000
+fi
