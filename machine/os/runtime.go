@@ -1,6 +1,7 @@
 package os
 
 import (
+	"fmt"
 	"github.com/docker/machine/drivers"
 )
 
@@ -55,23 +56,19 @@ type Runtime interface {
 	Package(name string, action PackageState) error
 }
 
-var (
-	runtimes map[string]*RegisteredRuntime
-)
-
-func init() {
-	runtimes = make(map[string]*RegisteredRuntime)
-}
+var runtimes = make(map[string]*RegisteredRuntime)
 
 type RegisteredRuntime struct {
 	Detect DetectionFunc
 }
 
 func RegisterRuntime(name string, runtime *RegisteredRuntime) error {
+	runtimes[name] = runtime
+
 	return nil
 }
 
-type DetectionFunc func(d drivers.Driver) (*Runtime, error)
+type DetectionFunc func(d drivers.Driver) (Runtime, error)
 
 func sshCommand(d drivers.Driver, args ...string) (string, error) {
 	cmd, err := d.GetSSHCommand(args...)
@@ -79,14 +76,24 @@ func sshCommand(d drivers.Driver, args ...string) (string, error) {
 		return "", ErrSSHCommandFailed
 	}
 
-	if err := cmd.Run(); err != nil {
-		return "", ErrSSHCommandFailed
-	}
+	// 	if err := cmd.Run(); err != nil {
+	// 		return "", ErrSSHCommandFailed
+	// 	}
 
+	cmd.Stdout = nil
 	out, err := cmd.Output()
 	if err != nil {
+		fmt.Print(err)
 		return "", ErrSSHCommandFailed
 	}
 
 	return string(out), nil
+}
+
+func DetectRuntime(d drivers.Driver) (Runtime, error) {
+	for _, r := range runtimes {
+		return r.Detect(d)
+	}
+
+	return nil, ErrDetectionFailed
 }
