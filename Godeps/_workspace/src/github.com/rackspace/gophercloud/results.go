@@ -3,6 +3,9 @@ package gophercloud
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 /*
@@ -80,6 +83,31 @@ type HeaderResult struct {
 //   header, err := objects.Create(client, "my_container", objects.CreateOpts{}).ExtractHeader()
 func (hr HeaderResult) ExtractHeader() (http.Header, error) {
 	return hr.Header, hr.Err
+}
+
+// DecodeHeader is a function that decodes a header (usually of type map[string]interface{}) to
+// another type (usually a struct). This function is used by the objectstorage package to give
+// users access to response headers without having to query a map. A DecodeHookFunction is used,
+// because OpenStack-based clients return header values as arrays (Go slices).
+func DecodeHeader(from, to interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		DecodeHook: func(from, to reflect.Kind, data interface{}) (interface{}, error) {
+			if from == reflect.Slice {
+				return data.([]string)[0], nil
+			}
+			return data, nil
+		},
+		Result:           to,
+		WeaklyTypedInput: true,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	if err := decoder.Decode(from); err != nil {
+		return err
+	}
+	return nil
 }
 
 // RFC3339Milli describes a common time format used by some API responses.

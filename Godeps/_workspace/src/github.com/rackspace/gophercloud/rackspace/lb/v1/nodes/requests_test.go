@@ -149,7 +149,6 @@ func TestUpdate(t *testing.T) {
 	mockUpdateResponse(t, lbID, nodeID)
 
 	opts := UpdateOpts{
-		Address:   "1.2.3.4",
 		Weight:    gophercloud.IntToPointer(10),
 		Condition: DRAINING,
 		Type:      SECONDARY,
