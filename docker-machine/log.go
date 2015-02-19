@@ -9,4 +9,5 @@ import (
 func initLogging(lvl log.Level) {
 	log.SetOutput(os.Stderr)
 	log.SetLevel(lvl)
+
 }

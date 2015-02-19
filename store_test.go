@@ -1,234 +1,189 @@
-package main
+package machine
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	_ "github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/utils"
 )
 
-type DriverOptionsMock struct {
-	Data map[string]interface{}
-}
-
-func (d DriverOptionsMock) String(key string) string {
-	return d.Data[key].(string)
-}
-
-func (d DriverOptionsMock) Int(key string) int {
-	return d.Data[key].(int)
-}
-
-func (d DriverOptionsMock) Bool(key string) bool {
-	return d.Data[key].(bool)
-}
-
-func clearHosts() error {
-	return os.RemoveAll(utils.GetMachineDir())
-}
-
-func TestStoreCreate(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
-
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
-
-	store := NewStore("", "", "")
-
-	host, err := store.Create("test", "none", flags)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if host.Name != "test" {
-		t.Fatal("Host name is incorrect")
-	}
-	path := filepath.Join(utils.GetMachineDir(), "test")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Fatalf("Host path doesn't exist: %s", path)
-	}
-}
-
-func TestStoreRemove(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
-
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
-
-	store := NewStore("", "", "")
-	_, err := store.Create("test", "none", flags)
-	if err != nil {
-		t.Fatal(err)
-	}
-	path := filepath.Join(utils.GetMachineDir(), "test")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Fatalf("Host path doesn't exist: %s", path)
-	}
-	err = store.Remove("test", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(path); err == nil {
-		t.Fatalf("Host path still exists after remove: %s", path)
-	}
-}
-
 func TestStoreList(t *testing.T) {
-	if err := clearHosts(); err != nil {
+	if err := cleanup(); err != nil {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	st := NewStore(TestStoreDir, "", "")
 
-	store := NewStore("", "", "")
-	_, err := store.Create("test", "none", flags)
+	m, err := getTestMachine()
 	if err != nil {
 		t.Fatal(err)
 	}
-	hosts, err := store.List()
-	if len(hosts) != 1 {
-		t.Fatalf("List returned %d items", len(hosts))
+
+	if err := st.Save(m); err != nil {
+		t.Fatal(err)
 	}
-	if hosts[0].Name != "test" {
-		t.Fatalf("hosts[0] name is incorrect, got: %s", hosts[0].Name)
+
+	machines, errs := st.List()
+	if len(errs) != 0 {
+		t.Fatal(errs)
+	}
+
+	if len(machines) != 1 {
+		t.Fatalf("list returned %d items", len(machines))
+	}
+
+	if machines[0].Name != "test" {
+		t.Fatalf("machines[0] name is incorrect, got: %s", machines[0].Name)
+	}
+
+	if err := cleanup(); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestStoreExists(t *testing.T) {
-	if err := clearHosts(); err != nil {
+	if err := cleanup(); err != nil {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
+	st := NewStore(TestStoreDir, "", "")
+
+	m, err := getTestMachine()
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	store := NewStore("", "", "")
-	exists, err := store.Exists("test")
-	if exists {
-		t.Fatal("Exists returned true when it should have been false")
+	if err := st.Save(m); err != nil {
+		t.Fatal(err)
 	}
-	_, err = store.Create("test", "none", flags)
+
+	exists, err := st.Exists("test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	exists, err = store.Exists("test")
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	if !exists {
-		t.Fatal("Exists returned false when it should have been true")
+		t.Fatal("exists returned false when it should have been true")
+	}
+
+	if err := cleanup(); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestStoreLoad(t *testing.T) {
-	if err := clearHosts(); err != nil {
+	if err := cleanup(); err != nil {
 		t.Fatal(err)
 	}
 
-	expectedURL := "unix:///foo/baz"
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": expectedURL,
-		},
-	}
+	st := NewStore(TestStoreDir, "", "")
 
-	store := NewStore("", "", "")
-	_, err := store.Create("test", "none", flags)
+	m, err := getTestMachine()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	store = NewStore("", "", "")
-	host, err := store.Load("test")
-	if host.Name != "test" {
+	if err := st.Save(m); err != nil {
+		t.Fatal(err)
+	}
+
+	exists, err := st.Exists("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("exists returned false when it should have been true")
+	}
+
+	expectedUrl := "unix:///var/run/docker.sock"
+
+	machine, err := st.Get("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if machine.Name != "test" {
 		t.Fatal("Host name is incorrect")
 	}
-	actualURL, err := host.GetURL()
+
+	actualUrl, err := machine.GetURL()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if actualURL != expectedURL {
-		t.Fatalf("GetURL is not %q, got %q", expectedURL, expectedURL)
+
+	if actualUrl != expectedUrl {
+		t.Fatalf("expected url %q, received %q", expectedUrl, actualUrl)
+	}
+
+	if err := cleanup(); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestStoreGetSetActive(t *testing.T) {
-	if err := clearHosts(); err != nil {
+	if err := cleanup(); err != nil {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	st := NewStore(TestStoreDir, "", "")
 
-	store := NewStore("", "", "")
-
-	// No hosts set
-	host, err := store.GetActive()
+	// No machine set
+	machine, err := st.GetActive()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if host != nil {
-		t.Fatalf("GetActive: Active host should not exist")
+	if machine != nil {
+		t.Fatalf("GetActive: active machine should not exist")
 	}
 
-	// Set normal host
-	originalHost, err := store.Create("test", "none", flags)
+	// Set normal machine
+	originalMachine, err := getTestMachine()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := store.SetActive(originalHost); err != nil {
+	if err := st.Save(originalMachine); err != nil {
 		t.Fatal(err)
 	}
 
-	host, err = store.GetActive()
+	if err := st.SetActive(originalMachine); err != nil {
+		t.Fatal(err)
+	}
+
+	machine, err = st.GetActive()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if host.Name != "test" {
-		t.Fatalf("Active host is not 'test', got %s", host.Name)
+
+	if machine.Name != "test" {
+		t.Fatalf("active machine is not 'test', got %s", machine.Name)
 	}
-	isActive, err := store.IsActive(host)
+
+	isActive, err := st.IsActive(machine)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if isActive != true {
-		t.Fatal("IsActive: Active host is not test")
+		t.Fatal("IsActive: active machine is not test")
 	}
 
-	// remove active host altogether
-	if err := store.RemoveActive(); err != nil {
+	// remove active machine
+	if err := st.RemoveActive(); err != nil {
 		t.Fatal(err)
 	}
 
-	host, err = store.GetActive()
+	machine, err = st.GetActive()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if host != nil {
-		t.Fatalf("Active host %s is not nil", host.Name)
+	if machine != nil {
+		t.Fatalf("active machine %s is not nil", machine.Name)
+	}
+
+	if err := cleanup(); err != nil {
+		t.Fatal(err)
 	}
 }

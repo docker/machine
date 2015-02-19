@@ -1,14 +1,12 @@
-package main
+package machine
 
 import (
-	"fmt"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/utils"
 )
 
@@ -27,89 +25,33 @@ func NewStore(rootPath string, caCert string, privateKey string) *Store {
 	return &Store{Path: rootPath, CaCertPath: caCert, PrivateKeyPath: privateKey}
 }
 
-func (s *Store) Create(name string, driverName string, flags drivers.DriverOptions) (*Host, error) {
-	exists, err := s.Exists(name)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, fmt.Errorf("Machine %s already exists", name)
+func loadMachine(name string, storePath string) (*Machine, error) {
+	if _, err := os.Stat(storePath); os.IsNotExist(err) {
+		return nil, ErrMachineDoesNotExist
 	}
 
-	hostPath := filepath.Join(s.Path, name)
-
-	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath)
-	if err != nil {
-		return host, err
-	}
-	if flags != nil {
-		if err := host.Driver.SetConfigFromFlags(flags); err != nil {
-			return host, err
-		}
-	}
-
-	if err := host.Driver.PreCreateCheck(); err != nil {
+	machine := &Machine{Name: name, StorePath: storePath}
+	if err := machine.LoadConfig(); err != nil {
 		return nil, err
 	}
 
-	if err := os.MkdirAll(hostPath, 0700); err != nil {
-		return nil, err
-	}
-
-	if err := host.SaveConfig(); err != nil {
-		return host, err
-	}
-
-	if err := host.Create(name); err != nil {
-		return host, err
-	}
-
-	if err := host.ConfigureAuth(); err != nil {
-		return host, err
-	}
-
-	return host, nil
+	return machine, nil
 }
 
-func (s *Store) Remove(name string, force bool) error {
-	active, err := s.GetActive()
+func (s *Store) Save(m *Machine) error {
+	data, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
 
-	if active != nil && active.Name == name {
-		if err := s.RemoveActive(); err != nil {
-			return err
-		}
-	}
-
-	host, err := s.Load(name)
-	if err != nil {
+	if err := os.MkdirAll(m.StorePath, 0700); err != nil {
 		return err
 	}
-	return host.Remove(force)
-}
 
-func (s *Store) List() ([]Host, error) {
-	dir, err := ioutil.ReadDir(s.Path)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, err
+	if err := ioutil.WriteFile(filepath.Join(m.StorePath, "config.json"), data, 0600); err != nil {
+		return err
 	}
-
-	hosts := []Host{}
-
-	for _, file := range dir {
-		// don't load hidden dirs; used for configs
-		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
-			host, err := s.Load(file.Name())
-			if err != nil {
-				log.Errorf("error loading host %q: %s", file.Name(), err)
-				continue
-			}
-			hosts = append(hosts, *host)
-		}
-	}
-	return hosts, nil
+	return nil
 }
 
 func (s *Store) Exists(name string) (bool, error) {
@@ -122,22 +64,45 @@ func (s *Store) Exists(name string) (bool, error) {
 	return false, err
 }
 
-func (s *Store) Load(name string) (*Host, error) {
-	hostPath := filepath.Join(s.Path, name)
-	return LoadHost(name, hostPath)
+func (s *Store) Get(name string) (*Machine, error) {
+	machinePath := filepath.Join(s.Path, name)
+	return loadMachine(name, machinePath)
 }
 
-func (s *Store) GetActive() (*Host, error) {
-	hostName, err := ioutil.ReadFile(s.activePath())
+func (s *Store) List() ([]Machine, []error) {
+	dir, err := ioutil.ReadDir(s.Path)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, []error{err}
+	}
+
+	machines := []Machine{}
+	errors := []error{}
+
+	for _, file := range dir {
+		// don't load hidden dirs; used for configs
+		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
+			machine, err := s.Get(file.Name())
+			if err != nil {
+				errors = append(errors, err)
+				continue
+			}
+			machines = append(machines, *machine)
+		}
+	}
+	return machines, nil
+}
+
+func (s *Store) GetActive() (*Machine, error) {
+	machineName, err := ioutil.ReadFile(s.activePath())
 	if os.IsNotExist(err) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
-	return s.Load(string(hostName))
+	return s.Get(string(machineName))
 }
 
-func (s *Store) IsActive(host *Host) (bool, error) {
+func (s *Store) IsActive(machine *Machine) (bool, error) {
 	active, err := s.GetActive()
 	if err != nil {
 		return false, err
@@ -145,14 +110,14 @@ func (s *Store) IsActive(host *Host) (bool, error) {
 	if active == nil {
 		return false, nil
 	}
-	return active.Name == host.Name, nil
+	return active.Name == machine.Name, nil
 }
 
-func (s *Store) SetActive(host *Host) error {
+func (s *Store) SetActive(machine *Machine) error {
 	if err := os.MkdirAll(filepath.Dir(s.activePath()), 0700); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(s.activePath(), []byte(host.Name), 0600)
+	return ioutil.WriteFile(s.activePath(), []byte(machine.Name), 0600)
 }
 
 func (s *Store) RemoveActive() error {

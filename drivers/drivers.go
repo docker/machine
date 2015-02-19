@@ -107,7 +107,7 @@ func Register(name string, registeredDriver *RegisteredDriver) error {
 func NewDriver(name string, machineName string, storePath string, caCert string, privateKey string) (Driver, error) {
 	driver, exists := drivers[name]
 	if !exists {
-		return nil, fmt.Errorf("hosts: Unknown driver %q", name)
+		return nil, fmt.Errorf("hosts: unknown driver %q", name)
 	}
 	return driver.New(machineName, storePath, caCert, privateKey)
 }
