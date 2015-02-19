@@ -42,6 +42,7 @@ type Host struct {
 	ClientCertPath string
 	SwarmMaster    bool
 	SwarmHost      string
+	SwarmDiscovery string
 	storePath      string
 }
 
@@ -67,7 +68,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster bool, swarmHost string) (*Host, error) {
+func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster bool, swarmHost string, swarmDiscovery string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -80,6 +81,7 @@ func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster
 		PrivateKeyPath: privateKey,
 		SwarmMaster:    swarmMaster,
 		SwarmHost:      swarmHost,
+		SwarmDiscovery: swarmDiscovery,
 		storePath:      storePath,
 	}, nil
 }
@@ -167,6 +169,10 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 
 	parts := strings.Split(u.Host, ":")
 	port := parts[1]
+
+	if err := waitForDocker(addr); err != nil {
+		return err
+	}
 
 	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
 	if err != nil {

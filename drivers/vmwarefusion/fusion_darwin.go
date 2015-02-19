@@ -46,6 +46,7 @@ type Driver struct {
 	PrivateKeyPath string
 	SwarmMaster    bool
 	SwarmHost      string
+	SwarmDiscovery string
 
 	storePath string
 }
@@ -102,6 +103,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ISO = path.Join(d.storePath, isoFilename)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	return nil
 }

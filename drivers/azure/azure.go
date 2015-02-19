@@ -40,6 +40,7 @@ type Driver struct {
 	PrivateKeyPath          string
 	SwarmMaster             bool
 	SwarmHost               string
+	SwarmDiscovery          string
 	storePath               string
 }
 
@@ -163,6 +164,7 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.SSHPort = flags.Int("azure-ssh-port")
 	driver.SwarmMaster = flags.Bool("swarm-master")
 	driver.SwarmHost = flags.String("swarm-host")
+	driver.SwarmDiscovery = flags.String("swarm-discovery")
 
 	return nil
 }

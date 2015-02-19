@@ -33,6 +33,9 @@ type Driver struct {
 	memSize        int
 	CaCertPath     string
 	PrivateKeyPath string
+	SwarmMaster    bool
+	SwarmHost      string
+	SwarmDiscovery string
 }
 
 func init() {
@@ -77,6 +80,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.vSwitch = flags.String("hyper-v-virtual-switch")
 	d.diskSize = flags.Int("hyper-v-disk-size")
 	d.memSize = flags.Int("hyper-v-memory")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 	return nil
 }
 
