@@ -398,8 +398,14 @@ func cmdEnv(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
-		utils.GetMachineClientCertDir(), cfg.machineUrl)
+	switch filepath.Base(os.Getenv("SHELL")) {
+	case "fish":
+		fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\nset -x DOCKER_HOST %s\n",
+			utils.GetMachineClientCertDir(), cfg.machineUrl)
+	default:
+		fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
+			utils.GetMachineClientCertDir(), cfg.machineUrl)
+	}
 }
 
 func cmdSsh(c *cli.Context) {
