@@ -38,7 +38,7 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath)
+	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath, flags.Bool("swarm-master"), flags.String("swarm-host"), flags.String("swarm-discovery"))
 	if err != nil {
 		return host, err
 	}
@@ -66,6 +66,18 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 
 	if err := host.ConfigureAuth(); err != nil {
 		return host, err
+	}
+
+	if flags.Bool("swarm") {
+		log.Info("Configuring Swarm...")
+
+		discovery := flags.String("swarm-discovery")
+		master := flags.Bool("swarm-master")
+		swarmHost := flags.String("swarm-host")
+		addr := flags.String("swarm-addr")
+		if err := host.ConfigureSwarm(discovery, master, swarmHost, addr); err != nil {
+			log.Errorf("Error configuring Swarm: %s", err)
+		}
 	}
 
 	return host, nil

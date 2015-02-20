@@ -29,16 +29,25 @@ func clearHosts() error {
 	return os.RemoveAll(utils.GetMachineDir())
 }
 
+func getDefaultTestDriverFlags() *DriverOptionsMock {
+	return &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"name":            "test",
+			"url":             "unix:///var/run/docker.sock",
+			"swarm":           false,
+			"swarm-host":      "",
+			"swarm-master":    false,
+			"swarm-discovery": "",
+		},
+	}
+}
+
 func TestStoreCreate(t *testing.T) {
 	if err := clearHosts(); err != nil {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
 	store := NewStore("", "", "")
 
@@ -60,11 +69,7 @@ func TestStoreRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
 	store := NewStore("", "", "")
 	_, err := store.Create("test", "none", flags)
@@ -89,11 +94,7 @@ func TestStoreList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
 	store := NewStore("", "", "")
 	_, err := store.Create("test", "none", flags)
@@ -114,11 +115,7 @@ func TestStoreExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
 	store := NewStore("", "", "")
 	exists, err := store.Exists("test")
@@ -144,11 +141,8 @@ func TestStoreLoad(t *testing.T) {
 	}
 
 	expectedURL := "unix:///foo/baz"
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": expectedURL,
-		},
-	}
+	flags := getDefaultTestDriverFlags()
+	flags.Data["url"] = expectedURL
 
 	store := NewStore("", "", "")
 	_, err := store.Create("test", "none", flags)
@@ -175,11 +169,7 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
 	store := NewStore("", "", "")
 

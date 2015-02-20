@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
@@ -24,6 +26,11 @@ var (
 	ErrInvalidHostname   = errors.New("Invalid hostname specified")
 )
 
+const (
+	swarmDockerImage              = "swarm:latest"
+	swarmDiscoveryServiceEndpoint = "https://discovery-stage.hub.docker.com/v1"
+)
+
 type Host struct {
 	Name           string `json:"-"`
 	DriverName     string
@@ -33,6 +40,9 @@ type Host struct {
 	ServerKeyPath  string
 	PrivateKeyPath string
 	ClientCertPath string
+	SwarmMaster    bool
+	SwarmHost      string
+	SwarmDiscovery string
 	storePath      string
 }
 
@@ -45,7 +55,20 @@ type hostConfig struct {
 	DriverName string
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, error) {
+func waitForDocker(addr string) error {
+	for {
+		conn, err := net.DialTimeout("tcp", addr, time.Second*5)
+		if err != nil {
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		conn.Close()
+		break
+	}
+	return nil
+}
+
+func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster bool, swarmHost string, swarmDiscovery string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -56,6 +79,9 @@ func NewHost(name, driverName, storePath, caCert, privateKey string) (*Host, err
 		Driver:         driver,
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
+		SwarmMaster:    swarmMaster,
+		SwarmHost:      swarmHost,
+		SwarmDiscovery: swarmDiscovery,
 		storePath:      storePath,
 	}, nil
 }
@@ -95,6 +121,79 @@ func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
 	log.Debugf("generating client cert: %s", clientCertPath)
 	if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating client cert: %s", err)
+	}
+
+	return nil
+}
+
+func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string) error {
+	d := h.Driver
+
+	if d.DriverName() == "none" {
+		return nil
+	}
+
+	if addr == "" {
+		ip, err := d.GetIP()
+		if err != nil {
+			return err
+		}
+		// TODO: remove hardcoded port
+		addr = fmt.Sprintf("%s:2376", ip)
+	}
+
+	basePath := d.GetDockerConfigDir()
+	tlsCaCert := path.Join(basePath, "ca.pem")
+	tlsCert := path.Join(basePath, "server.pem")
+	tlsKey := path.Join(basePath, "server-key.pem")
+	masterArgs := fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s %s",
+		tlsCaCert, tlsCert, tlsKey, host, discovery)
+	nodeArgs := fmt.Sprintf("--addr %s %s", addr, discovery)
+
+	u, err := url.Parse(host)
+	if err != nil {
+		return err
+	}
+
+	parts := strings.Split(u.Host, ":")
+	port := parts[1]
+
+	if err := waitForDocker(addr); err != nil {
+		return err
+	}
+
+	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// if master start master agent
+	if master {
+		log.Debug("launching swarm master")
+		log.Debugf("master args: %s", masterArgs)
+		cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
+			port, port, d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, masterArgs))
+		if err != nil {
+			return err
+		}
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	// start node agent
+	log.Debug("launching swarm node")
+	log.Debugf("node args: %s", nodeArgs)
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
+		d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, nodeArgs))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
 	return nil

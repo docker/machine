@@ -38,6 +38,9 @@ type Driver struct {
 	DockerPort              int
 	CaCertPath              string
 	PrivateKeyPath          string
+	SwarmMaster             bool
+	SwarmHost               string
+	SwarmDiscovery          string
 	storePath               string
 }
 
@@ -159,6 +162,9 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.UserPassword = flags.String("azure-password")
 	driver.DockerPort = flags.Int("azure-docker-port")
 	driver.SSHPort = flags.Int("azure-ssh-port")
+	driver.SwarmMaster = flags.Bool("swarm-master")
+	driver.SwarmHost = flags.String("swarm-host")
+	driver.SwarmDiscovery = flags.String("swarm-discovery")
 
 	return nil
 }
@@ -256,7 +262,11 @@ func (driver *Driver) GetURL() (string, error) {
 }
 
 func (driver *Driver) GetIP() (string, error) {
-	return driver.getHostname(), nil
+	addrs, err := net.LookupIP(driver.getHostname())
+	if err != nil {
+		return "", err
+	}
+	return addrs[0].String(), nil
 }
 
 func (driver *Driver) GetState() (state.State, error) {

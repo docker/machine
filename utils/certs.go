@@ -93,9 +93,10 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	}
 	// client
 	if len(hosts) == 1 && hosts[0] == "" {
-		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 		template.KeyUsage = x509.KeyUsageDigitalSignature
 	} else { // server
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
 		for _, h := range hosts {
 			if ip := net.ParseIP(h); ip != nil {
 				template.IPAddresses = append(template.IPAddresses, ip)
