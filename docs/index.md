@@ -52,7 +52,7 @@ machine version 0.1.0
 ## Getting started with Docker Machine using a local VM
 
 Let's take a look at using `docker-machine` to creating, using, and managing a Docker
-host inside of [VirtualBox](ihttps://www.virtualbox.org/).
+host inside of [VirtualBox](https://www.virtualbox.org/).
 
 First, ensure that
 [VirtualBox 4.3.20](https://www.virtualbox.org/wiki/Downloads) is correctly
