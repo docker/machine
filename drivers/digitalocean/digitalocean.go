@@ -11,7 +11,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/digitalocean/godo"
-	// "github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
@@ -34,6 +33,9 @@ type Driver struct {
 	CaCertPath     string
 	PrivateKeyPath string
 	DriverKeyPath  string
+	SwarmMaster    bool
+	SwarmHost      string
+	SwarmDiscovery string
 	storePath      string
 }
 
@@ -87,6 +89,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Image = flags.String("digitalocean-image")
 	d.Region = flags.String("digitalocean-region")
 	d.Size = flags.String("digitalocean-size")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
@@ -155,6 +160,8 @@ func (d *Driver) Create() error {
 	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
 		return err
 	}
+
+	log.Info("Configuring Machine...")
 
 	log.Debugf("Setting hostname: %s", d.MachineName)
 	cmd, err := d.GetSSHCommand(fmt.Sprintf(

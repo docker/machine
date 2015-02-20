@@ -262,6 +262,93 @@ NAME        ACTIVE   DRIVER    STATE     URL
 custombox   *        none      Running   tcp://50.134.234.20:2376
 ```
 
+## Using Docker Machine with Docker Swarm
+Docker Machine can also provision [Swarm](https://github.com/docker/swarm) 
+clusters. This can be used with any driver and will be secured with TLS. 
+
+Note: please note that this is an experimental feature and the subcommands and
+options will very likely change.
+
+First, create a Swarm token.  Optionally, you can use another discovery service.
+See the Swarm docs for details.
+
+To create the token, first create a Machine.  This example will use VirtualBox.
+
+```
+$ docker-machine create -d virtualbox local
+```
+
+Load the Machine configuration into your shell:
+
+```
+$ $(docker-machine env local)
+```
+Then run generate the token using the Swarm Docker image:
+
+```
+$ docker run swarm create
+1257e0f0bbb499b5cd04b4c9bdb2dab3
+```
+Once you have the token, you can create the cluster.
+
+
+Once you have the token, you can create the cluster.
+
+### Swarm Master
+
+Create the Swarm master:
+
+```
+docker-machine create \
+    -d virtualbox \
+    --swarm \
+    --swarm-master \
+    --swarm-discovery token://<TOKEN-FROM-ABOVE> \
+    swarm-master
+```
+
+Replace `<TOKEN-FROM-ABOVE>` with your random token.
+This will create the Swarm master and add itself as a Swarm node.
+
+### Swarm Nodes
+
+Now, create more Swarm nodes:
+
+```
+docker-machine create \
+    -d virtualbox \
+    --swarm \
+    --swarm-discovery token://<TOKEN-FROM-ABOVE> \
+    swarm-node-00
+```
+
+You now have a Swarm cluster across two nodes.
+To connect to the Swarm master, use `docker-machine env --swarm swarm-master`
+
+For example:
+
+```
+$ docker-machine env --swarm swarm-master
+export DOCKER_TLS_VERIFY=yes
+export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
+export DOCKER_HOST=tcp://192.168.99.100:3376
+```
+
+You can load this into your environment using
+`$(docker-machine env --swarm swarm-master)`.
+
+Now you can use the Docker CLI to query:
+
+```
+$ docker info
+Containers: 1
+Nodes: 1
+ swarm-master: 192.168.99.100:2376
+  └ Containers: 2
+  └ Reserved CPUs: 0 / 4
+  └ Reserved Memory: 0 B / 999.9 MiB
+```
+
 ## Subcommands
 
 #### active
@@ -302,6 +389,14 @@ $ docker-machine config dev
 --tls --tlscacert=/Users/ehazlett/.docker/machines/dev/ca.pem --tlscert=/Users/ehazlett/.docker/machines/dev/cert.pem --tlskey=/Users/ehazlett/.docker/machines/dev/key.pem -H tcp://192.168.99.103:2376
 ```
 
+#### generate-swarm-token
+
+Generate a token to be used with Swarm
+
+```
+$ docker-machine generate-swarm-token
+e74ebd8092ca0edb326c375057e2177f
+```
 #### inspect
 
 Inspect information about a machine.

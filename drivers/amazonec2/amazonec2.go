@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os/exec"
 	"path"
+	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -42,8 +45,8 @@ type Driver struct {
 	InstanceType      string
 	IPAddress         string
 	MachineName       string
-	SecurityGroupName string
 	SecurityGroupId   string
+	SecurityGroupName string
 	ReservationId     string
 	RootSize          int64
 	VpcId             string
@@ -51,6 +54,9 @@ type Driver struct {
 	Zone              string
 	CaCertPath        string
 	PrivateKeyPath    string
+	SwarmMaster       bool
+	SwarmHost         string
+	SwarmDiscovery    string
 	storePath         string
 	keyPath           string
 }
@@ -170,6 +176,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -272,6 +281,8 @@ func (d *Driver) Create() error {
 	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
 		return err
 	}
+
+	log.Info("Configuring Machine...")
 
 	log.Debug("Settings tags for instance")
 	tags := map[string]string{
@@ -554,6 +565,10 @@ func (d *Driver) terminate() error {
 	return nil
 }
 
+func (d *Driver) isSwarmMaster() bool {
+	return d.SwarmMaster
+}
+
 func (d *Driver) configureSecurityGroup(groupName string) error {
 	log.Debugf("configuring security group in %s", d.VpcId)
 
@@ -594,9 +609,32 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 
 	d.SecurityGroupId = securityGroup.GroupId
 
-	log.Debugf("configuring security group authorization for %s", ipRange)
-
 	perms := configureSecurityGroupPermissions(securityGroup)
+
+	// configure swarm permission if needed
+	if d.isSwarmMaster() {
+		u, err := url.Parse(d.SwarmHost)
+		if err != nil {
+			return fmt.Errorf("error authorizing port for swarm: %s", err)
+		}
+
+		parts := strings.Split(u.Host, ":")
+		port, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return err
+		}
+
+		log.Debugf("authorizing swarm on port %d", port)
+
+		perms = append(perms, amz.IpPermission{
+			IpProtocol: "tcp",
+			FromPort:   port,
+			ToPort:     port,
+			IpRange:    ipRange,
+		})
+	}
+
+	log.Debugf("configuring security group authorization for %s", ipRange)
 
 	if len(perms) != 0 {
 		log.Debugf("authorizing group %s with permissions: %v", securityGroup.GroupName, perms)

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,18 +33,24 @@ import (
 )
 
 type machineConfig struct {
+	machineName    string
 	caCertPath     string
 	clientCertPath string
 	clientKeyPath  string
 	machineUrl     string
+	swarmMaster    bool
+	swarmHost      string
+	swarmDiscovery string
 }
 
 type hostListItem struct {
-	Name       string
-	Active     bool
-	DriverName string
-	State      state.State
-	URL        string
+	Name           string
+	Active         bool
+	DriverName     string
+	State          state.State
+	URL            string
+	SwarmMaster    bool
+	SwarmDiscovery string
 }
 
 type hostListItemByName []hostListItem
@@ -135,6 +142,29 @@ var Commands = []cli.Command{
 				),
 				Value: "none",
 			},
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Configure Machine with Swarm",
+			},
+			cli.BoolFlag{
+				Name:  "swarm-master",
+				Usage: "Configure Machine to be a Swarm master",
+			},
+			cli.StringFlag{
+				Name:  "swarm-discovery",
+				Usage: "Discovery service to use with Swarm",
+				Value: "",
+			},
+			cli.StringFlag{
+				Name:  "swarm-host",
+				Usage: "ip/socket to listen on for Swarm master",
+				Value: "tcp://0.0.0.0:3376",
+			},
+			cli.StringFlag{
+				Name:  "swarm-addr",
+				Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
+				Value: "",
+			},
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
@@ -144,6 +174,12 @@ var Commands = []cli.Command{
 		Name:   "config",
 		Usage:  "Print the connection config for machine",
 		Action: cmdConfig,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+		},
 	},
 	{
 		Name:   "inspect",
@@ -191,6 +227,12 @@ var Commands = []cli.Command{
 		Name:   "env",
 		Usage:  "Display the commands to set up the environment for the Docker client",
 		Action: cmdEnv,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+		},
 	},
 	{
 		Name:   "ssh",
@@ -280,8 +322,30 @@ func cmdConfig(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	dockerHost := cfg.machineUrl
+	if c.Bool("swarm") {
+		if !cfg.swarmMaster {
+			log.Fatalf("%s is not a swarm master", cfg.machineName)
+		}
+		u, err := url.Parse(cfg.swarmHost)
+		if err != nil {
+			log.Fatal(err)
+		}
+		parts := strings.Split(u.Host, ":")
+		swarmPort := parts[1]
+
+		// get IP of machine to replace in case swarm host is 0.0.0.0
+		mUrl, err := url.Parse(cfg.machineUrl)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mParts := strings.Split(mUrl.Host, ":")
+		machineIp := mParts[0]
+
+		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+	}
 	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H=%q",
-		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, cfg.machineUrl)
+		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, dockerHost)
 }
 
 func cmdInspect(c *cli.Context) {
@@ -320,17 +384,28 @@ func cmdLs(c *cli.Context) {
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
 
 	if !quiet {
-		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL")
+		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM")
 	}
 
 	items := []hostListItem{}
 	hostListItems := make(chan hostListItem)
+
+	swarmMasters := make(map[string]string)
+	swarmInfo := make(map[string]string)
 
 	for _, host := range hostList {
 		if !quiet {
 			tmpHost, err := store.GetActive()
 			if err != nil {
 				log.Errorf("There's a problem with the active host: %s", err)
+			}
+
+			if host.SwarmMaster {
+				swarmMasters[host.SwarmDiscovery] = host.Name
+			}
+
+			if host.SwarmDiscovery != "" {
+				swarmInfo[host.Name] = host.SwarmDiscovery
 			}
 
 			if tmpHost == nil {
@@ -358,8 +433,17 @@ func cmdLs(c *cli.Context) {
 		if item.Active {
 			activeString = "*"
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL)
+
+		swarmInfo := ""
+
+		if item.SwarmDiscovery != "" {
+			swarmInfo = swarmMasters[item.SwarmDiscovery]
+			if item.SwarmMaster {
+				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
+			}
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo)
 	}
 
 	w.Flush()
@@ -398,13 +482,37 @@ func cmdEnv(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	dockerHost := cfg.machineUrl
+	if c.Bool("swarm") {
+		if !cfg.swarmMaster {
+			log.Fatalf("%s is not a swarm master", cfg.machineName)
+		}
+		u, err := url.Parse(cfg.swarmHost)
+		if err != nil {
+			log.Fatal(err)
+		}
+		parts := strings.Split(u.Host, ":")
+		swarmPort := parts[1]
+
+		// get IP of machine to replace in case swarm host is 0.0.0.0
+		mUrl, err := url.Parse(cfg.machineUrl)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mParts := strings.Split(mUrl.Host, ":")
+		machineIp := mParts[0]
+
+		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+	}
+
 	switch filepath.Base(os.Getenv("SHELL")) {
 	case "fish":
 		fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\nset -x DOCKER_HOST %s\n",
-			utils.GetMachineClientCertDir(), cfg.machineUrl)
+			utils.GetMachineClientCertDir(), dockerHost)
 	default:
 		fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
-			utils.GetMachineClientCertDir(), cfg.machineUrl)
+			utils.GetMachineClientCertDir(), dockerHost)
 	}
 }
 
@@ -529,11 +637,13 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 	}
 
 	hostListItems <- hostListItem{
-		Name:       host.Name,
-		Active:     isActive,
-		DriverName: host.Driver.DriverName(),
-		State:      currentState,
-		URL:        url,
+		Name:           host.Name,
+		Active:         isActive,
+		DriverName:     host.Driver.DriverName(),
+		State:          currentState,
+		URL:            url,
+		SwarmMaster:    host.SwarmMaster,
+		SwarmDiscovery: host.SwarmDiscovery,
 	}
 }
 
@@ -571,9 +681,13 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		}
 	}
 	return &machineConfig{
+		machineName:    name,
 		caCertPath:     caCert,
 		clientCertPath: clientCert,
 		clientKeyPath:  clientKey,
 		machineUrl:     machineUrl,
+		swarmMaster:    machine.SwarmMaster,
+		swarmHost:      machine.SwarmHost,
+		swarmDiscovery: machine.SwarmDiscovery,
 	}, nil
 }

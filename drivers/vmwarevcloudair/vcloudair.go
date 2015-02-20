@@ -43,9 +43,11 @@ type Driver struct {
 	MemorySize     int
 	CaCertPath     string
 	PrivateKeyPath string
-
-	VAppID    string
-	storePath string
+	SwarmMaster    bool
+	SwarmHost      string
+	SwarmDiscovery string
+	VAppID         string
+	storePath      string
 }
 
 type CreateFlags struct {
@@ -175,6 +177,9 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.UserPassword = flags.String("vmwarevcloudair-password")
 	driver.VDCID = flags.String("vmwarevcloudair-vdcid")
 	driver.PublicIP = flags.String("vmwarevcloudair-publicip")
+	driver.SwarmMaster = flags.Bool("swarm-master")
+	driver.SwarmHost = flags.String("swarm-host")
+	driver.SwarmDiscovery = flags.String("swarm-discovery")
 
 	// Check for required Params
 	if driver.UserName == "" || driver.UserPassword == "" || driver.VDCID == "" || driver.PublicIP == "" {
@@ -389,6 +394,8 @@ func (d *Driver) Create() error {
 	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.PublicIP, d.SSHPort)); err != nil {
 		return err
 	}
+
+	log.Info("Configuring Machine...")
 
 	log.Debugf("Setting hostname: %s", d.MachineName)
 	cmd, err := d.GetSSHCommand(fmt.Sprintf(
