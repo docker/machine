@@ -211,6 +211,7 @@ func TestMachinePort(t *testing.T) {
 	u := strings.Split(b, "=")
 	url := u[1]
 	url = strings.Replace(url, "'", "", -1)
+	url = strings.Replace(url, "\\\"", "", -1)
 	if url != bindUrl {
 		t.Errorf("expected url %s; received %s", bindUrl, url)
 	}
@@ -250,6 +251,7 @@ func TestMachineCustomPort(t *testing.T) {
 	u := strings.Split(b, "=")
 	url := u[1]
 	url = strings.Replace(url, "'", "", -1)
+	url = strings.Replace(url, "\\\"", "", -1)
 	if url != bindUrl {
 		t.Errorf("expected url %s; received %s", bindUrl, url)
 	}

@@ -246,7 +246,7 @@ DOCKER_TLS=no`, opts, caCertPath, serverKeyPath, serverCertPath)
 		daemonOpts = fmt.Sprintf("--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:%d", dockerPort)
 		daemonOptsCfg = "/etc/default/docker"
 		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
-		daemonCfg = fmt.Sprintf("export DOCKER_OPTS='%s'", opts)
+		daemonCfg = fmt.Sprintf("export DOCKER_OPTS=\\\"%s\\\"", opts)
 	}
 
 	return &DockerConfig{
