@@ -269,9 +269,28 @@ clusters. This can be used with any driver and will be secured with TLS.
 Note: please note that this is an experimental feature and the subcommands and
 options will very likely change.
 
-First, create a Swarm token using `docker-machine generate-swarm-token`.
-Optionally, you can use another discovery service.  See the Swarm docs for
-details.
+First, create a Swarm token.  Optionally, you can use another discovery service.
+See the Swarm docs for details.
+
+To create the token, first create a Machine.  This example will use VirtualBox.
+
+```
+$ docker-machine create -d virtualbox local
+```
+
+Load the Machine configuration into your shell:
+
+```
+$ $(docker-machine env local)
+```
+Then run generate the token using the Swarm Docker image:
+
+```
+$ docker run swarm create
+1257e0f0bbb499b5cd04b4c9bdb2dab3
+```
+Once you have the token, you can create the cluster.
+
 
 Once you have the token, you can create the cluster.
 
