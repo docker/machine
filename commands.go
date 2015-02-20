@@ -30,7 +30,6 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
-	"github.com/docker/swarm/discovery/token"
 )
 
 type machineConfig struct {
@@ -170,11 +169,6 @@ var Commands = []cli.Command{
 		Name:   "create",
 		Usage:  "Create a machine",
 		Action: cmdCreate,
-	},
-	{
-		Name:   "generate-swarm-token",
-		Usage:  "Generate a Swarm Cluster Token",
-		Action: cmdGenerateSwarmToken,
 	},
 	{
 		Name:   "config",
@@ -321,17 +315,6 @@ func cmdCreate(c *cli.Context) {
 
 	log.Infof("%q has been created and is now the active machine.", name)
 	log.Infof("To point your Docker client at it, run this in your shell: $(%s env %s)", c.App.Name, name)
-}
-
-func cmdGenerateSwarmToken(c *cli.Context) {
-	discovery := &token.TokenDiscoveryService{}
-	discovery.Initialize("", 0)
-	token, err := discovery.CreateCluster()
-	if err != nil {
-		log.Fatal(err)
-
-	}
-	fmt.Println(token)
 }
 
 func cmdConfig(c *cli.Context) {
