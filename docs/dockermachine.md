@@ -388,6 +388,33 @@ NAME   ACTIVE   DRIVER       STATE     URL
 foo0            virtualbox   Running   tcp://192.168.99.105:2376
 ```
 
+#### scp
+
+Copy files from your local host to a machine, from machine to machine, or from a
+machine to your local host using `scp`.
+
+The notation is `machinename:/path/to/files` for the arguments; in the host
+machine's case, you don't have to specify the name, just the path.
+
+Consider the following example:
+
+```
+$ cat foo.txt
+cat: foo.txt: No such file or directory
+$ docker-machine ssh dev pwd
+/home/docker
+$ docker-machine ssh dev 'echo A file created remotely! >foo.txt'
+$ docker-machine scp dev:/home/docker/foo.txt .
+foo.txt                                                           100%   28     0.0KB/s   00:00
+$ cat foo.txt
+A file created remotely!
+```
+
+Files are copied recursively by default (`scp`'s `-r` flag).
+
+In the case of transfering files from machine to machine, they go through the
+local host's filesystem first (using `scp`'s `-3` flag).
+
 #### ssh
 
 Log into or run a command on a machine using SSH.
