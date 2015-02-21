@@ -156,7 +156,7 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	region, err := validateAwsRegion(flags.String("amazonec2-region"))
 	if err != nil {
-		return nil
+		return err
 	}
 
 	image := flags.String("amazonec2-ami")
