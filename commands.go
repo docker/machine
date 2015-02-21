@@ -232,6 +232,10 @@ var Commands = []cli.Command{
 				Name:  "swarm",
 				Usage: "Display the Swarm config instead of the Docker daemon",
 			},
+			cli.BoolFlag{
+				Name:  "unset, u",
+				Usage: "Unset variables instead of setting them",
+			},
 		},
 	},
 	{
@@ -478,6 +482,17 @@ func cmdRm(c *cli.Context) {
 }
 
 func cmdEnv(c *cli.Context) {
+	userShell := filepath.Base(os.Getenv("SHELL"))
+	if c.Bool("unset") {
+		switch userShell {
+		case "fish":
+			fmt.Printf("set -e DOCKER_TLS_VERIFY\nset -e DOCKER_CERT_PATH\nset -e DOCKER_HOST")
+		default:
+			fmt.Println("unset DOCKER_TLS_VERIFY DOCKER_CERT_PATH DOCKER_HOST")
+		}
+		return
+	}
+
 	cfg, err := getMachineConfig(c)
 	if err != nil {
 		log.Fatal(err)
@@ -506,7 +521,7 @@ func cmdEnv(c *cli.Context) {
 		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
 	}
 
-	switch filepath.Base(os.Getenv("SHELL")) {
+	switch userShell {
 	case "fish":
 		fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\nset -x DOCKER_HOST %s\n",
 			utils.GetMachineClientCertDir(), dockerHost)
