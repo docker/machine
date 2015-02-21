@@ -37,8 +37,6 @@ const (
 	dockerStopCommand  = "sudo service docker stop"
 )
 
-const ()
-
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 	service, err := newGCEService(driver.storePath)
@@ -165,6 +163,12 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		Tags: &raw.Tags{
 			Items: []string{
 				firewallTargetTag,
+			},
+		},
+		ServiceAccounts: []*raw.ServiceAccount{
+			{
+				Email:  "default",
+				Scopes: strings.Split(d.Scopes, ","),
 			},
 		},
 	}
