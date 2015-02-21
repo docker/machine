@@ -1,10 +1,13 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"io/ioutil"
 	"os/exec"
 	"testing"
 
+	"github.com/codegangsta/cli"
 	drivers "github.com/docker/machine/drivers"
 	"github.com/docker/machine/state"
 )
@@ -79,6 +82,49 @@ func (d *FakeDriver) GetDockerConfigDir() string {
 
 func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return &exec.Cmd{}, nil
+}
+
+func TestGetHosts(t *testing.T) {
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := getDefaultTestDriverFlags()
+
+	store := NewStore(TestStoreDir, "", "")
+
+	hostA, hostAerr := store.Create("test-a", "none", flags)
+	if hostAerr != nil {
+		t.Fatal(hostAerr)
+	}
+
+	hostB, hostBerr := store.Create("test-b", "none", flags)
+	if hostBerr != nil {
+		t.Fatal(hostBerr)
+	}
+
+	set := flag.NewFlagSet("start", 0)
+	set.Parse([]string{"test-a", "test-b"})
+
+	c := cli.NewContext(nil, set, nil)
+	globalSet := flag.NewFlagSet("-d", 0)
+	globalSet.String("-d", "none", "driver")
+	globalSet.String("storage-path", TestStoreDir, "storage path")
+	globalSet.String("tls-ca-cert", "", "")
+	globalSet.String("tls-ca-key", "", "")
+
+	hosts, err := getHosts(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(hosts)
+	fmt.Println(hostA)
+	fmt.Println(hostB)
+
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestGetHostState(t *testing.T) {

@@ -9,6 +9,15 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+const (
+	TestStoreDir = ".store-test"
+)
+
+func init() {
+
+	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
+}
+
 type DriverOptionsMock struct {
 	Data map[string]interface{}
 }
@@ -26,7 +35,7 @@ func (d DriverOptionsMock) Bool(key string) bool {
 }
 
 func clearHosts() error {
-	return os.RemoveAll(utils.GetMachineDir())
+	return os.RemoveAll(TestStoreDir)
 }
 
 func getDefaultTestDriverFlags() *DriverOptionsMock {
