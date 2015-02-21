@@ -23,6 +23,7 @@ type Driver struct {
 	MachineName      string
 	Zone             string
 	MachineType      string
+	Scopes           string
 	DiskSize         int
 	storePath        string
 	UserName         string
@@ -42,6 +43,7 @@ type CreateFlags struct {
 	MachineType *string
 	UserName    *string
 	Project     *string
+	Scopes      *string
 	DiskSize    *int
 }
 
@@ -79,6 +81,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "GCE Project",
 			EnvVar: "GOOGLE_PROJECT",
 		},
+		cli.StringFlag{
+			Name:   "google-scopes",
+			Usage:  "GCE Scopes (comma-separated if multiple scopes)",
+			Value:  "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write",
+			EnvVar: "GOOGLE_SCOPES",
+		},
 		cli.IntFlag{
 			Name:   "google-disk-size",
 			Usage:  "GCE Instance Disk Size (in GB)",
@@ -112,6 +120,7 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.DiskSize = flags.Int("google-disk-size")
 	driver.UserName = flags.String("google-username")
 	driver.Project = flags.String("google-project")
+	driver.Scopes = flags.String("google-scopes")
 	driver.SwarmMaster = flags.Bool("swarm-master")
 	driver.SwarmHost = flags.String("swarm-host")
 	driver.SwarmDiscovery = flags.String("swarm-discovery")

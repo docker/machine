@@ -195,6 +195,7 @@ Options:
  - `--google-username`: The username to use for the instance.  Default: `docker-user`
  - `--google-instance-name`: The name of the instance.  Default: `docker-machine`
  - `--google-project`: The name of your project to use when launching the instance.
+ - `--google-scopes`: The scopes associated to the instance. Comma-separated if multiple scopes.  Default: `https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write``
 
 ### VMware Fusion
 
