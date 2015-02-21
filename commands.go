@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"text/tabwriter"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -382,12 +384,6 @@ func cmdIp(c *cli.Context) {
 	fmt.Println(ip)
 }
 
-func cmdKill(c *cli.Context) {
-	if err := getHost(c).Driver.Kill(); err != nil {
-		log.Fatal(err)
-	}
-}
-
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
@@ -454,12 +450,6 @@ func cmdLs(c *cli.Context) {
 	}
 
 	w.Flush()
-}
-
-func cmdRestart(c *cli.Context) {
-	if err := getHost(c).Driver.Restart(); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func cmdRm(c *cli.Context) {
@@ -573,20 +563,79 @@ func cmdSsh(c *cli.Context) {
 	}
 }
 
+// machineCommand maps the command name to the corresponding machine command
+// it is intended to be used by runCommand using a waitgroup and error channel
+// to enable running commands across multiple machines asynchronously
+func machineCommand(name string, machine *Host, wg *sync.WaitGroup, errorChan chan<- error) {
+	commands := map[string]interface{}{
+		"start":   machine.Start,
+		"stop":    machine.Stop,
+		"restart": machine.Driver.Restart,
+		"kill":    machine.Driver.Kill,
+		"upgrade": machine.Upgrade,
+	}
+
+	log.Debugf("command=%s machine=%s", name, machine.Name)
+
+	if err := commands[name].(func() error)(); err != nil {
+		errorChan <- err
+	}
+
+	wg.Done()
+}
+
+// runCommand will run the command across multiple machines
+func runCommand(name string, c *cli.Context) error {
+	errorChan := make(chan error)
+	go func() {
+		err := <-errorChan
+		log.Errorf(err.Error())
+	}()
+
+	wg := &sync.WaitGroup{}
+
+	machines, err := getHosts(c)
+	if err != nil {
+		return err
+	}
+
+	for _, machine := range machines {
+		wg.Add(1)
+		go machineCommand(name, machine, wg, errorChan)
+		time.Sleep(1 * time.Second)
+	}
+
+	wg.Wait()
+
+	return nil
+}
+
 func cmdStart(c *cli.Context) {
-	if err := getHost(c).Start(); err != nil {
+	if err := runCommand("start", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdStop(c *cli.Context) {
-	if err := getHost(c).Stop(); err != nil {
+	if err := runCommand("stop", c); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdRestart(c *cli.Context) {
+	if err := runCommand("restart", c); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdKill(c *cli.Context) {
+	if err := runCommand("kill", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdUpgrade(c *cli.Context) {
-	if err := getHost(c).Upgrade(); err != nil {
+	if err := runCommand("upgrade", c); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -608,6 +657,31 @@ func cmdNotFound(c *cli.Context, command string) {
 		c.App.Name,
 		c.App.Name,
 	)
+}
+
+func getHosts(c *cli.Context) ([]*Host, error) {
+	machines := []*Host{}
+	for _, n := range c.Args() {
+		machine, err := loadMachine(n, c)
+		if err != nil {
+			return nil, err
+		}
+
+		machines = append(machines, machine)
+	}
+
+	return machines, nil
+}
+
+func loadMachine(name string, c *cli.Context) (*Host, error) {
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+
+	machine, err := store.Load(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return machine, nil
 }
 
 func getHost(c *cli.Context) *Host {
