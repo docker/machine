@@ -389,14 +389,6 @@ $ docker-machine config dev
 --tls --tlscacert=/Users/ehazlett/.docker/machines/dev/ca.pem --tlscert=/Users/ehazlett/.docker/machines/dev/cert.pem --tlskey=/Users/ehazlett/.docker/machines/dev/key.pem -H tcp://192.168.99.103:2376
 ```
 
-#### generate-swarm-token
-
-Generate a token to be used with Swarm
-
-```
-$ docker-machine generate-swarm-token
-e74ebd8092ca0edb326c375057e2177f
-```
 #### inspect
 
 Inspect information about a machine.
