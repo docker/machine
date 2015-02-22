@@ -77,6 +77,14 @@ func (d *FakeDriver) GetDockerConfigDir() string {
 	return ""
 }
 
+func (d *FakeDriver) GetSSHKeyPath() string {
+	return "/foo/id_rsa"
+}
+
+func (d *FakeDriver) GetSSHUsername() string {
+	return "root"
+}
+
 func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return &exec.Cmd{}, nil
 }

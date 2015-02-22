@@ -292,8 +292,12 @@ func (d *Driver) GetState() (state.State, error) {
 	return vmState, nil
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return "root"
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, 22, d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 func (d *Driver) PreCreateCheck() error {
@@ -384,7 +388,7 @@ func (d *Driver) buildHostSpec() *HostSpec {
 }
 
 func (d *Driver) createSSHKey() (*SshKey, error) {
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return nil, err
 	}
 
@@ -402,10 +406,10 @@ func (d *Driver) createSSHKey() (*SshKey, error) {
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
 

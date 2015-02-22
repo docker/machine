@@ -10,17 +10,22 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func GetSSHCommand(host string, port int, user string, sshKey string, args ...string) *exec.Cmd {
-
-	defaultSSHArgs := []string{
+var (
+	BaseSSHOptions = []string{
 		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
+	}
+)
+
+func GetSSHCommand(host string, port int, user string, sshKey string, args ...string) *exec.Cmd {
+	customSSHOptions := []string{
 		"-p", fmt.Sprintf("%d", port),
 		"-i", sshKey,
 		fmt.Sprintf("%s@%s", user, host),
 	}
+	defaultSSHArgs := append(BaseSSHOptions, customSSHOptions...)
 
 	sshArgs := append(defaultSSHArgs, args...)
 	cmd := exec.Command("ssh", sshArgs...)

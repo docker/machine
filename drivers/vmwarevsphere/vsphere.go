@@ -291,7 +291,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Generating SSH Keypair...")
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
@@ -483,20 +483,24 @@ func (d *Driver) Upgrade() error {
 	return fmt.Errorf("upgrade is not supported for vsphere driver at this moment")
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return "docker"
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	ip, err := d.GetIP()
 	if err != nil {
 		return nil, err
 	}
-	return ssh.GetSSHCommand(ip, d.SSHPort, "docker", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(ip, d.SSHPort, d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return filepath.Join(d.StorePath, "id_docker_host_vsphere")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 func (d *Driver) checkVsphereConfig() error {
