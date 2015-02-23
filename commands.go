@@ -399,21 +399,12 @@ func cmdLs(c *cli.Context) {
 
 	for _, host := range hostList {
 		if !quiet {
-			tmpHost, err := store.GetActive()
-			if err != nil {
-				log.Errorf("There's a problem with the active host: %s", err)
-			}
-
 			if host.SwarmMaster {
 				swarmMasters[host.SwarmDiscovery] = host.Name
 			}
 
 			if host.SwarmDiscovery != "" {
 				swarmInfo[host.Name] = host.SwarmDiscovery
-			}
-
-			if tmpHost == nil {
-				log.Errorf("There's a problem finding the active host")
 			}
 
 			go getHostState(host, *store, hostListItems)
