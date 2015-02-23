@@ -178,18 +178,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Installing Docker")
-
-	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
 	return nil
 }
 
@@ -335,7 +323,8 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
+	cmd := ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...)
+	return cmd, nil
 }
 
 func (d *Driver) getClient() *godo.Client {

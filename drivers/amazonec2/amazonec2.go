@@ -308,18 +308,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Installing Docker")
-
-	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
 	return nil
 }
 

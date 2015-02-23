@@ -423,22 +423,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if d.Provision {
-		dockerInstall := "curl -sSL https://get.docker.com | sudo sh"
-
-		log.Infof("Installing Docker...")
-
-		cmd, err = d.GetSSHCommand(dockerInstall)
-		if err != nil {
-			return err
-		}
-
-		if err = cmd.Run(); err != nil {
-			return err
-		}
-
-	}
-
 	log.Debugf("Disconnecting from vCloud Air...")
 
 	if err = p.Disconnect(); err != nil {
