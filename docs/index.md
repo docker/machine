@@ -1,33 +1,19 @@
-page_title: Working with Docker Machine
+page_title: Docker Machine
 page_description: Working with Docker Machine
 page_keywords: docker, machine, virtualbox, digitalocean, amazonec2
 
-# Working with Docker Machine
+# Docker Machine
 
-## Overview
+Machine makes it really easy to create Docker hosts on your computer, on cloud
+providers and inside your own data center. It creates servers, installs Docker
+on them, then configures the Docker client to talk to them.
 
-In order to run Docker containers, you must have a
-[Docker daemon](https://docs.docker.com/arch) running somewhere. If you’re on a
-Linux system and you want to run a container on your local machine, this is
-straightforward: you run the daemon on your local machine and communicate with
-it over the Unix socket located at `/var/run/docker.sock` (this all happens
-behind the scenes when you run `docker` on the command line). However, if you
-want to control containers from Mac OSX / Windows or manage them on a remote
-server, you’ll need to create a new machine (probably a virtual machine) with
-Docker installed and execute Docker commands for that host remotely.
-Traditionally, the way to do this was either:
+Once your Docker host has been created, it then has a number of commands for
+managing them:
 
-- manual (open the web interface or virtualization application, make the machine
-yourself, manually install Docker, etc.) and therefore tedious and error-prone
-- with existing automation technologies, which usually entail a quite high skill
-threshold
-
-Docker's [`docker-machine`](https://github.com/docker/machine) is a tool for making the
-process of creating and managing those machines (and running Docker commands
-against them) much faster and easier for users.  `docker-machine` allows users to
-quickly create running instances of the Docker daemon on local virtualization
-platforms (e.g. Virtualbox) or on cloud providers (e.g. AWS EC2) that they can
-connect to and control from their local Docker client binary.
+ - Starting, stopping, restarting
+ - Upgrading Docker
+ - Configuring the Docker client to talk to your host
 
 ## Installation
 
@@ -52,7 +38,7 @@ machine version 0.1.0
 ## Getting started with Docker Machine using a local VM
 
 Let's take a look at using `docker-machine` to creating, using, and managing a Docker
-host inside of [VirtualBox](ihttps://www.virtualbox.org/).
+host inside of [VirtualBox](https://www.virtualbox.org/).
 
 First, ensure that
 [VirtualBox 4.3.20](https://www.virtualbox.org/wiki/Downloads) is correctly
@@ -797,7 +783,7 @@ Options:
  - `--vmwarevcloudair-ssh-port`: SSH port. Default: `22`
  - `--vmwarevcloudair-vdcid`: Virtual Data Center ID.
 
-The VMware vCloud Air driver will use the `Ubuntu Server 12.04 LTS (amd64 20140927)` image by default. 
+The VMware vCloud Air driver will use the `Ubuntu Server 12.04 LTS (amd64 20140927)` image by default.
 
 #### VMware vSphere
 Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. Requires a working vSphere (ESXi and optionally vCenter) installation. The vSphere driver depends on [`govc`](https://github.com/vmware/govmomi/tree/master/govc) (must be in path) and has been tested with [vmware/govmomi@`c848630`](https://github.com/vmware/govmomi/commit/c8486300bfe19427e4f3226e3b3eac067717ef17).
