@@ -183,17 +183,17 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:   "inspect",
-		Usage:  "Inspect information about a machine",
+		Usage:  "Inspect information about a machine.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdInspect,
 	},
 	{
 		Name:   "ip",
-		Usage:  "Get the IP address of a machine",
+		Usage:  "Get the IP address of a machine.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdIp,
 	},
 	{
 		Name:   "kill",
-		Usage:  "Kill a machine",
+		Usage:  "Kill a machine.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdKill,
 	},
 	{
@@ -209,7 +209,7 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:   "restart",
-		Usage:  "Restart a machine",
+		Usage:  "Restart a machine.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdRestart,
 	},
 	{
@@ -220,7 +220,7 @@ var Commands = []cli.Command{
 			},
 		},
 		Name:   "rm",
-		Usage:  "Remove a machine",
+		Usage:  "Remove a machine.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdRm,
 	},
 	{
@@ -236,26 +236,26 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:   "ssh",
-		Usage:  "Log into or run a command on a machine with SSH",
+		Usage:  "Log into or run a command on a machine with SSH.  Arguments are [machine-name] command.  Will use the active machine if none is provided.",
 		Action: cmdSsh,
 	},
 	{
 		Name:   "start",
-		Usage:  "Start a machine",
+		Usage:  "Start a machine.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdStart,
 	},
 	{
 		Name:   "stop",
-		Usage:  "Stop a machine",
+		Usage:  "Stop a machine.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdStop,
 	},
 	{
 		Name:   "upgrade",
-		Usage:  "Upgrade a machine to the latest version of Docker",
+		Usage:  "Upgrade a machine to the latest version of Docker.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Action: cmdUpgrade,
 	},
 	{
-		Name:   "url",
+		Name:   "url.  Argument is a machine name.  Will use the active machine if none is provided.",
 		Usage:  "Get the URL of a machine",
 		Action: cmdUrl,
 	},
