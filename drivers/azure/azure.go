@@ -226,14 +226,6 @@ func (driver *Driver) Create() error {
 		return err
 	}
 
-	cmd, err := driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
