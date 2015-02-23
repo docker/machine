@@ -375,6 +375,28 @@ $ docker-machine config dev
 --tls --tlscacert=/Users/ehazlett/.docker/machines/dev/ca.pem --tlscert=/Users/ehazlett/.docker/machines/dev/cert.pem --tlskey=/Users/ehazlett/.docker/machines/dev/key.pem -H tcp://192.168.99.103:2376
 ```
 
+#### env
+
+Set environment variables to dictate that `docker` should run a command against
+a particular machine.
+
+`docker-machine env machinename` will print out `export` commands which can be
+run in a subshell.  Running `docker-machine env -u` will print
+`unset` commands which reverse this effect.
+
+```
+$ env | grep DOCKER
+$ $(docker-machine env dev)
+$ env | grep DOCKER
+DOCKER_HOST=tcp://192.168.99.101:2376
+DOCKER_CERT_PATH=/Users/nathanleclaire/.docker/machines/.client
+DOCKER_TLS_VERIFY=yes
+$ # If you run a docker command, now it will run against that host.
+$ $(docker-machine env -u)
+$ env | grep DOCKER
+$ # The environment variables have been unset.
+```
+
 #### inspect
 
 Inspect information about a machine.
