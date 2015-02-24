@@ -236,8 +236,8 @@ var Commands = []cli.Command{
 		Action:      cmdEnv,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  "swarm",
-				Usage: "Display the Swarm config instead of the Docker daemon",
+				Name:  "engine",
+				Usage: "Display Docker daemon config instead of Swarm config on Swarm master",
 			},
 			cli.BoolFlag{
 				Name:  "unset, u",
@@ -502,10 +502,7 @@ func cmdEnv(c *cli.Context) {
 	}
 
 	dockerHost := cfg.machineUrl
-	if c.Bool("swarm") {
-		if !cfg.swarmMaster {
-			log.Fatalf("%s is not a swarm master", cfg.machineName)
-		}
+	if cfg.swarmMaster && !c.Bool("engine") {
 		u, err := url.Parse(cfg.swarmHost)
 		if err != nil {
 			log.Fatal(err)
