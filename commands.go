@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"text/tabwriter"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -199,7 +197,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "kill",
 		Usage:       "Kill a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdKill,
 	},
 	{
@@ -216,7 +214,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "restart",
 		Usage:       "Restart a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdRestart,
 	},
 	{
@@ -228,7 +226,7 @@ var Commands = []cli.Command{
 		},
 		Name:        "rm",
 		Usage:       "Remove a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdRm,
 	},
 	{
@@ -256,19 +254,19 @@ var Commands = []cli.Command{
 	{
 		Name:        "start",
 		Usage:       "Start a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdStart,
 	},
 	{
 		Name:        "stop",
 		Usage:       "Stop a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdStop,
 	},
 	{
 		Name:        "upgrade",
 		Usage:       "Upgrade a machine to the latest version of Docker",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdUpgrade,
 	},
 	{
@@ -563,79 +561,110 @@ func cmdSsh(c *cli.Context) {
 	}
 }
 
-// machineCommand maps the command name to the corresponding machine command
-// it is intended to be used by runCommand using a waitgroup and error channel
-// to enable running commands across multiple machines asynchronously
-func machineCommand(name string, machine *Host, wg *sync.WaitGroup, errorChan chan<- error) {
-	commands := map[string]interface{}{
-		"start":   machine.Start,
-		"stop":    machine.Stop,
+// machineCommand maps the command name to the corresponding machine command.
+// We run commands concurrently and communicate back an error if there was one.
+func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
+	commands := map[string](func() error){
+		"start":   machine.Driver.Start,
+		"stop":    machine.Driver.Stop,
 		"restart": machine.Driver.Restart,
 		"kill":    machine.Driver.Kill,
-		"upgrade": machine.Upgrade,
+		"upgrade": machine.Driver.Upgrade,
 	}
 
-	log.Debugf("command=%s machine=%s", name, machine.Name)
+	log.Debugf("command=%s machine=%s", actionName, machine.Name)
 
-	if err := commands[name].(func() error)(); err != nil {
+	if err := commands[actionName](); err != nil {
 		errorChan <- err
+		return
 	}
 
-	wg.Done()
+	errorChan <- nil
 }
 
-// runCommand will run the command across multiple machines
-func runCommand(name string, c *cli.Context) error {
-	errorChan := make(chan error)
-	go func() {
-		err := <-errorChan
-		log.Errorf(err.Error())
-	}()
+// runActionForeachMachine will run the command across multiple machines
+func runActionForeachMachine(actionName string, machines []*Host) {
+	var (
+		numConcurrentActions = 0
+		serialMachines       = []*Host{}
+		errorChan            = make(chan error)
+	)
 
-	wg := &sync.WaitGroup{}
+	for _, machine := range machines {
+		// Virtualbox is temperamental about doing things concurrently,
+		// so we schedule the actions in a "queue" to be executed serially
+		// after the concurrent actions are scheduled.
+		switch machine.DriverName {
+		case "virtualbox":
+			machine := machine
+			serialMachines = append(serialMachines, machine)
+		default:
+			numConcurrentActions++
+			go machineCommand(actionName, machine, errorChan)
+		}
+	}
 
+	// While the concurrent actions are running,
+	// do the serial actions.  As the name implies,
+	// these run one at a time.
+	for _, machine := range serialMachines {
+		serialChan := make(chan error)
+		go machineCommand(actionName, machine, serialChan)
+		if err := <-serialChan; err != nil {
+			log.Errorln(err)
+		}
+		close(serialChan)
+	}
+
+	// TODO: We should probably only do 5-10 of these
+	// at a time, since otherwise cloud providers might
+	// rate limit us.
+	for i := 0; i < numConcurrentActions; i++ {
+		if err := <-errorChan; err != nil {
+			log.Errorln(err)
+		}
+	}
+
+	close(errorChan)
+}
+
+func runActionWithContext(actionName string, c *cli.Context) error {
 	machines, err := getHosts(c)
 	if err != nil {
 		return err
 	}
 
-	for _, machine := range machines {
-		wg.Add(1)
-		go machineCommand(name, machine, wg, errorChan)
-		time.Sleep(1 * time.Second)
-	}
-
-	wg.Wait()
+	runActionForeachMachine(actionName, machines)
 
 	return nil
 }
 
 func cmdStart(c *cli.Context) {
-	if err := runCommand("start", c); err != nil {
+	if err := runActionWithContext("start", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdStop(c *cli.Context) {
-	if err := runCommand("stop", c); err != nil {
+	if err := runActionWithContext("stop", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdRestart(c *cli.Context) {
-	if err := runCommand("restart", c); err != nil {
+	if err := runActionWithContext("restart", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdKill(c *cli.Context) {
-	if err := runCommand("kill", c); err != nil {
+	if err := runActionWithContext("kill", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdUpgrade(c *cli.Context) {
-	if err := runCommand("upgrade", c); err != nil {
+	if err := runActionWithContext("upgrade", c); err != nil {
 		log.Fatal(err)
 	}
 }
