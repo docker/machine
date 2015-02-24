@@ -206,9 +206,26 @@ func (h *Host) ConfigureAuth() error {
 		return nil
 	}
 
-	ip, err := h.Driver.GetIP()
-	if err != nil {
-		return err
+	var (
+		ip         = ""
+		ipErr      error
+		maxRetries = 4
+	)
+
+	for i := 0; i < maxRetries; i++ {
+		ip, ipErr = h.Driver.GetIP()
+		if ip != "" {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	if ipErr != nil {
+		return ipErr
+	}
+
+	if ip == "" {
+		return fmt.Errorf("unable to get machine IP")
 	}
 
 	serverCertPath := filepath.Join(h.storePath, "server.pem")
