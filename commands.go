@@ -171,9 +171,10 @@ var Commands = []cli.Command{
 		Action: cmdCreate,
 	},
 	{
-		Name:   "config",
-		Usage:  "Print the connection config for machine",
-		Action: cmdConfig,
+		Name:        "config",
+		Usage:       "Print the connection config for machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdConfig,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "swarm",
@@ -182,19 +183,22 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:   "inspect",
-		Usage:  "Inspect information about a machine",
-		Action: cmdInspect,
+		Name:        "inspect",
+		Usage:       "Inspect information about a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdInspect,
 	},
 	{
-		Name:   "ip",
-		Usage:  "Get the IP address of a machine",
-		Action: cmdIp,
+		Name:        "ip",
+		Usage:       "Get the IP address of a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdIp,
 	},
 	{
-		Name:   "kill",
-		Usage:  "Kill a machine",
-		Action: cmdKill,
+		Name:        "kill",
+		Usage:       "Kill a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdKill,
 	},
 	{
 		Flags: []cli.Flag{
@@ -208,9 +212,10 @@ var Commands = []cli.Command{
 		Action: cmdLs,
 	},
 	{
-		Name:   "restart",
-		Usage:  "Restart a machine",
-		Action: cmdRestart,
+		Name:        "restart",
+		Usage:       "Restart a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdRestart,
 	},
 	{
 		Flags: []cli.Flag{
@@ -219,14 +224,16 @@ var Commands = []cli.Command{
 				Usage: "Remove local configuration even if machine cannot be removed",
 			},
 		},
-		Name:   "rm",
-		Usage:  "Remove a machine",
-		Action: cmdRm,
+		Name:        "rm",
+		Usage:       "Remove a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdRm,
 	},
 	{
-		Name:   "env",
-		Usage:  "Display the commands to set up the environment for the Docker client",
-		Action: cmdEnv,
+		Name:        "env",
+		Usage:       "Display the commands to set up the environment for the Docker client",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdEnv,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "swarm",
@@ -239,29 +246,34 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:   "ssh",
-		Usage:  "Log into or run a command on a machine with SSH",
-		Action: cmdSsh,
+		Name:        "ssh",
+		Usage:       "Log into or run a command on a machine with SSH",
+		Description: "Arguments are [machine-name] command - Will use the active machine if none is provided.",
+		Action:      cmdSsh,
 	},
 	{
-		Name:   "start",
-		Usage:  "Start a machine",
-		Action: cmdStart,
+		Name:        "start",
+		Usage:       "Start a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdStart,
 	},
 	{
-		Name:   "stop",
-		Usage:  "Stop a machine",
-		Action: cmdStop,
+		Name:        "stop",
+		Usage:       "Stop a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdStop,
 	},
 	{
-		Name:   "upgrade",
-		Usage:  "Upgrade a machine to the latest version of Docker",
-		Action: cmdUpgrade,
+		Name:        "upgrade",
+		Usage:       "Upgrade a machine to the latest version of Docker",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdUpgrade,
 	},
 	{
-		Name:   "url",
-		Usage:  "Get the URL of a machine",
-		Action: cmdUrl,
+		Name:        "url",
+		Usage:       "Get the URL of a machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdUrl,
 	},
 }
 
