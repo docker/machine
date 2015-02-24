@@ -325,9 +325,7 @@ func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKey
 		swarmLabels   = []string{}
 	)
 
-	if h.SwarmHost != "" {
-		swarmLabels = append(swarmLabels, fmt.Sprintf("--label=provider=%s", h.Driver.DriverName()))
-	}
+	swarmLabels = append(swarmLabels, fmt.Sprintf("--label=provider=%s", h.Driver.DriverName()))
 
 	defaultDaemonOpts := fmt.Sprintf(`--tlsverify \
 --tlscacert=%s \
