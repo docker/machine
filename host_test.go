@@ -28,7 +28,6 @@ func getTestStore() (*Store, error) {
 		os.Exit(1)
 	}
 
-	os.Setenv("MACHINE_DIR", tmpDir)
 	return NewStore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
 }
 

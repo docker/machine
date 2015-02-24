@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os/exec"
 	"testing"
@@ -49,10 +48,12 @@ func (d *FakeDriver) Remove() error {
 }
 
 func (d *FakeDriver) Start() error {
+	d.MockState = state.Running
 	return nil
 }
 
 func (d *FakeDriver) Stop() error {
+	d.MockState = state.Stopped
 	return nil
 }
 
@@ -93,12 +94,12 @@ func TestGetHosts(t *testing.T) {
 
 	store := NewStore(TestStoreDir, "", "")
 
-	hostA, hostAerr := store.Create("test-a", "none", flags)
+	_, hostAerr := store.Create("test-a", "none", flags)
 	if hostAerr != nil {
 		t.Fatal(hostAerr)
 	}
 
-	hostB, hostBerr := store.Create("test-b", "none", flags)
+	_, hostBerr := store.Create("test-b", "none", flags)
 	if hostBerr != nil {
 		t.Fatal(hostBerr)
 	}
@@ -106,24 +107,21 @@ func TestGetHosts(t *testing.T) {
 	set := flag.NewFlagSet("start", 0)
 	set.Parse([]string{"test-a", "test-b"})
 
-	c := cli.NewContext(nil, set, nil)
 	globalSet := flag.NewFlagSet("-d", 0)
 	globalSet.String("-d", "none", "driver")
 	globalSet.String("storage-path", TestStoreDir, "storage path")
 	globalSet.String("tls-ca-cert", "", "")
 	globalSet.String("tls-ca-key", "", "")
 
+	c := cli.NewContext(nil, set, globalSet)
+
 	hosts, err := getHosts(c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fmt.Println(hosts)
-	fmt.Println(hostA)
-	fmt.Println(hostB)
-
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
+	if len(hosts) != 2 {
+		t.Fatal("Expected %d hosts, got %d hosts", 2, len(hosts))
 	}
 }
 
@@ -175,6 +173,107 @@ func TestGetHostState(t *testing.T) {
 	for _, item := range items {
 		if expected[item.Name] != item.State {
 			t.Fatal("Expected state did not match for item", item)
+		}
+	}
+}
+
+func TestRunActionForeachMachine(t *testing.T) {
+	storePath, err := ioutil.TempDir("", ".docker")
+	if err != nil {
+		t.Fatal("Error creating tmp dir:", err)
+	}
+
+	// Assume a bunch of machines in randomly started or
+	// stopped states.
+	machines := []*Host{
+		{
+			Name:       "foo",
+			DriverName: "fakedriver",
+			Driver: &FakeDriver{
+				MockState: state.Running,
+			},
+			storePath: storePath,
+		},
+		{
+			Name:       "bar",
+			DriverName: "fakedriver",
+			Driver: &FakeDriver{
+				MockState: state.Stopped,
+			},
+			storePath: storePath,
+		},
+		{
+			Name: "baz",
+			// Ssh, don't tell anyone but this
+			// driver only _thinks_ it's named
+			// virtualbox...  (to test serial actions)
+			// It's actually FakeDriver!
+			DriverName: "virtualbox",
+			Driver: &FakeDriver{
+				MockState: state.Stopped,
+			},
+			storePath: storePath,
+		},
+		{
+			Name:       "spam",
+			DriverName: "virtualbox",
+			Driver: &FakeDriver{
+				MockState: state.Running,
+			},
+			storePath: storePath,
+		},
+		{
+			Name:       "eggs",
+			DriverName: "fakedriver",
+			Driver: &FakeDriver{
+				MockState: state.Stopped,
+			},
+			storePath: storePath,
+		},
+		{
+			Name:       "ham",
+			DriverName: "fakedriver",
+			Driver: &FakeDriver{
+				MockState: state.Running,
+			},
+			storePath: storePath,
+		},
+	}
+
+	runActionForeachMachine("start", machines)
+
+	expected := map[string]state.State{
+		"foo":  state.Running,
+		"bar":  state.Running,
+		"baz":  state.Running,
+		"spam": state.Running,
+		"eggs": state.Running,
+		"ham":  state.Running,
+	}
+
+	for _, machine := range machines {
+		state, _ := machine.Driver.GetState()
+		if expected[machine.Name] != state {
+			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
+		}
+	}
+
+	// OK, now let's stop them all!
+	expected = map[string]state.State{
+		"foo":  state.Stopped,
+		"bar":  state.Stopped,
+		"baz":  state.Stopped,
+		"spam": state.Stopped,
+		"eggs": state.Stopped,
+		"ham":  state.Stopped,
+	}
+
+	runActionForeachMachine("stop", machines)
+
+	for _, machine := range machines {
+		state, _ := machine.Driver.GetState()
+		if expected[machine.Name] != state {
+			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
 		}
 	}
 }
