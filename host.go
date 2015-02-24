@@ -322,16 +322,19 @@ func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKey
 		daemonOpts    string
 		daemonOptsCfg string
 		daemonCfg     string
+		swarmLabels   = []string{}
 	)
 
-	// TODO @ehazlett: template?
+	if h.SwarmHost != "" {
+		swarmLabels = append(swarmLabels, fmt.Sprintf("--label=provider=%s", h.Driver.DriverName()))
+	}
+
 	defaultDaemonOpts := fmt.Sprintf(`--tlsverify \
 --tlscacert=%s \
 --tlskey=%s \
---tlscert=%s`, caCertPath, serverKeyPath, serverCertPath)
+--tlscert=%s %s`, caCertPath, serverKeyPath, serverCertPath, strings.Join(swarmLabels, " "))
 
 	switch d.DriverName() {
-
 	case "virtualbox", "vmwarefusion", "vmwarevsphere", "hyper-v":
 		daemonOpts = fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
 		daemonOptsCfg = path.Join(d.GetDockerConfigDir(), "profile")
