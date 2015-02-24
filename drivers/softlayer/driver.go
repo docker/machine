@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	dockerConfigDir  = "/etc/docker"
-	ApiEndpoint      = "https://api.softlayer.com/rest/v3"
-	DockerInstallUrl = "https://get.docker.com"
+	dockerConfigDir = "/etc/docker"
+	ApiEndpoint     = "https://api.softlayer.com/rest/v3"
 )
 
 type Driver struct {
@@ -45,7 +44,6 @@ type deviceConfig struct {
 	Memory        int
 	Image         string
 	HourlyBilling bool
-	InstallScript string
 	LocalDisk     bool
 	PrivateNet    bool
 }
@@ -142,12 +140,6 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "OS image for machine",
 			Value:  "UBUNTU_LATEST",
 		},
-		cli.StringFlag{
-			EnvVar: "SOFTLAYER_INSTALL_SCRIPT",
-			Name:   "softlayer-install-script",
-			Usage:  "Install script to call after the machine is initialized (should install Docker)",
-			Value:  DockerInstallUrl,
-		},
 	}
 }
 
@@ -210,7 +202,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		PrivateNet:    flags.Bool("softlayer-private-net-only"),
 		LocalDisk:     flags.Bool("softlayer-local-disk"),
 		HourlyBilling: flags.Bool("softlayer-hourly-billing"),
-		InstallScript: flags.String("softlayer-install-script"),
 		Image:         "UBUNTU_LATEST",
 		Region:        flags.String("softlayer-region"),
 	}
@@ -372,7 +363,6 @@ func (d *Driver) buildHostSpec() *HostSpec {
 		Cpu:            d.deviceConfig.Cpu,
 		Memory:         d.deviceConfig.Memory,
 		Datacenter:     Datacenter{Name: d.deviceConfig.Region},
-		InstallScript:  d.deviceConfig.InstallScript,
 		Os:             d.deviceConfig.Image,
 		HourlyBilling:  d.deviceConfig.HourlyBilling,
 		PrivateNetOnly: d.deviceConfig.PrivateNet,

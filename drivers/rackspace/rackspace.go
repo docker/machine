@@ -149,7 +149,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FlavorId = flags.String("rackspace-flavor-id")
 	d.SSHUser = flags.String("rackspace-ssh-user")
 	d.SSHPort = flags.Int("rackspace-ssh-port")
-	d.EnableDockerInstall = flags.String("rackspace-docker-install") == "true"
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
