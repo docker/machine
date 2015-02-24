@@ -384,14 +384,15 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Remove() error {
-	log.WithField("MachineId", d.MachineId).Info("Deleting OpenStack instance...")
+	log.WithField("MachineId", d.MachineId).Debug("deleting instance...")
+	log.Info("Deleting OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
 	}
 	if err := d.client.DeleteInstance(d); err != nil {
 		return err
 	}
-	log.WithField("Name", d.KeyPairName).Info("Deleting Key Pair...")
+	log.WithField("Name", d.KeyPairName).Debug("deleting key pair...")
 	if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
 		return err
 	}
