@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -22,36 +21,35 @@ const (
 )
 
 type Driver struct {
-	AuthUrl             string
-	Username            string
-	Password            string
-	TenantName          string
-	TenantId            string
-	Region              string
-	EndpointType        string
-	MachineName         string
-	MachineId           string
-	FlavorName          string
-	FlavorId            string
-	ImageName           string
-	ImageId             string
-	KeyPairName         string
-	NetworkName         string
-	NetworkId           string
-	SecurityGroups      []string
-	FloatingIpPool      string
-	FloatingIpPoolId    string
-	SSHUser             string
-	SSHPort             int
-	Ip                  string
-	EnableDockerInstall bool
-	CaCertPath          string
-	PrivateKeyPath      string
-	storePath           string
-	SwarmMaster         bool
-	SwarmHost           string
-	SwarmDiscovery      string
-	client              Client
+	AuthUrl          string
+	Username         string
+	Password         string
+	TenantName       string
+	TenantId         string
+	Region           string
+	EndpointType     string
+	MachineName      string
+	MachineId        string
+	FlavorName       string
+	FlavorId         string
+	ImageName        string
+	ImageId          string
+	KeyPairName      string
+	NetworkName      string
+	NetworkId        string
+	SecurityGroups   []string
+	FloatingIpPool   string
+	FloatingIpPoolId string
+	SSHUser          string
+	SSHPort          int
+	Ip               string
+	CaCertPath       string
+	PrivateKeyPath   string
+	storePath        string
+	SwarmMaster      bool
+	SwarmHost        string
+	SwarmDiscovery   string
+	client           Client
 }
 
 type CreateFlags struct {
@@ -175,13 +173,6 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "OpenStack SSH port",
 			Value: 22,
 		},
-		// Using a StringFlag rather than a BoolFlag because
-		// the BoolFlag default value is always false
-		cli.StringFlag{
-			Name:  "openstack-docker-install",
-			Usage: "Openstack should install docker on the machine",
-			Value: "true",
-		},
 	}
 }
 
@@ -234,11 +225,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 
-	installDocker, err := strconv.ParseBool(flags.String("openstack-docker-install"))
-	if err != nil {
-		return err
-	}
-	d.EnableDockerInstall = installDocker
 	return d.checkConfig()
 }
 
@@ -347,11 +333,6 @@ func (d *Driver) Create() error {
 	}
 	if err := d.waitForSSHServer(); err != nil {
 		return err
-	}
-	if d.EnableDockerInstall {
-		if err := d.installDocker(); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -756,29 +737,6 @@ func (d *Driver) waitForInstanceToStart() error {
 		return err
 	}
 	return d.waitForSSHServer()
-}
-
-func (d *Driver) installDocker() error {
-	log.WithField("MachineId", d.MachineId).Debug("Installing docker daemon on the machine")
-
-	if err := d.sshExec([]string{
-		`apt-get install -y curl`,
-		`curl -sSL https://get.docker.com | sh`,
-	}); err != nil {
-		log.Error("The docker installation failed.")
-		log.Error(
-			"The driver assumes that your instance is running Ubuntu. If this is not the case, you should ",
-			"use the option --openstack-docker-install=false (or --{provider}-docker-install=false) when ",
-			"creating a machine, and then install and configure docker manually.",
-		)
-		log.Error(
-			`Also, you can use "machine ssh" to manually configure docker on this host.`,
-		)
-
-		// Don't return this ssh error so that host creation succeeds and "machine ssh" and "machine rm"
-		// are usable.
-	}
-	return nil
 }
 
 func (d *Driver) sshExec(commands []string) error {

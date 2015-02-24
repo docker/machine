@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -360,12 +361,46 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
+	// create the instance
 	if err := h.Driver.Create(); err != nil {
 		return err
 	}
 
+	// install docker
+	if err := h.Provision(); err != nil {
+		return err
+	}
+
+	// save to store
 	if err := h.SaveConfig(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (h *Host) Provision() error {
+	// "local" providers use b2d; no provisioning necessary
+	switch h.Driver.DriverName() {
+	case "none", "virtualbox", "vmwarefusion", "vmwarevsphere", "openstack":
+		return nil
+	}
+
+	// install docker - until cloudinit we use ubuntu everywhere so we
+	// just install it using the docker repos
+	cmd, err := h.Driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sSL https://get.docker.com | sh -; fi")
+	if err != nil {
+		return err
+	}
+
+	// HACK: the script above will output debug to stderr; we save it and
+	// then check if the command returned an error; if so, we show the debug
+
+	var buf bytes.Buffer
+	cmd.Stderr = &buf
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error installing docker: %s\n%s\n", err, string(buf.Bytes()))
 	}
 
 	return nil
