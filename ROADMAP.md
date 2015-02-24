@@ -1,22 +1,32 @@
-# Roadmap
+# Machine Roadmap
 
+These are the ideas for the roadmap.  They are not all slated for the next
+release.  You can follow progress towards the current release with the 
+[GitHub milestone](https://github.com/docker/machine/milestones/0.2.0).
 
-## Machine 1.0
+## Internal API
+ - [ ] Refactor Driver architecture to be more concise for providers
+ - [ ] Integration Test suite for drivers
+ - [ ] Refactor SSH (`ssh` -> `crypto/ssh`)
+ - [ ] Logging Unification (internal and provider logging)
 
-This will be a stable version of the current design with additional drivers and complete documentation.
+## Provisioning
+ - [ ] Cloudinit as standard provisioning method
+ - [ ] Customization of the Docker Engine options
+ - [ ] Alternate to b2d for local providers
 
-You can follow progress towards this release with the [GitHub milestone](https://github.com/docker/machine/milestones/1.0).
+## Swarm
+ - [ ] Full Swarm Integration
+   - [ ] Scale cluster (create/start/stop/remove nodes)
+ - [ ] Swarm configuration (labels, strategies)
 
-## Future
-
-There are two main areas for future development:
-
- - **Machine server:** Machine currently relies on storing configuration locally on the computer that the command-line client is run which makes it difficult to use in teams and for large deployments.
-   
-   Machines should instead be managed by a central server with a REST API. The command-line client would be a client for this server. To keep the current behaviour, and to manage local VMs, the server could run in an embedded mode inside the client.
-
- - **Swarm integration:** Machine should be able to create and manage [Swarm](https://github.com/docker/swarm) clusters. Perhaps it's even the default. Imagine this:
-
-        $ docker-machine create -d digitalocean production
-        $ docker-machine scale production=100
+## Machine Server
+ - [ ] Provide REST API for operations (?)
+ - [ ] Certificate management (?)
+   - [ ] Issue client certificates (activate/deactivate)
+   - [ ] Certificate rotation
+ - [ ] SSH key management (?)
+   - [ ] Manage keys (activate/deactivate)
+   - [ ] Key rotation
+ - [ ] Metrics (?)
 
