@@ -339,10 +339,18 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
+	s, err := d.GetState()
+	if err != nil {
 		return err
 	}
-	log.Infof("Waiting for VM to start...")
+
+	if s == state.Stopped {
+		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
+			return err
+		}
+		log.Infof("Waiting for VM to start...")
+	}
+
 	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
 }
 
