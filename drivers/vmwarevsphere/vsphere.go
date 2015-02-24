@@ -263,8 +263,8 @@ func (d *Driver) Create() error {
 
 		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.5.0-vmw/boot2docker-1.5.0-vmw.iso"
 
-		rootPath := filepath.Join(utils.GetDockerDir())
-		imgPath := filepath.Join(rootPath, "images")
+		rootPath := filepath.Join(utils.GetMachineDir())
+		imgPath := filepath.Join(rootPath, ".images")
 		commonIsoPath := filepath.Join(imgPath, B2D_ISO_NAME)
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)

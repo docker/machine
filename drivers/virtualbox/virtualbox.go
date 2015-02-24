@@ -144,11 +144,11 @@ func (d *Driver) Create() error {
 		isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
 		if err != nil {
 			log.Warnf("Unable to check for the latest release: %s", err)
-
 		}
+
 		// todo: use real constant for .docker
-		rootPath := filepath.Join(utils.GetDockerDir())
-		imgPath := filepath.Join(rootPath, "images")
+		rootPath := filepath.Join(utils.GetMachineDir())
+		imgPath := filepath.Join(rootPath, ".images")
 		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
@@ -156,22 +156,18 @@ func (d *Driver) Create() error {
 			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 				if err := os.Mkdir(imgPath, 0700); err != nil {
 					return err
-
 				}
 
 			}
 			if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
 				return err
-
 			}
-
 		}
+
 		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
 		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 			return err
-
 		}
-
 	}
 
 	log.Infof("Creating SSH key...")
