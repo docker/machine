@@ -106,27 +106,6 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
-func GenerateClientCertificate(caCertPath, privateKeyPath string) error {
-	var (
-		org  = "docker-machine"
-		bits = 2048
-	)
-
-	clientCertPath := filepath.Join(utils.GetMachineDir(), "cert.pem")
-	clientKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
-
-	if err := os.MkdirAll(utils.GetMachineDir(), 0700); err != nil {
-		return err
-	}
-
-	log.Debugf("generating client cert: %s", clientCertPath)
-	if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, privateKeyPath, org, bits); err != nil {
-		return fmt.Errorf("error generating client cert: %s", err)
-	}
-
-	return nil
-}
-
 func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string) error {
 	d := h.Driver
 
@@ -207,6 +186,22 @@ func (h *Host) ConfigureAuth() error {
 		return nil
 	}
 
+	// copy certs to client dir for docker client
+	machineDir := filepath.Join(utils.GetMachineDir(), h.Name)
+	if err := utils.CopyFile(h.CaCertPath, filepath.Join(machineDir, "ca.pem")); err != nil {
+		log.Fatalf("Error copying ca.pem to machine dir: %s", err)
+	}
+
+	clientCertPath := filepath.Join(utils.GetMachineCertDir(), "cert.pem")
+	if err := utils.CopyFile(clientCertPath, filepath.Join(machineDir, "cert.pem")); err != nil {
+		log.Fatalf("Error copying cert.pem to machine dir: %s", err)
+	}
+
+	clientKeyPath := filepath.Join(utils.GetMachineCertDir(), "key.pem")
+	if err := utils.CopyFile(clientKeyPath, filepath.Join(machineDir, "key.pem")); err != nil {
+		log.Fatalf("Error copying key.pem to machine dir: %s", err)
+	}
+
 	var (
 		ip         = ""
 		ipErr      error
@@ -236,7 +231,12 @@ func (h *Host) ConfigureAuth() error {
 	org := h.Name
 	bits := 2048
 
-	log.Debugf("generating server cert: %s", serverCertPath)
+	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s",
+		serverCertPath,
+		h.CaCertPath,
+		h.PrivateKeyPath,
+		org,
+	)
 
 	if err := utils.GenerateCert([]string{ip}, serverCertPath, serverKeyPath, h.CaCertPath, h.PrivateKeyPath, org, bits); err != nil {
 		return fmt.Errorf("error generating server cert: %s", err)
