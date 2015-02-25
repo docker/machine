@@ -26,6 +26,7 @@ import (
 
 const (
 	dockerConfigDir = "/var/lib/boot2docker"
+	isoFilename     = "boot2docker.iso"
 )
 
 type Driver struct {
@@ -129,11 +130,21 @@ func (d *Driver) Create() error {
 	}
 
 	b2dutils := utils.NewB2dUtils("", "")
+	imgPath := utils.GetMachineCacheDir()
+	isoFilename := "boot2docker.iso"
+	commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+	// just in case boot2docker.iso has been manually deleted
+	if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+		if err := os.Mkdir(imgPath, 0700); err != nil {
+			return err
+		}
+
+	}
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+		log.Infof("Downloading %s from %s...", isoFilename, isoURL)
+		if err := b2dutils.DownloadISO(commonIsoPath, isoFilename, isoURL); err != nil {
 			return err
 
 		}
@@ -146,25 +157,14 @@ func (d *Driver) Create() error {
 			log.Warnf("Unable to check for the latest release: %s", err)
 		}
 
-		// todo: use real constant for .docker
-		rootPath := filepath.Join(utils.GetMachineDir())
-		imgPath := filepath.Join(rootPath, ".images")
-		commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
-			// just in case boot2docker.iso has been manually deleted
-			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
-				if err := os.Mkdir(imgPath, 0700); err != nil {
-					return err
-				}
-
-			}
-			if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+			log.Infof("Downloading %s to %s...", isoFilename, commonIsoPath)
+			if err := b2dutils.DownloadISO(imgPath, isoFilename, isoURL); err != nil {
 				return err
 			}
 		}
 
-		isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+		isoDest := filepath.Join(d.storePath, isoFilename)
 		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 			return err
 		}

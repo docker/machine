@@ -34,6 +34,7 @@ import (
 
 type machineConfig struct {
 	machineName    string
+	machineDir     string
 	caCertPath     string
 	clientCertPath string
 	clientKeyPath  string
@@ -71,9 +72,9 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 	org := utils.GetUsername()
 	bits := 2048
 
-	if _, err := os.Stat(utils.GetMachineDir()); err != nil {
+	if _, err := os.Stat(utils.GetMachineCertDir()); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(utils.GetMachineDir(), 0700); err != nil {
+			if err := os.MkdirAll(utils.GetMachineCertDir(), 0700); err != nil {
 				log.Fatalf("Error creating machine config dir: %s", err)
 			}
 		} else {
@@ -97,9 +98,9 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 	if _, err := os.Stat(clientCertPath); os.IsNotExist(err) {
 		log.Infof("Creating client certificate: %s", clientCertPath)
 
-		if _, err := os.Stat(utils.GetMachineClientCertDir()); err != nil {
+		if _, err := os.Stat(utils.GetMachineCertDir()); err != nil {
 			if os.IsNotExist(err) {
-				if err := os.Mkdir(utils.GetMachineClientCertDir(), 0700); err != nil {
+				if err := os.Mkdir(utils.GetMachineCertDir(), 0700); err != nil {
 					log.Fatalf("Error creating machine client cert dir: %s", err)
 				}
 			} else {
@@ -114,11 +115,6 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 
 		if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
 			log.Fatalf("Error generating client certificate: %s", err)
-		}
-
-		// copy ca.pem to client cert dir for docker client
-		if err := utils.CopyFile(caCertPath, filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")); err != nil {
-			log.Fatalf("Error copying ca.pem to client cert dir: %s", err)
 		}
 	}
 
@@ -279,7 +275,7 @@ var Commands = []cli.Command{
 
 func cmdActive(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -317,7 +313,7 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("Error generating certificates: %s", err)
 	}
 
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	host, err := store.Create(name, driver, c)
 	if err != nil {
@@ -384,7 +380,7 @@ func cmdIp(c *cli.Context) {
 
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	hostList, err := store.List()
 	if err != nil {
@@ -460,7 +456,7 @@ func cmdRm(c *cli.Context) {
 
 	isError := false
 
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 	for _, host := range c.Args() {
 		if err := store.Remove(host, force); err != nil {
 			log.Errorf("Error removing machine %s: %s", host, err)
@@ -515,10 +511,10 @@ func cmdEnv(c *cli.Context) {
 	switch userShell {
 	case "fish":
 		fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\nset -x DOCKER_HOST %s\n",
-			utils.GetMachineClientCertDir(), dockerHost)
+			cfg.machineDir, dockerHost)
 	default:
 		fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
-			utils.GetMachineClientCertDir(), dockerHost)
+			cfg.machineDir, dockerHost)
 	}
 }
 
@@ -528,7 +524,7 @@ func cmdSsh(c *cli.Context) {
 		sshCmd *exec.Cmd
 	)
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -703,7 +699,7 @@ func getHosts(c *cli.Context) ([]*Host, error) {
 }
 
 func loadMachine(name string, c *cli.Context) (*Host, error) {
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	machine, err := store.Load(name)
 	if err != nil {
@@ -715,7 +711,7 @@ func loadMachine(name string, c *cli.Context) (*Host, error) {
 
 func getHost(c *cli.Context) *Host {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
 	if name == "" {
 		host, err := store.GetActive()
@@ -770,7 +766,7 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 
 func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	name := c.Args().First()
-	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 	var machine *Host
 
 	if name == "" {
@@ -790,9 +786,10 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		machine = m
 	}
 
-	caCert := filepath.Join(utils.GetMachineClientCertDir(), "ca.pem")
-	clientCert := filepath.Join(utils.GetMachineClientCertDir(), "cert.pem")
-	clientKey := filepath.Join(utils.GetMachineClientCertDir(), "key.pem")
+	machineDir := filepath.Join(utils.GetMachineDir(), machine.Name)
+	caCert := filepath.Join(machineDir, "ca.pem")
+	clientCert := filepath.Join(machineDir, "cert.pem")
+	clientKey := filepath.Join(machineDir, "key.pem")
 	machineUrl, err := machine.GetURL()
 	if err != nil {
 		if err == drivers.ErrHostIsNotRunning {
@@ -803,6 +800,7 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	}
 	return &machineConfig{
 		machineName:    name,
+		machineDir:     machineDir,
 		caCertPath:     caCert,
 		clientCertPath: clientCert,
 		clientKeyPath:  clientKey,
