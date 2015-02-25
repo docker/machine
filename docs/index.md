@@ -252,8 +252,8 @@ custombox   *        none      Running   tcp://50.134.234.20:2376
 Docker Machine can also provision [Swarm](https://github.com/docker/swarm) 
 clusters. This can be used with any driver and will be secured with TLS. 
 
-Note: please note that this is an experimental feature and the subcommands and
-options will very likely change.
+> **Note**: This is an experimental feature so the subcommands and
+> options are likely to change in future versions.
 
 First, create a Swarm token.  Optionally, you can use another discovery service.
 See the Swarm docs for details.
