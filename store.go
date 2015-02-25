@@ -60,26 +60,6 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 		return host, err
 	}
 
-	if err := host.Create(name); err != nil {
-		return host, err
-	}
-
-	if err := host.ConfigureAuth(); err != nil {
-		return host, err
-	}
-
-	if flags.Bool("swarm") {
-		log.Info("Configuring Swarm...")
-
-		discovery := flags.String("swarm-discovery")
-		master := flags.Bool("swarm-master")
-		swarmHost := flags.String("swarm-host")
-		addr := flags.String("swarm-addr")
-		if err := host.ConfigureSwarm(discovery, master, swarmHost, addr); err != nil {
-			log.Errorf("Error configuring Swarm: %s", err)
-		}
-	}
-
 	return host, nil
 }
 

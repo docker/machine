@@ -161,6 +161,11 @@ var Commands = []cli.Command{
 				Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
 				Value: "",
 			},
+			cli.IntFlag{
+				Name:  "n-instances, n",
+				Usage: "Number of instances to create - each instance's number will be appended to the name",
+				Value: 1,
+			},
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
@@ -299,7 +304,17 @@ func cmdActive(c *cli.Context) {
 	}
 }
 
+type SwarmOptions struct {
+	Discovery string
+	Master    bool
+	Host      string
+	Addr      string
+}
+
 func cmdCreate(c *cli.Context) {
+	var (
+		swarmConf *SwarmOptions
+	)
 	driver := c.String("driver")
 	name := c.Args().First()
 
@@ -314,31 +329,66 @@ func cmdCreate(c *cli.Context) {
 	}
 
 	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	machineNames := []string{}
 
-	host, err := store.Create(name, driver, c)
-	if err != nil {
-		log.Errorf("Error creating machine: %s", err)
-		log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
-		log.Fatal("Error creating machine")
+	for i := 0; i < c.Int("n-instances"); i++ {
+		var (
+			machineName string
+		)
+		if c.Int("n-instances") == 1 {
+			machineName = name
+		} else {
+			machineName = fmt.Sprintf("%s%d", name, i)
+		}
+		machineNames = append(machineNames, machineName)
+		_, err := store.Create(machineName, driver, c)
+		if err != nil {
+			log.Errorf("Error creating machine: %s", err)
+			log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
+			log.Fatal("Error creating machine")
+		}
+
+		/*
+			// Active host doesn't really make sense in this context,
+			// so I'm not sure what to do.
+			if err := store.SetActive(host); err != nil {
+				log.Fatalf("error setting active host: %v", err)
+			}
+
+			log.Infof("%q has been created and is now the active machine.", name)
+		*/
 	}
-	if err := store.SetActive(host); err != nil {
-		log.Fatalf("error setting active host: %v", err)
+
+	if c.Bool("swarm") {
+		swarmConf = &SwarmOptions{
+			Discovery: c.String("swarm-discovery"),
+			Master:    c.Bool("swarm-master"),
+			Host:      c.String("swarm-host"),
+			Addr:      c.String("swarm-addr"),
+		}
+	} else {
+		swarmConf = nil
 	}
 
-	info := ""
-	userShell := filepath.Base(os.Getenv("SHELL"))
+	/*
+		info := ""
+		userShell := filepath.Base(os.Getenv("SHELL"))
 
-	switch userShell {
-	case "fish":
-		info = fmt.Sprintf("%s env %s | source", c.App.Name, name)
-	default:
-		info = fmt.Sprintf("$(%s env %s)", c.App.Name, name)
-	}
+		switch userShell {
+		case "fish":
+			info = fmt.Sprintf("%s env %s | source", c.App.Name, name)
+		default:
+			info = fmt.Sprintf("$(%s env %s)", c.App.Name, name)
+		}
 
-	log.Infof("%q has been created and is now the active machine.", name)
+		log.Infof("%q has been created and is now the active machine.", name)
 
-	if info != "" {
-		log.Infof("To point your Docker client at it, run this in your shell: %s", info)
+		if info != "" {
+			log.Infof("To point your Docker client at it, run this in your shell: %s", info)
+		}
+	*/
+	if err := runActionOnMachineNames("create", machineNames, store, swarmConf); err != nil {
+		log.Fatalf("Error in --n-instances create")
 	}
 }
 
@@ -570,15 +620,42 @@ func cmdSsh(c *cli.Context) {
 	}
 }
 
+func actualCreateFunc(machine *Host, swarmConf *SwarmOptions) func() error {
+	return func() error {
+		if err := machine.Create(machine.Name); err != nil {
+			return err
+		}
+
+		if err := machine.ConfigureAuth(); err != nil {
+			return err
+		}
+
+		if swarmConf != nil {
+			log.Info("Configuring Swarm...")
+
+			discovery := swarmConf.Discovery
+			master := swarmConf.Master
+			swarmHost := swarmConf.Host
+			addr := swarmConf.Addr
+			if err := machine.ConfigureSwarm(discovery, master, swarmHost, addr); err != nil {
+				return fmt.Errorf("Error configuring Swarm: %s", err)
+			}
+		}
+
+		return nil
+	}
+}
+
 // machineCommand maps the command name to the corresponding machine command.
 // We run commands concurrently and communicate back an error if there was one.
-func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
+func machineCommand(actionName string, machine *Host, errorChan chan<- error, swarmConf *SwarmOptions) {
 	commands := map[string](func() error){
 		"start":   machine.Driver.Start,
 		"stop":    machine.Driver.Stop,
 		"restart": machine.Driver.Restart,
 		"kill":    machine.Driver.Kill,
 		"upgrade": machine.Driver.Upgrade,
+		"create":  actualCreateFunc(machine, swarmConf),
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, machine.Name)
@@ -592,7 +669,7 @@ func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
 }
 
 // runActionForeachMachine will run the command across multiple machines
-func runActionForeachMachine(actionName string, machines []*Host) {
+func runActionForeachMachine(actionName string, machines []*Host, swarmConf *SwarmOptions) {
 	var (
 		numConcurrentActions = 0
 		serialMachines       = []*Host{}
@@ -609,7 +686,7 @@ func runActionForeachMachine(actionName string, machines []*Host) {
 			serialMachines = append(serialMachines, machine)
 		default:
 			numConcurrentActions++
-			go machineCommand(actionName, machine, errorChan)
+			go machineCommand(actionName, machine, errorChan, swarmConf)
 		}
 	}
 
@@ -618,7 +695,7 @@ func runActionForeachMachine(actionName string, machines []*Host) {
 	// these run one at a time.
 	for _, machine := range serialMachines {
 		serialChan := make(chan error)
-		go machineCommand(actionName, machine, serialChan)
+		go machineCommand(actionName, machine, serialChan, swarmConf)
 		if err := <-serialChan; err != nil {
 			log.Errorln(err)
 		}
@@ -637,15 +714,14 @@ func runActionForeachMachine(actionName string, machines []*Host) {
 	close(errorChan)
 }
 
-func runActionWithContext(actionName string, c *cli.Context) error {
-	machines, err := getHosts(c)
+func runActionOnMachineNames(actionName string, machineNames []string, store *Store, swarmConf *SwarmOptions) error {
+	machines, err := getHosts(machineNames, store)
 	if err != nil {
 		return err
 	}
 
 	// No args specified, so use active.
 	if len(machines) == 0 {
-		store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 		activeHost, err := store.GetActive()
 		if err != nil {
 			log.Fatalf("Unable to get active host: %v", err)
@@ -653,37 +729,41 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 		machines = []*Host{activeHost}
 	}
 
-	runActionForeachMachine(actionName, machines)
-
+	runActionForeachMachine(actionName, machines, swarmConf)
 	return nil
 }
 
 func cmdStart(c *cli.Context) {
-	if err := runActionWithContext("start", c); err != nil {
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	if err := runActionOnMachineNames("start", c.Args(), store, nil); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdStop(c *cli.Context) {
-	if err := runActionWithContext("stop", c); err != nil {
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	if err := runActionOnMachineNames("stop", c.Args(), store, nil); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdRestart(c *cli.Context) {
-	if err := runActionWithContext("restart", c); err != nil {
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	if err := runActionOnMachineNames("restart", c.Args(), store, nil); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdKill(c *cli.Context) {
-	if err := runActionWithContext("kill", c); err != nil {
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	if err := runActionOnMachineNames("kill", c.Args(), store, nil); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdUpgrade(c *cli.Context) {
-	if err := runActionWithContext("upgrade", c); err != nil {
+	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	if err := runActionOnMachineNames("upgrade", c.Args(), store, nil); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -707,10 +787,10 @@ func cmdNotFound(c *cli.Context, command string) {
 	)
 }
 
-func getHosts(c *cli.Context) ([]*Host, error) {
+func getHosts(hostNames []string, store *Store) ([]*Host, error) {
 	machines := []*Host{}
-	for _, n := range c.Args() {
-		machine, err := loadMachine(n, c)
+	for _, n := range hostNames {
+		machine, err := loadMachine(n, store)
 		if err != nil {
 			return nil, err
 		}
@@ -721,9 +801,7 @@ func getHosts(c *cli.Context) ([]*Host, error) {
 	return machines, nil
 }
 
-func loadMachine(name string, c *cli.Context) (*Host, error) {
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
-
+func loadMachine(name string, store *Store) (*Host, error) {
 	machine, err := store.Load(name)
 	if err != nil {
 		return nil, err
