@@ -668,26 +668,32 @@ The SoftLayer driver will use `UBUNTU_LATEST` as the image type by default.
 
 
 #### Microsoft Azure
+
 Create machines on [Microsoft Azure](http://azure.microsoft.com/).
 
-You need to create a subscription with a cert. Run these commands:
+You need to create a subscription with a cert. Run these commands and answer the questions:
 
     $ openssl req -x509 -nodes -days 365 -newkey rsa:1024 -keyout mycert.pem -out mycert.pem
     $ openssl pkcs12 -export -out mycert.pfx -in mycert.pem -name "My Certificate"
     $ openssl x509 -inform pem -in mycert.pem -outform der -out mycert.cer
 
-Go to the Azure portal, go to the "Settings" page, then "Manage Certificates" and upload `mycert.cer`.
+Go to the Azure portal, go to the "Settings" page (you can find the link at the bottom of the
+left sidebar - you need to scroll), then "Management Certificates" and upload `mycert.cer`.
 
 Grab your subscription ID from the portal, then run `docker-machine create` with these details:
 
-    $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem"
+    $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem" A-VERY-UNIQUE-NAME
 
 Options:
 
- - `--azure-subscription-id`: Your Azure subscription ID.
+ - `--azure-subscription-id`: Your Azure subscription ID (A GUID like `d255d8d7-5af0-4f5c-8a3e-1545044b861e`).
  - `--azure-subscription-cert`: Your Azure subscription cert.
 
-The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB` image by default. Note, this image is not available in the Chinese regions. In China you should specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
+The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
+image by default. Note, this image is not available in the Chinese regions. In China you should
+ specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`.
+
+You may need to `machine ssh` in to the virtual machine and reboot to ensure that the OS is updated.
 
 #### Openstack
 Create machines on [Openstack](http://www.openstack.org/software/)
