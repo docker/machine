@@ -6,7 +6,10 @@ import (
 	"testing"
 
 	_ "github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/utils"
+)
+
+const (
+	TestStoreDir = ".store-test"
 )
 
 type DriverOptionsMock struct {
@@ -26,7 +29,7 @@ func (d DriverOptionsMock) Bool(key string) bool {
 }
 
 func clearHosts() error {
-	return os.RemoveAll(utils.GetMachineDir())
+	return os.RemoveAll(TestStoreDir)
 }
 
 func getDefaultTestDriverFlags() *DriverOptionsMock {
@@ -49,7 +52,7 @@ func TestStoreCreate(t *testing.T) {
 
 	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 
 	host, err := store.Create("test", "none", flags)
 	if err != nil {
@@ -58,7 +61,7 @@ func TestStoreCreate(t *testing.T) {
 	if host.Name != "test" {
 		t.Fatal("Host name is incorrect")
 	}
-	path := filepath.Join(utils.GetMachineDir(), "test")
+	path := filepath.Join(TestStoreDir, "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -71,12 +74,12 @@ func TestStoreRemove(t *testing.T) {
 
 	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(utils.GetMachineDir(), "test")
+	path := filepath.Join(TestStoreDir, "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -96,7 +99,7 @@ func TestStoreList(t *testing.T) {
 
 	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
@@ -117,7 +120,7 @@ func TestStoreExists(t *testing.T) {
 
 	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	exists, err := store.Exists("test")
 	if exists {
 		t.Fatal("Exists returned true when it should have been false")
@@ -144,13 +147,13 @@ func TestStoreLoad(t *testing.T) {
 	flags := getDefaultTestDriverFlags()
 	flags.Data["url"] = expectedURL
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	store = NewStore("", "", "")
+	store = NewStore(TestStoreDir, "", "")
 	host, err := store.Load("test")
 	if host.Name != "test" {
 		t.Fatal("Host name is incorrect")
@@ -171,7 +174,7 @@ func TestStoreGetSetActive(t *testing.T) {
 
 	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 
 	// No hosts set
 	host, err := store.GetActive()
