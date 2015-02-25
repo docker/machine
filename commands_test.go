@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"testing"
 
@@ -89,19 +90,27 @@ func TestGetHosts(t *testing.T) {
 	if err := clearHosts(); err != nil {
 		t.Fatal(err)
 	}
+	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
 
 	flags := getDefaultTestDriverFlags()
 
-	store := NewStore(TestStoreDir, "", "")
+	store := NewStore(TestMachineDir, "", "")
+	var err error
 
-	_, hostAerr := store.Create("test-a", "none", flags)
-	if hostAerr != nil {
-		t.Fatal(hostAerr)
+	_, err = store.Create("test-a", "none", flags)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	_, hostBerr := store.Create("test-b", "none", flags)
-	if hostBerr != nil {
-		t.Fatal(hostBerr)
+	_, err = store.Create("test-b", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	storeHosts, err := store.List()
+
+	if len(storeHosts) != 2 {
+		t.Fatalf("List returned %d items", len(storeHosts))
 	}
 
 	set := flag.NewFlagSet("start", 0)
@@ -109,7 +118,7 @@ func TestGetHosts(t *testing.T) {
 
 	globalSet := flag.NewFlagSet("-d", 0)
 	globalSet.String("-d", "none", "driver")
-	globalSet.String("storage-path", TestStoreDir, "storage path")
+	globalSet.String("storage-path", store.Path, "storage path")
 	globalSet.String("tls-ca-cert", "", "")
 	globalSet.String("tls-ca-key", "", "")
 
@@ -123,6 +132,8 @@ func TestGetHosts(t *testing.T) {
 	if len(hosts) != 2 {
 		t.Fatal("Expected %d hosts, got %d hosts", 2, len(hosts))
 	}
+
+	os.Setenv("MACHINE_STORAGE_PATH", "")
 }
 
 func TestGetHostState(t *testing.T) {
@@ -131,7 +142,12 @@ func TestGetHostState(t *testing.T) {
 		t.Fatal("Error creating tmp dir:", err)
 	}
 	hostListItems := make(chan hostListItem)
-	store := NewStore(storePath, "", "")
+
+	store, err := getTestStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	hosts := []Host{
 		{
 			Name:       "foo",

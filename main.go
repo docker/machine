@@ -35,31 +35,32 @@ func main() {
 		cli.StringFlag{
 			EnvVar: "MACHINE_STORAGE_PATH",
 			Name:   "storage-path",
+			Value:  utils.GetMachineRoot(),
 			Usage:  "Configures storage path",
 		},
 		cli.StringFlag{
 			EnvVar: "MACHINE_TLS_CA_CERT",
 			Name:   "tls-ca-cert",
 			Usage:  "CA to verify remotes against",
-			Value:  filepath.Join(utils.GetMachineDir(), "ca.pem"),
+			Value:  filepath.Join(utils.GetMachineCertDir(), "ca.pem"),
 		},
 		cli.StringFlag{
 			EnvVar: "MACHINE_TLS_CA_KEY",
 			Name:   "tls-ca-key",
 			Usage:  "Private key to generate certificates",
-			Value:  filepath.Join(utils.GetMachineDir(), "key.pem"),
+			Value:  filepath.Join(utils.GetMachineCertDir(), "ca-key.pem"),
 		},
 		cli.StringFlag{
 			EnvVar: "MACHINE_TLS_CLIENT_CERT",
 			Name:   "tls-client-cert",
 			Usage:  "Client cert to use for TLS",
-			Value:  filepath.Join(utils.GetMachineClientCertDir(), "cert.pem"),
+			Value:  filepath.Join(utils.GetMachineCertDir(), "cert.pem"),
 		},
 		cli.StringFlag{
 			EnvVar: "MACHINE_TLS_CLIENT_KEY",
 			Name:   "tls-client-key",
 			Usage:  "Private key used in client TLS auth",
-			Value:  filepath.Join(utils.GetMachineClientCertDir(), "key.pem"),
+			Value:  filepath.Join(utils.GetMachineCertDir(), "key.pem"),
 		},
 	}
 
