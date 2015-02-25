@@ -12,6 +12,10 @@ const (
 	TestStoreDir = ".store-test"
 )
 
+var (
+	TestMachineDir = filepath.Join(TestStoreDir, "machine", "machines")
+)
+
 type DriverOptionsMock struct {
 	Data map[string]interface{}
 }
@@ -174,7 +178,11 @@ func TestStoreGetSetActive(t *testing.T) {
 
 	flags := getDefaultTestDriverFlags()
 
-	store := NewStore(TestStoreDir, "", "")
+	//store := NewStore(TestStoreDir, "", "")
+	store, err := getTestStore()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// No hosts set
 	host, err := store.GetActive()

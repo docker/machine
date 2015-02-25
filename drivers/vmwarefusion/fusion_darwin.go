@@ -149,10 +149,20 @@ func (d *Driver) Create() error {
 
 	b2dutils := utils.NewB2dUtils("", "")
 
+	imgPath := utils.GetMachineCacheDir()
+	commonIsoPath := filepath.Join(imgPath, isoFilename)
+	// just in case boot2docker.iso has been manually deleted
+	if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+		if err := os.Mkdir(imgPath, 0700); err != nil {
+			return err
+		}
+
+	}
+
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
+		if err := b2dutils.DownloadISO(commonIsoPath, isoFilename, isoURL); err != nil {
 			return err
 		}
 
@@ -168,9 +178,6 @@ func (d *Driver) Create() error {
 
 		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.5.0-vmw/boot2docker-1.5.0-vmw.iso"
 
-		rootPath := filepath.Join(utils.GetMachineDir())
-		imgPath := filepath.Join(rootPath, ".images")
-		commonIsoPath := filepath.Join(imgPath, isoFilename)
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
 			// just in case boot2docker.iso has been manually deleted

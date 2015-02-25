@@ -15,23 +15,31 @@ func GetHomeDir() string {
 }
 
 func GetBaseDir() string {
-	baseDir := os.Getenv("MACHINE_DIR")
+	baseDir := os.Getenv("MACHINE_STORAGE_PATH")
 	if baseDir == "" {
-		baseDir = GetHomeDir()
+		baseDir = filepath.Join(GetHomeDir(), ".docker")
 	}
 	return baseDir
 }
 
 func GetDockerDir() string {
-	return filepath.Join(GetBaseDir(), ".docker")
+	return filepath.Join(GetHomeDir(), ".docker")
+}
+
+func GetMachineRoot() string {
+	return filepath.Join(GetBaseDir(), "machine")
 }
 
 func GetMachineDir() string {
-	return filepath.Join(GetDockerDir(), "machines")
+	return filepath.Join(GetMachineRoot(), "machines")
 }
 
-func GetMachineClientCertDir() string {
-	return filepath.Join(GetMachineDir(), ".client")
+func GetMachineCertDir() string {
+	return filepath.Join(GetMachineRoot(), "certs")
+}
+
+func GetMachineCacheDir() string {
+	return filepath.Join(GetMachineRoot(), "cache")
 }
 
 func GetUsername() string {

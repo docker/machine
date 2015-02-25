@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
 	_ "github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/utils"
 )
 
 const (
@@ -27,6 +25,7 @@ func getTestStore() (*Store, error) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	os.Setenv("MACHINE_STORAGE_PATH", tmpDir)
 
 	return NewStore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
 }
@@ -115,37 +114,6 @@ func TestValidateHostnameInvalid(t *testing.T) {
 		if err == nil {
 			t.Fatal("No error returned")
 		}
-	}
-}
-
-func TestGenerateClientCertificate(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "machine-test-")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	os.Setenv("MACHINE_DIR", tmpDir)
-
-	caCertPath := filepath.Join(tmpDir, "ca.pem")
-	caKeyPath := filepath.Join(tmpDir, "key.pem")
-	testOrg := "test-org"
-	bits := 2048
-	if err := utils.GenerateCACertificate(caCertPath, caKeyPath, testOrg, bits); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := GenerateClientCertificate(caCertPath, caKeyPath); err != nil {
-		t.Fatal(err)
-	}
-
-	clientCertPath := filepath.Join(utils.GetMachineDir(), "cert.pem")
-	clientKeyPath := filepath.Join(utils.GetMachineDir(), "key.pem")
-	if _, err := os.Stat(clientCertPath); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(clientKeyPath); err != nil {
-		t.Fatal(err)
 	}
 }
 

@@ -15,44 +15,34 @@ func TestGetBaseDir(t *testing.T) {
 	homeDir := GetHomeDir()
 	baseDir := GetBaseDir()
 
-	if strings.Index(homeDir, baseDir) != 0 {
+	if strings.Index(baseDir, homeDir) != 0 {
 		t.Fatalf("expected base dir with prefix %s; received %s", homeDir, baseDir)
 	}
 }
 
 func TestGetCustomBaseDir(t *testing.T) {
 	root := "/tmp"
-	os.Setenv("MACHINE_DIR", root)
+	os.Setenv("MACHINE_STORAGE_PATH", root)
 	baseDir := GetBaseDir()
 
-	if strings.Index(root, baseDir) != 0 {
+	if strings.Index(baseDir, root) != 0 {
 		t.Fatalf("expected base dir with prefix %s; received %s", root, baseDir)
 	}
-	os.Setenv("MACHINE_DIR", "")
+	os.Setenv("MACHINE_STORAGE_PATH", "")
 }
 
 func TestGetDockerDir(t *testing.T) {
-	root := "/tmp"
-	os.Setenv("MACHINE_DIR", root)
-	dockerDir := GetDockerDir()
+	homeDir := GetHomeDir()
+	baseDir := GetBaseDir()
 
-	if strings.Index(dockerDir, root) != 0 {
-		t.Fatalf("expected docker dir with prefix %s; received %s", root, dockerDir)
+	if strings.Index(baseDir, homeDir) != 0 {
+		t.Fatalf("expected base dir with prefix %s; received %s", homeDir, baseDir)
 	}
-
-	path, filename := path.Split(dockerDir)
-	if strings.Index(path, root) != 0 {
-		t.Fatalf("expected base path of %s; received %s", root, path)
-	}
-	if filename != ".docker" {
-		t.Fatalf("expected docker dir \".docker\"; received %s", filename)
-	}
-	os.Setenv("MACHINE_DIR", "")
 }
 
 func TestGetMachineDir(t *testing.T) {
 	root := "/tmp"
-	os.Setenv("MACHINE_DIR", root)
+	os.Setenv("MACHINE_STORAGE_PATH", root)
 	machineDir := GetMachineDir()
 
 	if strings.Index(machineDir, root) != 0 {
@@ -66,13 +56,13 @@ func TestGetMachineDir(t *testing.T) {
 	if filename != "machines" {
 		t.Fatalf("expected machine dir \"machines\"; received %s", filename)
 	}
-	os.Setenv("MACHINE_DIR", "")
+	os.Setenv("MACHINE_STORAGE_PATH", "")
 }
 
-func TestGetMachineClientCertDir(t *testing.T) {
+func TestGetMachineCertDir(t *testing.T) {
 	root := "/tmp"
-	os.Setenv("MACHINE_DIR", root)
-	clientDir := GetMachineClientCertDir()
+	os.Setenv("MACHINE_STORAGE_PATH", root)
+	clientDir := GetMachineCertDir()
 
 	if strings.Index(clientDir, root) != 0 {
 		t.Fatalf("expected machine client cert dir with prefix %s; received %s", root, clientDir)
@@ -82,10 +72,10 @@ func TestGetMachineClientCertDir(t *testing.T) {
 	if strings.Index(path, root) != 0 {
 		t.Fatalf("expected base path of %s; received %s", root, path)
 	}
-	if filename != ".client" {
-		t.Fatalf("expected machine client dir \".client\"; received %s", filename)
+	if filename != "certs" {
+		t.Fatalf("expected machine client dir \"certs\"; received %s", filename)
 	}
-	os.Setenv("MACHINE_DIR", "")
+	os.Setenv("MACHINE_STORAGE_PATH", "")
 }
 
 func TestCopyFile(t *testing.T) {
