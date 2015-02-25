@@ -277,9 +277,6 @@ $ docker run swarm create
 ```
 Once you have the token, you can create the cluster.
 
-
-Once you have the token, you can create the cluster.
-
 ### Swarm Master
 
 Create the Swarm master:
