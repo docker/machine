@@ -771,8 +771,12 @@ variable and CLI option are provided the CLI option takes the precedence.
 
 The Rackspace driver will use `598a4282-f14b-4e50-af4c-b3e52749d9f9` (Ubuntu 14.04 LTS) by default.
 
-#### VirtualBox
-Creates machines locally on [VirtualBox](https://www.virtualbox.org/). Requires VirtualBox to be installed.
+#### Oracle VirtualBox
+
+Create machines locally using [VirtualBox](https://www.virtualbox.org/).
+This driver requires VirtualBox to be installed on your host.
+
+    $ docker-machine create --driver=virtualbox vbox-test
 
 Options:
 
