@@ -21,12 +21,12 @@ Docker Machine is supported on Windows, OSX, and Linux.  To install Docker
 Machine, download the appropriate binary for your OS and architecture to the
 correct place in your `PATH`:
 
-- [Windows - x86_64]()
-- [OSX - x86_64]()
-- [Linux - x86_64]()
-- [Windows - i386]()
-- [OSX - i386]()
-- [Linux - i386]()
+- [Windows - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-amd64.exe)
+- [OSX - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-amd64)
+- [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-amd64)
+- [Windows - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-386.exe)
+- [OSX - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-386)
+- [Linux - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-386)
 
 Now you should be able to check the version with `docker-machine -v`:
 
