@@ -277,9 +277,6 @@ $ docker run swarm create
 ```
 Once you have the token, you can create the cluster.
 
-
-Once you have the token, you can create the cluster.
-
 ### Swarm Master
 
 Create the Swarm master:
@@ -616,14 +613,20 @@ By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 	|us-gov-west-1  |ami-cf5630ec|
 
 #### Digital Ocean
-Creates machines on [Digital Ocean](https://www.digitalocean.com/). You need to create a personal access token under "Apps & API" in the Digital Ocean Control Panel and pass that to `docker-machine create` with the `--digitalocean-access-token` option.
+
+Create Docker machines on [Digital Ocean](https://www.digitalocean.com/).
+
+You need to create a personal access token under "Apps & API" in the Digital Ocean
+Control Panel and pass that to `docker-machine create` with the `--digitalocean-access-token` option.
+
+    $ docker-machine create --driver digitalocean --digitalocean-access-token=aa9399a2175a93b17b1c86c807e08d3fc4b79876545432a629602f61cf6ccd6b test-this
 
 Options:
 
  - `--digitalocean-access-token`: Your personal access token for the Digital Ocean API.
  - `--digitalocean-image`: The name of the Digital Ocean image to use. Default: `docker`
- - `--digitalocean-region`: The region to create the droplet in. Default: `nyc3`
- - `--digitalocean-size`: The size of the Digital Ocean driver. Default: `512mb`
+ - `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list. Default: `nyc3`
+ - `--digitalocean-size`: The size of the Digital Ocean driver (larger than default options are of the form `2gb`). Default: `512mb`
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
@@ -668,26 +671,32 @@ The SoftLayer driver will use `UBUNTU_LATEST` as the image type by default.
 
 
 #### Microsoft Azure
+
 Create machines on [Microsoft Azure](http://azure.microsoft.com/).
 
-You need to create a subscription with a cert. Run these commands:
+You need to create a subscription with a cert. Run these commands and answer the questions:
 
     $ openssl req -x509 -nodes -days 365 -newkey rsa:1024 -keyout mycert.pem -out mycert.pem
     $ openssl pkcs12 -export -out mycert.pfx -in mycert.pem -name "My Certificate"
     $ openssl x509 -inform pem -in mycert.pem -outform der -out mycert.cer
 
-Go to the Azure portal, go to the "Settings" page, then "Manage Certificates" and upload `mycert.cer`.
+Go to the Azure portal, go to the "Settings" page (you can find the link at the bottom of the
+left sidebar - you need to scroll), then "Management Certificates" and upload `mycert.cer`.
 
 Grab your subscription ID from the portal, then run `docker-machine create` with these details:
 
-    $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem"
+    $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem" A-VERY-UNIQUE-NAME
 
 Options:
 
- - `--azure-subscription-id`: Your Azure subscription ID.
+ - `--azure-subscription-id`: Your Azure subscription ID (A GUID like `d255d8d7-5af0-4f5c-8a3e-1545044b861e`).
  - `--azure-subscription-cert`: Your Azure subscription cert.
 
-The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB` image by default. Note, this image is not available in the Chinese regions. In China you should specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
+The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
+image by default. Note, this image is not available in the Chinese regions. In China you should
+ specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`.
+
+You may need to `machine ssh` in to the virtual machine and reboot to ensure that the OS is updated.
 
 #### Openstack
 Create machines on [Openstack](http://www.openstack.org/software/)
@@ -759,8 +768,12 @@ variable and CLI option are provided the CLI option takes the precedence.
 
 The Rackspace driver will use `598a4282-f14b-4e50-af4c-b3e52749d9f9` (Ubuntu 14.04 LTS) by default.
 
-#### VirtualBox
-Creates machines locally on [VirtualBox](https://www.virtualbox.org/). Requires VirtualBox to be installed.
+#### Oracle VirtualBox
+
+Create machines locally using [VirtualBox](https://www.virtualbox.org/).
+This driver requires VirtualBox to be installed on your host.
+
+    $ docker-machine create --driver=virtualbox vbox-test
 
 Options:
 
