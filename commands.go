@@ -197,7 +197,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "kill",
 		Usage:       "Kill a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdKill,
 	},
 	{
@@ -214,7 +214,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "restart",
 		Usage:       "Restart a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdRestart,
 	},
 	{
@@ -226,7 +226,7 @@ var Commands = []cli.Command{
 		},
 		Name:        "rm",
 		Usage:       "Remove a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdRm,
 	},
 	{
@@ -254,19 +254,19 @@ var Commands = []cli.Command{
 	{
 		Name:        "start",
 		Usage:       "Start a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdStart,
 	},
 	{
 		Name:        "stop",
 		Usage:       "Stop a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdStop,
 	},
 	{
 		Name:        "upgrade",
 		Usage:       "Upgrade a machine to the latest version of Docker",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdUpgrade,
 	},
 	{
@@ -382,12 +382,6 @@ func cmdIp(c *cli.Context) {
 	fmt.Println(ip)
 }
 
-func cmdKill(c *cli.Context) {
-	if err := getHost(c).Driver.Kill(); err != nil {
-		log.Fatal(err)
-	}
-}
-
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
@@ -454,12 +448,6 @@ func cmdLs(c *cli.Context) {
 	}
 
 	w.Flush()
-}
-
-func cmdRestart(c *cli.Context) {
-	if err := getHost(c).Driver.Restart(); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func cmdRm(c *cli.Context) {
@@ -573,20 +561,110 @@ func cmdSsh(c *cli.Context) {
 	}
 }
 
+// machineCommand maps the command name to the corresponding machine command.
+// We run commands concurrently and communicate back an error if there was one.
+func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
+	commands := map[string](func() error){
+		"start":   machine.Driver.Start,
+		"stop":    machine.Driver.Stop,
+		"restart": machine.Driver.Restart,
+		"kill":    machine.Driver.Kill,
+		"upgrade": machine.Driver.Upgrade,
+	}
+
+	log.Debugf("command=%s machine=%s", actionName, machine.Name)
+
+	if err := commands[actionName](); err != nil {
+		errorChan <- err
+		return
+	}
+
+	errorChan <- nil
+}
+
+// runActionForeachMachine will run the command across multiple machines
+func runActionForeachMachine(actionName string, machines []*Host) {
+	var (
+		numConcurrentActions = 0
+		serialMachines       = []*Host{}
+		errorChan            = make(chan error)
+	)
+
+	for _, machine := range machines {
+		// Virtualbox is temperamental about doing things concurrently,
+		// so we schedule the actions in a "queue" to be executed serially
+		// after the concurrent actions are scheduled.
+		switch machine.DriverName {
+		case "virtualbox":
+			machine := machine
+			serialMachines = append(serialMachines, machine)
+		default:
+			numConcurrentActions++
+			go machineCommand(actionName, machine, errorChan)
+		}
+	}
+
+	// While the concurrent actions are running,
+	// do the serial actions.  As the name implies,
+	// these run one at a time.
+	for _, machine := range serialMachines {
+		serialChan := make(chan error)
+		go machineCommand(actionName, machine, serialChan)
+		if err := <-serialChan; err != nil {
+			log.Errorln(err)
+		}
+		close(serialChan)
+	}
+
+	// TODO: We should probably only do 5-10 of these
+	// at a time, since otherwise cloud providers might
+	// rate limit us.
+	for i := 0; i < numConcurrentActions; i++ {
+		if err := <-errorChan; err != nil {
+			log.Errorln(err)
+		}
+	}
+
+	close(errorChan)
+}
+
+func runActionWithContext(actionName string, c *cli.Context) error {
+	machines, err := getHosts(c)
+	if err != nil {
+		return err
+	}
+
+	runActionForeachMachine(actionName, machines)
+
+	return nil
+}
+
 func cmdStart(c *cli.Context) {
-	if err := getHost(c).Start(); err != nil {
+	if err := runActionWithContext("start", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdStop(c *cli.Context) {
-	if err := getHost(c).Stop(); err != nil {
+	if err := runActionWithContext("stop", c); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdRestart(c *cli.Context) {
+	if err := runActionWithContext("restart", c); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdKill(c *cli.Context) {
+	if err := runActionWithContext("kill", c); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmdUpgrade(c *cli.Context) {
-	if err := getHost(c).Upgrade(); err != nil {
+	if err := runActionWithContext("upgrade", c); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -608,6 +686,31 @@ func cmdNotFound(c *cli.Context, command string) {
 		c.App.Name,
 		c.App.Name,
 	)
+}
+
+func getHosts(c *cli.Context) ([]*Host, error) {
+	machines := []*Host{}
+	for _, n := range c.Args() {
+		machine, err := loadMachine(n, c)
+		if err != nil {
+			return nil, err
+		}
+
+		machines = append(machines, machine)
+	}
+
+	return machines, nil
+}
+
+func loadMachine(name string, c *cli.Context) (*Host, error) {
+	store := NewStore(c.GlobalString("storage-path"), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+
+	machine, err := store.Load(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return machine, nil
 }
 
 func getHost(c *cli.Context) *Host {
