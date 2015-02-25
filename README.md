@@ -362,6 +362,17 @@ Options:
  - `--hyper-v-memory`: Size of memory for the host in MB. Defaults to `1024`. The machine is setup to use dynamic memory.
  - `--hyper-v-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
 
+### Vultr
+
+Creates machines on [Vultr](https://www.vultr.com/). You need to create an API key under "Settings" in the [Vultr control panel](https://my.vultr.com/settings/) and pass that to `docker-machine create` with the `--vultr-api-key` option.
+
+Options:
+
+ - `--vultr-api-key`: Your API key for the Vultr API.
+ - `--vultr-os-id`: Operating system ID (OSID) to use. Default: `160` (Ubuntu 14.04 x64)
+ - `--vultr-region-id`: ID of the region (DCID) to create the machine in. Default: `1` (New Jersey)
+ - `--vultr-plan-id`: Plan ID (VPSPLANID) to use. Default: `29` (768 MB RAM, 15 GB SSD, 1.00 TB BW)
+
 ## Running on Windows
 Machine needs some helper applications to be installed (`ssh`, etc).  The easiest way to get started on Windows
 is to install [msysGit](https://msysgit.github.io/) and [OpenSSL on Windows](http://slproweb.com/products/Win32OpenSSL.html).
