@@ -217,7 +217,7 @@ func (h *Host) ConfigureAuth() error {
 		if ip != "" {
 			break
 		}
-		log.Debug("waiting for ip")
+		log.Debugf("waiting for ip: %s", ipErr)
 		time.Sleep(5 * time.Second)
 	}
 
