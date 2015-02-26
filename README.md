@@ -128,11 +128,13 @@ BATS (use that link).  Then run `./script/build` to generate the binary.  Once
 you have the binary, you can run test against a specified driver:
 
 ```
-$ DRIVER=virtualbox bats test/driver.bats
+$ bats test/driver-virtualbox.bats
  ✓ virtualbox: machine should not exist
+ ✓ virtualbox: VM should not exist
  ✓ virtualbox: create
  ✓ virtualbox: active
  ✓ virtualbox: ls
+ ✓ virtualbox: run busybox container 
  ✓ virtualbox: url
  ✓ virtualbox: ip
  ✓ virtualbox: ssh
@@ -144,6 +146,7 @@ $ DRIVER=virtualbox bats test/driver.bats
  ✓ virtualbox: machine should show running after restart
  ✓ virtualbox: remove
  ✓ virtualbox: machine should not exist
+ ✓ virtualbox: VM should not exist
 
 15 tests, 0 failures
 ```

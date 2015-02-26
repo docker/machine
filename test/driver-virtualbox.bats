@@ -16,6 +16,11 @@ function setup() {
   [ "$status" -eq 1  ]
 }
 
+@test "$DRIVER: VM should not exist" {
+  run VBoxManage showvminfo $NAME
+  [ "$status" -eq 1  ]
+}
+
 @test "$DRIVER: create" {
   run machine create -d $DRIVER $NAME
   [ "$status" -eq 0  ]
@@ -106,6 +111,11 @@ function setup() {
 
 @test "$DRIVER: machine should not exist" {
   run machine active $NAME
+  [ "$status" -eq 1  ]
+}
+
+@test "$DRIVER: VM should not exist" {
+  run VBoxManage showvminfo $NAME
   [ "$status" -eq 1  ]
 }
 
