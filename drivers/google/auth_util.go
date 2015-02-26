@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,13 +24,13 @@ const (
 	RedirectURI  = "urn:ietf:wg:oauth:2.0:oob"
 )
 
-func newGCEService(storePath string) (*raw.Service, error) {
-	client := newOauthClient(storePath)
+func newGCEService(storePath, authTokenPath string) (*raw.Service, error) {
+	client := newOauthClient(storePath, authTokenPath)
 	service, err := raw.New(client)
 	return service, err
 }
 
-func newOauthClient(storePath string) *http.Client {
+func newOauthClient(storePath, authTokenPath string) *http.Client {
 	config := &oauth.Config{
 		ClientId:     ClientId,
 		ClientSecret: ClientSecret,
@@ -37,7 +38,8 @@ func newOauthClient(storePath string) *http.Client {
 		AuthURL:      AuthURL,
 		TokenURL:     TokenURL,
 	}
-	token := token(storePath, config)
+
+	token := token(storePath, authTokenPath, config)
 	t := oauth.Transport{
 		Token:     token,
 		Config:    config,
@@ -46,8 +48,13 @@ func newOauthClient(storePath string) *http.Client {
 	return t.Client()
 }
 
-func token(storePath string, config *oauth.Config) *oauth.Token {
-	token, err := tokenFromCache(storePath)
+func token(storePath, authTokenPath string, config *oauth.Config) *oauth.Token {
+	tokenPath := authTokenPath
+	if authTokenPath == "" {
+		tokenPath = filepath.Join(storePath, "gce_token")
+	}
+	log.Debugf("using auth token: %s", tokenPath)
+	token, err := tokenFromCache(tokenPath)
 	if err != nil {
 		token = tokenFromWeb(config)
 		saveToken(storePath, token)
@@ -55,8 +62,7 @@ func token(storePath string, config *oauth.Config) *oauth.Token {
 	return token
 }
 
-func tokenFromCache(storePath string) (*oauth.Token, error) {
-	tokenPath := path.Join(storePath, "gce_token")
+func tokenFromCache(tokenPath string) (*oauth.Token, error) {
 	f, err := os.Open(tokenPath)
 	if err != nil {
 		return nil, err
