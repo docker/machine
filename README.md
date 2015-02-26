@@ -130,6 +130,9 @@ Options:
  - `--digitalocean-image`: The name of the Digital Ocean image to use. Default: `docker`
  - `--digitalocean-region`: The region to create the droplet in. Default: `nyc3`
  - `--digitalocean-size`: The size of the Digital Ocean driver. Default: `512mb`
+ - `--digitalocean-ipv6`: Enable ipv6 for the droplet. Default: `false`
+ - `--digitalocean-backups`: Enable backups for the droplet. Default: `false`
+ - `--digitalocean-private-networking`: Enable private networking for the droplet. Default: `false`
 
 ### Microsoft Azure
 
