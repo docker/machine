@@ -4,6 +4,8 @@ page_keywords: docker, machine, virtualbox, digitalocean, amazonec2
 
 # Docker Machine
 
+> **Note**: Machine is currently in beta.  Features are likely to change.
+
 Machine makes it really easy to create Docker hosts on your computer, on cloud
 providers and inside your own data center. It creates servers, installs Docker
 on them, then configures the Docker client to talk to them.
