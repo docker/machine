@@ -1,6 +1,9 @@
 package openstack
 
 import (
+	"crypto/tls"
+	"net/http"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
@@ -393,6 +396,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 
 	log.WithFields(log.Fields{
 		"AuthUrl":    d.AuthUrl,
+		"Insecure":   d.Insecure,
 		"Username":   d.Username,
 		"TenantName": d.TenantName,
 		"TenantID":   d.TenantId,
@@ -407,10 +411,23 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		AllowReauth:      true,
 	}
 
-	provider, err := openstack.AuthenticatedClient(opts)
+	provider, err := openstack.NewClient(opts.IdentityEndpoint)
 	if err != nil {
 		return err
 	}
+
+	if d.Insecure {
+		// Configure custom TLS settings.
+		config := &tls.Config{InsecureSkipVerify: true}
+		transport := &http.Transport{TLSClientConfig: config}
+		provider.HTTPClient.Transport = transport
+	}
+
+	err = openstack.Authenticate(provider, opts)
+	if err != nil {
+		return err
+	}
+
 	c.Provider = provider
 
 	return nil

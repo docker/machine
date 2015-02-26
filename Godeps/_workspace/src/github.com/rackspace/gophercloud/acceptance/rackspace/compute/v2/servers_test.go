@@ -100,6 +100,18 @@ func getServer(t *testing.T, client *gophercloud.ServiceClient, server *os.Serve
 	logServer(t, details, -1)
 }
 
+func updateServer(t *testing.T, client *gophercloud.ServiceClient, server *os.Server) {
+	t.Logf("> servers.Get")
+
+	opts := os.UpdateOpts{
+		Name: "updated-server",
+	}
+	updatedServer, err := servers.Update(client, server.ID, opts).Extract()
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, "updated-server", updatedServer.Name)
+	logServer(t, updatedServer, -1)
+}
+
 func listServers(t *testing.T, client *gophercloud.ServiceClient) {
 	t.Logf("> servers.List")
 
@@ -197,6 +209,7 @@ func TestServerOperations(t *testing.T) {
 	defer deleteServer(t, client, server)
 
 	getServer(t, client, server)
+	updateServer(t, client, server)
 	listServers(t, client)
 	changeAdminPassword(t, client, server)
 	rebootServer(t, client, server)
