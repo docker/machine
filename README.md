@@ -11,13 +11,16 @@ $ docker-machine create -d virtualbox dev
 [info] Creating VirtualBox VM...
 [info] Starting VirtualBox VM...
 [info] Waiting for VM to start...
-[info] "dev" has been created and is now the active host. Docker commands will now run against that host.
+[info] "dev" has been created and is now the active machine.
+[info] To point your Docker client at it, run this in your shell: $(docker-machine env dev)
 
 $ docker-machine ls
 NAME  	ACTIVE   DRIVER     	STATE 	URL
 dev   	*    	virtualbox 	Running   tcp://192.168.99.100:2375
 
-$ docker $(docker-machine config dev) run busybox echo hello world
+$ (docker-machine env dev)
+
+$ docker run busybox echo hello world
 Unable to find image 'busybox' locally
 Pulling repository busybox
 e72ac664f4f0: Download complete
