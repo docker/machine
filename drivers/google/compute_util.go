@@ -14,16 +14,17 @@ import (
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
 type ComputeUtil struct {
-	zone         string
-	instanceName string
-	userName     string
-	project      string
-	service      *raw.Service
-	zoneURL      string
-	globalURL    string
-	ipAddress    string
-	SwarmMaster  bool
-	SwarmHost    string
+	zone          string
+	instanceName  string
+	userName      string
+	project       string
+	service       *raw.Service
+	zoneURL       string
+	authTokenPath string
+	globalURL     string
+	ipAddress     string
+	SwarmMaster   bool
+	SwarmHost     string
 }
 
 const (
@@ -39,20 +40,21 @@ const (
 
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
-	service, err := newGCEService(driver.storePath)
+	service, err := newGCEService(driver.storePath, driver.AuthTokenPath)
 	if err != nil {
 		return nil, err
 	}
 	c := ComputeUtil{
-		zone:         driver.Zone,
-		instanceName: driver.MachineName,
-		userName:     driver.UserName,
-		project:      driver.Project,
-		service:      service,
-		zoneURL:      apiURL + driver.Project + "/zones/" + driver.Zone,
-		globalURL:    apiURL + driver.Project + "/global",
-		SwarmMaster:  driver.SwarmMaster,
-		SwarmHost:    driver.SwarmHost,
+		authTokenPath: driver.AuthTokenPath,
+		zone:          driver.Zone,
+		instanceName:  driver.MachineName,
+		userName:      driver.UserName,
+		project:       driver.Project,
+		service:       service,
+		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
+		globalURL:     apiURL + driver.Project + "/global",
+		SwarmMaster:   driver.SwarmMaster,
+		SwarmHost:     driver.SwarmHost,
 	}
 	return &c, nil
 }
