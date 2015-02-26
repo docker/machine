@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -36,6 +37,24 @@ func TestGenerateCACertificate(t *testing.T) {
 			t.Fatal(err)
 		}
 		os.Setenv("MACHINE_DIR", "")
+
+		// Make sure the encrypted file is actually encrypted
+		if len(pass) > 0 {
+			encKeyByt, err := ioutil.ReadFile(caKeyPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			pemBlock, _ := pem.Decode(encKeyByt)
+			if pemBlock == nil {
+				t.Fatal(err)
+			}
+
+			if !x509.IsEncryptedPEMBlock(pemBlock) {
+				// This is unencrypted, therefore we can use the noraml tls package implementation
+				t.Fatal("Expected encrypted PEM block when using a passphrase to generate CA certificate")
+			}
+		}
 
 		// cleanup
 		_ = os.RemoveAll(tmpDir)
