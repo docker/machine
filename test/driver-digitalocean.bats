@@ -2,14 +2,9 @@
 
 load vars
 
-export DRIVER=virtualbox
+export DRIVER=digitalocean
 export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
-
-function setup() {
-  # add sleep because vbox; ugh
-  sleep 1
-}
 
 @test "$DRIVER: machine should not exist" {
   run machine active $NAME
