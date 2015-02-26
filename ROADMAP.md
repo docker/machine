@@ -9,6 +9,7 @@ release.  You can follow progress towards the current release with the
  - [ ] Integration Test suite for drivers
  - [ ] Refactor SSH (`ssh` -> `crypto/ssh`)
  - [ ] Logging Unification (internal and provider logging)
+ - [ ] Encryption of secrets
 
 ## Provisioning
  - [ ] Cloudinit as standard provisioning method
