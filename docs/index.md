@@ -4,7 +4,8 @@ page_keywords: docker, machine, virtualbox, digitalocean, amazonec2
 
 # Docker Machine
 
-> **Note**: Machine is currently in beta.  Features are likely to change.
+> **Note**: Machine is currently in beta, so things are likely to change. We
+> don't recommend you use it in production yet.
 
 Machine makes it really easy to create Docker hosts on your computer, on cloud
 providers and inside your own data center. It creates servers, installs Docker
