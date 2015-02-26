@@ -1,46 +1,61 @@
 # Docker Machine
 
-Machine makes it really easy to create Docker hosts on your computer, on cloud providers and inside your own data center. It creates servers, installs Docker on them, then configures the Docker client to talk to them.
+Machine makes it really easy to create Docker hosts on your computer, on cloud
+providers and inside your own data center. It creates servers, installs Docker
+on them, then configures the Docker client to talk to them.
 
 It works a bit like this:
 
 ```console
 $ docker-machine create -d virtualbox dev
-[info] Downloading boot2docker...
-[info] Creating SSH key...
-[info] Creating VirtualBox VM...
-[info] Starting VirtualBox VM...
-[info] Waiting for VM to start...
-[info] "dev" has been created and is now the active host. Docker commands will now run against that host.
+INFO[0000] Creating SSH key...
+INFO[0000] Creating VirtualBox VM...
+INFO[0007] Starting VirtualBox VM...
+INFO[0007] Waiting for VM to start...
+INFO[0041] "dev" has been created and is now the active machine.
+INFO[0041] To point your Docker client at it, run this in your shell: $(docker-machine env dev)
 
 $ docker-machine ls
-NAME  	ACTIVE   DRIVER     	STATE 	URL
-dev   	*    	virtualbox 	Running   tcp://192.168.99.100:2375
+NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
+dev    *        virtualbox   Running   tcp://192.168.99.127:2376
 
-$ docker $(docker-machine config dev) run busybox echo hello world
-Unable to find image 'busybox' locally
-Pulling repository busybox
-e72ac664f4f0: Download complete
-511136ea3c5a: Download complete
-df7546f9f060: Download complete
-e433a6c5b276: Download complete
+$ $(docker-machine env dev)
+
+$ docker run busybox echo hello world
+Unable to find image 'busybox:latest' locally
+511136ea3c5a: Pull complete
+df7546f9f060: Pull complete
+ea13149945cb: Pull complete
+4986bf8c1536: Pull complete
+busybox:latest: The image you are pulling has been verified. Important: image
+verification is a tech preview feature and should not be relied on to provide
+security.
+
+Status: Downloaded newer image for busybox:latest
 hello world
 
-$ docker-machine create -d digitalocean --digitalocean-access-token=... staging
-[info] Creating SSH key...
-[info] Creating Digital Ocean droplet...
-[info] Waiting for SSH...
-[info] "staging" has been created and is now the active host. Docker commands will now run against that host.
+$ docker-machine create -d digitalocean --digitalocean-access-token=secret staging
+INFO[0000] Creating SSH key...
+INFO[0001] Creating Digital Ocean droplet...
+INFO[0002] Waiting for SSH...
+INFO[0070] Configuring Machine...
+INFO[0109] "staging" has been created and is now the active machine.
+INFO[0109] To point your Docker client at it, run this in your shell: $(docker-machine env staging)
 
 $ docker-machine ls
-NAME      ACTIVE   DRIVER         STATE     URL
-dev                virtualbox     Running   tcp://192.168.99.108:2376
-staging   *        digitalocean   Running   tcp://104.236.37.134:2376
+NAME      ACTIVE   DRIVER         STATE     URL                          SWARM
+dev                virtualbox     Running   tcp://192.168.99.127:2376
+staging   *        digitalocean   Running   tcp://104.236.253.181:2376
 ```
 
-Machine creates Docker hosts that are secure by default. The connection between the client and daemon is encrypted and authenticated using TLS security.  To get the Docker arguments for a machine use the command: `docker-machine config <machine-name>` i.e. `docker-machine config dev`.
+Machine creates Docker hosts that are secure by default. The connection between
+the client and daemon is encrypted and authenticated using TLS security.  To get
+the Docker arguments for a machine use the command: `docker-machine config
+<machine-name>` e.g. `docker-machine config dev`.
 
-You can also get the commands to export environment variables to use with the Docker CLI:  `docker-machine env <machine-name>` i.e. `docker-machine env dev` to show or `$(docker-machine env dev)` to load in your environment.
+You can also get the commands to export environment variables to use with the
+Docker CLI:  `docker-machine env <machine-name>` e.g. `docker-machine env dev`
+to show or `$(docker-machine env dev)` to load in your environment.
 
 ## Try it out
 
