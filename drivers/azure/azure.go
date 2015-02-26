@@ -254,11 +254,7 @@ func (driver *Driver) GetURL() (string, error) {
 }
 
 func (driver *Driver) GetIP() (string, error) {
-	addrs, err := net.LookupIP(driver.getHostname())
-	if err != nil {
-		return "", err
-	}
-	return addrs[0].String(), nil
+	return driver.getHostname(), nil
 }
 
 func (driver *Driver) GetState() (state.State, error) {
