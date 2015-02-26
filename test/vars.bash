@@ -8,5 +8,3 @@ if [ "$ARCH" = "x86_64" ]; then
 else
     ARCH="386"
 fi
-
-DRIVER=${DRIVER:-}
