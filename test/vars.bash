@@ -8,3 +8,7 @@ if [ "$ARCH" = "x86_64" ]; then
 else
     ARCH="386"
 fi
+
+function machine() {
+    ./docker-machine_$PLATFORM-$ARCH $@
+}
