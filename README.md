@@ -27,11 +27,6 @@ Unable to find image 'busybox:latest' locally
 df7546f9f060: Pull complete
 ea13149945cb: Pull complete
 4986bf8c1536: Pull complete
-busybox:latest: The image you are pulling has been verified. Important: image
-verification is a tech preview feature and should not be relied on to provide
-security.
-
-Status: Downloaded newer image for busybox:latest
 hello world
 
 $ docker-machine create -d digitalocean --digitalocean-access-token=secret staging
