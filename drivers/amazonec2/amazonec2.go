@@ -275,11 +275,8 @@ func (d *Driver) Create() error {
 		VolumeType:          "gp2",
 	}
 
-	// get the subnet id
-	subnetId := d.SubnetId
-
-	log.Debugf("launching instance in subnet %s", subnetId)
-	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, subnetId, bdm)
+	log.Debugf("launching instance in subnet %s", d.SubnetId)
+	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm)
 
 	if err != nil {
 		return fmt.Errorf("Error launching instance: %s", err)
@@ -348,7 +345,6 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) GetURL() (string, error) {
-
 	if d.IPAddress == "" {
 		return "", nil
 	}
