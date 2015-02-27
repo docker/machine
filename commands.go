@@ -630,6 +630,16 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 		return err
 	}
 
+	// No args specified, so use active.
+	if len(machines) == 0 {
+		store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+		activeHost, err := store.GetActive()
+		if err != nil {
+			log.Fatalf("Unable to get active host: %v", err)
+		}
+		machines = []*Host{activeHost}
+	}
+
 	runActionForeachMachine(actionName, machines)
 
 	return nil
