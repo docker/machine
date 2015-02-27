@@ -746,19 +746,6 @@ func (d *Driver) waitForInstanceToStart() error {
 	return d.waitForSSHServer()
 }
 
-func (d *Driver) sshExec(commands []string) error {
-	for _, command := range commands {
-		sshCmd, err := d.GetSSHCommand(command)
-		if err != nil {
-			return err
-		}
-		if err := sshCmd.Run(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (d *Driver) sshKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
