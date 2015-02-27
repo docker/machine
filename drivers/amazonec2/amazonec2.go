@@ -281,7 +281,7 @@ func (d *Driver) Create() error {
 	log.Debugf("created instance ID %s, IP address %s, Private IP address %s",
 		d.InstanceId,
 		d.IPAddress,
-		instance.NetworkInterfaceSet[0].PrivateIpAddress,
+		d.PrivateIPAddress,
 	)
 
 	log.Infof("Waiting for SSH on %s:%d", d.IPAddress, 22)
