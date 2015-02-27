@@ -250,7 +250,7 @@ func (d *Driver) Create() error {
 		}
 
 		for _, s := range subnets {
-			if s.AvailabilityZone == regionZone {
+			if s.AvailabilityZone == regionZone && s.VpcId == d.VpcId {
 				subnetId = s.SubnetId
 				break
 			}
