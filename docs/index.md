@@ -646,7 +646,7 @@ Options:
  - `--google-instance-name`: The name of the instance.  Default: `docker-machine`
  - `--google-project`: The name of your project to use when launching the instance.
 
-The GCE driver will use the `ubuntu-1410-utopic-v20150202` instance type unless otherwise specified.
+The GCE driver will use the `ubuntu-1404-trusty-v20150128` instance type unless otherwise specified.
 
 #### IBM Softlayer
 
