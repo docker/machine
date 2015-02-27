@@ -356,7 +356,7 @@ func cmdConfig(c *cli.Context) {
 
 		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
 	}
-	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H=%q",
+	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H=%s",
 		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, dockerHost)
 }
 

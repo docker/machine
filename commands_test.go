@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"flag"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/codegangsta/cli"
@@ -291,5 +294,56 @@ func TestRunActionForeachMachine(t *testing.T) {
 		if expected[machine.Name] != state {
 			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
 		}
+	}
+}
+
+func TestCmdConfig(t *testing.T) {
+	stdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
+
+	defer func() {
+		os.Setenv("MACHINE_STORAGE_PATH", "")
+		os.Stdout = stdout
+		w.Close()
+	}()
+
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := getDefaultTestDriverFlags()
+
+	store := NewStore(TestMachineDir, "", "")
+	var err error
+
+	_, err = store.Create("test-a", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err := store.Load("test-a")
+	if err != nil {
+		t.Fatalf("error loading host: %v", err)
+	}
+
+	if err := store.SetActive(host); err != nil {
+		t.Fatalf("error setting active host: %v", err)
+	}
+
+	set := flag.NewFlagSet("config", 0)
+
+	testOutput := &bytes.Buffer{}
+
+	go io.Copy(testOutput, r)
+
+	c := cli.NewContext(nil, set, set)
+
+	cmdConfig(c)
+
+	if strings.Contains(testOutput.String(), "-H=unix:///var/run/docker.sock") {
+		t.Fatalf("Expect docker host URL")
 	}
 }
