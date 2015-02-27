@@ -39,6 +39,7 @@ type machineConfig struct {
 	clientCertPath string
 	clientKeyPath  string
 	machineUrl     string
+	protocol       string
 	swarmMaster    bool
 	swarmHost      string
 	swarmDiscovery string
@@ -336,6 +337,9 @@ func cmdConfig(c *cli.Context) {
 	}
 	dockerHost := cfg.machineUrl
 	if c.Bool("swarm") {
+		if cfg.protocol != "tcp" {
+			log.Fatal("Error: using swarm with a non-TCP protocol is not supported")
+		}
 		if !cfg.swarmMaster {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
 		}
@@ -356,8 +360,10 @@ func cmdConfig(c *cli.Context) {
 
 		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
 	}
-	fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s -H=%q",
-		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, dockerHost)
+	if cfg.protocol == "tcp" {
+		fmt.Printf("--tls --tlscacert=%s --tlscert=%s --tlskey=%s ", cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath)
+	}
+	fmt.Printf("-H=%q", dockerHost)
 }
 
 func cmdInspect(c *cli.Context) {
@@ -487,6 +493,9 @@ func cmdEnv(c *cli.Context) {
 
 	dockerHost := cfg.machineUrl
 	if c.Bool("swarm") {
+		if cfg.protocol != "tcp" {
+			log.Fatal("Error: using swarm with a non-TCP protocol is not supported")
+		}
 		if !cfg.swarmMaster {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
 		}
@@ -510,11 +519,16 @@ func cmdEnv(c *cli.Context) {
 
 	switch userShell {
 	case "fish":
-		fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\nset -x DOCKER_HOST %s\n",
-			cfg.machineDir, dockerHost)
+		// No TLS for Unix socket
+		if cfg.protocol == "tcp" {
+			fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\n", cfg.machineDir)
+		}
+		fmt.Printf("set -x DOCKER_HOST %s\n", dockerHost)
 	default:
-		fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
-			cfg.machineDir, dockerHost)
+		if cfg.protocol == "tcp" {
+			fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\n", cfg.machineDir)
+		}
+		fmt.Printf("export DOCKER_HOST=%s\n", dockerHost)
 	}
 }
 
@@ -805,8 +819,22 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		clientCertPath: clientCert,
 		clientKeyPath:  clientKey,
 		machineUrl:     machineUrl,
+		protocol:       getProtocol(machineUrl),
 		swarmMaster:    machine.SwarmMaster,
 		swarmHost:      machine.SwarmHost,
 		swarmDiscovery: machine.SwarmDiscovery,
 	}, nil
+}
+
+func getProtocol(url string) string {
+	pieces := strings.Split(url, "://")
+	switch pieces[0] {
+	case "tcp":
+		return "tcp"
+	case "unix":
+		return "unix"
+	default:
+		log.Fatalf("Unrecognized protocol %s")
+	}
+	return ""
 }
