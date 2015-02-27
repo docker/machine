@@ -128,7 +128,7 @@ BATS (use that link).  Then run `./script/build` to generate the binary.  Once
 you have the binary, you can run test against a specified driver:
 
 ```
-$ bats test/driver-virtualbox.bats
+$ bats integration-tests/driver-virtualbox.bats
  ✓ virtualbox: machine should not exist
  ✓ virtualbox: VM should not exist
  ✓ virtualbox: create
@@ -154,7 +154,7 @@ $ bats test/driver-virtualbox.bats
 You can also run the general `cli` tests:
 
 ```
-$ bats test/cli.bats
+$ bats integration-tests/cli.bats
  ✓ cli: show info
  ✓ cli: show active help
  ✓ cli: show config help
