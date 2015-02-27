@@ -44,6 +44,7 @@ type Driver struct {
 	InstanceId        string
 	InstanceType      string
 	IPAddress         string
+	PrivateIPAddress  string
 	MachineName       string
 	SecurityGroupId   string
 	SecurityGroupName string
@@ -269,12 +270,19 @@ func (d *Driver) Create() error {
 	}
 
 	d.InstanceId = instance.InstanceId
+	d.IPAddress = instance.IpAddress
+
+	if len(instance.NetworkInterfaceSet) > 0 {
+		d.PrivateIPAddress = instance.NetworkInterfaceSet[0].PrivateIpAddress
+	}
 
 	d.waitForInstance()
 
-	log.Debugf("created instance ID %s, IP address %s",
+	log.Debugf("created instance ID %s, IP address %s, Private IP address %s",
 		d.InstanceId,
-		d.IPAddress)
+		d.IPAddress,
+		d.PrivateIPAddress,
+	)
 
 	log.Infof("Waiting for SSH on %s:%d", d.IPAddress, 22)
 
@@ -312,14 +320,11 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) GetURL() (string, error) {
-	ip, err := d.GetIP()
-	if err != nil {
-		return "", err
-	}
-	if ip == "" {
+
+	if d.IPAddress == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:%d", ip, dockerPort), nil
+	return fmt.Sprintf("tcp://%s:%d", d.IPAddress, dockerPort), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -327,8 +332,8 @@ func (d *Driver) GetIP() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	d.IPAddress = inst.IpAddress
-	return d.IPAddress, nil
+
+	return inst.IpAddress, nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
