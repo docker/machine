@@ -11,4 +11,5 @@ type Subnet struct {
 	VpcId            string `xml:"vpcId"`
 	CidrBlock        string `xml:"cidrBlock"`
 	AvailabilityZone string `xml:"availabilityZone"`
+	DefaultForAz     bool   `xml:"defaultForAz"`
 }

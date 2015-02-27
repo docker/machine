@@ -210,6 +210,42 @@ func (d *Driver) checkPrereqs() error {
 	if key != nil {
 		return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name.", d.MachineName)
 	}
+
+	regionZone := d.Region + d.Zone
+	if d.SubnetId == "" {
+		filters := []amz.Filter{
+			{
+				Name:  "availabilityZone",
+				Value: regionZone,
+			},
+			{
+				Name:  "vpc-id",
+				Value: d.VpcId,
+			},
+		}
+
+		subnets, err := d.getClient().GetSubnets(filters)
+		if err != nil {
+			return err
+		}
+
+		if len(subnets) == 0 {
+			return fmt.Errorf("unable to find a subnet in the zone: %s", regionZone)
+		}
+
+		d.SubnetId = subnets[0].SubnetId
+
+		// try to find default
+		if len(subnets) > 1 {
+			for _, subnet := range subnets {
+				if subnet.DefaultForAz {
+					d.SubnetId = subnet.SubnetId
+					break
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -240,27 +276,7 @@ func (d *Driver) Create() error {
 	}
 
 	// get the subnet id
-	regionZone := d.Region + d.Zone
 	subnetId := d.SubnetId
-
-	if d.SubnetId == "" {
-		subnets, err := d.getClient().GetSubnets()
-		if err != nil {
-			return err
-		}
-
-		for _, s := range subnets {
-			if s.AvailabilityZone == regionZone && s.VpcId == d.VpcId {
-				subnetId = s.SubnetId
-				break
-			}
-		}
-
-	}
-
-	if subnetId == "" {
-		return fmt.Errorf("unable to find a subnet in the zone: %s", regionZone)
-	}
 
 	log.Debugf("launching instance in subnet %s", subnetId)
 	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, subnetId, bdm)
@@ -270,7 +286,19 @@ func (d *Driver) Create() error {
 	}
 
 	d.InstanceId = instance.InstanceId
-	d.IPAddress = instance.IpAddress
+	log.Debug("waiting for ip address to become available")
+	for {
+		ip, err := d.GetIP()
+		if err != nil {
+			return err
+		}
+		if ip != "" {
+
+			d.IPAddress = instance.IpAddress
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
 
 	if len(instance.NetworkInterfaceSet) > 0 {
 		d.PrivateIPAddress = instance.NetworkInterfaceSet[0].PrivateIpAddress
