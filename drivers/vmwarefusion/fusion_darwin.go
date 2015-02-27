@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"text/template"
 	"time"
@@ -40,6 +41,7 @@ type Driver struct {
 	IPAddress      string
 	Memory         int
 	DiskSize       int
+	CPUs           int
 	ISO            string
 	Boot2DockerURL string
 	CaCertPath     string
@@ -104,6 +106,13 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+
+	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
+	// specs.
+	d.CPUs = int(runtime.NumCPU())
+	if d.CPUs > 16 {
+		d.CPUs = 16
+	}
 
 	return nil
 }
