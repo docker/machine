@@ -417,13 +417,20 @@ func (e *EC2) GetSecurityGroupById(id string) (*SecurityGroup, error) {
 	return nil, nil
 }
 
-func (e *EC2) GetSubnets() ([]Subnet, error) {
+func (e *EC2) GetSubnets(filters []Filter) ([]Subnet, error) {
 	subnets := []Subnet{}
-	resp, err := e.performStandardAction("DescribeSubnets")
-	if err != nil {
-		return subnets, err
+	v := url.Values{}
+	v.Set("Action", "DescribeSubnets")
+
+	for idx, filter := range filters {
+		n := idx + 1 // amazon starts counting from 1 not 0
+		v.Set(fmt.Sprintf("Filter.%d.Name", n), filter.Name)
+		v.Set(fmt.Sprintf("Filter.%d.Value", n), filter.Value)
 	}
+
+	resp, err := e.awsApiCall(v)
 	defer resp.Body.Close()
+
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return subnets, fmt.Errorf("Error reading AWS response body: %s", err)
