@@ -114,7 +114,8 @@ func (conn VcConn) VmCreate(isoPath string) error {
 	args = append(args, fmt.Sprintf("--m=%s", memory))
 	cpu := strconv.Itoa(conn.driver.CPU)
 	args = append(args, fmt.Sprintf("--c=%s", cpu))
-	args = append(args, "--disk.controller=scsi")
+	args = append(args, "--disk.controller=pvscsi")
+	args = append(args, "--net.adapter=vmxnet3")
 	args = append(args, "--on=false")
 	if conn.driver.Pool != "" {
 		args = append(args, fmt.Sprintf("--pool=%s", conn.driver.Pool))
@@ -158,6 +159,24 @@ func (conn VcConn) VmPowerOff() error {
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
 	args = append(args, "-off")
+	args = append(args, conn.driver.MachineName)
+	_, stderr, err := govcOutErr(args...)
+
+	if stderr == "" && err == nil {
+		return nil
+	} else {
+		return errors.NewVmError("power on", conn.driver.MachineName, stderr)
+	}
+}
+
+func (conn VcConn) VmShutdown() error {
+	log.Infof("Powering off virtual machine %s of vCenter %s... ",
+		conn.driver.MachineName, conn.driver.IP)
+
+	args := []string{"vm.power"}
+	args = conn.AppendConnectionString(args)
+	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
+	args = append(args, "-s")
 	args = append(args, conn.driver.MachineName)
 	_, stderr, err := govcOutErr(args...)
 
@@ -265,6 +284,23 @@ func (conn VcConn) GuestUpload(guestUser, guestPass, localPath, remotePath strin
 		return nil
 	} else {
 		return errors.NewGuestError("upload", conn.driver.MachineName, stderr)
+	}
+}
+
+func (conn VcConn) GuestStart(guestUser, guestPass, remoteBin, remoteArguments string) error {
+	args := []string{"guest.start"}
+	args = conn.AppendConnectionString(args)
+	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
+	args = append(args, fmt.Sprintf("--l=%s:%s", guestUser, guestPass))
+	args = append(args, fmt.Sprintf("--vm=%s", conn.driver.MachineName))
+	args = append(args, remoteBin)
+	args = append(args, remoteArguments)
+	_, stderr, err := govcOutErr(args...)
+
+	if stderr == "" && err == nil {
+		return nil
+	} else {
+		return errors.NewGuestError("start", conn.driver.MachineName, stderr)
 	}
 }
 
