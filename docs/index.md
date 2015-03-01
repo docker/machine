@@ -590,6 +590,7 @@ Options:
  - `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
  - `--amazonec2-ami`: The AMI ID of the instance to use  Default: `ami-4ae27e22`
  - `--amazonec2-instance-type`: The instance type to run.  Default: `t2.micro`
+ - `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile
  - `--amazonec2-region`: The region to use when launching the instance.  Default: `us-east-1`
  - `--amazonec2-root-size`: The root disk size of the instance (in GB).  Default: `16`
  - `--amazonec2-secret-key`: **required** Your secret access key for the Amazon Web Services API.
