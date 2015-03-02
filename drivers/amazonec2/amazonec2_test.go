@@ -1,9 +1,22 @@
 package amazonec2
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/docker/machine/drivers/amazonec2/amz"
+)
+
+const (
+	testSshPort           = 22
+	testDockerPort        = 2376
+	testStoreDir          = ".store-test"
+	machineTestName       = "test-host"
+	machineTestDriverName = "none"
+	machineTestStorePath  = "/test/path"
+	machineTestCaCert     = "test-cert"
+	machineTestPrivateKey = "test-key"
 )
 
 var (
@@ -14,20 +27,96 @@ var (
 	}
 )
 
-const (
-	testSshPort    = 22
-	testDockerPort = 2376
-)
+type DriverOptionsMock struct {
+	Data map[string]interface{}
+}
+
+func (d DriverOptionsMock) String(key string) string {
+	return d.Data[key].(string)
+}
+
+func (d DriverOptionsMock) Int(key string) int {
+	return d.Data[key].(int)
+}
+
+func (d DriverOptionsMock) Bool(key string) bool {
+	return d.Data[key].(bool)
+}
+
+func cleanup() error {
+	return os.RemoveAll(testStoreDir)
+}
+
+func getTestStorePath() (string, error) {
+	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	if err != nil {
+		return "", err
+	}
+	os.Setenv("MACHINE_STORAGE_PATH", tmpDir)
+	return tmpDir, nil
+}
+
+func getDefaultTestDriverFlags() *DriverOptionsMock {
+	return &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"name":                     "test",
+			"url":                      "unix:///var/run/docker.sock",
+			"swarm":                    false,
+			"swarm-host":               "",
+			"swarm-master":             false,
+			"swarm-discovery":          "",
+			"amazonec2-ami":            "ami-12345",
+			"amazonec2-access-key":     "abcdefg",
+			"amazonec2-secret-key":     "12345",
+			"amazonec2-session-token":  "",
+			"amazonec2-instance-type":  "t1.micro",
+			"amazonec2-vpc-id":         "vpc-12345",
+			"amazonec2-subnet-id":      "subnet-12345",
+			"amazonec2-security-group": "docker-machine-test",
+			"amazonec2-region":         "us-east-1",
+			"amazonec2-zone":           "e",
+			"amazonec2-root-size":      10,
+		},
+	}
+}
+
+func getTestDriver() (*Driver, error) {
+	storePath, err := getTestStorePath()
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	d, err := NewDriver(machineTestName, storePath, machineTestCaCert, machineTestPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	d.SetConfigFromFlags(getDefaultTestDriverFlags())
+	drv := d.(*Driver)
+	return drv, nil
+}
 
 func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
+	d, err := getTestDriver()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
 	group := securityGroup
-	perms := configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(&group)
 	if len(perms) != 2 {
 		t.Fatalf("expected 2 permissions; received %d", len(perms))
 	}
 }
 
 func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
+	d, err := getTestDriver()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
 	group := securityGroup
 
 	group.IpPermissions = []amz.IpPermission{
@@ -38,7 +127,7 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 		},
 	}
 
-	perms := configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(&group)
 	if len(perms) != 1 {
 		t.Fatalf("expected 1 permission; received %d", len(perms))
 	}
@@ -50,6 +139,12 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
+	d, err := getTestDriver()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
 	group := securityGroup
 
 	group.IpPermissions = []amz.IpPermission{
@@ -60,7 +155,7 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 		},
 	}
 
-	perms := configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(&group)
 	if len(perms) != 1 {
 		t.Fatalf("expected 1 permission; received %d", len(perms))
 	}
@@ -72,6 +167,12 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
+	d, err := getTestDriver()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
 	group := securityGroup
 
 	group.IpPermissions = []amz.IpPermission{
@@ -87,7 +188,7 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 		},
 	}
 
-	perms := configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(&group)
 	if len(perms) != 0 {
 		t.Fatalf("expected 0 permissions; received %d", len(perms))
 	}
