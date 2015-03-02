@@ -29,7 +29,11 @@ const (
 	ipRange                  = "0.0.0.0/0"
 	dockerConfigDir          = "/etc/docker"
 	machineSecurityGroupName = "docker-machine"
-	dockerPort               = 2376
+)
+
+var (
+	dockerPort = 2376
+	swarmPort  = 3376
 )
 
 type Driver struct {
@@ -191,6 +195,21 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if d.SubnetId == "" && d.VpcId == "" {
 		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
+	}
+
+	if d.isSwarmMaster() {
+		u, err := url.Parse(d.SwarmHost)
+		if err != nil {
+			return fmt.Errorf("error parsing swarm host: %s", err)
+		}
+
+		parts := strings.Split(u.Host, ":")
+		port, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return err
+		}
+
+		swarmPort = port
 	}
 
 	return nil
@@ -626,32 +645,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 
 	d.SecurityGroupId = securityGroup.GroupId
 
-	perms := configureSecurityGroupPermissions(securityGroup)
-
-	// configure swarm permission if needed
-	if d.isSwarmMaster() {
-		u, err := url.Parse(d.SwarmHost)
-		if err != nil {
-			return fmt.Errorf("error authorizing port for swarm: %s", err)
-		}
-
-		parts := strings.Split(u.Host, ":")
-		port, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return err
-		}
-
-		log.Debugf("authorizing swarm on port %d", port)
-
-		perms = append(perms, amz.IpPermission{
-			IpProtocol: "tcp",
-			FromPort:   port,
-			ToPort:     port,
-			IpRange:    ipRange,
-		})
-	}
-
-	log.Debugf("configuring security group authorization for %s", ipRange)
+	perms := d.configureSecurityGroupPermissions(securityGroup)
 
 	if len(perms) != 0 {
 		log.Debugf("authorizing group %s with permissions: %v", securityGroup.GroupName, perms)
@@ -664,41 +658,51 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 	return nil
 }
 
-func configureSecurityGroupPermissions(group *amz.SecurityGroup) []amz.IpPermission {
+func (d *Driver) configureSecurityGroupPermissions(group *amz.SecurityGroup) []amz.IpPermission {
 	hasSshPort := false
 	hasDockerPort := false
+	hasSwarmPort := false
 	for _, p := range group.IpPermissions {
 		switch p.FromPort {
 		case 22:
 			hasSshPort = true
 		case dockerPort:
 			hasDockerPort = true
+		case swarmPort:
+			hasSwarmPort = true
 		}
 	}
 
 	perms := []amz.IpPermission{}
 
 	if !hasSshPort {
-		perm := amz.IpPermission{
+		perms = append(perms, amz.IpPermission{
 			IpProtocol: "tcp",
 			FromPort:   22,
 			ToPort:     22,
 			IpRange:    ipRange,
-		}
-
-		perms = append(perms, perm)
+		})
 	}
 
 	if !hasDockerPort {
-		perm := amz.IpPermission{
+		perms = append(perms, amz.IpPermission{
 			IpProtocol: "tcp",
 			FromPort:   dockerPort,
 			ToPort:     dockerPort,
 			IpRange:    ipRange,
-		}
-
-		perms = append(perms, perm)
+		})
 	}
+
+	if !hasSwarmPort && d.SwarmMaster {
+		perms = append(perms, amz.IpPermission{
+			IpProtocol: "tcp",
+			FromPort:   swarmPort,
+			ToPort:     swarmPort,
+			IpRange:    ipRange,
+		})
+	}
+
+	log.Debugf("configuring security group authorization for %s", ipRange)
 
 	return perms
 }
