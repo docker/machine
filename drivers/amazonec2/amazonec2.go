@@ -37,43 +37,45 @@ var (
 )
 
 type Driver struct {
-	Id                string
-	AccessKey         string
-	SecretKey         string
-	SessionToken      string
-	Region            string
-	AMI               string
-	SSHKeyID          int
-	KeyName           string
-	InstanceId        string
-	InstanceType      string
-	IPAddress         string
-	PrivateIPAddress  string
-	MachineName       string
-	SecurityGroupId   string
-	SecurityGroupName string
-	ReservationId     string
-	RootSize          int64
-	VpcId             string
-	SubnetId          string
-	Zone              string
-	CaCertPath        string
-	PrivateKeyPath    string
-	SwarmMaster       bool
-	SwarmHost         string
-	SwarmDiscovery    string
-	storePath         string
-	keyPath           string
+	Id                 string
+	AccessKey          string
+	SecretKey          string
+	SessionToken       string
+	Region             string
+	AMI                string
+	SSHKeyID           int
+	KeyName            string
+	InstanceId         string
+	InstanceType       string
+	IPAddress          string
+	PrivateIPAddress   string
+	MachineName        string
+	SecurityGroupId    string
+	SecurityGroupName  string
+	ReservationId      string
+	RootSize           int64
+	IamInstanceProfile string
+	VpcId              string
+	SubnetId           string
+	Zone               string
+	CaCertPath         string
+	PrivateKeyPath     string
+	SwarmMaster        bool
+	SwarmHost          string
+	SwarmDiscovery     string
+	storePath          string
+	keyPath            string
 }
 
 type CreateFlags struct {
-	AccessKey    *string
-	SecretKey    *string
-	Region       *string
-	AMI          *string
-	InstanceType *string
-	SubnetId     *string
-	RootSize     *int64
+	AccessKey          *string
+	SecretKey          *string
+	Region             *string
+	AMI                *string
+	InstanceType       *string
+	SubnetId           *string
+	RootSize           *int64
+	IamInstanceProfile *string
 }
 
 func init() {
@@ -150,6 +152,10 @@ func GetCreateFlags() []cli.Flag {
 			Value:  defaultRootSize,
 			EnvVar: "AWS_ROOT_SIZE",
 		},
+		cli.StringFlag{
+			Name:  "amazonec2-iam-instance-profile",
+			Usage: "AWS IAM Instance Profile",
+		},
 	}
 }
 
@@ -181,6 +187,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
+	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -295,7 +302,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("launching instance in subnet %s", d.SubnetId)
-	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm)
+	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile)
 
 	if err != nil {
 		return fmt.Errorf("Error launching instance: %s", err)
