@@ -122,16 +122,56 @@ the coverage for the VirtualBox driver's package, browse to `/drivers/virtualbox
 You can hit `CTRL+C` to stop the server.
 
 ## Integration Tests
-There is a suite of integration tests that will run for the drivers.  In order
-to use these you must export the corresponding environment variables for each
-driver as these perform the actual actions (start, stop, restart, kill, etc).
+We utilize [BATS](https://github.com/sstephenson/bats) for integration testing.
+This runs tests against the generated binary.  To use, make sure to install
+BATS (use that link).  Then run `./script/build` to generate the binary.  Once
+you have the binary, you can run test against a specified driver:
 
-By default, the suite will run tests against all drivers in master.  You can
-override this by setting the environment variable `MACHINE_TESTS`.  For example,
-`MACHINE_TESTS="virtualbox" ./script/run-integration-tests` will only run the
-virtualbox driver integration tests.
+```
+$ bats integration-tests/driver-virtualbox.bats
+ ✓ virtualbox: machine should not exist
+ ✓ virtualbox: VM should not exist
+ ✓ virtualbox: create
+ ✓ virtualbox: active
+ ✓ virtualbox: ls
+ ✓ virtualbox: run busybox container 
+ ✓ virtualbox: url
+ ✓ virtualbox: ip
+ ✓ virtualbox: ssh
+ ✓ virtualbox: stop
+ ✓ virtualbox: machine should show stopped
+ ✓ virtualbox: start
+ ✓ virtualbox: machine should show running after start
+ ✓ virtualbox: restart
+ ✓ virtualbox: machine should show running after restart
+ ✓ virtualbox: remove
+ ✓ virtualbox: machine should not exist
+ ✓ virtualbox: VM should not exist
 
-You can set the path to the machine binary under test using the `MACHINE_BINARY`
-environment variable.
+15 tests, 0 failures
+```
 
-To run, use the helper script `./script/run-integration-tests`.
+You can also run the general `cli` tests:
+
+```
+$ bats integration-tests/cli.bats
+ ✓ cli: show info
+ ✓ cli: show active help
+ ✓ cli: show config help
+ ✓ cli: show inspect help
+ ✓ cli: show ip help
+ ✓ cli: show kill help
+ ✓ cli: show ls help
+ ✓ cli: show restart help
+ ✓ cli: show rm help
+ ✓ cli: show env help
+ ✓ cli: show ssh help
+ ✓ cli: show start help
+ ✓ cli: show stop help
+ ✓ cli: show upgrade help
+ ✓ cli: show url help
+ ✓ flag: show version
+ ✓ flag: show help
+
+17 tests, 0 failures
+```

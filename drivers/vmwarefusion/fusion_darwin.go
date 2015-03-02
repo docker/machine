@@ -49,6 +49,7 @@ type Driver struct {
 	SwarmMaster    bool
 	SwarmHost      string
 	SwarmDiscovery string
+	CPUS           int
 
 	storePath string
 }
@@ -106,6 +107,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.CPUS = runtime.NumCPU()
 
 	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
 	// specs.
