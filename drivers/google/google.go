@@ -25,6 +25,7 @@ type Driver struct {
 	MachineType      string
 	Scopes           string
 	DiskSize         int
+	AuthTokenPath    string
 	storePath        string
 	UserName         string
 	Project          string
@@ -82,6 +83,11 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "GOOGLE_PROJECT",
 		},
 		cli.StringFlag{
+			Name:   "google-auth-token",
+			Usage:  "GCE oAuth token",
+			EnvVar: "GOOGLE_AUTH_TOKEN",
+		},
+		cli.StringFlag{
 			Name:   "google-scopes",
 			Usage:  "GCE Scopes (comma-separated if multiple scopes)",
 			Value:  "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write",
@@ -119,6 +125,7 @@ func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	driver.MachineType = flags.String("google-machine-type")
 	driver.DiskSize = flags.Int("google-disk-size")
 	driver.UserName = flags.String("google-username")
+	driver.AuthTokenPath = flags.String("google-auth-token")
 	driver.Project = flags.String("google-project")
 	driver.Scopes = flags.String("google-scopes")
 	driver.SwarmMaster = flags.Bool("swarm-master")
