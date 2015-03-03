@@ -501,9 +501,11 @@ func (e *EC2) GetInstance(instanceId string) (EC2Instance, error) {
 		return ec2Instance, fmt.Errorf("Error unmarshalling AWS response XML: %s", err)
 	}
 
-	reservationSet := unmarshalledResponse.ReservationSet[0]
-	instance := reservationSet.InstancesSet[0]
-	return instance, nil
+	if len(unmarshalledResponse.ReservationSet) > 0 {
+		reservationSet := unmarshalledResponse.ReservationSet[0]
+		ec2Instance = reservationSet.InstancesSet[0]
+	}
+	return ec2Instance, nil
 }
 
 func (e *EC2) StartInstance(instanceId string) error {
