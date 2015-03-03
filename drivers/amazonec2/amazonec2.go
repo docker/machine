@@ -11,7 +11,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -19,6 +18,7 @@ import (
 	"github.com/docker/machine/drivers/amazonec2/amz"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 const (
@@ -279,6 +279,19 @@ func (d *Driver) PreCreateCheck() error {
 	return d.checkPrereqs()
 }
 
+func (d *Driver) instanceIpAvailable() bool {
+	ip, err := d.GetIP()
+	if err != nil {
+		log.Debug(err)
+	}
+	if ip != "" {
+		d.IPAddress = ip
+		log.Debugf("Got the IP Address, it's %q", d.IPAddress)
+		return true
+	}
+	return false
+}
+
 func (d *Driver) Create() error {
 	if err := d.checkPrereqs(); err != nil {
 		return err
@@ -309,18 +322,10 @@ func (d *Driver) Create() error {
 	}
 
 	d.InstanceId = instance.InstanceId
+
 	log.Debug("waiting for ip address to become available")
-	for {
-		ip, err := d.GetIP()
-		if err != nil {
-			return err
-		}
-		if ip != "" {
-			d.IPAddress = ip
-			log.Debugf("Got the IP Address, it's %q", d.IPAddress)
-			break
-		}
-		time.Sleep(5 * time.Second)
+	if err := utils.WaitFor(d.instanceIpAvailable); err != nil {
+		return err
 	}
 
 	if len(instance.NetworkInterfaceSet) > 0 {
@@ -417,9 +422,6 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	if err := d.updateDriver(); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -519,29 +521,6 @@ func (d *Driver) sshKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
 
-func (d *Driver) updateDriver() error {
-	inst, err := d.getInstance()
-	if err != nil {
-		return err
-	}
-	// wait for ipaddress
-	for {
-		i, err := d.getInstance()
-		if err != nil {
-			return err
-		}
-		if i.IpAddress == "" {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		d.InstanceId = inst.InstanceId
-		d.IPAddress = inst.IpAddress
-		break
-	}
-	return nil
-}
-
 func (d *Driver) publicSSHKeyPath() string {
 	return d.sshKeyPath() + ".pub"
 }
@@ -555,16 +534,20 @@ func (d *Driver) getInstance() (*amz.EC2Instance, error) {
 	return &instance, nil
 }
 
+func (d *Driver) instanceIsRunning() bool {
+	st, err := d.GetState()
+	if err != nil {
+		log.Debug(err)
+	}
+	if st == state.Running {
+		return true
+	}
+	return false
+}
+
 func (d *Driver) waitForInstance() error {
-	for {
-		st, err := d.GetState()
-		if err != nil {
-			return err
-		}
-		if st == state.Running {
-			break
-		}
-		time.Sleep(1 * time.Second)
+	if err := utils.WaitFor(d.instanceIsRunning); err != nil {
+		return err
 	}
 
 	return nil
@@ -610,6 +593,17 @@ func (d *Driver) isSwarmMaster() bool {
 	return d.SwarmMaster
 }
 
+func (d *Driver) securityGroupAvailableFunc(id string) func() bool {
+	return func() bool {
+		_, err := d.getClient().GetSecurityGroupById(id)
+		if err == nil {
+			return true
+		}
+		log.Debug(err)
+		return false
+	}
+}
+
 func (d *Driver) configureSecurityGroup(groupName string) error {
 	log.Debugf("configuring security group in %s", d.VpcId)
 
@@ -638,13 +632,8 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 		securityGroup = group
 		// wait until created (dat eventual consistency)
 		log.Debugf("waiting for group (%s) to become available", group.GroupId)
-		for {
-			_, err := d.getClient().GetSecurityGroupById(group.GroupId)
-			if err == nil {
-				break
-			}
-			log.Debug(err)
-			time.Sleep(1 * time.Second)
+		if err := utils.WaitFor(d.securityGroupAvailableFunc(group.GroupId)); err != nil {
+			return err
 		}
 	}
 
