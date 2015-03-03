@@ -68,7 +68,8 @@ current state of the instance (running, stopped, error, etc).  This should
 return an error on failure.
 
 # Testing
-Testing is strongly recommended for drivers.  
+Testing is strongly recommended for drivers.  Unit tests are preferred as well
+as inclusion into the [integration tests](https://github.com/docker/machine#integration-tests).
 
 # Maintaining
 Driver contributors are strongly encouraged to maintain the driver to keep
