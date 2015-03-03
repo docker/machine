@@ -486,7 +486,7 @@ func cmdEnv(c *cli.Context) {
 	if c.Bool("unset") {
 		switch userShell {
 		case "fish":
-			fmt.Printf("set -e DOCKER_TLS_VERIFY\nset -e DOCKER_CERT_PATH\nset -e DOCKER_HOST\n")
+			fmt.Printf("set -e DOCKER_TLS_VERIFY;\nset -e DOCKER_CERT_PATH;\nset -e DOCKER_HOST;\n")
 		default:
 			fmt.Println("unset DOCKER_TLS_VERIFY DOCKER_CERT_PATH DOCKER_HOST")
 		}
@@ -523,7 +523,7 @@ func cmdEnv(c *cli.Context) {
 
 	switch userShell {
 	case "fish":
-		fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\nset -x DOCKER_HOST %s\n",
+		fmt.Printf("set -x DOCKER_TLS_VERIFY yes;\nset -x DOCKER_CERT_PATH %s;\nset -x DOCKER_HOST %s;\n",
 			cfg.machineDir, dockerHost)
 	default:
 		fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
