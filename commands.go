@@ -524,10 +524,10 @@ func cmdEnv(c *cli.Context) {
 	switch userShell {
 	case "fish":
 		fmt.Printf("set -x DOCKER_TLS_VERIFY yes\nset -x DOCKER_CERT_PATH %s\nset -x DOCKER_HOST %s\n",
-			cfg.machineDir, dockerHost)
+			strings.Replace(cfg.machineDir, ` `, `\ `, -1), dockerHost)
 	default:
-		fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
-			cfg.machineDir, dockerHost)
+		fmt.Printf("export DOCKER_TLS_VERIFY=yes DOCKER_CERT_PATH=%s DOCKER_HOST=%s\n",
+			strings.Replace(cfg.machineDir, ` `, `\ `, -1), dockerHost)
 	}
 }
 
