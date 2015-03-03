@@ -8,9 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
-	"github.com/docker/machine/state"
 	awsauth "github.com/smartystreets/go-aws-auth"
 )
 
@@ -484,40 +482,6 @@ func (e *EC2) GetKeyPair(name string) (*KeyPair, error) {
 		}
 	}
 	return nil, nil
-}
-
-func (e *EC2) GetInstanceState(instanceId string) (state.State, error) {
-	resp, err := e.performInstanceAction(instanceId, "DescribeInstances", nil)
-	if err != nil {
-		return state.Error, err
-	}
-	defer resp.Body.Close()
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return state.Error, fmt.Errorf("Error reading AWS response body: %s", err)
-	}
-
-	unmarshalledResponse := DescribeInstancesResponse{}
-	if err = xml.Unmarshal(contents, &unmarshalledResponse); err != nil {
-		return state.Error, fmt.Errorf("Error unmarshalling AWS response XML: %s", err)
-	}
-
-	reservationSet := unmarshalledResponse.ReservationSet[0]
-	instanceState := reservationSet.InstancesSet[0].InstanceState
-
-	shortState := strings.TrimSpace(instanceState.Name)
-	switch shortState {
-	case "pending":
-		return state.Starting, nil
-	case "running":
-		return state.Running, nil
-	case "stopped":
-		return state.Stopped, nil
-	case "stopping":
-		return state.Stopped, nil
-	}
-
-	return state.Error, nil
 }
 
 func (e *EC2) GetInstance(instanceId string) (EC2Instance, error) {
