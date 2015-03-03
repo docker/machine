@@ -402,6 +402,8 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Stopping, nil
 	case "stopped":
 		return state.Stopped, nil
+	default:
+		return state.Error, nil
 	}
 	return state.None, nil
 }
