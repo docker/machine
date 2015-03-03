@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 )
 
 func GetHomeDir() string {
@@ -78,4 +80,18 @@ func CopyFile(src, dst string) error {
 	}
 
 	return nil
+}
+
+func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration) error {
+	for i := 0; i < maxAttempts; i++ {
+		if f() {
+			return nil
+		}
+		time.Sleep(waitInterval)
+	}
+	return fmt.Errorf("Maximum number of retries (%d) exceeded", maxAttempts)
+}
+
+func WaitFor(f func() bool) error {
+	return WaitForSpecific(f, 60, 3*time.Second)
 }
