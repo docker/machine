@@ -560,6 +560,28 @@ NAME   ACTIVE   DRIVER       STATE     URL
 dev    *        virtualbox   Stopped
 ```
 
+#### tls-rebuild-ca
+
+Regenerate TLS CA certificates.
+
+```
+$ docker-machine tls-rebuild-ca
+Rebuild TLS CA?  Warning: this is irreversible. (y/n): y
+INFO[0006] Rebuilding TLS CA
+INFO[0006] Creating CA: /Users/ehazlett/.docker/machine/certs/ca.pem
+INFO[0007] Creating client certificate: /Users/ehazlett/.docker/machine/certs/cert.pem
+```
+
+#### tls-regenerate-certs
+
+Regenerate TLS certificates and update the machine with new certs.
+
+```
+$ docker-machine tls-regenerate-certs
+Regenerate TLS machine certs?  Warning: this is irreversible. (y/n): y
+INFO[0013] Regenerating TLS certificates
+```
+
 #### upgrade
 
 Upgrade a machine to the latest version of Docker.

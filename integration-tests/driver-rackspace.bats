@@ -49,6 +49,11 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   [[ ${lines[0]} =~ "total"  ]]
 }
 
+@test "$DRIVER: regenerate certs" {
+  run machine tls-regenerate-certs --force $NAME
+  [ "$status" -eq 0  ]
+}
+
 @test "$DRIVER: stop should fail (unsupported)" {
   run machine stop $NAME
   [[ ${lines[1]} == *"not currently support"*  ]]

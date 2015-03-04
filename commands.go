@@ -67,6 +67,21 @@ func (h hostListItemByName) Swap(i, j int) {
 func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
+func confirmInput(msg string) bool {
+	fmt.Printf("%s (y/n): ", msg)
+	var resp string
+	_, err := fmt.Scanln(&resp)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if strings.Index(strings.ToLower(resp), "y") == 0 {
+		return true
+	}
+
+	return false
+}
 
 func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath string) error {
 	org := utils.GetUsername()
@@ -179,6 +194,22 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Name:        "env",
+		Usage:       "Display the commands to set up the environment for the Docker client",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdEnv,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+			cli.BoolFlag{
+				Name:  "unset, u",
+				Usage: "Unset variables instead of setting them",
+			},
+		},
+	},
+	{
 		Name:        "inspect",
 		Usage:       "Inspect information about a machine",
 		Description: "Argument is a machine name. Will use the active machine if none is provided.",
@@ -226,18 +257,26 @@ var Commands = []cli.Command{
 		Action:      cmdRm,
 	},
 	{
-		Name:        "env",
-		Usage:       "Display the commands to set up the environment for the Docker client",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
-		Action:      cmdEnv,
+		Name:        "tls-rebuild-ca",
+		Usage:       "Rebuild CA",
+		Description: "Rebuild TLS certificate authority and certificates",
+		Action:      cmdTlsRebuildCa,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  "swarm",
-				Usage: "Display the Swarm config instead of the Docker daemon",
+				Name:  "force, f",
+				Usage: "Force rebuild and do not prompt",
 			},
+		},
+	},
+	{
+		Name:        "tls-regenerate-certs",
+		Usage:       "Regenerate TLS Certificates for a machine",
+		Description: "Argument(s) are one or more machine names.  Will use the active machine if none is provided.",
+		Action:      cmdTlsRegenerateCerts,
+		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  "unset, u",
-				Usage: "Unset variables instead of setting them",
+				Name:  "force, f",
+				Usage: "Force rebuild and do not prompt",
 			},
 		},
 	},
@@ -574,11 +613,12 @@ func cmdSsh(c *cli.Context) {
 // We run commands concurrently and communicate back an error if there was one.
 func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
 	commands := map[string](func() error){
-		"start":   machine.Driver.Start,
-		"stop":    machine.Driver.Stop,
-		"restart": machine.Driver.Restart,
-		"kill":    machine.Driver.Kill,
-		"upgrade": machine.Driver.Upgrade,
+		"start":         machine.Driver.Start,
+		"stop":          machine.Driver.Stop,
+		"restart":       machine.Driver.Restart,
+		"kill":          machine.Driver.Kill,
+		"upgrade":       machine.Driver.Upgrade,
+		"configureAuth": machine.ConfigureAuth,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, machine.Name)
@@ -667,6 +707,38 @@ func cmdStart(c *cli.Context) {
 func cmdStop(c *cli.Context) {
 	if err := runActionWithContext("stop", c); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func cmdTlsRebuildCa(c *cli.Context) {
+	force := c.Bool("force")
+
+	if force || confirmInput("Rebuild TLS CA?  Warning: this is irreversible.") {
+		log.Infof("Rebuilding TLS CA")
+
+		certPath := filepath.Join(c.GlobalString("storage-path"), "certs")
+
+		log.Debugf("Removing certificates from %s", certPath)
+		if err := os.RemoveAll(certPath); err != nil {
+			log.Fatal(err)
+		}
+
+		log.Debug("Creating certificates")
+		if err := setupCertificates(c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"),
+			c.GlobalString("tls-client-cert"), c.GlobalString("tls-client-key")); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func cmdTlsRegenerateCerts(c *cli.Context) {
+	force := c.Bool("force")
+	if force || confirmInput("Regenerate TLS machine certs?  Warning: this is irreversible.") {
+		log.Infof("Regenerating TLS certificates")
+		if err := runActionWithContext("configureAuth", c); err != nil {
+			log.Fatal(err)
+		}
+
 	}
 }
 
