@@ -401,9 +401,15 @@ func (h *Host) Create(name string) error {
 }
 
 func (h *Host) Provision() error {
+	// "local" providers use b2d; no provisioning necessary
+	switch h.Driver.DriverName() {
+	case "none", "virtualbox", "vmwarefusion", "vmwarevsphere":
+		return nil
+	}
+
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
-	cmd, err := h.Driver.GetSSHCommand("command -v docker || curl -sSL https://get.docker.com | sh -;")
+	cmd, err := h.Driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sSL https://get.docker.com | sh -; fi")
 	if err != nil {
 		return err
 	}
