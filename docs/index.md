@@ -630,7 +630,10 @@ Options:
  - `--digitalocean-access-token`: Your personal access token for the Digital Ocean API.
  - `--digitalocean-image`: The name of the Digital Ocean image to use. Default: `docker`
  - `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list. Default: `nyc3`
- - `--digitalocean-size`: The size of the Digital Ocean driver (larger than default options are of the form `2gb`). Default: `512mb`
+ - `--digitalocean-size`: The size of the Digital Ocean droplet (larger than default options are of the form `2gb`). Default: `512mb`
+ - `--digitalocean-ipv6`: Enable IPv6 support for the droplet. Default: `false`
+ - `--digitalocean-private-networking`: Enable private networking support for the droplet. Default: `false`
+ - `--digitalocean-backups`: Enable Digital Oceans backups for the droplet. Default: `false`
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
