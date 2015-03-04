@@ -21,22 +21,25 @@ const (
 )
 
 type Driver struct {
-	AccessToken    string
-	DropletID      int
-	DropletName    string
-	Image          string
-	MachineName    string
-	IPAddress      string
-	Region         string
-	SSHKeyID       int
-	Size           string
-	CaCertPath     string
-	PrivateKeyPath string
-	DriverKeyPath  string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-	storePath      string
+	AccessToken       string
+	DropletID         int
+	DropletName       string
+	Image             string
+	MachineName       string
+	IPAddress         string
+	Region            string
+	SSHKeyID          int
+	Size              string
+	IPv6              bool
+	Backups           bool
+	PrivateNetworking bool
+	CaCertPath        string
+	PrivateKeyPath    string
+	DriverKeyPath     string
+	SwarmMaster       bool
+	SwarmHost         string
+	SwarmDiscovery    string
+	storePath         string
 }
 
 func init() {
@@ -73,6 +76,21 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "Digital Ocean size",
 			Value:  "512mb",
 		},
+		cli.BoolFlag{
+			EnvVar: "DIGITALOCEAN_IPV6",
+			Name:   "digitalocean-ipv6",
+			Usage:  "enable ipv6 for droplet",
+		},
+		cli.BoolFlag{
+			EnvVar: "DIGITALOCEAN_PRIVATE_NETWORKING",
+			Name:   "digitalocean-private-networking",
+			Usage:  "enable private networking for droplet",
+		},
+		cli.BoolFlag{
+			EnvVar: "DIGITALOCEAN_BACKUPS",
+			Name:   "digitalocean-backups",
+			Usage:  "enable backups for droplet",
+		},
 	}
 }
 
@@ -89,6 +107,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Image = flags.String("digitalocean-image")
 	d.Region = flags.String("digitalocean-region")
 	d.Size = flags.String("digitalocean-size")
+	d.IPv6 = flags.Bool("digitalocean-ipv6")
+	d.PrivateNetworking = flags.Bool("digitalocean-private-networking")
+	d.Backups = flags.Bool("digitalocean-backups")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -101,7 +122,18 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) PreCreateCheck() error {
-	return nil
+	client := d.getClient()
+	regions, _, err := client.Regions.List(nil)
+	if err != nil {
+		return err
+	}
+	for _, region := range regions {
+		if region.Slug == d.Region {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("digitalocean requires a valid region")
 }
 
 func (d *Driver) Create() error {
@@ -119,11 +151,14 @@ func (d *Driver) Create() error {
 	client := d.getClient()
 
 	createRequest := &godo.DropletCreateRequest{
-		Image:   d.Image,
-		Name:    d.MachineName,
-		Region:  d.Region,
-		Size:    d.Size,
-		SSHKeys: []interface{}{d.SSHKeyID},
+		Image:             d.Image,
+		Name:              d.MachineName,
+		Region:            d.Region,
+		Size:              d.Size,
+		IPv6:              d.IPv6,
+		PrivateNetworking: d.PrivateNetworking,
+		Backups:           d.Backups,
+		SSHKeys:           []interface{}{d.SSHKeyID},
 	}
 
 	newDroplet, _, err := client.Droplets.Create(createRequest)
