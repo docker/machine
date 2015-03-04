@@ -403,7 +403,7 @@ func (h *Host) Create(name string) error {
 func (h *Host) Provision() error {
 	// "local" providers use b2d; no provisioning necessary
 	switch h.Driver.DriverName() {
-	case "none", "virtualbox", "vmwarefusion", "vmwarevsphere":
+	case "none", "hyper-v", "virtualbox", "vmwarefusion", "vmwarevsphere":
 		return nil
 	}
 
