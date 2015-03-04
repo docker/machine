@@ -316,8 +316,8 @@ func (d *Driver) Create() error {
 			return err
 		}
 		if ip != "" {
-
-			d.IPAddress = instance.IpAddress
+			d.IPAddress = ip
+			log.Debugf("Got the IP Address, it's %q", d.IPAddress)
 			break
 		}
 		time.Sleep(5 * time.Second)
@@ -402,6 +402,8 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Stopping, nil
 	case "stopped":
 		return state.Stopped, nil
+	default:
+		return state.Error, nil
 	}
 	return state.None, nil
 }
@@ -563,10 +565,6 @@ func (d *Driver) waitForInstance() error {
 			break
 		}
 		time.Sleep(1 * time.Second)
-	}
-
-	if err := d.updateDriver(); err != nil {
-		return err
 	}
 
 	return nil
