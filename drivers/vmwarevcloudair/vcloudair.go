@@ -270,7 +270,6 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-
 	key, err := d.createSSHKey()
 	if err != nil {
 		return err
@@ -395,26 +394,10 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Info("Configuring Machine...")
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	connTest := "ping -c 3 www.google.com >/dev/null 2>&1 && ( echo \"Connectivity and DNS tests passed.\" ) || ( echo \"Connectivity and DNS tests failed, trying to add Nameserver to resolv.conf\"; echo \"nameserver 8.8.8.8\" >> /etc/resolv.conf )"
 
 	log.Debugf("Connectivity and DNS sanity test...")
-	cmd, err = d.GetSSHCommand(connTest)
+	cmd, err := d.GetSSHCommand(connTest)
 	if err != nil {
 		return err
 	}
@@ -433,7 +416,6 @@ func (d *Driver) Create() error {
 	d.VAppID = vapp.VApp.ID
 
 	return nil
-
 }
 
 func (d *Driver) Remove() error {
@@ -751,8 +733,24 @@ func (d *Driver) Upgrade() error {
 	return cmd.Run()
 }
 
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+	return ip, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return "root"
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.PublicIP, d.SSHPort, "root", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.PublicIP, d.SSHPort, d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 // Helpers
@@ -764,7 +762,7 @@ func generateVMName() string {
 
 func (d *Driver) createSSHKey() (string, error) {
 
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return "", err
 	}
 
@@ -776,10 +774,10 @@ func (d *Driver) createSSHKey() (string, error) {
 	return string(publicKey), nil
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }

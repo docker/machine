@@ -29,6 +29,7 @@ type Driver struct {
 	IPAddress         string
 	Region            string
 	SSHKeyID          int
+	SSHPort           int
 	Size              string
 	IPv6              bool
 	Backups           bool
@@ -95,7 +96,13 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
+	return &Driver{
+		MachineName:    machineName,
+		storePath:      storePath,
+		CaCertPath:     caCert,
+		SSHPort:        22,
+		PrivateKeyPath: privateKey,
+	}, nil
 }
 
 func (d *Driver) DriverName() string {
@@ -192,24 +199,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Waiting for SSH...")
 
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
-		return err
-	}
-
-	log.Info("Configuring Machine...")
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)); err != nil {
 		return err
 	}
 
@@ -217,7 +207,7 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) createSSHKey() (*godo.Key, error) {
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return nil, err
 	}
 
@@ -357,9 +347,24 @@ func (d *Driver) Upgrade() error {
 	return cmd.Run()
 }
 
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return "root"
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+	return ip, nil
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	cmd := ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...)
-	return cmd, nil
+	return ssh.GetSSHCommand(d.IPAddress, d.GetSSHPort(), d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *godo.Client {
@@ -370,10 +375,10 @@ func (d *Driver) getClient() *godo.Client {
 	return godo.NewClient(t.Client())
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }

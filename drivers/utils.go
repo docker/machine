@@ -6,6 +6,8 @@ import (
 	"path"
 	"path/filepath"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 )
 
@@ -39,4 +41,35 @@ func PublicKeyExists() (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func sshAvailableFunc(d Driver) func() bool {
+	return func() bool {
+		log.Debug("Getting to WaitForSSH function...")
+		hostname, err := d.GetSSHHostname()
+		if err != nil {
+			log.Debugf("Error getting IP address waiting for SSH: %s", err)
+			return false
+		}
+		if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", hostname, d.GetSSHPort())); err != nil {
+			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
+			return false
+		}
+		cmd, err := d.GetSSHCommand("exit 0")
+		if err != nil {
+			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+			return false
+		}
+		if err := cmd.Run(); err != nil {
+			return false
+		}
+		return true
+	}
+}
+
+func WaitForSSH(d Driver) error {
+	if err := utils.WaitFor(sshAvailableFunc(d)); err != nil {
+		return fmt.Errorf("Too many retries.  Last error: %s", err)
+	}
+	return nil
 }

@@ -450,6 +450,14 @@ func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	ip, err := d.GetIP()
 	if err != nil {
@@ -462,7 +470,7 @@ func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	}
 
 	log.WithField("MachineId", d.MachineId).Debug("Command: %s", args)
-	return ssh.GetSSHCommand(ip, d.SSHPort, d.SSHUser, d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(ip, d.SSHPort, d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 const (
@@ -624,7 +632,7 @@ func (d *Driver) initNetwork() error {
 
 func (d *Driver) createSSHKey() error {
 	log.WithField("Name", d.KeyPairName).Debug("Creating Key Pair...")
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
@@ -759,10 +767,18 @@ func (d *Driver) sshExec(commands []string) error {
 	return nil
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHHostname() (string, error) {
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+	return ip, nil
+}
+
+func (d *Driver) GetSSHKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
