@@ -287,7 +287,6 @@ Create the Swarm master:
 ```
 docker-machine create \
     -d virtualbox \
-    --swarm \
     --swarm-master \
     --swarm-discovery token://<TOKEN-FROM-ABOVE> \
     swarm-master
@@ -303,7 +302,6 @@ Now, create more Swarm nodes:
 ```
 docker-machine create \
     -d virtualbox \
-    --swarm \
     --swarm-discovery token://<TOKEN-FROM-ABOVE> \
     swarm-node-00
 ```
