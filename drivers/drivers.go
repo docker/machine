@@ -54,10 +54,10 @@ type Driver interface {
 	// Kill stops a host forcefully
 	Kill() error
 
-	// RestartDocker restarts a Docker daemon on the machine
+	// StartDocker starts a Docker daemon on the machine
 	StartDocker() error
 
-	// RestartDocker restarts a Docker daemon on the machine
+	// StopDocker stops a Docker daemon on the machine
 	StopDocker() error
 
 	// Upgrade the version of Docker on the host to the latest version
