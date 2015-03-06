@@ -79,7 +79,7 @@ needed to connect to the instance.
 
 ```
 $ docker-machine env dev
-export DOCKER_TLS_VERIFY=yes
+export DOCKER_TLS_VERIFY=1
 export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
 export DOCKER_HOST=tcp://192.168.99.100:2376
 
@@ -315,7 +315,7 @@ For example:
 
 ```
 $ docker-machine env --swarm swarm-master
-export DOCKER_TLS_VERIFY=yes
+export DOCKER_TLS_VERIFY=1
 export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
 export DOCKER_HOST=tcp://192.168.99.100:3376
 ```
@@ -390,7 +390,7 @@ $ $(docker-machine env dev)
 $ env | grep DOCKER
 DOCKER_HOST=tcp://192.168.99.101:2376
 DOCKER_CERT_PATH=/Users/nathanleclaire/.docker/machines/.client
-DOCKER_TLS_VERIFY=yes
+DOCKER_TLS_VERIFY=1
 $ # If you run a docker command, now it will run against that host.
 $ $(docker-machine env -u)
 $ env | grep DOCKER
