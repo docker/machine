@@ -44,6 +44,7 @@ type Host struct {
 	SwarmMaster    bool
 	SwarmHost      string
 	SwarmDiscovery string
+	SwarmStrategy  string
 	storePath      string
 }
 
@@ -69,7 +70,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster bool, swarmHost string, swarmDiscovery string) (*Host, error) {
+func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster bool, swarmHost string, swarmDiscovery string, swarmStrategy string) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -83,6 +84,7 @@ func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster
 		SwarmMaster:    swarmMaster,
 		SwarmHost:      swarmHost,
 		SwarmDiscovery: swarmDiscovery,
+		SwarmStrategy:  swarmStrategy,
 		storePath:      storePath,
 	}, nil
 }
@@ -106,7 +108,7 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
-func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string) error {
+func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string, strategy string) error {
 	d := h.Driver
 
 	if d.DriverName() == "none" {
@@ -126,8 +128,8 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 	tlsCaCert := path.Join(basePath, "ca.pem")
 	tlsCert := path.Join(basePath, "server.pem")
 	tlsKey := path.Join(basePath, "server-key.pem")
-	masterArgs := fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s %s",
-		tlsCaCert, tlsCert, tlsKey, host, discovery)
+	masterArgs := fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy %s %s",
+		tlsCaCert, tlsCert, tlsKey, host, strategy, discovery)
 	nodeArgs := fmt.Sprintf("--addr %s %s", addr, discovery)
 
 	u, err := url.Parse(host)

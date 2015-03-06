@@ -45,6 +45,7 @@ func getDefaultTestDriverFlags() *DriverOptionsMock {
 			"swarm-host":      "",
 			"swarm-master":    false,
 			"swarm-discovery": "",
+			"swarm-strategy":  "random",
 		},
 	}
 }
