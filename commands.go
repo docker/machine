@@ -120,7 +120,6 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 
 	return nil
 }
-
 var Commands = []cli.Command{
 	{
 		Name:   "active",
@@ -145,6 +144,11 @@ var Commands = []cli.Command{
 			cli.BoolFlag{
 				Name:  "swarm-master",
 				Usage: "Configure Machine to be a Swarm master",
+			},
+			cli.StringFlag{
+				Name: "swarm-strategy",
+				Usage: "Placement strategy to use",
+				Value: "binpacking",
 			},
 			cli.StringFlag{
 				Name:  "swarm-discovery",
@@ -523,10 +527,10 @@ func cmdEnv(c *cli.Context) {
 
 	switch userShell {
 	case "fish":
-		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %s;\nset -x DOCKER_HOST %s;\n",
+		fmt.Printf("set -x DOCKER_TLS_VERIFY yes;\nset -x DOCKER_CERT_PATH %s;\nset -x DOCKER_HOST %s;\n",
 			cfg.machineDir, dockerHost)
 	default:
-		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
+		fmt.Printf("export DOCKER_TLS_VERIFY=yes\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
 			cfg.machineDir, dockerHost)
 	}
 }
