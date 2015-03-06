@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,20 +15,8 @@ const (
 	timeout = time.Second * 5
 )
 
-func defaultTimeout(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, timeout)
-}
-
 func getClient() *http.Client {
-	transport := http.Transport{
-		Dial: defaultTimeout,
-	}
-
-	client := http.Client{
-		Transport: &transport,
-	}
-
-	return &client
+	return http.DefaultClient
 }
 
 type B2dUtils struct {
