@@ -11,5 +11,4 @@ script:
 - script/validate-dco
 - script/validate-gofmt
 - go test -v -short ./...
-- rm -rf $HOME/.docker
 - script/generate-coverage
