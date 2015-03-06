@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -637,8 +637,7 @@ func cmdEnv(c *cli.Context) {
 
 func cmdSsh(c *cli.Context) {
 	var (
-		err    error
-		sshCmd *exec.Cmd
+		err error
 	)
 	name := c.Args().First()
 	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
@@ -658,19 +657,17 @@ func cmdSsh(c *cli.Context) {
 	}
 
 	if len(c.Args()) <= 1 {
-		sshCmd, err = host.GetSSHCommand()
+		_, _, err = host.GetSSHCommand()
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
-		sshCmd, err = host.GetSSHCommand(c.Args()[1:]...)
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		log.Fatal(err)
+		stdout, stderr, err := host.GetSSHCommand(c.Args()[1:]...)
+		io.Copy(os.Stderr, stderr)
+		io.Copy(os.Stdout, stdout)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 

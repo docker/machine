@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -165,11 +165,7 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		return err
 	}
 
-	cmd, err := h.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, _, err := h.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage)); err != nil {
 		return err
 	}
 
@@ -182,12 +178,8 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 	if master {
 		log.Debug("launching swarm master")
 		log.Debugf("master args: %s", masterArgs)
-		cmd, err = h.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
-			port, port, dockerDir, dockerDir, swarmDockerImage, masterArgs))
-		if err != nil {
-			return err
-		}
-		if err := cmd.Run(); err != nil {
+		if _, _, err = h.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
+			port, port, dockerDir, dockerDir, swarmDockerImage, masterArgs)); err != nil {
 			return err
 		}
 	}
@@ -195,12 +187,8 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 	// start node agent
 	log.Debug("launching swarm node")
 	log.Debugf("node args: %s", nodeArgs)
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
-		dockerDir, dockerDir, swarmDockerImage, nodeArgs))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, _, err = h.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
+		dockerDir, dockerDir, swarmDockerImage, nodeArgs)); err != nil {
 		return err
 	}
 
@@ -211,24 +199,19 @@ func (h *Host) StartDocker() error {
 	log.Debug("Starting Docker...")
 
 	var (
-		cmd *exec.Cmd
 		err error
 	)
 
 	switch h.Driver.GetProviderType() {
 	case provider.Local:
-		cmd, err = h.GetSSHCommand("sudo /etc/init.d/docker start")
+		_, _, err = h.GetSSHCommand("sudo /etc/init.d/docker start")
 	case provider.Remote:
-		cmd, err = h.GetSSHCommand("sudo service docker start")
+		_, _, err = h.GetSSHCommand("sudo service docker start")
 	default:
 		return ErrUnknownHypervisorType
 	}
 
 	if err != nil {
-		return err
-	}
-
-	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -239,23 +222,19 @@ func (h *Host) StopDocker() error {
 	log.Debug("Stopping Docker...")
 
 	var (
-		cmd *exec.Cmd
 		err error
 	)
 
 	switch h.Driver.GetProviderType() {
 	case provider.Local:
-		cmd, err = h.GetSSHCommand("if [ -e /var/run/docker.pid  ] && [ -d /proc/$(cat /var/run/docker.pid)  ]; then sudo /etc/init.d/docker stop ; exit 0; fi")
+		_, _, err = h.GetSSHCommand("if [ -e /var/run/docker.pid  ] && [ -d /proc/$(cat /var/run/docker.pid)  ]; then sudo /etc/init.d/docker stop ; exit 0; fi")
 	case provider.Remote:
-		cmd, err = h.GetSSHCommand("sudo service docker stop")
+		_, _, err = h.GetSSHCommand("sudo service docker stop")
 	default:
 		return ErrUnknownHypervisorType
 	}
 
 	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -334,11 +313,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err := h.GetSSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, _, err := h.GetSSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir)); err != nil {
 		return err
 	}
 
@@ -364,27 +339,15 @@ func (h *Host) ConfigureAuth() error {
 	}
 	machineServerKeyPath := path.Join(dockerDir, "server-key.pem")
 
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, _, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath)); err != nil {
 		return err
 	}
 
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), machineServerKeyPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, _, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), machineServerKeyPath)); err != nil {
 		return err
 	}
 
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), machineServerCertPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, _, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), machineServerCertPath)); err != nil {
 		return err
 	}
 
@@ -411,11 +374,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", cfg.EngineConfig, cfg.EngineConfigPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, _, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", cfg.EngineConfig, cfg.EngineConfigPath)); err != nil {
 		return err
 	}
 
@@ -514,46 +473,55 @@ func (h *Host) Provision() error {
 
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
-	cmd, err := h.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sSL https://get.docker.com | sh -; fi")
+	_, stderr, err := h.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sSL https://get.docker.com | sh -; fi")
 	if err != nil {
-		return err
-	}
+		buf := bytes.NewBuffer([]byte{})
+		buf.ReadFrom(stderr)
 
-	// HACK: the script above will output debug to stderr; we save it and
-	// then check if the command returned an error; if so, we show the debug
-
-	var buf bytes.Buffer
-	cmd.Stderr = &buf
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error installing docker: %s\n%s\n", err, string(buf.Bytes()))
+		return fmt.Errorf("error installing docker: %s\n%s\n", err, buf.String())
 	}
 
 	return nil
 }
 
-func (h *Host) GetSSHCommand(args ...string) (*exec.Cmd, error) {
+func (h *Host) GetSSHCommand(args ...string) (io.Reader, io.Reader, error) {
 	addr, err := h.Driver.GetSSHHostname()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	user := h.Driver.GetSSHUsername()
 
 	port, err := h.Driver.GetSSHPort()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	keyPath := h.Driver.GetSSHKeyPath()
+	key, err := ioutil.ReadFile(h.Driver.GetSSHKeyPath())
+	if err != nil {
+		return nil, nil, err
+	}
 
-	cmd := ssh.GetSSHCommand(addr, port, user, keyPath, args...)
-	return cmd, nil
+	client := ssh.NewClient(addr, uint16(port), user, key)
+
+	if len(args) == 0 {
+		if err := client.Terminal(); err != nil {
+			return nil, nil, err
+		}
+	} else {
+		stdout, stderr, err := client.PerformCommand(strings.Join(args, " "))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return stdout, stderr, nil
+	}
+
+	return nil, nil, nil
 }
 
 func (h *Host) SetHostname() error {
 	var (
-		cmd *exec.Cmd
 		err error
 	)
 
@@ -566,13 +534,13 @@ func (h *Host) SetHostname() error {
 	case provider.None:
 		return nil
 	case provider.Local:
-		cmd, err = h.GetSSHCommand(fmt.Sprintf(
+		_, _, err = h.GetSSHCommand(fmt.Sprintf(
 			"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
 			h.Name,
 			h.Name,
 		))
 	case provider.Remote:
-		cmd, err = h.GetSSHCommand(fmt.Sprintf(
+		_, _, err = h.GetSSHCommand(fmt.Sprintf(
 			"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
 			h.Name,
 			h.Name,
@@ -583,10 +551,6 @@ func (h *Host) SetHostname() error {
 	}
 
 	if err != nil {
-		return err
-	}
-
-	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -750,17 +714,12 @@ func sshAvailableFunc(h *Host) func() bool {
 			log.Debugf("Error getting SSH port: %s", err)
 			return false
 		}
-		if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", hostname, port)); err != nil {
+		if err := utils.WaitForTCP(fmt.Sprintf("%s:%d", hostname, port)); err != nil {
 			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
 			return false
 		}
-		cmd, err := h.GetSSHCommand("exit 0")
-		if err != nil {
+		if _, _, err := h.GetSSHCommand("exit 0"); err != nil {
 			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
-			return false
-		}
-		if err := cmd.Run(); err != nil {
-			log.Debugf("Error running ssh command 'exit 0' : %s", err)
 			return false
 		}
 		return true

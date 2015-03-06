@@ -14,11 +14,12 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
+	dutils "github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 const (
@@ -434,19 +435,14 @@ func (d *Driver) Create() error {
 
 	log.Infof("Waiting for SSH...")
 
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.PublicIP, d.SSHPort)); err != nil {
+	if err := utils.WaitForTCP(fmt.Sprintf("%s:%d", d.PublicIP, d.SSHPort)); err != nil {
 		return err
 	}
 
 	connTest := "ping -c 3 www.google.com >/dev/null 2>&1 && ( echo \"Connectivity and DNS tests passed.\" ) || ( echo \"Connectivity and DNS tests failed, trying to add Nameserver to resolv.conf\"; echo \"nameserver 8.8.8.8\" >> /etc/resolv.conf )"
 
 	log.Debugf("Connectivity and DNS sanity test...")
-	cmd, err := drivers.GetSSHCommandFromDriver(d, connTest)
-	if err != nil {
-		return err
-	}
-
-	if err := cmd.Run(); err != nil {
+	if _, _, err := drivers.GetSSHCommandFromDriver(d, connTest); err != nil {
 		return err
 	}
 
@@ -731,7 +727,7 @@ func (d *Driver) Kill() error {
 // Helpers
 
 func generateVMName() string {
-	randomID := utils.TruncateID(utils.GenerateRandomID())
+	randomID := dutils.TruncateID(dutils.GenerateRandomID())
 	return fmt.Sprintf("docker-host-%s", randomID)
 }
 

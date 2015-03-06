@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/ssh"
+	"github.com/docker/machine/utils"
 	raw "google.golang.org/api/compute/v1"
 )
 
@@ -283,7 +284,7 @@ func (c *ComputeUtil) waitForGlobalOp(name string) error {
 // waitForSSH waits for SSH to become ready on the instance.
 func (c *ComputeUtil) waitForSSH(ip string) error {
 	log.Infof("Waiting for SSH...")
-	return ssh.WaitForTCP(fmt.Sprintf("%s:22", ip))
+	return utils.WaitForTCP(fmt.Sprintf("%s:22", ip))
 }
 
 // ip retrieves and returns the external IP address of the instance.

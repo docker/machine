@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -118,8 +117,8 @@ func (d *FakeDriver) GetDockerConfigDir() string {
 	return ""
 }
 
-func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return &exec.Cmd{}, nil
+func (d *FakeDriver) GetSSHCommand(args ...string) (io.Reader, io.Reader, error) {
+	return nil, nil, nil
 }
 
 func TestGetHosts(t *testing.T) {

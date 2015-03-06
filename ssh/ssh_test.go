@@ -1,10 +1,13 @@
-package ssh
+package ssh_test
 
 import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+	// "time"
+
+	"github.com/docker/machine/ssh"
 )
 
 func TestGenerateSSHKey(t *testing.T) {
@@ -15,7 +18,7 @@ func TestGenerateSSHKey(t *testing.T) {
 
 	filename := filepath.Join(tmpDir, "sshkey")
 
-	if err := GenerateSSHKey(filename); err != nil {
+	if err := ssh.GenerateSSHKey(filename); err != nil {
 		t.Fatal(err)
 	}
 

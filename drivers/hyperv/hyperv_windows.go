@@ -332,7 +332,7 @@ func (d *Driver) wait() error {
 	if err != nil {
 		return err
 	}
-	return ssh.WaitForTCP(fmt.Sprintf("%s:22", ip))
+	return utils.WaitForTCP(fmt.Sprintf("%s:22", ip))
 }
 
 func (d *Driver) Start() error {

@@ -3,8 +3,10 @@ package drivers
 import (
 	"errors"
 	"fmt"
-	"os/exec"
+	"io"
+	"io/ioutil"
 	"sort"
+	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/provider"
@@ -159,19 +161,39 @@ type DriverOptions interface {
 	Bool(key string) bool
 }
 
-func GetSSHCommandFromDriver(d Driver, args ...string) (*exec.Cmd, error) {
+func GetSSHCommandFromDriver(d Driver, args ...string) (io.Reader, io.Reader, error) {
 	host, err := d.GetSSHHostname()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	port, err := d.GetSSHPort()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	user := d.GetSSHUsername()
 	keyPath := d.GetSSHKeyPath()
 
-	return ssh.GetSSHCommand(host, port, user, keyPath, args...), nil
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client := ssh.NewClient(host, uint16(port), user, key)
+
+	if len(args) == 0 {
+		if err := client.Terminal(); err != nil {
+			return nil, nil, err
+		}
+	} else {
+		stdout, stderr, err := client.PerformCommand(strings.Join(args, " "))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return stdout, stderr, nil
+	}
+
+	return nil, nil, nil
 }

@@ -9,11 +9,12 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
+	dutils "github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 const (
@@ -356,7 +357,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, utils.GenerateRandomID())
+	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, dutils.GenerateRandomID())
 
 	if err := d.resolveIds(); err != nil {
 		return err
@@ -713,7 +714,7 @@ func (d *Driver) waitForSSHServer() error {
 		"MachineId": d.MachineId,
 		"IP":        ip,
 	}).Debug("Waiting for the SSH server to be started...")
-	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
+	return utils.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
 }
 
 func (d *Driver) waitForInstanceToStart() error {
