@@ -126,7 +126,7 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 	tlsCaCert := path.Join(basePath, "ca.pem")
 	tlsCert := path.Join(basePath, "server.pem")
 	tlsKey := path.Join(basePath, "server-key.pem")
-	masterArgs := fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy random %s",
+	masterArgs := fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s %s",
 		tlsCaCert, tlsCert, tlsKey, host, discovery)
 	nodeArgs := fmt.Sprintf("--addr %s %s", addr, discovery)
 
