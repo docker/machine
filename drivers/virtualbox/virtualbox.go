@@ -344,7 +344,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	if s == state.Stopped {
+	if s == state.Stopped || s == state.Saved {
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
