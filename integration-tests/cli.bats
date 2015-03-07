@@ -3,104 +3,116 @@
 load vars
 
 @test "cli: show info" {
-  run ./docker-machine_$PLATFORM-$ARCH
+  run machine
   [ "$status" -eq 0  ]
   [[ ${lines[0]} =~ "NAME:"  ]]
   [[ ${lines[1]} =~ "Create and manage machines running Docker"  ]]
 }
 
 @test "cli: show active help" {
-  run ./docker-machine_$PLATFORM-$ARCH active -h
+  run machine active -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command active"  ]]
 }
 
 @test "cli: show config help" {
-  run ./docker-machine_$PLATFORM-$ARCH config -h
+  run machine config -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command config"  ]]
 }
 
 @test "cli: show inspect help" {
-  run ./docker-machine_$PLATFORM-$ARCH inspect -h
+  run machine inspect -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command inspect"  ]]
 }
 
 @test "cli: show ip help" {
-  run ./docker-machine_$PLATFORM-$ARCH ip -h
+  run machine ip -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command ip"  ]]
 }
 
 @test "cli: show kill help" {
-  run ./docker-machine_$PLATFORM-$ARCH kill -h
+  run machine kill -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command kill"  ]]
 }
 
 @test "cli: show ls help" {
-  run ./docker-machine_$PLATFORM-$ARCH ls -h
+  run machine ls -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command ls"  ]]
 }
 
 @test "cli: show restart help" {
-  run ./docker-machine_$PLATFORM-$ARCH restart -h
+  run machine restart -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command restart"  ]]
 }
 
+@test "cli: show tls-rebuild-ca help" {
+  run machine tls-rebuild-ca -h
+  [ "$status" -eq 0  ]
+  [[ ${lines[3]} =~ "command tls-rebuild-ca"  ]]
+}
+
+@test "cli: show tls-regenerate-certs help" {
+  run machine tls-regenerate-certs -h
+  [ "$status" -eq 0  ]
+  [[ ${lines[3]} =~ "command tls-regenerate-certs"  ]]
+}
+
 @test "cli: show rm help" {
-  run ./docker-machine_$PLATFORM-$ARCH rm -h
+  run machine rm -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command rm"  ]]
 }
 
 @test "cli: show env help" {
-  run ./docker-machine_$PLATFORM-$ARCH env -h
+  run machine env -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command env"  ]]
 }
 
 @test "cli: show ssh help" {
-  run ./docker-machine_$PLATFORM-$ARCH ssh -h
+  run machine ssh -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command ssh"  ]]
 }
 
 @test "cli: show start help" {
-  run ./docker-machine_$PLATFORM-$ARCH start -h
+  run machine start -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command start"  ]]
 }
 
 @test "cli: show stop help" {
-  run ./docker-machine_$PLATFORM-$ARCH stop -h
+  run machine stop -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command stop"  ]]
 }
 
 @test "cli: show upgrade help" {
-  run ./docker-machine_$PLATFORM-$ARCH upgrade -h
+  run machine upgrade -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command upgrade"  ]]
 }
 
 @test "cli: show url help" {
-  run ./docker-machine_$PLATFORM-$ARCH url -h
+  run machine url -h
   [ "$status" -eq 0  ]
   [[ ${lines[3]} =~ "command url"  ]]
 }
 
 @test "flag: show version" {
-  run ./docker-machine_$PLATFORM-$ARCH -v
+  run machine -v
   [ "$status" -eq 0  ]
   [[ ${lines[0]} =~ "version"  ]]
 }
 
 @test "flag: show help" {
-  run ./docker-machine_$PLATFORM-$ARCH --help
+  run machine --help
   [ "$status" -eq 0  ]
   [[ ${lines[0]} =~ "NAME"  ]]
 }

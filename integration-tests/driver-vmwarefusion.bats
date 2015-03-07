@@ -53,6 +53,11 @@ function setup() {
   [[ ${lines[0]} =~ "total"  ]]
 }
 
+@test "$DRIVER: regenerate certs" {
+  run machine tls-regenerate-certs --force $NAME
+  [ "$status" -eq 0  ]
+}
+
 @test "$DRIVER: stop" {
   run machine stop $NAME
   [ "$status" -eq 0  ]

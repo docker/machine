@@ -276,7 +276,7 @@ func (h *Host) ConfigureAuth() error {
 	}
 	machineServerKeyPath := path.Join(d.GetDockerConfigDir(), "server-key.pem")
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(caCert), machineCaCertPath))
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath))
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverKey), machineServerKeyPath))
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), machineServerKeyPath))
 	if err != nil {
 		return err
 	}
@@ -292,7 +292,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverCert), machineServerCertPath))
+	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), machineServerCertPath))
 	if err != nil {
 		return err
 	}

@@ -523,7 +523,7 @@ func (d *Driver) StartDocker() error {
 func (d *Driver) StopDocker() error {
 	log.Debug("Stopping Docker...")
 
-	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
+	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ] && [ -d /proc/$(cat /var/run/docker.pid) ]; then sudo /etc/init.d/docker stop ; exit 0; fi")
 	if err != nil {
 		return err
 	}
