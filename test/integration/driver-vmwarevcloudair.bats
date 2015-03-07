@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load vars
+load helpers
 
 export DRIVER=vmwarevcloudair
 export NAME="bats-$DRIVER-test"

@@ -1,15 +1,10 @@
 #!/usr/bin/env bats
 
-load vars
+load helpers
 
-export DRIVER=vmwarefusion
+export DRIVER=softlayer
 export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
-
-function setup() {
-  # add sleep because vbox; ugh
-  sleep 1
-}
 
 @test "$DRIVER: machine should not exist" {
   run machine active $NAME
