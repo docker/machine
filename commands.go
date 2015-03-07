@@ -161,6 +161,11 @@ var Commands = []cli.Command{
 				Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
 				Value: "",
 			},
+			cli.StringFlag{
+				Name:  "pull-swarm-image",
+				Usage: "Set if pull swarm image from Docker Hub",
+				Value: "true",
+			},
 		),
 		Name:   "create",
 		Usage:  "Create a machine",

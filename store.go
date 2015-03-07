@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -75,7 +76,12 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 		master := flags.Bool("swarm-master")
 		swarmHost := flags.String("swarm-host")
 		addr := flags.String("swarm-addr")
-		if err := host.ConfigureSwarm(discovery, master, swarmHost, addr); err != nil {
+		pullSwarmImage, err := strconv.ParseBool(flags.String("pull-swarm-image"))
+		if err != nil {
+			return nil, err
+		}
+
+		if err := host.ConfigureSwarm(discovery, master, swarmHost, addr, pullSwarmImage); err != nil {
 			log.Errorf("Error configuring Swarm: %s", err)
 		}
 	}

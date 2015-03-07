@@ -106,7 +106,7 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
-func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string) error {
+func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string, pullSwarmImage bool) error {
 	d := h.Driver
 
 	if d.DriverName() == "none" {
@@ -142,19 +142,21 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		return err
 	}
 
-	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
+	if pullSwarmImage {
+		cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
+		if err != nil {
+			return err
+		}
+		if err := cmd.Run(); err != nil {
+			return err
+		}
 	}
 
 	// if master start master agent
 	if master {
 		log.Debug("launching swarm master")
 		log.Debugf("master args: %s", masterArgs)
-		cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
+		cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
 			port, port, d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, masterArgs))
 		if err != nil {
 			return err
@@ -167,7 +169,7 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 	// start node agent
 	log.Debug("launching swarm node")
 	log.Debugf("node args: %s", nodeArgs)
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
+	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
 		d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, nodeArgs))
 	if err != nil {
 		return err
