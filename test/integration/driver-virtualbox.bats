@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load vars
+load helpers
 
 export DRIVER=virtualbox
 export NAME="bats-$DRIVER-test"
