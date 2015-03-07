@@ -344,11 +344,19 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	if s == state.Stopped {
+	switch s {
+	case state.Stopped, state.Saved:
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
 		log.Infof("Waiting for VM to start...")
+	case state.Paused:
+		if err := vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
+			return err
+		}
+		log.Infof("Resuming VM ...")
+	default:
+		log.Infof("VM not in restartable state")
 	}
 
 	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
