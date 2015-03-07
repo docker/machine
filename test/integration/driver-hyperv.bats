@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
-load vars
+load helpers
 
-export DRIVER=google
+export DRIVER=hyperv
 export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 
