@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
-load vars
+load helpers
 
-export DRIVER=rackspace
+export DRIVER=digitalocean
 export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 
@@ -25,7 +25,6 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"$NAME"*  ]]
-  [[ ${lines[1]} == *"*"*  ]]
 }
 
 @test "$DRIVER: run busybox container" {
@@ -49,14 +48,38 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   [[ ${lines[0]} =~ "total"  ]]
 }
 
-@test "$DRIVER: stop should fail (unsupported)" {
+@test "$DRIVER: stop" {
   run machine stop $NAME
-  [[ ${lines[1]} == *"not currently support"*  ]]
+  [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: start should fail (unsupported)" {
+@test "$DRIVER: machine should show stopped after stop" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Stopped"*  ]]
+}
+
+@test "$DRIVER: start" {
   run machine start $NAME
-  [[ ${lines[1]} == *"not currently support"*  ]]
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: machine should show running after start" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Running"*  ]]
+}
+
+@test "$DRIVER: kill" {
+  run machine kill $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: machine should show stopped after kill" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"$NAME"*  ]]
+  [[ ${lines[1]} == *"Stopped"*  ]]
 }
 
 @test "$DRIVER: restart" {
@@ -72,7 +95,7 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 }
 
 @test "$DRIVER: remove" {
-  run machine rm $NAME
+  run machine rm -f $NAME
   [ "$status" -eq 0  ]
 }
 
