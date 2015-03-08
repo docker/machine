@@ -32,6 +32,7 @@ type Driver struct {
 	CaCertPath       string
 	PrivateKeyPath   string
 	sshKeyPath       string
+	SSHPort          int
 	publicSSHKeyPath string
 	SwarmMaster      bool
 	SwarmHost        string
@@ -110,6 +111,7 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 		CaCertPath:       caCert,
 		PrivateKeyPath:   privateKey,
 		sshKeyPath:       path.Join(storePath, "id_rsa"),
+		SSHPort:          22,
 		publicSSHKeyPath: path.Join(storePath, "id_rsa.pub"),
 	}, nil
 }
@@ -296,17 +298,37 @@ func (d *Driver) StopDocker() error {
 	return nil
 }
 
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
 func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
 }
 
+func (d *Driver) GetSSHKeyPath() string {
+	return d.sshKeyPath
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return d.UserName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+	return ip, nil
+}
+
 // GetSSHCommand returns a command that will run over SSH on the GCE instance.
-func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	ip, err := driver.GetIP()
+func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
+	ip, err := d.GetIP()
 	if err != nil {
 		return nil, err
 	}
-	return ssh.GetSSHCommand(ip, 22, driver.UserName, driver.sshKeyPath, args...), nil
+	return ssh.GetSSHCommand(ip, d.GetSSHPort(), d.GetSSHUsername(), d.sshKeyPath, args...), nil
 }
 
 // Upgrade upgrades the docker daemon on the host to the latest version.

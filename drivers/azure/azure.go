@@ -448,6 +448,18 @@ func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return d.UserName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+	return ip, nil
+}
+
 func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	err := driver.setUserSubscription()
 	if err != nil {
@@ -463,7 +475,7 @@ func (driver *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("Azure host is stopped. Please start it before using ssh command.")
 	}
 
-	return ssh.GetSSHCommand(driver.getHostname(), driver.SSHPort, driver.UserName, driver.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(driver.getHostname(), driver.SSHPort, driver.GetSSHUsername(), driver.GetSSHKeyPath(), args...), nil
 }
 
 func (driver *Driver) Upgrade() error {
@@ -562,11 +574,11 @@ func waitForDockerEndpoint(url string, maxRepeats int) bool {
 }
 
 func (driver *Driver) generateCertForAzure() error {
-	if err := ssh.GenerateSSHKey(driver.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(driver.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
-	cmd := exec.Command("openssl", "req", "-x509", "-key", driver.sshKeyPath(), "-nodes", "-days", "365", "-newkey", "rsa:2048", "-out", driver.azureCertPath(), "-subj", "/C=AU/ST=Some-State/O=InternetWidgitsPtyLtd/CN=\\*")
+	cmd := exec.Command("openssl", "req", "-x509", "-key", driver.GetSSHKeyPath(), "-nodes", "-days", "365", "-newkey", "rsa:2048", "-out", driver.azureCertPath(), "-subj", "/C=AU/ST=Some-State/O=InternetWidgitsPtyLtd/CN=\\*")
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -574,12 +586,16 @@ func (driver *Driver) generateCertForAzure() error {
 	return nil
 }
 
-func (driver *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
+func (driver *Driver) GetSSHKeyPath() string {
 	return filepath.Join(driver.storePath, "id_rsa")
 }
 
 func (driver *Driver) publicSSHKeyPath() string {
-	return driver.sshKeyPath() + ".pub"
+	return driver.GetSSHKeyPath() + ".pub"
 }
 
 func (driver *Driver) azureCertPath() string {

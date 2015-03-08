@@ -57,6 +57,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+func (d *Driver) GetSSHPort() int {
+	return 22
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return "", nil
+}
+
 func (d *Driver) GetURL() (string, error) {
 	return d.URL, nil
 }
@@ -113,6 +121,14 @@ func (d *Driver) Upgrade() error {
 	return fmt.Errorf("hosts without a driver cannot be upgraded")
 }
 
+func (d *Driver) GetSSHUsername() string {
+	return ""
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return nil, fmt.Errorf("hosts without a driver do not support SSH")
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return ""
 }

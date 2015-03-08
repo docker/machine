@@ -73,6 +73,10 @@ func (d *FakeDriver) Upgrade() error {
 	return nil
 }
 
+func (d *FakeDriver) GetSSHPort() int {
+	return 22
+}
+
 func (d *FakeDriver) StartDocker() error {
 	return nil
 }
@@ -83,6 +87,18 @@ func (d *FakeDriver) StopDocker() error {
 
 func (d *FakeDriver) GetDockerConfigDir() string {
 	return ""
+}
+
+func (d *FakeDriver) GetSSHKeyPath() string {
+	return "/foo/id_rsa"
+}
+
+func (d *FakeDriver) GetSSHUsername() string {
+	return "root"
+}
+
+func (d *FakeDriver) GetSSHHostname() (string, error) {
+	return "localhost", nil
 }
 
 func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {

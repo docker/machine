@@ -172,7 +172,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Creating SSH key...")
 
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
@@ -321,20 +321,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
-		d.MachineName,
-		d.MachineName,
-	))
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
 	return nil
 }
 
@@ -351,7 +337,7 @@ func (d *Driver) Start() error {
 		log.Infof("Waiting for VM to start...")
 	}
 
-	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
+	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.GetSSHPort()))
 }
 
 func (d *Driver) Stop() error {
@@ -502,8 +488,20 @@ func (d *Driver) GetIP() (string, error) {
 	return "", fmt.Errorf("No IP address found %s", out)
 }
 
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return "docker"
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return "localhost", nil
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand("localhost", d.SSHPort, "docker", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand("localhost", d.GetSSHPort(), d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 func (d *Driver) StartDocker() error {
@@ -538,12 +536,12 @@ func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 func (d *Driver) diskPath() string {

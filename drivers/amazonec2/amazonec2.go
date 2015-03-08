@@ -57,6 +57,7 @@ type Driver struct {
 	IamInstanceProfile string
 	VpcId              string
 	SubnetId           string
+	SSHPort            int
 	Zone               string
 	CaCertPath         string
 	PrivateKeyPath     string
@@ -161,7 +162,14 @@ func GetCreateFlags() []cli.Flag {
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	id := generateId()
-	return &Driver{Id: id, MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
+	return &Driver{
+		Id:             id,
+		SSHPort:        22,
+		MachineName:    machineName,
+		storePath:      storePath,
+		CaCertPath:     caCert,
+		PrivateKeyPath: privateKey,
+	}, nil
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
@@ -340,9 +348,9 @@ func (d *Driver) Create() error {
 		d.PrivateIPAddress,
 	)
 
-	log.Infof("Waiting for SSH on %s:%d", d.IPAddress, 22)
+	log.Infof("Waiting for SSH on %s:%d", d.IPAddress, d.SSHPort)
 
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)); err != nil {
 		return err
 	}
 
@@ -354,21 +362,6 @@ func (d *Driver) Create() error {
 	}
 
 	if err = d.getClient().CreateTags(d.InstanceId, tags); err != nil {
-		return err
-	}
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -410,7 +403,6 @@ func (d *Driver) GetState() (state.State, error) {
 	default:
 		return state.Error, nil
 	}
-	return state.None, nil
 }
 
 func (d *Driver) Start() error {
@@ -508,8 +500,24 @@ func (d *Driver) Upgrade() error {
 	return cmd.Run()
 }
 
+func (d *Driver) GetSSHPort() int {
+	return d.SSHPort
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return "ubuntu"
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+	return ip, nil
+}
+
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "ubuntu", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, d.SSHPort, d.GetSSHUsername(), d.GetSSHKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *amz.EC2 {
@@ -517,12 +525,12 @@ func (d *Driver) getClient() *amz.EC2 {
 	return amz.NewEC2(auth, d.Region)
 }
 
-func (d *Driver) sshKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return path.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 func (d *Driver) getInstance() (*amz.EC2Instance, error) {
@@ -555,7 +563,7 @@ func (d *Driver) waitForInstance() error {
 
 func (d *Driver) createKeyPair() error {
 
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
@@ -638,6 +646,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 	}
 
 	d.SecurityGroupId = securityGroup.GroupId
+	log.Debugf("configuring security group authorization for %s", ipRange)
 
 	perms := d.configureSecurityGroupPermissions(securityGroup)
 
@@ -658,7 +667,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *amz.SecurityGroup) []a
 	hasSwarmPort := false
 	for _, p := range group.IpPermissions {
 		switch p.FromPort {
-		case 22:
+		case d.GetSSHPort():
 			hasSshPort = true
 		case dockerPort:
 			hasDockerPort = true
@@ -672,8 +681,8 @@ func (d *Driver) configureSecurityGroupPermissions(group *amz.SecurityGroup) []a
 	if !hasSshPort {
 		perms = append(perms, amz.IpPermission{
 			IpProtocol: "tcp",
-			FromPort:   22,
-			ToPort:     22,
+			FromPort:   d.GetSSHPort(),
+			ToPort:     d.GetSSHPort(),
 			IpRange:    ipRange,
 		})
 	}

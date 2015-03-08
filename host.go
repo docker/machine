@@ -387,13 +387,17 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
-	// install docker
-	if err := h.Provision(); err != nil {
-		return err
-	}
+	log.Debug("Done with driver create")
 
 	// save to store
 	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
+	log.Debug("Time for provisioning")
+
+	// install docker
+	if err := h.Provision(); err != nil {
 		return err
 	}
 
@@ -401,10 +405,29 @@ func (h *Host) Create(name string) error {
 }
 
 func (h *Host) Provision() error {
-	// "local" providers use b2d; no provisioning necessary
-	switch h.Driver.DriverName() {
-	case "none", "virtualbox", "vmwarefusion", "vmwarevsphere":
+	if h.Driver.DriverName() == "none" {
+		// no provisioning nil driver (at least right now)
 		return nil
+	}
+
+	if err := drivers.WaitForSSH(h.Driver); err != nil {
+		return err
+	}
+
+	switch h.Driver.DriverName() {
+	// TODO: This should be in a Provisioner interface whose concern is OS-specific
+	// detection and handling, so that this code doesn't care about underlying
+	// operations.
+	case "virtualbox", "vmwarefusion", "vmwarevsphere", "hyper-v":
+		if err := h.SetInstanceHostnameBoot2Docker(); err != nil {
+			return err
+		}
+		// "local" providers use b2d; at this point, they're done
+		return nil
+	default:
+		if err := h.SetInstanceHostnameUbuntu(); err != nil {
+			return err
+		}
 	}
 
 	// install docker - until cloudinit we use ubuntu everywhere so we
@@ -495,6 +518,41 @@ func (h *Host) SaveConfig() error {
 		return err
 	}
 	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *Host) SetInstanceHostnameUbuntu() error {
+	log.Debugf("Setting hostname for: %s", h.Name)
+	cmd, err := h.Driver.GetSSHCommand(fmt.Sprintf(
+		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
+		h.Name,
+		h.Name,
+		h.Name,
+	))
+
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) SetInstanceHostnameBoot2Docker() error {
+	log.Debugf("Setting hostname for: %s", h.Name)
+	cmd, err := h.Driver.GetSSHCommand(fmt.Sprintf(
+		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
+		h.Name,
+		h.Name,
+	))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 	return nil
