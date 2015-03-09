@@ -507,6 +507,10 @@ func (h *Host) Provision() error {
 		return nil
 	}
 
+	if err := WaitForSSH(h); err != nil {
+		return err
+	}
+
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
 	cmd, err := h.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sSL https://get.docker.com | sh -; fi")
@@ -658,6 +662,43 @@ func (h *Host) SaveConfig() error {
 	}
 	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
 		return err
+	}
+	return nil
+}
+
+func sshAvailableFunc(h *Host) func() bool {
+	return func() bool {
+		log.Debug("Getting to WaitForSSH function...")
+		hostname, err := h.Driver.GetSSHHostname()
+		if err != nil {
+			log.Debugf("Error getting IP address waiting for SSH: %s", err)
+			return false
+		}
+		port, err := h.Driver.GetSSHPort()
+		if err != nil {
+			log.Debugf("Error getting SSH port: %s", err)
+			return false
+		}
+		if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", hostname, port)); err != nil {
+			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
+			return false
+		}
+		cmd, err := h.GetSSHCommand("exit 0")
+		if err != nil {
+			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+			return false
+		}
+		if err := cmd.Run(); err != nil {
+			log.Debugf("Error running ssh command 'exit 0' : %s", err)
+			return false
+		}
+		return true
+	}
+}
+
+func WaitForSSH(h *Host) error {
+	if err := utils.WaitFor(sshAvailableFunc(h)); err != nil {
+		return fmt.Errorf("Too many retries.  Last error: %s", err)
 	}
 	return nil
 }
