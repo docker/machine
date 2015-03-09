@@ -16,18 +16,18 @@ import (
 
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/amazonec2"
-	_ "github.com/docker/machine/drivers/azure"
-	_ "github.com/docker/machine/drivers/digitalocean"
-	_ "github.com/docker/machine/drivers/google"
-	_ "github.com/docker/machine/drivers/hyperv"
+	//_ "github.com/docker/machine/drivers/azure"
+	//_ "github.com/docker/machine/drivers/digitalocean"
+	//_ "github.com/docker/machine/drivers/google"
+	//_ "github.com/docker/machine/drivers/hyperv"
 	_ "github.com/docker/machine/drivers/none"
-	_ "github.com/docker/machine/drivers/openstack"
-	_ "github.com/docker/machine/drivers/rackspace"
-	_ "github.com/docker/machine/drivers/softlayer"
-	_ "github.com/docker/machine/drivers/virtualbox"
-	_ "github.com/docker/machine/drivers/vmwarefusion"
-	_ "github.com/docker/machine/drivers/vmwarevcloudair"
-	_ "github.com/docker/machine/drivers/vmwarevsphere"
+	//_ "github.com/docker/machine/drivers/openstack"
+	//_ "github.com/docker/machine/drivers/rackspace"
+	//_ "github.com/docker/machine/drivers/softlayer"
+	//_ "github.com/docker/machine/drivers/virtualbox"
+	//_ "github.com/docker/machine/drivers/vmwarefusion"
+	//_ "github.com/docker/machine/drivers/vmwarevcloudair"
+	//_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
@@ -554,9 +554,9 @@ func cmdSsh(c *cli.Context) {
 	}
 
 	if len(c.Args()) <= 1 {
-		sshCmd, err = host.Driver.GetSSHCommand()
+		sshCmd, err = host.GetSSHCommand()
 	} else {
-		sshCmd, err = host.Driver.GetSSHCommand(c.Args()[1:]...)
+		sshCmd, err = host.GetSSHCommand(c.Args()[1:]...)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -578,7 +578,7 @@ func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
 		"stop":    machine.Driver.Stop,
 		"restart": machine.Driver.Restart,
 		"kill":    machine.Driver.Kill,
-		"upgrade": machine.Driver.Upgrade,
+		"upgrade": machine.Upgrade,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, machine.Name)
