@@ -3,7 +3,6 @@ package drivers
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"sort"
 
 	"github.com/codegangsta/cli"
@@ -14,62 +13,57 @@ import (
 // driver represent different ways hosts can be created (e.g. different
 // hypervisors, different cloud providers)
 type Driver interface {
+	// Create a host using the driver's config
+	Create() error
+
 	// DriverName returns the name of the driver as it is registered
 	DriverName() string
-
-	// SetConfigFromFlags configures the driver with the object that was returned
-	// by RegisterCreateFlags
-	SetConfigFromFlags(flags DriverOptions) error
-
-	// GetURL returns a Docker compatible host URL for connecting to this host
-	// e.g. tcp://1.2.3.4:2376
-	GetURL() (string, error)
 
 	// GetIP returns an IP or hostname that this host is available at
 	// e.g. 1.2.3.4 or docker-host-d60b70a14d3a.cloudapp.net
 	GetIP() (string, error)
 
+	// GetSSHHostname returns hostname for use with ssh
+	GetSSHHostname() (string, error)
+
+	// GetSSHKeyPath returns key path for use with ssh
+	GetSSHKeyPath() string
+
+	// GetSSHPort returns port for use with ssh
+	GetSSHPort() (int, error)
+
+	// GetSSHUsername returns username for use with ssh
+	GetSSHUsername() string
+
+	// GetURL returns a Docker compatible host URL for connecting to this host
+	// e.g. tcp://1.2.3.4:2376
+	GetURL() (string, error)
+
 	// GetState returns the state that the host is in (running, stopped, etc)
 	GetState() (state.State, error)
 
-	// PreCreate allows for pre-create operations to make sure a driver is ready for creation
-	PreCreateCheck() error
+	// Kill stops a host forcefully
+	Kill() error
 
-	// Create a host using the driver's config
-	Create() error
+	// PreCreateCheck allows for pre-create operations to make sure a driver is ready for creation
+	PreCreateCheck() error
 
 	// Remove a host
 	Remove() error
+
+	// Restart a host. This may just call Stop(); Start() if the provider does not
+	// have any special restart behaviour.
+	Restart() error
+
+	// SetConfigFromFlags configures the driver with the object that was returned
+	// by RegisterCreateFlags
+	SetConfigFromFlags(flags DriverOptions) error
 
 	// Start a host
 	Start() error
 
 	// Stop a host gracefully
 	Stop() error
-
-	// Restart a host. This may just call Stop(); Start() if the provider does not
-	// have any special restart behaviour.
-	Restart() error
-
-	// Kill stops a host forcefully
-	Kill() error
-
-	// StartDocker starts a Docker daemon on the machine
-	StartDocker() error
-
-	// StopDocker stops a Docker daemon on the machine
-	StopDocker() error
-
-	// Upgrade the version of Docker on the host to the latest version
-	Upgrade() error
-
-	// GetDockerConfigDir returns the config directory for storing daemon configs
-	GetDockerConfigDir() string
-
-	// GetSSHCommand returns a command for SSH pointing at the correct user, host
-	// and keys for the host with args appended. If no args are passed, it will
-	// initiate an interactive SSH session as if SSH were passed no args.
-	GetSSHCommand(args ...string) (*exec.Cmd, error)
 }
 
 // RegisteredDriver is used to register a driver with the Register function.
