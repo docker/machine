@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/hypervisor"
 	"github.com/docker/machine/state"
 )
 
@@ -19,13 +20,13 @@ type Port struct {
 // hypervisors, different cloud providers)
 type Driver interface {
 	// AuthorizePort authorizes a port for machine access
-	AuthorizePort(ports []Port) error
+	AuthorizePort(ports []*Port) error
 
 	// Create a host using the driver's config
 	Create() error
 
 	// DeauthorizePort removes a port for machine access
-	DeauthorizePort(ports []Port) error
+	DeauthorizePort(ports []*Port) error
 
 	// DriverName returns the name of the driver as it is registered
 	DriverName() string
@@ -33,6 +34,9 @@ type Driver interface {
 	// GetIP returns an IP or hostname that this host is available at
 	// e.g. 1.2.3.4 or docker-host-d60b70a14d3a.cloudapp.net
 	GetIP() (string, error)
+
+	// GetMachineName returns the name of the machine
+	GetMachineName() string
 
 	// GetSSHHostname returns hostname for use with ssh
 	GetSSHAddress() (string, error)
@@ -52,6 +56,9 @@ type Driver interface {
 
 	// GetState returns the state that the host is in (running, stopped, etc)
 	GetState() (state.State, error)
+
+	// GetHypervisorType returns whether the instance is local/remote
+	GetHypervisorType() hypervisor.HypervisorType
 
 	// Kill stops a host forcefully
 	Kill() error
