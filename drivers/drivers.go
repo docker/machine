@@ -19,12 +19,15 @@ type Driver interface {
 	// DriverName returns the name of the driver as it is registered
 	DriverName() string
 
+	// GetDockerPort returns the port specified for Docker
+	GetDockerPort() int
+
 	// GetIP returns an IP or hostname that this host is available at
 	// e.g. 1.2.3.4 or docker-host-d60b70a14d3a.cloudapp.net
 	GetIP() (string, error)
 
 	// GetSSHHostname returns hostname for use with ssh
-	GetSSHHostname() (string, error)
+	GetSSHAddress() (string, error)
 
 	// GetSSHKeyPath returns key path for use with ssh
 	GetSSHKeyPath() string
