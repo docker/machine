@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/hypervisor"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -57,8 +57,8 @@ type Driver interface {
 	// GetState returns the state that the host is in (running, stopped, etc)
 	GetState() (state.State, error)
 
-	// GetHypervisorType returns whether the instance is local/remote
-	GetHypervisorType() hypervisor.HypervisorType
+	// GetProviderType returns whether the instance is local/remote
+	GetProviderType() provider.ProviderType
 
 	// Kill stops a host forcefully
 	Kill() error

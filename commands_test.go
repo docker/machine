@@ -12,7 +12,7 @@ import (
 
 	"github.com/codegangsta/cli"
 	drivers "github.com/docker/machine/drivers"
-	"github.com/docker/machine/hypervisor"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -44,8 +44,8 @@ func (d *FakeDriver) GetMachineName() string {
 	return ""
 }
 
-func (d *FakeDriver) GetHypervisorType() hypervisor.HypervisorType {
-	return hypervisor.None
+func (d *FakeDriver) GetProviderType() provider.ProviderType {
+	return provider.None
 }
 
 func (d *FakeDriver) GetIP() (string, error) {
