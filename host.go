@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -18,13 +19,16 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/hypervisor"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 )
 
 var (
-	validHostNameChars   = `[a-zA-Z0-9\-\.]`
-	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
-	ErrInvalidHostname   = errors.New("Invalid hostname specified")
+	validHostNameChars       = `[a-zA-Z0-9\-\.]`
+	validHostNamePattern     = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	ErrInvalidHostname       = errors.New("Invalid hostname specified")
+	ErrUnknownHypervisorType = errors.New("Unknown hypervisor type")
 )
 
 const (
@@ -106,6 +110,18 @@ func ValidateHostName(name string) (string, error) {
 	return name, nil
 }
 
+func (h *Host) GetDockerConfigDir() (string, error) {
+	// TODO: this will be refactored in https://github.com/docker/machine/issues/699
+	switch h.Driver.GetHypervisorType() {
+	case hypervisor.Local:
+		return "/var/lib/boot2docker", nil
+	case hypervisor.Remote:
+		return "/etc/default", nil
+	default:
+		return "", ErrUnknownHypervisorType
+	}
+}
+
 func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr string) error {
 	d := h.Driver
 
@@ -122,7 +138,11 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		addr = fmt.Sprintf("%s:2376", ip)
 	}
 
-	basePath := d.GetDockerConfigDir()
+	basePath, err := h.GetDockerConfigDir()
+	if err != nil {
+		return err
+	}
+
 	tlsCaCert := path.Join(basePath, "ca.pem")
 	tlsCert := path.Join(basePath, "server.pem")
 	tlsKey := path.Join(basePath, "server-key.pem")
@@ -142,7 +162,7 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		return err
 	}
 
-	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
+	cmd, err := h.GetSSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage))
 	if err != nil {
 		return err
 	}
@@ -150,12 +170,17 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 		return err
 	}
 
+	dockerDir, err := h.GetDockerConfigDir()
+	if err != nil {
+		return err
+	}
+
 	// if master start master agent
 	if master {
 		log.Debug("launching swarm master")
 		log.Debugf("master args: %s", masterArgs)
-		cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
-			port, port, d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, masterArgs))
+		cmd, err = h.GetSSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
+			port, port, dockerDir, dockerDir, swarmDockerImage, masterArgs))
 		if err != nil {
 			return err
 		}
@@ -167,8 +192,63 @@ func (h *Host) ConfigureSwarm(discovery string, master bool, host string, addr s
 	// start node agent
 	log.Debug("launching swarm node")
 	log.Debugf("node args: %s", nodeArgs)
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
-		d.GetDockerConfigDir(), d.GetDockerConfigDir(), swarmDockerImage, nodeArgs))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
+		dockerDir, dockerDir, swarmDockerImage, nodeArgs))
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) StartDocker() error {
+	log.Debug("Starting Docker...")
+
+	var (
+		cmd *exec.Cmd
+		err error
+	)
+
+	switch h.Driver.GetHypervisorType() {
+	case hypervisor.Local:
+		cmd, err = h.GetSSHCommand("sudo /etc/init.d/docker start")
+	case hypervisor.Remote:
+		cmd, err = h.GetSSHCommand("sudo service docker start")
+	default:
+		return ErrUnknownHypervisorType
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) StopDocker() error {
+	log.Debug("Stopping Docker...")
+
+	var (
+		cmd *exec.Cmd
+		err error
+	)
+
+	switch h.Driver.GetHypervisorType() {
+	case hypervisor.Local:
+		cmd, err = h.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
+	case hypervisor.Remote:
+		cmd, err = h.GetSSHCommand("sudo service docker stop")
+	default:
+		return ErrUnknownHypervisorType
+	}
+
 	if err != nil {
 		return err
 	}
@@ -242,11 +322,16 @@ func (h *Host) ConfigureAuth() error {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
 
-	if err := d.StopDocker(); err != nil {
+	if err := h.StopDocker(); err != nil {
 		return err
 	}
 
-	cmd, err := d.GetSSHCommand(fmt.Sprintf("sudo mkdir -p %s", d.GetDockerConfigDir()))
+	dockerDir, err := h.GetDockerConfigDir()
+	if err != nil {
+		return err
+	}
+
+	cmd, err := h.GetSSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir))
 	if err != nil {
 		return err
 	}
@@ -262,21 +347,21 @@ func (h *Host) ConfigureAuth() error {
 
 	// due to windows clients, we cannot use filepath.Join as the paths
 	// will be mucked on the linux hosts
-	machineCaCertPath := path.Join(d.GetDockerConfigDir(), "ca.pem")
+	machineCaCertPath := path.Join(dockerDir, "ca.pem")
 
 	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
 		return err
 	}
-	machineServerCertPath := path.Join(d.GetDockerConfigDir(), "server.pem")
+	machineServerCertPath := path.Join(dockerDir, "server.pem")
 
 	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
 		return err
 	}
-	machineServerKeyPath := path.Join(d.GetDockerConfigDir(), "server-key.pem")
+	machineServerKeyPath := path.Join(dockerDir, "server-key.pem")
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(caCert), machineCaCertPath))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(caCert), machineCaCertPath))
 	if err != nil {
 		return err
 	}
@@ -284,7 +369,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverKey), machineServerKeyPath))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverKey), machineServerKeyPath))
 	if err != nil {
 		return err
 	}
@@ -292,7 +377,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverCert), machineServerCertPath))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverCert), machineServerCertPath))
 	if err != nil {
 		return err
 	}
@@ -318,9 +403,12 @@ func (h *Host) ConfigureAuth() error {
 		dockerPort = dPort
 	}
 
-	cfg := h.generateDockerConfig(dockerPort, machineCaCertPath, machineServerKeyPath, machineServerCertPath)
+	cfg, err := h.generateDockerConfig(dockerPort, machineCaCertPath, machineServerKeyPath, machineServerCertPath)
+	if err != nil {
+		return err
+	}
 
-	cmd, err = d.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", cfg.EngineConfig, cfg.EngineConfigPath))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", cfg.EngineConfig, cfg.EngineConfigPath))
 	if err != nil {
 		return err
 	}
@@ -328,14 +416,14 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	if err := d.StartDocker(); err != nil {
+	if err := h.StartDocker(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKeyPath string, serverCertPath string) *DockerConfig {
+func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKeyPath string, serverCertPath string) (*DockerConfig, error) {
 	d := h.Driver
 	var (
 		daemonOpts    string
@@ -353,10 +441,15 @@ func (h *Host) generateDockerConfig(dockerPort int, caCertPath string, serverKey
 		strings.Join(swarmLabels, " "),
 	)
 
+	dockerDir, err := h.GetDockerConfigDir()
+	if err != nil {
+		return nil, err
+	}
+
 	switch d.DriverName() {
 	case "virtualbox", "vmwarefusion", "vmwarevsphere", "hyper-v":
 		daemonOpts = fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
-		daemonOptsCfg = path.Join(d.GetDockerConfigDir(), "profile")
+		daemonOptsCfg = path.Join(dockerDir, "profile")
 		opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
 		daemonCfg = fmt.Sprintf(`EXTRA_ARGS='%s'
 CACERT=%s
@@ -373,7 +466,7 @@ DOCKER_TLS=no`, opts, caCertPath, serverKeyPath, serverCertPath)
 	return &DockerConfig{
 		EngineConfig:     daemonCfg,
 		EngineConfigPath: daemonOptsCfg,
-	}
+	}, nil
 }
 
 func (h *Host) Create(name string) error {
@@ -387,13 +480,13 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
-	// install docker
-	if err := h.Provision(); err != nil {
+	// save to store
+	if err := h.SaveConfig(); err != nil {
 		return err
 	}
 
-	// save to store
-	if err := h.SaveConfig(); err != nil {
+	// install docker
+	if err := h.Provision(); err != nil {
 		return err
 	}
 
@@ -409,7 +502,7 @@ func (h *Host) Provision() error {
 
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
-	cmd, err := h.Driver.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sSL https://get.docker.com | sh -; fi")
+	cmd, err := h.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sSL https://get.docker.com | sh -; fi")
 	if err != nil {
 		return err
 	}
@@ -424,6 +517,64 @@ func (h *Host) Provision() error {
 		return fmt.Errorf("error installing docker: %s\n%s\n", err, string(buf.Bytes()))
 	}
 
+	if err := h.SetHostname(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) GetSSHCommand(args ...string) (*exec.Cmd, error) {
+	addr, err := h.Driver.GetSSHAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	user := h.Driver.GetSSHUsername()
+
+	port, err := h.Driver.GetSSHPort()
+	if err != nil {
+		return nil, err
+	}
+
+	keyPath := h.Driver.GetSSHKeyPath()
+
+	cmd := ssh.GetSSHCommand(addr, port, user, keyPath, args...)
+	return cmd, nil
+}
+
+func (h *Host) SetHostname() error {
+	var (
+		cmd *exec.Cmd
+		err error
+	)
+
+	switch h.Driver.GetHypervisorType() {
+	case hypervisor.Local:
+		cmd, err = h.GetSSHCommand(fmt.Sprintf(
+			"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
+			h.Name,
+			h.Name,
+		))
+	case hypervisor.Remote:
+		cmd, err = h.GetSSHCommand(fmt.Sprintf(
+			"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
+			h.Name,
+			h.Name,
+			h.Name,
+		))
+	default:
+		return ErrUnknownHypervisorType
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -436,7 +587,8 @@ func (h *Host) Stop() error {
 }
 
 func (h *Host) Upgrade() error {
-	return h.Driver.Upgrade()
+	// TODO: refactor to provisioner
+	return fmt.Errorf("upgrade not implemented")
 }
 
 func (h *Host) Remove(force bool) error {
