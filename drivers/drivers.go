@@ -39,7 +39,7 @@ type Driver interface {
 	GetMachineName() string
 
 	// GetSSHHostname returns hostname for use with ssh
-	GetSSHAddress() (string, error)
+	GetSSHHostname() (string, error)
 
 	// GetSSHKeyPath returns key path for use with ssh
 	GetSSHKeyPath() string

@@ -62,7 +62,7 @@ func (d *Driver) GetMachineName() string {
 	return ""
 }
 
-func (d *Driver) GetSSHAddress() (string, error) {
+func (d *Driver) GetSSHHostname() (string, error) {
 	return "", nil
 }
 

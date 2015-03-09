@@ -52,7 +52,7 @@ func (d *FakeDriver) GetIP() (string, error) {
 	return "", nil
 }
 
-func (d *FakeDriver) GetSSHAddress() (string, error) {
+func (d *FakeDriver) GetSSHHostname() (string, error) {
 	return "", nil
 }
 
