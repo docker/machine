@@ -350,9 +350,17 @@ func (d *Driver) Create() error {
 	getIp()
 	waitForStart()
 	ssh.WaitForTCP(d.IPAddress + ":22")
-	if err := d.setupHost(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error setting up host config: %q", err)
+
+	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install -y curl")
+	if err != nil {
+		return err
+
 	}
+	if err := cmd.Run(); err != nil {
+		return err
+
+	}
+
 	return nil
 }
 
@@ -437,22 +445,4 @@ func (d *Driver) Upgrade() error {
 	}
 
 	return cmd.Run()
-}
-
-func (d *Driver) setupHost() error {
-	log.Infof("Configuring host OS")
-	ssh.WaitForTCP(d.IPAddress + ":22")
-	// Wait to make sure docker is installed
-	for {
-		cmd, err := d.GetSSHCommand(`[ -f "$(which docker)" ] && [ -f "/etc/default/docker" ] || exit 1`)
-		if err != nil {
-			return err
-		}
-		if err := cmd.Run(); err == nil {
-			break
-		}
-		time.Sleep(2 * time.Second)
-	}
-
-	return nil
 }
