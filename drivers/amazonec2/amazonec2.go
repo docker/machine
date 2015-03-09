@@ -15,7 +15,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/amazonec2/amz"
-	"github.com/docker/machine/hypervisor"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -43,6 +43,7 @@ type Driver struct {
 	Region             string
 	AMI                string
 	SSHKeyID           int
+	SSHPort            int
 	KeyName            string
 	InstanceId         string
 	InstanceType       string
@@ -64,7 +65,6 @@ type Driver struct {
 	SwarmDiscovery     string
 	storePath          string
 	keyPath            string
-	SSHPort            int
 }
 
 type CreateFlags struct {
@@ -170,8 +170,8 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	}, nil
 }
 
-func (d *Driver) GetHypervisorType() hypervisor.HypervisorType {
-	return hypervisor.Remote
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
 }
 
 func (d *Driver) AuthorizePort(ports []*drivers.Port) error {

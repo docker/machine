@@ -19,7 +19,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/hypervisor"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 )
@@ -112,10 +112,10 @@ func ValidateHostName(name string) (string, error) {
 
 func (h *Host) GetDockerConfigDir() (string, error) {
 	// TODO: this will be refactored in https://github.com/docker/machine/issues/699
-	switch h.Driver.GetHypervisorType() {
-	case hypervisor.Local:
+	switch h.Driver.GetProviderType() {
+	case provider.Local:
 		return "/var/lib/boot2docker", nil
-	case hypervisor.Remote:
+	case provider.Remote:
 		return "/etc/default", nil
 	default:
 		return "", ErrUnknownHypervisorType
@@ -212,10 +212,10 @@ func (h *Host) StartDocker() error {
 		err error
 	)
 
-	switch h.Driver.GetHypervisorType() {
-	case hypervisor.Local:
+	switch h.Driver.GetProviderType() {
+	case provider.Local:
 		cmd, err = h.GetSSHCommand("sudo /etc/init.d/docker start")
-	case hypervisor.Remote:
+	case provider.Remote:
 		cmd, err = h.GetSSHCommand("sudo service docker start")
 	default:
 		return ErrUnknownHypervisorType
@@ -240,10 +240,10 @@ func (h *Host) StopDocker() error {
 		err error
 	)
 
-	switch h.Driver.GetHypervisorType() {
-	case hypervisor.Local:
+	switch h.Driver.GetProviderType() {
+	case provider.Local:
 		cmd, err = h.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
-	case hypervisor.Remote:
+	case provider.Remote:
 		cmd, err = h.GetSSHCommand("sudo service docker stop")
 	default:
 		return ErrUnknownHypervisorType
@@ -549,14 +549,14 @@ func (h *Host) SetHostname() error {
 		err error
 	)
 
-	switch h.Driver.GetHypervisorType() {
-	case hypervisor.Local:
+	switch h.Driver.GetProviderType() {
+	case provider.Local:
 		cmd, err = h.GetSSHCommand(fmt.Sprintf(
 			"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
 			h.Name,
 			h.Name,
 		))
-	case hypervisor.Remote:
+	case provider.Remote:
 		cmd, err = h.GetSSHCommand(fmt.Sprintf(
 			"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
 			h.Name,
