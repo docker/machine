@@ -19,6 +19,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -31,6 +32,7 @@ const (
 
 type Driver struct {
 	MachineName    string
+	SSHUser        string
 	SSHPort        int
 	Memory         int
 	DiskSize       int
@@ -83,6 +85,38 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return "localhost", nil
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Local
+}
+
 func (d *Driver) DriverName() string {
 	return "virtualbox"
 }
@@ -105,6 +139,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SSHUser = "docker"
 
 	return nil
 }
@@ -172,7 +207,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Creating SSH key...")
 
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
@@ -321,20 +356,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
-		d.MachineName,
-		d.MachineName,
-	))
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
 	return nil
 }
 
@@ -465,6 +486,24 @@ func (d *Driver) setMachineNameIfNotSet() {
 	}
 }
 
+// getSSHCommand returns a command suitable for ssh
+func (d *Driver) getSSHCommand(args ...string) (*exec.Cmd, error) {
+	host, err := d.GetSSHHostname()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := d.GetSSHPort()
+	if err != nil {
+		return nil, err
+	}
+
+	user := d.GetSSHUsername()
+	keyPath := d.GetSSHKeyPath()
+
+	return ssh.GetSSHCommand(host, port, user, keyPath, args...), nil
+}
+
 func (d *Driver) GetIP() (string, error) {
 	// DHCP is used to get the IP, so virtualbox hosts don't have IPs unless
 	// they are running
@@ -475,8 +514,7 @@ func (d *Driver) GetIP() (string, error) {
 	if s != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
-
-	cmd, err := d.GetSSHCommand("ip addr show dev eth1")
+	cmd, err := d.getSSHCommand("ip addr show dev eth1")
 	if err != nil {
 		return "", err
 	}
@@ -502,48 +540,8 @@ func (d *Driver) GetIP() (string, error) {
 	return "", fmt.Errorf("No IP address found %s", out)
 }
 
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand("localhost", d.SSHPort, "docker", d.sshKeyPath(), args...), nil
-}
-
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
-func (d *Driver) sshKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 func (d *Driver) diskPath() string {
