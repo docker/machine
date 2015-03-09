@@ -2,11 +2,11 @@ package none
 
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/api"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/hypervisor"
 	"github.com/docker/machine/state"
 )
 
@@ -38,7 +38,15 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	return &Driver{}, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
 func (d *Driver) Create() error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
 	return nil
 }
 
@@ -50,7 +58,11 @@ func (d *Driver) GetIP() (string, error) {
 	return "", nil
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
+func (d *Driver) GetMachineName() string {
+	return ""
+}
+
+func (d *Driver) GetSSHAddress() (string, error) {
 	return "", nil
 }
 
@@ -58,8 +70,8 @@ func (d *Driver) GetSSHKeyPath() string {
 	return ""
 }
 
-func (d *Driver) GetSSHPort() int {
-	return 0
+func (d *Driver) GetSSHPort() (int, error) {
+	return 0, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -72,6 +84,10 @@ func (d *Driver) GetURL() (string, error) {
 
 func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
+}
+
+func (d *Driver) GetHypervisorType() hypervisor.HypervisorType {
+	return hypervisor.None
 }
 
 func (d *Driver) Kill() error {

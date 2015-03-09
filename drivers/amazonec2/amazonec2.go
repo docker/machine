@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/url"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/amazonec2/amz"
+	"github.com/docker/machine/hypervisor"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -27,7 +27,6 @@ const (
 	defaultInstanceType      = "t2.micro"
 	defaultRootSize          = 16
 	ipRange                  = "0.0.0.0/0"
-	dockerConfigDir          = "/etc/docker"
 	machineSecurityGroupName = "docker-machine"
 )
 
@@ -65,7 +64,7 @@ type Driver struct {
 	SwarmDiscovery     string
 	storePath          string
 	keyPath            string
-	sshPort            int
+	SSHPort            int
 }
 
 type CreateFlags struct {
@@ -162,7 +161,25 @@ func GetCreateFlags() []cli.Flag {
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	id := generateId()
-	return &Driver{Id: id, MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
+	return &Driver{
+		Id:             id,
+		MachineName:    machineName,
+		storePath:      storePath,
+		CaCertPath:     caCert,
+		PrivateKeyPath: privateKey,
+	}, nil
+}
+
+func (d *Driver) GetHypervisorType() hypervisor.HypervisorType {
+	return hypervisor.Remote
+}
+
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
@@ -192,6 +209,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SSHPort = 22
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -221,6 +239,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
 }
 
 func (d *Driver) DriverName() string {
@@ -347,29 +369,12 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Info("Configuring Machine...")
-
 	log.Debug("Settings tags for instance")
 	tags := map[string]string{
 		"Name": d.MachineName,
 	}
 
 	if err = d.getClient().CreateTags(d.InstanceId, tags); err != nil {
-		return err
-	}
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -420,7 +425,7 @@ func (d *Driver) GetSSHAddress() (string, error) {
 }
 
 func (d *Driver) GetSSHPort() (int, error) {
-	return d.sshPort, nil
+	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -474,58 +479,6 @@ func (d *Driver) Kill() error {
 	return nil
 }
 
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
-func (d *Driver) Upgrade() error {
-	log.Debugf("Upgrading Docker")
-
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
-	return cmd.Run()
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, d.GetSSHPort(), "ubuntu", d.sshKeyPath(), args...), nil
-}
-
 func (d *Driver) getClient() *amz.EC2 {
 	auth := amz.GetAuth(d.AccessKey, d.SecretKey, d.SessionToken)
 	return amz.NewEC2(auth, d.Region)
@@ -533,10 +486,6 @@ func (d *Driver) getClient() *amz.EC2 {
 
 func (d *Driver) GetSSHKeyPath() string {
 	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
 }
 
 func (d *Driver) getInstance() (*amz.EC2Instance, error) {
@@ -569,11 +518,11 @@ func (d *Driver) waitForInstance() error {
 
 func (d *Driver) createKeyPair() error {
 
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
-	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	publicKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
 	if err != nil {
 		return err
 	}
