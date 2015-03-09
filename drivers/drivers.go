@@ -19,13 +19,13 @@ type Port struct {
 // hypervisors, different cloud providers)
 type Driver interface {
 	// AuthorizePort authorizes a port for machine access
-	AuthorizePort(port Port) error
+	AuthorizePort(ports []Port) error
 
 	// Create a host using the driver's config
 	Create() error
 
 	// DeauthorizePort removes a port for machine access
-	DeauthorizePort(port Port) error
+	DeauthorizePort(ports []Port) error
 
 	// DriverName returns the name of the driver as it is registered
 	DriverName() string
