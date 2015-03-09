@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -65,6 +65,7 @@ type Driver struct {
 	SwarmDiscovery     string
 	storePath          string
 	keyPath            string
+	sshPort            int
 }
 
 type CreateFlags struct {
@@ -413,6 +414,19 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) GetSSHAddress() (string, error) {
+	// TODO: use @nathanleclaire retry func here (ehazlett)
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	return d.sshPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return "ubuntu"
+}
+
 func (d *Driver) Start() error {
 	if err := d.getClient().StartInstance(d.InstanceId); err != nil {
 		return err
@@ -509,7 +523,7 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "ubuntu", d.sshKeyPath(), args...), nil
+	return ssh.GetSSHCommand(d.IPAddress, d.GetSSHPort(), "ubuntu", d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *amz.EC2 {
@@ -517,8 +531,8 @@ func (d *Driver) getClient() *amz.EC2 {
 	return amz.NewEC2(auth, d.Region)
 }
 
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) publicSSHKeyPath() string {
