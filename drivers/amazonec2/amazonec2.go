@@ -419,7 +419,7 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-func (d *Driver) GetSSHAddress() (string, error) {
+func (d *Driver) GetSSHHostname() (string, error) {
 	// TODO: use @nathanleclaire retry func here (ehazlett)
 	return d.GetIP()
 }

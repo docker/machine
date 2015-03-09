@@ -525,7 +525,7 @@ func (h *Host) Provision() error {
 }
 
 func (h *Host) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	addr, err := h.Driver.GetSSHAddress()
+	addr, err := h.Driver.GetSSHHostname()
 	if err != nil {
 		return nil, err
 	}
