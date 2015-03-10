@@ -1,4 +1,4 @@
-package provisioner
+package provision
 
 import (
 	"errors"
