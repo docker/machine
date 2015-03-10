@@ -1,33 +1,39 @@
 package provision
 
 import (
-	"fmt"
-
 	"github.com/docker/machine/drivers"
 )
 
 func init() {
-	RegisterRuntime("boot2docker", &RegisteredRuntime{
-		Detect: Boot2DockerDetection,
+	RegisterProvisioner("boot2docker", &ProvisionerDetection{
+		New: func(driver drivers.Driver) Provisioner {
+			return &Boot2DockerProvisioner{
+				Driver: driver,
+			}
+		},
 	})
 }
 
-func Boot2DockerDetection(d drivers.Driver) (Runtime, error) {
-	_, err := sshCommand(d, "lsb_release")
-	if err != nil {
-		fmt.Print(err)
-		return nil, ErrDetectionFailed
-	}
-
-	return Boot2Docker{}, nil
+type Boot2DockerProvisioner struct {
+	Driver drivers.Driver
 }
 
-type Boot2Docker struct{}
-
-func (r Boot2Docker) Service(name string, state ServiceState) error {
+func (provisioner *Boot2DockerProvisioner) Service(name string, action ServiceState) error {
 	return nil
 }
 
-func (r Boot2Docker) Package(name string, state PackageState) error {
-	return ErrNotImplemented
+func (provisioner *Boot2DockerProvisioner) Package(name string, action PackageState) error {
+	return nil
+}
+
+func (provisioner *Boot2DockerProvisioner) Hostname() string {
+	return ""
+}
+
+func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
+	return nil
+}
+
+func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() error {
+	return nil
 }

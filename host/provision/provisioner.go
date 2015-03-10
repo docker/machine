@@ -1,9 +1,33 @@
 package provision
 
 import (
-	"fmt"
 	"github.com/docker/machine/drivers"
 )
+
+var provisioners = make(map[string]*ProvisionerDetection)
+
+// Detection
+type ProvisionerDetection struct {
+	New ProvisionerFactoryFunc
+}
+
+func RegisterProvisioner(name string, p *ProvisionerDetection) {
+	provisioners[name] = p
+}
+
+func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
+	for _, p := range provisioners {
+		provisioner := p.New(d)
+
+		if err := provisioner.CompatibleWithHost(); err != nil {
+			return provisioner, nil
+		}
+	}
+
+	return nil, ErrDetectionFailed
+}
+
+type ProvisionerFactoryFunc func(drivers.Driver) Provisioner
 
 // Distribution specific actions
 type Provisioner interface {
@@ -18,26 +42,7 @@ type Provisioner interface {
 
 	// Set hostname
 	SetHostname(hostname string) error
+
+	// Detection function
+	CompatibleWithHost() error
 }
-
-// var runtimes = make(map[string]*RegisteredRuntime)
-
-// type RegisteredRuntime struct {
-// 	Detect DetectionFunc
-// }
-
-// func RegisterRuntime(name string, runtime *RegisteredRuntime) error {
-// 	runtimes[name] = runtime
-
-// 	return nil
-// }
-
-// type DetectionFunc func(d drivers.Driver) (Runtime, error)
-
-// func DetectRuntime(d drivers.Driver) (Runtime, error) {
-// 	for _, r := range runtimes {
-// 		return r.Detect(d)
-// 	}
-
-// 	return nil, ErrDetectionFailed
-// }
