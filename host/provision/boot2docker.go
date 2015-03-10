@@ -8,13 +8,15 @@ import (
 )
 
 func init() {
-	RegisterProvisioner("boot2docker", &ProvisionerDetection{
-		New: func(driver drivers.Driver) Provisioner {
-			return &Boot2DockerProvisioner{
-				Driver: driver,
-			}
-		},
+	RegisterProvisioner("boot2docker", &ProvisionerFactories{
+		New: NewBoot2DockerProvisioner,
 	})
+}
+
+func NewBoot2DockerProvisioner(driver drivers.Driver) Provisioner {
+	return &Boot2DockerProvisioner{
+		Driver: driver,
+	}
 }
 
 type Boot2DockerProvisioner struct {

@@ -6,14 +6,14 @@ import (
 	"github.com/docker/machine/drivers"
 )
 
-var provisioners = make(map[string]*ProvisionerDetection)
+var provisioners = make(map[string]*ProvisionerFactories)
 
 // Detection
-type ProvisionerDetection struct {
+type ProvisionerFactories struct {
 	New ProvisionerFactoryFunc
 }
 
-func RegisterProvisioner(name string, p *ProvisionerDetection) {
+func RegisterProvisioner(name string, p *ProvisionerFactories) {
 	provisioners[name] = p
 }
 
