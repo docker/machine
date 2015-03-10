@@ -52,7 +52,8 @@ func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() error {
 
 	re := regexp.MustCompile(`(?m)^ID=(\w+)`)
 
-	if len(re.FindStringSubmatch(so.String())) > 0 {
+	m := re.FindStringSubmatch(so.String())
+	if len(m) > 0 && m[1] == "boot2docker" {
 		return nil
 	}
 
