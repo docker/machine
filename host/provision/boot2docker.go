@@ -29,12 +29,33 @@ func (provisioner *Boot2DockerProvisioner) Package(name string, action PackageSt
 	return nil
 }
 
-func (provisioner *Boot2DockerProvisioner) Hostname() string {
-	return ""
+func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
+	cmd, err := provisioner.SSHCommandFunc(fmt.Sprintf("hostname"))
+	if err != nil {
+		return "", err
+	}
+
+	var so bytes.Buffer
+	cmd.Stdout = &so
+
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	return so.String(), nil
 }
 
 func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
-	return nil
+	cmd, err := provisioner.SSHCommandFunc(fmt.Sprintf(
+		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
+		d.MachineName,
+		d.MachineName,
+	))
+	if err != nil {
+		return err
+	}
+
+	return cmd.Run()
 }
 
 func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() error {
