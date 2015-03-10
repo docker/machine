@@ -21,6 +21,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
+	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
 
@@ -588,12 +589,54 @@ func (h *Host) SetHostname() error {
 	return nil
 }
 
+func (h *Host) MachineInState(desiredState state.State) func() bool {
+	return func() bool {
+		currentState, err := h.Driver.GetState()
+		if err != nil {
+			log.Debugf("Error getting machine state: %s", err)
+		}
+		if currentState == desiredState {
+			return true
+		}
+		return false
+	}
+}
+
 func (h *Host) Start() error {
-	return h.Driver.Start()
+	if err := h.Driver.Start(); err != nil {
+		return err
+	}
+	return utils.WaitFor(h.MachineInState(state.Running))
 }
 
 func (h *Host) Stop() error {
-	return h.Driver.Stop()
+	if err := h.Driver.Stop(); err != nil {
+		return err
+	}
+	return utils.WaitFor(h.MachineInState(state.Stopped))
+}
+
+func (h *Host) Kill() error {
+	if err := h.Driver.Stop(); err != nil {
+		return err
+	}
+	return utils.WaitFor(h.MachineInState(state.Stopped))
+}
+
+func (h *Host) Restart() error {
+	if err := h.Stop(); err != nil {
+		return err
+	}
+	if err := utils.WaitFor(h.MachineInState(state.Stopped)); err != nil {
+		return err
+	}
+	if err := h.Start(); err != nil {
+		return err
+	}
+	if err := utils.WaitFor(h.MachineInState(state.Running)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (h *Host) Upgrade() error {
