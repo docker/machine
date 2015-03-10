@@ -41,7 +41,7 @@ type Provisioner interface {
 	Package(name string, action PackageState) error
 
 	// Hostname
-	Hostname() string
+	Hostname() (string, error)
 
 	// Set hostname
 	SetHostname(hostname string) error
