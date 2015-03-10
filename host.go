@@ -117,6 +117,8 @@ func (h *Host) GetDockerConfigDir() (string, error) {
 		return "/var/lib/boot2docker", nil
 	case provider.Remote:
 		return "/etc/default", nil
+	case provider.None:
+		return "", nil
 	default:
 		return "", ErrUnknownHypervisorType
 	}
