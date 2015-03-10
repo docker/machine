@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -22,10 +21,10 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
-	// cssh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -40,6 +39,7 @@ const (
 
 type Driver struct {
 	MachineName    string
+	SSHUser        string
 	SSHPort        int
 	CPU            int
 	Memory         int
@@ -160,11 +160,44 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	return &Driver{MachineName: machineName, StorePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Local
+}
+
 func (d *Driver) DriverName() string {
 	return "vmwarevsphere"
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.SSHUser = "docker"
 	d.SSHPort = 22
 	d.CPU = flags.Int("vmwarevsphere-cpu-count")
 	d.Memory = flags.Int("vmwarevsphere-memory-size")
@@ -243,7 +276,6 @@ func (d *Driver) Create() error {
 
 	var (
 		isoURL string
-		err    error
 	)
 
 	b2dutils := utils.NewB2dUtils("", "")
@@ -305,7 +337,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Generating SSH Keypair...")
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
@@ -354,20 +386,6 @@ func (d *Driver) Create() error {
 
 	// Expand tar file.
 	if err := vcConn.GuestStart(B2D_USER, B2D_PASS, "/usr/bin/sudo", "/bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && /usr/bin/sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && /usr/bin/sudo chown -R docker:staff /home/docker"); err != nil {
-		return err
-	}
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -469,56 +487,12 @@ func (d *Driver) Kill() error {
 	return nil
 }
 
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
 func (d *Driver) Upgrade() error {
 	return fmt.Errorf("upgrade is not supported for vsphere driver at this moment")
 }
 
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	ip, err := d.GetIP()
-	if err != nil {
-		return nil, err
-	}
-	return ssh.GetSSHCommand(ip, d.SSHPort, "docker", d.sshKeyPath(), args...), nil
-}
-
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
-}
-
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 func (d *Driver) checkVsphereConfig() error {
