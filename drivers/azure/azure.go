@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -175,7 +176,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	if (d.SubscriptionID == "" || d.SubscriptionCert == "") && d.PublishSettingsFilePath == "" {
-		return fmt.Errorf("Please specify azure subscription params using options: --azure-subscription-id and --azure-subscription-cert or --azure-publish-settings-file")
+		return errors.New("Please specify azure subscription params using options: --azure-subscription-id and --azure-subscription-cert or --azure-publish-settings-file")
 	}
 
 	if image == "" {
@@ -188,7 +189,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Size = flags.String("azure-size")
 
 	if strings.ToLower(username) == "docker" {
-		return fmt.Errorf("'docker' is not valid user name for docker host. Please specify another user name")
+		return errors.New("'docker' is not valid user name for docker host. Please specify another user name")
 	}
 
 	d.SSHUser = username
@@ -214,7 +215,7 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	if !available {
-		return fmt.Errorf(response)
+		return errors.New(response)
 	}
 
 	return nil
@@ -237,12 +238,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debug("Adding Linux provisioning...")
-	user := d.GetSSHUsername()
-	port, err := d.GetSSHPort()
-	if err != nil {
-		return err
-	}
-	vmConfig, err = vmClient.AddAzureLinuxProvisioningConfig(vmConfig, user, d.UserPassword, d.azureCertPath(), port)
+	vmConfig, err = vmClient.AddAzureLinuxProvisioningConfig(vmConfig, d.GetSSHUsername(), d.UserPassword, d.azureCertPath(), d.SSHPort)
 	if err != nil {
 		return err
 	}
@@ -259,12 +255,7 @@ func (d *Driver) Create() error {
 
 	log.Info("Waiting for SSH...")
 	log.Debugf("Host: %s SSH Port: %d", d.getHostname(), d.SSHPort)
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.getHostname(), d.SSHPort)); err != nil {
-		return err
-	}
-
-	return nil
+	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.getHostname(), d.SSHPort))
 }
 
 func (d *Driver) GetURL() (string, error) {
@@ -277,15 +268,14 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	err := d.setUserSubscription()
-	if err != nil {
+	if err := d.setUserSubscription(); err != nil {
 		return state.Error, err
 	}
 
 	dockerVM, err := vmClient.GetVMDeployment(d.MachineName, d.MachineName)
 	if err != nil {
 		if strings.Contains(err.Error(), "Code: ResourceNotFound") {
-			return state.Error, fmt.Errorf("Azure host was not found. Please check your Azure subscription.")
+			return state.Error, errors.New("Azure host was not found. Please check your Azure subscription.")
 		}
 
 		return state.Error, err
@@ -305,81 +295,58 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) Start() error {
-	err := d.setUserSubscription()
-	if err != nil {
+	if err := d.setUserSubscription(); err != nil {
 		return err
 	}
 
-	vmState, err := d.GetState()
-	if err != nil {
+	if vmState, err := d.GetState(); err != nil {
 		return err
-	}
-	if vmState == state.Running || vmState == state.Starting {
+	} else if vmState == state.Running || vmState == state.Starting {
 		log.Infof("Host is already running or starting")
 		return nil
 	}
 
 	log.Debugf("starting %s", d.MachineName)
 
-	err = vmClient.StartRole(d.MachineName, d.MachineName, d.MachineName)
-	if err != nil {
+	if err := vmClient.StartRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
 	}
-	err = d.waitForSSH()
-	if err != nil {
+	if err := d.waitForSSH(); err != nil {
 		return err
 	}
-	err = d.waitForDocker()
-	if err != nil {
-		return err
-	}
-	return nil
+	return d.waitForDocker()
 }
 
 func (d *Driver) Stop() error {
-	err := d.setUserSubscription()
-	if err != nil {
+	if err := d.setUserSubscription(); err != nil {
 		return err
 	}
-	vmState, err := d.GetState()
-	if err != nil {
+
+	if vmState, err := d.GetState(); err != nil {
 		return err
-	}
-	if vmState == state.Stopped {
+	} else if vmState == state.Stopped {
 		log.Infof("Host is already stopped")
 		return nil
 	}
 
 	log.Debugf("stopping %s", d.MachineName)
 
-	err = vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
-	if err != nil {
-		return err
-	}
-	return nil
+	return vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
 }
 
 func (d *Driver) Remove() error {
-	err := d.setUserSubscription()
-	if err != nil {
+	if err := d.setUserSubscription(); err != nil {
 		return err
 	}
-	available, _, err := vmClient.CheckHostedServiceNameAvailability(d.MachineName)
-	if err != nil {
+	if available, _, err := vmClient.CheckHostedServiceNameAvailability(d.MachineName); err != nil {
 		return err
-	}
-	if available {
+	} else if available {
 		return nil
 	}
 
 	log.Debugf("removing %s", d.MachineName)
 
-	err = vmClient.DeleteHostedService(d.MachineName)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return vmClient.DeleteHostedService(d.MachineName)
 }
 
 func (d *Driver) Restart() error {
@@ -387,56 +354,38 @@ func (d *Driver) Restart() error {
 	if err != nil {
 		return err
 	}
-	vmState, err := d.GetState()
-	if err != nil {
+	if vmState, err := d.GetState(); err != nil {
 		return err
-	}
-	if vmState == state.Stopped {
-		return fmt.Errorf("Host is already stopped, use start command to run it")
+	} else if vmState == state.Stopped {
+		return errors.New("Host is already stopped, use start command to run it")
 	}
 
 	log.Debugf("restarting %s", d.MachineName)
 
-	err = vmClient.RestartRole(d.MachineName, d.MachineName, d.MachineName)
-	if err != nil {
+	if err := vmClient.RestartRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
 	}
-	err = d.waitForSSH()
-	if err != nil {
+	if err := d.waitForSSH(); err != nil {
 		return err
 	}
-	err = d.waitForDocker()
-	if err != nil {
-		return err
-	}
-	return nil
+	return d.waitForDocker()
 }
 
 func (d *Driver) Kill() error {
-	err := d.setUserSubscription()
-	if err != nil {
+	if err := d.setUserSubscription(); err != nil {
 		return err
 	}
-	vmState, err := d.GetState()
-	if err != nil {
+
+	if vmState, err := d.GetState(); err != nil {
 		return err
-	}
-	if vmState == state.Stopped {
+	} else if vmState == state.Stopped {
 		log.Infof("Host is already stopped")
 		return nil
 	}
 
 	log.Debugf("killing %s", d.MachineName)
 
-	err = vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
+	return vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
 }
 
 func generateVMName() string {
@@ -445,34 +394,26 @@ func generateVMName() string {
 }
 
 func (d *Driver) setUserSubscription() error {
-	if len(d.PublishSettingsFilePath) != 0 {
-		err := azure.ImportPublishSettingsFile(d.PublishSettingsFilePath)
-		if err != nil {
-			return err
-		}
-		return nil
+	if d.PublishSettingsFilePath != "" {
+		return azure.ImportPublishSettingsFile(d.PublishSettingsFilePath)
 	}
-	err := azure.ImportPublishSettings(d.SubscriptionID, d.SubscriptionCert)
-	if err != nil {
-		return err
-	}
-	return nil
+	return azure.ImportPublishSettings(d.SubscriptionID, d.SubscriptionCert)
 }
 
 func (d *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 	configSets := vmConfig.ConfigurationSets.ConfigurationSet
 	if len(configSets) == 0 {
-		return fmt.Errorf("no configuration set")
+		return errors.New("no configuration set")
 	}
 	for i := 0; i < len(configSets); i++ {
 		if configSets[i].ConfigurationSetType != "NetworkConfiguration" {
 			continue
 		}
-		ep := vmClient.InputEndpoint{}
-		ep.Name = "docker"
-		ep.Protocol = "tcp"
-		ep.Port = d.DockerPort
-		ep.LocalPort = d.DockerPort
+		ep := vmClient.InputEndpoint{
+			Name:      "docker",
+			Protocol:  "tcp",
+			Port:      d.DockerPort,
+			LocalPort: d.DockerPort}
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
 		log.Debugf("added Docker endpoint (port %d) to configuration", d.DockerPort)
 	}
@@ -481,12 +422,7 @@ func (d *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 
 func (d *Driver) waitForSSH() error {
 	log.Infof("Waiting for SSH...")
-	err := ssh.WaitForTCP(fmt.Sprintf("%s:%v", d.getHostname(), d.SSHPort))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ssh.WaitForTCP(fmt.Sprintf("%s:%v", d.getHostname(), d.SSHPort))
 }
 
 func (d *Driver) waitForDocker() error {
@@ -495,7 +431,7 @@ func (d *Driver) waitForDocker() error {
 	url := fmt.Sprintf("%s:%v", d.getHostname(), d.DockerPort)
 	success := waitForDockerEndpoint(url, maxRepeats)
 	if !success {
-		return fmt.Errorf("Can not run docker daemon on remote machine. Please try again.")
+		return errors.New("Can not run docker daemon on remote machine. Please try again.")
 	}
 	return nil
 }
@@ -519,22 +455,16 @@ func waitForDockerEndpoint(url string, maxRepeats int) bool {
 }
 
 func (d *Driver) generateCertForAzure() error {
-	keyPath := d.GetSSHKeyPath()
-
-	if err := ssh.GenerateSSHKey(keyPath); err != nil {
+	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
 		return err
 	}
 
-	cmd := exec.Command("openssl", "req", "-x509", "-key", keyPath, "-nodes", "-days", "365", "-newkey", "rsa:2048", "-out", d.azureCertPath(), "-subj", "/C=AU/ST=Some-State/O=InternetWidgitsPtyLtd/CN=\\*")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	cmd := exec.Command("openssl", "req", "-x509", "-key", d.sshKeyPath(), "-nodes", "-days", "365", "-newkey", "rsa:2048", "-out", d.azureCertPath(), "-subj", "/C=AU/ST=Some-State/O=InternetWidgitsPtyLtd/CN=\\*")
+	return cmd.Run()
 }
 
-func (d *Driver) publicSSHKeyPath() string {
-	return d.GetSSHKeyPath() + ".pub"
+func (d *Driver) sshKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) azureCertPath() string {
