@@ -428,31 +428,6 @@ func (d *Driver) Kill() error {
 	return vbm("controlvm", d.MachineName, "poweroff")
 }
 
-func (d *Driver) Upgrade() error {
-	log.Infof("Stopping machine...")
-	if err := d.Stop(); err != nil {
-		return err
-	}
-
-	b2dutils := utils.NewB2dUtils("", "")
-	isoURL, err := b2dutils.GetLatestBoot2DockerReleaseURL()
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Downloading boot2docker...")
-	if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
-		return err
-	}
-
-	log.Infof("Starting machine...")
-	if err := d.Start(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (d *Driver) GetState() (state.State, error) {
 	stdout, stderr, err := vbmOutErr("showvminfo", d.MachineName,
 		"--machinereadable")
