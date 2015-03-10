@@ -1,6 +1,9 @@
+---
 page_title: Docker Machine
 page_description: Working with Docker Machine
-page_keywords: docker, machine, virtualbox, digitalocean, amazonec2
+page_keywords: docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarevcloudair, vmwarevsphere
+---
+
 
 # Docker Machine
 
