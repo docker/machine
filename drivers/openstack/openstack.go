@@ -151,7 +151,7 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "openstack-net-id",
-			Usage: "OpenStack image name to use for the instance",
+			Usage: "OpenStack network id the machine will be connected on",
 			Value: "",
 		},
 		cli.StringFlag{
