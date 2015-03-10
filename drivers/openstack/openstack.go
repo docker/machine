@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -201,6 +203,38 @@ func NewDerivedDriver(machineName string, storePath string, client Client, caCer
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
 	}, nil
+}
+
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
 }
 
 func (d *Driver) DriverName() string {
