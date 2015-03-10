@@ -3,10 +3,12 @@ package drivers
 import (
 	"errors"
 	"fmt"
+	"os/exec"
 	"sort"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/provider"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
 
@@ -155,4 +157,21 @@ type DriverOptions interface {
 	String(key string) string
 	Int(key string) int
 	Bool(key string) bool
+}
+
+func GetSSHCommandFromDriver(d Driver, args ...string) (*exec.Cmd, error) {
+	host, err := d.GetSSHHostname()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := d.GetSSHPort()
+	if err != nil {
+		return nil, err
+	}
+
+	user := d.GetSSHUsername()
+	keyPath := d.GetSSHKeyPath()
+
+	return ssh.GetSSHCommand(host, port, user, keyPath, args...), nil
 }

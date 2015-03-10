@@ -461,24 +461,6 @@ func (d *Driver) setMachineNameIfNotSet() {
 	}
 }
 
-// getSSHCommand returns a command suitable for ssh
-func (d *Driver) getSSHCommand(args ...string) (*exec.Cmd, error) {
-	host, err := d.GetSSHHostname()
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := d.GetSSHPort()
-	if err != nil {
-		return nil, err
-	}
-
-	user := d.GetSSHUsername()
-	keyPath := d.GetSSHKeyPath()
-
-	return ssh.GetSSHCommand(host, port, user, keyPath, args...), nil
-}
-
 func (d *Driver) GetIP() (string, error) {
 	// DHCP is used to get the IP, so virtualbox hosts don't have IPs unless
 	// they are running
@@ -489,7 +471,7 @@ func (d *Driver) GetIP() (string, error) {
 	if s != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
-	cmd, err := d.getSSHCommand("ip addr show dev eth1")
+	cmd, err := drivers.GetSSHCommandFromDriver(d, "ip addr show dev eth1")
 	if err != nil {
 		return "", err
 	}
