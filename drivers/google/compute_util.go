@@ -28,8 +28,7 @@ type ComputeUtil struct {
 }
 
 const (
-	apiURL = "https://www.googleapis.com/compute/v1/projects/"
-	//imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20150129"
+	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
 	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128"
 	firewallRule       = "docker-machines"
 	port               = "2376"
@@ -48,7 +47,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		authTokenPath: driver.AuthTokenPath,
 		zone:          driver.Zone,
 		instanceName:  driver.MachineName,
-		userName:      driver.UserName,
+		userName:      driver.SSHUser,
 		project:       driver.Project,
 		service:       service,
 		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
@@ -203,7 +202,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	c.waitForSSH(ip)
 
 	// Update the SSH Key
-	sshKey, err := ioutil.ReadFile(d.publicSSHKeyPath)
+	sshKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
 	if err != nil {
 		return err
 	}
@@ -224,39 +223,6 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	err = c.waitForRegionalOp(op.Name)
 	if err != nil {
 		return err
-	}
-
-	log.Info("Configuring Machine...")
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *ComputeUtil) updateDocker(d *Driver) error {
-	log.Debugf("Upgrading Docker")
-
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
 	}
 
 	return nil
