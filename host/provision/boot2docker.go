@@ -2,6 +2,7 @@ package provision
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 )
 
@@ -48,8 +49,8 @@ func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
 func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
 	cmd, err := provisioner.SSHCommandFunc(fmt.Sprintf(
 		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
-		d.MachineName,
-		d.MachineName,
+		hostname,
+		hostname,
 	))
 	if err != nil {
 		return err
