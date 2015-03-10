@@ -1,7 +1,7 @@
 package provision
 
 import (
-	// "fmt"
+	"os/exec"
 
 	"github.com/docker/machine/drivers"
 )
@@ -19,7 +19,7 @@ func RegisterProvisioner(name string, p *ProvisionerFactories) {
 
 func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 	for _, p := range provisioners {
-		provisioner := p.New(d)
+		provisioner := p.New(d.GetSSHCommand)
 
 		if err := provisioner.CompatibleWithHost(); err == nil {
 			return provisioner, nil
@@ -29,7 +29,8 @@ func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 	return nil, ErrDetectionFailed
 }
 
-type ProvisionerFactoryFunc func(drivers.Driver) Provisioner
+type SSHCommandFunc func(args ...string) (*exec.Cmd, error)
+type ProvisionerFactoryFunc func(SSHCommandFunc) Provisioner
 
 // Distribution specific actions
 type Provisioner interface {

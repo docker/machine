@@ -3,8 +3,6 @@ package provision
 import (
 	"bytes"
 	"regexp"
-
-	"github.com/docker/machine/drivers"
 )
 
 func init() {
@@ -13,14 +11,14 @@ func init() {
 	})
 }
 
-func NewBoot2DockerProvisioner(driver drivers.Driver) Provisioner {
+func NewBoot2DockerProvisioner(sshFunc SSHCommandFunc) Provisioner {
 	return &Boot2DockerProvisioner{
-		Driver: driver,
+		SSHCommandFunc: sshFunc,
 	}
 }
 
 type Boot2DockerProvisioner struct {
-	Driver drivers.Driver
+	SSHCommandFunc SSHCommandFunc
 }
 
 func (provisioner *Boot2DockerProvisioner) Service(name string, action ServiceState) error {
@@ -40,7 +38,7 @@ func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
 }
 
 func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() error {
-	cmd, err := provisioner.Driver.GetSSHCommand("cat /etc/os-release")
+	cmd, err := provisioner.SSHCommandFunc("cat /etc/os-release")
 	if err != nil {
 		return err
 	}
