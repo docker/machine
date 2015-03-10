@@ -351,7 +351,7 @@ func (d *Driver) Create() error {
 	waitForStart()
 	ssh.WaitForTCP(d.IPAddress + ":22")
 
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install -y curl")
+	cmd, err := d.GetSSHCommand("sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq curl")
 	if err != nil {
 		return err
 
@@ -434,7 +434,7 @@ func (d *Driver) Stop() error {
 func (d *Driver) Upgrade() error {
 	log.Debugf("Upgrading Docker")
 
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
+	cmd, err := d.GetSSHCommand("sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq --upgrade lxc-docker")
 	if err != nil {
 		return err
 
