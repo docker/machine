@@ -1,4 +1,4 @@
-package os
+package provisioner
 
 import (
 	"fmt"
