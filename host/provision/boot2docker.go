@@ -1,6 +1,9 @@
 package provision
 
 import (
+	"bytes"
+	"regexp"
+
 	"github.com/docker/machine/drivers"
 )
 
@@ -35,5 +38,23 @@ func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
 }
 
 func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() error {
-	return nil
+	cmd, err := provisioner.Driver.GetSSHCommand("cat /etc/os-release")
+	if err != nil {
+		return err
+	}
+
+	var so bytes.Buffer
+	cmd.Stdout = &so
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	re := regexp.MustCompile(`(?m)^ID=(\w+)`)
+
+	if len(re.FindStringSubmatch(so.String())) > 0 {
+		return nil
+	}
+
+	return ErrDetectionFailed
 }
