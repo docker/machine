@@ -588,7 +588,7 @@ func (h *Host) Stop() error {
 
 func (h *Host) Upgrade() error {
 	// TODO: refactor to provisioner
-	return fmt.Errorf("upgrade not implemented")
+	return fmt.Errorf("centralized upgrade coming in the provisioner")
 }
 
 func (h *Host) Remove(force bool) error {
