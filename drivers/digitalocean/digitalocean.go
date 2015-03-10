@@ -12,6 +12,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/digitalocean/godo"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -29,6 +30,8 @@ type Driver struct {
 	IPAddress         string
 	Region            string
 	SSHKeyID          int
+	SSHUser           string
+	SSHPort           int
 	Size              string
 	IPv6              bool
 	Backups           bool
@@ -98,6 +101,38 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
+}
+
 func (d *Driver) DriverName() string {
 	return "digitalocean"
 }
@@ -113,6 +148,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SSHUser = "root"
+	d.SSHPort = 22
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
