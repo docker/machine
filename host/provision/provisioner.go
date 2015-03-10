@@ -1,6 +1,8 @@
 package provision
 
 import (
+	// "fmt"
+
 	"github.com/docker/machine/drivers"
 )
 
@@ -19,7 +21,7 @@ func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 	for _, p := range provisioners {
 		provisioner := p.New(d)
 
-		if err := provisioner.CompatibleWithHost(); err != nil {
+		if err := provisioner.CompatibleWithHost(); err == nil {
 			return provisioner, nil
 		}
 	}
