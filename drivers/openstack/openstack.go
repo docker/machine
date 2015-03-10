@@ -151,7 +151,7 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "openstack-net-id",
-			Usage: "OpenStack image name to use for the instance",
+			Usage: "OpenStack network id the machine will be connected on",
 			Value: "",
 		},
 		cli.StringFlag{
@@ -744,19 +744,6 @@ func (d *Driver) waitForInstanceToStart() error {
 		return err
 	}
 	return d.waitForSSHServer()
-}
-
-func (d *Driver) sshExec(commands []string) error {
-	for _, command := range commands {
-		sshCmd, err := d.GetSSHCommand(command)
-		if err != nil {
-			return err
-		}
-		if err := sshCmd.Run(); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (d *Driver) sshKeyPath() string {
