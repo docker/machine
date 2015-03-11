@@ -29,6 +29,7 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarefusion"
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
@@ -88,7 +89,22 @@ func confirmInput(msg string) bool {
 	}
 
 	return false
+}
 
+func newMcn(store libmachine.Store) (*libmachine.Machine, error) {
+	return libmachine.New(store)
+}
+
+func getMachineDir(rootPath string) string {
+	return filepath.Join(rootPath, "machines")
+}
+
+func getDefaultStore(rootPath, caCertPath, privateKeyPath string) (libmachine.Store, error) {
+	return libmachine.NewFilestore(
+		rootPath,
+		caCertPath,
+		privateKeyPath,
+	), nil
 }
 
 func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath string) error {
@@ -310,10 +326,23 @@ var Commands = []cli.Command{
 
 func cmdActive(c *cli.Context) {
 	name := c.Args().First()
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if name == "" {
-		host, err := store.GetActive()
+		host, err := mcn.GetActive()
 		if err != nil {
 			log.Fatalf("error getting active host: %v", err)
 		}
@@ -321,12 +350,12 @@ func cmdActive(c *cli.Context) {
 			fmt.Println(host.Name)
 		}
 	} else if name != "" {
-		host, err := store.Load(name)
+		host, err := mcn.Get(name)
 		if err != nil {
 			log.Fatalf("error loading host: %v", err)
 		}
 
-		if err := store.SetActive(host); err != nil {
+		if err := mcn.SetActive(host); err != nil {
 			log.Fatalf("error setting active host: %v", err)
 		}
 	} else {
@@ -348,15 +377,27 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("Error generating certificates: %s", err)
 	}
 
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	host, err := store.Create(name, driver, c)
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host, err := mcn.Create(name, driver, c)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
 		log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
 		log.Fatal("Error creating machine")
 	}
-	if err := store.SetActive(host); err != nil {
+	if err := mcn.SetActive(host); err != nil {
 		log.Fatalf("error setting active host: %v", err)
 	}
 
@@ -462,9 +503,22 @@ func cmdIp(c *cli.Context) {
 
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
 
-	hostList, err := store.List()
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	hostList, err := mcn.List()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -491,7 +545,7 @@ func cmdLs(c *cli.Context) {
 				swarmInfo[host.Name] = host.SwarmDiscovery
 			}
 
-			go getHostState(host, *store, hostListItems)
+			go getHostState(*host, defaultStore, hostListItems)
 		} else {
 			fmt.Fprintf(w, "%s\n", host.Name)
 		}
@@ -548,9 +602,22 @@ func cmdRm(c *cli.Context) {
 
 	isError := false
 
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for _, host := range c.Args() {
-		if err := store.Remove(host, force); err != nil {
+		if err := mcn.Remove(host, force); err != nil {
 			log.Errorf("Error removing machine %s: %s", host, err)
 			isError = true
 		}
@@ -642,10 +709,23 @@ func cmdSsh(c *cli.Context) {
 		sshCmd *exec.Cmd
 	)
 	name := c.Args().First()
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if name == "" {
-		host, err := store.GetActive()
+		host, err := mcn.GetActive()
 		if err != nil {
 			log.Fatalf("unable to get active host: %v", err)
 		}
@@ -653,7 +733,7 @@ func cmdSsh(c *cli.Context) {
 		name = host.Name
 	}
 
-	host, err := store.Load(name)
+	host, err := mcn.Get(name)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -677,17 +757,17 @@ func cmdSsh(c *cli.Context) {
 
 // machineCommand maps the command name to the corresponding machine command.
 // We run commands concurrently and communicate back an error if there was one.
-func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
+func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- error) {
 	commands := map[string](func() error){
-		"configureAuth": machine.ConfigureAuth,
-		"start":         machine.Start,
-		"stop":          machine.Stop,
-		"restart":       machine.Restart,
-		"kill":          machine.Kill,
-		"upgrade":       machine.Upgrade,
+		"configureAuth": host.ConfigureAuth,
+		"start":         host.Start,
+		"stop":          host.Stop,
+		"restart":       host.Restart,
+		"kill":          host.Kill,
+		"upgrade":       host.Upgrade,
 	}
 
-	log.Debugf("command=%s machine=%s", actionName, machine.Name)
+	log.Debugf("command=%s machine=%s", actionName, host.Name)
 
 	if err := commands[actionName](); err != nil {
 		errorChan <- err
@@ -698,10 +778,10 @@ func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
 }
 
 // runActionForeachMachine will run the command across multiple machines
-func runActionForeachMachine(actionName string, machines []*Host) {
+func runActionForeachMachine(actionName string, machines []*libmachine.Host) {
 	var (
 		numConcurrentActions = 0
-		serialMachines       = []*Host{}
+		serialMachines       = []*libmachine.Host{}
 		errorChan            = make(chan error)
 	)
 
@@ -751,12 +831,25 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 
 	// No args specified, so use active.
 	if len(machines) == 0 {
-		store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
-		activeHost, err := store.GetActive()
+		defaultStore, err := getDefaultStore(
+			c.GlobalString("storage-path"),
+			c.GlobalString("tls-ca-cert"),
+			c.GlobalString("tls-ca-key"),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		mcn, err := newMcn(defaultStore)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		activeHost, err := mcn.GetActive()
 		if err != nil {
 			log.Fatalf("Unable to get active host: %v", err)
 		}
-		machines = []*Host{activeHost}
+		machines = []*libmachine.Host{activeHost}
 	}
 
 	runActionForeachMachine(actionName, machines)
@@ -813,8 +906,8 @@ func cmdNotFound(c *cli.Context, command string) {
 	)
 }
 
-func getHosts(c *cli.Context) ([]*Host, error) {
-	machines := []*Host{}
+func getHosts(c *cli.Context) ([]*libmachine.Host, error) {
+	machines := []*libmachine.Host{}
 	for _, n := range c.Args() {
 		machine, err := loadMachine(n, c)
 		if err != nil {
@@ -827,23 +920,48 @@ func getHosts(c *cli.Context) ([]*Host, error) {
 	return machines, nil
 }
 
-func loadMachine(name string, c *cli.Context) (*Host, error) {
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+func loadMachine(name string, c *cli.Context) (*libmachine.Host, error) {
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	machine, err := store.Load(name)
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host, err := mcn.Get(name)
 	if err != nil {
 		return nil, err
 	}
 
-	return machine, nil
+	return host, nil
 }
 
-func getHost(c *cli.Context) *Host {
+func getHost(c *cli.Context) *libmachine.Host {
 	name := c.Args().First()
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
+
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if name == "" {
-		host, err := store.GetActive()
+		host, err := mcn.GetActive()
 		if err != nil {
 			log.Fatalf("unable to get active host: %v", err)
 		}
@@ -854,14 +972,14 @@ func getHost(c *cli.Context) *Host {
 		return host
 	}
 
-	host, err := store.Load(name)
+	host, err := mcn.Get(name)
 	if err != nil {
 		log.Fatalf("unable to load host: %v", err)
 	}
 	return host
 }
 
-func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
+func getHostState(host libmachine.Host, store libmachine.Store, hostListItems chan<- hostListItem) {
 	currentState, err := host.Driver.GetState()
 	if err != nil {
 		log.Errorf("error getting state for host %s: %s", host.Name, err)
@@ -895,11 +1013,24 @@ func getHostState(host Host, store Store, hostListItems chan<- hostListItem) {
 
 func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	name := c.Args().First()
-	store := NewStore(utils.GetMachineDir(), c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"))
-	var machine *Host
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		c.GlobalString("tls-ca-cert"),
+		c.GlobalString("tls-ca-key"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var machine *libmachine.Host
 
 	if name == "" {
-		m, err := store.GetActive()
+		m, err := mcn.GetActive()
 		if err != nil {
 			log.Fatalf("error getting active host: %v", err)
 		}
@@ -908,7 +1039,7 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		}
 		machine = m
 	} else {
-		m, err := store.Load(name)
+		m, err := mcn.Get(name)
 		if err != nil {
 			return nil, fmt.Errorf("Error loading machine config: %s", err)
 		}
