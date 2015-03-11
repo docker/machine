@@ -202,7 +202,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		PrivateNet:    flags.Bool("softlayer-private-net-only"),
 		LocalDisk:     flags.Bool("softlayer-local-disk"),
 		HourlyBilling: flags.Bool("softlayer-hourly-billing"),
-		Image:         "UBUNTU_LATEST",
+		Image:         flags.String("softlayer-image"),
 		Region:        flags.String("softlayer-region"),
 	}
 	return validateDeviceConfig(d.deviceConfig)
