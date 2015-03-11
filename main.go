@@ -22,6 +22,10 @@ func main() {
 	app.Name = path.Base(os.Args[0])
 	app.Author = "Docker Machine Contributors"
 	app.Email = "https://github.com/docker/machine"
+	app.Before = func(c *cli.Context) error {
+		os.Setenv("MACHINE_STORAGE_PATH", c.GlobalString("storage-path"))
+		return nil
+	}
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
@@ -35,7 +39,7 @@ func main() {
 		cli.StringFlag{
 			EnvVar: "MACHINE_STORAGE_PATH",
 			Name:   "storage-path",
-			Value:  utils.GetMachineRoot(),
+			Value:  utils.GetBaseDir(),
 			Usage:  "Configures storage path",
 		},
 		cli.StringFlag{
