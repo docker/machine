@@ -1,12 +1,15 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 func GetHomeDir() string {
@@ -94,4 +97,14 @@ func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration)
 
 func WaitFor(f func() bool) error {
 	return WaitForSpecific(f, 60, 3*time.Second)
+}
+
+func DumpVal(vals ...interface{}) {
+	for _, val := range vals {
+		prettyJSON, err := json.MarshalIndent(val, "", "    ")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Debug(string(prettyJSON))
+	}
 }
