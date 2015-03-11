@@ -24,7 +24,7 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-const (
+var (
 	dockerConfigDir = "/var/lib/boot2docker"
 	isoFilename     = "boot2docker.iso"
 )
@@ -131,8 +131,7 @@ func (d *Driver) Create() error {
 
 	b2dutils := utils.NewB2dUtils("", "")
 	imgPath := utils.GetMachineCacheDir()
-	isoFilename := "boot2docker.iso"
-	commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+	commonIsoPath := filepath.Join(imgPath, isoFilename)
 	// just in case boot2docker.iso has been manually deleted
 	if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 		if err := os.Mkdir(imgPath, 0700); err != nil {
@@ -143,12 +142,10 @@ func (d *Driver) Create() error {
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading %s from %s...", isoFilename, isoURL)
-		if err := b2dutils.DownloadISO(commonIsoPath, isoFilename, isoURL); err != nil {
-			return err
-
-		}
-
+		isoFilename = filepath.Base(isoURL)
+		parts := strings.Split(isoFilename, ".")
+		dockerConfigDir = strings.Replace(dockerConfigDir, "boot2docker", parts[0], 1)
+		commonIsoPath = filepath.Join(imgPath, isoFilename)
 	} else {
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
@@ -156,18 +153,18 @@ func (d *Driver) Create() error {
 		if err != nil {
 			log.Warnf("Unable to check for the latest release: %s", err)
 		}
+	}
 
-		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading %s to %s...", isoFilename, commonIsoPath)
-			if err := b2dutils.DownloadISO(imgPath, isoFilename, isoURL); err != nil {
-				return err
-			}
-		}
-
-		isoDest := filepath.Join(d.storePath, isoFilename)
-		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+	if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+		log.Infof("Downloading %s to %s...", isoFilename, commonIsoPath)
+		if err := b2dutils.DownloadISO(imgPath, isoFilename, isoURL); err != nil {
 			return err
 		}
+	}
+
+	isoDest := filepath.Join(d.storePath, isoFilename)
+	if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+		return err
 	}
 
 	log.Infof("Creating SSH key...")
@@ -263,7 +260,7 @@ func (d *Driver) Create() error {
 		"--port", "0",
 		"--device", "0",
 		"--type", "dvddrive",
-		"--medium", filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
+		"--medium", filepath.Join(d.storePath, isoFilename)); err != nil {
 		return err
 	}
 
@@ -320,11 +317,12 @@ func (d *Driver) Create() error {
 	if err := d.Start(); err != nil {
 		return err
 	}
-
+	parts := strings.Split(isoFilename, ".")
 	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
+		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/%s/etc/hostname",
 		d.MachineName,
 		d.MachineName,
+		parts[0],
 	))
 	if err != nil {
 		return err
