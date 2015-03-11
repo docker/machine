@@ -142,6 +142,10 @@
 			"Rev": "66a23eaabc61518f91769939ff541886fe1dceef"
 		},
 		{
+			"ImportPath": "github.com/howeyc/gopass",
+			"Rev": "ddd7fbf6636d1a67d9bac869449b3f89cc4e20e0"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/ssh",
 			"Rev": "1fbbd62cfec66bd39d91e97749579579d4d3037e"
 		},

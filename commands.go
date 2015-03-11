@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/howeyc/gopass"
 
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/amazonec2"
@@ -68,6 +70,30 @@ func (h hostListItemByName) Less(i, j int) bool {
 	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
 }
 
+// Prompts the user to enter and repeat their passphrase for encrypting the CA
+// key file. If the user fails to enter the same passphrase twice this returns
+// an error.
+//
+// A user can skip encryption by entering no passphrase.
+func getPassphrase() ([]byte, error) {
+	// Prompt the user to enter an optional passphrase to encrypt their CA key
+	fmt.Printf("Enter a passphrase to encrypt your CA key (enter to skip): ")
+	passphrase := gopass.GetPasswd()
+
+	if len(passphrase) == 0 {
+		return []byte{}, nil
+	}
+
+	fmt.Printf("Repeat your passphrase: ")
+	repeat := gopass.GetPasswd()
+
+	if !bytes.Equal(passphrase, repeat) {
+		return []byte{}, fmt.Errorf("Your passphrases do not match")
+	}
+
+	return passphrase, nil
+}
+
 func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath string) error {
 	org := utils.GetUsername()
 	bits := 2048
@@ -90,7 +116,12 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 			log.Fatalf("The CA key already exists.  Please remove it or specify a different key/cert.")
 		}
 
-		if err := utils.GenerateCACertificate(caCertPath, caKeyPath, org, bits); err != nil {
+		passphrase, err := getPassphrase()
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+
+		if err := utils.GenerateCACertificate(caCertPath, caKeyPath, org, bits, passphrase); err != nil {
 			log.Infof("Error generating CA certificate: %s", err)
 		}
 	}

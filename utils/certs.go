@@ -7,10 +7,14 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
+	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
 	"time"
+
+	"github.com/howeyc/gopass"
 )
 
 func newCertificate(org string) (*x509.Certificate, error) {
@@ -43,7 +47,9 @@ func newCertificate(org string) (*x509.Certificate, error) {
 // GenerateCACertificate generates a new certificate authority from the specified org
 // and bit size and stores the resulting certificate and key file
 // in the arguments.
-func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
+func GenerateCACertificate(certFile, keyFile, org string, bits int, optPassphrase []byte) error {
+	var pemBlock *pem.Block
+
 	template, err := newCertificate(org)
 	if err != nil {
 		return err
@@ -76,7 +82,16 @@ func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
 
 	}
 
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	pemBlock = &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}
+	// Encrypt the private key using the supplied passphrase
+	if len(optPassphrase) > 0 {
+		pemBlock, err = x509.EncryptPEMBlock(rand.Reader, "RSA PRIVATE KEY", pemBlock.Bytes, optPassphrase, x509.PEMCipherAES256)
+		if err != nil {
+			return err
+		}
+	}
+
+	pem.Encode(keyOut, pemBlock)
 	keyOut.Close()
 
 	return nil
@@ -107,10 +122,9 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 		}
 	}
 
-	tlsCert, err := tls.LoadX509KeyPair(caFile, caKeyFile)
+	tlsCert, err := LoadX509KeyPair(caFile, caKeyFile)
 	if err != nil {
 		return err
-
 	}
 
 	priv, err := rsa.GenerateKey(rand.Reader, bits)
@@ -148,4 +162,49 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	keyOut.Close()
 
 	return nil
+}
+
+// We use an external library, gopass, to prompt the user to enter their
+// password on the command line for encrypted CA key files.
+//
+// However, in testing this method is unavailable. By assigning this method
+// to a variable we can change the variable in testing to a []byte array
+// matching the password. This allows us to automate testing of encrypted certs
+var getpasswd = gopass.GetPasswd
+
+// Attempts to load an encrypted X509 certificate
+// If the key file is not encrypted it falls back to the default tls package
+// implementation which works for unencrypted key files.
+func LoadX509KeyPair(caFile, caKeyFile string) (cert tls.Certificate, err error) {
+	var caByt, encKeyByt []byte
+
+	if encKeyByt, err = ioutil.ReadFile(caKeyFile); err != nil {
+		return
+	}
+
+	pemBlock, _ := pem.Decode(encKeyByt)
+	if pemBlock == nil {
+		return cert, fmt.Errorf("Unable to parse certificate key file")
+	}
+
+	if !x509.IsEncryptedPEMBlock(pemBlock) {
+		// This is unencrypted, therefore we can use the noraml tls package implementation
+		return tls.LoadX509KeyPair(caFile, caKeyFile)
+	}
+
+	// Decrypt the key with a given password
+	fmt.Printf("CA Key password: ")
+
+	// In normal environments getpasswd calls gopass.Getpasswd; in testing we override
+	// this variable to return passwords without asking for input.
+	if pemBlock.Bytes, err = x509.DecryptPEMBlock(pemBlock, getpasswd()); err != nil {
+		return
+	}
+
+	if caByt, err = ioutil.ReadFile(caFile); err != nil {
+		return
+	}
+
+	// We can now return a standard X509 key pair using the decrypted PEM key in memory
+	return tls.X509KeyPair(caByt, pem.EncodeToMemory(pemBlock))
 }
