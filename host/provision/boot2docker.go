@@ -3,7 +3,6 @@ package provision
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 )
 
 func init() {
@@ -14,12 +13,13 @@ func init() {
 
 func NewBoot2DockerProvisioner(sshFunc SSHCommandFunc) Provisioner {
 	return &Boot2DockerProvisioner{
-		SSHCommandFunc: sshFunc,
+		SSHCommand: sshFunc,
 	}
 }
 
 type Boot2DockerProvisioner struct {
-	SSHCommandFunc SSHCommandFunc
+	OsReleaseInfo *OsRelease
+	SSHCommand    SSHCommandFunc
 }
 
 func (provisioner *Boot2DockerProvisioner) Service(name string, action ServiceState) error {
@@ -31,7 +31,7 @@ func (provisioner *Boot2DockerProvisioner) Package(name string, action PackageSt
 }
 
 func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
-	cmd, err := provisioner.SSHCommandFunc(fmt.Sprintf("hostname"))
+	cmd, err := provisioner.SSHCommand(fmt.Sprintf("hostname"))
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +47,7 @@ func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
 }
 
 func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
-	cmd, err := provisioner.SSHCommandFunc(fmt.Sprintf(
+	cmd, err := provisioner.SSHCommand(fmt.Sprintf(
 		"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
 		hostname,
 		hostname,
@@ -59,25 +59,10 @@ func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
 	return cmd.Run()
 }
 
-func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() error {
-	cmd, err := provisioner.SSHCommandFunc("cat /etc/os-release")
-	if err != nil {
-		return err
-	}
+func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() bool {
+	return provisioner.OsReleaseInfo.Id == "boot2docker"
+}
 
-	var so bytes.Buffer
-	cmd.Stdout = &so
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	re := regexp.MustCompile(`(?m)^ID=(\w+)`)
-
-	m := re.FindStringSubmatch(so.String())
-	if len(m) > 0 && m[1] == "boot2docker" {
-		return nil
-	}
-
-	return ErrDetectionFailed
+func (provisioner *Boot2DockerProvisioner) SetOsReleaseInfo(info *OsRelease) {
+	provisioner.OsReleaseInfo = info
 }

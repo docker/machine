@@ -28,6 +28,11 @@ func NewStore(rootPath string, caCert string, privateKey string) *Store {
 }
 
 func (s *Store) Create(name string, driverName string, flags drivers.DriverOptions) (*Host, error) {
+	name, err := ValidateHostName(name)
+	if err != nil {
+		return nil, err
+	}
+
 	exists, err := s.Exists(name)
 	if err != nil {
 		return nil, err

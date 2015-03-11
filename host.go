@@ -475,11 +475,6 @@ DOCKER_TLS=no`, opts, caCertPath, serverKeyPath, serverCertPath)
 }
 
 func (h *Host) Create(name string) error {
-	name, err := ValidateHostName(name)
-	if err != nil {
-		return err
-	}
-
 	// create the instance
 	if err := h.Driver.Create(); err != nil {
 		return err
