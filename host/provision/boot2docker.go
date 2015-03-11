@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	RegisterProvisioner("boot2docker", &ProvisionerFactories{
+	Register("boot2docker", &RegisteredProvisioner{
 		New: NewBoot2DockerProvisioner,
 	})
 }
