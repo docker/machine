@@ -12,6 +12,7 @@ import (
 
 	"github.com/codegangsta/cli"
 	drivers "github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -23,6 +24,14 @@ func (d *FakeDriver) DriverName() string {
 	return "fakedriver"
 }
 
+func (d *FakeDriver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *FakeDriver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
 func (d *FakeDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
@@ -31,8 +40,32 @@ func (d *FakeDriver) GetURL() (string, error) {
 	return "", nil
 }
 
+func (d *FakeDriver) GetMachineName() string {
+	return ""
+}
+
+func (d *FakeDriver) GetProviderType() provider.ProviderType {
+	return provider.None
+}
+
 func (d *FakeDriver) GetIP() (string, error) {
 	return "", nil
+}
+
+func (d *FakeDriver) GetSSHHostname() (string, error) {
+	return "", nil
+}
+
+func (d *FakeDriver) GetSSHKeyPath() string {
+	return ""
+}
+
+func (d *FakeDriver) GetSSHPort() (int, error) {
+	return 0, nil
+}
+
+func (d *FakeDriver) GetSSHUsername() string {
+	return ""
 }
 
 func (d *FakeDriver) GetState() (state.State, error) {

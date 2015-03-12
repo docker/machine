@@ -3,8 +3,7 @@ package openstack
 import (
 	"fmt"
 	"io/ioutil"
-	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -201,6 +201,46 @@ func NewDerivedDriver(machineName string, storePath string, client Client, caCer
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
 	}, nil
+}
+
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "root"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
 }
 
 func (d *Driver) DriverName() string {
@@ -402,69 +442,6 @@ func (d *Driver) Kill() error {
 	return d.Stop()
 }
 
-func (d *Driver) Upgrade() error {
-	log.Debugf("Upgrading Docker")
-
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
-	return cmd.Run()
-}
-
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	ip, err := d.GetIP()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(args) != 0 && d.SSHUser != "root" {
-		cmd := strings.Replace(strings.Join(args, " "), "'", "\\'", -1)
-		args = []string{"sudo", "sh", "-c", fmt.Sprintf("'%s'", cmd)}
-	}
-
-	log.WithField("MachineId", d.MachineId).Debug("Command: %s", args)
-	return ssh.GetSSHCommand(ip, d.SSHPort, d.SSHUser, d.sshKeyPath(), args...), nil
-}
-
 const (
 	errorMandatoryEnvOrOption    string = "%s must be specified either using the environment variable %s or the CLI option %s"
 	errorMandatoryOption         string = "%s must be specified using the CLI option %s"
@@ -624,7 +601,7 @@ func (d *Driver) initNetwork() error {
 
 func (d *Driver) createSSHKey() error {
 	log.WithField("Name", d.KeyPairName).Debug("Creating Key Pair...")
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
@@ -746,10 +723,6 @@ func (d *Driver) waitForInstanceToStart() error {
 	return d.waitForSSHServer()
 }
 
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
-}
-
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }

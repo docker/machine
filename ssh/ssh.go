@@ -11,7 +11,6 @@ import (
 )
 
 func GetSSHCommand(host string, port int, user string, sshKey string, args ...string) *exec.Cmd {
-
 	defaultSSHArgs := []string{
 		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
