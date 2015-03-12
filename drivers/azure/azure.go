@@ -138,10 +138,18 @@ func (d *Driver) GetSSHKeyPath() string {
 }
 
 func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
 	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "ubuntu"
+	}
+
 	return d.SSHUser
 }
 
