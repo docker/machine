@@ -43,6 +43,7 @@ type Driver struct {
 	Region             string
 	AMI                string
 	SSHKeyID           int
+	SSHUser            string
 	SSHPort            int
 	KeyName            string
 	InstanceId         string
@@ -209,6 +210,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SSHUser = "ubuntu"
 	d.SSHPort = 22
 
 	if d.AccessKey == "" {
@@ -429,7 +431,7 @@ func (d *Driver) GetSSHPort() (int, error) {
 }
 
 func (d *Driver) GetSSHUsername() string {
-	return "ubuntu"
+	return d.SSHUser
 }
 
 func (d *Driver) Start() error {
