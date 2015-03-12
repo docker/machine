@@ -460,6 +460,16 @@ foo3            virtualbox   Running   tcp://192.168.99.108:2376
 foo4   *        virtualbox   Running   tcp://192.168.99.109:2376
 ```
 
+#### regenerate-certs
+
+Regenerate TLS certificates and update the machine with new certs.
+
+```
+$ docker-machine regenerate-certs
+Regenerate TLS machine certs?  Warning: this is irreversible. (y/n): y
+INFO[0013] Regenerating TLS certificates
+```
+
 #### restart
 
 Restart a machine.  Oftentimes this is equivalent to

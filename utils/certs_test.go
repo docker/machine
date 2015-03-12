@@ -12,6 +12,8 @@ func TestGenerateCACertificate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// cleanup
+	defer os.RemoveAll(tmpDir)
 
 	os.Setenv("MACHINE_DIR", tmpDir)
 	caCertPath := filepath.Join(tmpDir, "ca.pem")
@@ -29,9 +31,6 @@ func TestGenerateCACertificate(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Setenv("MACHINE_DIR", "")
-
-	// cleanup
-	_ = os.RemoveAll(tmpDir)
 }
 
 func TestGenerateCert(t *testing.T) {
@@ -39,6 +38,8 @@ func TestGenerateCert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// cleanup
+	defer os.RemoveAll(tmpDir)
 
 	os.Setenv("MACHINE_DIR", tmpDir)
 	caCertPath := filepath.Join(tmpDir, "ca.pem")
@@ -70,7 +71,4 @@ func TestGenerateCert(t *testing.T) {
 	if _, err := os.Stat(keyPath); err != nil {
 		t.Fatalf("key not created at %s", keyPath)
 	}
-
-	// cleanup
-	_ = os.RemoveAll(tmpDir)
 }
