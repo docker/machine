@@ -129,7 +129,10 @@ func TestGenerateDockerConfigNonLocal(t *testing.T) {
 	serverCertPath := "/test/server-cert"
 	engineConfigPath := "/etc/default/docker"
 
-	dockerCfg := host.generateDockerConfig(dockerPort, caCertPath, serverKeyPath, serverCertPath)
+	dockerCfg, err := host.generateDockerConfig(dockerPort, caCertPath, serverKeyPath, serverCertPath)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if dockerCfg.EngineConfigPath != engineConfigPath {
 		t.Fatalf("expected engine path %s; received %s", engineConfigPath, dockerCfg.EngineConfigPath)
@@ -170,8 +173,11 @@ func TestMachinePort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := host.generateDockerConfig(dockerPort, "", "", "")
 
+	cfg, err := host.generateDockerConfig(dockerPort, "", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
 	re := regexp.MustCompile("--host=tcp://.*:(.+)")
 	m := re.FindStringSubmatch(cfg.EngineConfig)
 	if len(m) == 0 {
@@ -210,7 +216,11 @@ func TestMachineCustomPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := host.generateDockerConfig(dockerPort, "", "", "")
+
+	cfg, err := host.generateDockerConfig(dockerPort, "", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	re := regexp.MustCompile("--host=tcp://.*:(.+)")
 	m := re.FindStringSubmatch(cfg.EngineConfig)

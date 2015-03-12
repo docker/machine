@@ -7,8 +7,7 @@ package vmwarevcloudair
 import (
 	"fmt"
 	"io/ioutil"
-	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/vmware/govcloudair"
@@ -17,6 +16,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -36,6 +36,7 @@ type Driver struct {
 	Catalog        string
 	CatalogItem    string
 	MachineName    string
+	SSHUser        string
 	SSHPort        int
 	DockerPort     int
 	Provision      bool
@@ -61,6 +62,7 @@ type CreateFlags struct {
 	Catalog      *string
 	CatalogItem  *string
 	Name         *string
+	SSHUser      string
 	SSHPort      *int
 	DockerPort   *int
 	Provision    *bool
@@ -166,55 +168,96 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	return driver, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "root"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
+}
+
 // Driver interface implementation
-func (driver *Driver) DriverName() string {
+func (d *Driver) DriverName() string {
 	return "vmwarevcloudair"
 }
 
-func (driver *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
-	driver.UserName = flags.String("vmwarevcloudair-username")
-	driver.UserPassword = flags.String("vmwarevcloudair-password")
-	driver.VDCID = flags.String("vmwarevcloudair-vdcid")
-	driver.PublicIP = flags.String("vmwarevcloudair-publicip")
-	driver.SwarmMaster = flags.Bool("swarm-master")
-	driver.SwarmHost = flags.String("swarm-host")
-	driver.SwarmDiscovery = flags.String("swarm-discovery")
+	d.UserName = flags.String("vmwarevcloudair-username")
+	d.UserPassword = flags.String("vmwarevcloudair-password")
+	d.VDCID = flags.String("vmwarevcloudair-vdcid")
+	d.PublicIP = flags.String("vmwarevcloudair-publicip")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
 	// Check for required Params
-	if driver.UserName == "" || driver.UserPassword == "" || driver.VDCID == "" || driver.PublicIP == "" {
+	if d.UserName == "" || d.UserPassword == "" || d.VDCID == "" || d.PublicIP == "" {
 		return fmt.Errorf("Please specify vcloudair mandatory params using options: -vmwarevcloudair-username -vmwarevcloudair-password -vmwarevcloudair-vdcid and -vmwarevcloudair-publicip")
 	}
 
 	// If ComputeID is not set we're using a VPC, hence setting ComputeID = VDCID
 	if flags.String("vmwarevcloudair-computeid") == "" {
-		driver.ComputeID = flags.String("vmwarevcloudair-vdcid")
+		d.ComputeID = flags.String("vmwarevcloudair-vdcid")
 	} else {
-		driver.ComputeID = flags.String("vmwarevcloudair-computeid")
+		d.ComputeID = flags.String("vmwarevcloudair-computeid")
 	}
 
 	// If the Org VDC Network is empty, set it to the default routed network.
 	if flags.String("vmwarevcloudair-orgvdcnetwork") == "" {
-		driver.OrgVDCNet = flags.String("vmwarevcloudair-vdcid") + "-default-routed"
+		d.OrgVDCNet = flags.String("vmwarevcloudair-vdcid") + "-default-routed"
 	} else {
-		driver.OrgVDCNet = flags.String("vmwarevcloudair-orgvdcnetwork")
+		d.OrgVDCNet = flags.String("vmwarevcloudair-orgvdcnetwork")
 	}
 
 	// If the Edge Gateway is empty, just set it to the default edge gateway.
 	if flags.String("vmwarevcloudair-edgegateway") == "" {
-		driver.EdgeGateway = flags.String("vmwarevcloudair-vdcid")
+		d.EdgeGateway = flags.String("vmwarevcloudair-vdcid")
 	} else {
-		driver.EdgeGateway = flags.String("vmwarevcloudair-edgegateway")
+		d.EdgeGateway = flags.String("vmwarevcloudair-edgegateway")
 	}
 
-	driver.Catalog = flags.String("vmwarevcloudair-catalog")
-	driver.CatalogItem = flags.String("vmwarevcloudair-catalogitem")
+	d.Catalog = flags.String("vmwarevcloudair-catalog")
+	d.CatalogItem = flags.String("vmwarevcloudair-catalogitem")
 
-	driver.DockerPort = flags.Int("vmwarevcloudair-docker-port")
-	driver.SSHPort = flags.Int("vmwarevcloudair-ssh-port")
-	driver.Provision = flags.Bool("vmwarevcloudair-provision")
-	driver.CPUCount = flags.Int("vmwarevcloudair-cpu-count")
-	driver.MemorySize = flags.Int("vmwarevcloudair-memory-size")
+	d.DockerPort = flags.Int("vmwarevcloudair-docker-port")
+	d.SSHUser = "root"
+	d.SSHPort = flags.Int("vmwarevcloudair-ssh-port")
+	d.Provision = flags.Bool("vmwarevcloudair-provision")
+	d.CPUCount = flags.Int("vmwarevcloudair-cpu-count")
+	d.MemorySize = flags.Int("vmwarevcloudair-memory-size")
 
 	return nil
 }
@@ -395,26 +438,10 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Info("Configuring Machine...")
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	connTest := "ping -c 3 www.google.com >/dev/null 2>&1 && ( echo \"Connectivity and DNS tests passed.\" ) || ( echo \"Connectivity and DNS tests failed, trying to add Nameserver to resolv.conf\"; echo \"nameserver 8.8.8.8\" >> /etc/resolv.conf )"
 
 	log.Debugf("Connectivity and DNS sanity test...")
-	cmd, err = d.GetSSHCommand(connTest)
+	cmd, err := drivers.GetSSHCommandFromDriver(d, connTest)
 	if err != nil {
 		return err
 	}
@@ -437,7 +464,6 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Remove() error {
-
 	p, err := govcloudair.NewClient()
 	if err != nil {
 		return err
@@ -660,7 +686,6 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-
 	p, err := govcloudair.NewClient()
 	if err != nil {
 		return err
@@ -703,58 +728,6 @@ func (d *Driver) Kill() error {
 
 }
 
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
-func (d *Driver) Upgrade() error {
-	log.Debugf("Upgrading Docker")
-
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
-	return cmd.Run()
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.PublicIP, d.SSHPort, "root", d.sshKeyPath(), args...), nil
-}
-
 // Helpers
 
 func generateVMName() string {
@@ -763,8 +736,7 @@ func generateVMName() string {
 }
 
 func (d *Driver) createSSHKey() (string, error) {
-
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return "", err
 	}
 
@@ -776,10 +748,6 @@ func (d *Driver) createSSHKey() (string, error) {
 	return string(publicKey), nil
 }
 
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
-}
-
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }

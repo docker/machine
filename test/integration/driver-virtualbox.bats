@@ -31,6 +31,11 @@ function setup() {
   [ "$status" -eq 0  ]
 }
 
+@test "$DRIVER: upgrade" {
+  run machine upgrade $NAME
+  [ "$status" -eq 0  ]
+}
+
 @test "$DRIVER: ls" {
   run machine ls
   [ "$status" -eq 0  ]

@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -23,6 +22,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -50,6 +50,8 @@ type Driver struct {
 	SwarmHost      string
 	SwarmDiscovery string
 	CPUS           int
+	SSHUser        string
+	SSHPort        int
 
 	storePath string
 }
@@ -95,6 +97,46 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "docker"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Local
+}
+
 func (d *Driver) DriverName() string {
 	return "vmwarefusion"
 }
@@ -108,6 +150,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.CPUS = runtime.NumCPU()
+	d.SSHUser = "docker"
+	d.SSHPort = 22
 
 	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
 	// specs.
@@ -209,7 +253,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Creating SSH key...")
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
@@ -284,20 +328,6 @@ func (d *Driver) Create() error {
 	// Expand tar file.
 	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
 
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -338,49 +368,8 @@ func (d *Driver) Kill() error {
 	return nil
 }
 
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo /etc/init.d/docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	// Check if pidfile exists, then if process exists, depending on that stop docker or remove pidfile
-	cmd, err := d.GetSSHCommand("if [ -e /var/run/docker.pid ]; then if [ -f /proc/$(cat /var/run/docker.pid)/status ]; then sudo /etc/init.d/docker stop; else rm -f /var/run/docker.pid; fi fi")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
 func (d *Driver) Upgrade() error {
 	return fmt.Errorf("VMware Fusion does not currently support the upgrade operation.")
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	ip, err := d.GetIP()
-	if err != nil {
-		return nil, err
-	}
-	return ssh.GetSSHCommand(ip, 22, "docker", d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) vmxPath() string {
@@ -500,12 +489,8 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 
 }
 
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
-}
-
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 // Make a boot2docker userdata.tar key bundle

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path"
+	"path/filepath"
 	"regexp"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -27,6 +27,8 @@ type Driver struct {
 	deviceConfig   *deviceConfig
 	Id             int
 	Client         *Client
+	SSHUser        string
+	SSHPort        int
 	MachineName    string
 	CaCertPath     string
 	PrivateKeyPath string
@@ -57,6 +59,46 @@ func init() {
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
+}
+
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "root"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
 }
 
 func GetCreateFlags() []cli.Flag {
@@ -188,6 +230,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SSHUser = "root"
+	d.SSHPort = 22
 
 	if err := validateClientConfig(d.Client); err != nil {
 		return err
@@ -214,38 +258,6 @@ func (d *Driver) getClient() *Client {
 
 func (d *Driver) DriverName() string {
 	return "softlayer"
-}
-
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
 }
 
 func (d *Driver) GetURL() (string, error) {
@@ -281,10 +293,6 @@ func (d *Driver) GetState() (state.State, error) {
 		vmState = state.None
 	}
 	return vmState, nil
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) PreCreateCheck() error {
@@ -351,7 +359,7 @@ func (d *Driver) Create() error {
 	waitForStart()
 	ssh.WaitForTCP(d.IPAddress + ":22")
 
-	cmd, err := d.GetSSHCommand("sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq curl")
+	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq curl")
 	if err != nil {
 		return err
 
@@ -382,7 +390,7 @@ func (d *Driver) buildHostSpec() *HostSpec {
 }
 
 func (d *Driver) createSSHKey() (*SshKey, error) {
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return nil, err
 	}
 
@@ -400,11 +408,7 @@ func (d *Driver) createSSHKey() (*SshKey, error) {
 }
 
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
-}
-
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
+	return d.GetSSHKeyPath() + ".pub"
 }
 
 func (d *Driver) Kill() error {
@@ -429,20 +433,4 @@ func (d *Driver) Start() error {
 }
 func (d *Driver) Stop() error {
 	return d.getClient().VirtualGuest().PowerOff(d.Id)
-}
-
-func (d *Driver) Upgrade() error {
-	log.Debugf("Upgrading Docker")
-
-	cmd, err := d.GetSSHCommand("sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
-	return cmd.Run()
 }
