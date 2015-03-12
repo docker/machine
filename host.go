@@ -558,6 +558,8 @@ func (h *Host) SetHostname() error {
 	)
 
 	switch h.Driver.GetProviderType() {
+	case provider.None:
+		return nil
 	case provider.Local:
 		cmd, err = h.GetSSHCommand(fmt.Sprintf(
 			"sudo hostname %s && echo \"%s\" | sudo tee /var/lib/boot2docker/etc/hostname",
