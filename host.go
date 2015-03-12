@@ -487,6 +487,11 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
+	// set hostname
+	if err := h.SetHostname(); err != nil {
+		return err
+	}
+
 	// install docker
 	if err := h.Provision(); err != nil {
 		return err
@@ -519,10 +524,6 @@ func (h *Host) Provision() error {
 		return fmt.Errorf("error installing docker: %s\n%s\n", err, string(buf.Bytes()))
 	}
 
-	if err := h.SetHostname(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -549,6 +550,11 @@ func (h *Host) SetHostname() error {
 	var (
 		cmd *exec.Cmd
 		err error
+	)
+
+	log.Debugf("setting hostname for provider type %s: %s",
+		h.Driver.GetProviderType(),
+		h.Name,
 	)
 
 	switch h.Driver.GetProviderType() {
