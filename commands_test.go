@@ -116,18 +116,11 @@ func TestGetHosts(t *testing.T) {
 		t.Fatalf("List returned %d items", len(storeHosts))
 	}
 
-	set := flag.NewFlagSet("start", 0)
-	set.Parse([]string{"test-a", "test-b"})
-
-	globalSet := flag.NewFlagSet("-d", 0)
-	globalSet.String("-d", "none", "driver")
-	globalSet.String("storage-path", store.Path, "storage path")
-	globalSet.String("tls-ca-cert", "", "")
-	globalSet.String("tls-ca-key", "", "")
-
-	c := cli.NewContext(nil, set, globalSet)
-
-	hosts, err := getHosts(c)
+	machineNames := []string{
+		"test-a",
+		"test-b",
+	}
+	hosts, err := getHosts(machineNames, store)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +252,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 		},
 	}
 
-	runActionForeachMachine("start", machines)
+	runActionForeachMachine("start", machines, &SwarmOptions{})
 
 	expected := map[string]state.State{
 		"foo":  state.Running,
@@ -287,7 +280,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 		"ham":  state.Stopped,
 	}
 
-	runActionForeachMachine("stop", machines)
+	runActionForeachMachine("stop", machines, &SwarmOptions{})
 
 	for _, machine := range machines {
 		state, _ := machine.Driver.GetState()
