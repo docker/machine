@@ -79,9 +79,12 @@ func TestStoreRemove(t *testing.T) {
 	flags := getDefaultTestDriverFlags()
 
 	store := NewStore(TestStoreDir, "", "")
-	_, err := store.Create("test", "none", flags)
+	host, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if err := store.SetActive(host); err != nil {
+		t.Fatalf("error setting active host: %v", err)
 	}
 	path := filepath.Join(TestStoreDir, "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -186,7 +189,9 @@ func TestStoreGetSetActive(t *testing.T) {
 
 	// No hosts set
 	host, err := store.GetActive()
-	if err != nil {
+	if err.Error() == "no active host" {
+		t.Logf("OK, no active host initially: %v", err)
+	} else if err != nil {
 		t.Fatal(err)
 	}
 
@@ -225,7 +230,9 @@ func TestStoreGetSetActive(t *testing.T) {
 	}
 
 	host, err = store.GetActive()
-	if err != nil {
+	if err.Error() == "no active host" {
+		t.Logf("OK, success to remove active host: %v", err)
+	} else if err != nil {
 		t.Fatal(err)
 	}
 
