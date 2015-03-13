@@ -574,10 +574,10 @@ func cmdSsh(c *cli.Context) {
 // We run commands concurrently and communicate back an error if there was one.
 func machineCommand(actionName string, machine *Host, errorChan chan<- error) {
 	commands := map[string](func() error){
-		"start":   machine.Driver.Start,
-		"stop":    machine.Driver.Stop,
-		"restart": machine.Driver.Restart,
-		"kill":    machine.Driver.Kill,
+		"start":   machine.Start,
+		"stop":    machine.Stop,
+		"restart": machine.Restart,
+		"kill":    machine.Kill,
 		"upgrade": machine.Upgrade,
 	}
 
