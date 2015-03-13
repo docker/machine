@@ -663,7 +663,8 @@ You need to generate an API key in the softlayer control panel.
 [Retrieve your API key](http://knowledgelayer.softlayer.com/procedure/retrieve-your-api-key)
 
 Options:
-  - `--softlayer-api-endpoint=`: Change softlayer API endpoint
+
+  - `--softlayer-api-endpoint`: Change softlayer API endpoint
   - `--softlayer-user`: **required** username for your softlayer account, api key needs to match this user.
   - `--softlayer-api-key`: **required** API key for your user account
   - `--softlayer-cpu`: Number of CPU's for the machine.
