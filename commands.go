@@ -33,6 +33,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/share"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
@@ -290,6 +291,22 @@ var Commands = []cli.Command{
 			cli.BoolFlag{
 				Name:  "unset, u",
 				Usage: "Unset variables instead of setting them",
+			},
+		},
+	},
+	{
+		Name:        "share",
+		Usage:       "Share a directory with a machine, if supported",
+		Description: "e.g. docker-machine share --driver vboxsf --with dev .",
+		Action:      cmdShare,
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "driver",
+				Usage: "Type of share to create.  Options: vboxsf",
+			},
+			cli.StringFlag{
+				Name:  "with",
+				Usage: "Machine to share the directory with.",
 			},
 		},
 	},
@@ -735,6 +752,79 @@ func cmdEnv(c *cli.Context) {
 		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%q\nexport DOCKER_HOST=%s\n",
 			cfg.machineDir, dockerHost)
 	}
+}
+
+func cmdShare(c *cli.Context) {
+	var (
+		newShare  share.Share
+		shareType string = c.String("driver")
+	)
+
+	certInfo := getCertPathInfo(c)
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mcn, err := newMcn(defaultStore)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if c.String("with") == "" {
+		log.Fatal("Please specify a machine to share with using the --with flag.")
+	}
+
+	host, err := mcn.Get(c.String("with"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sharePath := c.Args().First()
+	absSharePath, err := filepath.Abs(sharePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	newShare, err = share.NewShare(shareType, absSharePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	contractFulfilled, err := newShare.ContractFulfilled(host.Driver)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !contractFulfilled {
+		log.Fatal("It is not possible to create a share with this machine.  Please make sure the required dependencies are installed.")
+	}
+
+	if err := newShare.Create(host.Driver); err != nil {
+		log.Fatalf("Error creating share: %s", err)
+	}
+
+	// unexported version
+	host.SharesUnexported = append(host.SharesUnexported, newShare)
+
+	// exported version
+	host.Shares = append(host.Shares, share.ShareWithType{
+		Options: newShare.GetOptions(),
+	})
+
+	// TODO: Is this an appropriate place for this?
+	if err := host.SaveConfig(); err != nil {
+		log.Fatal("There was an error saving the new configuration: %s", err)
+	}
+
+	if err := host.Start(); err != nil {
+		log.Fatal("Error starting host after creating share: %s", err)
+	}
+
+	log.Infof("Share created successfully at %s", absSharePath)
 }
 
 func cmdSsh(c *cli.Context) {
