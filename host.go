@@ -117,7 +117,7 @@ func (h *Host) GetDockerConfigDir() (string, error) {
 	case provider.Local:
 		return "/var/lib/boot2docker", nil
 	case provider.Remote:
-		return "/etc/default", nil
+		return "/etc/docker", nil
 	case provider.None:
 		return "", nil
 	default:
