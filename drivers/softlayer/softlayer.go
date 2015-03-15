@@ -150,6 +150,19 @@ func (c *sshKey) Create(label, key string) (*SshKey, error) {
 	return &k, nil
 }
 
+func (c *sshKey) Delete(id int) error {
+	var (
+		method = "DELETE"
+		uri    = fmt.Sprintf("%s/%v", c.namespace(), id)
+	)
+
+	_, err := c.newRequest(method, uri, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) VirtualGuest() *virtualGuest {
 	return &virtualGuest{c}
 }
