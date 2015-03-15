@@ -139,10 +139,6 @@ var Commands = []cli.Command{
 				Value: "none",
 			},
 			cli.BoolFlag{
-				Name:  "swarm",
-				Usage: "Configure Machine with Swarm",
-			},
-			cli.BoolFlag{
 				Name:  "swarm-master",
 				Usage: "Configure Machine to be a Swarm master",
 			},
@@ -348,7 +344,7 @@ func cmdConfig(c *cli.Context) {
 		log.Fatal(err)
 	}
 	dockerHost := cfg.machineUrl
-	if c.Bool("swarm") {
+	if c.IsSet("swarm-discovery") {
 		if !cfg.swarmMaster {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
 		}
