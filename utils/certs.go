@@ -192,7 +192,11 @@ func ValidateCertificate(addr, caCertPath, serverCertPath, serverKeyPath string)
 		return false, err
 	}
 
-	_, err = tls.Dial("tcp", addr, tlsConfig)
+	dialer := &net.Dialer{
+		Timeout: time.Second * 2,
+	}
+
+	_, err = tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
 	if err != nil {
 		return false, nil
 	}

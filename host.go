@@ -610,6 +610,11 @@ func (h *Host) Start() error {
 	if err := h.Driver.Start(); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return utils.WaitFor(h.MachineInState(state.Running))
 }
 
@@ -617,6 +622,11 @@ func (h *Host) Stop() error {
 	if err := h.Driver.Stop(); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return utils.WaitFor(h.MachineInState(state.Stopped))
 }
 
@@ -624,6 +634,11 @@ func (h *Host) Kill() error {
 	if err := h.Driver.Stop(); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return utils.WaitFor(h.MachineInState(state.Stopped))
 }
 
@@ -631,15 +646,23 @@ func (h *Host) Restart() error {
 	if err := h.Stop(); err != nil {
 		return err
 	}
+
 	if err := utils.WaitFor(h.MachineInState(state.Stopped)); err != nil {
 		return err
 	}
+
 	if err := h.Start(); err != nil {
 		return err
 	}
+
 	if err := utils.WaitFor(h.MachineInState(state.Running)); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -654,6 +677,11 @@ func (h *Host) Remove(force bool) error {
 			return err
 		}
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return h.removeStorePath()
 }
 
