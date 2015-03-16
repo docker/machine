@@ -381,7 +381,12 @@ func cmdConfig(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	dockerHost := cfg.machineUrl
+
+	dockerHost, err := getHost(c).Driver.GetURL()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if c.Bool("swarm") {
 		if !cfg.swarmMaster {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
@@ -394,7 +399,7 @@ func cmdConfig(c *cli.Context) {
 		swarmPort := parts[1]
 
 		// get IP of machine to replace in case swarm host is 0.0.0.0
-		mUrl, err := url.Parse(cfg.machineUrl)
+		mUrl, err := url.Parse(dockerHost)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -403,6 +408,8 @@ func cmdConfig(c *cli.Context) {
 
 		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
 	}
+
+	log.Debug(dockerHost)
 
 	u, err := url.Parse(cfg.machineUrl)
 	if err != nil {
