@@ -78,7 +78,6 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 @test "$DRIVER: machine should show stopped after kill" {
   run machine ls
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"$NAME"*  ]]
   [[ ${lines[1]} == *"Stopped"*  ]]
 }
 
@@ -90,7 +89,6 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 @test "$DRIVER: machine should show running after restart" {
   run machine ls
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"$NAME"*  ]]
   [[ ${lines[1]} == *"Running"*  ]]
 }
 
