@@ -24,7 +24,7 @@ import (
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 
-	"github.com/docker/machine/host/provision"
+	"github.com/docker/machine/libmachine/provision"
 )
 
 var (
@@ -484,6 +484,8 @@ func (h *Host) Create(name string) error {
 	if err := h.SaveConfig(); err != nil {
 		return err
 	}
+
+	provision.DetectProvisioner(h.GetSSHCommand)
 
 	// set hostname
 	if err := h.SetHostname(); err != nil {
