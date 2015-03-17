@@ -245,7 +245,7 @@ func (h *Host) StopDocker() error {
 
 	switch h.Driver.GetProviderType() {
 	case provider.Local:
-		cmd, err = h.GetSSHCommand("if [ -e /var/run/docker.pid ]; then sudo /etc/init.d/docker stop ; fi")
+		cmd, err = h.GetSSHCommand("if [ -e /var/run/docker.pid  ] && [ -d /proc/$(cat /var/run/docker.pid)  ]; then sudo /etc/init.d/docker stop ; exit 0; fi")
 	case provider.Remote:
 		cmd, err = h.GetSSHCommand("sudo service docker stop")
 	default:
@@ -364,7 +364,7 @@ func (h *Host) ConfigureAuth() error {
 	}
 	machineServerKeyPath := path.Join(dockerDir, "server-key.pem")
 
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(caCert), machineCaCertPath))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath))
 	if err != nil {
 		return err
 	}
@@ -372,7 +372,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverKey), machineServerKeyPath))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), machineServerKeyPath))
 	if err != nil {
 		return err
 	}
@@ -380,7 +380,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", string(serverCert), machineServerCertPath))
+	cmd, err = h.GetSSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), machineServerCertPath))
 	if err != nil {
 		return err
 	}
@@ -610,6 +610,11 @@ func (h *Host) Start() error {
 	if err := h.Driver.Start(); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return utils.WaitFor(h.MachineInState(state.Running))
 }
 
@@ -617,6 +622,11 @@ func (h *Host) Stop() error {
 	if err := h.Driver.Stop(); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return utils.WaitFor(h.MachineInState(state.Stopped))
 }
 
@@ -624,6 +634,11 @@ func (h *Host) Kill() error {
 	if err := h.Driver.Stop(); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return utils.WaitFor(h.MachineInState(state.Stopped))
 }
 
@@ -631,15 +646,23 @@ func (h *Host) Restart() error {
 	if err := h.Stop(); err != nil {
 		return err
 	}
+
 	if err := utils.WaitFor(h.MachineInState(state.Stopped)); err != nil {
 		return err
 	}
+
 	if err := h.Start(); err != nil {
 		return err
 	}
+
 	if err := utils.WaitFor(h.MachineInState(state.Running)); err != nil {
 		return err
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -654,6 +677,11 @@ func (h *Host) Remove(force bool) error {
 			return err
 		}
 	}
+
+	if err := h.SaveConfig(); err != nil {
+		return err
+	}
+
 	return h.removeStorePath()
 }
 

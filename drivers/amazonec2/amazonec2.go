@@ -384,10 +384,14 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) GetURL() (string, error) {
-	if d.IPAddress == "" {
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
+	if ip == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:%d", d.IPAddress, dockerPort), nil
+	return fmt.Sprintf("tcp://%s:%d", ip, dockerPort), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
