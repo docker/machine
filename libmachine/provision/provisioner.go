@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
-
-	"github.com/docker/machine/drivers"
 )
 
 var provisioners = make(map[string]*RegisteredProvisioner)
@@ -43,11 +41,11 @@ func Register(name string, p *RegisteredProvisioner) {
 	provisioners[name] = p
 }
 
-func DetectProvisioner(d drivers.Driver) (*Provisioner, error) {
+func DetectProvisioner(sshCommand SSHCommandFunc) (*Provisioner, error) {
 	var (
 		osReleaseOut bytes.Buffer
 	)
-	catOsReleaseCmd, err := d.GetSSHCommand("cat /etc/os-release")
+	catOsReleaseCmd, err := sshCommand("cat /etc/os-release")
 	if err != nil {
 		return nil, fmt.Errorf("Error getting SSH command: %s", err)
 	}
@@ -67,7 +65,7 @@ func DetectProvisioner(d drivers.Driver) (*Provisioner, error) {
 	}
 
 	for _, p := range provisioners {
-		provisioner := p.New(d.GetSSHCommand)
+		provisioner := p.New(sshCommand)
 		provisioner.SetOsReleaseInfo(osReleaseInfo)
 
 		if provisioner.CompatibleWithHost() {
