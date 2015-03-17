@@ -28,7 +28,7 @@ import (
 var (
 	validHostNameChars       = `[a-zA-Z0-9\-\.]`
 	validHostNamePattern     = regexp.MustCompile(`^` + validHostNameChars + `+$`)
-	ErrInvalidHostname       = errors.New("Invalid hostname specified")
+	ErrInvalidHostname       = errors.New("Invalid hostname specified.  Hostnames must be comprised only of alphanumeric characters, \".\", or \"-\".")
 	ErrUnknownHypervisorType = errors.New("Unknown hypervisor type")
 )
 
