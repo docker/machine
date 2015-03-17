@@ -273,7 +273,7 @@ $ docker-machine create -d virtualbox local
 Load the Machine configuration into your shell:
 
 ```
-$ $(docker-machine env local)
+$ eval "$(docker-machine env local)"
 ```
 Then run generate the token using the Swarm Docker image:
 
@@ -324,7 +324,7 @@ export DOCKER_HOST=tcp://192.168.99.100:3376
 ```
 
 You can load this into your environment using
-`$(docker-machine env --swarm swarm-master)`.
+`eval "$(docker-machine env --swarm swarm-master)"`.
 
 Now you can use the Docker CLI to query:
 
@@ -389,13 +389,13 @@ run in a subshell.  Running `docker-machine env -u` will print
 
 ```
 $ env | grep DOCKER
-$ $(docker-machine env dev)
+$ eval "$(docker-machine env dev)"
 $ env | grep DOCKER
 DOCKER_HOST=tcp://192.168.99.101:2376
 DOCKER_CERT_PATH=/Users/nathanleclaire/.docker/machines/.client
 DOCKER_TLS_VERIFY=1
 $ # If you run a docker command, now it will run against that host.
-$ $(docker-machine env -u)
+$ eval "$(docker-machine env -u)"
 $ env | grep DOCKER
 $ # The environment variables have been unset.
 ```
