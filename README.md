@@ -13,13 +13,13 @@ INFO[0000] Creating VirtualBox VM...
 INFO[0007] Starting VirtualBox VM...
 INFO[0007] Waiting for VM to start...
 INFO[0041] "dev" has been created and is now the active machine.
-INFO[0041] To point your Docker client at it, run this in your shell: $(docker-machine env dev)
+INFO[0041] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 
 $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
 dev    *        virtualbox   Running   tcp://192.168.99.127:2376
 
-$ $(docker-machine env dev)
+$ eval "$(docker-machine env dev)"
 
 $ docker run busybox echo hello world
 Unable to find image 'busybox:latest' locally
@@ -35,7 +35,7 @@ INFO[0001] Creating Digital Ocean droplet...
 INFO[0002] Waiting for SSH...
 INFO[0070] Configuring Machine...
 INFO[0109] "staging" has been created and is now the active machine.
-INFO[0109] To point your Docker client at it, run this in your shell: $(docker-machine env staging)
+INFO[0109] To point your Docker client at it, run this in your shell: eval "$(docker-machine env staging)"
 
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL                          SWARM
