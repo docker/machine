@@ -3,7 +3,6 @@ package digitalocean
 import (
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -241,23 +240,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Info("Configuring Machine...")
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -354,57 +336,8 @@ func (d *Driver) Kill() error {
 	return err
 }
 
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
-}
-
-func (d *Driver) Upgrade() error {
-	log.Debugf("Upgrading Docker")
-
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
-	return cmd.Run()
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	cmd := ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...)
-	return cmd, nil
 }
 
 func (d *Driver) getClient() *godo.Client {
