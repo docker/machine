@@ -22,8 +22,9 @@ func defaultTimeout(network, addr string) (net.Conn, error) {
 
 func getClient() *http.Client {
 	transport := http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		Dial:  defaultTimeout,
+		DisableKeepAlives: true,
+		Proxy:             http.ProxyFromEnvironment,
+		Dial:              defaultTimeout,
 	}
 
 	client := http.Client{
