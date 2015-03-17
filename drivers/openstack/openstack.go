@@ -3,9 +3,7 @@ package openstack
 import (
 	"fmt"
 	"io/ioutil"
-	"os/exec"
-	"path"
-	"strconv"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -22,37 +21,41 @@ const (
 )
 
 type Driver struct {
-	AuthUrl             string
-	Username            string
-	Password            string
-	TenantName          string
-	TenantId            string
-	Region              string
-	EndpointType        string
-	MachineName         string
-	MachineId           string
-	FlavorName          string
-	FlavorId            string
-	ImageName           string
-	ImageId             string
-	KeyPairName         string
-	NetworkName         string
-	NetworkId           string
-	SecurityGroups      []string
-	FloatingIpPool      string
-	FloatingIpPoolId    string
-	SSHUser             string
-	SSHPort             int
-	Ip                  string
-	EnableDockerInstall bool
-	CaCertPath          string
-	PrivateKeyPath      string
-	storePath           string
-	client              Client
+	AuthUrl          string
+	Insecure         bool
+	Username         string
+	Password         string
+	TenantName       string
+	TenantId         string
+	Region           string
+	EndpointType     string
+	MachineName      string
+	MachineId        string
+	FlavorName       string
+	FlavorId         string
+	ImageName        string
+	ImageId          string
+	KeyPairName      string
+	NetworkName      string
+	NetworkId        string
+	SecurityGroups   []string
+	FloatingIpPool   string
+	FloatingIpPoolId string
+	SSHUser          string
+	SSHPort          int
+	Ip               string
+	CaCertPath       string
+	PrivateKeyPath   string
+	storePath        string
+	SwarmMaster      bool
+	SwarmHost        string
+	SwarmDiscovery   string
+	client           Client
 }
 
 type CreateFlags struct {
 	AuthUrl        *string
+	Insecure       *bool
 	Username       *string
 	Password       *string
 	TenantName     *string
@@ -85,6 +88,10 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "openstack-auth-url",
 			Usage:  "OpenStack authentication URL",
 			Value:  "",
+		},
+		cli.BoolFlag{
+			Name:  "openstack-insecure",
+			Usage: "Disable TLS credential checking.",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_USERNAME",
@@ -144,7 +151,7 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "openstack-net-id",
-			Usage: "OpenStack image name to use for the instance",
+			Usage: "OpenStack network id the machine will be connected on",
 			Value: "",
 		},
 		cli.StringFlag{
@@ -172,13 +179,6 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "OpenStack SSH port",
 			Value: 22,
 		},
-		// Using a StringFlag rather than a BoolFlag because
-		// the BoolFlag default value is always false
-		cli.StringFlag{
-			Name:  "openstack-docker-install",
-			Usage: "Set if docker have to be installed on the machine",
-			Value: "true",
-		},
 	}
 }
 
@@ -203,12 +203,53 @@ func NewDerivedDriver(machineName string, storePath string, client Client, caCer
 	}, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "root"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
+}
+
 func (d *Driver) DriverName() string {
 	return "openstack"
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AuthUrl = flags.String("openstack-auth-url")
+	d.Insecure = flags.Bool("openstack-insecure")
 	d.Username = flags.String("openstack-username")
 	d.Password = flags.String("openstack-password")
 	d.TenantName = flags.String("openstack-tenant-name")
@@ -227,12 +268,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FloatingIpPool = flags.String("openstack-floatingip-pool")
 	d.SSHUser = flags.String("openstack-ssh-user")
 	d.SSHPort = flags.Int("openstack-ssh-port")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 
-	installDocker, err := strconv.ParseBool(flags.String("openstack-docker-install"))
-	if err != nil {
-		return err
-	}
-	d.EnableDockerInstall = installDocker
 	return d.checkConfig()
 }
 
@@ -312,6 +351,10 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) PreCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, utils.GenerateRandomID())
 
@@ -337,11 +380,6 @@ func (d *Driver) Create() error {
 	}
 	if err := d.waitForSSHServer(); err != nil {
 		return err
-	}
-	if d.EnableDockerInstall {
-		if err := d.installDocker(); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -374,14 +412,15 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Remove() error {
-	log.WithField("MachineId", d.MachineId).Info("Deleting OpenStack instance...")
+	log.WithField("MachineId", d.MachineId).Debug("deleting instance...")
+	log.Info("Deleting OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
 	}
 	if err := d.client.DeleteInstance(d); err != nil {
 		return err
 	}
-	log.WithField("Name", d.KeyPairName).Info("Deleting Key Pair...")
+	log.WithField("Name", d.KeyPairName).Debug("deleting key pair...")
 	if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
 		return err
 	}
@@ -401,57 +440,6 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) Kill() error {
 	return d.Stop()
-}
-
-func (d *Driver) Upgrade() error {
-	return fmt.Errorf("unable to upgrade as we are using the custom docker binary with identity auth")
-}
-
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	ip, err := d.GetIP()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(args) != 0 && d.SSHUser != "root" {
-		cmd := strings.Replace(strings.Join(args, " "), "'", "\\'", -1)
-		args = []string{"sudo", "sh", "-c", fmt.Sprintf("'%s'", cmd)}
-	}
-
-	log.WithField("MachineId", d.MachineId).Debug("Command: %s", args)
-	return ssh.GetSSHCommand(ip, d.SSHPort, d.SSHUser, d.sshKeyPath(), args...), nil
 }
 
 const (
@@ -613,7 +601,7 @@ func (d *Driver) initNetwork() error {
 
 func (d *Driver) createSSHKey() error {
 	log.WithField("Name", d.KeyPairName).Debug("Creating Key Pair...")
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
@@ -735,46 +723,6 @@ func (d *Driver) waitForInstanceToStart() error {
 	return d.waitForSSHServer()
 }
 
-func (d *Driver) installDocker() error {
-	log.WithField("MachineId", d.MachineId).Debug("Installing docker daemon on the machine")
-
-	if err := d.sshExec([]string{
-		`apt-get install -y curl`,
-		`curl -sSL https://get.docker.com | /bin/sh >/var/log/docker-install.log 2>&1`,
-	}); err != nil {
-		log.Error("The docker installation failed.")
-		log.Error(
-			"The driver assumes that your instance is running Ubuntu. If this is not the case, you should ",
-			"use the option --openstack-docker-install=false (or --{provider}-docker-install=false) when ",
-			"creating a machine, and then install and configure docker manually.",
-		)
-		log.Error(
-			`Also, you can use "machine ssh" to manually configure docker on this host.`,
-		)
-
-		// Don't return this ssh error so that host creation succeeds and "machine ssh" and "machine rm"
-		// are usable.
-	}
-	return nil
-}
-
-func (d *Driver) sshExec(commands []string) error {
-	for _, command := range commands {
-		sshCmd, err := d.GetSSHCommand(command)
-		if err != nil {
-			return err
-		}
-		if err := sshCmd.Run(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (d *Driver) sshKeyPath() string {
-	return path.Join(d.storePath, "id_rsa")
-}
-
 func (d *Driver) publicSSHKeyPath() string {
-	return d.sshKeyPath() + ".pub"
+	return d.GetSSHKeyPath() + ".pub"
 }

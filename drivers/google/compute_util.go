@@ -1,11 +1,10 @@
 package google
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"strings"
-	"text/template"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -15,19 +14,22 @@ import (
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
 type ComputeUtil struct {
-	zone         string
-	instanceName string
-	userName     string
-	project      string
-	service      *raw.Service
-	zoneURL      string
-	globalURL    string
-	ipAddress    string
+	zone          string
+	instanceName  string
+	userName      string
+	project       string
+	service       *raw.Service
+	zoneURL       string
+	authTokenPath string
+	globalURL     string
+	ipAddress     string
+	SwarmMaster   bool
+	SwarmHost     string
 }
 
 const (
 	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20141016"
+	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
@@ -35,31 +37,23 @@ const (
 	dockerStopCommand  = "sudo service docker stop"
 )
 
-var (
-	dockerUpgradeScriptTemplate = template.Must(template.New("upgrade-docker-script").Parse(
-		`sudo mkdir -p /.docker/authorized-keys.d/
-sudo chown -R {{ .UserName }} /.docker
-while [ -e /var/run/docker.pid ]; do sleep 1; done
-sudo curl -s -L -o /usr/bin/docker https://get.docker.com/builds/Linux/x86_64/docker-latest
-`))
-)
-
-const ()
-
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
-	service, err := newGCEService(driver.storePath)
+	service, err := newGCEService(driver.storePath, driver.AuthTokenPath)
 	if err != nil {
 		return nil, err
 	}
 	c := ComputeUtil{
-		zone:         driver.Zone,
-		instanceName: driver.MachineName,
-		userName:     driver.UserName,
-		project:      driver.Project,
-		service:      service,
-		zoneURL:      apiURL + driver.Project + "/zones/" + driver.Zone,
-		globalURL:    apiURL + driver.Project + "/global",
+		authTokenPath: driver.AuthTokenPath,
+		zone:          driver.Zone,
+		instanceName:  driver.MachineName,
+		userName:      driver.SSHUser,
+		project:       driver.Project,
+		service:       service,
+		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
+		globalURL:     apiURL + driver.Project + "/global",
+		SwarmMaster:   driver.SwarmMaster,
+		SwarmHost:     driver.SwarmHost,
 	}
 	return &c, nil
 }
@@ -90,15 +84,33 @@ func (c *ComputeUtil) firewallRule() (*raw.Firewall, error) {
 
 func (c *ComputeUtil) createFirewallRule() error {
 	log.Infof("Creating firewall rule.")
-	rule := &raw.Firewall{
-		Allowed: []*raw.FirewallAllowed{
-			{
-				IPProtocol: "tcp",
-				Ports: []string{
-					port,
-				},
+	allowed := []*raw.FirewallAllowed{
+
+		{
+			IPProtocol: "tcp",
+			Ports: []string{
+				port,
 			},
 		},
+	}
+
+	if c.SwarmMaster {
+		u, err := url.Parse(c.SwarmHost)
+		if err != nil {
+			return fmt.Errorf("error authorizing port for swarm: %s", err)
+		}
+
+		parts := strings.Split(u.Host, ":")
+		swarmPort := parts[1]
+		allowed = append(allowed, &raw.FirewallAllowed{
+			IPProtocol: "tcp",
+			Ports: []string{
+				swarmPort,
+			},
+		})
+	}
+	rule := &raw.Firewall{
+		Allowed: allowed,
 		SourceRanges: []string{
 			"0.0.0.0/0",
 		},
@@ -154,12 +166,20 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 				firewallTargetTag,
 			},
 		},
+		ServiceAccounts: []*raw.ServiceAccount{
+			{
+				Email:  "default",
+				Scopes: strings.Split(d.Scopes, ","),
+			},
+		},
 	}
 	disk, err := c.disk()
 	if disk == nil || err != nil {
 		instance.Disks[0].InitializeParams = &raw.AttachedDiskInitializeParams{
 			DiskName:    c.diskName(),
 			SourceImage: imageName,
+			// The maximum supported disk size is 1000GB, the cast should be fine.
+			DiskSizeGb: int64(d.DiskSize),
 		}
 	} else {
 		instance.Disks[0].Source = c.zoneURL + "/disks/" + c.instanceName + "-disk"
@@ -182,7 +202,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	c.waitForSSH(ip)
 
 	// Update the SSH Key
-	sshKey, err := ioutil.ReadFile(d.publicSSHKeyPath)
+	sshKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
 	if err != nil {
 		return err
 	}
@@ -205,22 +225,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return c.updateDocker(d)
+	return nil
 }
 
 // deleteInstance deletes the instance, leaving the persistent disk.
@@ -232,28 +237,6 @@ func (c *ComputeUtil) deleteInstance() error {
 	}
 	log.Infof("Waiting for instance to delete.")
 	return c.waitForRegionalOp(op.Name)
-}
-
-// updateDocker updates the docker daemon to the latest version.
-func (c *ComputeUtil) updateDocker(d *Driver) error {
-	log.Infof("Updating docker.")
-	ip, err := d.GetIP()
-	if err != nil {
-		return fmt.Errorf("error retrieving ip: %v", err)
-	}
-	if c.executeCommands([]string{dockerStopCommand}, ip, d.sshKeyPath); err != nil {
-		return err
-	}
-	var scriptBuf bytes.Buffer
-
-	if err := dockerUpgradeScriptTemplate.Execute(&scriptBuf, d); err != nil {
-		return fmt.Errorf("error expanding upgrade script template: %v", err)
-	}
-	commands := strings.Split(scriptBuf.String(), "\n")
-	if err := c.executeCommands(commands, ip, d.sshKeyPath); err != nil {
-		return err
-	}
-	return c.executeCommands([]string{dockerStartCommand}, ip, d.sshKeyPath)
 }
 
 func (c *ComputeUtil) executeCommands(commands []string, ip, sshKeyPath string) error {

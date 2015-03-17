@@ -7,66 +7,83 @@ import (
 	"sort"
 
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/provider"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
+
+type Port struct {
+	Protocol string
+	Port     int
+}
 
 // Driver defines how a host is created and controlled. Different types of
 // driver represent different ways hosts can be created (e.g. different
 // hypervisors, different cloud providers)
 type Driver interface {
+	// AuthorizePort authorizes a port for machine access
+	AuthorizePort(ports []*Port) error
+
+	// Create a host using the driver's config
+	Create() error
+
+	// DeauthorizePort removes a port for machine access
+	DeauthorizePort(ports []*Port) error
+
 	// DriverName returns the name of the driver as it is registered
 	DriverName() string
-
-	// SetConfigFromFlags configures the driver with the object that was returned
-	// by RegisterCreateFlags
-	SetConfigFromFlags(flags DriverOptions) error
-
-	// GetURL returns a Docker compatible host URL for connecting to this host
-	// e.g. tcp://1.2.3.4:2376
-	GetURL() (string, error)
 
 	// GetIP returns an IP or hostname that this host is available at
 	// e.g. 1.2.3.4 or docker-host-d60b70a14d3a.cloudapp.net
 	GetIP() (string, error)
 
+	// GetMachineName returns the name of the machine
+	GetMachineName() string
+
+	// GetSSHHostname returns hostname for use with ssh
+	GetSSHHostname() (string, error)
+
+	// GetSSHKeyPath returns key path for use with ssh
+	GetSSHKeyPath() string
+
+	// GetSSHPort returns port for use with ssh
+	GetSSHPort() (int, error)
+
+	// GetSSHUsername returns username for use with ssh
+	GetSSHUsername() string
+
+	// GetURL returns a Docker compatible host URL for connecting to this host
+	// e.g. tcp://1.2.3.4:2376
+	GetURL() (string, error)
+
 	// GetState returns the state that the host is in (running, stopped, etc)
 	GetState() (state.State, error)
 
-	// Create a host using the driver's config
-	Create() error
+	// GetProviderType returns whether the instance is local/remote
+	GetProviderType() provider.ProviderType
+
+	// Kill stops a host forcefully
+	Kill() error
+
+	// PreCreateCheck allows for pre-create operations to make sure a driver is ready for creation
+	PreCreateCheck() error
 
 	// Remove a host
 	Remove() error
+
+	// Restart a host. This may just call Stop(); Start() if the provider does not
+	// have any special restart behaviour.
+	Restart() error
+
+	// SetConfigFromFlags configures the driver with the object that was returned
+	// by RegisterCreateFlags
+	SetConfigFromFlags(flags DriverOptions) error
 
 	// Start a host
 	Start() error
 
 	// Stop a host gracefully
 	Stop() error
-
-	// Restart a host. This may just call Stop(); Start() if the provider does not
-	// have any special restart behaviour.
-	Restart() error
-
-	// Kill stops a host forcefully
-	Kill() error
-
-	// RestartDocker restarts a Docker daemon on the machine
-	StartDocker() error
-
-	// RestartDocker restarts a Docker daemon on the machine
-	StopDocker() error
-
-	// Upgrade the version of Docker on the host to the latest version
-	Upgrade() error
-
-	// GetDockerConfigDir returns the config directory for storing daemon configs
-	GetDockerConfigDir() string
-
-	// GetSSHCommand returns a command for SSH pointing at the correct user, host
-	// and keys for the host with args appended. If no args are passed, it will
-	// initiate an interactive SSH session as if SSH were passed no args.
-	GetSSHCommand(args ...string) (*exec.Cmd, error)
 }
 
 // RegisteredDriver is used to register a driver with the Register function.
@@ -140,4 +157,21 @@ type DriverOptions interface {
 	String(key string) string
 	Int(key string) int
 	Bool(key string) bool
+}
+
+func GetSSHCommandFromDriver(d Driver, args ...string) (*exec.Cmd, error) {
+	host, err := d.GetSSHHostname()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := d.GetSSHPort()
+	if err != nil {
+		return nil, err
+	}
+
+	user := d.GetSSHUsername()
+	keyPath := d.GetSSHKeyPath()
+
+	return ssh.GetSSHCommand(host, port, user, keyPath, args...), nil
 }

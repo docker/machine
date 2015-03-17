@@ -1,6 +1,8 @@
 package servers
 
 import (
+	"reflect"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/pagination"
@@ -20,8 +22,21 @@ func (r serverResult) Extract() (*Server, error) {
 		Server Server `mapstructure:"server"`
 	}
 
-	err := mapstructure.Decode(r.Body, &response)
-	return &response.Server, err
+	config := &mapstructure.DecoderConfig{
+		DecodeHook: toMapFromString,
+		Result:     &response,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = decoder.Decode(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response.Server, nil
 }
 
 // CreateResult temporarily contains the response from a Create call.
@@ -124,6 +139,9 @@ type Server struct {
 	// AdminPass will generally be empty ("").  However, it will contain the administrative password chosen when provisioning a new server without a set AdminPass setting in the first place.
 	// Note that this is the ONLY time this field will be valid.
 	AdminPass string `json:"adminPass" mapstructure:"adminPass"`
+
+	// SecurityGroups includes the security groups that this instance has applied to it
+	SecurityGroups []map[string]interface{} `json:"security_groups" mapstructure:"security_groups"`
 }
 
 // ServerPage abstracts the raw results of making a List() request against the API.
@@ -164,7 +182,19 @@ func ExtractServers(page pagination.Page) ([]Server, error) {
 	var response struct {
 		Servers []Server `mapstructure:"servers"`
 	}
-	err := mapstructure.Decode(casted, &response)
+
+	config := &mapstructure.DecoderConfig{
+		DecodeHook: toMapFromString,
+		Result:     &response,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = decoder.Decode(casted)
+
+	//err := mapstructure.Decode(casted, &response)
 	return response.Servers, err
 }
 
@@ -234,4 +264,11 @@ func (r MetadatumResult) Extract() (map[string]string, error) {
 
 	err := mapstructure.Decode(r.Body, &response)
 	return response.Metadatum, err
+}
+
+func toMapFromString(from reflect.Kind, to reflect.Kind, data interface{}) (interface{}, error) {
+	if (from == reflect.String) && (to == reflect.Map) {
+		return map[string]interface{}{}, nil
+	}
+	return data, nil
 }

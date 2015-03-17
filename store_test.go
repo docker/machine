@@ -2,12 +2,18 @@ package main
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
-	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/none"
+)
+
+const (
+	TestStoreDir = ".store-test"
+)
+
+var (
+	TestMachineDir = filepath.Join(TestStoreDir, "machine", "machines")
 )
 
 type DriverOptionsMock struct {
@@ -27,7 +33,20 @@ func (d DriverOptionsMock) Bool(key string) bool {
 }
 
 func clearHosts() error {
-	return os.RemoveAll(path.Join(drivers.GetHomeDir(), ".docker", "machines"))
+	return os.RemoveAll(TestStoreDir)
+}
+
+func getDefaultTestDriverFlags() *DriverOptionsMock {
+	return &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"name":            "test",
+			"url":             "unix:///var/run/docker.sock",
+			"swarm":           false,
+			"swarm-host":      "",
+			"swarm-master":    false,
+			"swarm-discovery": "",
+		},
+	}
 }
 
 func TestStoreCreate(t *testing.T) {
@@ -35,13 +54,9 @@ func TestStoreCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 
 	host, err := store.Create("test", "none", flags)
 	if err != nil {
@@ -50,7 +65,7 @@ func TestStoreCreate(t *testing.T) {
 	if host.Name != "test" {
 		t.Fatal("Host name is incorrect")
 	}
-	path := filepath.Join(drivers.GetHomeDir(), ".docker", "machines", "test")
+	path := filepath.Join(TestStoreDir, "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -61,18 +76,14 @@ func TestStoreRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(drivers.GetHomeDir(), ".docker", "machines", "test")
+	path := filepath.Join(TestStoreDir, "test")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -90,13 +101,9 @@ func TestStoreList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
@@ -115,13 +122,9 @@ func TestStoreExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	exists, err := store.Exists("test")
 	if exists {
 		t.Fatal("Exists returned true when it should have been false")
@@ -145,19 +148,16 @@ func TestStoreLoad(t *testing.T) {
 	}
 
 	expectedURL := "unix:///foo/baz"
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": expectedURL,
-		},
-	}
+	flags := getDefaultTestDriverFlags()
+	flags.Data["url"] = expectedURL
 
-	store := NewStore("", "", "")
+	store := NewStore(TestStoreDir, "", "")
 	_, err := store.Create("test", "none", flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	store = NewStore("", "", "")
+	store = NewStore(TestStoreDir, "", "")
 	host, err := store.Load("test")
 	if host.Name != "test" {
 		t.Fatal("Host name is incorrect")
@@ -176,13 +176,13 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"url": "unix:///var/run/docker.sock",
-		},
-	}
+	flags := getDefaultTestDriverFlags()
 
-	store := NewStore("", "", "")
+	//store := NewStore(TestStoreDir, "", "")
+	store, err := getTestStore()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// No hosts set
 	host, err := store.GetActive()

@@ -56,6 +56,7 @@ func TestGet(t *testing.T) {
 
 	th.AssertEquals(t, v.Name, "vol-001")
 	th.AssertEquals(t, v.ID, "d32019d3-bc6e-4319-9c1d-6722fc136a22")
+	th.AssertEquals(t, v.Attachments[0]["device"], "/dev/vde")
 }
 
 func TestCreate(t *testing.T) {

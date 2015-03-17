@@ -5,15 +5,62 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
+
+const (
+	timeout = time.Second * 5
+)
+
+func defaultTimeout(network, addr string) (net.Conn, error) {
+	return net.DialTimeout(network, addr, timeout)
+}
+
+func getClient() *http.Client {
+	transport := http.Transport{
+		Dial: defaultTimeout,
+	}
+
+	client := http.Client{
+		Transport: &transport,
+	}
+
+	return &client
+}
+
+type B2dUtils struct {
+	githubApiBaseUrl string
+	githubBaseUrl    string
+}
+
+func NewB2dUtils(githubApiBaseUrl, githubBaseUrl string) *B2dUtils {
+	defaultBaseApiUrl := "https://api.github.com"
+	defaultBaseUrl := "https://github.com"
+
+	if githubApiBaseUrl == "" {
+		githubApiBaseUrl = defaultBaseApiUrl
+	}
+
+	if githubBaseUrl == "" {
+		githubBaseUrl = defaultBaseUrl
+	}
+
+	return &B2dUtils{
+		githubApiBaseUrl: githubApiBaseUrl,
+		githubBaseUrl:    githubBaseUrl,
+	}
+}
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
-func GetLatestBoot2DockerReleaseURL() (string, error) {
-	rsp, err := http.Get("https://api.github.com/repos/boot2docker/boot2docker/releases")
+func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
+	client := getClient()
+	apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
+	rsp, err := client.Get(apiUrl)
 	if err != nil {
 		return "", err
 	}
@@ -30,13 +77,14 @@ func GetLatestBoot2DockerReleaseURL() (string, error) {
 	}
 
 	tag := t[0].TagName
-	url := fmt.Sprintf("https://github.com/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", tag)
-	return url, nil
+	isoUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseUrl, tag)
+	return isoUrl, nil
 }
 
 // Download boot2docker ISO image for the given tag and save it at dest.
-func DownloadISO(dir, file, url string) error {
-	rsp, err := http.Get(url)
+func (b *B2dUtils) DownloadISO(dir, file, url string) error {
+	client := getClient()
+	rsp, err := client.Get(url)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -23,39 +25,43 @@ var (
 	ErrMachineExist    = errors.New("machine already exists")
 	ErrMachineNotExist = errors.New("machine does not exist")
 	ErrVBMNotFound     = errors.New("VBoxManage not found")
-	vboxManageCmd      = "VBoxManage"
+	vboxManageCmd      = setVBoxManageCmd()
 )
 
-func vbm(args ...string) error {
-	cmd := exec.Command(vboxManageCmd, args...)
-	if os.Getenv("DEBUG") != "" {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+// detect the VBoxManage cmd's path if needed
+func setVBoxManageCmd() string {
+	cmd := "VBoxManage"
+	if path, err := exec.LookPath(cmd); err == nil {
+		return path
 	}
-	log.Debugf("executing: %v %v", vboxManageCmd, strings.Join(args, " "))
-	if err := cmd.Run(); err != nil {
-		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
-			return ErrVBMNotFound
+	if runtime.GOOS == "windows" {
+		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" {
+			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+				return path
+			}
 		}
-		return fmt.Errorf("%v %v failed: %v", vboxManageCmd, strings.Join(args, " "), err)
+		if p := os.Getenv("VBOX_MSI_INSTALL_PATH"); p != "" {
+			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+				return path
+			}
+		}
+		// look at HKEY_LOCAL_MACHINE\SOFTWARE\Oracle\VirtualBox\InstallDir
+		p := "C:\\Program Files\\Oracle\\VirtualBox"
+		if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+			return path
+		}
 	}
-	return nil
+	return cmd
+}
+
+func vbm(args ...string) error {
+	_, _, err := vbmOutErr(args...)
+	return err
 }
 
 func vbmOut(args ...string) (string, error) {
-	cmd := exec.Command(vboxManageCmd, args...)
-	if os.Getenv("DEBUG") != "" {
-		cmd.Stderr = os.Stderr
-	}
-	log.Debugf("executing: %v %v", vboxManageCmd, strings.Join(args, " "))
-
-	b, err := cmd.Output()
-	if err != nil {
-		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
-			err = ErrVBMNotFound
-		}
-	}
-	return string(b), err
+	stdout, _, err := vbmOutErr(args...)
+	return stdout, err
 }
 
 func vbmOutErr(args ...string) (string, string, error) {
@@ -66,10 +72,19 @@ func vbmOutErr(args ...string) (string, string, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
+	stderrStr := stderr.String()
+	log.Debugf("STDOUT: %v", stdout.String())
+	log.Debugf("STDERR: %v", stderrStr)
 	if err != nil {
 		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
 			err = ErrVBMNotFound
 		}
+	} else {
+		// VBoxManage will sometimes not set the return code, but has a fatal error
+		// such as VBoxManage.exe: error: VT-x is not available. (VERR_VMX_NO_VMX)
+		if strings.Contains(stderrStr, "error:") {
+			err = fmt.Errorf("%v %v failed: %v", vboxManageCmd, strings.Join(args, " "), stderrStr)
+		}
 	}
-	return stdout.String(), stderr.String(), err
+	return stdout.String(), stderrStr, err
 }

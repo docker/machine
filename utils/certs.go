@@ -7,11 +7,32 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
 	"time"
 )
+
+func getTLSConfig(caCert, cert, key []byte, allowInsecure bool) (*tls.Config, error) {
+	// TLS config
+	var tlsConfig tls.Config
+	tlsConfig.InsecureSkipVerify = allowInsecure
+	certPool := x509.NewCertPool()
+
+	certPool.AppendCertsFromPEM(caCert)
+	tlsConfig.RootCAs = certPool
+	keypair, err := tls.X509KeyPair(cert, key)
+	if err != nil {
+		return &tlsConfig, err
+	}
+	tlsConfig.Certificates = []tls.Certificate{keypair}
+	if allowInsecure {
+		tlsConfig.InsecureSkipVerify = true
+	}
+
+	return &tlsConfig, nil
+}
 
 func newCertificate(org string) (*x509.Certificate, error) {
 	now := time.Now()
@@ -40,10 +61,10 @@ func newCertificate(org string) (*x509.Certificate, error) {
 
 }
 
-// GenerateCACert generates a new certificate authority from the specified org
+// GenerateCACertificate generates a new certificate authority from the specified org
 // and bit size and stores the resulting certificate and key file
 // in the arguments.
-func GenerateCACert(certFile, keyFile, org string, bits int) error {
+func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
 	template, err := newCertificate(org)
 	if err != nil {
 		return err
@@ -96,6 +117,7 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 		template.KeyUsage = x509.KeyUsageDigitalSignature
 	} else { // server
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
 		for _, h := range hosts {
 			if ip := net.ParseIP(h); ip != nil {
 				template.IPAddresses = append(template.IPAddresses, ip)
@@ -147,4 +169,37 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	keyOut.Close()
 
 	return nil
+}
+
+func ValidateCertificate(addr, caCertPath, serverCertPath, serverKeyPath string) (bool, error) {
+	caCert, err := ioutil.ReadFile(caCertPath)
+	if err != nil {
+		return false, err
+	}
+
+	serverCert, err := ioutil.ReadFile(serverCertPath)
+	if err != nil {
+		return false, err
+	}
+
+	serverKey, err := ioutil.ReadFile(serverKeyPath)
+	if err != nil {
+		return false, err
+	}
+
+	tlsConfig, err := getTLSConfig(caCert, serverCert, serverKey, false)
+	if err != nil {
+		return false, err
+	}
+
+	dialer := &net.Dialer{
+		Timeout: time.Second * 2,
+	}
+
+	_, err = tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
+	if err != nil {
+		return false, nil
+	}
+
+	return true, nil
 }

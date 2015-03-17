@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/utils"
 )
 
 // Store persists hosts on the filesystem
@@ -19,7 +21,7 @@ type Store struct {
 
 func NewStore(rootPath string, caCert string, privateKey string) *Store {
 	if rootPath == "" {
-		rootPath = filepath.Join(drivers.GetHomeDir(), ".docker", "machines")
+		rootPath = utils.GetMachineDir()
 	}
 
 	return &Store{Path: rootPath, CaCertPath: caCert, PrivateKeyPath: privateKey}
@@ -31,12 +33,12 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 		return nil, err
 	}
 	if exists {
-		return nil, fmt.Errorf("Host %q already exists", name)
+		return nil, fmt.Errorf("Machine %s already exists", name)
 	}
 
 	hostPath := filepath.Join(s.Path, name)
 
-	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath)
+	host, err := NewHost(name, driverName, hostPath, s.CaCertPath, s.PrivateKeyPath, flags.Bool("swarm-master"), flags.String("swarm-host"), flags.String("swarm-discovery"))
 	if err != nil {
 		return host, err
 	}
@@ -44,6 +46,10 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 		if err := host.Driver.SetConfigFromFlags(flags); err != nil {
 			return host, err
 		}
+	}
+
+	if err := host.Driver.PreCreateCheck(); err != nil {
+		return nil, err
 	}
 
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
@@ -60,6 +66,18 @@ func (s *Store) Create(name string, driverName string, flags drivers.DriverOptio
 
 	if err := host.ConfigureAuth(); err != nil {
 		return host, err
+	}
+
+	if flags.Bool("swarm") {
+		log.Info("Configuring Swarm...")
+
+		discovery := flags.String("swarm-discovery")
+		master := flags.Bool("swarm-master")
+		swarmHost := flags.String("swarm-host")
+		addr := flags.String("swarm-addr")
+		if err := host.ConfigureSwarm(discovery, master, swarmHost, addr); err != nil {
+			log.Errorf("Error configuring Swarm: %s", err)
+		}
 	}
 
 	return host, nil
@@ -93,7 +111,8 @@ func (s *Store) List() ([]Host, error) {
 	hosts := []Host{}
 
 	for _, file := range dir {
-		if file.IsDir() {
+		// don't load hidden dirs; used for configs
+		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
 			host, err := s.Load(file.Name())
 			if err != nil {
 				log.Errorf("error loading host %q: %s", file.Name(), err)

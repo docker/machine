@@ -2,9 +2,12 @@ package main
 
 import (
 	"os"
+	"path"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/utils"
 )
 
 func main() {
@@ -16,7 +19,9 @@ func main() {
 	}
 
 	app := cli.NewApp()
-	app.Name = "machine"
+	app.Name = path.Base(os.Args[0])
+	app.Author = "Docker Machine Contributors"
+	app.Email = "https://github.com/docker/machine"
 	app.Commands = Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
@@ -30,17 +35,32 @@ func main() {
 		cli.StringFlag{
 			EnvVar: "MACHINE_STORAGE_PATH",
 			Name:   "storage-path",
+			Value:  utils.GetMachineRoot(),
 			Usage:  "Configures storage path",
 		},
 		cli.StringFlag{
-			EnvVar: "MACHINE_AUTH_CA",
-			Name:   "auth-ca",
+			EnvVar: "MACHINE_TLS_CA_CERT",
+			Name:   "tls-ca-cert",
 			Usage:  "CA to verify remotes against",
+			Value:  filepath.Join(utils.GetMachineCertDir(), "ca.pem"),
 		},
 		cli.StringFlag{
-			EnvVar: "MACHINE_AUTH_PRIVATE_KEY",
-			Name:   "auth-key",
+			EnvVar: "MACHINE_TLS_CA_KEY",
+			Name:   "tls-ca-key",
 			Usage:  "Private key to generate certificates",
+			Value:  filepath.Join(utils.GetMachineCertDir(), "ca-key.pem"),
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_TLS_CLIENT_CERT",
+			Name:   "tls-client-cert",
+			Usage:  "Client cert to use for TLS",
+			Value:  filepath.Join(utils.GetMachineCertDir(), "cert.pem"),
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_TLS_CLIENT_KEY",
+			Name:   "tls-client-key",
+			Usage:  "Private key used in client TLS auth",
+			Value:  filepath.Join(utils.GetMachineCertDir(), "key.pem"),
 		},
 	}
 
