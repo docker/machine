@@ -295,52 +295,89 @@ func (d *Driver) GetState() (state.State, error) {
 	return vmState, nil
 }
 
+func (d *Driver) GetActiveTransaction() (string, error) {
+	t, err := d.getClient().VirtualGuest().ActiveTransaction(d.Id)
+	if err != nil {
+		return "", err
+	}
+	return t, nil
+}
+
 func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) waitForStart() {
+	log.Infof("Waiting for host to become available")
+	for {
+		s, err := d.GetState()
+		if err != nil {
+			log.Debugf("Failed to GetState - %+v", err)
+			continue
+		}
+
+		if s == state.Running {
+			break
+		} else {
+			log.Debugf("Still waiting - state is %s...", s)
+		}
+		time.Sleep(2 * time.Second)
+	}
+}
+
+func (d *Driver) getIp() (string, error) {
+	log.Infof("Getting Host IP")
+	for {
+		var (
+			ip  string
+			err error
+		)
+		if d.deviceConfig.PrivateNet {
+			ip, err = d.getClient().VirtualGuest().GetPrivateIp(d.Id)
+		} else {
+			ip, err = d.getClient().VirtualGuest().GetPublicIp(d.Id)
+		}
+		if err != nil {
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		// not a perfect regex, but should be just fine for our needs
+		exp := regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
+		if exp.MatchString(ip) {
+			return ip, nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+}
+
+func (d *Driver) waitForSetupTransactions() {
+	log.Infof("Waiting for host setup transactions to complete")
+	// sometimes we'll hit a case where there's no active transaction, but if
+	// we check again in a few seconds, it moves to the next transaction. We
+	// don't want to get false-positives, so we check a few times in a row to make sure!
+	noActiveCount, maxNoActiveCount := 0, 3
+	for {
+		t, err := d.GetActiveTransaction()
+		if err != nil {
+			noActiveCount = 0
+			log.Debugf("Failed to GetActiveTransaction - %+v", err)
+			continue
+		}
+
+		if t == "" {
+			if noActiveCount == maxNoActiveCount {
+				break
+			}
+			noActiveCount++
+		} else {
+			noActiveCount = 0
+			log.Debugf("Still waiting - active transaction is %s...", t)
+		}
+		time.Sleep(2 * time.Second)
+	}
+}
+
 func (d *Driver) Create() error {
-	waitForStart := func() {
-		log.Infof("Waiting for host to become available")
-		for {
-			s, err := d.GetState()
-			if err != nil {
-				continue
-			}
-
-			if s == state.Running {
-				break
-			}
-			time.Sleep(2 * time.Second)
-		}
-	}
-
-	getIp := func() {
-		log.Infof("Getting Host IP")
-		for {
-			var (
-				ip  string
-				err error
-			)
-			if d.deviceConfig.PrivateNet {
-				ip, err = d.getClient().VirtualGuest().GetPrivateIp(d.Id)
-			} else {
-				ip, err = d.getClient().VirtualGuest().GetPublicIp(d.Id)
-			}
-			if err != nil {
-				time.Sleep(2 * time.Second)
-				continue
-			}
-			// not a perfect regex, but should be just fine for our needs
-			exp := regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
-			if exp.MatchString(ip) {
-				d.IPAddress = ip
-				break
-			}
-			time.Sleep(2 * time.Second)
-		}
-	}
-
 	log.Infof("Creating SSH key...")
 	key, err := d.createSSHKey()
 	if err != nil {
@@ -355,8 +392,9 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Error creating host: %q", err)
 	}
 	d.Id = id
-	getIp()
-	waitForStart()
+	d.getIp()
+	d.waitForStart()
+	d.waitForSetupTransactions()
 	ssh.WaitForTCP(d.IPAddress + ":22")
 
 	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq curl")
