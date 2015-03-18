@@ -257,7 +257,7 @@ var Commands = []cli.Command{
 		},
 		Name:        "rm",
 		Usage:       "Remove a machine",
-		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdRm,
 	},
 	{
