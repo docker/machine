@@ -22,6 +22,10 @@
 			"Rev": "9831e1e25c874e0a0601b6dc43641071414eec7a"
 		},
 		{
+			"ImportPath": "github.com/skarademir/naturalsort",
+			"Rev": "9688a08870fba63de22ec85d167598bb677820ee"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-64-ge1712f3",
 			"Rev": "e1712f381785e32046927f64a7c86fe569203196"
