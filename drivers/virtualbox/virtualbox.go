@@ -177,17 +177,14 @@ func (d *Driver) Create() error {
 		if err := os.Mkdir(imgPath, 0700); err != nil {
 			return err
 		}
-
 	}
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 		log.Infof("Downloading %s from %s...", isoFilename, isoURL)
-		if err := b2dutils.DownloadISO(commonIsoPath, isoFilename, isoURL); err != nil {
+		if err := b2dutils.DownloadISO(imgPath, isoFilename, isoURL); err != nil {
 			return err
-
 		}
-
 	} else {
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
@@ -202,11 +199,11 @@ func (d *Driver) Create() error {
 				return err
 			}
 		}
+	}
 
-		isoDest := filepath.Join(d.storePath, isoFilename)
-		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
-			return err
-		}
+	isoDest := filepath.Join(d.storePath, isoFilename)
+	if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+		return err
 	}
 
 	log.Infof("Creating SSH key...")
