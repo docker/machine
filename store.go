@@ -142,7 +142,7 @@ func (s *Store) Load(name string) (*Host, error) {
 func (s *Store) GetActive() (*Host, error) {
 	hostName, err := ioutil.ReadFile(s.activePath())
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("no active host")
+		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
