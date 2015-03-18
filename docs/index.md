@@ -69,12 +69,13 @@ daemon installed, and will create and start a VirtualBox VM with Docker running.
 
 ```
 $ docker-machine create --driver virtualbox dev
-INFO[0000] Creating SSH key...
-INFO[0000] Creating VirtualBox VM...
-INFO[0007] Starting VirtualBox VM...
-INFO[0007] Waiting for VM to start...
-INFO[0038] "dev" has been created and is now the active machine
-INFO[0038] To connect: docker $(docker-machine config dev) ps
+INFO[0001] Downloading boot2docker.iso to /home/ehazlett/.docker/machine/cache/boot2docker.iso...
+INFO[0011] Creating SSH key...
+INFO[0012] Creating VirtualBox VM...
+INFO[0019] Starting VirtualBox VM...
+INFO[0020] Waiting for VM to start...
+INFO[0053] "dev" has been created and is now the active machine.
+INFO[0053] To point your Docker client at it, run this in your shell: $(docker-machine env dev)
 ```
 
 To use the Docker CLI, you can use the `env` command to list the commands
@@ -83,9 +84,8 @@ needed to connect to the instance.
 ```
 $ docker-machine env dev
 export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
+export DOCKER_CERT_PATH=/home/ehazlett/.docker/machine/machines/dev
 export DOCKER_HOST=tcp://192.168.99.100:2376
-
 ```
 
 You can see the machine you have created by running the `docker-machine ls` command
@@ -93,27 +93,28 @@ again:
 
 ```
 $ docker-machine ls
-NAME      ACTIVE   DRIVER       STATE     URL
-dev       *        virtualbox   Running   tcp://192.168.99.100:2376
+NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
+dev    *        virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
 The `*` next to `dev` indicates that it is the active host.
 
 Next, as noted in the output of the `docker-machine create` command, we have to tell
-Docker to talk to that machine.  You can do this with the `docker-machine config`
+Docker to talk to that machine.  You can do this with the `docker-machine env`
 command.  For example,
 
 ```
-$ docker $(docker-machine config dev) ps
+$ eval "$(docker-machine env dev)"
+$ docker ps
 ```
 
-This will pass arguments to the Docker client that specify the TLS settings.
-To see what will be passed, run `docker-machine config dev`.
+This will set environment variables that the Docker client will read which specify
+the TLS settings. To see what will be set, run `docker-machine env dev`.
 
 You can now run Docker commands on this host:
 
 ```
-$ docker $(docker-machine config dev) run busybox echo hello world
+$ docker run busybox echo hello world
 Unable to find image 'busybox' locally
 Pulling repository busybox
 e72ac664f4f0: Download complete
@@ -192,7 +193,7 @@ INFO[0000] Creating SSH key...
 INFO[0000] Creating Digital Ocean droplet...
 INFO[0002] Waiting for SSH...
 INFO[0085] "staging" has been created and is now the active machine
-INFO[0085] To connect: docker $(docker-machine config dev) staging
+INFO[0085] To point your Docker client at it, run this in your shell: $(docker-machine env staging)
 ```
 
 For convenience, `docker-machine` will use sensible defaults for choosing settings such
