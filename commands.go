@@ -13,6 +13,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/skarademir/naturalsort"
 
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/amazonec2"
@@ -57,18 +58,18 @@ type hostListItem struct {
 	SwarmDiscovery string
 }
 
-type hostListItemByName []hostListItem
-
-func (h hostListItemByName) Len() int {
-	return len(h)
-}
-
-func (h hostListItemByName) Swap(i, j int) {
-	h[i], h[j] = h[j], h[i]
-}
-
-func (h hostListItemByName) Less(i, j int) bool {
-	return strings.ToLower(h[i].Name) < strings.ToLower(h[j].Name)
+func sortHostListItemsByName(items []hostListItem) {
+	m := make(map[string]hostListItem, len(items))
+	s := make([]string, len(items))
+	for i, v := range items {
+		name := strings.ToLower(v.Name)
+		m[name] = v
+		s[i] = name
+	}
+	sort.Sort(naturalsort.NaturalSort(s))
+	for i, v := range s {
+		items[i] = m[v]
+	}
 }
 
 func confirmInput(msg string) bool {
@@ -504,7 +505,7 @@ func cmdLs(c *cli.Context) {
 
 	close(hostListItems)
 
-	sort.Sort(hostListItemByName(items))
+	sortHostListItemsByName(items)
 
 	for _, item := range items {
 		activeString := ""
