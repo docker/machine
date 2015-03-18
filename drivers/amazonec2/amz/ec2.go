@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"os"
 
 	awsauth "github.com/smartystreets/go-aws-auth"
 )
@@ -130,7 +131,10 @@ func getDecodedResponse(r http.Response, into interface{}) error {
 }
 
 func NewEC2(auth Auth, region string) *EC2 {
-	endpoint := fmt.Sprintf("https://ec2.%s.amazonaws.com", region)
+	endpoint := os.Getenv("EC2_URL")
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("https://ec2.%s.amazonaws.com", region)
+	}
 	return &EC2{
 		Endpoint: endpoint,
 		Auth:     auth,
