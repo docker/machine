@@ -164,12 +164,16 @@ func TestMachinePort(t *testing.T) {
 	}
 	flags := getTestDriverFlags()
 
-	_, err = store.Create(hostTestName, hostTestDriverName, flags)
+	host, err := store.Create(hostTestName, hostTestDriverName, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load(hostTestName)
+	if err := store.SetActive(host); err != nil {
+		t.Fatalf("error setting active host: %v", err)
+	}
+
+	host, err = store.Load(hostTestName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,12 +211,16 @@ func TestMachineCustomPort(t *testing.T) {
 	}
 	flags := getTestDriverFlags()
 
-	_, err = store.Create(hostTestName, hostTestDriverName, flags)
+	host, err := store.Create(hostTestName, hostTestDriverName, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load(hostTestName)
+	if err := store.SetActive(host); err != nil {
+		t.Fatalf("error setting active host: %v", err)
+	}
+
+	host, err = store.Load(hostTestName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,6 +260,10 @@ func TestHostConfig(t *testing.T) {
 	host, err := store.Create(hostTestName, hostTestDriverName, flags)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if err := store.SetActive(host); err != nil {
+		t.Fatalf("error setting active host: %v", err)
 	}
 
 	if err := host.SaveConfig(); err != nil {
