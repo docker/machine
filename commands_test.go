@@ -241,6 +241,11 @@ func TestGetHostState(t *testing.T) {
 				MockState: state.Running,
 			},
 			StorePath: store.GetPath(),
+			SwarmOptions: &swarm.SwarmOptions{
+				Master:    false,
+				Address:   "",
+				Discovery: "",
+			},
 		},
 		{
 			Name:       "bar",
@@ -249,6 +254,11 @@ func TestGetHostState(t *testing.T) {
 				MockState: state.Stopped,
 			},
 			StorePath: store.GetPath(),
+			SwarmOptions: &swarm.SwarmOptions{
+				Master:    false,
+				Address:   "",
+				Discovery: "",
+			},
 		},
 		{
 			Name:       "baz",
@@ -257,20 +267,35 @@ func TestGetHostState(t *testing.T) {
 				MockState: state.Running,
 			},
 			StorePath: store.GetPath(),
+			SwarmOptions: &swarm.SwarmOptions{
+				Master:    false,
+				Address:   "",
+				Discovery: "",
+			},
 		},
 	}
+
+	for _, h := range hosts {
+		if err := store.Save(&h); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	expected := map[string]state.State{
 		"foo": state.Running,
 		"bar": state.Stopped,
 		"baz": state.Running,
 	}
+
 	items := []hostListItem{}
 	for _, host := range hosts {
 		go getHostState(host, store, hostListItems)
 	}
+
 	for i := 0; i < len(hosts); i++ {
 		items = append(items, <-hostListItems)
 	}
+
 	for _, item := range items {
 		if expected[item.Name] != item.State {
 			t.Fatal("Expected state did not match for item", item)
@@ -396,12 +421,25 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host, err := getDefaultTestHost()
+	mcn, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err = store.Save(host); err != nil {
+	flags := getTestDriverFlags()
+	hostOptions := &libmachine.HostOptions{
+		DriverOptions: flags,
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
+			Master:    false,
+			Discovery: "",
+			Address:   "",
+			Host:      "",
+		},
+	}
+
+	host, err := mcn.Create("test-a", "none", hostOptions)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -433,19 +471,19 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatalf("Expect --tlsverify")
 	}
 
-	testMachineDir := filepath.Join(store.GetPath(), "machine", "machines", host.Name)
+	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
 
-	tlscacert := fmt.Sprintf("--tlscacert=\"%s/test-a/ca.pem\"", testMachineDir)
+	tlscacert := fmt.Sprintf("--tlscacert=\"%s/ca.pem\"", testMachineDir)
 	if !strings.Contains(out, tlscacert) {
 		t.Fatalf("Expected to find %s in %s", tlscacert, out)
 	}
 
-	tlscert := fmt.Sprintf("--tlscert=\"%s/test-a/cert.pem\"", testMachineDir)
+	tlscert := fmt.Sprintf("--tlscert=\"%s/cert.pem\"", testMachineDir)
 	if !strings.Contains(out, tlscert) {
 		t.Fatalf("Expected to find %s in %s", tlscert, out)
 	}
 
-	tlskey := fmt.Sprintf("--tlskey=\"%s/test-a/key.pem\"", testMachineDir)
+	tlskey := fmt.Sprintf("--tlskey=\"%s/key.pem\"", testMachineDir)
 	if !strings.Contains(out, tlskey) {
 		t.Fatalf("Expected to find %s in %s", tlskey, out)
 	}
@@ -507,7 +545,7 @@ func TestCmdEnvBash(t *testing.T) {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := store.SetActive(host); err != nil {
+	if err := mcn.SetActive(host); err != nil {
 		t.Fatalf("error setting active host: %v", err)
 	}
 
@@ -535,11 +573,11 @@ func TestCmdEnvBash(t *testing.T) {
 		envvars[strings.Replace(key, "export ", "", 1)] = value
 	}
 
-	testMachineDir := filepath.Join(store.GetPath(), "machine", "machines", host.Name)
+	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
 
 	expected := map[string]string{
 		"DOCKER_TLS_VERIFY": "1",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", testMachineDir),
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s\"", testMachineDir),
 		"DOCKER_HOST":       "unix:///var/run/docker.sock",
 	}
 
@@ -602,7 +640,7 @@ func TestCmdEnvFish(t *testing.T) {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := store.SetActive(host); err != nil {
+	if err := mcn.SetActive(host); err != nil {
 		t.Fatalf("error setting active host: %v", err)
 	}
 
@@ -630,11 +668,11 @@ func TestCmdEnvFish(t *testing.T) {
 		envvars[key] = value
 	}
 
-	testMachineDir := filepath.Join(store.GetPath(), "machine", "machines", host.Name)
+	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
 
 	expected := map[string]string{
 		"DOCKER_TLS_VERIFY": "1",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", testMachineDir),
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s\"", testMachineDir),
 		"DOCKER_HOST":       "unix:///var/run/docker.sock",
 	}
 
