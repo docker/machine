@@ -18,6 +18,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
@@ -44,8 +46,17 @@ type Host struct {
 	ServerKeyPath  string
 	ClientCertPath string
 	StorePath      string
-	EngineOptions  *EngineOptions
-	SwarmOptions   *SwarmOptions
+	EngineOptions  *engine.EngineOptions
+	SwarmOptions   *swarm.SwarmOptions
+}
+
+type HostOptions struct {
+	Driver        string
+	Memory        int
+	Disk          int
+	DriverOptions drivers.DriverOptions
+	EngineOptions *engine.EngineOptions
+	SwarmOptions  *swarm.SwarmOptions
 }
 
 type DockerConfig struct {
@@ -70,7 +81,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, StorePath, caCert, privateKey string, engineOptions *EngineOptions, swarmOptions *SwarmOptions) (*Host, error) {
+func NewHost(name, driverName, StorePath, caCert, privateKey string, engineOptions *engine.EngineOptions, swarmOptions *swarm.SwarmOptions) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, StorePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
