@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/utils"
 )
 
@@ -20,7 +19,11 @@ func New(store Store) (*Machine, error) {
 	}, nil
 }
 
-func (m *Machine) Create(name string, driverName string, flags drivers.DriverOptions) (*Host, error) {
+func (m *Machine) Create(name string, driverName string, options *HostOptions) (*Host, error) {
+	driverOptions := options.DriverOptions
+	engineOptions := options.EngineOptions
+	swarmOptions := options.SwarmOptions
+
 	exists, err := m.store.Exists(name)
 	if err != nil {
 		return nil, err
@@ -41,12 +44,12 @@ func (m *Machine) Create(name string, driverName string, flags drivers.DriverOpt
 		return nil, err
 	}
 
-	host, err := NewHost(name, driverName, hostPath, caCert, privateKey, flags.Bool("swarm-master"), flags.String("swarm-host"), flags.String("swarm-discovery"))
+	host, err := NewHost(name, driverName, hostPath, caCert, privateKey, engineOptions, swarmOptions)
 	if err != nil {
 		return host, err
 	}
-	if flags != nil {
-		if err := host.Driver.SetConfigFromFlags(flags); err != nil {
+	if driverOptions != nil {
+		if err := host.Driver.SetConfigFromFlags(driverOptions); err != nil {
 			return host, err
 		}
 	}
@@ -71,13 +74,13 @@ func (m *Machine) Create(name string, driverName string, flags drivers.DriverOpt
 		return host, err
 	}
 
-	if flags.Bool("swarm") {
+	if swarmOptions.Host != "" {
 		log.Info("Configuring Swarm...")
 
-		discovery := flags.String("swarm-discovery")
-		master := flags.Bool("swarm-master")
-		swarmHost := flags.String("swarm-host")
-		addr := flags.String("swarm-addr")
+		discovery := swarmOptions.Discovery
+		master := swarmOptions.Master
+		swarmHost := swarmOptions.Host
+		addr := swarmOptions.Address
 		if err := host.ConfigureSwarm(discovery, master, swarmHost, addr); err != nil {
 			log.Errorf("Error configuring Swarm: %s", err)
 		}

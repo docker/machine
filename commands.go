@@ -391,7 +391,17 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	host, err := mcn.Create(name, driver, c)
+	hostOptions := &libmachine.HostOptions{
+		EngineOptions: &libmachine.EngineOptions{},
+		SwarmOptions: &libmachine.SwarmOptions{
+			Master:    c.GlobalBool("swarm-master"),
+			Discovery: c.GlobalString("swarm-discovery"),
+			Address:   c.GlobalString("swarm-addr"),
+			Host:      c.GlobalString("swarm-host"),
+		},
+	}
+
+	host, err := mcn.Create(name, driver, hostOptions)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
 		log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
@@ -537,12 +547,12 @@ func cmdLs(c *cli.Context) {
 
 	for _, host := range hostList {
 		if !quiet {
-			if host.SwarmMaster {
-				swarmMasters[host.SwarmDiscovery] = host.Name
+			if host.SwarmOptions.Master {
+				swarmMasters[host.SwarmOptions.Discovery] = host.Name
 			}
 
-			if host.SwarmDiscovery != "" {
-				swarmInfo[host.Name] = host.SwarmDiscovery
+			if host.SwarmOptions.Discovery != "" {
+				swarmInfo[host.Name] = host.SwarmOptions.Discovery
 			}
 
 			go getHostState(*host, defaultStore, hostListItems)
@@ -1006,8 +1016,8 @@ func getHostState(host libmachine.Host, store libmachine.Store, hostListItems ch
 		DriverName:     host.Driver.DriverName(),
 		State:          currentState,
 		URL:            url,
-		SwarmMaster:    host.SwarmMaster,
-		SwarmDiscovery: host.SwarmDiscovery,
+		SwarmMaster:    host.SwarmOptions.Master,
+		SwarmDiscovery: host.SwarmOptions.Discovery,
 	}
 }
 
@@ -1071,8 +1081,8 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		serverCertPath: serverCert,
 		serverKeyPath:  serverKey,
 		machineUrl:     machineUrl,
-		swarmMaster:    machine.SwarmMaster,
-		swarmHost:      machine.SwarmHost,
-		swarmDiscovery: machine.SwarmDiscovery,
+		swarmMaster:    machine.SwarmOptions.Master,
+		swarmHost:      machine.SwarmOptions.Host,
+		swarmDiscovery: machine.SwarmOptions.Discovery,
 	}, nil
 }
