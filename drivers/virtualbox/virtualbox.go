@@ -628,15 +628,25 @@ func zeroFill(w io.Writer, n int64) error {
 }
 
 func getAvailableTCPPort() (int, error) {
-	// FIXME: this has a race condition between finding an available port and
-	// virtualbox using that port. Perhaps we should randomly pick an unused
-	// port in a range not used by kernel for assigning ports
-	ln, err := net.Listen("tcp4", "127.0.0.1:0")
-	if err != nil {
-		return 0, err
+	port := 0
+	for {
+		ln, err := net.Listen("tcp4", "127.0.0.1:0")
+		if err != nil {
+			return 0, err
+		}
+		defer ln.Close()
+		addr := ln.Addr().String()
+		addrParts := strings.SplitN(addr, ":", 2)
+		p, err := strconv.Atoi(addrParts[1])
+		if err != nil {
+			return 0, err
+		}
+		if p != 0 {
+			port = p
+			break
+		}
+		time.Sleep(1)
 	}
-	defer ln.Close()
-	addr := ln.Addr().String()
-	addrParts := strings.SplitN(addr, ":", 2)
-	return strconv.Atoi(addrParts[1])
+
+	return port, nil
 }
