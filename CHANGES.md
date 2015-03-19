@@ -9,6 +9,7 @@ Core Stability and Driver Updates
 
 - Support for system proxy environment
 - New command to regenerate TLS certificates
+  - Note: this will restart the Docker engine to apply
 - Updates to driver operations (create, start, stop, etc) for better reliability
 - Updated Driver Interface
   - [Driver Spec](https://github.com/docker/machine/blob/master/docs/DRIVER_SPEC.md)
@@ -51,11 +52,12 @@ Core Stability and Driver Updates
 ## CLI
 
 - Auto-regeneration of TLS certificates when TLS error is detected
+  - Note: this will restart the Docker engine to apply
 - Minor UI updates including improved sorting and updated command docs
 - Bug with `config` and `env` with spaces fixed
-- Commands now use `eval` for better support with terminal
 - Updates to better support `fish` shell
 - Use `--tlsverify` for both `config` and `env` commands
+- Commands now use eval for better interoperability with shell
 
 ## Testing
 - New integration test framework (bats)
