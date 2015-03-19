@@ -75,7 +75,7 @@ INFO[0012] Creating VirtualBox VM...
 INFO[0019] Starting VirtualBox VM...
 INFO[0020] Waiting for VM to start...
 INFO[0053] "dev" has been created and is now the active machine.
-INFO[0053] To point your Docker client at it, run this in your shell: $(docker-machine env dev)
+INFO[0053] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 ```
 
 To use the Docker CLI, you can use the `env` command to list the commands
@@ -84,7 +84,7 @@ needed to connect to the instance.
 ```
 $ docker-machine env dev
 export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH=/home/ehazlett/.docker/machine/machines/dev
+export DOCKER_CERT_PATH="/home/ehazlett/.docker/machine/machines/dev"
 export DOCKER_HOST=tcp://192.168.99.100:2376
 ```
 
@@ -193,7 +193,7 @@ INFO[0000] Creating SSH key...
 INFO[0000] Creating Digital Ocean droplet...
 INFO[0002] Waiting for SSH...
 INFO[0085] "staging" has been created and is now the active machine
-INFO[0085] To point your Docker client at it, run this in your shell: $(docker-machine env staging)
+INFO[0085] To point your Docker client at it, run this in your shell: eval "$(docker-machine env staging)"
 ```
 
 For convenience, `docker-machine` will use sensible defaults for choosing settings such
@@ -256,8 +256,8 @@ custombox   *        none      Running   tcp://50.134.234.20:2376
 ```
 
 ## Using Docker Machine with Docker Swarm
-Docker Machine can also provision [Swarm](https://github.com/docker/swarm) 
-clusters. This can be used with any driver and will be secured with TLS. 
+Docker Machine can also provision [Swarm](https://github.com/docker/swarm)
+clusters. This can be used with any driver and will be secured with TLS.
 
 > **Note**: This is an experimental feature so the subcommands and
 > options are likely to change in future versions.
@@ -320,7 +320,7 @@ For example:
 ```
 $ docker-machine env --swarm swarm-master
 export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
+export DOCKER_CERT_PATH="/home/ehazlett/.docker/machines/.client"
 export DOCKER_HOST=tcp://192.168.99.100:3376
 ```
 
@@ -363,11 +363,13 @@ Create a machine.
 
 ```
 $ docker-machine create --driver virtualbox dev
+INFO[0001] Downloading boot2docker.iso to /home/ehazlett/.docker/machine/cache/boot2docker.iso...
 INFO[0000] Creating SSH key...
 INFO[0000] Creating VirtualBox VM...
 INFO[0007] Starting VirtualBox VM...
 INFO[0007] Waiting for VM to start...
-INFO[0038] "dev" has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(docker-machine url) DOCKER_AUTH=identity
+INFO[0038] "dev" has been created and is now the active machine.
+INFO[0038] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 ```
 
 #### config
@@ -376,7 +378,7 @@ Show the Docker client configuration for a machine.
 
 ```
 $ docker-machine config dev
---tls --tlscacert=/Users/ehazlett/.docker/machines/dev/ca.pem --tlscert=/Users/ehazlett/.docker/machines/dev/cert.pem --tlskey=/Users/ehazlett/.docker/machines/dev/key.pem -H tcp://192.168.99.103:2376
+--tls --tlscacert="/Users/ehazlett/.docker/machines/dev/ca.pem" --tlscert="/Users/ehazlett/.docker/machines/dev/cert.pem" --tlskey="/Users/ehazlett/.docker/machines/dev/key.pem" -H tcp://192.168.99.103:2376
 ```
 
 #### env
