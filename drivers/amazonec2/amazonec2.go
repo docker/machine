@@ -66,9 +66,11 @@ type Driver struct {
 	SwarmDiscovery     string
 	storePath          string
 	keyPath            string
+	Endpoint           string
 }
 
 type CreateFlags struct {
+	Endpoint           *string
 	AccessKey          *string
 	SecretKey          *string
 	Region             *string
@@ -88,6 +90,12 @@ func init() {
 
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
+		cli.StringFlag{
+			Name:   "amazonec2-endpoint",
+			Usage:  "Custom endpoint including the region",
+			Value:  "",
+			EnvVar: "AWS_ENDPOINT",
+		},
 		cli.StringFlag{
 			Name:   "amazonec2-access-key",
 			Usage:  "AWS Access Key",
@@ -194,6 +202,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		image = regionDetails[region].AmiId
 	}
 
+	d.Endpoint = flags.String("amazonec2-endpoint")
 	d.AccessKey = flags.String("amazonec2-access-key")
 	d.SecretKey = flags.String("amazonec2-secret-key")
 	d.SessionToken = flags.String("amazonec2-session-token")
@@ -495,7 +504,12 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) getClient() *amz.EC2 {
 	auth := amz.GetAuth(d.AccessKey, d.SecretKey, d.SessionToken)
-	return amz.NewEC2(auth, d.Region)
+
+	if d.Endpoint == "" {
+		return amz.NewEC2(auth, d.Region)
+	} else {
+		return amz.NewEC2WithEndpoint(auth, d.Region, d.Endpoint)
+	}
 }
 
 func (d *Driver) GetSSHKeyPath() string {
