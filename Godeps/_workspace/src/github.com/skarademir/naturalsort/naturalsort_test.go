@@ -27,6 +27,10 @@ func TestSortValid(t *testing.T) {
 			[]string{"0"},
 		},
 		{
+			[]string{"data","data20","data3"},
+			[]string{"data","data3","data20"},
+		},
+		{
 			[]string{"1", "2", "30", "22", "0", "00", "3"},
 			[]string{"0", "00", "1", "2", "3", "22", "30"},
 		},
