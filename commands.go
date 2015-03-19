@@ -438,7 +438,7 @@ func cmdConfig(c *cli.Context) {
 		}
 	}
 
-	fmt.Printf("--tlsverify --tlscacert=%q --tlscert=%q --tlskey=%q -H=%s",
+	fmt.Printf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H=%s",
 		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, dockerHost)
 }
 
@@ -628,10 +628,10 @@ func cmdEnv(c *cli.Context) {
 
 	switch userShell {
 	case "fish":
-		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %q;\nset -x DOCKER_HOST %s;\n",
+		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %s;\nset -x DOCKER_HOST %s;\n",
 			cfg.machineDir, dockerHost)
 	default:
-		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%q\nexport DOCKER_HOST=%s\n",
+		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%s\nexport DOCKER_HOST=%s\n",
 			cfg.machineDir, dockerHost)
 	}
 }
