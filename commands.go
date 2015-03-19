@@ -30,6 +30,8 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
@@ -392,8 +394,9 @@ func cmdCreate(c *cli.Context) {
 	}
 
 	hostOptions := &libmachine.HostOptions{
-		EngineOptions: &libmachine.EngineOptions{},
-		SwarmOptions: &libmachine.SwarmOptions{
+		DriverOptions: c,
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
 			Master:    c.GlobalBool("swarm-master"),
 			Discovery: c.GlobalString("swarm-discovery"),
 			Address:   c.GlobalString("swarm-addr"),
