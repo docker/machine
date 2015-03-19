@@ -643,12 +643,14 @@ func (h *Host) Kill() error {
 }
 
 func (h *Host) Restart() error {
-	if err := h.Stop(); err != nil {
-		return err
-	}
+	if h.MachineInState(state.Running)() {
+		if err := h.Stop(); err != nil {
+			return err
+		}
 
-	if err := utils.WaitFor(h.MachineInState(state.Stopped)); err != nil {
-		return err
+		if err := utils.WaitFor(h.MachineInState(state.Stopped)); err != nil {
+			return err
+		}
 	}
 
 	if err := h.Start(); err != nil {
