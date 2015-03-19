@@ -43,10 +43,9 @@ type Host struct {
 	ServerCertPath string
 	ServerKeyPath  string
 	ClientCertPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
 	StorePath      string
+	EngineOptions  *EngineOptions
+	SwarmOptions   *SwarmOptions
 }
 
 type DockerConfig struct {
@@ -71,7 +70,7 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, StorePath, caCert, privateKey string, swarmMaster bool, swarmHost string, swarmDiscovery string) (*Host, error) {
+func NewHost(name, driverName, StorePath, caCert, privateKey string, engineOptions *EngineOptions, swarmOptions *SwarmOptions) (*Host, error) {
 	driver, err := drivers.NewDriver(driverName, name, StorePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
@@ -82,9 +81,8 @@ func NewHost(name, driverName, StorePath, caCert, privateKey string, swarmMaster
 		Driver:         driver,
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
-		SwarmMaster:    swarmMaster,
-		SwarmHost:      swarmHost,
-		SwarmDiscovery: swarmDiscovery,
+		EngineOptions:  engineOptions,
+		SwarmOptions:   swarmOptions,
 		StorePath:      StorePath,
 	}, nil
 }
