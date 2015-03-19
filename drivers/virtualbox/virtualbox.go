@@ -73,7 +73,7 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
 			Name:  "virtualbox-processors",
-			Usage: "Number of virtual CPUs cores for host",
+			Usage: "Number of virtual CPUs cores for host. Defaults to number of available cores",
 			Value: GetCPUCores(),
 		},
 		cli.IntFlag{
