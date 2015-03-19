@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	_ "github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 )
 
 const (
@@ -56,8 +58,20 @@ func getTestDriverFlags() *DriverOptionsMock {
 }
 
 func getDefaultTestHost() (*Host, error) {
-	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, false, "", "")
+	engineOptions := &engine.EngineOptions{}
+	swarmOptions := &swarm.SwarmOptions{
+		Master:    false,
+		Host:      "",
+		Discovery: "",
+		Address:   "",
+	}
+	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, engineOptions, swarmOptions)
 	if err != nil {
+		return nil, err
+	}
+
+	flags := getTestDriverFlags()
+	if err := host.Driver.SetConfigFromFlags(flags); err != nil {
 		return nil, err
 	}
 

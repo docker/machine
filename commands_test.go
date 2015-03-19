@@ -8,12 +8,15 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/codegangsta/cli"
 	drivers "github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
@@ -27,7 +30,22 @@ const (
 
 var (
 	hostTestStorePath string
+	TestStoreDir      string
 )
+
+func init() {
+	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	TestStoreDir = tmpDir
+}
+
+func clearHosts() error {
+	return os.RemoveAll(TestStoreDir)
+}
 
 func getTestStore() (libmachine.Store, error) {
 	tmpDir, err := ioutil.TempDir("", "machine-test-")
@@ -63,7 +81,14 @@ func getTestDriverFlags() *DriverOptionsMock {
 }
 
 func getDefaultTestHost() (*libmachine.Host, error) {
-	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, false, "", "")
+	engineOptions := &engine.EngineOptions{}
+	swarmOptions := &swarm.SwarmOptions{
+		Master:    false,
+		Host:      "",
+		Discovery: "",
+		Address:   "",
+	}
+	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, engineOptions, swarmOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -408,17 +433,19 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatalf("Expect --tlsverify")
 	}
 
-	tlscacert := fmt.Sprintf("--tlscacert=\"%s/test-a/ca.pem\"", TestMachineDir)
+	testMachineDir := filepath.Join(store.GetPath(), "machine", "machines", host.Name)
+
+	tlscacert := fmt.Sprintf("--tlscacert=\"%s/test-a/ca.pem\"", testMachineDir)
 	if !strings.Contains(out, tlscacert) {
 		t.Fatalf("Expected to find %s in %s", tlscacert, out)
 	}
 
-	tlscert := fmt.Sprintf("--tlscert=\"%s/test-a/cert.pem\"", TestMachineDir)
+	tlscert := fmt.Sprintf("--tlscert=\"%s/test-a/cert.pem\"", testMachineDir)
 	if !strings.Contains(out, tlscert) {
 		t.Fatalf("Expected to find %s in %s", tlscert, out)
 	}
 
-	tlskey := fmt.Sprintf("--tlskey=\"%s/test-a/key.pem\"", TestMachineDir)
+	tlskey := fmt.Sprintf("--tlskey=\"%s/test-a/key.pem\"", testMachineDir)
 	if !strings.Contains(out, tlskey) {
 		t.Fatalf("Expected to find %s in %s", tlskey, out)
 	}
@@ -447,17 +474,35 @@ func TestCmdEnvBash(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := getDefaultTestDriverFlags()
+	flags := getTestDriverFlags()
 
-	store := NewStore(TestMachineDir, "", "")
-	var err error
+	store, sErr := getTestStore()
+	if sErr != nil {
+		t.Fatal(sErr)
+	}
 
-	_, err = store.Create("test-a", "none", flags)
+	mcn, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load("test-a")
+	hostOptions := &libmachine.HostOptions{
+		DriverOptions: flags,
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
+			Master:    false,
+			Discovery: "",
+			Address:   "",
+			Host:      "",
+		},
+	}
+
+	host, err := mcn.Create("test-a", "none", hostOptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = mcn.Get("test-a")
 	if err != nil {
 		t.Fatalf("error loading host: %v", err)
 	}
@@ -490,9 +535,11 @@ func TestCmdEnvBash(t *testing.T) {
 		envvars[strings.Replace(key, "export ", "", 1)] = value
 	}
 
+	testMachineDir := filepath.Join(store.GetPath(), "machine", "machines", host.Name)
+
 	expected := map[string]string{
 		"DOCKER_TLS_VERIFY": "1",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", TestMachineDir),
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", testMachineDir),
 		"DOCKER_HOST":       "unix:///var/run/docker.sock",
 	}
 
@@ -522,17 +569,35 @@ func TestCmdEnvFish(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := getDefaultTestDriverFlags()
+	flags := getTestDriverFlags()
 
-	store := NewStore(TestMachineDir, "", "")
-	var err error
-
-	_, err = store.Create("test-a", "none", flags)
+	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load("test-a")
+	mcn, err := libmachine.New(store)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hostOptions := &libmachine.HostOptions{
+		DriverOptions: flags,
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
+			Master:    false,
+			Discovery: "",
+			Address:   "",
+			Host:      "",
+		},
+	}
+
+	host, err := mcn.Create("test-a", "none", hostOptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = mcn.Get("test-a")
 	if err != nil {
 		t.Fatalf("error loading host: %v", err)
 	}
@@ -565,9 +630,11 @@ func TestCmdEnvFish(t *testing.T) {
 		envvars[key] = value
 	}
 
+	testMachineDir := filepath.Join(store.GetPath(), "machine", "machines", host.Name)
+
 	expected := map[string]string{
 		"DOCKER_TLS_VERIFY": "1",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", TestMachineDir),
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", testMachineDir),
 		"DOCKER_HOST":       "unix:///var/run/docker.sock",
 	}
 
