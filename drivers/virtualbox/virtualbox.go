@@ -34,6 +34,7 @@ type Driver struct {
 	MachineName    string
 	SSHUser        string
 	SSHPort        int
+	CPU            int
 	Memory         int
 	DiskSize       int
 	Boot2DockerURL string
@@ -58,10 +59,23 @@ func init() {
 	})
 }
 
+func GetCPUCores() int {
+	cpus := runtime.NumCPU()
+	if cpus > 32 {
+		cpus = 32
+	}
+	return cpus
+}
+
 // RegisterCreateFlags registers the flags this driver adds to
 // "docker hosts create"
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
+		cli.IntFlag{
+			Name:  "virtualbox-processors",
+			Usage: "Number of virtual CPUs cores for host",
+			Value: GetCPUCores(),
+		},
 		cli.IntFlag{
 			Name:  "virtualbox-memory",
 			Usage: "Size of memory for host in MB",
@@ -137,6 +151,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.CPU = flags.Int("virtualbox-processors")
 	d.Memory = flags.Int("virtualbox-memory")
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
@@ -228,11 +243,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cpus := uint(runtime.NumCPU())
-	if cpus > 32 {
-		cpus = 32
-	}
-
 	if err := vbm("modifyvm", d.MachineName,
 		"--firmware", "bios",
 		"--bioslogofadein", "off",
@@ -242,7 +252,7 @@ func (d *Driver) Create() error {
 		"--biosbootmenu", "disabled",
 
 		"--ostype", "Linux26_64",
-		"--cpus", fmt.Sprintf("%d", cpus),
+		"--cpus", fmt.Sprintf("%d", d.CPU),
 		"--memory", fmt.Sprintf("%d", d.Memory),
 
 		"--acpi", "on",
