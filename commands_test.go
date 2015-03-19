@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -385,7 +386,172 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatalf("Expect --tlsverify")
 	}
 
+	tlscacert := fmt.Sprintf("--tlscacert=\"%s/test-a/ca.pem\"", TestMachineDir)
+	if !strings.Contains(out, tlscacert) {
+		t.Fatalf("Expected to find %s in %s", tlscacert, out)
+	}
+
+	tlscert := fmt.Sprintf("--tlscert=\"%s/test-a/cert.pem\"", TestMachineDir)
+	if !strings.Contains(out, tlscert) {
+		t.Fatalf("Expected to find %s in %s", tlscert, out)
+	}
+
+	tlskey := fmt.Sprintf("--tlskey=\"%s/test-a/key.pem\"", TestMachineDir)
+	if !strings.Contains(out, tlskey) {
+		t.Fatalf("Expected to find %s in %s", tlskey, out)
+	}
+
 	if !strings.Contains(out, "-H=unix:///var/run/docker.sock") {
 		t.Fatalf("Expect docker host URL")
+	}
+}
+
+func TestCmdEnvBash(t *testing.T) {
+	stdout := os.Stdout
+	shell := os.Getenv("SHELL")
+	r, w, _ := os.Pipe()
+
+	os.Stdout = w
+	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
+	os.Setenv("SHELL", "/bin/bash")
+
+	defer func() {
+		os.Setenv("MACHINE_STORAGE_PATH", "")
+		os.Setenv("SHELL", shell)
+		os.Stdout = stdout
+	}()
+
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := getDefaultTestDriverFlags()
+
+	store := NewStore(TestMachineDir, "", "")
+	var err error
+
+	_, err = store.Create("test-a", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err := store.Load("test-a")
+	if err != nil {
+		t.Fatalf("error loading host: %v", err)
+	}
+
+	if err := store.SetActive(host); err != nil {
+		t.Fatalf("error setting active host: %v", err)
+	}
+
+	outStr := make(chan string)
+
+	go func() {
+		var testOutput bytes.Buffer
+		io.Copy(&testOutput, r)
+		outStr <- testOutput.String()
+	}()
+
+	set := flag.NewFlagSet("config", 0)
+	c := cli.NewContext(nil, set, set)
+	cmdEnv(c)
+
+	w.Close()
+
+	out := <-outStr
+
+	// parse the output into a map of envvar:value for easier testing below
+	envvars := make(map[string]string)
+	for _, e := range strings.Split(strings.TrimSpace(out), "\n") {
+		kv := strings.SplitN(e, "=", 2)
+		key, value := kv[0], kv[1]
+		envvars[strings.Replace(key, "export ", "", 1)] = value
+	}
+
+	expected := map[string]string{
+		"DOCKER_TLS_VERIFY": "1",
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", TestMachineDir),
+		"DOCKER_HOST":       "unix:///var/run/docker.sock",
+	}
+
+	for k, v := range envvars {
+		if v != expected[k] {
+			t.Fatalf("Expected %s == <%s>, but was <%s>", k, expected[k], v)
+		}
+	}
+}
+
+func TestCmdEnvFish(t *testing.T) {
+	stdout := os.Stdout
+	shell := os.Getenv("SHELL")
+	r, w, _ := os.Pipe()
+
+	os.Stdout = w
+	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
+	os.Setenv("SHELL", "/bin/fish")
+
+	defer func() {
+		os.Setenv("MACHINE_STORAGE_PATH", "")
+		os.Setenv("SHELL", shell)
+		os.Stdout = stdout
+	}()
+
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := getDefaultTestDriverFlags()
+
+	store := NewStore(TestMachineDir, "", "")
+	var err error
+
+	_, err = store.Create("test-a", "none", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err := store.Load("test-a")
+	if err != nil {
+		t.Fatalf("error loading host: %v", err)
+	}
+
+	if err := store.SetActive(host); err != nil {
+		t.Fatalf("error setting active host: %v", err)
+	}
+
+	outStr := make(chan string)
+
+	go func() {
+		var testOutput bytes.Buffer
+		io.Copy(&testOutput, r)
+		outStr <- testOutput.String()
+	}()
+
+	set := flag.NewFlagSet("config", 0)
+	c := cli.NewContext(nil, set, set)
+	cmdEnv(c)
+
+	w.Close()
+
+	out := <-outStr
+
+	// parse the output into a map of envvar:value for easier testing below
+	envvars := make(map[string]string)
+	for _, e := range strings.Split(strings.TrimSuffix(out, ";\n"), ";\n") {
+		kv := strings.SplitN(strings.Replace(e, "set -x ", "", 1), " ", 2)
+		key, value := kv[0], kv[1]
+		envvars[key] = value
+	}
+
+	expected := map[string]string{
+		"DOCKER_TLS_VERIFY": "1",
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", TestMachineDir),
+		"DOCKER_HOST":       "unix:///var/run/docker.sock",
+	}
+
+	for k, v := range envvars {
+		if v != expected[k] {
+			t.Fatalf("Expected %s == <%s>, but was <%s>", k, expected[k], v)
+		}
 	}
 }
