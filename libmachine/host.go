@@ -1,9 +1,8 @@
-package main
+package libmachine
 
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -19,6 +18,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
@@ -26,10 +27,8 @@ import (
 )
 
 var (
-	validHostNameChars       = `[a-zA-Z0-9\-\.]`
-	validHostNamePattern     = regexp.MustCompile(`^` + validHostNameChars + `+$`)
-	ErrInvalidHostname       = errors.New("Invalid hostname specified.  Hostnames must be comprised only of alphanumeric characters, \".\", or \"-\".")
-	ErrUnknownHypervisorType = errors.New("Unknown hypervisor type")
+	validHostNameChars   = `[a-zA-Z0-9\-\.]`
+	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
 )
 
 const (
@@ -42,14 +41,26 @@ type Host struct {
 	DriverName     string
 	Driver         drivers.Driver
 	CaCertPath     string
+	PrivateKeyPath string
 	ServerCertPath string
 	ServerKeyPath  string
-	PrivateKeyPath string
 	ClientCertPath string
-	SwarmMaster    bool
+	StorePath      string
+	EngineOptions  *engine.EngineOptions
+	SwarmOptions   *swarm.SwarmOptions
+	// deprecated options; these are left to assist in config migrations
 	SwarmHost      string
+	SwarmMaster    bool
 	SwarmDiscovery string
-	storePath      string
+}
+
+type HostOptions struct {
+	Driver        string
+	Memory        int
+	Disk          int
+	DriverOptions drivers.DriverOptions
+	EngineOptions *engine.EngineOptions
+	SwarmOptions  *swarm.SwarmOptions
 }
 
 type DockerConfig struct {
@@ -74,8 +85,8 @@ func waitForDocker(addr string) error {
 	return nil
 }
 
-func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster bool, swarmHost string, swarmDiscovery string) (*Host, error) {
-	driver, err := drivers.NewDriver(driverName, name, storePath, caCert, privateKey)
+func NewHost(name, driverName, StorePath, caCert, privateKey string, engineOptions *engine.EngineOptions, swarmOptions *swarm.SwarmOptions) (*Host, error) {
+	driver, err := drivers.NewDriver(driverName, name, StorePath, caCert, privateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -85,19 +96,18 @@ func NewHost(name, driverName, storePath, caCert, privateKey string, swarmMaster
 		Driver:         driver,
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
-		SwarmMaster:    swarmMaster,
-		SwarmHost:      swarmHost,
-		SwarmDiscovery: swarmDiscovery,
-		storePath:      storePath,
+		EngineOptions:  engineOptions,
+		SwarmOptions:   swarmOptions,
+		StorePath:      StorePath,
 	}, nil
 }
 
-func LoadHost(name string, storePath string) (*Host, error) {
-	if _, err := os.Stat(storePath); os.IsNotExist(err) {
+func LoadHost(name string, StorePath string) (*Host, error) {
+	if _, err := os.Stat(StorePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("Host %q does not exist", name)
 	}
 
-	host := &Host{Name: name, storePath: storePath}
+	host := &Host{Name: name, StorePath: StorePath}
 	if err := host.LoadConfig(); err != nil {
 		return nil, err
 	}
@@ -121,7 +131,7 @@ func (h *Host) GetDockerConfigDir() (string, error) {
 	case provider.None:
 		return "", nil
 	default:
-		return "", ErrUnknownHypervisorType
+		return "", ErrUnknownProviderType
 	}
 }
 
@@ -221,7 +231,7 @@ func (h *Host) StartDocker() error {
 	case provider.Remote:
 		cmd, err = h.GetSSHCommand("sudo service docker start")
 	default:
-		return ErrUnknownHypervisorType
+		return ErrUnknownProviderType
 	}
 
 	if err != nil {
@@ -249,7 +259,7 @@ func (h *Host) StopDocker() error {
 	case provider.Remote:
 		cmd, err = h.GetSSHCommand("sudo service docker stop")
 	default:
-		return ErrUnknownHypervisorType
+		return ErrUnknownProviderType
 	}
 
 	if err != nil {
@@ -308,8 +318,8 @@ func (h *Host) ConfigureAuth() error {
 		return fmt.Errorf("unable to get machine IP")
 	}
 
-	serverCertPath := filepath.Join(h.storePath, "server.pem")
-	serverKeyPath := filepath.Join(h.storePath, "server-key.pem")
+	serverCertPath := filepath.Join(h.StorePath, "server.pem")
+	serverKeyPath := filepath.Join(h.StorePath, "server-key.pem")
 
 	org := h.Name
 	bits := 2048
@@ -579,7 +589,7 @@ func (h *Host) SetHostname() error {
 			h.Name,
 		))
 	default:
-		return ErrUnknownHypervisorType
+		return ErrUnknownProviderType
 	}
 
 	if err != nil {
@@ -688,14 +698,14 @@ func (h *Host) Remove(force bool) error {
 }
 
 func (h *Host) removeStorePath() error {
-	file, err := os.Stat(h.storePath)
+	file, err := os.Stat(h.StorePath)
 	if err != nil {
 		return err
 	}
 	if !file.IsDir() {
-		return fmt.Errorf("%q is not a directory", h.storePath)
+		return fmt.Errorf("%q is not a directory", h.StorePath)
 	}
-	return os.RemoveAll(h.storePath)
+	return os.RemoveAll(h.StorePath)
 }
 
 func (h *Host) GetURL() (string, error) {
@@ -703,7 +713,7 @@ func (h *Host) GetURL() (string, error) {
 }
 
 func (h *Host) LoadConfig() error {
-	data, err := ioutil.ReadFile(filepath.Join(h.storePath, "config.json"))
+	data, err := ioutil.ReadFile(filepath.Join(h.StorePath, "config.json"))
 	if err != nil {
 		return err
 	}
@@ -714,7 +724,7 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	driver, err := drivers.NewDriver(config.DriverName, h.Name, h.storePath, h.CaCertPath, h.PrivateKeyPath)
+	driver, err := drivers.NewDriver(config.DriverName, h.Name, h.StorePath, h.CaCertPath, h.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -733,7 +743,8 @@ func (h *Host) SaveConfig() error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(h.storePath, "config.json"), data, 0600); err != nil {
+
+	if err := ioutil.WriteFile(filepath.Join(h.StorePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
 	return nil

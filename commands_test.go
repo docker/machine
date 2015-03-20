@@ -8,14 +8,114 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/codegangsta/cli"
 	drivers "github.com/docker/machine/drivers"
+	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
+
+const (
+	hostTestName       = "test-host"
+	hostTestDriverName = "none"
+	hostTestCaCert     = "test-cert"
+	hostTestPrivateKey = "test-key"
+)
+
+var (
+	hostTestStorePath string
+	TestStoreDir      string
+)
+
+func init() {
+	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	TestStoreDir = tmpDir
+}
+
+func clearHosts() error {
+	return os.RemoveAll(TestStoreDir)
+}
+
+func getTestStore() (libmachine.Store, error) {
+	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	hostTestStorePath = tmpDir
+
+	os.Setenv("MACHINE_STORAGE_PATH", tmpDir)
+
+	return libmachine.NewFilestore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
+}
+
+func cleanup() {
+	os.RemoveAll(hostTestStorePath)
+}
+
+func getTestDriverFlags() *DriverOptionsMock {
+	name := hostTestName
+	flags := &DriverOptionsMock{
+		Data: map[string]interface{}{
+			"name":            name,
+			"url":             "unix:///var/run/docker.sock",
+			"swarm":           false,
+			"swarm-host":      "",
+			"swarm-master":    false,
+			"swarm-discovery": "",
+		},
+	}
+	return flags
+}
+
+func getDefaultTestHost() (*libmachine.Host, error) {
+	engineOptions := &engine.EngineOptions{}
+	swarmOptions := &swarm.SwarmOptions{
+		Master:    false,
+		Host:      "",
+		Discovery: "",
+		Address:   "",
+	}
+	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, engineOptions, swarmOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	flags := getTestDriverFlags()
+	if err := host.Driver.SetConfigFromFlags(flags); err != nil {
+		return nil, err
+	}
+
+	return host, nil
+}
+
+type DriverOptionsMock struct {
+	Data map[string]interface{}
+}
+
+func (d DriverOptionsMock) String(key string) string {
+	return d.Data[key].(string)
+}
+
+func (d DriverOptionsMock) Int(key string) int {
+	return d.Data[key].(int)
+}
+
+func (d DriverOptionsMock) Bool(key string) bool {
+	return d.Data[key].(bool)
+}
 
 type FakeDriver struct {
 	MockState state.State
@@ -123,61 +223,9 @@ func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return &exec.Cmd{}, nil
 }
 
-func TestGetHosts(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
-	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
-
-	flags := getDefaultTestDriverFlags()
-
-	store := NewStore(TestMachineDir, "", "")
-	var err error
-
-	_, err = store.Create("test-a", "none", flags)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = store.Create("test-b", "none", flags)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	storeHosts, err := store.List()
-
-	if len(storeHosts) != 2 {
-		t.Fatalf("List returned %d items", len(storeHosts))
-	}
-
-	set := flag.NewFlagSet("start", 0)
-	set.Parse([]string{"test-a", "test-b"})
-
-	globalSet := flag.NewFlagSet("-d", 0)
-	globalSet.String("-d", "none", "driver")
-	globalSet.String("storage-path", store.Path, "storage path")
-	globalSet.String("tls-ca-cert", "", "")
-	globalSet.String("tls-ca-key", "", "")
-
-	c := cli.NewContext(nil, set, globalSet)
-
-	hosts, err := getHosts(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(hosts) != 2 {
-		t.Fatal("Expected %d hosts, got %d hosts", 2, len(hosts))
-	}
-
-	os.Setenv("MACHINE_STORAGE_PATH", "")
-}
-
 func TestGetHostState(t *testing.T) {
-	storePath, err := ioutil.TempDir("", ".docker")
-	if err != nil {
-		t.Fatal("Error creating tmp dir:", err)
-	}
+	defer cleanup()
+
 	hostListItems := make(chan hostListItem)
 
 	store, err := getTestStore()
@@ -185,14 +233,19 @@ func TestGetHostState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	hosts := []Host{
+	hosts := []libmachine.Host{
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: store.GetPath(),
+			SwarmOptions: &swarm.SwarmOptions{
+				Master:    false,
+				Address:   "",
+				Discovery: "",
+			},
 		},
 		{
 			Name:       "bar",
@@ -200,7 +253,12 @@ func TestGetHostState(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Stopped,
 			},
-			storePath: storePath,
+			StorePath: store.GetPath(),
+			SwarmOptions: &swarm.SwarmOptions{
+				Master:    false,
+				Address:   "",
+				Discovery: "",
+			},
 		},
 		{
 			Name:       "baz",
@@ -208,21 +266,36 @@ func TestGetHostState(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: store.GetPath(),
+			SwarmOptions: &swarm.SwarmOptions{
+				Master:    false,
+				Address:   "",
+				Discovery: "",
+			},
 		},
 	}
+
+	for _, h := range hosts {
+		if err := store.Save(&h); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	expected := map[string]state.State{
 		"foo": state.Running,
 		"bar": state.Stopped,
 		"baz": state.Running,
 	}
+
 	items := []hostListItem{}
 	for _, host := range hosts {
-		go getHostState(host, *store, hostListItems)
+		go getHostState(host, store, hostListItems)
 	}
+
 	for i := 0; i < len(hosts); i++ {
 		items = append(items, <-hostListItems)
 	}
+
 	for _, item := range items {
 		if expected[item.Name] != item.State {
 			t.Fatal("Expected state did not match for item", item)
@@ -238,14 +311,14 @@ func TestRunActionForeachMachine(t *testing.T) {
 
 	// Assume a bunch of machines in randomly started or
 	// stopped states.
-	machines := []*Host{
+	machines := []*libmachine.Host{
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "bar",
@@ -253,7 +326,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Stopped,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name: "baz",
@@ -265,7 +338,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Stopped,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "spam",
@@ -273,7 +346,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "eggs",
@@ -281,7 +354,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Stopped,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 		{
 			Name:       "ham",
@@ -289,7 +362,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &FakeDriver{
 				MockState: state.Running,
 			},
-			storePath: storePath,
+			StorePath: storePath,
 		},
 	}
 
@@ -332,34 +405,42 @@ func TestRunActionForeachMachine(t *testing.T) {
 }
 
 func TestCmdConfig(t *testing.T) {
+	defer cleanup()
+
 	stdout := os.Stdout
 	r, w, _ := os.Pipe()
 
 	os.Stdout = w
-	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
 
 	defer func() {
-		os.Setenv("MACHINE_STORAGE_PATH", "")
 		os.Stdout = stdout
 	}()
 
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
-
-	flags := getDefaultTestDriverFlags()
-
-	store := NewStore(TestMachineDir, "", "")
-	var err error
-
-	_, err = store.Create("test-a", "none", flags)
+	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load("test-a")
+	mcn, err := libmachine.New(store)
 	if err != nil {
-		t.Fatalf("error loading host: %v", err)
+		t.Fatal(err)
+	}
+
+	flags := getTestDriverFlags()
+	hostOptions := &libmachine.HostOptions{
+		DriverOptions: flags,
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
+			Master:    false,
+			Discovery: "",
+			Address:   "",
+			Host:      "",
+		},
+	}
+
+	host, err := mcn.Create("test-a", "none", hostOptions)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	if err := store.SetActive(host); err != nil {
@@ -375,7 +456,11 @@ func TestCmdConfig(t *testing.T) {
 	}()
 
 	set := flag.NewFlagSet("config", 0)
-	c := cli.NewContext(nil, set, set)
+	globalSet := flag.NewFlagSet("test", 0)
+	globalSet.String("storage-path", store.GetPath(), "")
+
+	c := cli.NewContext(nil, set, globalSet)
+
 	cmdConfig(c)
 
 	w.Close()
@@ -386,17 +471,19 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatalf("Expect --tlsverify")
 	}
 
-	tlscacert := fmt.Sprintf("--tlscacert=\"%s/test-a/ca.pem\"", TestMachineDir)
+	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
+
+	tlscacert := fmt.Sprintf("--tlscacert=\"%s/ca.pem\"", testMachineDir)
 	if !strings.Contains(out, tlscacert) {
 		t.Fatalf("Expected to find %s in %s", tlscacert, out)
 	}
 
-	tlscert := fmt.Sprintf("--tlscert=\"%s/test-a/cert.pem\"", TestMachineDir)
+	tlscert := fmt.Sprintf("--tlscert=\"%s/cert.pem\"", testMachineDir)
 	if !strings.Contains(out, tlscert) {
 		t.Fatalf("Expected to find %s in %s", tlscert, out)
 	}
 
-	tlskey := fmt.Sprintf("--tlskey=\"%s/test-a/key.pem\"", TestMachineDir)
+	tlskey := fmt.Sprintf("--tlskey=\"%s/key.pem\"", testMachineDir)
 	if !strings.Contains(out, tlskey) {
 		t.Fatalf("Expected to find %s in %s", tlskey, out)
 	}
@@ -425,22 +512,40 @@ func TestCmdEnvBash(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := getDefaultTestDriverFlags()
+	flags := getTestDriverFlags()
 
-	store := NewStore(TestMachineDir, "", "")
-	var err error
+	store, sErr := getTestStore()
+	if sErr != nil {
+		t.Fatal(sErr)
+	}
 
-	_, err = store.Create("test-a", "none", flags)
+	mcn, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load("test-a")
+	hostOptions := &libmachine.HostOptions{
+		DriverOptions: flags,
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
+			Master:    false,
+			Discovery: "",
+			Address:   "",
+			Host:      "",
+		},
+	}
+
+	host, err := mcn.Create("test-a", "none", hostOptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = mcn.Get("test-a")
 	if err != nil {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := store.SetActive(host); err != nil {
+	if err := mcn.SetActive(host); err != nil {
 		t.Fatalf("error setting active host: %v", err)
 	}
 
@@ -468,9 +573,11 @@ func TestCmdEnvBash(t *testing.T) {
 		envvars[strings.Replace(key, "export ", "", 1)] = value
 	}
 
+	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
+
 	expected := map[string]string{
 		"DOCKER_TLS_VERIFY": "1",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", TestMachineDir),
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s\"", testMachineDir),
 		"DOCKER_HOST":       "unix:///var/run/docker.sock",
 	}
 
@@ -500,22 +607,40 @@ func TestCmdEnvFish(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := getDefaultTestDriverFlags()
+	flags := getTestDriverFlags()
 
-	store := NewStore(TestMachineDir, "", "")
-	var err error
-
-	_, err = store.Create("test-a", "none", flags)
+	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load("test-a")
+	mcn, err := libmachine.New(store)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hostOptions := &libmachine.HostOptions{
+		DriverOptions: flags,
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
+			Master:    false,
+			Discovery: "",
+			Address:   "",
+			Host:      "",
+		},
+	}
+
+	host, err := mcn.Create("test-a", "none", hostOptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = mcn.Get("test-a")
 	if err != nil {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := store.SetActive(host); err != nil {
+	if err := mcn.SetActive(host); err != nil {
 		t.Fatalf("error setting active host: %v", err)
 	}
 
@@ -543,9 +668,11 @@ func TestCmdEnvFish(t *testing.T) {
 		envvars[key] = value
 	}
 
+	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
+
 	expected := map[string]string{
 		"DOCKER_TLS_VERIFY": "1",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s/test-a\"", TestMachineDir),
+		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s\"", testMachineDir),
 		"DOCKER_HOST":       "unix:///var/run/docker.sock",
 	}
 
