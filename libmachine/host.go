@@ -30,7 +30,7 @@ type Host struct {
 	DriverName string
 	Driver     drivers.Driver
 	StorePath  string
-	HostConfig HostOptions
+	HostConfig *HostOptions
 
 	// deprecated options; these are left to assist in config migrations
 	SwarmHost      string
@@ -57,7 +57,7 @@ type HostMetadata struct {
 	HostConfig HostOptions
 }
 
-func NewHost(name, driverName string, hostConfig HostOptions) (*Host, error) {
+func NewHost(name, driverName string, hostConfig *HostOptions) (*Host, error) {
 	authConfig := hostConfig.AuthConfig
 	storePath := filepath.Join(utils.GetMachineDir(), name)
 	driver, err := drivers.NewDriver(driverName, name, storePath, authConfig.CaCertPath, authConfig.PrivateKeyPath)
@@ -103,17 +103,20 @@ func (h *Host) Create(name string) error {
 		return err
 	}
 
-	if err := WaitForSSH(h); err != nil {
-		return err
-	}
+	// TODO: Not really a fan of just checking "none" here.
+	if h.Driver.DriverName() != "none" {
+		if err := WaitForSSH(h); err != nil {
+			return err
+		}
 
-	provisioner, err := provision.DetectProvisioner(h.Driver)
-	if err != nil {
-		return err
-	}
+		provisioner, err := provision.DetectProvisioner(h.Driver)
+		if err != nil {
+			return err
+		}
 
-	if err := provisioner.Provision(*h.HostConfig.SwarmConfig, *h.HostConfig.AuthConfig); err != nil {
-		return err
+		if err := provisioner.Provision(*h.HostConfig.SwarmConfig, *h.HostConfig.AuthConfig); err != nil {
+			return err
+		}
 	}
 
 	return nil
