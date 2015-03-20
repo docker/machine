@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/utils"
 )
 
@@ -32,7 +34,8 @@ func (s Filestore) loadHost(name string) (*Host, error) {
 		return nil, err
 	}
 
-	return host, nil
+	h := validateHost(host)
+	return h, nil
 }
 
 func (s Filestore) GetPath() string {
@@ -145,4 +148,23 @@ func (s Filestore) RemoveActive() error {
 // active host
 func (s Filestore) activePath() string {
 	return filepath.Join(utils.GetMachineDir(), ".active")
+}
+
+// validates host config and modifies if needed
+// this is used for configuration updates
+func validateHost(host *Host) *Host {
+	if host.EngineOptions == nil {
+		host.EngineOptions = &engine.EngineOptions{}
+	}
+
+	if host.SwarmOptions == nil {
+		host.SwarmOptions = &swarm.SwarmOptions{
+			Address:   "",
+			Discovery: host.SwarmDiscovery,
+			Host:      host.SwarmHost,
+			Master:    host.SwarmMaster,
+		}
+	}
+
+	return host
 }
