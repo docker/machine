@@ -15,6 +15,7 @@ import (
 	"github.com/codegangsta/cli"
 	drivers "github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/provider"
@@ -88,7 +89,16 @@ func getDefaultTestHost() (*libmachine.Host, error) {
 		Discovery: "",
 		Address:   "",
 	}
-	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, engineOptions, swarmOptions)
+	authConfig := &auth.AuthOptions{
+		CaCertPath:     hostTestCaCert,
+		PrivateKeyPath: hostTestPrivateKey,
+	}
+	hostConfig := &libmachine.HostOptions{
+		EngineConfig: engineOptions,
+		SwarmConfig:  swarmOptions,
+		AuthConfig:   authConfig,
+	}
+	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -241,10 +251,12 @@ func TestGetHostState(t *testing.T) {
 				MockState: state.Running,
 			},
 			StorePath: store.GetPath(),
-			SwarmOptions: &swarm.SwarmOptions{
-				Master:    false,
-				Address:   "",
-				Discovery: "",
+			HostConfig: &libmachine.HostOptions{
+				SwarmConfig: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
 			},
 		},
 		{
@@ -254,10 +266,12 @@ func TestGetHostState(t *testing.T) {
 				MockState: state.Stopped,
 			},
 			StorePath: store.GetPath(),
-			SwarmOptions: &swarm.SwarmOptions{
-				Master:    false,
-				Address:   "",
-				Discovery: "",
+			HostConfig: &libmachine.HostOptions{
+				SwarmConfig: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
 			},
 		},
 		{
@@ -267,10 +281,12 @@ func TestGetHostState(t *testing.T) {
 				MockState: state.Running,
 			},
 			StorePath: store.GetPath(),
-			SwarmOptions: &swarm.SwarmOptions{
-				Master:    false,
-				Address:   "",
-				Discovery: "",
+			HostConfig: &libmachine.HostOptions{
+				SwarmConfig: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
 			},
 		},
 	}
@@ -428,17 +444,17 @@ func TestCmdConfig(t *testing.T) {
 
 	flags := getTestDriverFlags()
 	hostOptions := &libmachine.HostOptions{
-		DriverOptions: flags,
-		EngineOptions: &engine.EngineOptions{},
-		SwarmOptions: &swarm.SwarmOptions{
+		EngineConfig: &engine.EngineOptions{},
+		SwarmConfig: &swarm.SwarmOptions{
 			Master:    false,
 			Discovery: "",
 			Address:   "",
 			Host:      "",
 		},
+		AuthConfig: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions)
+	host, err := mcn.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -525,17 +541,17 @@ func TestCmdEnvBash(t *testing.T) {
 	}
 
 	hostOptions := &libmachine.HostOptions{
-		DriverOptions: flags,
-		EngineOptions: &engine.EngineOptions{},
-		SwarmOptions: &swarm.SwarmOptions{
+		EngineConfig: &engine.EngineOptions{},
+		SwarmConfig: &swarm.SwarmOptions{
 			Master:    false,
 			Discovery: "",
 			Address:   "",
 			Host:      "",
 		},
+		AuthConfig: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions)
+	host, err := mcn.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -620,17 +636,17 @@ func TestCmdEnvFish(t *testing.T) {
 	}
 
 	hostOptions := &libmachine.HostOptions{
-		DriverOptions: flags,
-		EngineOptions: &engine.EngineOptions{},
-		SwarmOptions: &swarm.SwarmOptions{
+		EngineConfig: &engine.EngineOptions{},
+		SwarmConfig: &swarm.SwarmOptions{
 			Master:    false,
 			Discovery: "",
 			Address:   "",
 			Host:      "",
 		},
+		AuthConfig: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions)
+	host, err := mcn.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}

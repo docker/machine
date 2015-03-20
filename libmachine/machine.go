@@ -19,17 +19,7 @@ func New(store Store) (*Machine, error) {
 	}, nil
 }
 
-func (m *Machine) Create(name string, driverName string, options *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
-	engineConfig := options.EngineConfig
-	swarmConfig := options.SwarmConfig
-	authConfig := options.AuthConfig
-
-	hostConfig := HostOptions{
-		AuthConfig:   authConfig,
-		EngineConfig: engineConfig,
-		SwarmConfig:  swarmConfig,
-	}
-
+func (m *Machine) Create(name string, driverName string, hostConfig *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
 	exists, err := m.store.Exists(name)
 	if err != nil {
 		return nil, err

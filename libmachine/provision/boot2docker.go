@@ -95,7 +95,7 @@ func (provisioner *Boot2DockerProvisioner) GenerateDockerConfig(dockerPort int, 
 CACERT=%s
 SERVERCERT=%s
 SERVERKEY=%s
-DOCKER_TLS=no`, opts, authConfig.CaCertRemotePath, authConfig.ServerKeyRemotePath, authConfig.ServerCertRemotePath)
+DOCKER_TLS=no`, opts, authConfig.CaCertRemotePath, authConfig.ServerCertRemotePath, authConfig.ServerKeyRemotePath)
 	return &DockerConfig{
 		EngineConfig:     daemonCfg,
 		EngineConfigPath: daemonOptsCfg,
@@ -111,11 +111,9 @@ func (provisioner *Boot2DockerProvisioner) SetOsReleaseInfo(info *OsRelease) {
 }
 
 func (provisioner *Boot2DockerProvisioner) Provision(swarmConfig swarm.SwarmOptions, authConfig auth.AuthOptions) error {
-	fmt.Println("before set hostname")
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
-	fmt.Println("after set hostname")
 
 	if err := installDockerGeneric(provisioner); err != nil {
 		return err
