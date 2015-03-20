@@ -367,7 +367,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Waiting for SSH on %s:%d", d.IPAddress, 22)
 
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
+	if err := utils.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
 		return err
 	}
 

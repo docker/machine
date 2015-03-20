@@ -384,7 +384,7 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
+	return utils.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
 }
 
 func (d *Driver) Stop() error {
@@ -449,8 +449,10 @@ func (d *Driver) GetState() (state.State, error) {
 		}
 		return state.Error, err
 	}
+
 	re := regexp.MustCompile(`(?m)^VMState="(\w+)"`)
 	groups := re.FindStringSubmatch(stdout)
+
 	if len(groups) < 1 {
 		return state.None, nil
 	}
@@ -483,19 +485,15 @@ func (d *Driver) GetIP() (string, error) {
 	if s != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "ip addr show dev eth1")
+	stdout, _, err := drivers.GetSSHCommandFromDriver(d, "ip addr show dev eth1")
 	if err != nil {
 		return "", err
 	}
 
-	// reset to nil as if using from Host Stdout is already set when using DEBUG
-	cmd.Stdout = nil
+	buf := bytes.NewBuffer([]byte{})
+	buf.ReadFrom(stdout)
+	out := buf.String()
 
-	b, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	out := string(b)
 	log.Debugf("SSH returned: %s\nEND SSH\n", out)
 	// parse to find: inet 192.168.59.103/24 brd 192.168.59.255 scope global eth1
 	lines := strings.Split(out, "\n")
@@ -543,14 +541,14 @@ func (d *Driver) generateDiskImage(size int) error {
 	if err != nil {
 		return err
 	}
-	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
+	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
 	if err := tw.WriteHeader(file); err != nil {
 		return err
 	}
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
 		return err
 	}
-	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
+	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
 	if err := tw.WriteHeader(file); err != nil {
 		return err
 	}

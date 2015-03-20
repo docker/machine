@@ -15,11 +15,12 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
+	dutils "github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 const (
@@ -263,7 +264,7 @@ func (d *Driver) Create() error {
 
 	log.Info("Waiting for SSH...")
 	log.Debugf("Host: %s SSH Port: %d", d.getHostname(), d.SSHPort)
-	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.getHostname(), d.SSHPort))
+	return utils.WaitForTCP(fmt.Sprintf("%s:%d", d.getHostname(), d.SSHPort))
 }
 
 func (d *Driver) GetURL() (string, error) {
@@ -397,7 +398,7 @@ func (d *Driver) Kill() error {
 }
 
 func generateVMName() string {
-	randomID := utils.TruncateID(utils.GenerateRandomID())
+	randomID := dutils.TruncateID(dutils.GenerateRandomID())
 	return fmt.Sprintf("docker-host-%s", randomID)
 }
 
@@ -430,7 +431,7 @@ func (d *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 
 func (d *Driver) waitForSSH() error {
 	log.Infof("Waiting for SSH...")
-	return ssh.WaitForTCP(fmt.Sprintf("%s:%v", d.getHostname(), d.SSHPort))
+	return utils.WaitForTCP(fmt.Sprintf("%s:%v", d.getHostname(), d.SSHPort))
 }
 
 func (d *Driver) waitForDocker() error {
