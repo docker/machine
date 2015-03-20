@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -22,12 +22,15 @@ const (
 type Driver struct {
 	MachineName    string
 	IPAddress      string
-	User           string
 	SSHKey         string
+	SSHUser        string
 	SSHPort        int
 	CaCertPath     string
 	PrivateKeyPath string
 	DriverKeyPath  string
+	SwarmMaster    bool
+	SwarmHost      string
+	SwarmDiscovery string
 	storePath      string
 }
 
@@ -73,9 +76,49 @@ func (d *Driver) DriverName() string {
 	return "generic"
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "root"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
+}
+
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IPAddress = flags.String("generic-ip-address")
-	d.User = flags.String("generic-user")
+	d.SSHUser = flags.String("generic-user")
 	d.SSHKey = flags.String("generic-ssh-key")
 	d.SSHPort = flags.Int("generic-ssh-port")
 
@@ -109,35 +152,6 @@ func (d *Driver) Create() error {
 
 	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)); err != nil {
 		return err
-	}
-
-	log.Info("Configuring machine...")
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debug("Installing Docker")
-
-	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl get.docker.io | sudo sh -; fi")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
 	}
 
 	return nil
@@ -185,7 +199,7 @@ func (d *Driver) Remove() error {
 func (d *Driver) Restart() error {
 	log.Debug("Restarting...")
 
-	cmd, err := d.GetSSHCommand("sudo shutdown -r now")
+	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo shutdown -r now")
 	if err != nil {
 		return err
 	}
@@ -199,35 +213,7 @@ func (d *Driver) Restart() error {
 func (d *Driver) Kill() error {
 	log.Debug("Killing...")
 
-	cmd, err := d.GetSSHCommand("sudo shutdown -P now")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
+	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo shutdown -P now")
 	if err != nil {
 		return err
 	}
@@ -240,24 +226,6 @@ func (d *Driver) StopDocker() error {
 
 func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
-}
-
-func (d *Driver) Upgrade() error {
-	sshCmd, err := d.GetSSHCommand("apt-get update && apt-get install lxc-docker")
-	if err != nil {
-		return err
-	}
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	return nil
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, d.SSHPort, d.User, d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) sshKeyPath() string {
