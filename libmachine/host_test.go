@@ -1,4 +1,4 @@
-package main
+package libmachine
 
 import (
 	"fmt"
@@ -9,25 +9,37 @@ import (
 	"testing"
 
 	_ "github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/swarm"
 )
 
 const (
 	hostTestName       = "test-host"
 	hostTestDriverName = "none"
-	hostTestStorePath  = "/test/path"
 	hostTestCaCert     = "test-cert"
 	hostTestPrivateKey = "test-key"
 )
 
-func getTestStore() (*Store, error) {
+var (
+	hostTestStorePath string
+)
+
+func getTestStore() (Store, error) {
 	tmpDir, err := ioutil.TempDir("", "machine-test-")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	hostTestStorePath = tmpDir
+
 	os.Setenv("MACHINE_STORAGE_PATH", tmpDir)
 
-	return NewStore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
+	return NewFilestore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
+}
+
+func cleanup() {
+	os.RemoveAll(hostTestStorePath)
 }
 
 func getTestDriverFlags() *DriverOptionsMock {
@@ -46,8 +58,20 @@ func getTestDriverFlags() *DriverOptionsMock {
 }
 
 func getDefaultTestHost() (*Host, error) {
-	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, false, "", "")
+	engineOptions := &engine.EngineOptions{}
+	swarmOptions := &swarm.SwarmOptions{
+		Master:    false,
+		Host:      "",
+		Discovery: "",
+		Address:   "",
+	}
+	host, err := NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, engineOptions, swarmOptions)
 	if err != nil {
+		return nil, err
+	}
+
+	flags := getTestDriverFlags()
+	if err := host.Driver.SetConfigFromFlags(flags); err != nil {
 		return nil, err
 	}
 
@@ -162,14 +186,17 @@ func TestMachinePort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	flags := getTestDriverFlags()
 
-	_, err = store.Create(hostTestName, hostTestDriverName, flags)
+	host, err := getDefaultTestHost()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load(hostTestName)
+	if err = store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = store.Get(hostTestName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,14 +232,17 @@ func TestMachineCustomPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	flags := getTestDriverFlags()
 
-	_, err = store.Create(hostTestName, hostTestDriverName, flags)
+	host, err := getDefaultTestHost()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err := store.Load(hostTestName)
+	if err = store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = store.Get(hostTestName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,9 +278,12 @@ func TestHostConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := getTestDriverFlags()
-	host, err := store.Create(hostTestName, hostTestDriverName, flags)
+	host, err := getDefaultTestHost()
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err = store.Save(host); err != nil {
 		t.Fatal(err)
 	}
 
