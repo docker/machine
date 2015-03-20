@@ -1,4 +1,4 @@
-package main
+package libmachine
 
 import (
 	"os"
@@ -6,14 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/docker/machine/drivers/none"
-)
-
-const (
-	TestStoreDir = ".store-test"
-)
-
-var (
-	TestMachineDir = filepath.Join(TestStoreDir, "machine", "machines")
+	"github.com/docker/machine/utils"
 )
 
 type DriverOptionsMock struct {
@@ -32,62 +25,49 @@ func (d DriverOptionsMock) Bool(key string) bool {
 	return d.Data[key].(bool)
 }
 
-func clearHosts() error {
-	return os.RemoveAll(TestStoreDir)
-}
+func TestStoreSave(t *testing.T) {
+	defer cleanup()
 
-func getDefaultTestDriverFlags() *DriverOptionsMock {
-	return &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"name":            "test",
-			"url":             "unix:///var/run/docker.sock",
-			"swarm":           false,
-			"swarm-host":      "",
-			"swarm-master":    false,
-			"swarm-discovery": "",
-		},
-	}
-}
-
-func TestStoreCreate(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
-
-	flags := getDefaultTestDriverFlags()
-
-	store := NewStore(TestStoreDir, "", "")
-
-	host, err := store.Create("test", "none", flags)
+	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if host.Name != "test" {
-		t.Fatal("Host name is incorrect")
+
+	host, err := getDefaultTestHost()
+	if err != nil {
+		t.Fatal(err)
 	}
-	path := filepath.Join(TestStoreDir, "test")
+	if err := store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+
+	path := filepath.Join(utils.GetMachineDir(), host.Name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
 }
 
 func TestStoreRemove(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
+	defer cleanup()
 
-	flags := getDefaultTestDriverFlags()
-
-	store := NewStore(TestStoreDir, "", "")
-	_, err := store.Create("test", "none", flags)
+	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(TestStoreDir, "test")
+
+	host, err := getDefaultTestHost()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(utils.GetMachineDir(), host.Name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
-	err = store.Remove("test", false)
+	err = store.Remove(host.Name, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,88 +77,117 @@ func TestStoreRemove(t *testing.T) {
 }
 
 func TestStoreList(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
+	defer cleanup()
 
-	flags := getDefaultTestDriverFlags()
-
-	store := NewStore(TestStoreDir, "", "")
-	_, err := store.Create("test", "none", flags)
+	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	host, err := getDefaultTestHost()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+
 	hosts, err := store.List()
 	if len(hosts) != 1 {
 		t.Fatalf("List returned %d items", len(hosts))
 	}
-	if hosts[0].Name != "test" {
+	if hosts[0].Name != host.Name {
 		t.Fatalf("hosts[0] name is incorrect, got: %s", hosts[0].Name)
 	}
 }
 
 func TestStoreExists(t *testing.T) {
-	if err := clearHosts(); err != nil {
+	defer cleanup()
+
+	store, err := getTestStore()
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	flags := getDefaultTestDriverFlags()
+	host, err := getDefaultTestHost()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	store := NewStore(TestStoreDir, "", "")
-	exists, err := store.Exists("test")
+	exists, err := store.Exists(host.Name)
 	if exists {
 		t.Fatal("Exists returned true when it should have been false")
 	}
-	_, err = store.Create("test", "none", flags)
+
+	if err := store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+
+	exists, err = store.Exists(host.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	exists, err = store.Exists("test")
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	if !exists {
 		t.Fatal("Exists returned false when it should have been true")
+	}
+	if err := store.Remove(host.Name, true); err != nil {
+		t.Fatal(err)
+	}
+
+	exists, err = store.Exists(host.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if exists {
+		t.Fatal("Exists returned true when it should have been false")
 	}
 }
 
 func TestStoreLoad(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
+	defer cleanup()
 
 	expectedURL := "unix:///foo/baz"
-	flags := getDefaultTestDriverFlags()
+	flags := getTestDriverFlags()
 	flags.Data["url"] = expectedURL
 
-	store := NewStore(TestStoreDir, "", "")
-	_, err := store.Create("test", "none", flags)
+	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	store = NewStore(TestStoreDir, "", "")
-	host, err := store.Load("test")
-	if host.Name != "test" {
+	host, err := getDefaultTestHost()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := host.Driver.SetConfigFromFlags(flags); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = store.Get(host.Name)
+	if host.Name != host.Name {
 		t.Fatal("Host name is incorrect")
 	}
 	actualURL, err := host.GetURL()
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if actualURL != expectedURL {
-		t.Fatalf("GetURL is not %q, got %q", expectedURL, expectedURL)
+		t.Fatalf("GetURL is not %q, got %q", expectedURL, actualURL)
 	}
 }
 
 func TestStoreGetSetActive(t *testing.T) {
-	if err := clearHosts(); err != nil {
-		t.Fatal(err)
-	}
+	defer cleanup()
 
-	flags := getDefaultTestDriverFlags()
-
-	//store := NewStore(TestStoreDir, "", "")
 	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)
@@ -194,11 +203,17 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatalf("GetActive: Active host should not exist")
 	}
 
-	// Set normal host
-	originalHost, err := store.Create("test", "none", flags)
+	host, err = getDefaultTestHost()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Set normal host
+	if err := store.Save(host); err != nil {
+		t.Fatal(err)
+	}
+
+	originalHost := host
 
 	if err := store.SetActive(originalHost); err != nil {
 		t.Fatal(err)
@@ -208,7 +223,7 @@ func TestStoreGetSetActive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if host.Name != "test" {
+	if host.Name != host.Name {
 		t.Fatalf("Active host is not 'test', got %s", host.Name)
 	}
 	isActive, err := store.IsActive(host)
