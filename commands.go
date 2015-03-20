@@ -407,20 +407,20 @@ func cmdCreate(c *cli.Context) {
 
 	hostConfig := &libmachine.HostOptions{
 		AuthConfig: &auth.AuthOptions{
-			CaCertPath:     c.GlobalString("tls-ca-cert"),
-			PrivateKeyPath: c.GlobalString("tls-ca-key"),
-			ClientCertPath: c.GlobalString("tls-client-cert"),
-			ClientKeyPath:  filepath.Join(utils.GetMachineCertDir(), "key.pem"),
+			CaCertPath:     certInfo.CaCertPath,
+			PrivateKeyPath: certInfo.CaKeyPath,
+			ClientCertPath: certInfo.ClientCertPath,
+			ClientKeyPath:  certInfo.ClientKeyPath,
 			ServerCertPath: filepath.Join(utils.GetMachineDir(), name, "server.pem"),
 			ServerKeyPath:  filepath.Join(utils.GetMachineDir(), name, "server-key.pem"),
 		},
 		EngineConfig: &engine.EngineOptions{},
 		SwarmConfig: &swarm.SwarmOptions{
 			IsSwarm:   c.Bool("swarm"),
-			Master:    c.GlobalBool("swarm-master"),
-			Discovery: c.GlobalString("swarm-discovery"),
-			Address:   c.GlobalString("swarm-addr"),
-			Host:      c.GlobalString("swarm-host"),
+			Master:    c.Bool("swarm-master"),
+			Discovery: c.String("swarm-discovery"),
+			Address:   c.String("swarm-addr"),
+			Host:      c.String("swarm-host"),
 		},
 	}
 
