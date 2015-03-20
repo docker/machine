@@ -61,6 +61,13 @@ type hostListItem struct {
 	SwarmDiscovery string
 }
 
+type certPathInfo struct {
+	CaCertPath     string
+	CaKeyPath      string
+	ClientCertPath string
+	ClientKeyPath  string
+}
+
 func sortHostListItemsByName(items []hostListItem) {
 	m := make(map[string]hostListItem, len(items))
 	s := make([]string, len(items))
@@ -329,10 +336,11 @@ var Commands = []cli.Command{
 func cmdActive(c *cli.Context) {
 	name := c.Args().First()
 
+	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		c.GlobalString("tls-ca-cert"),
-		c.GlobalString("tls-ca-key"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -374,36 +382,20 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
-	// setup cert paths
-	caCertPath := c.GlobalString("tls-ca-cert")
-	caKeyPath := c.GlobalString("tls-ca-key")
-	clientCertPath := c.GlobalString("tls-client-cert")
-	clientKeyPath := c.GlobalString("tls-client-key")
+	certInfo := getCertPathInfo(c)
 
-	if caCertPath == "" {
-		caCertPath = filepath.Join(utils.GetMachineCertDir(), "ca.pem")
-	}
-
-	if caKeyPath == "" {
-		caKeyPath = filepath.Join(utils.GetMachineCertDir(), "ca-key.pem")
-	}
-
-	if clientCertPath == "" {
-		clientCertPath = filepath.Join(utils.GetMachineCertDir(), "cert.pem")
-	}
-
-	if clientKeyPath == "" {
-		clientKeyPath = filepath.Join(utils.GetMachineCertDir(), "key.pem")
-	}
-
-	if err := setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath); err != nil {
+	if err := setupCertificates(
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
+		certInfo.ClientCertPath,
+		certInfo.ClientKeyPath); err != nil {
 		log.Fatalf("Error generating certificates: %s", err)
 	}
 
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		caCertPath,
-		caKeyPath,
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -538,10 +530,11 @@ func cmdIp(c *cli.Context) {
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 
+	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		c.GlobalString("tls-ca-cert"),
-		c.GlobalString("tls-ca-key"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -636,10 +629,11 @@ func cmdRm(c *cli.Context) {
 
 	isError := false
 
+	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		c.GlobalString("tls-ca-cert"),
-		c.GlobalString("tls-ca-key"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -744,10 +738,11 @@ func cmdSsh(c *cli.Context) {
 	)
 	name := c.Args().First()
 
+	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		c.GlobalString("tls-ca-cert"),
-		c.GlobalString("tls-ca-key"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -865,10 +860,11 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 
 	// No args specified, so use active.
 	if len(machines) == 0 {
+		certInfo := getCertPathInfo(c)
 		defaultStore, err := getDefaultStore(
 			c.GlobalString("storage-path"),
-			c.GlobalString("tls-ca-cert"),
-			c.GlobalString("tls-ca-key"),
+			certInfo.CaCertPath,
+			certInfo.CaKeyPath,
 		)
 		if err != nil {
 			log.Fatal(err)
@@ -955,10 +951,11 @@ func getHosts(c *cli.Context) ([]*libmachine.Host, error) {
 }
 
 func loadMachine(name string, c *cli.Context) (*libmachine.Host, error) {
+	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		c.GlobalString("tls-ca-cert"),
-		c.GlobalString("tls-ca-key"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -1047,10 +1044,11 @@ func getHostState(host libmachine.Host, store libmachine.Store, hostListItems ch
 
 func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	name := c.Args().First()
+	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		c.GlobalString("tls-ca-cert"),
-		c.GlobalString("tls-ca-key"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -1109,4 +1107,39 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		swarmHost:      machine.SwarmOptions.Host,
 		swarmDiscovery: machine.SwarmOptions.Discovery,
 	}, nil
+}
+
+// getCertPaths returns the cert paths
+// codegangsta/cli will not set the cert paths if the storage-path
+// is set to something different so we cannot use the paths
+// in the global options. le sigh.
+func getCertPathInfo(c *cli.Context) certPathInfo {
+	// setup cert paths
+	caCertPath := c.GlobalString("tls-ca-cert")
+	caKeyPath := c.GlobalString("tls-ca-key")
+	clientCertPath := c.GlobalString("tls-client-cert")
+	clientKeyPath := c.GlobalString("tls-client-key")
+
+	if caCertPath == "" {
+		caCertPath = filepath.Join(utils.GetMachineCertDir(), "ca.pem")
+	}
+
+	if caKeyPath == "" {
+		caKeyPath = filepath.Join(utils.GetMachineCertDir(), "ca-key.pem")
+	}
+
+	if clientCertPath == "" {
+		clientCertPath = filepath.Join(utils.GetMachineCertDir(), "cert.pem")
+	}
+
+	if clientKeyPath == "" {
+		clientKeyPath = filepath.Join(utils.GetMachineCertDir(), "key.pem")
+	}
+
+	return certPathInfo{
+		CaCertPath:     caCertPath,
+		CaKeyPath:      caKeyPath,
+		ClientCertPath: clientCertPath,
+		ClientKeyPath:  clientKeyPath,
+	}
 }
