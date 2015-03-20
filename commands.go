@@ -343,6 +343,11 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
+	name, err := ValidateHostName(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if err := setupCertificates(c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"),
 		c.GlobalString("tls-client-cert"), c.GlobalString("tls-client-key")); err != nil {
 		log.Fatalf("Error generating certificates: %s", err)
