@@ -1,0 +1,49 @@
+{
+  "DriverName": "virtualbox",
+  "Driver": {
+    "MachineName": "test-vbox",
+    "SSHUser": "docker",
+    "SSHPort": 51575,
+    "Memory": 1024,
+    "DiskSize": 20000,
+    "Boot2DockerURL": "",
+    "CaCertPath": "/tmp/store/certs/ca.pem",
+    "PrivateKeyPath": "/tmp/store/certs/ca-key.pem",
+    "SwarmMaster": false,
+    "SwarmHost": "tcp://0.0.0.0:3376",
+    "SwarmDiscovery": ""
+  },
+  "CaCertPath": "/tmp/store/certs/ca.pem",
+  "PrivateKeyPath": "/tmp/store/certs/ca-key.pem",
+  "ServerCertPath": "",
+  "ServerKeyPath": "",
+  "ClientCertPath": "",
+  "StorePath": "/tmp/store/machines/test-vbox",
+  "EngineOptions": {
+    "Dns": null,
+    "GraphDir": "",
+    "Ipv6": false,
+    "Labels": null,
+    "LogLevel": "",
+    "StorageDriver": "",
+    "SelinuxEnabled": false,
+    "TlsCaCert": "",
+    "TlsCert": "",
+    "TlsKey": "",
+    "TlsVerify": false,
+    "RegistryMirror": null
+  },
+  "SwarmOptions": {
+    "Address": "",
+    "Discovery": "",
+    "Master": false,
+    "Host": "",
+    "Strategy": "",
+    "Heartbeat": 0,
+    "Overcommit": 0,
+    "TlsCaCert": "",
+    "TlsCert": "",
+    "TlsKey": "",
+    "TlsVerify": false
+  }
+}

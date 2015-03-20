@@ -374,15 +374,36 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
-	if err := setupCertificates(c.GlobalString("tls-ca-cert"), c.GlobalString("tls-ca-key"),
-		c.GlobalString("tls-client-cert"), c.GlobalString("tls-client-key")); err != nil {
+	// setup cert paths
+	caCertPath := c.GlobalString("tls-ca-cert")
+	caKeyPath := c.GlobalString("tls-ca-key")
+	clientCertPath := c.GlobalString("tls-client-cert")
+	clientKeyPath := c.GlobalString("tls-client-key")
+
+	if caCertPath == "" {
+		caCertPath = filepath.Join(utils.GetMachineCertDir(), "ca.pem")
+	}
+
+	if caKeyPath == "" {
+		caKeyPath = filepath.Join(utils.GetMachineCertDir(), "ca-key.pem")
+	}
+
+	if clientCertPath == "" {
+		clientCertPath = filepath.Join(utils.GetMachineCertDir(), "cert.pem")
+	}
+
+	if clientKeyPath == "" {
+		clientKeyPath = filepath.Join(utils.GetMachineCertDir(), "key.pem")
+	}
+
+	if err := setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath); err != nil {
 		log.Fatalf("Error generating certificates: %s", err)
 	}
 
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
-		c.GlobalString("tls-ca-cert"),
-		c.GlobalString("tls-ca-key"),
+		caCertPath,
+		caKeyPath,
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -48,6 +48,10 @@ type Host struct {
 	StorePath      string
 	EngineOptions  *engine.EngineOptions
 	SwarmOptions   *swarm.SwarmOptions
+	// deprecated options; these are left to assist in config migrations
+	SwarmHost      string
+	SwarmMaster    bool
+	SwarmDiscovery string
 }
 
 type HostOptions struct {
