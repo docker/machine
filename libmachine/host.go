@@ -26,13 +26,11 @@ var (
 )
 
 type Host struct {
-	Name          string `json:"-"`
-	DriverName    string
-	Driver        drivers.Driver
-	StorePath     string
-	EngineOptions *engine.EngineOptions
-	SwarmOptions  *swarm.SwarmOptions
-	HostConfig    HostOptions
+	Name       string `json:"-"`
+	DriverName string
+	Driver     drivers.Driver
+	StorePath  string
+	HostConfig HostOptions
 
 	// deprecated options; these are left to assist in config migrations
 	SwarmHost      string

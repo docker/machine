@@ -153,12 +153,12 @@ func (s Filestore) activePath() string {
 // validates host config and modifies if needed
 // this is used for configuration updates
 func validateHost(host *Host) *Host {
-	if host.EngineOptions == nil {
-		host.EngineOptions = &engine.EngineOptions{}
+	if host.HostConfig.EngineConfig == nil {
+		host.HostConfig.EngineConfig = &engine.EngineOptions{}
 	}
 
-	if host.SwarmOptions == nil {
-		host.SwarmOptions = &swarm.SwarmOptions{
+	if host.HostConfig.SwarmConfig == nil {
+		host.HostConfig.SwarmConfig = &swarm.SwarmOptions{
 			Address:   "",
 			Discovery: host.SwarmDiscovery,
 			Host:      host.SwarmHost,
