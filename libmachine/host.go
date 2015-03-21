@@ -41,6 +41,7 @@ type Host struct {
 	ServerCertPath string
 	ServerKeyPath  string
 	ClientCertPath string
+	ClientKeyPath  string
 }
 
 type HostOptions struct {
@@ -53,8 +54,14 @@ type HostOptions struct {
 }
 
 type HostMetadata struct {
-	DriverName string
-	HostConfig HostOptions
+	DriverName     string
+	HostConfig     HostOptions
+	StorePath      string
+	CaCertPath     string
+	PrivateKeyPath string
+	ServerCertPath string
+	ServerKeyPath  string
+	ClientCertPath string
 }
 
 func NewHost(name, driverName string, hostConfig *HostOptions) (*Host, error) {
@@ -262,7 +269,9 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	authConfig := hostMetadata.HostConfig.AuthConfig
+	meta := ValidateHostMetadata(&hostMetadata)
+
+	authConfig := meta.HostConfig.AuthConfig
 
 	driver, err := drivers.NewDriver(hostMetadata.DriverName, h.Name, h.StorePath, authConfig.CaCertPath, authConfig.PrivateKeyPath)
 	if err != nil {

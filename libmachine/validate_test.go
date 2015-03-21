@@ -1,0 +1,5 @@
+package libmachine
+
+import (
+	"testing"
+)
