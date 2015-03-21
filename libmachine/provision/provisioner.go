@@ -16,10 +16,10 @@ var provisioners = make(map[string]*RegisteredProvisioner)
 // Distribution specific actions
 type Provisioner interface {
 	// Create the files for the daemon to consume configuration settings (return struct of content and path)
-	GenerateDockerConfig(dockerPort int, authConfig auth.AuthOptions) (*DockerConfig, error)
+	GenerateDockerOptions(dockerPort int, authOptions auth.AuthOptions) (*DockerOptions, error)
 
 	// Get the directory where the settings files for docker are to be found
-	GetDockerConfigDir() string
+	GetDockerOptionsDir() string
 
 	// Run a package action e.g. install
 	Package(name string, action pkgaction.PackageAction) error
@@ -39,7 +39,7 @@ type Provisioner interface {
 	//     3. Configure the daemon to accept connections over TLS.
 	//     4. Copy the needed certificates to the server and local config dir.
 	//     5. Configure / activate swarm if applicable.
-	Provision(swarmConfig swarm.SwarmOptions, authConfig auth.AuthOptions) error
+	Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error
 
 	// Perform action on a named service e.g. stop
 	Service(name string, action pkgaction.ServiceAction) error

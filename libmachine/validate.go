@@ -14,15 +14,15 @@ import (
 func ValidateHost(host *Host) *Host {
 	certInfo := getCertInfoFromHost(host)
 
-	if host.HostConfig == nil {
-		host.HostConfig = &HostOptions{}
+	if host.HostOptions == nil {
+		host.HostOptions = &HostOptions{}
 	}
-	if host.HostConfig.EngineConfig == nil {
-		host.HostConfig.EngineConfig = &engine.EngineOptions{}
+	if host.HostOptions.EngineOptions == nil {
+		host.HostOptions.EngineOptions = &engine.EngineOptions{}
 	}
 
-	if host.HostConfig.SwarmConfig == nil {
-		host.HostConfig.SwarmConfig = &swarm.SwarmOptions{
+	if host.HostOptions.SwarmOptions == nil {
+		host.HostOptions.SwarmOptions = &swarm.SwarmOptions{
 			Address:   "",
 			Discovery: host.SwarmDiscovery,
 			Host:      host.SwarmHost,
@@ -30,7 +30,7 @@ func ValidateHost(host *Host) *Host {
 		}
 	}
 
-	host.HostConfig.AuthConfig = &auth.AuthOptions{
+	host.HostOptions.AuthOptions = &auth.AuthOptions{
 		StorePath:            host.StorePath,
 		CaCertPath:           certInfo.CaCertPath,
 		CaCertRemotePath:     "",
@@ -49,12 +49,12 @@ func ValidateHost(host *Host) *Host {
 // validates host metadata and modifies if needed
 // this is used for configuration updates
 func ValidateHostMetadata(m *HostMetadata) *HostMetadata {
-	if m.HostConfig.EngineConfig == nil {
-		m.HostConfig.EngineConfig = &engine.EngineOptions{}
+	if m.HostOptions.EngineOptions == nil {
+		m.HostOptions.EngineOptions = &engine.EngineOptions{}
 	}
 
-	if m.HostConfig.AuthConfig == nil {
-		m.HostConfig.AuthConfig = &auth.AuthOptions{
+	if m.HostOptions.AuthOptions == nil {
+		m.HostOptions.AuthOptions = &auth.AuthOptions{
 			StorePath:            m.StorePath,
 			CaCertPath:           m.CaCertPath,
 			CaCertRemotePath:     "",

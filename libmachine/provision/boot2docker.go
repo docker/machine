@@ -27,7 +27,7 @@ func NewBoot2DockerProvisioner(d drivers.Driver) Provisioner {
 type Boot2DockerProvisioner struct {
 	OsReleaseInfo *OsRelease
 	Driver        drivers.Driver
-	SwarmConfig   swarm.SwarmOptions
+	SwarmOptions  swarm.SwarmOptions
 }
 
 func (provisioner *Boot2DockerProvisioner) Service(name string, action pkgaction.ServiceAction) error {
@@ -82,23 +82,23 @@ func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
 	return cmd.Run()
 }
 
-func (provisioner *Boot2DockerProvisioner) GetDockerConfigDir() string {
+func (provisioner *Boot2DockerProvisioner) GetDockerOptionsDir() string {
 	return "/var/lib/boot2docker"
 }
 
-func (provisioner *Boot2DockerProvisioner) GenerateDockerConfig(dockerPort int, authConfig auth.AuthOptions) (*DockerConfig, error) {
-	defaultDaemonOpts := getDefaultDaemonOpts(provisioner.Driver.DriverName(), authConfig)
+func (provisioner *Boot2DockerProvisioner) GenerateDockerOptions(dockerPort int, authOptions auth.AuthOptions) (*DockerOptions, error) {
+	defaultDaemonOpts := getDefaultDaemonOpts(provisioner.Driver.DriverName(), authOptions)
 	daemonOpts := fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
-	daemonOptsCfg := path.Join(provisioner.GetDockerConfigDir(), "profile")
+	daemonOptsDir := path.Join(provisioner.GetDockerOptionsDir(), "profile")
 	opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
 	daemonCfg := fmt.Sprintf(`EXTRA_ARGS='%s'
 CACERT=%s
 SERVERCERT=%s
 SERVERKEY=%s
-DOCKER_TLS=no`, opts, authConfig.CaCertRemotePath, authConfig.ServerCertRemotePath, authConfig.ServerKeyRemotePath)
-	return &DockerConfig{
-		EngineConfig:     daemonCfg,
-		EngineConfigPath: daemonOptsCfg,
+DOCKER_TLS=no`, opts, authOptions.CaCertRemotePath, authOptions.ServerCertRemotePath, authOptions.ServerKeyRemotePath)
+	return &DockerOptions{
+		EngineOptions:     daemonCfg,
+		EngineOptionsPath: daemonOptsDir,
 	}, nil
 }
 
@@ -110,7 +110,7 @@ func (provisioner *Boot2DockerProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
 
-func (provisioner *Boot2DockerProvisioner) Provision(swarmConfig swarm.SwarmOptions, authConfig auth.AuthOptions) error {
+func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
@@ -119,11 +119,11 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmConfig swarm.SwarmOpti
 		return err
 	}
 
-	if err := ConfigureAuth(provisioner, authConfig); err != nil {
+	if err := ConfigureAuth(provisioner, authOptions); err != nil {
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmConfig); err != nil {
+	if err := configureSwarm(provisioner, swarmOptions); err != nil {
 		return err
 	}
 

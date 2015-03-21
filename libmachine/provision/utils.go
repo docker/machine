@@ -17,9 +17,9 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-type DockerConfig struct {
-	EngineConfig     string
-	EngineConfigPath string
+type DockerOptions struct {
+	EngineOptions     string
+	EngineOptionsPath string
 }
 
 func installDockerGeneric(p Provisioner) error {
@@ -42,7 +42,7 @@ func installDockerGeneric(p Provisioner) error {
 	return nil
 }
 
-func ConfigureAuth(p Provisioner, authConfig auth.AuthOptions) error {
+func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 	var (
 		err error
 	)
@@ -59,33 +59,33 @@ func ConfigureAuth(p Provisioner, authConfig auth.AuthOptions) error {
 	// copy certs to client dir for docker client
 	machineDir := filepath.Join(utils.GetMachineDir(), machineName)
 
-	if err := utils.CopyFile(authConfig.CaCertPath, filepath.Join(machineDir, "ca.pem")); err != nil {
+	if err := utils.CopyFile(authOptions.CaCertPath, filepath.Join(machineDir, "ca.pem")); err != nil {
 		log.Fatalf("Error copying ca.pem to machine dir: %s", err)
 	}
 
-	if err := utils.CopyFile(authConfig.ClientCertPath, filepath.Join(machineDir, "cert.pem")); err != nil {
+	if err := utils.CopyFile(authOptions.ClientCertPath, filepath.Join(machineDir, "cert.pem")); err != nil {
 		log.Fatalf("Error copying cert.pem to machine dir: %s", err)
 	}
 
-	if err := utils.CopyFile(authConfig.ClientKeyPath, filepath.Join(machineDir, "key.pem")); err != nil {
+	if err := utils.CopyFile(authOptions.ClientKeyPath, filepath.Join(machineDir, "key.pem")); err != nil {
 		log.Fatalf("Error copying key.pem to machine dir: %s", err)
 	}
 
 	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s",
-		authConfig.ServerCertPath,
-		authConfig.CaCertPath,
-		authConfig.PrivateKeyPath,
+		authOptions.ServerCertPath,
+		authOptions.CaCertPath,
+		authOptions.PrivateKeyPath,
 		org,
 	)
 
-	// TODO: Switch to passing just authConfig to this func
+	// TODO: Switch to passing just authOptions to this func
 	// instead of all these individual fields
 	err = utils.GenerateCert(
 		[]string{ip},
-		authConfig.ServerCertPath,
-		authConfig.ServerKeyPath,
-		authConfig.CaCertPath,
-		authConfig.PrivateKeyPath,
+		authOptions.ServerCertPath,
+		authOptions.ServerKeyPath,
+		authOptions.CaCertPath,
+		authOptions.PrivateKeyPath,
 		org,
 		bits,
 	)
@@ -97,7 +97,7 @@ func ConfigureAuth(p Provisioner, authConfig auth.AuthOptions) error {
 		return err
 	}
 
-	dockerDir := p.GetDockerConfigDir()
+	dockerDir := p.GetDockerOptionsDir()
 
 	cmd, err := p.SSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir))
 	if err != nil {
@@ -108,7 +108,7 @@ func ConfigureAuth(p Provisioner, authConfig auth.AuthOptions) error {
 	}
 
 	// upload certs and configure TLS auth
-	caCert, err := ioutil.ReadFile(authConfig.CaCertPath)
+	caCert, err := ioutil.ReadFile(authOptions.CaCertPath)
 	if err != nil {
 		return err
 	}
@@ -116,21 +116,21 @@ func ConfigureAuth(p Provisioner, authConfig auth.AuthOptions) error {
 	// due to windows clients, we cannot use filepath.Join as the paths
 	// will be mucked on the linux hosts
 	machineCaCertPath := path.Join(dockerDir, "ca.pem")
-	authConfig.CaCertRemotePath = machineCaCertPath
+	authOptions.CaCertRemotePath = machineCaCertPath
 
-	serverCert, err := ioutil.ReadFile(authConfig.ServerCertPath)
+	serverCert, err := ioutil.ReadFile(authOptions.ServerCertPath)
 	if err != nil {
 		return err
 	}
 	machineServerCertPath := path.Join(dockerDir, "server.pem")
-	authConfig.ServerCertRemotePath = machineServerCertPath
+	authOptions.ServerCertRemotePath = machineServerCertPath
 
-	serverKey, err := ioutil.ReadFile(authConfig.ServerKeyPath)
+	serverKey, err := ioutil.ReadFile(authOptions.ServerKeyPath)
 	if err != nil {
 		return err
 	}
 	machineServerKeyPath := path.Join(dockerDir, "server-key.pem")
-	authConfig.ServerKeyRemotePath = machineServerKeyPath
+	authOptions.ServerKeyRemotePath = machineServerKeyPath
 
 	cmd, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath))
 	if err != nil {
@@ -174,12 +174,12 @@ func ConfigureAuth(p Provisioner, authConfig auth.AuthOptions) error {
 		dockerPort = dPort
 	}
 
-	dkrcfg, err := p.GenerateDockerConfig(dockerPort, authConfig)
+	dkrcfg, err := p.GenerateDockerOptions(dockerPort, authOptions)
 	if err != nil {
 		return err
 	}
 
-	cmd, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", dkrcfg.EngineConfig, dkrcfg.EngineConfigPath))
+	cmd, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath))
 	if err != nil {
 		return err
 	}
@@ -194,21 +194,21 @@ func ConfigureAuth(p Provisioner, authConfig auth.AuthOptions) error {
 	return nil
 }
 
-func getDefaultDaemonOpts(driverName string, authConfig auth.AuthOptions) string {
+func getDefaultDaemonOpts(driverName string, authOptions auth.AuthOptions) string {
 	return fmt.Sprintf(`--tlsverify --tlscacert=%s --tlskey=%s --tlscert=%s %s`,
-		authConfig.CaCertRemotePath,
-		authConfig.ServerKeyRemotePath,
-		authConfig.ServerCertRemotePath,
+		authOptions.CaCertRemotePath,
+		authOptions.ServerKeyRemotePath,
+		authOptions.ServerCertRemotePath,
 		fmt.Sprintf("--label=provider=%s", driverName),
 	)
 }
 
-func configureSwarm(p Provisioner, swarmConfig swarm.SwarmOptions) error {
-	if !swarmConfig.IsSwarm {
+func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
+	if !swarmOptions.IsSwarm {
 		return nil
 	}
 
-	basePath := p.GetDockerConfigDir()
+	basePath := p.GetDockerOptionsDir()
 	ip, err := p.GetDriver().GetIP()
 	if err != nil {
 		return err
@@ -218,10 +218,10 @@ func configureSwarm(p Provisioner, swarmConfig swarm.SwarmOptions) error {
 	tlsCert := path.Join(basePath, "server.pem")
 	tlsKey := path.Join(basePath, "server-key.pem")
 	masterArgs := fmt.Sprintf("--tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s %s",
-		tlsCaCert, tlsCert, tlsKey, swarmConfig.Host, swarmConfig.Discovery)
-	nodeArgs := fmt.Sprintf("--addr %s:2376 %s", ip, swarmConfig.Discovery)
+		tlsCaCert, tlsCert, tlsKey, swarmOptions.Host, swarmOptions.Discovery)
+	nodeArgs := fmt.Sprintf("--addr %s:2376 %s", ip, swarmOptions.Discovery)
 
-	u, err := url.Parse(swarmConfig.Host)
+	u, err := url.Parse(swarmOptions.Host)
 	if err != nil {
 		return err
 	}
@@ -242,10 +242,10 @@ func configureSwarm(p Provisioner, swarmConfig swarm.SwarmOptions) error {
 		return err
 	}
 
-	dockerDir := p.GetDockerConfigDir()
+	dockerDir := p.GetDockerOptionsDir()
 
 	// if master start master agent
-	if swarmConfig.Master {
+	if swarmOptions.Master {
 		log.Debug("launching swarm master")
 		log.Debugf("master args: %s", masterArgs)
 		cmd, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",

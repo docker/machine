@@ -59,14 +59,14 @@ func getTestDriverFlags() *DriverOptionsMock {
 
 func getDefaultTestHost() (*Host, error) {
 	hostOptions := &HostOptions{
-		EngineConfig: &engine.EngineOptions{},
-		SwarmConfig: &swarm.SwarmOptions{
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
 			Master:    false,
 			Host:      "",
 			Discovery: "",
 			Address:   "",
 		},
-		AuthConfig: &auth.AuthOptions{
+		AuthOptions: &auth.AuthOptions{
 			CaCertPath:     hostTestCaCert,
 			PrivateKeyPath: hostTestPrivateKey,
 		},
@@ -96,7 +96,7 @@ func TestLoadHostExists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	authConfig := host.HostConfig.AuthConfig
+	authOptions := host.HostOptions.AuthOptions
 	if host.Name != hostTestName {
 		t.Fatalf("expected name %s; received %s", hostTestName, host.Name)
 	}
@@ -105,12 +105,12 @@ func TestLoadHostExists(t *testing.T) {
 		t.Fatalf("expected driver %s; received %s", hostTestDriverName, host.DriverName)
 	}
 
-	if authConfig.CaCertPath != hostTestCaCert {
-		t.Fatalf("expected ca cert path %s; received %s", hostTestCaCert, authConfig.CaCertPath)
+	if authOptions.CaCertPath != hostTestCaCert {
+		t.Fatalf("expected ca cert path %s; received %s", hostTestCaCert, authOptions.CaCertPath)
 	}
 
-	if authConfig.PrivateKeyPath != hostTestPrivateKey {
-		t.Fatalf("expected key path %s; received %s", hostTestPrivateKey, authConfig.PrivateKeyPath)
+	if authOptions.PrivateKeyPath != hostTestPrivateKey {
+		t.Fatalf("expected key path %s; received %s", hostTestPrivateKey, authOptions.PrivateKeyPath)
 	}
 }
 
@@ -148,7 +148,7 @@ func TestValidateHostnameInvalid(t *testing.T) {
 	}
 }
 
-func TestHostConfig(t *testing.T) {
+func TestHostOptions(t *testing.T) {
 	store, err := getTestStore()
 	if err != nil {
 		t.Fatal(err)

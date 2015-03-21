@@ -26,11 +26,11 @@ var (
 )
 
 type Host struct {
-	Name       string `json:"-"`
-	DriverName string
-	Driver     drivers.Driver
-	StorePath  string
-	HostConfig *HostOptions
+	Name        string `json:"-"`
+	DriverName  string
+	Driver      drivers.Driver
+	StorePath   string
+	HostOptions *HostOptions
 
 	// deprecated options; these are left to assist in config migrations
 	SwarmHost      string
@@ -45,17 +45,17 @@ type Host struct {
 }
 
 type HostOptions struct {
-	Driver       string
-	Memory       int
-	Disk         int
-	EngineConfig *engine.EngineOptions
-	SwarmConfig  *swarm.SwarmOptions
-	AuthConfig   *auth.AuthOptions
+	Driver        string
+	Memory        int
+	Disk          int
+	EngineOptions *engine.EngineOptions
+	SwarmOptions  *swarm.SwarmOptions
+	AuthOptions   *auth.AuthOptions
 }
 
 type HostMetadata struct {
 	DriverName     string
-	HostConfig     HostOptions
+	HostOptions    HostOptions
 	StorePath      string
 	CaCertPath     string
 	PrivateKeyPath string
@@ -64,19 +64,19 @@ type HostMetadata struct {
 	ClientCertPath string
 }
 
-func NewHost(name, driverName string, hostConfig *HostOptions) (*Host, error) {
-	authConfig := hostConfig.AuthConfig
+func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
+	authOptions := hostOptions.AuthOptions
 	storePath := filepath.Join(utils.GetMachineDir(), name)
-	driver, err := drivers.NewDriver(driverName, name, storePath, authConfig.CaCertPath, authConfig.PrivateKeyPath)
+	driver, err := drivers.NewDriver(driverName, name, storePath, authOptions.CaCertPath, authOptions.PrivateKeyPath)
 	if err != nil {
 		return nil, err
 	}
 	return &Host{
-		Name:       name,
-		DriverName: driverName,
-		Driver:     driver,
-		StorePath:  storePath,
-		HostConfig: hostConfig,
+		Name:        name,
+		DriverName:  driverName,
+		Driver:      driver,
+		StorePath:   storePath,
+		HostOptions: hostOptions,
 	}, nil
 }
 
@@ -121,7 +121,7 @@ func (h *Host) Create(name string) error {
 			return err
 		}
 
-		if err := provisioner.Provision(*h.HostConfig.SwarmConfig, *h.HostConfig.AuthConfig); err != nil {
+		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions); err != nil {
 			return err
 		}
 	}
@@ -271,9 +271,9 @@ func (h *Host) LoadConfig() error {
 
 	meta := ValidateHostMetadata(&hostMetadata)
 
-	authConfig := meta.HostConfig.AuthConfig
+	authOptions := meta.HostOptions.AuthOptions
 
-	driver, err := drivers.NewDriver(hostMetadata.DriverName, h.Name, h.StorePath, authConfig.CaCertPath, authConfig.PrivateKeyPath)
+	driver, err := drivers.NewDriver(hostMetadata.DriverName, h.Name, h.StorePath, authOptions.CaCertPath, authOptions.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -294,7 +294,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	if err := provision.ConfigureAuth(provisioner, *h.HostConfig.AuthConfig); err != nil {
+	if err := provision.ConfigureAuth(provisioner, *h.HostOptions.AuthOptions); err != nil {
 		return err
 	}
 
