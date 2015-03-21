@@ -107,6 +107,51 @@ function setup() {
   [[ ${lines[1]} == *"Running"*  ]]
 }
 
+@test "$DRIVER: VBoxManage pause" {
+  run VBoxManage controlvm $NAME pause
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: machine should show paused after VBoxManage pause" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Paused"*  ]]
+}
+
+@test "$DRIVER: start" {
+  run machine start $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: machine should show running after start" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Running"*  ]]
+}
+
+@test "$DRIVER: VBoxManage savestate" {
+  run VBoxManage controlvm $NAME savestate
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: machine should show saved after VBoxManage savestate" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"$NAME"*  ]]
+  [[ ${lines[1]} == *"Saved"*  ]]
+}
+
+@test "$DRIVER: start" {
+  run machine start $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: machine should show running after start" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Running"*  ]]
+}
+
 @test "$DRIVER: remove" {
   run machine rm -f $NAME
   [ "$status" -eq 0  ]
@@ -126,4 +171,3 @@ function setup() {
   run rm -rf $MACHINE_STORAGE_PATH
   [ "$status" -eq 0  ]
 }
-
