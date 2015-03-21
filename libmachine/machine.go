@@ -19,7 +19,7 @@ func New(store Store) (*Machine, error) {
 	}, nil
 }
 
-func (m *Machine) Create(name string, driverName string, hostConfig *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
+func (m *Machine) Create(name string, driverName string, hostOptions *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
 	exists, err := m.store.Exists(name)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func (m *Machine) Create(name string, driverName string, hostConfig *HostOptions
 
 	hostPath := filepath.Join(utils.GetMachineDir(), name)
 
-	host, err := NewHost(name, driverName, hostConfig)
+	host, err := NewHost(name, driverName, hostOptions)
 	if err != nil {
 		return host, err
 	}

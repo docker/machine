@@ -30,7 +30,7 @@ type UbuntuProvisioner struct {
 	packages      []string
 	OsReleaseInfo *OsRelease
 	Driver        drivers.Driver
-	SwarmConfig   swarm.SwarmOptions
+	SwarmOptions  swarm.SwarmOptions
 }
 
 func (provisioner *UbuntuProvisioner) Service(name string, action pkgaction.ServiceAction) error {
@@ -72,7 +72,7 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 	return nil
 }
 
-func (provisioner *UbuntuProvisioner) Provision(swarmConfig swarm.SwarmOptions, authConfig auth.AuthOptions) error {
+func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
@@ -87,11 +87,11 @@ func (provisioner *UbuntuProvisioner) Provision(swarmConfig swarm.SwarmOptions, 
 		return err
 	}
 
-	if err := ConfigureAuth(provisioner, authConfig); err != nil {
+	if err := ConfigureAuth(provisioner, authOptions); err != nil {
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmConfig); err != nil {
+	if err := configureSwarm(provisioner, swarmOptions); err != nil {
 		return err
 	}
 
@@ -129,7 +129,7 @@ func (provisioner *UbuntuProvisioner) SetHostname(hostname string) error {
 	return cmd.Run()
 }
 
-func (provisioner *UbuntuProvisioner) GetDockerConfigDir() string {
+func (provisioner *UbuntuProvisioner) GetDockerOptionsDir() string {
 	return "/etc/docker"
 }
 
@@ -145,15 +145,15 @@ func (provisioner *UbuntuProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
 
-func (provisioner *UbuntuProvisioner) GenerateDockerConfig(dockerPort int, authConfig auth.AuthOptions) (*DockerConfig, error) {
-	defaultDaemonOpts := getDefaultDaemonOpts(provisioner.Driver.DriverName(), authConfig)
+func (provisioner *UbuntuProvisioner) GenerateDockerOptions(dockerPort int, authOptions auth.AuthOptions) (*DockerOptions, error) {
+	defaultDaemonOpts := getDefaultDaemonOpts(provisioner.Driver.DriverName(), authOptions)
 	daemonOpts := fmt.Sprintf("--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:%d", dockerPort)
-	daemonOptsCfg := "/etc/default/docker"
+	daemonOptsDir := "/etc/default/docker"
 	opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
 	daemonCfg := fmt.Sprintf("export DOCKER_OPTS=\\\"%s\\\"", opts)
-	return &DockerConfig{
-		EngineConfig:     daemonCfg,
-		EngineConfigPath: daemonOptsCfg,
+	return &DockerOptions{
+		EngineOptions:     daemonCfg,
+		EngineOptionsPath: daemonOptsDir,
 	}, nil
 }
 
