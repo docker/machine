@@ -60,13 +60,6 @@ type hostListItem struct {
 	SwarmConfig swarm.SwarmOptions
 }
 
-type certPathInfo struct {
-	CaCertPath     string
-	CaKeyPath      string
-	ClientCertPath string
-	ClientKeyPath  string
-}
-
 func sortHostListItemsByName(items []hostListItem) {
 	m := make(map[string]hostListItem, len(items))
 	s := make([]string, len(items))
@@ -1119,7 +1112,7 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 // codegangsta/cli will not set the cert paths if the storage-path
 // is set to something different so we cannot use the paths
 // in the global options. le sigh.
-func getCertPathInfo(c *cli.Context) certPathInfo {
+func getCertPathInfo(c *cli.Context) libmachine.CertPathInfo {
 	// setup cert paths
 	caCertPath := c.GlobalString("tls-ca-cert")
 	caKeyPath := c.GlobalString("tls-ca-key")
@@ -1142,7 +1135,7 @@ func getCertPathInfo(c *cli.Context) certPathInfo {
 		clientKeyPath = filepath.Join(utils.GetMachineCertDir(), "key.pem")
 	}
 
-	return certPathInfo{
+	return libmachine.CertPathInfo{
 		CaCertPath:     caCertPath,
 		CaKeyPath:      caKeyPath,
 		ClientCertPath: clientCertPath,
