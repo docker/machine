@@ -56,6 +56,7 @@ Core Stability and Driver Updates
   - Note: this will restart the Docker engine to apply
 - Minor UI updates including improved sorting and updated command docs
 - Bug with `config` and `env` with spaces fixed
+  - Note: you now must use `eval $(docker-machine env machine)` to load environment settings
 - Updates to better support `fish` shell
 - Use `--tlsverify` for both `config` and `env` commands
 - Commands now use eval for better interoperability with shell
