@@ -130,11 +130,18 @@ func getDecodedResponse(r http.Response, into interface{}) error {
 }
 
 func NewEC2(auth Auth, region string) *EC2 {
-	endpoint := fmt.Sprintf("https://ec2.%s.amazonaws.com", region)
+	return &EC2{
+		Endpoint: fmt.Sprintf("https://ec2.%s.amazonaws.com", region),
+		Auth:     auth,
+		Region:   region,
+	}
+}
+
+func NewEC2WithEndpoint(auth Auth, region string, endpoint string) *EC2 {
 	return &EC2{
 		Endpoint: endpoint,
 		Auth:     auth,
-		Region:   region,
+		Region: region,
 	}
 }
 
