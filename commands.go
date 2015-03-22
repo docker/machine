@@ -30,6 +30,7 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/state"
@@ -39,33 +40,24 @@ import (
 type machineConfig struct {
 	machineName    string
 	machineDir     string
-	caCertPath     string
-	caKeyPath      string
-	clientCertPath string
+	machineUrl     string
 	clientKeyPath  string
 	serverCertPath string
+	clientCertPath string
+	caCertPath     string
+	caKeyPath      string
 	serverKeyPath  string
-	machineUrl     string
-	swarmMaster    bool
-	swarmHost      string
-	swarmDiscovery string
+	AuthOptions    auth.AuthOptions
+	SwarmOptions   swarm.SwarmOptions
 }
 
 type hostListItem struct {
-	Name           string
-	Active         bool
-	DriverName     string
-	State          state.State
-	URL            string
-	SwarmMaster    bool
-	SwarmDiscovery string
-}
-
-type certPathInfo struct {
-	CaCertPath     string
-	CaKeyPath      string
-	ClientCertPath string
-	ClientKeyPath  string
+	Name         string
+	Active       bool
+	DriverName   string
+	State        state.State
+	URL          string
+	SwarmOptions swarm.SwarmOptions
 }
 
 func sortHostListItemsByName(items []hostListItem) {
@@ -407,17 +399,25 @@ func cmdCreate(c *cli.Context) {
 	}
 
 	hostOptions := &libmachine.HostOptions{
-		DriverOptions: c,
+		AuthOptions: &auth.AuthOptions{
+			CaCertPath:     certInfo.CaCertPath,
+			PrivateKeyPath: certInfo.CaKeyPath,
+			ClientCertPath: certInfo.ClientCertPath,
+			ClientKeyPath:  certInfo.ClientKeyPath,
+			ServerCertPath: filepath.Join(utils.GetMachineDir(), name, "server.pem"),
+			ServerKeyPath:  filepath.Join(utils.GetMachineDir(), name, "server-key.pem"),
+		},
 		EngineOptions: &engine.EngineOptions{},
 		SwarmOptions: &swarm.SwarmOptions{
-			Master:    c.GlobalBool("swarm-master"),
-			Discovery: c.GlobalString("swarm-discovery"),
-			Address:   c.GlobalString("swarm-addr"),
-			Host:      c.GlobalString("swarm-host"),
+			IsSwarm:   c.Bool("swarm"),
+			Master:    c.Bool("swarm-master"),
+			Discovery: c.String("swarm-discovery"),
+			Address:   c.String("swarm-addr"),
+			Host:      c.String("swarm-host"),
 		},
 	}
 
-	host, err := mcn.Create(name, driver, hostOptions)
+	host, err := mcn.Create(name, driver, hostOptions, c)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
 		log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
@@ -456,10 +456,10 @@ func cmdConfig(c *cli.Context) {
 	}
 
 	if c.Bool("swarm") {
-		if !cfg.swarmMaster {
+		if !cfg.SwarmOptions.Master {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
 		}
-		u, err := url.Parse(cfg.swarmHost)
+		u, err := url.Parse(cfg.SwarmOptions.Host)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -563,13 +563,14 @@ func cmdLs(c *cli.Context) {
 	swarmInfo := make(map[string]string)
 
 	for _, host := range hostList {
+		swarmOptions := host.HostOptions.SwarmOptions
 		if !quiet {
-			if host.SwarmOptions.Master {
-				swarmMasters[host.SwarmOptions.Discovery] = host.Name
+			if swarmOptions.Master {
+				swarmMasters[swarmOptions.Discovery] = host.Name
 			}
 
-			if host.SwarmOptions.Discovery != "" {
-				swarmInfo[host.Name] = host.SwarmOptions.Discovery
+			if swarmOptions.Discovery != "" {
+				swarmInfo[host.Name] = swarmOptions.Discovery
 			}
 
 			go getHostState(*host, defaultStore, hostListItems)
@@ -596,9 +597,9 @@ func cmdLs(c *cli.Context) {
 
 		swarmInfo := ""
 
-		if item.SwarmDiscovery != "" {
-			swarmInfo = swarmMasters[item.SwarmDiscovery]
-			if item.SwarmMaster {
+		if item.SwarmOptions.Discovery != "" {
+			swarmInfo = swarmMasters[item.SwarmOptions.Discovery]
+			if item.SwarmOptions.Master {
 				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
 			}
 		}
@@ -674,10 +675,10 @@ func cmdEnv(c *cli.Context) {
 
 	dockerHost := cfg.machineUrl
 	if c.Bool("swarm") {
-		if !cfg.swarmMaster {
+		if !cfg.SwarmOptions.Master {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
 		}
-		u, err := url.Parse(cfg.swarmHost)
+		u, err := url.Parse(cfg.SwarmOptions.Host)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -1032,13 +1033,12 @@ func getHostState(host libmachine.Host, store libmachine.Store, hostListItems ch
 	}
 
 	hostListItems <- hostListItem{
-		Name:           host.Name,
-		Active:         isActive,
-		DriverName:     host.Driver.DriverName(),
-		State:          currentState,
-		URL:            url,
-		SwarmMaster:    host.SwarmOptions.Master,
-		SwarmDiscovery: host.SwarmOptions.Discovery,
+		Name:         host.Name,
+		Active:       isActive,
+		DriverName:   host.Driver.DriverName(),
+		State:        currentState,
+		URL:          url,
+		SwarmOptions: *host.HostOptions.SwarmOptions,
 	}
 }
 
@@ -1096,16 +1096,15 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	return &machineConfig{
 		machineName:    name,
 		machineDir:     machineDir,
-		caCertPath:     caCert,
-		caKeyPath:      caKey,
-		clientCertPath: clientCert,
-		clientKeyPath:  clientKey,
-		serverCertPath: serverCert,
-		serverKeyPath:  serverKey,
 		machineUrl:     machineUrl,
-		swarmMaster:    machine.SwarmOptions.Master,
-		swarmHost:      machine.SwarmOptions.Host,
-		swarmDiscovery: machine.SwarmOptions.Discovery,
+		clientKeyPath:  clientKey,
+		clientCertPath: clientCert,
+		serverCertPath: serverCert,
+		caKeyPath:      caKey,
+		caCertPath:     caCert,
+		serverKeyPath:  serverKey,
+		AuthOptions:    *machine.HostOptions.AuthOptions,
+		SwarmOptions:   *machine.HostOptions.SwarmOptions,
 	}, nil
 }
 
@@ -1113,7 +1112,7 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 // codegangsta/cli will not set the cert paths if the storage-path
 // is set to something different so we cannot use the paths
 // in the global options. le sigh.
-func getCertPathInfo(c *cli.Context) certPathInfo {
+func getCertPathInfo(c *cli.Context) libmachine.CertPathInfo {
 	// setup cert paths
 	caCertPath := c.GlobalString("tls-ca-cert")
 	caKeyPath := c.GlobalString("tls-ca-key")
@@ -1136,7 +1135,7 @@ func getCertPathInfo(c *cli.Context) certPathInfo {
 		clientKeyPath = filepath.Join(utils.GetMachineCertDir(), "key.pem")
 	}
 
-	return certPathInfo{
+	return libmachine.CertPathInfo{
 		CaCertPath:     caCertPath,
 		CaKeyPath:      caKeyPath,
 		ClientCertPath: clientCertPath,

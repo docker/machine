@@ -7,17 +7,16 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/codegangsta/cli"
-	drivers "github.com/docker/machine/drivers"
+	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -88,7 +87,16 @@ func getDefaultTestHost() (*libmachine.Host, error) {
 		Discovery: "",
 		Address:   "",
 	}
-	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostTestStorePath, hostTestCaCert, hostTestPrivateKey, engineOptions, swarmOptions)
+	authOptions := &auth.AuthOptions{
+		CaCertPath:     hostTestCaCert,
+		PrivateKeyPath: hostTestPrivateKey,
+	}
+	hostOptions := &libmachine.HostOptions{
+		EngineOptions: engineOptions,
+		SwarmOptions:  swarmOptions,
+		AuthOptions:   authOptions,
+	}
+	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -116,113 +124,6 @@ func (d DriverOptionsMock) Int(key string) int {
 func (d DriverOptionsMock) Bool(key string) bool {
 	return d.Data[key].(bool)
 }
-
-type FakeDriver struct {
-	MockState state.State
-}
-
-func (d *FakeDriver) DriverName() string {
-	return "fakedriver"
-}
-
-func (d *FakeDriver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *FakeDriver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *FakeDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	return nil
-}
-
-func (d *FakeDriver) GetURL() (string, error) {
-	return "", nil
-}
-
-func (d *FakeDriver) GetMachineName() string {
-	return ""
-}
-
-func (d *FakeDriver) GetProviderType() provider.ProviderType {
-	return provider.None
-}
-
-func (d *FakeDriver) GetIP() (string, error) {
-	return "", nil
-}
-
-func (d *FakeDriver) GetSSHHostname() (string, error) {
-	return "", nil
-}
-
-func (d *FakeDriver) GetSSHKeyPath() string {
-	return ""
-}
-
-func (d *FakeDriver) GetSSHPort() (int, error) {
-	return 0, nil
-}
-
-func (d *FakeDriver) GetSSHUsername() string {
-	return ""
-}
-
-func (d *FakeDriver) GetState() (state.State, error) {
-	return d.MockState, nil
-}
-
-func (d *FakeDriver) PreCreateCheck() error {
-	return nil
-}
-
-func (d *FakeDriver) Create() error {
-	return nil
-}
-
-func (d *FakeDriver) Remove() error {
-	return nil
-}
-
-func (d *FakeDriver) Start() error {
-	d.MockState = state.Running
-	return nil
-}
-
-func (d *FakeDriver) Stop() error {
-	d.MockState = state.Stopped
-	return nil
-}
-
-func (d *FakeDriver) Restart() error {
-	return nil
-}
-
-func (d *FakeDriver) Kill() error {
-	return nil
-}
-
-func (d *FakeDriver) Upgrade() error {
-	return nil
-}
-
-func (d *FakeDriver) StartDocker() error {
-	return nil
-}
-
-func (d *FakeDriver) StopDocker() error {
-	return nil
-}
-
-func (d *FakeDriver) GetDockerConfigDir() string {
-	return ""
-}
-
-func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return &exec.Cmd{}, nil
-}
-
 func TestGetHostState(t *testing.T) {
 	defer cleanup()
 
@@ -237,40 +138,46 @@ func TestGetHostState(t *testing.T) {
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
 			StorePath: store.GetPath(),
-			SwarmOptions: &swarm.SwarmOptions{
-				Master:    false,
-				Address:   "",
-				Discovery: "",
+			HostOptions: &libmachine.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
 			},
 		},
 		{
 			Name:       "bar",
 			DriverName: "fakedriver",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Stopped,
 			},
 			StorePath: store.GetPath(),
-			SwarmOptions: &swarm.SwarmOptions{
-				Master:    false,
-				Address:   "",
-				Discovery: "",
+			HostOptions: &libmachine.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
 			},
 		},
 		{
 			Name:       "baz",
 			DriverName: "fakedriver",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
 			StorePath: store.GetPath(),
-			SwarmOptions: &swarm.SwarmOptions{
-				Master:    false,
-				Address:   "",
-				Discovery: "",
+			HostOptions: &libmachine.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
 			},
 		},
 	}
@@ -315,7 +222,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
 			StorePath: storePath,
@@ -323,7 +230,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 		{
 			Name:       "bar",
 			DriverName: "fakedriver",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Stopped,
 			},
 			StorePath: storePath,
@@ -335,7 +242,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 			// virtualbox...  (to test serial actions)
 			// It's actually FakeDriver!
 			DriverName: "virtualbox",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Stopped,
 			},
 			StorePath: storePath,
@@ -343,7 +250,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 		{
 			Name:       "spam",
 			DriverName: "virtualbox",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
 			StorePath: storePath,
@@ -351,7 +258,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 		{
 			Name:       "eggs",
 			DriverName: "fakedriver",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Stopped,
 			},
 			StorePath: storePath,
@@ -359,7 +266,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 		{
 			Name:       "ham",
 			DriverName: "fakedriver",
-			Driver: &FakeDriver{
+			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
 			StorePath: storePath,
@@ -428,7 +335,6 @@ func TestCmdConfig(t *testing.T) {
 
 	flags := getTestDriverFlags()
 	hostOptions := &libmachine.HostOptions{
-		DriverOptions: flags,
 		EngineOptions: &engine.EngineOptions{},
 		SwarmOptions: &swarm.SwarmOptions{
 			Master:    false,
@@ -436,9 +342,10 @@ func TestCmdConfig(t *testing.T) {
 			Address:   "",
 			Host:      "",
 		},
+		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions)
+	host, err := mcn.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -525,7 +432,6 @@ func TestCmdEnvBash(t *testing.T) {
 	}
 
 	hostOptions := &libmachine.HostOptions{
-		DriverOptions: flags,
 		EngineOptions: &engine.EngineOptions{},
 		SwarmOptions: &swarm.SwarmOptions{
 			Master:    false,
@@ -533,9 +439,10 @@ func TestCmdEnvBash(t *testing.T) {
 			Address:   "",
 			Host:      "",
 		},
+		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions)
+	host, err := mcn.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -620,7 +527,6 @@ func TestCmdEnvFish(t *testing.T) {
 	}
 
 	hostOptions := &libmachine.HostOptions{
-		DriverOptions: flags,
 		EngineOptions: &engine.EngineOptions{},
 		SwarmOptions: &swarm.SwarmOptions{
 			Master:    false,
@@ -628,9 +534,10 @@ func TestCmdEnvFish(t *testing.T) {
 			Address:   "",
 			Host:      "",
 		},
+		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions)
+	host, err := mcn.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
