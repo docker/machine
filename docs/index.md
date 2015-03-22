@@ -595,9 +595,6 @@ tcp://192.168.99.109:2376
 
 ## Drivers
 
-TODO: List all possible values (where applicable) for all flags for every
-driver.
-
 #### Amazon Web Services
 Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and a VPC ID.  To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs.  Select the one where you would like to launch the instance.
 
