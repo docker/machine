@@ -20,6 +20,10 @@ func New(store Store) (*Machine, error) {
 }
 
 func (m *Machine) Create(name string, driverName string, hostOptions *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
+	validName := ValidateHostName(name)
+	if !validName {
+		return nil, ErrInvalidHostname
+	}
 	exists, err := m.store.Exists(name)
 	if err != nil {
 		return nil, err
