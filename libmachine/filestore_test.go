@@ -195,7 +195,9 @@ func TestStoreGetSetActive(t *testing.T) {
 
 	// No hosts set
 	host, err := store.GetActive()
-	if err != nil {
+	if err.Error() == "No active host" {
+		t.Logf("OK, no active host initally: %v", err)
+	} else if err != nil {
 		t.Fatal(err)
 	}
 
@@ -240,7 +242,9 @@ func TestStoreGetSetActive(t *testing.T) {
 	}
 
 	host, err = store.GetActive()
-	if err != nil {
+	if err.Error() == "No active host" {
+		t.Logf("OK, success to remove active host: %v", err)
+	} else if err != nil {
 		t.Fatal(err)
 	}
 

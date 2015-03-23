@@ -2,6 +2,7 @@ package libmachine
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -113,7 +114,7 @@ func (s Filestore) Get(name string) (*Host, error) {
 func (s Filestore) GetActive() (*Host, error) {
 	hostName, err := ioutil.ReadFile(s.activePath())
 	if os.IsNotExist(err) {
-		return nil, nil
+		return nil, fmt.Errorf("No active host")
 	} else if err != nil {
 		return nil, err
 	}
