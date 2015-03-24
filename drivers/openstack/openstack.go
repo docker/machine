@@ -455,7 +455,7 @@ const (
 
 func (d *Driver) checkConfig() error {
 	if d.AuthUrl == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Autentication URL", "OS_AUTH_URL", "--openstack-auth-url")
+		return fmt.Errorf(errorMandatoryEnvOrOption, "Authentication URL", "OS_AUTH_URL", "--openstack-auth-url")
 	}
 	if d.Username == "" {
 		return fmt.Errorf(errorMandatoryEnvOrOption, "Username", "OS_USERNAME", "--openstack-username")
