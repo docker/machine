@@ -5,6 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers/openstack"
+	"github.com/docker/machine/version"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/rackspace"
 )
@@ -36,10 +37,18 @@ func (c *Client) Authenticate(d *openstack.Driver) error {
 		APIKey:   apiKey,
 	}
 
-	provider, err := rackspace.AuthenticatedClient(opts)
+	provider, err := rackspace.NewClient(rackspace.RackspaceUSIdentity)
 	if err != nil {
 		return err
 	}
+
+	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%s", version.VERSION))
+
+	err = rackspace.Authenticate(provider, opts)
+	if err != nil {
+		return err
+	}
+
 	c.Provider = provider
 
 	return nil
