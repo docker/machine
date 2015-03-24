@@ -88,7 +88,7 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 	u, err := url.Parse(isoUrl)
 	var src io.ReadCloser
-	if u.Scheme == "file" {
+	if u.Scheme == "file" || u.Scheme == "" {
 		s, err := os.Open(u.Path)
 		if err != nil {
 			return err
