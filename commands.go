@@ -434,7 +434,7 @@ func cmdCreate(c *cli.Context) {
 	case "fish":
 		info = fmt.Sprintf("%s env %s | source", c.App.Name, name)
 	default:
-		info = fmt.Sprintf(`eval "$(%s env %s)"`, c.App.Name, name)
+		info = fmt.Sprintf(`eval $(%s env %s)`, c.App.Name, name)
 	}
 
 	log.Infof("%q has been created and is now the active machine.", name)
