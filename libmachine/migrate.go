@@ -53,8 +53,8 @@ func FillNestedHost(host *Host) *Host {
 	return host
 }
 
-// fills nested host metadata and modifies if needed
-// this is used for configuration updates
+// FillNestedHostMetadata fills nested host metadata and modifies if needed.
+// This is used for configuration updates
 func FillNestedHostMetadata(m *HostMetadata) *HostMetadata {
 	if m.HostOptions.EngineOptions == nil {
 		m.HostOptions.EngineOptions = &engine.EngineOptions{}

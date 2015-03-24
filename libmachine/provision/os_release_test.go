@@ -59,13 +59,13 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 		AnsiColor:    "",
 		Name:         "Ubuntu",
 		Version:      "14.04, Trusty Tahr",
-		Id:           "ubuntu",
-		IdLike:       "debian",
+		ID:           "ubuntu",
+		IDLike:       "debian",
 		PrettyName:   "Ubuntu 14.04 LTS",
-		VersionId:    "14.04",
-		HomeUrl:      "http://www.ubuntu.com/",
-		SupportUrl:   "http://help.ubuntu.com/",
-		BugReportUrl: "http://bugs.launchpad.net/ubuntu/",
+		VersionID:    "14.04",
+		HomeURL:      "http://www.ubuntu.com/",
+		SupportURL:   "http://help.ubuntu.com/",
+		BugReportURL: "http://bugs.launchpad.net/ubuntu/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
@@ -81,13 +81,13 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 		AnsiColor:    "1;32",
 		Name:         "Gentoo",
 		Version:      "",
-		Id:           "gentoo",
-		IdLike:       "",
+		ID:           "gentoo",
+		IDLike:       "",
 		PrettyName:   "Gentoo/Linux",
-		VersionId:    "",
-		HomeUrl:      "http://www.gentoo.org/",
-		SupportUrl:   "http://www.gentoo.org/main/en/support.xml",
-		BugReportUrl: "https://bugs.gentoo.org/",
+		VersionID:    "",
+		HomeURL:      "http://www.gentoo.org/",
+		SupportURL:   "http://www.gentoo.org/main/en/support.xml",
+		BugReportURL: "https://bugs.gentoo.org/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
@@ -103,13 +103,13 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 		AnsiColor:    "",
 		Name:         "Ubuntu",
 		Version:      "14.04, Trusty Tahr",
-		Id:           "ubuntu",
-		IdLike:       "debian",
+		ID:           "ubuntu",
+		IDLike:       "debian",
 		PrettyName:   "",
-		VersionId:    "14.04",
-		HomeUrl:      "http://www.ubuntu.com/",
-		SupportUrl:   "http://help.ubuntu.com/",
-		BugReportUrl: "http://bugs.launchpad.net/ubuntu/",
+		VersionID:    "14.04",
+		HomeURL:      "http://www.ubuntu.com/",
+		SupportURL:   "http://help.ubuntu.com/",
+		BugReportURL: "http://bugs.launchpad.net/ubuntu/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
@@ -124,13 +124,13 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 	expectedOsr = OsRelease{
 		Name:         "CentOS Linux",
 		Version:      "7 (Core)",
-		Id:           "centos",
-		IdLike:       "rhel fedora",
+		ID:           "centos",
+		IDLike:       "rhel fedora",
 		PrettyName:   "CentOS Linux 7 (Core)",
 		AnsiColor:    "0;31",
-		VersionId:    "7",
-		HomeUrl:      "https://www.centos.org/",
-		BugReportUrl: "https://bugs.centos.org/",
+		VersionID:    "7",
+		HomeURL:      "https://www.centos.org/",
+		BugReportURL: "https://bugs.centos.org/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {

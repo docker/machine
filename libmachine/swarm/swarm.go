@@ -14,8 +14,8 @@ type SwarmOptions struct {
 	Strategy   string
 	Heartbeat  int
 	Overcommit float64
-	TlsCaCert  string
-	TlsCert    string
-	TlsKey     string
-	TlsVerify  bool
+	TLSCaCert  string
+	TLSCert    string
+	TLSKey     string
+	TLSVerify  bool
 }

@@ -6,14 +6,14 @@ package errors
 
 import "fmt"
 
-type VmError struct {
+type VMError struct {
 	operation string
 	vm        string
 	reason    string
 }
 
-func NewVmError(operation, vm, reason string) error {
-	err := VmError{
+func NewVMError(operation, vm, reason string) error {
+	err := VMError{
 		vm:        vm,
 		operation: operation,
 		reason:    reason,
@@ -21,6 +21,6 @@ func NewVmError(operation, vm, reason string) error {
 	return &err
 }
 
-func (err *VmError) Error() string {
+func (err *VMError) Error() string {
 	return fmt.Sprintf("Unable to %s docker host %s: %s", err.operation, err.vm, err.reason)
 }

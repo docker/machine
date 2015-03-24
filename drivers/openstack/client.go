@@ -32,16 +32,16 @@ type Client interface {
 	RestartInstance(d *Driver) error
 	DeleteInstance(d *Driver) error
 	WaitForInstanceStatus(d *Driver, status string, timeout int) error
-	GetInstanceIpAddresses(d *Driver) ([]IpAddress, error)
+	GetInstanceIPAddresses(d *Driver) ([]IPAddress, error)
 	CreateKeyPair(d *Driver, name string, publicKey string) error
 	DeleteKeyPair(d *Driver, name string) error
-	GetNetworkId(d *Driver) (string, error)
-	GetFlavorId(d *Driver) (string, error)
-	GetImageId(d *Driver) (string, error)
-	AssignFloatingIP(d *Driver, floatingIp *FloatingIp, portId string) error
-	GetFloatingIPs(d *Driver) ([]FloatingIp, error)
-	GetFloatingIpPoolId(d *Driver) (string, error)
-	GetInstancePortId(d *Driver) (string, error)
+	GetNetworkID(d *Driver) (string, error)
+	GetFlavorID(d *Driver) (string, error)
+	GetImageID(d *Driver) (string, error)
+	AssignFloatingIP(d *Driver, floatingIP *FloatingIP, portID string) error
+	GetFloatingIPs(d *Driver) ([]FloatingIP, error)
+	GetFloatingIPPoolID(d *Driver) (string, error)
+	GetInstancePortID(d *Driver) (string, error)
 }
 
 type GenericClient struct {
@@ -53,14 +53,14 @@ type GenericClient struct {
 func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 	serverOpts := servers.CreateOpts{
 		Name:           d.MachineName,
-		FlavorRef:      d.FlavorId,
-		ImageRef:       d.ImageId,
+		FlavorRef:      d.FlavorID,
+		ImageRef:       d.ImageID,
 		SecurityGroups: d.SecurityGroups,
 	}
-	if d.NetworkId != "" {
+	if d.NetworkID != "" {
 		serverOpts.Networks = []servers.Network{
 			{
-				UUID: d.NetworkId,
+				UUID: d.NetworkID,
 			},
 		}
 	}
@@ -82,18 +82,18 @@ const (
 	Fixed    string = "fixed"
 )
 
-type IpAddress struct {
+type IPAddress struct {
 	Network     string
 	AddressType string
 	Address     string
 	Mac         string
 }
 
-type FloatingIp struct {
-	Id        string
-	Ip        string
-	NetworkId string
-	PortId    string
+type FloatingIP struct {
+	ID        string
+	IP        string
+	NetworkID string
+	PortID    string
 }
 
 func (c *GenericClient) GetInstanceState(d *Driver) (string, error) {
@@ -105,51 +105,51 @@ func (c *GenericClient) GetInstanceState(d *Driver) (string, error) {
 }
 
 func (c *GenericClient) StartInstance(d *Driver) error {
-	if result := startstop.Start(c.Compute, d.MachineId); result.Err != nil {
+	if result := startstop.Start(c.Compute, d.MachineID); result.Err != nil {
 		return result.Err
 	}
 	return nil
 }
 
 func (c *GenericClient) StopInstance(d *Driver) error {
-	if result := startstop.Stop(c.Compute, d.MachineId); result.Err != nil {
+	if result := startstop.Stop(c.Compute, d.MachineID); result.Err != nil {
 		return result.Err
 	}
 	return nil
 }
 
 func (c *GenericClient) RestartInstance(d *Driver) error {
-	if result := servers.Reboot(c.Compute, d.MachineId, servers.SoftReboot); result.Err != nil {
+	if result := servers.Reboot(c.Compute, d.MachineID, servers.SoftReboot); result.Err != nil {
 		return result.Err
 	}
 	return nil
 }
 
 func (c *GenericClient) DeleteInstance(d *Driver) error {
-	if result := servers.Delete(c.Compute, d.MachineId); result.Err != nil {
+	if result := servers.Delete(c.Compute, d.MachineID); result.Err != nil {
 		return result.Err
 	}
 	return nil
 }
 
 func (c *GenericClient) WaitForInstanceStatus(d *Driver, status string, timeout int) error {
-	if err := servers.WaitForStatus(c.Compute, d.MachineId, status, timeout); err != nil {
+	if err := servers.WaitForStatus(c.Compute, d.MachineID, status, timeout); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
+func (c *GenericClient) GetInstanceIPAddresses(d *Driver) ([]IPAddress, error) {
 	server, err := c.GetServerDetail(d)
 	if err != nil {
 		return nil, err
 	}
-	addresses := []IpAddress{}
+	addresses := []IPAddress{}
 	for network, networkAddresses := range server.Addresses {
 		for _, element := range networkAddresses.([]interface{}) {
 			address := element.(map[string]interface{})
 
-			addr := IpAddress{
+			addr := IPAddress{
 				Network: network,
 				Address: address["addr"].(string),
 			}
@@ -167,18 +167,18 @@ func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 	return addresses, nil
 }
 
-func (c *GenericClient) GetNetworkId(d *Driver) (string, error) {
-	return c.getNetworkId(d, d.NetworkName)
+func (c *GenericClient) GetNetworkID(d *Driver) (string, error) {
+	return c.getNetworkID(d, d.NetworkName)
 }
 
-func (c *GenericClient) GetFloatingIpPoolId(d *Driver) (string, error) {
-	return c.getNetworkId(d, d.FloatingIpPool)
+func (c *GenericClient) GetFloatingIPPoolID(d *Driver) (string, error) {
+	return c.getNetworkID(d, d.FloatingIPPool)
 }
 
-func (c *GenericClient) getNetworkId(d *Driver, networkName string) (string, error) {
+func (c *GenericClient) getNetworkID(d *Driver, networkName string) (string, error) {
 	opts := networks.ListOpts{Name: networkName}
 	pager := networks.List(c.Network, opts)
-	networkId := ""
+	networkID := ""
 
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		networkList, err := networks.ExtractNetworks(page)
@@ -188,7 +188,7 @@ func (c *GenericClient) getNetworkId(d *Driver, networkName string) (string, err
 
 		for _, n := range networkList {
 			if n.Name == networkName {
-				networkId = n.ID
+				networkID = n.ID
 				return false, nil
 			}
 		}
@@ -196,12 +196,12 @@ func (c *GenericClient) getNetworkId(d *Driver, networkName string) (string, err
 		return true, nil
 	})
 
-	return networkId, err
+	return networkID, err
 }
 
-func (c *GenericClient) GetFlavorId(d *Driver) (string, error) {
+func (c *GenericClient) GetFlavorID(d *Driver) (string, error) {
 	pager := flavors.ListDetail(c.Compute, nil)
-	flavorId := ""
+	flavorID := ""
 
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		flavorList, err := flavors.ExtractFlavors(page)
@@ -211,7 +211,7 @@ func (c *GenericClient) GetFlavorId(d *Driver) (string, error) {
 
 		for _, f := range flavorList {
 			if f.Name == d.FlavorName {
-				flavorId = f.ID
+				flavorID = f.ID
 				return false, nil
 			}
 		}
@@ -219,13 +219,13 @@ func (c *GenericClient) GetFlavorId(d *Driver) (string, error) {
 		return true, nil
 	})
 
-	return flavorId, err
+	return flavorID, err
 }
 
-func (c *GenericClient) GetImageId(d *Driver) (string, error) {
+func (c *GenericClient) GetImageID(d *Driver) (string, error) {
 	opts := images.ListOpts{Name: d.ImageName}
 	pager := images.ListDetail(c.Compute, opts)
-	imageId := ""
+	imageID := ""
 
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		imageList, err := images.ExtractImages(page)
@@ -235,7 +235,7 @@ func (c *GenericClient) GetImageId(d *Driver) (string, error) {
 
 		for _, i := range imageList {
 			if i.Name == d.ImageName {
-				imageId = i.ID
+				imageID = i.ID
 				return false, nil
 			}
 		}
@@ -243,7 +243,7 @@ func (c *GenericClient) GetImageId(d *Driver) (string, error) {
 		return true, nil
 	})
 
-	return imageId, err
+	return imageID, err
 }
 
 func (c *GenericClient) CreateKeyPair(d *Driver, name string, publicKey string) error {
@@ -265,30 +265,30 @@ func (c *GenericClient) DeleteKeyPair(d *Driver, name string) error {
 }
 
 func (c *GenericClient) GetServerDetail(d *Driver) (*servers.Server, error) {
-	server, err := servers.Get(c.Compute, d.MachineId).Extract()
+	server, err := servers.Get(c.Compute, d.MachineID).Extract()
 	if err != nil {
 		return nil, err
 	}
 	return server, nil
 }
 
-func (c *GenericClient) AssignFloatingIP(d *Driver, floatingIp *FloatingIp, portId string) error {
-	if floatingIp.Id == "" {
+func (c *GenericClient) AssignFloatingIP(d *Driver, floatingIP *FloatingIP, portID string) error {
+	if floatingIP.ID == "" {
 		f, err := floatingips.Create(c.Network, floatingips.CreateOpts{
-			FloatingNetworkID: d.FloatingIpPoolId,
-			PortID:            portId,
+			FloatingNetworkID: d.FloatingIPPoolID,
+			PortID:            portID,
 		}).Extract()
 		if err != nil {
 			return err
 		}
-		floatingIp.Id = f.ID
-		floatingIp.Ip = f.FloatingIP
-		floatingIp.NetworkId = f.FloatingNetworkID
-		floatingIp.PortId = f.PortID
+		floatingIP.ID = f.ID
+		floatingIP.IP = f.FloatingIP
+		floatingIP.NetworkID = f.FloatingNetworkID
+		floatingIP.PortID = f.PortID
 		return nil
 	}
-	_, err := floatingips.Update(c.Network, floatingIp.Id, floatingips.UpdateOpts{
-		PortID: portId,
+	_, err := floatingips.Update(c.Network, floatingIP.ID, floatingips.UpdateOpts{
+		PortID: portID,
 	}).Extract()
 	if err != nil {
 		return err
@@ -296,23 +296,23 @@ func (c *GenericClient) AssignFloatingIP(d *Driver, floatingIp *FloatingIp, port
 	return nil
 }
 
-func (c *GenericClient) GetFloatingIPs(d *Driver) ([]FloatingIp, error) {
+func (c *GenericClient) GetFloatingIPs(d *Driver) ([]FloatingIP, error) {
 	pager := floatingips.List(c.Network, floatingips.ListOpts{
-		FloatingNetworkID: d.FloatingIpPoolId,
+		FloatingNetworkID: d.FloatingIPPoolID,
 	})
 
-	ips := []FloatingIp{}
+	ips := []FloatingIP{}
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		floatingipList, err := floatingips.ExtractFloatingIPs(page)
 		if err != nil {
 			return false, err
 		}
 		for _, f := range floatingipList {
-			ips = append(ips, FloatingIp{
-				Id:        f.ID,
-				Ip:        f.FloatingIP,
-				NetworkId: f.FloatingNetworkID,
-				PortId:    f.PortID,
+			ips = append(ips, FloatingIP{
+				ID:        f.ID,
+				IP:        f.FloatingIP,
+				NetworkID: f.FloatingNetworkID,
+				PortID:    f.PortID,
 			})
 		}
 		return true, nil
@@ -324,20 +324,20 @@ func (c *GenericClient) GetFloatingIPs(d *Driver) ([]FloatingIp, error) {
 	return ips, nil
 }
 
-func (c *GenericClient) GetInstancePortId(d *Driver) (string, error) {
+func (c *GenericClient) GetInstancePortID(d *Driver) (string, error) {
 	pager := ports.List(c.Network, ports.ListOpts{
-		DeviceID:  d.MachineId,
-		NetworkID: d.NetworkId,
+		DeviceID:  d.MachineID,
+		NetworkID: d.NetworkID,
 	})
 
-	var portId string
+	var portID string
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		portList, err := ports.ExtractPorts(page)
 		if err != nil {
 			return false, err
 		}
 		for _, port := range portList {
-			portId = port.ID
+			portID = port.ID
 			return false, nil
 		}
 		return true, nil
@@ -346,7 +346,7 @@ func (c *GenericClient) GetInstancePortId(d *Driver) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return portId, nil
+	return portID, nil
 }
 
 func (c *GenericClient) InitComputeClient(d *Driver) error {
@@ -397,19 +397,19 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 	}
 
 	log.WithFields(log.Fields{
-		"AuthUrl":    d.AuthUrl,
+		"AuthURL":    d.AuthURL,
 		"Insecure":   d.Insecure,
 		"Username":   d.Username,
 		"TenantName": d.TenantName,
-		"TenantID":   d.TenantId,
+		"TenantID":   d.TenantID,
 	}).Debug("Authenticating...")
 
 	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: d.AuthUrl,
+		IdentityEndpoint: d.AuthURL,
 		Username:         d.Username,
 		Password:         d.Password,
 		TenantName:       d.TenantName,
-		TenantID:         d.TenantId,
+		TenantID:         d.TenantID,
 		AllowReauth:      true,
 	}
 
