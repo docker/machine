@@ -713,7 +713,37 @@ func (d *Driver) waitForSSHServer() error {
 		"MachineId": d.MachineId,
 		"IP":        ip,
 	}).Debug("Waiting for the SSH server to be started...")
-	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
+
+	err = ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
+	if err != nil {
+		return err
+	}
+
+	retryCount := 0
+	for {
+		log.WithFields(log.Fields{
+			"MachineId": d.MachineId,
+			"IP":        ip,
+			"SSHUser":   d.SSHUser,
+		}).Debug("Trying to establish a SSH connection...")
+
+		cmd, err := d.GetSSHCommand("exit 0")
+		if err != nil {
+			return err
+		}
+		if err := cmd.Run(); err != nil {
+			retryCount++
+			// Avoid infinite retries
+			// A big enough retryCount limit is arbitrary chosen
+			if retryCount == 100 {
+				return err
+			}
+			time.Sleep(time.Second)
+			continue
+		}
+		break
+	}
+	return nil
 }
 
 func (d *Driver) waitForInstanceToStart() error {

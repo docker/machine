@@ -15,6 +15,7 @@ func GetSSHCommand(host string, port int, user string, sshKey string, args ...st
 		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
+		"-o", "PasswordAuthentication=no",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-p", fmt.Sprintf("%d", port),
 		"-i", sshKey,
