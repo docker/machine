@@ -2,9 +2,11 @@ package openstack
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/version"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/extensions/keypairs"
@@ -415,6 +417,8 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 	if err != nil {
 		return err
 	}
+
+	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%s", version.VERSION))
 
 	if d.Insecure {
 		// Configure custom TLS settings.
