@@ -92,11 +92,8 @@ func LoadHost(name string, StorePath string) (*Host, error) {
 	return host, nil
 }
 
-func ValidateHostName(name string) (string, error) {
-	if !validHostNamePattern.MatchString(name) {
-		return name, ErrInvalidHostname
-	}
-	return name, nil
+func ValidateHostName(name string) bool {
+	return validHostNamePattern.MatchString(name)
 }
 
 func (h *Host) Create(name string) error {

@@ -122,13 +122,9 @@ func TestValidateHostnameValid(t *testing.T) {
 	}
 
 	for _, v := range hosts {
-		h, err := ValidateHostName(v)
-		if err != nil {
-			t.Fatal("Invalid hostname")
-		}
-
-		if h != v {
-			t.Fatal("Hostname doesn't match")
+		isValid := ValidateHostName(v)
+		if !isValid {
+			t.Fatal("Thought a valid hostname was invalid: %s", v)
 		}
 	}
 }
@@ -141,9 +137,9 @@ func TestValidateHostnameInvalid(t *testing.T) {
 	}
 
 	for _, v := range hosts {
-		_, err := ValidateHostName(v)
-		if err == nil {
-			t.Fatal("No error returned")
+		isValid := ValidateHostName(v)
+		if isValid {
+			t.Fatal("Thought an invalid hostname was valid: %s", v)
 		}
 	}
 }
