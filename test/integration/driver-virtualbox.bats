@@ -5,10 +5,30 @@ load helpers
 export DRIVER=virtualbox
 export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
+# Default memsize is 1024MB and disksize is 20000MB
+# These values are defined in drivers/virtualbox/virtualbox.go
+export DEFAULT_MEMSIZE=1024
+export DEFAULT_DISKSIZE=20000
+export CUSTOM_MEMSIZE=1536
+export CUSTOM_DISKSIZE=10000
+export BAD_URL="http://dev.null:9111/bad.iso"
 
 function setup() {
   # add sleep because vbox; ugh
   sleep 1
+}
+
+findDiskSize() {
+  # SATA-0-0 is usually the boot2disk.iso image
+  # We assume that SATA 1-0 is root disk VMDK and grab this UUID
+  # e.g. "SATA-ImageUUID-1-0"="fb5f33a7-e4e3-4cb9-877c-f9415ae2adea"
+  # TODO(slashk): does this work on Windows ?
+  run bash -c "VBoxManage showvminfo --machinereadable $NAME | grep SATA-ImageUUID-1-0 | cut -d'=' -f2"
+  run bash -c "VBoxManage showhdinfo $output | grep "Capacity:" | awk -F' ' '{ print $2 }'"
+}
+
+findMemorySize() {
+  run bash -c "VBoxManage showvminfo --machinereadable $NAME | grep memory= | cut -d'=' -f2"
 }
 
 @test "$DRIVER: machine should not exist" {
@@ -29,6 +49,16 @@ function setup() {
 @test "$DRIVER: active" {
   run machine active $NAME
   [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: check default machine memory size" {
+  findMemorySize
+  [[ ${output} == "${DEFAULT_MEMSIZE}"  ]]
+}
+
+@test "$DRIVER: dheck default machine disksize" {
+  findDiskSize
+  [[ ${output} == *"$DEFAULT_DISKSIZE"* ]]
 }
 
 @test "$DRIVER: upgrade" {
@@ -118,7 +148,7 @@ function setup() {
   [[ ${lines[1]} == *"Paused"*  ]]
 }
 
-@test "$DRIVER: start" {
+@test "$DRIVER: start after paused" {
   run machine start $NAME
   [ "$status" -eq 0  ]
 }
@@ -141,7 +171,7 @@ function setup() {
   [[ ${lines[1]} == *"Saved"*  ]]
 }
 
-@test "$DRIVER: start" {
+@test "$DRIVER: start after saved" {
   run machine start $NAME
   [ "$status" -eq 0  ]
 }
@@ -152,19 +182,92 @@ function setup() {
   [[ ${lines[1]} == *"Running"*  ]]
 }
 
-@test "$DRIVER: remove" {
+@test "$DRIVER: remove after paused" {
   run machine rm -f $NAME
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: machine should not exist" {
+@test "$DRIVER: machine should not exist after remove" {
   run machine active $NAME
   [ "$status" -eq 1  ]
 }
 
-@test "$DRIVER: VM should not exist" {
+@test "$DRIVER: VM should not exist after remove" {
   run VBoxManage showvminfo $NAME
   [ "$status" -eq 1  ]
+}
+
+@test "$DRIVER: create too small disk size" {
+  run machine create -d $DRIVER --virtualbox-disk-size 0 $NAME
+  [ "$status" -eq 1  ]
+}
+
+@test "$DRIVER: remove after too small create" {
+  run machine rm -f $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: create too large disk size" {
+  skip "this will take too long to run effectively"
+  run machine create -d $DRIVER --virtualbox-disk-size 1000000 $NAME
+  [ "$status" -eq 1  ]
+}
+
+@test "$DRIVER: remove after too large create" {
+  skip "no need to remove if large test not run"
+  run machine rm -f $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: should not create with incorrect value type for disk size" {
+  run machine create -d $DRIVER --virtualbox-disk-size ffsfwf $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: create too small memory size" {
+  run machine create -d $DRIVER --virtualbox-memory 0 $NAME
+  [ "$status" -eq 1  ]
+}
+
+@test "$DRIVER: remove after too small memory" {
+  run machine rm -f $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: create with bad boot2docker url" {
+  run machine create -d $DRIVER --virtualbox-boot2docker-url $BAD_URL $NAME
+  [ "$status" -eq 1  ]
+}
+
+@test "$DRIVER: remove after bad boot2docker url" {
+  run machine rm -f $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: create with custom disk and memory size flags" {
+  run machine create -d $DRIVER --virtualbox-disk-size $CUSTOM_DISKSIZE --virtualbox-memory $CUSTOM_MEMSIZE $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: check custom machine memory size" {
+  findMemorySize
+  [[ ${output} == "${CUSTOM_MEMSIZE}"  ]]
+}
+
+@test "$DRIVER: check custom machine disksize" {
+  findDiskSize
+  [[ ${output} == *"$CUSTOM_DISKSIZE"* ]]
+}
+
+@test "$DRIVER: machine should show running after create" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Running"*  ]]
+}
+
+@test "$DRIVER: remove after custom flag create" {
+  run machine rm -f $NAME
+  [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: cleanup" {
