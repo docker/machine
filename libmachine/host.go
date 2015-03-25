@@ -266,7 +266,7 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	meta := ValidateHostMetadata(&hostMetadata)
+	meta := FillNestedHostMetadata(&hostMetadata)
 
 	authOptions := meta.HostOptions.AuthOptions
 
