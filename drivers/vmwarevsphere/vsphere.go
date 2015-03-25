@@ -301,7 +301,7 @@ func (d *Driver) Create() error {
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-		if err := b2dutils.DownloadISO(commonIsoPath, isoFilename, isoURL); err != nil {
+		if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
 			return err
 
 		}
@@ -334,14 +334,12 @@ func (d *Driver) Create() error {
 				return err
 
 			}
-
 		}
+
 		isoDest := filepath.Join(d.storePath, isoFilename)
 		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 			return err
-
 		}
-
 	}
 
 	log.Infof("Generating SSH Keypair...")

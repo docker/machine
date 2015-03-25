@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -84,29 +85,46 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 }
 
 // Download boot2docker ISO image for the given tag and save it at dest.
-func (b *B2dUtils) DownloadISO(dir, file, url string) error {
-	client := getClient()
-	rsp, err := client.Get(url)
-	if err != nil {
-		return err
+func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
+	u, err := url.Parse(isoUrl)
+	var src io.ReadCloser
+	if u.Scheme == "file" || u.Scheme == "" {
+		s, err := os.Open(u.Path)
+		if err != nil {
+			return err
+		}
+		src = s
+	} else {
+		client := getClient()
+		s, err := client.Get(isoUrl)
+		if err != nil {
+			return err
+		}
+		src = s.Body
 	}
-	defer rsp.Body.Close()
+
+	defer src.Close()
 
 	// Download to a temp file first then rename it to avoid partial download.
 	f, err := ioutil.TempFile(dir, file+".tmp")
 	if err != nil {
 		return err
 	}
+
 	defer os.Remove(f.Name())
-	if _, err := io.Copy(f, rsp.Body); err != nil {
+
+	if _, err := io.Copy(f, src); err != nil {
 		// TODO: display download progress?
 		return err
 	}
+
 	if err := f.Close(); err != nil {
 		return err
 	}
+
 	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
 		return err
 	}
+
 	return nil
 }
