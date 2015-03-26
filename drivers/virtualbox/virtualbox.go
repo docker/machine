@@ -629,7 +629,7 @@ func zeroFill(w io.Writer, n int64) error {
 
 func getAvailableTCPPort() (int, error) {
 	port := 0
-	for {
+	for i := 0; i <= 10; i++ {
 		ln, err := net.Listen("tcp4", "127.0.0.1:0")
 		if err != nil {
 			return 0, err
@@ -643,10 +643,10 @@ func getAvailableTCPPort() (int, error) {
 		}
 		if p != 0 {
 			port = p
-			break
+			return port, nil
 		}
 		time.Sleep(1)
 	}
+	return 0, fmt.Errorf("unable to allocate tcp port")
 
-	return port, nil
 }
