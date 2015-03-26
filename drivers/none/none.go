@@ -2,9 +2,9 @@ package none
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/api"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
@@ -107,17 +107,22 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	url := flags.String("url")
+	flagURL := flags.String("url")
 
-	if url == "" {
+	if flagURL == "" {
 		return fmt.Errorf("--url option is required when no driver is selected")
 	}
-	validatedUrl, err := api.ValidateHost(url)
+
+	uri, err := url.Parse(flagURL)
 	if err != nil {
 		return err
 	}
 
-	d.URL = validatedUrl
+	if uri.Scheme != "unix" || uri.Scheme != "tcp" {
+		return fmt.Errorf("Unable to validate url")
+	}
+
+	d.URL = flagURL
 	return nil
 }
 

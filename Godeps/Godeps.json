@@ -32,11 +32,6 @@
 			"Rev": "5478aae80694de1d2d0e02c386bbedd201266234"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/api",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/dockerversion",
 			"Comment": "v1.5.0",
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
