@@ -284,11 +284,6 @@ findCPUCount() {
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: cleanup" {
-  run rm -rf $MACHINE_STORAGE_PATH
-  [ "$status" -eq 0  ]
-}
-
 @test "$DRIVER: can create custom machine using disk size and memory size via env vars" {
   run VIRTUALBOX_DISK_SIZE=${CUSTOM_DISKSIZE} VIRTUALBOX_MEMORY_SIZE=${CUSTOM_MEMSIZE} machine create -d $DRIVER $NAME
   [ "$status" -eq 0  ]
@@ -315,4 +310,9 @@ findCPUCount() {
   [ "$status" -eq 0  ]
 }
 
+# Cleanup of machine store should always be the last 'test'
+@test "$DRIVER: cleanup" {
+  run rm -rf $MACHINE_STORAGE_PATH
+  [ "$status" -eq 0  ]
+}
 
