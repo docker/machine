@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/utils"
 )
 
 func init() {
@@ -35,13 +36,9 @@ func (provisioner *Boot2DockerProvisioner) Service(name string, action pkgaction
 		cmd *exec.Cmd
 		err error
 	)
-	if name == "docker" && action == pkgaction.Stop {
-		cmd, err = provisioner.SSHCommand("if [ -e /var/run/docker.pid  ] && [ -d /proc/$(cat /var/run/docker.pid)  ]; then sudo /etc/init.d/docker stop ; exit 0; fi")
-	} else {
-		cmd, err = provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String()))
-		if err != nil {
-			return err
-		}
+	cmd, err = provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String()))
+	if err != nil {
+		return err
 	}
 	if err := cmd.Run(); err != nil {
 		return err
@@ -116,6 +113,17 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 	}
 
 	if err := installDockerGeneric(provisioner); err != nil {
+		return err
+	}
+
+	ip, err := provisioner.GetDriver().GetIP()
+	if err != nil {
+		return err
+	}
+
+	// b2d hosts need to wait for the daemon to be up
+	// before continuing with provisioning
+	if err := utils.WaitForDocker(ip, 2376); err != nil {
 		return err
 	}
 

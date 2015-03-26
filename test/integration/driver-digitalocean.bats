@@ -48,6 +48,10 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   [[ ${lines[0]} =~ "total"  ]]
 }
 
+@test "$DRIVER: docker commands with the socket should work" {
+  run machine ssh $NAME -- docker version
+}
+
 @test "$DRIVER: stop" {
   run machine stop $NAME
   [ "$status" -eq 0  ]
