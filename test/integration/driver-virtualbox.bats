@@ -63,6 +63,10 @@ function setup() {
   [[ ${lines[0]} =~ "total"  ]]
 }
 
+@test "$DRIVER: docker commands with the socket should work" {
+  run machine ssh $NAME -- docker version
+}
+
 @test "$DRIVER: stop" {
   run machine stop $NAME
   [ "$status" -eq 0  ]
