@@ -32,7 +32,7 @@ func (s Filestore) loadHost(name string) (*Host, error) {
 		return nil, err
 	}
 
-	h := ValidateHost(host)
+	h := FillNestedHost(host)
 	return h, nil
 }
 
