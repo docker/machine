@@ -288,3 +288,31 @@ findCPUCount() {
   run rm -rf $MACHINE_STORAGE_PATH
   [ "$status" -eq 0  ]
 }
+
+@test "$DRIVER: can create custom machine using disk size and memory size via env vars" {
+  run VIRTUALBOX_DISK_SIZE=${CUSTOM_DISKSIZE} VIRTUALBOX_MEMORY_SIZE=${CUSTOM_MEMSIZE} machine create -d $DRIVER $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: check machine's memory size was set correctly by env var" {
+  findMemorySize
+  [[ ${output} == "${CUSTOM_MEMSIZE}"  ]]
+}
+
+@test "$DRIVER: check machine's disk size was set correctly by env var" {
+  findDiskSize
+  [[ ${output} == *"$CUSTOM_DISKSIZE"* ]]
+}
+
+@test "$DRIVER: machine should show running after create with env" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Running"*  ]]
+}
+
+@test "$DRIVER: remove after custom env create" {
+  run machine rm -f $NAME
+  [ "$status" -eq 0  ]
+}
+
+
