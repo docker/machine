@@ -18,10 +18,6 @@
 			"Rev": "1f2ba2c6317323dd667bd266c1e8ebffc4a4c62f"
 		},
 		{
-			"ImportPath": "github.com/cenkalti/backoff",
-			"Rev": "9831e1e25c874e0a0601b6dc43641071414eec7a"
-		},
-		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-64-ge1712f3",
 			"Rev": "e1712f381785e32046927f64a7c86fe569203196"
@@ -32,88 +28,9 @@
 			"Rev": "5478aae80694de1d2d0e02c386bbedd201266234"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/dockerversion",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/engine",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/archive",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/fileutils",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/ioutils",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/mflag",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/parsers",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/pools",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/promise",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/system",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/term",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/timeutils",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/units",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/version",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/utils",
 			"Comment": "v1.5.0",
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/vendor/src/code.google.com/p/go/src/pkg/archive/tar",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/libtrust",
-			"Rev": "c54fbb67c1f1e68d7d6f8d2ad7c9360404616a41"
 		},
 		{
 			"ImportPath": "github.com/google/go-querystring/query",

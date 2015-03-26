@@ -118,7 +118,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return err
 	}
 
-	if uri.Scheme != "unix" || uri.Scheme != "tcp" {
+	if uri.Scheme != "unix" && uri.Scheme != "tcp" {
 		return fmt.Errorf("Unable to validate url")
 	}
 
