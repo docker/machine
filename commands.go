@@ -673,6 +673,10 @@ func cmdEnv(c *cli.Context) {
 		log.Fatal(err)
 	}
 
+	if cfg.machineUrl == "" {
+		log.Fatalf("%s is not running. Please start this with docker-machine start %s", cfg.machineName, cfg.machineName)
+	}
+
 	dockerHost := cfg.machineUrl
 	if c.Bool("swarm") {
 		if !cfg.SwarmOptions.Master {
