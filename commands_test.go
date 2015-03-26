@@ -475,7 +475,7 @@ func TestCmdEnvBash(t *testing.T) {
 	// parse the output into a map of envvar:value for easier testing below
 	envvars := make(map[string]string)
 	for _, e := range strings.Split(strings.TrimSpace(out), "\n") {
-		if strings.HasPrefix(e, "#") || e == "" {
+		if !strings.HasPrefix(e, "export ") {
 			continue
 		}
 		kv := strings.SplitN(e, "=", 2)
@@ -573,7 +573,7 @@ func TestCmdEnvFish(t *testing.T) {
 	// parse the output into a map of envvar:value for easier testing below
 	envvars := make(map[string]string)
 	for _, e := range strings.Split(strings.TrimSuffix(out, ";\n"), ";\n") {
-		if strings.HasPrefix(e, "#") || e == "" {
+		if !strings.HasPrefix(e, "set -x ") {
 			continue
 		}
 		kv := strings.SplitN(strings.Replace(e, "set -x ", "", 1), " ", 2)
