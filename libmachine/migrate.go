@@ -9,9 +9,16 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+// In the 0.0.1 => 0.0.2 transition, the JSON representation of
+// machines changed from a "flat" to a more "nested" structure
+// for various options and configuration settings.  To preserve
+// compatibility with existing machines, these migration functions
+// have been introduced.  They preserve backwards compat at the expense
+// of some duplicated information.
+
 // validates host config and modifies if needed
 // this is used for configuration updates
-func ValidateHost(host *Host) *Host {
+func FillNestedHost(host *Host) *Host {
 	certInfo := getCertInfoFromHost(host)
 
 	if host.HostOptions == nil {
@@ -46,9 +53,9 @@ func ValidateHost(host *Host) *Host {
 	return host
 }
 
-// validates host metadata and modifies if needed
+// fills nested host metadata and modifies if needed
 // this is used for configuration updates
-func ValidateHostMetadata(m *HostMetadata) *HostMetadata {
+func FillNestedHostMetadata(m *HostMetadata) *HostMetadata {
 	if m.HostOptions.EngineOptions == nil {
 		m.HostOptions.EngineOptions = &engine.EngineOptions{}
 	}
