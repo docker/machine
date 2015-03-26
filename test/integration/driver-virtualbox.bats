@@ -11,6 +11,7 @@ export DEFAULT_MEMSIZE=1024
 export DEFAULT_DISKSIZE=20000
 export CUSTOM_MEMSIZE=1536
 export CUSTOM_DISKSIZE=10000
+export CUSTOM_CPUCOUNT=1
 export BAD_URL="http://dev.null:9111/bad.iso"
 
 function setup() {
@@ -29,6 +30,10 @@ findDiskSize() {
 
 findMemorySize() {
   run bash -c "VBoxManage showvminfo --machinereadable $NAME | grep memory= | cut -d'=' -f2"
+}
+
+findCPUCount() {
+  run bash -c "VBoxManage showvminfo --machinereadable $NAME | grep cpus= | cut -d'=' -f2"
 }
 
 @test "$DRIVER: machine should not exist" {
@@ -56,7 +61,7 @@ findMemorySize() {
   [[ ${output} == "${DEFAULT_MEMSIZE}"  ]]
 }
 
-@test "$DRIVER: dheck default machine disksize" {
+@test "$DRIVER: check default machine disksize" {
   findDiskSize
   [[ ${output} == *"$DEFAULT_DISKSIZE"* ]]
 }
@@ -244,8 +249,8 @@ findMemorySize() {
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: create with custom disk and memory size flags" {
-  run machine create -d $DRIVER --virtualbox-disk-size $CUSTOM_DISKSIZE --virtualbox-memory $CUSTOM_MEMSIZE $NAME
+@test "$DRIVER: create with custom disk, cpu count and memory size flags" {
+  run machine create -d $DRIVER --virtualbox-cpu-count $CUSTOM_CPUCOUNT --virtualbox-disk-size $CUSTOM_DISKSIZE --virtualbox-memory $CUSTOM_MEMSIZE $NAME
   [ "$status" -eq 0  ]
 }
 
@@ -257,6 +262,11 @@ findMemorySize() {
 @test "$DRIVER: check custom machine disksize" {
   findDiskSize
   [[ ${output} == *"$CUSTOM_DISKSIZE"* ]]
+}
+
+@test "$DRIVER: check custom machine cpucount" {
+  findCPUCount
+  [[ ${output} == "${CUSTOM_CPUCOUNT}" ]]
 }
 
 @test "$DRIVER: machine should show running after create" {
