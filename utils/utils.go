@@ -100,7 +100,7 @@ func WaitForDocker(ip string, daemonPort int) error {
 	return WaitFor(func() bool {
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, daemonPort))
 		if err != nil {
-			fmt.Println("Got an error it was", err)
+			log.Debug("Got an error it was", err)
 			return false
 		}
 		conn.Close()
