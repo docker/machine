@@ -177,7 +177,8 @@ the side panel.
 2. Click on "Generate New Token".
 3. Give the token a clever name (e.g. "machine"), make sure the "Write" checkbox
 is checked, and click on "Generate Token".
-4. Grab the big long hex string that is generated (this is your token) and store it somehwere safe.
+4. Grab the big long hex string that is generated (this is your token) and store
+it somewhere safe.
 
 Now, run `docker-machine create` with the `digitalocean` driver and pass your key to
 the `--digitalocean-access-token` flag.
