@@ -24,14 +24,14 @@ managing them:
 ## Installation
 
 Docker Machine is supported on Windows, OSX, and Linux.  To install Docker
-Machine, download the appropriate binary for your OS and architecture to the
-correct place in your `PATH`:
+Machine, download the appropriate binary for your OS and architecture, rename it `docker-machine` and place
+into your `PATH`:
 
-- [Windows - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-amd64.exe)
+- [Windows - 32bit](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-386.exe)
+- [Windows - 64bit](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-amd64.exe)
 - [OSX - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-amd64)
+- [OSX - (old macs)](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-386)
 - [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-amd64)
-- [Windows - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-386.exe)
-- [OSX - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-386)
 - [Linux - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-386)
 
 Now you should be able to check the version with `docker-machine -v`:
@@ -69,23 +69,13 @@ daemon installed, and will create and start a VirtualBox VM with Docker running.
 
 ```
 $ docker-machine create --driver virtualbox dev
-INFO[0001] Downloading boot2docker.iso to /home/ehazlett/.docker/machine/cache/boot2docker.iso...
+INFO[0001] Downloading boot2docker.iso to /home/<your username>/.docker/machine/cache/boot2docker.iso...
 INFO[0011] Creating SSH key...
 INFO[0012] Creating VirtualBox VM...
 INFO[0019] Starting VirtualBox VM...
 INFO[0020] Waiting for VM to start...
 INFO[0053] "dev" has been created and is now the active machine.
 INFO[0053] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
-```
-
-To use the Docker CLI, you can use the `env` command to list the commands
-needed to connect to the instance.
-
-```
-$ docker-machine env dev
-export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH="/home/ehazlett/.docker/machine/machines/dev"
-export DOCKER_HOST=tcp://192.168.99.100:2376
 ```
 
 You can see the machine you have created by running the `docker-machine ls` command
@@ -109,7 +99,17 @@ $ docker ps
 ```
 
 This will set environment variables that the Docker client will read which specify
-the TLS settings. To see what will be set, run `docker-machine env dev`.
+the TLS settings. Note that you will need to do that every time you open a new tab or
+restart your machine.
+
+To see what will be set, run `docker-machine env dev`.
+
+```
+$ docker-machine env dev
+export DOCKER_TLS_VERIFY=1
+export DOCKER_CERT_PATH=/Users/<your username>/.docker/machine/machines/dev
+export DOCKER_HOST=tcp://192.168.99.100:2376
+```
 
 You can now run Docker commands on this host:
 
