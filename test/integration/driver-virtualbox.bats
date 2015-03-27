@@ -285,17 +285,13 @@ findCPUCount() {
 }
 
 @test "$DRIVER: can create custom machine using disk size and memory size via env vars" {
-  export VIRTUALBOX_DISK_SIZE=$CUSTOM_DISKSIZE
-  export VIRTUALBOX_MEMORY_SIZE=$CUSTOM_MEMSIZE
-  run machine create -d $DRIVER $NAME
-  export VIRTUALBOX_DISK_SIZE=
-  export VIRTUALBOX_MEMORY_SIZE=
+  VIRTUALBOX_DISK_SIZE=$CUSTOM_DISKSIZE VIRTUALBOX_MEMORY_SIZE=$CUSTOM_MEMSIZE run machine create -d $DRIVER $NAME
   [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: check machine's memory size was set correctly by env var" {
   findMemorySize
-  [[ ${output} == "${CUSTOM_MEMSIZE}"  ]]
+  [[ ${output} == "$CUSTOM_MEMSIZE"  ]]
 }
 
 @test "$DRIVER: check machine's disk size was set correctly by env var" {
