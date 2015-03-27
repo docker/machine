@@ -3,6 +3,7 @@ package virtualbox
 import (
 	"archive/tar"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -197,12 +198,15 @@ func (d *Driver) Create() error {
 	} else {
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
-		isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
-		if err != nil {
+		isoURL, releaseErr := b2dutils.GetLatestBoot2DockerReleaseURL()
+		if releaseErr != nil {
 			log.Warnf("Unable to check for the latest release: %s", err)
 		}
 
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+			if releaseErr != nil {
+				return errors.New("Checking for the release failed and the ISO does not exist, aborting create")
+			}
 			log.Infof("Downloading %s to %s...", isoFilename, commonIsoPath)
 			if err := b2dutils.DownloadISO(imgPath, isoFilename, isoURL); err != nil {
 				return err
