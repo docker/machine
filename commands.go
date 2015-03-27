@@ -726,7 +726,7 @@ func cmdEnv(c *cli.Context) {
 		}
 	}
 
-	usageHint := generateUsageHint(c, userShell)
+	usageHint := generateUsageHint(c.Args().First(), userShell)
 
 	switch userShell {
 	case "fish":
@@ -738,27 +738,24 @@ func cmdEnv(c *cli.Context) {
 	}
 }
 
-func generateUsageHint(c *cli.Context, userShell string) string {
-	msg := "# Run this command to configure your shell: "
+func generateUsageHint(machineName string, userShell string) string {
 	cmd := ""
-	machine := c.Args().First()
-
 	switch userShell {
 	case "fish":
-		if machine != "" {
-			cmd = fmt.Sprintf("eval (docker-machine env %s)", machine)
+		if machineName != "" {
+			cmd = fmt.Sprintf("eval (docker-machine env %s)", machineName)
 		} else {
 			cmd = "eval (docker-machine env)"
 		}
 	default:
-		if machine != "" {
-			cmd = fmt.Sprintf("eval $(docker-machine env %s)", machine)
+		if machineName != "" {
+			cmd = fmt.Sprintf("eval $(docker-machine env %s)", machineName)
 		} else {
 			cmd = "eval $(docker-machine env)"
 		}
 	}
 
-	return fmt.Sprintf("%s %s\n", msg, cmd)
+	return fmt.Sprintf("# Run this command to configure your shell: %s\n", cmd)
 }
 
 func cmdSsh(c *cli.Context) {
