@@ -14,6 +14,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision"
+	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
@@ -221,8 +222,19 @@ func (h *Host) Restart() error {
 }
 
 func (h *Host) Upgrade() error {
-	// TODO: refactor to provisioner
-	return fmt.Errorf("centralized upgrade coming in the provisioner")
+	provisioner, err := provision.DetectProvisioner(h.Driver)
+	if err != nil {
+		return err
+	}
+
+	if err := provisioner.Package("docker", pkgaction.Upgrade); err != nil {
+		return err
+	}
+
+	if err := provisioner.Service("docker", pkgaction.Restart); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (h *Host) Remove(force bool) error {
