@@ -173,14 +173,14 @@ func (d *Driver) PostCreateCheck() error {
 		}
 		return vminfoerr
 	}
-	
+
 	reMemorySize := regexp.MustCompile(`(?m)^memory=(\w+)`)
 	realMemorySize := reMemorySize.FindStringSubmatch(vminfostdout)
-	log.Infof("Real Memory Size: %s", realMemorySize[1]) 
+	log.Infof("Real Memory Size: %s", realMemorySize[1])
 	memSize, e := strconv.Atoi(realMemorySize[1])
-    if e != nil {
-        return e
-    }
+	if e != nil {
+		return e
+	}
 
 	if memSize != d.Memory {
 		log.Warnf("Mismatched Memory Size.")
@@ -197,11 +197,11 @@ func (d *Driver) PostCreateCheck() error {
 
 	reDiskSize := regexp.MustCompile(`(?m)^Capacity:(.*)MBytes`)
 	realDiskSize := reDiskSize.FindStringSubmatch(hdinfostdout)
-	log.Infof("Real HD Disk Size: %s", strings.TrimSpace(realDiskSize[1])) 
+	log.Infof("Real HD Disk Size: %s", strings.TrimSpace(realDiskSize[1]))
 	diskSize, e := strconv.Atoi(strings.TrimSpace(realDiskSize[1]))
-    if e != nil {
-        return e
-    }
+	if e != nil {
+		return e
+	}
 	if diskSize != d.DiskSize {
 		log.Warnf("Mismatched Disk Size.")
 	}

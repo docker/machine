@@ -275,6 +275,7 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) PostCreateCheck() error {
 	return nil
 }
+
 // the current implementation does the following:
 // 1. check whether the docker directory contains the boot2docker ISO
 // 2. generate an SSH keypair and bundle it in a tar.

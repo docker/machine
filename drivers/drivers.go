@@ -70,7 +70,7 @@ type Driver interface {
 
 	// PostCreateCheck allows for checking the creation of driver met the configuration we specified
 	PostCreateCheck() error
-	
+
 	// Remove a host
 	Remove() error
 
