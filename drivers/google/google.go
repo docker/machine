@@ -35,15 +35,6 @@ type Driver struct {
 	SwarmDiscovery string
 }
 
-// CreateFlags are the command line flags used to create a driver.
-type CreateFlags struct {
-	Zone        *string
-	MachineType *string
-	Project     *string
-	Scopes      *string
-	DiskSize    *int
-}
-
 func init() {
 	drivers.Register("google", &drivers.RegisteredDriver{
 		New:            NewDriver,

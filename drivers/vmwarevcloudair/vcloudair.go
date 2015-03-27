@@ -51,25 +51,6 @@ type Driver struct {
 	storePath      string
 }
 
-type CreateFlags struct {
-	UserName     *string
-	UserPassword *string
-	ComputeID    *string
-	VDCID        *string
-	OrgVDCNet    *string
-	EdgeGateway  *string
-	PublicIP     *string
-	Catalog      *string
-	CatalogItem  *string
-	Name         *string
-	SSHUser      string
-	SSHPort      *int
-	DockerPort   *int
-	Provision    *bool
-	CPUCount     *int
-	MemorySize   *int
-}
-
 func init() {
 	drivers.Register("vmwarevcloudair", &drivers.RegisteredDriver{
 		New:            NewDriver,

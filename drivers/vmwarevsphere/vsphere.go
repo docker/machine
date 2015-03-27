@@ -64,21 +64,6 @@ type Driver struct {
 	storePath string
 }
 
-type CreateFlags struct {
-	CPU            *int
-	Memory         *int
-	DiskSize       *int
-	Boot2DockerURL *string
-	IP             *string
-	Username       *string
-	Password       *string
-	Network        *string
-	Datastore      *string
-	Datacenter     *string
-	Pool           *string
-	HostIP         *string
-}
-
 func init() {
 	drivers.Register("vmwarevsphere", &drivers.RegisteredDriver{
 		New:            NewDriver,
