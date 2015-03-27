@@ -68,6 +68,10 @@ func (d *FakeDriver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *FakeDriver) Create() error {
 	return nil
 }

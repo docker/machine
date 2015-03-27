@@ -64,6 +64,10 @@ func (m *Machine) Create(name string, driverName string, hostOptions *HostOption
 		return nil, err
 	}
 
+	if err := host.Driver.PostCreateCheck(); err != nil {
+		return nil, err
+	}
+
 	return host, nil
 }
 

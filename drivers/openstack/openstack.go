@@ -355,6 +355,10 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, utils.GenerateRandomID())
 

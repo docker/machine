@@ -195,6 +195,10 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 
 	var (

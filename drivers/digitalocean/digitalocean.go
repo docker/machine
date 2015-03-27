@@ -180,6 +180,10 @@ func (d *Driver) PreCreateCheck() error {
 	return fmt.Errorf("digitalocean requires a valid region")
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 	log.Infof("Creating SSH key...")
 

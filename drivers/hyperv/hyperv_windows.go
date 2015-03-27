@@ -142,6 +142,10 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) GetURL() (string, error) {
 	ip, err := d.GetIP()
 	if err != nil {
