@@ -11,6 +11,12 @@ if [ -z "$GITHUB_TOKEN" ]; then
 fi
 
 script/build
+
+for BINARY in docker-machine_*; do
+    sha256sum $BINARY > $BINARY.sha256
+    md5sum $BINARY >> $BINARY.md5
+done
+
 git tag $VERSION
 git push --tags
 docker run --rm -e GITHUB_TOKEN docker-machine github-release release \
