@@ -45,13 +45,6 @@ type Driver struct {
 	storePath      string
 }
 
-type CreateFlags struct {
-	CPU            *int
-	Memory         *int
-	DiskSize       *int
-	Boot2DockerURL *string
-}
-
 func init() {
 	drivers.Register("parallels", &drivers.RegisteredDriver{
 		New:            NewDriver,
@@ -64,20 +57,22 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
-			Name:  "parallels-memory",
-			Usage: "Size of memory for host in MB",
-			Value: 1024,
+			EnvVar: "PARALLELS_MEMORY_SIZE",
+			Name:   "parallels-memory",
+			Usage:  "Size of memory for host in MB",
+			Value:  1024,
 		},
 		cli.IntFlag{
+			EnvVar: "PARALLELS_CPU_COUNT",
 			Name:   "parallels-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
-			EnvVar: "PARALLELS_CPU_COUNT",
 			Value:  -1,
 		},
 		cli.IntFlag{
-			Name:  "parallels-disk-size",
-			Usage: "Size of disk for host in MB",
-			Value: 20000,
+			EnvVar: "PARALLELS_DISK_SIZE",
+			Name:   "parallels-disk-size",
+			Usage:  "Size of disk for host in MB",
+			Value:  20000,
 		},
 		cli.StringFlag{
 			EnvVar: "PARALLELS_BOOT2DOCKER_URL",
@@ -215,15 +210,11 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Creating Parallels Desktop VM...")
-	if err := os.MkdirAll(d.storePath, 0755); err != nil {
-		return err
-	}
 
 	if err := prlctl("create", d.MachineName,
 		"--distribution", "linux-2.6",
 		"--dst", d.storePath,
-		"--no-hdd",
-	); err != nil {
+		"--no-hdd"); err != nil {
 		return err
 	}
 
@@ -310,8 +301,21 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	if err := prlctl("start", d.MachineName); err != nil {
+	s, err := d.GetState()
+	if err != nil {
 		return err
+	}
+
+	switch s {
+	case state.Stopped, state.Saved, state.Paused:
+		if err := prlctl("start", d.MachineName); err != nil {
+			return err
+		}
+		log.Infof("Waiting for VM to start...")
+	case state.Running:
+		break
+	default:
+		log.Infof("VM not in restartable state")
 	}
 
 	ip, err := d.GetIP()
@@ -319,7 +323,6 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	log.Infof("Waiting for VM to start...")
 	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
 }
 
@@ -351,7 +354,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	if s == state.Running {
-		if err := d.Stop(); err != nil {
+		if err := d.Kill(); err != nil {
 			return err
 		}
 	}
