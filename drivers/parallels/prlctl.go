@@ -25,6 +25,7 @@ var (
 	ErrMachineNotExist = errors.New("machine does not exist")
 	ErrPrlctlNotFound  = errors.New("prlctl not found")
 	prlctlCmd          = "prlctl"
+	prldisktoolCmd     = "prl_disk_tool"
 )
 
 func prlctl(args ...string) error {
@@ -73,4 +74,20 @@ func prlctlOutErr(args ...string) (string, string, error) {
 		}
 	}
 	return stdout.String(), stderr.String(), err
+}
+
+func prldisktool(args ...string) error {
+	cmd := exec.Command(prldisktoolCmd, args...)
+	if os.Getenv("DEBUG") != "" {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	log.Debugf("executing: %v %v", prldisktoolCmd, strings.Join(args, " "))
+	if err := cmd.Run(); err != nil {
+		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
+			return ErrPrlctlNotFound
+		}
+		return fmt.Errorf("%v %v failed: %v", prldisktoolCmd, strings.Join(args, " "), err)
+	}
+	return nil
 }

@@ -1,6 +1,8 @@
 package parallels
 
 import (
+	"archive/tar"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -18,14 +20,12 @@ import (
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
-	cssh "golang.org/x/crypto/ssh"
 )
 
 const (
-	B2D_USER        = "docker"
-	B2D_PASS        = "tcuser"
 	dockerConfigDir = "/var/lib/boot2docker"
 	isoFilename     = "boot2docker.iso"
+	minDiskSize     = 32
 )
 
 type Driver struct {
@@ -257,14 +257,18 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	// Create a small plain disk. It will be converted and expanded later
 	if err := prlctl("set", d.MachineName,
 		"--device-add", "hdd",
 		"--iface", "sata",
 		"--position", "1",
-		"--type", "expand",
-		"--size", fmt.Sprintf("%d", d.DiskSize),
 		"--image", d.diskPath(),
-	); err != nil {
+		"--type", "plain",
+		"--size", fmt.Sprintf("%d", minDiskSize)); err != nil {
+		return err
+	}
+
+	if err := d.generateDiskImage(d.DiskSize); err != nil {
 		return err
 	}
 
@@ -296,50 +300,11 @@ func (d *Driver) Create() error {
 
 	d.IPAddress = ip
 
-	key, err := ioutil.ReadFile(d.publicSSHKeyPath())
-	if err != nil {
+	log.Infof("Starting Parallels Desktop VM...")
+
+	if err := d.Start(); err != nil {
 		return err
 	}
-
-	// TODO
-	// prlctl exec will not work without parallels tools in b2d. Since getting stuff into TCL
-	// is much more painful, we simply use the b2d password to get the initial public key
-	// onto the machine. From then on we use the pub key.
-	sshConfig := &cssh.ClientConfig{
-		User: B2D_USER,
-		Auth: []cssh.AuthMethod{
-			cssh.Password(B2D_PASS),
-		},
-	}
-
-	var sshClient *cssh.Client
-
-	for i := 1; i <= 20; i++ {
-		sshClient, err = cssh.Dial("tcp", fmt.Sprintf("%s:22", ip), sshConfig)
-
-		if err != nil {
-			log.Debugf("Not there yet %d/%d, error: %s", i, 60, err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-
-		if sshClient != nil {
-			log.Debugf("Connected!")
-			break
-		}
-	}
-
-	if err != nil {
-		return err
-	}
-	session, err := sshClient.NewSession()
-	if err != nil {
-		return err
-	}
-	if err := session.Run(fmt.Sprintf("mkdir /home/docker/.ssh && echo \"%s\" > /home/docker/.ssh/authorized_keys", string(key))); err != nil {
-		return err
-	}
-	session.Close()
 
 	return nil
 }
@@ -513,4 +478,106 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) diskPath() string {
 	return filepath.Join(d.storePath, "disk.hdd")
+}
+
+// Make a boot2docker VM disk image.
+func (d *Driver) generateDiskImage(size int) error {
+	tarBuf, err := d.generateTar()
+	if err != nil {
+		return err
+	}
+
+	minSizeBytes := int64(minDiskSize) << 20 // usually won't fit in 32-bit int (max 2GB)
+
+	//Expand the initial image if needed
+	if bufLen := int64(tarBuf.Len()); bufLen > minSizeBytes {
+		bufLenMBytes := bufLen>>20 + 1
+		if err := prldisktool("resize",
+			"--hdd", d.diskPath(),
+			"--size", fmt.Sprintf("%d", bufLenMBytes)); err != nil {
+			return err
+		}
+	}
+
+	// Find hds file
+	hdsList, err := filepath.Glob(d.diskPath() + "/*.hds")
+	if err != nil {
+		return err
+	}
+	if len(hdsList) == 0 {
+		return fmt.Errorf("Could not find *.hds image in %s", d.diskPath())
+	}
+	hdsPath := hdsList[0]
+	log.Debugf("HDS image path: %s", hdsPath)
+
+	// Write tar to the hds file
+	hds, err := os.OpenFile(hdsPath, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer hds.Close()
+	hds.Seek(0, os.SEEK_SET)
+	_, err = hds.Write(tarBuf.Bytes())
+	if err != nil {
+		return err
+	}
+	hds.Close()
+
+	// Convert image to expanding type and resize it
+	if err := prldisktool("convert", "--expanding",
+		"--hdd", d.diskPath()); err != nil {
+		return err
+	}
+
+	if err := prldisktool("resize",
+		"--hdd", d.diskPath(),
+		"--size", fmt.Sprintf("%d", size)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// See https://github.com/boot2docker/boot2docker/blob/master/rootfs/rootfs/etc/rc.d/automount
+func (d *Driver) generateTar() (*bytes.Buffer, error) {
+	magicString := "boot2docker, please format-me"
+
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+
+	// magicString first so the automount script knows to format the disk
+	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+	if _, err := tw.Write([]byte(magicString)); err != nil {
+		return nil, err
+	}
+	// .ssh/key.pub => authorized_keys
+	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
+		return nil, err
+	}
+	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+	if err := tw.Close(); err != nil {
+		return nil, err
+	}
+	return buf, nil
 }
