@@ -161,6 +161,40 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 	return nil
 }
 
+var CreateFlags = []cli.Flag{
+	cli.StringFlag{
+		Name: "driver, d",
+		Usage: fmt.Sprintf(
+			"Driver to create machine with. Available drivers: %s",
+			strings.Join(drivers.GetDriverNames(), ", "),
+		),
+		Value: "none",
+	},
+	cli.BoolFlag{
+		Name:  "swarm",
+		Usage: "Configure Machine with Swarm",
+	},
+	cli.BoolFlag{
+		Name:  "swarm-master",
+		Usage: "Configure Machine to be a Swarm master",
+	},
+	cli.StringFlag{
+		Name:  "swarm-discovery",
+		Usage: "Discovery service to use with Swarm",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "swarm-host",
+		Usage: "ip/socket to listen on for Swarm master",
+		Value: "tcp://0.0.0.0:3376",
+	},
+	cli.StringFlag{
+		Name:  "swarm-addr",
+		Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
+		Value: "",
+	},
+}
+
 var Commands = []cli.Command{
 	{
 		Name:   "active",
@@ -170,37 +204,7 @@ var Commands = []cli.Command{
 	{
 		Flags: append(
 			drivers.GetCreateFlags(),
-			cli.StringFlag{
-				Name: "driver, d",
-				Usage: fmt.Sprintf(
-					"Driver to create machine with. Available drivers: %s",
-					strings.Join(drivers.GetDriverNames(), ", "),
-				),
-				Value: "none",
-			},
-			cli.BoolFlag{
-				Name:  "swarm",
-				Usage: "Configure Machine with Swarm",
-			},
-			cli.BoolFlag{
-				Name:  "swarm-master",
-				Usage: "Configure Machine to be a Swarm master",
-			},
-			cli.StringFlag{
-				Name:  "swarm-discovery",
-				Usage: "Discovery service to use with Swarm",
-				Value: "",
-			},
-			cli.StringFlag{
-				Name:  "swarm-host",
-				Usage: "ip/socket to listen on for Swarm master",
-				Value: "tcp://0.0.0.0:3376",
-			},
-			cli.StringFlag{
-				Name:  "swarm-addr",
-				Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
-				Value: "",
-			},
+			CreateFlags...,
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
@@ -370,7 +374,30 @@ func cmdCreate(c *cli.Context) {
 	name := c.Args().First()
 
 	if name == "" {
+
+		hasDriver := false
+		driverFlags, err := drivers.GetCreateFlagsForDriver(driver)
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			hasDriver = true
+		}
+
+		if hasDriver {
+			for i, cmd := range c.App.Commands {
+				if cmd.HasName("create") {
+					c.App.Commands[i].Flags = append(
+						driverFlags,
+						CreateFlags...,
+					)
+				}
+			}
+		}
+
 		cli.ShowCommandHelp(c, "create")
+		if hasDriver {
+			fmt.Println("Run 'docker-machine create --help' for all options.\n")
+		}
 		log.Fatal("You must specify a machine name")
 	}
 

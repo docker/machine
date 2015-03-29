@@ -143,6 +143,20 @@ func GetCreateFlags() []cli.Flag {
 	return flags
 }
 
+func GetCreateFlagsForDriver(name string) ([]cli.Flag, error) {
+
+	for driverName := range drivers {
+		if name == driverName {
+			driver := drivers[driverName]
+			flags := driver.GetCreateFlags()
+			sort.Sort(ByFlagName(flags))
+			return flags, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Driver %s not found", name)
+}
+
 // GetDriverNames returns a slice of all registered driver names
 func GetDriverNames() []string {
 	names := make([]string, 0, len(drivers))
