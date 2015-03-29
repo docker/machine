@@ -13,46 +13,14 @@ provisioning**.
 For what is coming in specific releases, see our [upcoming
 milestones](https://github.com/docker/machine/milestones).)
 
-## Client/server architecture
+### Docker Engine / Swarm Configuration
+Currently there are only a few things that can be configured in the Docker Engine and Swarm.  This will enable more operations such as Engine labels and Swarm strategies.
 
-Machine currently only works with a single user. Any machines you create are
-stored on your local filesystem, meaning only you can control them. This means
-you can't use it in teams or for large deployments.
+### Boot2Docker Migration Support
+Currently both Machine and Boot2Docker provider similar functionality.  This will enable users to migrate from boot2docker to machine.
 
-Machines should instead have some kind of central storage. This could be done by
-having a client/server architecture, where a central server keeps track of what
-machines exist and the credentials used to access them. Clients could then
-connect to this server to create and manage machines.
+### Expand Provisioner
+Machine currently supports running Boot2Docker for "local" providers and Ubuntu for "remote" providers.  This will expand the provisioning capabilities to include other base operating systems such as RedHat like distributions and possibly other "just enough" operating systems.
 
-Once we have a server, a number of other things become possible: monitoring the
-health of running hosts, access control, automatically scaling them, etc.
-
-Here are some of the pieces of work being done to make this happen:
-
- - [**Internal refactoring**](https://github.com/docker/machine/issues/553):
-   Some of Machine's internals need to be reorganised to make an external API
-   possible.
- - **Add a REST API for internal API**: The first step towards a
-   server is adding a REST API for the stuff that Machine does already.
-
-## Swarm integration
-
-For production, Machine should be able to create and manage Swarm clusters.
-
-This probably means there is a new high-level object in Machine called a Swarm,
-which abstracted away the machines inside of it. You would be able to create and
-configure a Swarm on a provider, then scale it up and down.
-
-## Flexible provisioning
-
-Currently, the operating systems and methods that Machine uses to provision
-hosts are fixed. In production, you may want to be able to customise this
-depending on your environment and requirements.
-
- - **Customize the provisioning**: It should be possible to do custom
-   provisioning of your server. This will probably be done by [setting up
-   machines with cloudinit](https://github.com/docker/machine/issues/124).
- - **Customize the operating system**: It should be possible to deploy operating
-   systems which aren't boot2docker or Ubuntu.
- - **Customize the Docker Engine options**: It should be possible to pass
-   options to the Docker daemon inside the machine.
+### Windows Experience
+Currently, the Machine on Windows experience is not as good as the Mac / Linux.  There is no "recommended" path to use Machine and there are several inconsistencies on Windows such as logging and output formatting.
