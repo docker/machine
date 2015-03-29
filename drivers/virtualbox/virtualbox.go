@@ -452,19 +452,17 @@ func (d *Driver) GetIP() (string, error) {
 	if s != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "ip addr show dev eth1")
+	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show dev eth1")
 	if err != nil {
 		return "", err
 	}
 
-	// reset to nil as if using from Host Stdout is already set when using DEBUG
-	cmd.Stdout = nil
-
-	b, err := cmd.Output()
-	if err != nil {
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(output.Stdout); err != nil {
 		return "", err
 	}
-	out := string(b)
+
+	out := buf.String()
 	log.Debugf("SSH returned: %s\nEND SSH\n", out)
 	// parse to find: inet 192.168.59.103/24 brd 192.168.59.255 scope global eth1
 	lines := strings.Split(out, "\n")

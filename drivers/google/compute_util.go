@@ -234,9 +234,17 @@ func (c *ComputeUtil) deleteInstance() error {
 
 func (c *ComputeUtil) executeCommands(commands []string, ip, sshKeyPath string) error {
 	for _, command := range commands {
-		cmd := ssh.GetSSHCommand(ip, 22, c.userName, sshKeyPath, command)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("error executing command: %v %v", command, err)
+		auth := &ssh.Auth{
+			Keys: []string{sshKeyPath},
+		}
+
+		client, err := ssh.NewClient(c.userName, ip, 22, auth)
+		if err != nil {
+			return err
+		}
+
+		if _, err := client.Run(command); err != nil {
+			return err
 		}
 	}
 	return nil
