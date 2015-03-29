@@ -3,12 +3,12 @@ package provision
 import (
 	"bytes"
 	"fmt"
-	"os/exec"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/ssh"
 )
 
 var provisioners = make(map[string]*RegisteredProvisioner)
@@ -48,7 +48,7 @@ type Provisioner interface {
 	GetDriver() drivers.Driver
 
 	// Short-hand for accessing an SSH command from the driver.
-	SSHCommand(args ...string) (*exec.Cmd, error)
+	SSHCommand(args string) (ssh.Output, error)
 
 	// Set the OS Release info depending on how it's represented
 	// internally
@@ -68,18 +68,13 @@ func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 	var (
 		osReleaseOut bytes.Buffer
 	)
-	catOsReleaseCmd, err := drivers.GetSSHCommandFromDriver(d, "cat /etc/os-release")
+	catOsReleaseOutput, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
 	if err != nil {
 		return nil, fmt.Errorf("Error getting SSH command: %s", err)
 	}
 
-	// Normally I would just use Output() for this, but d.GetSSHCommand
-	// defaults to sending the output of the command to stdout in debug
-	// mode, so that will be broken if we don't set it ourselves.
-	catOsReleaseCmd.Stdout = &osReleaseOut
-
-	if err := catOsReleaseCmd.Run(); err != nil {
-		return nil, fmt.Errorf("Error running SSH command to get /etc/os-release: %s", err)
+	if _, err := osReleaseOut.ReadFrom(catOsReleaseOutput.Stdout); err != nil {
+		return nil, err
 	}
 
 	osReleaseInfo, err := NewOsRelease(osReleaseOut.Bytes())

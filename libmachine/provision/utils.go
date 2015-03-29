@@ -25,18 +25,13 @@ type DockerOptions struct {
 func installDockerGeneric(p Provisioner) error {
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
-	cmd, err := p.SSHCommand("if ! type docker; then curl -sSL https://get.docker.com | sh -; fi")
-	if err != nil {
-		return err
-	}
+	if output, err := p.SSHCommand("if ! type docker; then curl -sSL https://get.docker.com | sh -; fi"); err != nil {
+		var buf bytes.Buffer
+		if _, err := buf.ReadFrom(output.Stderr); err != nil {
+			return err
+		}
 
-	// HACK: the script above will output debug to stderr; we save it and
-	// then check if the command returned an error; if so, we show the debug
-	var buf bytes.Buffer
-	cmd.Stderr = &buf
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error installing docker: %s\n%s\n", err, string(buf.Bytes()))
+		return fmt.Errorf("error installing docker: %s\n", buf.String())
 	}
 
 	return nil
@@ -99,11 +94,7 @@ func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 
 	dockerDir := p.GetDockerOptionsDir()
 
-	cmd, err := p.SSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir)); err != nil {
 		return err
 	}
 
@@ -132,27 +123,15 @@ func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 	machineServerKeyPath := path.Join(dockerDir, "server-key.pem")
 	authOptions.ServerKeyRemotePath = machineServerKeyPath
 
-	cmd, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath)); err != nil {
 		return err
 	}
 
-	cmd, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), machineServerKeyPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), machineServerKeyPath)); err != nil {
 		return err
 	}
 
-	cmd, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), machineServerCertPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), machineServerCertPath)); err != nil {
 		return err
 	}
 
@@ -179,11 +158,7 @@ func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 		return err
 	}
 
-	cmd, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
 		return err
 	}
 
@@ -234,11 +209,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 		return err
 	}
 
-	cmd, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarm.DockerImage))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarm.DockerImage)); err != nil {
 		return err
 	}
 
@@ -248,12 +219,8 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 	if swarmOptions.Master {
 		log.Debug("launching swarm master")
 		log.Debugf("master args: %s", masterArgs)
-		cmd, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
-			port, port, dockerDir, dockerDir, swarm.DockerImage, masterArgs))
-		if err != nil {
-			return err
-		}
-		if err := cmd.Run(); err != nil {
+		if _, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
+			port, port, dockerDir, dockerDir, swarm.DockerImage, masterArgs)); err != nil {
 			return err
 		}
 	}
@@ -261,12 +228,8 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 	// start node agent
 	log.Debug("launching swarm node")
 	log.Debugf("node args: %s", nodeArgs)
-	cmd, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
-		dockerDir, dockerDir, swarm.DockerImage, nodeArgs))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
+		dockerDir, dockerDir, swarm.DockerImage, nodeArgs)); err != nil {
 		return err
 	}
 
