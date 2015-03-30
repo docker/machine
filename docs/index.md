@@ -828,6 +828,18 @@ Options:
 
 The VirtualBox driver uses the latest boot2docker image.
 
+Environment variables:
+
+Here comes the list of the supported variables with the corresponding options. If both environment
+variable and CLI option are provided the CLI option takes the precedence.
+
+| Environment variable              | CLI option                        |
+|-----------------------------------|-----------------------------------|
+| `VIRTUALBOX_MEMORY_SIZE`          | `--virtualbox-memory`             |
+| `VIRTUALBOX_CPU_COUNT`            | `--virtualbox-cpu-count`          |
+| `VIRTUALBOX_DISK_SIZE`            | `--virtualbox-disk-size`          |
+| `VIRTUALBOX_BOOT2DOCKER_URL`      | `--virtualbox-boot2docker-url`    |
+
 #### VMware Fusion
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.
 

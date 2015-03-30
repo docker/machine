@@ -260,7 +260,7 @@ findCPUCount() {
 
 @test "$DRIVER: check custom machine memory size" {
   findMemorySize
-  [[ ${output} == "${CUSTOM_MEMSIZE}"  ]]
+  [[ ${output} == "$CUSTOM_MEMSIZE"  ]]
 }
 
 @test "$DRIVER: check custom machine disksize" {
@@ -270,7 +270,7 @@ findCPUCount() {
 
 @test "$DRIVER: check custom machine cpucount" {
   findCPUCount
-  [[ ${output} == "${CUSTOM_CPUCOUNT}" ]]
+  [[ ${output} == "$CUSTOM_CPUCOUNT" ]]
 }
 
 @test "$DRIVER: machine should show running after create" {
@@ -284,7 +284,41 @@ findCPUCount() {
   [ "$status" -eq 0  ]
 }
 
+@test "$DRIVER: can create custom machine using disk size, cpu count and memory size via env vars" {
+  VIRTUALBOX_DISK_SIZE=$CUSTOM_DISKSIZE VIRTUALBOX_CPU_COUNT=$CUSTOM_CPUCOUNT VIRTUALBOX_MEMORY_SIZE=$CUSTOM_MEMSIZE run machine create -d $DRIVER $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: check machine's memory size was set correctly by env var" {
+  findMemorySize
+  [[ ${output} == "$CUSTOM_MEMSIZE"  ]]
+}
+
+@test "$DRIVER: check machine's disk size was set correctly by env var" {
+  findDiskSize
+  [[ ${output} == *"$CUSTOM_DISKSIZE"* ]]
+}
+
+@test "$DRIVER: check custom machine cpucount" {
+  findCPUCount
+  [[ ${output} == "$CUSTOM_CPUCOUNT" ]]
+}
+
+
+@test "$DRIVER: machine should show running after create with env" {
+  run machine ls
+  [ "$status" -eq 0  ]
+  [[ ${lines[1]} == *"Running"*  ]]
+}
+
+@test "$DRIVER: remove after custom env create" {
+  run machine rm -f $NAME
+  [ "$status" -eq 0  ]
+}
+
+# Cleanup of machine store should always be the last 'test'
 @test "$DRIVER: cleanup" {
   run rm -rf $MACHINE_STORAGE_PATH
   [ "$status" -eq 0  ]
 }
+
