@@ -2,14 +2,17 @@ package provision
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"path"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
 
@@ -46,7 +49,54 @@ func (provisioner *Boot2DockerProvisioner) Service(name string, action pkgaction
 	return nil
 }
 
+func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
+	log.Infof("Stopping machine to do the upgrade...")
+
+	switch provisioner.Driver.DriverName() {
+	case "vmwarefusion", "vmwarevsphere":
+		return errors.New("Upgrade functionality is currently not supported for these providers, as they use a custom ISO.")
+	}
+
+	if err := provisioner.Driver.Stop(); err != nil {
+		return err
+	}
+
+	if err := utils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Stopped)); err != nil {
+		return err
+	}
+
+	machineName := provisioner.GetDriver().GetMachineName()
+
+	log.Infof("Upgrading machine %s...", machineName)
+
+	b2dutils := utils.NewB2dUtils("", "")
+
+	// Usually we call this implicitly, but call it here explicitly to get
+	// the latest boot2docker ISO.
+	if err := b2dutils.DownloadLatestBoot2Docker(); err != nil {
+		return err
+	}
+
+	// Copy the latest version of boot2docker ISO to the machine's directory
+	if err := b2dutils.CopyIsoToMachineDir("", machineName); err != nil {
+		return err
+	}
+
+	log.Infof("Starting machine back up...")
+
+	if err := provisioner.Driver.Start(); err != nil {
+		return err
+	}
+
+	return utils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Running))
+}
+
 func (provisioner *Boot2DockerProvisioner) Package(name string, action pkgaction.PackageAction) error {
+	if name == "docker" && action == pkgaction.Upgrade {
+		if err := provisioner.upgradeIso(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

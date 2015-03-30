@@ -36,6 +36,12 @@ findCPUCount() {
   run bash -c "VBoxManage showvminfo --machinereadable $NAME | grep cpus= | cut -d'=' -f2"
 }
 
+buildMachineWithOldIsoCheckUpgrade() {
+  run wget https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso -O $MACHINE_STORAGE_PATH/cache/boot2docker.iso
+  run machine create -d virtualbox $NAME
+  run machine upgrade $NAME
+}
+
 @test "$DRIVER: machine should not exist" {
   run machine active $NAME
   [ "$status" -eq 1  ]
@@ -314,6 +320,15 @@ findCPUCount() {
 @test "$DRIVER: remove after custom env create" {
   run machine rm -f $NAME
   [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: upgrade should work" {
+  buildMachineWithOldIsoCheckUpgrade
+  [ "$status" -eq 0 ]
+}
+
+@test "$DRIVER: remove machine after upgrade test" {
+  run machine rm -f $NAME
 }
 
 # Cleanup of machine store should always be the last 'test'
