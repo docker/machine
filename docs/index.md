@@ -47,7 +47,7 @@ Let's take a look at using `docker-machine` to creating, using, and managing a D
 host inside of [VirtualBox](https://www.virtualbox.org/).
 
 First, ensure that
-[VirtualBox 4.3.20](https://www.virtualbox.org/wiki/Downloads) is correctly
+[VirtualBox 4.3.26](https://www.virtualbox.org/wiki/Downloads) is correctly
 installed on your system.
 
 If you run the `docker-machine ls` command to show all available machines, you will see
