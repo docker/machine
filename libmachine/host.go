@@ -15,6 +15,7 @@ import (
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/share"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -33,15 +34,17 @@ type Host struct {
 	HostOptions *HostOptions
 
 	// deprecated options; these are left to assist in config migrations
-	SwarmHost      string
-	SwarmMaster    bool
-	SwarmDiscovery string
-	CaCertPath     string
-	PrivateKeyPath string
-	ServerCertPath string
-	ServerKeyPath  string
-	ClientCertPath string
-	ClientKeyPath  string
+	SwarmHost        string
+	SwarmMaster      bool
+	SwarmDiscovery   string
+	CaCertPath       string
+	PrivateKeyPath   string
+	Shares           []share.ShareWithType
+	SharesUnexported []share.Share `json:"-"`
+	ServerCertPath   string
+	ServerKeyPath    string
+	ClientCertPath   string
+	ClientKeyPath    string
 }
 
 type HostOptions struct {
@@ -158,6 +161,15 @@ func (h *Host) MachineInState(desiredState state.State) func() bool {
 	}
 }
 
+func (h *Host) mountShares() error {
+	for _, s := range h.SharesUnexported {
+		if err := s.Mount(h.Driver); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (h *Host) Start() error {
 	if err := h.Driver.Start(); err != nil {
 		return err
@@ -167,7 +179,22 @@ func (h *Host) Start() error {
 		return err
 	}
 
-	return utils.WaitFor(h.MachineInState(state.Running))
+	if err := WaitForSSH(h); err != nil {
+		return err
+	}
+
+	if err := utils.WaitFor(h.MachineInState(state.Running)); err != nil {
+		return err
+	}
+
+	// TODO: Better than this mount-all-on-start would be auto-mounting.
+	// However, we're blocked by e.g. getting 64bit userspace into b2d
+	// to run the VBoxService before we can do so >_>
+	if err := h.mountShares(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (h *Host) Stop() error {
@@ -179,7 +206,14 @@ func (h *Host) Stop() error {
 		return err
 	}
 
-	return utils.WaitFor(h.MachineInState(state.Stopped))
+	if err := utils.WaitFor(h.MachineInState(state.Stopped)); err != nil {
+		return err
+	}
+
+	// Parse to []Share from concrete type saved in marshal
+	h.SharesUnexported = share.ParseShares(h.Shares)
+
+	return nil
 }
 
 func (h *Host) Kill() error {

@@ -54,6 +54,10 @@ func setVBoxManageCmd() string {
 	return cmd
 }
 
+func Vbm(args ...string) error {
+	return vbm(args...)
+}
+
 func vbm(args ...string) error {
 	_, _, err := vbmOutErr(args...)
 	return err
