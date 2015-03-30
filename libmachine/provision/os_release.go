@@ -64,7 +64,7 @@ func (osr *OsRelease) ParseOsRelease(osReleaseContents []byte) error {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		key, val, err := parseLine(scanner.Text())
-		if err != nil {
+		if key != "" && val != "" && err != nil {
 			return err
 		}
 		if err := osr.setIfPossible(key, val); err != nil {
