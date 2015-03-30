@@ -31,3 +31,4 @@ for BINARY in docker-machine_*; do
         --file $BINARY
 done
 
+docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine ./script/generate-sums
