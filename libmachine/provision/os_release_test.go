@@ -18,7 +18,8 @@ PRETTY_NAME="Ubuntu 14.04 LTS"
 VERSION_ID="14.04"
 HOME_URL="http://www.ubuntu.com/"
 SUPPORT_URL="http://help.ubuntu.com/"
-BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"`)
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+`)
 		gentoo = []byte(`NAME=Gentoo
 ID=gentoo
 PRETTY_NAME="Gentoo/Linux"
@@ -34,7 +35,19 @@ ID_LIKE=debian
 VERSION_ID="14.04"
 HOME_URL="http://www.ubuntu.com/"
 SUPPORT_URL="http://help.ubuntu.com/"
-BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"`)
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+`)
+		centos = []byte(`NAME="CentOS Linux"
+VERSION="7 (Core)"
+ID="centos"
+ID_LIKE="rhel fedora"
+VERSION_ID="7"
+PRETTY_NAME="CentOS Linux 7 (Core)"
+ANSI_COLOR="0;31"
+HOME_URL="https://www.centos.org/"
+BUG_REPORT_URL="https://bugs.centos.org/"
+
+`)
 	)
 
 	osr, err := NewOsRelease(ubuntuTrusty)
@@ -102,6 +115,27 @@ BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"`)
 	if !reflect.DeepEqual(*osr, expectedOsr) {
 		t.Fatal("Error with noPrettyName osr parsing: structs do not match")
 	}
+
+	osr, err = NewOsRelease(centos)
+	if err != nil {
+		t.Fatal("Unexpected error parsing os release: %s", err)
+	}
+
+	expectedOsr = OsRelease{
+		Name:         "CentOS Linux",
+		Version:      "7 (Core)",
+		Id:           "centos",
+		IdLike:       "rhel fedora",
+		PrettyName:   "CentOS Linux 7 (Core)",
+		AnsiColor:    "0;31",
+		VersionId:    "7",
+		HomeUrl:      "https://www.centos.org/",
+		BugReportUrl: "https://bugs.centos.org/",
+	}
+
+	if !reflect.DeepEqual(*osr, expectedOsr) {
+		t.Fatal("Error with centos osr parsing: structs do not match")
+	}
 }
 
 func TestParseLine(t *testing.T) {
@@ -109,6 +143,7 @@ func TestParseLine(t *testing.T) {
 		withQuotes    = "ID=\"ubuntu\""
 		withoutQuotes = "ID=gentoo"
 		wtf           = "LOTS=OF=EQUALS"
+		blank         = ""
 	)
 
 	key, val, err := parseLine(withQuotes)
@@ -134,5 +169,11 @@ func TestParseLine(t *testing.T) {
 	key, val, err = parseLine(wtf)
 	if err == nil {
 		t.Fatal("Expected to get an error on parseLine, got nil")
+	}
+	key, val, err = parseLine(blank)
+	if key != "" || val != "" {
+		t.Fatal("Expected empty response on parseLine, got key: %s val: %s", key, val)
+	} else if err != nil {
+		t.Fatal("Expected nil err response on parseLine, got %s", err)
 	}
 }
