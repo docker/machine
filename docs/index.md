@@ -579,11 +579,25 @@ dev    *        virtualbox   Stopped
 
 #### upgrade
 
-Upgrade a machine to the latest version of Docker.
+Upgrade a machine to the latest version of Docker.  If the machine uses Ubuntu
+as the underlying operating system, it will upgrade the package `lxc-docker`
+(our recommended install method).  If the machine uses boot2docker, this command
+will download the latest boot2docker ISO and replace the machine's existing ISO
+with the latest.
 
 ```
 $ docker-machine upgrade dev
+INFO[0000] Stopping machine to do the upgrade...
+INFO[0005] Upgrading machine dev...
+INFO[0006] Downloading latest boot2docker release to /tmp/store/cache/boot2docker.iso...
+INFO[0008] Starting machine back up...
+INFO[0008] Waiting for VM to start...
 ```
+
+> **Note**: If you are using a custom boot2docker ISO specified using
+> `--virtualbox-boot2docker-url` or an equivalent flag, running an upgrade on
+> that machine will completely replace the specified ISO with the latest
+> "vanilla" boot2docker ISO available.
 
 #### url
 
@@ -826,7 +840,22 @@ Options:
  - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
  - `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to number of available CPUs.
 
-The VirtualBox driver uses the latest boot2docker image.
+The `--virtualbox-boot2docker-url` flag takes a few different forms.  By
+default, if no value is specified for this flag, Machine will check locally for
+a boot2docker ISO.  If one is found, that will be used as the ISO for the
+created machine.  If one is not found, the latest ISO release available on
+[boot2docker/boot2docker](https://github.com/boot2docker/boot2docker) will be
+downloaded and stored locally for future use.  Note that this means you must run
+`docker-machine upgrade` deliberately on a machine if you wish to update the "cached"
+boot2docker ISO.
+
+This is the default behavior (when `--virtualbox-boot2docker-url=""`), but the
+option also supports specifying ISOs by the `http://` and `file://` protocols.
+`file://` will look at the path specified locally to locate the ISO: for
+instance, you could specify `--virtualbox-boot2docker-url
+file://$HOME/Downloads/rc.iso` to test out a release candidate ISO that you have
+downloaded already.  You could also just get an ISO straight from the Internet
+using the `http://` form.
 
 Environment variables:
 
@@ -839,6 +868,7 @@ variable and CLI option are provided the CLI option takes the precedence.
 | `VIRTUALBOX_CPU_COUNT`            | `--virtualbox-cpu-count`          |
 | `VIRTUALBOX_DISK_SIZE`            | `--virtualbox-disk-size`          |
 | `VIRTUALBOX_BOOT2DOCKER_URL`      | `--virtualbox-boot2docker-url`    |
+
 
 #### VMware Fusion
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.

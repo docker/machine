@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"sort"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
@@ -174,4 +175,17 @@ func GetSSHCommandFromDriver(d Driver, args ...string) (*exec.Cmd, error) {
 	keyPath := d.GetSSHKeyPath()
 
 	return ssh.GetSSHCommand(host, port, user, keyPath, args...), nil
+}
+
+func MachineInState(d Driver, desiredState state.State) func() bool {
+	return func() bool {
+		currentState, err := d.GetState()
+		if err != nil {
+			log.Debugf("Error getting machine state: %s", err)
+		}
+		if currentState == desiredState {
+			return true
+		}
+		return false
+	}
 }

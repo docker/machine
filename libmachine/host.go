@@ -146,19 +146,6 @@ func (h *Host) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func (h *Host) MachineInState(desiredState state.State) func() bool {
-	return func() bool {
-		currentState, err := h.Driver.GetState()
-		if err != nil {
-			log.Debugf("Error getting machine state: %s", err)
-		}
-		if currentState == desiredState {
-			return true
-		}
-		return false
-	}
-}
-
 func (h *Host) Start() error {
 	if err := h.Driver.Start(); err != nil {
 		return err
@@ -168,7 +155,7 @@ func (h *Host) Start() error {
 		return err
 	}
 
-	return utils.WaitFor(h.MachineInState(state.Running))
+	return utils.WaitFor(drivers.MachineInState(h.Driver, state.Running))
 }
 
 func (h *Host) Stop() error {
@@ -180,7 +167,7 @@ func (h *Host) Stop() error {
 		return err
 	}
 
-	return utils.WaitFor(h.MachineInState(state.Stopped))
+	return utils.WaitFor(drivers.MachineInState(h.Driver, state.Stopped))
 }
 
 func (h *Host) Kill() error {
@@ -192,16 +179,16 @@ func (h *Host) Kill() error {
 		return err
 	}
 
-	return utils.WaitFor(h.MachineInState(state.Stopped))
+	return utils.WaitFor(drivers.MachineInState(h.Driver, state.Stopped))
 }
 
 func (h *Host) Restart() error {
-	if h.MachineInState(state.Running)() {
+	if drivers.MachineInState(h.Driver, state.Running)() {
 		if err := h.Stop(); err != nil {
 			return err
 		}
 
-		if err := utils.WaitFor(h.MachineInState(state.Stopped)); err != nil {
+		if err := utils.WaitFor(drivers.MachineInState(h.Driver, state.Stopped)); err != nil {
 			return err
 		}
 	}
@@ -210,7 +197,7 @@ func (h *Host) Restart() error {
 		return err
 	}
 
-	if err := utils.WaitFor(h.MachineInState(state.Running)); err != nil {
+	if err := utils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
 		return err
 	}
 
