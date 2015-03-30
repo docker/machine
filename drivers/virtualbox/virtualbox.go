@@ -65,20 +65,22 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
-			Name:  "virtualbox-memory",
-			Usage: "Size of memory for host in MB",
-			Value: 1024,
+			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
+			Name:   "virtualbox-memory",
+			Usage:  "Size of memory for host in MB",
+			Value:  1024,
 		},
 		cli.IntFlag{
+			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
-			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Value:  -1,
 		},
 		cli.IntFlag{
-			Name:  "virtualbox-disk-size",
-			Usage: "Size of disk for host in MB",
-			Value: 20000,
+			EnvVar: "VIRTUALBOX_DISK_SIZE",
+			Name:   "virtualbox-disk-size",
+			Usage:  "Size of disk for host in MB",
+			Value:  20000,
 		},
 		cli.StringFlag{
 			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
