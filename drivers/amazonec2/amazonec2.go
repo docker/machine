@@ -68,17 +68,6 @@ type Driver struct {
 	keyPath            string
 }
 
-type CreateFlags struct {
-	AccessKey          *string
-	SecretKey          *string
-	Region             *string
-	AMI                *string
-	InstanceType       *string
-	SubnetId           *string
-	RootSize           *int64
-	IamInstanceProfile *string
-}
-
 func init() {
 	drivers.Register(driverName, &drivers.RegisteredDriver{
 		New:            NewDriver,

@@ -56,12 +56,6 @@ type Driver struct {
 	storePath string
 }
 
-type CreateFlags struct {
-	Boot2DockerURL *string
-	Memory         *int
-	DiskSize       *int
-}
-
 func init() {
 	drivers.Register("vmwarefusion", &drivers.RegisteredDriver{
 		New:            NewDriver,

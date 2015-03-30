@@ -53,27 +53,6 @@ type Driver struct {
 	client           Client
 }
 
-type CreateFlags struct {
-	AuthUrl        *string
-	Insecure       *bool
-	Username       *string
-	Password       *string
-	TenantName     *string
-	TenantId       *string
-	Region         *string
-	EndpointType   *string
-	FlavorName     *string
-	FlavorId       *string
-	ImageName      *string
-	ImageId        *string
-	NetworkName    *string
-	NetworkId      *string
-	SecurityGroups *string
-	FloatingIpPool *string
-	SSHUser        *string
-	SSHPort        *int
-}
-
 func init() {
 	drivers.Register("openstack", &drivers.RegisteredDriver{
 		New:            NewDriver,
