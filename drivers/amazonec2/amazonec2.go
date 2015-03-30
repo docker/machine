@@ -304,6 +304,10 @@ func (d *Driver) PreCreateCheck() error {
 	return d.checkPrereqs()
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) instanceIpAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {

@@ -229,6 +229,10 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) Create() error {
 	if err := d.setUserSubscription(); err != nil {
 		return err

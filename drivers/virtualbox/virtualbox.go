@@ -160,6 +160,53 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) PreCreateCheck() error {
+
+	return nil
+}
+
+func (d *Driver) PostCreateCheck() error {
+	// check the settings for configuration
+	log.Infof("Comparing Memory Size ...")
+	vminfostdout, vminfostderr, vminfoerr := vbmOutErr("showvminfo", d.MachineName,
+		"--machinereadable")
+	if vminfoerr != nil {
+		if reMachineNotFound.FindString(vminfostderr) != "" {
+			return ErrMachineNotExist
+		}
+		return vminfoerr
+	}
+
+	reMemorySize := regexp.MustCompile(`(?m)^memory=(\w+)`)
+	realMemorySize := reMemorySize.FindStringSubmatch(vminfostdout)
+	log.Infof("Real Memory Size: %s", realMemorySize[1])
+	memSize, e := strconv.Atoi(realMemorySize[1])
+	if e != nil {
+		return e
+	}
+
+	if memSize != d.Memory {
+		log.Warnf("Mismatched Memory Size.")
+	}
+
+	log.Infof("Comparing Disk Size ...")
+	hdinfostdout, hdinfostderr, hdinfoerr := vbmOutErr("showhdinfo", d.diskPath())
+	if hdinfoerr != nil {
+		if reMachineNotFound.FindString(hdinfostderr) != "" {
+			return ErrMachineNotExist
+		}
+		return hdinfoerr
+	}
+
+	reDiskSize := regexp.MustCompile(`(?m)^Capacity:(.*)MBytes`)
+	realDiskSize := reDiskSize.FindStringSubmatch(hdinfostdout)
+	log.Infof("Real HD Disk Size: %s", strings.TrimSpace(realDiskSize[1]))
+	diskSize, e := strconv.Atoi(strings.TrimSpace(realDiskSize[1]))
+	if e != nil {
+		return e
+	}
+	if diskSize != d.DiskSize {
+		log.Warnf("Mismatched Disk Size.")
+	}
 	return nil
 }
 

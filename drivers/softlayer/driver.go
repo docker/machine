@@ -307,6 +307,10 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 func (d *Driver) waitForStart() {
 	log.Infof("Waiting for host to become available")
 	for {

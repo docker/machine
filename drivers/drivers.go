@@ -68,6 +68,9 @@ type Driver interface {
 	// PreCreateCheck allows for pre-create operations to make sure a driver is ready for creation
 	PreCreateCheck() error
 
+	// PostCreateCheck allows for checking the creation of driver met the configuration we specified
+	PostCreateCheck() error
+
 	// Remove a host
 	Remove() error
 

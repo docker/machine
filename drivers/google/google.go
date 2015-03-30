@@ -180,6 +180,10 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) PostCreateCheck() error {
+	return nil
+}
+
 // Create creates a GCE VM instance acting as a docker host.
 func (d *Driver) Create() error {
 	c, err := newComputeUtil(d)
