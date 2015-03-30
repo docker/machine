@@ -50,6 +50,10 @@ func (osr *OsRelease) setIfPossible(key, val string) error {
 }
 
 func parseLine(osrLine string) (string, string, error) {
+	if osrLine == "" {
+		return "", "", nil
+	}
+
 	vals := strings.Split(osrLine, "=")
 	if len(vals) != 2 {
 		return "", "", fmt.Errorf("Expected %s to split by '=' char into two strings, instead got %d strings", osrLine, len(vals))
