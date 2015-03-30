@@ -24,14 +24,14 @@ managing them:
 ## Installation
 
 Docker Machine is supported on Windows, OSX, and Linux.  To install Docker
-Machine, download the appropriate binary for your OS and architecture to the
-correct place in your `PATH`:
+Machine, download the appropriate binary for your OS and architecture, rename it `docker-machine` and place
+into your `PATH`:
 
-- [Windows - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-amd64.exe)
+- [Windows - 32bit](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-386.exe)
+- [Windows - 64bit](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-amd64.exe)
 - [OSX - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-amd64)
+- [OSX - (old macs)](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-386)
 - [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-amd64)
-- [Windows - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-386.exe)
-- [OSX - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-386)
 - [Linux - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-386)
 
 Now you should be able to check the version with `docker-machine -v`:
@@ -47,7 +47,7 @@ Let's take a look at using `docker-machine` to creating, using, and managing a D
 host inside of [VirtualBox](https://www.virtualbox.org/).
 
 First, ensure that
-[VirtualBox 4.3.20](https://www.virtualbox.org/wiki/Downloads) is correctly
+[VirtualBox 4.3.26](https://www.virtualbox.org/wiki/Downloads) is correctly
 installed on your system.
 
 If you run the `docker-machine ls` command to show all available machines, you will see
@@ -69,23 +69,13 @@ daemon installed, and will create and start a VirtualBox VM with Docker running.
 
 ```
 $ docker-machine create --driver virtualbox dev
-INFO[0000] Creating SSH key...
-INFO[0000] Creating VirtualBox VM...
-INFO[0007] Starting VirtualBox VM...
-INFO[0007] Waiting for VM to start...
-INFO[0038] "dev" has been created and is now the active machine
-INFO[0038] To connect: docker $(docker-machine config dev) ps
-```
-
-To use the Docker CLI, you can use the `env` command to list the commands
-needed to connect to the instance.
-
-```
-$ docker-machine env dev
-export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
-export DOCKER_HOST=tcp://192.168.99.100:2376
-
+INFO[0001] Downloading boot2docker.iso to /home/<your username>/.docker/machine/cache/boot2docker.iso...
+INFO[0011] Creating SSH key...
+INFO[0012] Creating VirtualBox VM...
+INFO[0019] Starting VirtualBox VM...
+INFO[0020] Waiting for VM to start...
+INFO[0053] "dev" has been created and is now the active machine.
+INFO[0053] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 ```
 
 You can see the machine you have created by running the `docker-machine ls` command
@@ -93,27 +83,38 @@ again:
 
 ```
 $ docker-machine ls
-NAME      ACTIVE   DRIVER       STATE     URL
-dev       *        virtualbox   Running   tcp://192.168.99.100:2376
+NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
+dev    *        virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
 The `*` next to `dev` indicates that it is the active host.
 
 Next, as noted in the output of the `docker-machine create` command, we have to tell
-Docker to talk to that machine.  You can do this with the `docker-machine config`
+Docker to talk to that machine.  You can do this with the `docker-machine env`
 command.  For example,
 
 ```
-$ docker $(docker-machine config dev) ps
+$ eval "$(docker-machine env dev)"
+$ docker ps
 ```
 
-This will pass arguments to the Docker client that specify the TLS settings.
-To see what will be passed, run `docker-machine config dev`.
+This will set environment variables that the Docker client will read which specify
+the TLS settings. Note that you will need to do that every time you open a new tab or
+restart your machine.
+
+To see what will be set, run `docker-machine env dev`.
+
+```
+$ docker-machine env dev
+export DOCKER_TLS_VERIFY=1
+export DOCKER_CERT_PATH=/Users/<your username>/.docker/machine/machines/dev
+export DOCKER_HOST=tcp://192.168.99.100:2376
+```
 
 You can now run Docker commands on this host:
 
 ```
-$ docker $(docker-machine config dev) run busybox echo hello world
+$ docker run busybox echo hello world
 Unable to find image 'busybox' locally
 Pulling repository busybox
 e72ac664f4f0: Download complete
@@ -176,7 +177,8 @@ the side panel.
 2. Click on "Generate New Token".
 3. Give the token a clever name (e.g. "machine"), make sure the "Write" checkbox
 is checked, and click on "Generate Token".
-4. Grab the big long hex string that is generated (this is your token) and store it somehwere safe.
+4. Grab the big long hex string that is generated (this is your token) and store
+it somewhere safe.
 
 Now, run `docker-machine create` with the `digitalocean` driver and pass your key to
 the `--digitalocean-access-token` flag.
@@ -192,7 +194,7 @@ INFO[0000] Creating SSH key...
 INFO[0000] Creating Digital Ocean droplet...
 INFO[0002] Waiting for SSH...
 INFO[0085] "staging" has been created and is now the active machine
-INFO[0085] To connect: docker $(docker-machine config dev) staging
+INFO[0085] To point your Docker client at it, run this in your shell: eval "$(docker-machine env staging)"
 ```
 
 For convenience, `docker-machine` will use sensible defaults for choosing settings such
@@ -255,8 +257,8 @@ custombox   *        none      Running   tcp://50.134.234.20:2376
 ```
 
 ## Using Docker Machine with Docker Swarm
-Docker Machine can also provision [Swarm](https://github.com/docker/swarm) 
-clusters. This can be used with any driver and will be secured with TLS. 
+Docker Machine can also provision [Swarm](https://github.com/docker/swarm)
+clusters. This can be used with any driver and will be secured with TLS.
 
 > **Note**: This is an experimental feature so the subcommands and
 > options are likely to change in future versions.
@@ -319,7 +321,7 @@ For example:
 ```
 $ docker-machine env --swarm swarm-master
 export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH=/home/ehazlett/.docker/machines/.client
+export DOCKER_CERT_PATH="/home/ehazlett/.docker/machines/.client"
 export DOCKER_HOST=tcp://192.168.99.100:3376
 ```
 
@@ -362,11 +364,13 @@ Create a machine.
 
 ```
 $ docker-machine create --driver virtualbox dev
+INFO[0001] Downloading boot2docker.iso to /home/ehazlett/.docker/machine/cache/boot2docker.iso...
 INFO[0000] Creating SSH key...
 INFO[0000] Creating VirtualBox VM...
 INFO[0007] Starting VirtualBox VM...
 INFO[0007] Waiting for VM to start...
-INFO[0038] "dev" has been created and is now the active machine. To point Docker at this machine, run: export DOCKER_HOST=$(docker-machine url) DOCKER_AUTH=identity
+INFO[0038] "dev" has been created and is now the active machine.
+INFO[0038] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 ```
 
 #### config
@@ -375,7 +379,7 @@ Show the Docker client configuration for a machine.
 
 ```
 $ docker-machine config dev
---tls --tlscacert=/Users/ehazlett/.docker/machines/dev/ca.pem --tlscert=/Users/ehazlett/.docker/machines/dev/cert.pem --tlskey=/Users/ehazlett/.docker/machines/dev/key.pem -H tcp://192.168.99.103:2376
+--tlsverify --tlscacert="/Users/ehazlett/.docker/machines/dev/ca.pem" --tlscert="/Users/ehazlett/.docker/machines/dev/cert.pem" --tlskey="/Users/ehazlett/.docker/machines/dev/key.pem" -H tcp://192.168.99.103:2376
 ```
 
 #### env
@@ -591,9 +595,6 @@ tcp://192.168.99.109:2376
 ```
 
 ## Drivers
-
-TODO: List all possible values (where applicable) for all flags for every
-driver.
 
 #### Amazon Web Services
 Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and a VPC ID.  To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs.  Select the one where you would like to launch the instance.
@@ -823,8 +824,21 @@ Options:
  - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
  - `--virtualbox-disk-size`: Size of disk for the host in MB. Default: `20000`
  - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
+ - `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to number of available CPUs.
 
 The VirtualBox driver uses the latest boot2docker image.
+
+Environment variables:
+
+Here comes the list of the supported variables with the corresponding options. If both environment
+variable and CLI option are provided the CLI option takes the precedence.
+
+| Environment variable              | CLI option                        |
+|-----------------------------------|-----------------------------------|
+| `VIRTUALBOX_MEMORY_SIZE`          | `--virtualbox-memory`             |
+| `VIRTUALBOX_CPU_COUNT`            | `--virtualbox-cpu-count`          |
+| `VIRTUALBOX_DISK_SIZE`            | `--virtualbox-disk-size`          |
+| `VIRTUALBOX_BOOT2DOCKER_URL`      | `--virtualbox-boot2docker-url`    |
 
 #### VMware Fusion
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.

@@ -1,0 +1,24 @@
+{
+  "DriverName": "virtualbox",
+  "Driver": {
+    "MachineName": "test-vbox",
+    "SSHUser": "docker",
+    "SSHPort": 45515,
+    "Memory": 1024,
+    "DiskSize": 20000,
+    "Boot2DockerURL": "",
+    "CaCertPath": "/tmp/store/certs/ca.pem",
+    "PrivateKeyPath": "/tmp/store/certs/ca-key.pem",
+    "SwarmMaster": false,
+    "SwarmHost": "tcp://0.0.0.0:3376",
+    "SwarmDiscovery": ""
+  },
+  "CaCertPath": "/tmp/store/certs/ca.pem",
+  "ServerCertPath": "",
+  "ServerKeyPath": "",
+  "PrivateKeyPath": "/tmp/store/certs/ca-key.pem",
+  "ClientCertPath": "",
+  "SwarmMaster": false,
+  "SwarmHost": "tcp://0.0.0.0:3376",
+  "SwarmDiscovery": ""
+}

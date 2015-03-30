@@ -31,6 +31,7 @@ const (
 )
 
 type Driver struct {
+	CPU            int
 	MachineName    string
 	SSHUser        string
 	SSHPort        int
@@ -45,12 +46,6 @@ type Driver struct {
 	storePath      string
 }
 
-type CreateFlags struct {
-	Memory         *int
-	DiskSize       *int
-	Boot2DockerURL *string
-}
-
 func init() {
 	drivers.Register("virtualbox", &drivers.RegisteredDriver{
 		New:            NewDriver,
@@ -63,14 +58,22 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
-			Name:  "virtualbox-memory",
-			Usage: "Size of memory for host in MB",
-			Value: 1024,
+			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
+			Name:   "virtualbox-memory",
+			Usage:  "Size of memory for host in MB",
+			Value:  1024,
 		},
 		cli.IntFlag{
-			Name:  "virtualbox-disk-size",
-			Usage: "Size of disk for host in MB",
-			Value: 20000,
+			EnvVar: "VIRTUALBOX_CPU_COUNT",
+			Name:   "virtualbox-cpu-count",
+			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
+			Value:  -1,
+		},
+		cli.IntFlag{
+			EnvVar: "VIRTUALBOX_DISK_SIZE",
+			Name:   "virtualbox-disk-size",
+			Usage:  "Size of disk for host in MB",
+			Value:  20000,
 		},
 		cli.StringFlag{
 			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
@@ -137,6 +140,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.CPU = flags.Int("virtualbox-cpu-count")
 	d.Memory = flags.Int("virtualbox-memory")
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
@@ -177,17 +181,14 @@ func (d *Driver) Create() error {
 		if err := os.Mkdir(imgPath, 0700); err != nil {
 			return err
 		}
-
 	}
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
 		log.Infof("Downloading %s from %s...", isoFilename, isoURL)
-		if err := b2dutils.DownloadISO(commonIsoPath, isoFilename, isoURL); err != nil {
+		if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
 			return err
-
 		}
-
 	} else {
 		// todo: check latest release URL, download if it's new
 		// until then always use "latest"
@@ -228,7 +229,10 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	cpus := uint(runtime.NumCPU())
+	cpus := d.CPU
+	if cpus < 1 {
+		cpus = int(runtime.NumCPU())
+	}
 	if cpus > 32 {
 		cpus = 32
 	}

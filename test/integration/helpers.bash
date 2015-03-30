@@ -12,6 +12,19 @@ else
     ARCH="386"
 fi
 MACHINE_BIN_NAME=docker-machine_$PLATFORM-$ARCH
+BATS_LOG=${MACHINE_ROOT}/bats.log
+
+touch ${BATS_LOG}
+rm ${BATS_LOG}
+
+teardown() {
+  echo "$BATS_TEST_NAME
+----------
+$output
+----------
+
+" >> ${BATS_LOG}
+}
 
 build_machine() {
     pushd $MACHINE_ROOT >/dev/null
