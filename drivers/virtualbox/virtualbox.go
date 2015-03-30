@@ -46,13 +46,6 @@ type Driver struct {
 	storePath      string
 }
 
-type CreateFlags struct {
-	CPU            *int
-	Memory         *int
-	DiskSize       *int
-	Boot2DockerURL *string
-}
-
 func init() {
 	drivers.Register("virtualbox", &drivers.RegisteredDriver{
 		New:            NewDriver,

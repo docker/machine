@@ -20,24 +20,6 @@ type Driver struct {
 	APIKey string
 }
 
-// CreateFlags stores the command-line arguments given to "machine create".
-type CreateFlags struct {
-	Username       *string
-	APIKey         *string
-	Region         *string
-	MachineName    *string
-	EndpointType   *string
-	ImageID        *string
-	FlavorID       *string
-	SSHUser        *string
-	SSHPort        *int
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-}
-
 func init() {
 	drivers.Register("rackspace", &drivers.RegisteredDriver{
 		New:            NewDriver,
