@@ -223,6 +223,13 @@ var Commands = []cli.Command{
 		Usage:       "Inspect information about a machine",
 		Description: "Argument is a machine name. Will use the active machine if none is provided.",
 		Action:      cmdInspect,
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "format, f",
+				Usage: "Format the output using the given go template.",
+				Value: "",
+			},
+		},
 	},
 	{
 		Name:        "ip",
