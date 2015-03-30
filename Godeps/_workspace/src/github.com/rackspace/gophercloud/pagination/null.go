@@ -1,6 +1,6 @@
 package pagination
 
-// nullPage is an always-empty page that trivially satisfies all Page interfacts.
+// nullPage is an always-empty page that trivially satisfies all Page interfaces.
 // It's useful to be returned along with an error.
 type nullPage struct{}
 
