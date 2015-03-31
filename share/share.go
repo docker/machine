@@ -2,6 +2,7 @@ package share
 
 import (
 	"fmt"
+	"syscall"
 
 	dockerutils "github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
@@ -41,6 +42,10 @@ func NewShareWithOptions(options ShareOptions) Share {
 		return VBoxSharedFolder{
 			Options: options,
 		}
+	case "nfs":
+		return NfsSharedFolder{
+			Options: options,
+		}
 	}
 	return nil
 }
@@ -51,11 +56,24 @@ func NewShare(shareType, absPath string) (Share, error) {
 		return VBoxSharedFolder{
 			Options: ShareOptions{
 				Name:     dockerutils.GenerateRandomID(),
+				SrcUid:   syscall.Getuid(),
 				DestUid:  1000,
 				DestGid:  50,
 				SrcPath:  absPath,
 				DestPath: absPath,
 				Type:     "vboxsf",
+			},
+		}, nil
+	case "nfs":
+		return NfsSharedFolder{
+			Options: ShareOptions{
+				Name:     dockerutils.GenerateRandomID(),
+				SrcUid:   syscall.Getuid(),
+				DestUid:  1000,
+				DestGid:  50,
+				SrcPath:  absPath,
+				DestPath: absPath,
+				Type:     "nfs",
 			},
 		}, nil
 	}

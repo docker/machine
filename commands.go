@@ -302,7 +302,7 @@ var Commands = []cli.Command{
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "driver",
-				Usage: "Type of share to create.  Options: vboxsf",
+				Usage: "Type of share to create.  Options: vboxsf, nfs",
 			},
 			cli.StringFlag{
 				Name:  "with",
@@ -815,13 +815,9 @@ func cmdShare(c *cli.Context) {
 		Options: newShare.GetOptions(),
 	})
 
-	// TODO: Is this an appropriate place for this?
-	if err := host.SaveConfig(); err != nil {
-		log.Fatal("There was an error saving the new configuration: %s", err)
-	}
-
+	// Run the host start to mount the new share
 	if err := host.Start(); err != nil {
-		log.Fatal("Error starting host after creating share: %s", err)
+		log.Fatalf("Error starting host after creating share: %s", err)
 	}
 
 	log.Infof("Share created successfully at %s", absSharePath)
