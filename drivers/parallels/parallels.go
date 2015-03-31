@@ -423,6 +423,15 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	// Assume that Parallels Desktop hosts don't have IPs unless they are running
+	s, err := d.GetState()
+	if err != nil {
+		return "", err
+	}
+	if s != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
 	ip, err := d.getIPfromDHCPLease()
 	if err != nil {
 		return "", err
