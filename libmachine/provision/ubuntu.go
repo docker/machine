@@ -56,6 +56,14 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 		packageAction = "install"
 	case pkgaction.Remove:
 		packageAction = "remove"
+	case pkgaction.Upgrade:
+		packageAction = "upgrade"
+	}
+
+	// TODO: This should probably have a const
+	switch name {
+	case "docker":
+		name = "lxc-docker"
 	}
 
 	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
