@@ -11,6 +11,9 @@ if [ -z "$GITHUB_TOKEN" ]; then
 fi
 
 script/build
+
+docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine ./script/generate-sums
+
 git tag $VERSION
 git push --tags
 docker run --rm -e GITHUB_TOKEN docker-machine github-release release \
@@ -29,4 +32,3 @@ for BINARY in docker-machine_*; do
         --name $BINARY \
         --file $BINARY
 done
-
