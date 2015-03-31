@@ -27,11 +27,13 @@ type PackageAction int
 const (
 	Install PackageAction = iota
 	Remove
+	Upgrade
 )
 
 var packageActions = []string{
 	"install",
 	"remove",
+	"upgrade",
 }
 
 func (s PackageAction) String() string {

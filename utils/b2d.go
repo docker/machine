@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 const (
@@ -36,6 +38,9 @@ func getClient() *http.Client {
 }
 
 type B2dUtils struct {
+	isoFilename      string
+	commonIsoPath    string
+	imgCachePath     string
 	githubApiBaseUrl string
 	githubBaseUrl    string
 }
@@ -43,6 +48,8 @@ type B2dUtils struct {
 func NewB2dUtils(githubApiBaseUrl, githubBaseUrl string) *B2dUtils {
 	defaultBaseApiUrl := "https://api.github.com"
 	defaultBaseUrl := "https://github.com"
+	imgCachePath := GetMachineCacheDir()
+	isoFilename := "boot2docker.iso"
 
 	if githubApiBaseUrl == "" {
 		githubApiBaseUrl = defaultBaseApiUrl
@@ -53,6 +60,9 @@ func NewB2dUtils(githubApiBaseUrl, githubBaseUrl string) *B2dUtils {
 	}
 
 	return &B2dUtils{
+		isoFilename:      isoFilename,
+		imgCachePath:     GetMachineCacheDir(),
+		commonIsoPath:    filepath.Join(imgCachePath, isoFilename),
 		githubApiBaseUrl: githubApiBaseUrl,
 		githubBaseUrl:    githubBaseUrl,
 	}
@@ -123,6 +133,65 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 	}
 
 	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *B2dUtils) DownloadLatestBoot2Docker() error {
+	latestReleaseUrl, err := b.GetLatestBoot2DockerReleaseURL()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Downloading latest boot2docker release to %s...", b.commonIsoPath)
+	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseUrl); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
+	machinesDir := GetMachineDir()
+	machineIsoPath := filepath.Join(machinesDir, machineName, b.isoFilename)
+
+	// just in case the cache dir has been manually deleted,
+	// check for it and recreate it if it's gone
+	if _, err := os.Stat(b.imgCachePath); os.IsNotExist(err) {
+		log.Infof("Image cache does not exist, creating it at %s...", b.imgCachePath)
+		if err := os.Mkdir(b.imgCachePath, 0700); err != nil {
+			return err
+		}
+	}
+
+	// By default just copy the existing "cached" iso to
+	// the machine's directory...
+	if isoURL == "" {
+		if err := b.copyDefaultIsoToMachine(machineIsoPath); err != nil {
+			return err
+		}
+	} else {
+		// But if ISO is specified go get it directly
+		log.Infof("Downloading %s from %s...", b.isoFilename, isoURL)
+		if err := b.DownloadISO(filepath.Join(machinesDir, machineName), b.isoFilename, isoURL); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b *B2dUtils) copyDefaultIsoToMachine(machineIsoPath string) error {
+	if _, err := os.Stat(b.commonIsoPath); os.IsNotExist(err) {
+		log.Info("No default boot2docker iso found locally, downloading the latest release...")
+		if err := b.DownloadLatestBoot2Docker(); err != nil {
+			return err
+		}
+	}
+
+	if err := CopyFile(b.commonIsoPath, machineIsoPath); err != nil {
 		return err
 	}
 
