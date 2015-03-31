@@ -158,8 +158,7 @@ func (d *Driver) PreCreateCheck() error {
 
 func (d *Driver) Create() error {
 	var (
-		err    error
-		isoURL string
+		err error
 	)
 
 	// Check that prctl exists and works
@@ -168,40 +167,8 @@ func (d *Driver) Create() error {
 	}
 
 	b2dutils := utils.NewB2dUtils("", "")
-	imgPath := utils.GetMachineCacheDir()
-	commonIsoPath := filepath.Join(imgPath, isoFilename)
-	// just in case boot2docker.iso has been manually deleted
-	if _, err := os.Stat(imgPath); os.IsNotExist(err) {
-		if err := os.Mkdir(imgPath, 0700); err != nil {
-			return err
-		}
-	}
-
-	if d.Boot2DockerURL != "" {
-		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading %s from %s...", isoFilename, isoURL)
-		if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
-			return err
-		}
-	} else {
-		// todo: check latest release URL, download if it's new
-		// until then always use "latest"
-		isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
-		if err != nil {
-			log.Warnf("Unable to check for the latest release: %s", err)
-		}
-
-		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading %s to %s...", isoFilename, commonIsoPath)
-			if err := b2dutils.DownloadISO(imgPath, isoFilename, isoURL); err != nil {
-				return err
-			}
-		}
-
-		isoDest := filepath.Join(d.storePath, isoFilename)
-		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
-			return err
-		}
+	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
+		return err
 	}
 
 	log.Infof("Creating SSH key...")
@@ -370,31 +337,6 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) Kill() error {
 	return prlctl("stop", d.MachineName, "--kill")
-}
-
-func (d *Driver) Upgrade() error {
-	log.Infof("Stopping machine...")
-	if err := d.Stop(); err != nil {
-		return err
-	}
-
-	b2dutils := utils.NewB2dUtils("", "")
-	isoURL, err := b2dutils.GetLatestBoot2DockerReleaseURL()
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Downloading boot2docker...")
-	if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
-		return err
-	}
-
-	log.Infof("Starting machine...")
-	if err := d.Start(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
