@@ -15,4 +15,4 @@ fi
 
 docker build -t docker-machine .
 rm -f docker-machine*
-exec docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox "${OS_PLATFORM_ARG[@]}" "${OS_ARCH_ARG[@]}" -output="docker-machine_{{.OS}}-{{.Arch}}" -ldflags="-w -X github.com/docker/machine/version.GITCOMMIT `git rev-parse --short HEAD`"
+docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox "${OS_PLATFORM_ARG[@]}" "${OS_ARCH_ARG[@]}" -output="docker-machine_{{.OS}}-{{.Arch}}" -ldflags="-w -X github.com/docker/machine/version.GITCOMMIT `git rev-parse --short HEAD`"
