@@ -748,7 +748,7 @@ Create machines on [Openstack](http://www.openstack.org/software/)
 Mandatory:
 
  - `--openstack-flavor-id` or `openstack-flavor-name`: Identify the flavor that will be used for the machine.
- - `--openstack-image-id`or `openstack-image-name`: Identify the image that will be used for the machine.
+ - `--openstack-image-id` or `openstack-image-name`: Identify the image that will be used for the machine.
 
 Options:
 
