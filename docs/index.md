@@ -747,8 +747,8 @@ Create machines on [Openstack](http://www.openstack.org/software/)
 
 Mandatory:
 
- - `--openstack-flavor-id`: The flavor ID to use when creating the machine
- - `--openstack-image-id`: The image ID to use when creating the machine.
+ - `--openstack-flavor-id` or `openstack-flavor-name`: The flavor ID (Name) to use when creating the machine
+ - `--openstack-image-id` or `openstack-image-name`: The image ID(Name) to use when creating the machine.
 
 Options:
 
@@ -768,6 +768,8 @@ Options:
    there is no IP address already allocated a new IP will be allocated and assigned to the machine.
  - `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
+ - `--openstack-insecure`:Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's 
+   certificate will not be verified against any certificate authorities. This  option should be used with caution.
 
 Environment variables:
 
