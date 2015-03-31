@@ -747,8 +747,8 @@ Create machines on [Openstack](http://www.openstack.org/software/)
 
 Mandatory:
 
- - `--openstack-flavor-id`: The flavor ID to use when creating the machine
- - `--openstack-image-id`: The image ID to use when creating the machine.
+ - `--openstack-flavor-id` or `openstack-flavor-name`: Identify the flavor that will be used for the machine.
+ - `--openstack-image-id`or `openstack-image-name`: Identify the image that will be used for the machine.
 
 Options:
 
@@ -770,7 +770,7 @@ Options:
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
  - `--openstack-insecure`:Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's 
    certificate will not be verified against any certificate authorities. This  option should be used with caution.   
-    
+
 Environment variables:
 
 Here comes the list of the supported variables with the corresponding options. If both environment variable
