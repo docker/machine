@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -36,36 +37,38 @@ var (
 )
 
 type Driver struct {
-	Id                 string
-	AccessKey          string
-	SecretKey          string
-	SessionToken       string
-	Region             string
-	AMI                string
-	SSHKeyID           int
-	SSHUser            string
-	SSHPort            int
-	KeyName            string
-	InstanceId         string
-	InstanceType       string
-	IPAddress          string
-	PrivateIPAddress   string
-	MachineName        string
-	SecurityGroupId    string
-	SecurityGroupName  string
-	ReservationId      string
-	RootSize           int64
-	IamInstanceProfile string
-	VpcId              string
-	SubnetId           string
-	Zone               string
-	CaCertPath         string
-	PrivateKeyPath     string
-	SwarmMaster        bool
-	SwarmHost          string
-	SwarmDiscovery     string
-	storePath          string
-	keyPath            string
+	Id                  string
+	AccessKey           string
+	SecretKey           string
+	SessionToken        string
+	Region              string
+	AMI                 string
+	SSHKeyID            int
+	SSHUser             string
+	SSHPort             int
+	KeyName             string
+	InstanceId          string
+	InstanceType        string
+	IPAddress           string
+	PrivateIPAddress    string
+	MachineName         string
+	SecurityGroupId     string
+	SecurityGroupName   string
+	ReservationId       string
+	RootSize            int64
+	IamInstanceProfile  string
+	VpcId               string
+	SubnetId            string
+	Zone                string
+	CaCertPath          string
+	PrivateKeyPath      string
+	SwarmMaster         bool
+	SwarmHost           string
+	SwarmDiscovery      string
+	storePath           string
+	keyPath             string
+	RequestSpotInstance bool
+	SpotPrice           string
 }
 
 func init() {
@@ -146,6 +149,15 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "amazonec2-iam-instance-profile",
 			Usage: "AWS IAM Instance Profile",
 		},
+		cli.BoolFlag{
+			Name:  "amazonec2-request-spot-instance",
+			Usage: "Set this flag to request spot instance",
+		},
+		cli.StringFlag{
+			Name:  "amazonec2-spot-price",
+			Usage: "AWS spot instance bid price (in dollar)",
+			Value: "0.50",
+		},
 	}
 }
 
@@ -188,6 +200,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SessionToken = flags.String("amazonec2-session-token")
 	d.Region = region
 	d.AMI = image
+	d.RequestSpotInstance = flags.Bool("amazonec2-request-spot-instance")
+	d.SpotPrice = flags.String("amazonec2-spot-price")
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
 	d.SubnetId = flags.String("amazonec2-subnet-id")
@@ -329,10 +343,35 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("launching instance in subnet %s", d.SubnetId)
-	instance, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile)
-
-	if err != nil {
-		return fmt.Errorf("Error launching instance: %s", err)
+	var instance amz.EC2Instance
+	if d.RequestSpotInstance {
+		spotInstanceRequestId, err := d.getClient().RequestSpotInstances(d.AMI, d.InstanceType, d.Zone, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.SpotPrice)
+		if err != nil {
+			return fmt.Errorf("Error request spot instance: %s", err)
+		}
+		var instanceId string
+		var spotRequestStatus string
+		log.Infof("Waiting for spot instance fullfillment...")
+		log.Infof("This will take about 5 minutes.")
+		// check util fulfilled
+		for instanceId == "" {
+			time.Sleep(time.Second * 5)
+			spotRequestStatus, instanceId, err = d.getClient().DescribeSpotInstanceRequests(spotInstanceRequestId)
+			if err != nil {
+				return fmt.Errorf("Error describe spot instance request: %s", err)
+			}
+			log.Infof("Spot request status: %s.", spotRequestStatus)
+		}
+		instance, err = d.getClient().GetInstance(instanceId)
+		if err != nil {
+			return fmt.Errorf("Error get instance: %s", err)
+		}
+	} else {
+		inst, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile)
+		if err != nil {
+			return fmt.Errorf("Error launching instance: %s", err)
+		}
+		instance = inst
 	}
 
 	d.InstanceId = instance.InstanceId
@@ -365,7 +404,7 @@ func (d *Driver) Create() error {
 		"Name": d.MachineName,
 	}
 
-	if err = d.getClient().CreateTags(d.InstanceId, tags); err != nil {
+	if err := d.getClient().CreateTags(d.InstanceId, tags); err != nil {
 		return err
 	}
 
