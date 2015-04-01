@@ -31,7 +31,16 @@ func cmdInspect(c *cli.Context) {
 			log.Fatalf("Template parsing error: %v\n", err)
 		}
 
-		if err := tmpl.Execute(os.Stderr, getHost(c)); err != nil {
+		jsonHost, err := json.Marshal(getHost(c))
+		if err != nil {
+			log.Fatal(err)
+		}
+		obj := make(map[string]interface{})
+		if err := json.Unmarshal(jsonHost, &obj); err != nil {
+			log.Fatal(err)
+		}
+
+		if err := tmpl.Execute(os.Stderr, obj); err != nil {
 			log.Fatal(err)
 		}
 		os.Stderr.Write([]byte{'\n'})
