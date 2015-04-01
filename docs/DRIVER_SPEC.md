@@ -85,12 +85,13 @@ will need to make sure it is compliant with the Docker license terms (non-GPL).
 For more information, contact a project maintainer.
 
 # Implementation
-The following describes what is needed to create a Machine Driver.
+The following describes what is needed to create a Machine Driver.  The driver
+interface has methods that must be implemented for all drivers.  These include
+operations such as `Create`, `Remove`, `Start`, `Stop` etc.
 
-As mentioned, please review the [Driver Interface](https://github.com/docker/machine/blob/master/drivers/drivers.go#L23) for full details.
+For details see the [Driver Interface](https://github.com/docker/machine/blob/master/drivers/drivers.go#L24).
 
-## Definition
-All drivers use a struct for its basic definition:
+To provide this functionality, most drivers use a struct similar to the following:
 
 ```
 type Driver struct {
@@ -142,71 +143,6 @@ func GetCreateFlags() []cli.Flag {
 }
 ```
 
-You will then need to implement the various methods defined in the Driver
-interface:
-
-```
-// AuthorizePort authorizes a port for machine access
-AuthorizePort(ports []*Port) error
-
-// Create a host using the driver's config
-Create() error
-
-// DeauthorizePort removes a port for machine access
-DeauthorizePort(ports []*Port) error
-
-// DriverName returns the name of the driver as it is registered
-DriverName() string
-
-// GetIP returns an IP or hostname that this host is available at
-// e.g. 1.2.3.4 or docker-host-d60b70a14d3a.cloudapp.net
-GetIP() (string, error)
-
-// GetMachineName returns the name of the machine
-GetMachineName() string
-
-// GetSSHHostname returns hostname for use with ssh
-GetSSHHostname() (string, error)
-
-// GetSSHKeyPath returns key path for use with ssh
-GetSSHKeyPath() string
-
-// GetSSHPort returns port for use with ssh
-GetSSHPort() (int, error)
-
-// GetSSHUsername returns username for use with ssh
-GetSSHUsername() string
-
-// GetURL returns a Docker compatible host URL for connecting to this host
-// e.g. tcp://1.2.3.4:2376
-GetURL() (string, error)
-
-// GetState returns the state that the host is in (running, stopped, etc)
-GetState() (state.State, error)
-
-// GetProviderType returns whether the instance is local/remote
-GetProviderType() provider.ProviderType
-
-// Kill stops a host forcefully
-Kill() error
-
-// PreCreateCheck allows for pre-create operations to make sure a driver is ready for creation
-PreCreateCheck() error
-
-// Remove a host
-Remove() error
-
-// Restart a host. This may just call Stop(); Start() if the provider does not
-// have any special restart behaviour.
-Restart() error
-
-// SetConfigFromFlags configures the driver with the object that was returned
-// by RegisterCreateFlags
-SetConfigFromFlags(flags DriverOptions) error
-
-// Start a host
-Start() error
-
-// Stop a host gracefully
-Stop() error
-```
+## Examples
+You can reference the existing [Drivers](https://github.com/docker/machine/tree/master/drivers)
+as well.
