@@ -34,6 +34,10 @@ into your `PATH`:
 - [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-amd64)
 - [Linux - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-386)
 
+The `PATH` is a set of locations in the file system whereby the user can use certain applications, commands and programs without the need to specify the full path to that command or program.
+
+The location where you copy `docker-machine` does not affect its functionality, but it will make your life easier by typing less. A not very practical option, it's to run `docker-machine` from the location where you save it. If you are using OSX or Linux, make sure you give execute rights: `chmod +x docker-machine`
+
 Now you should be able to check the version with `docker-machine -v`:
 
 ```
