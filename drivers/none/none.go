@@ -112,12 +112,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if url == "" {
 		return fmt.Errorf("--url option is required when no driver is selected")
 	}
-	validatedUrl, err := api.ValidateHost(url)
+	validatedURL, err := api.ValidateHost(url)
 	if err != nil {
 		return err
 	}
 
-	d.URL = validatedUrl
+	d.URL = validatedURL
 	return nil
 }
 

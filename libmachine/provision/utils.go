@@ -156,11 +156,11 @@ func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 		return err
 	}
 
-	dockerUrl, err := p.GetDriver().GetURL()
+	dockerURL, err := p.GetDriver().GetURL()
 	if err != nil {
 		return err
 	}
-	u, err := url.Parse(dockerUrl)
+	u, err := url.Parse(dockerURL)
 	if err != nil {
 		return err
 	}

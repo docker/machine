@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	B2D_USER        = "docker"
-	B2D_PASS        = "tcuser"
+	B2DUser         = "docker"
+	B2DPass         = "tcuser"
 	dockerConfigDir = "/var/lib/boot2docker"
 	isoFilename     = "boot2docker-1.5.0-GH747.iso"
 )
@@ -313,13 +313,13 @@ func (d *Driver) Create() error {
 	}
 
 	// Test if /var/lib/boot2docker exists
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "directoryExistsInGuest", d.vmxPath(), "/var/lib/boot2docker")
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "directoryExistsInGuest", d.vmxPath(), "/var/lib/boot2docker")
 
 	// Copy SSH keys bundle
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "CopyFileFromHostToGuest", d.vmxPath(), path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar")
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "CopyFileFromHostToGuest", d.vmxPath(), path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar")
 
 	// Expand tar file.
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
 
 	return nil
 }
@@ -362,7 +362,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("VMware Fusion does not currently support the upgrade operation.")
+	return fmt.Errorf("VMware Fusion does not currently support the upgrade operation")
 }
 
 func (d *Driver) vmxPath() string {

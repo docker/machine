@@ -11,17 +11,17 @@ import (
 
 type Client struct {
 	User     string
-	ApiKey   string
+	APIKey   string
 	Endpoint string
 }
 
 type HostSpec struct {
 	Hostname       string        `json:"hostname"`
 	Domain         string        `json:"domain"`
-	Cpu            int           `json:"startCpus"`
+	CPU            int           `json:"startCPUs"`
 	Memory         int           `json:"maxMemory"`
 	Datacenter     Datacenter    `json:"datacenter"`
-	SshKeys        []*SshKey     `json:"sshKeys"`
+	SSHKeys        []*SSHKey     `json:"sshKeys"`
 	BlockDevices   []BlockDevice `json:"blockDevices"`
 	InstallScript  string        `json:"postInstallScriptUri"`
 	PrivateNetOnly bool          `json:"privateNetworkOnlyFlag"`
@@ -30,9 +30,9 @@ type HostSpec struct {
 	LocalDisk      bool          `json:"localDiskFlag"`
 }
 
-type SshKey struct {
+type SSHKey struct {
 	Key   string `json:"key,omitempty"`
-	Id    int    `json:"id,omitempty"`
+	ID    int    `json:"id,omitempty"`
 	Label string `json:"label,omitempty"`
 }
 
@@ -58,7 +58,7 @@ type virtualGuest struct {
 }
 
 func NewClient(user, key, endpoint string) *Client {
-	return &Client{User: user, ApiKey: key, Endpoint: endpoint}
+	return &Client{User: user, APIKey: key, Endpoint: endpoint}
 }
 
 func (c *Client) isOkStatus(code int) bool {
@@ -85,11 +85,11 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	)
 
 	if body != nil {
-		bodyJson, err := json.Marshal(body)
+		bodyJSON, err := json.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
-		req, err = http.NewRequest(method, url, bytes.NewBuffer(bodyJson))
+		req, err = http.NewRequest(method, url, bytes.NewBuffer(bodyJSON))
 	} else {
 		req, err = http.NewRequest(method, url, nil)
 	}
@@ -98,7 +98,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 		return nil, fmt.Errorf("Error with request: %v - %q", url, err)
 	}
 
-	req.SetBasicAuth(c.User, c.ApiKey)
+	req.SetBasicAuth(c.User, c.APIKey)
 	req.Method = method
 
 	resp, err := client.Do(req)
@@ -122,7 +122,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	return data, nil
 }
 
-func (c *Client) SshKey() *sshKey {
+func (c *Client) SSHKey() *sshKey {
 	return &sshKey{c}
 }
 
@@ -130,11 +130,11 @@ func (c *sshKey) namespace() string {
 	return "SoftLayer_Security_Ssh_Key"
 }
 
-func (c *sshKey) Create(label, key string) (*SshKey, error) {
+func (c *sshKey) Create(label, key string) (*SSHKey, error) {
 	var (
 		method = "POST"
 		uri    = c.namespace()
-		body   = SshKey{Key: key, Label: label}
+		body   = SSHKey{Key: key, Label: label}
 	)
 
 	data, err := c.newRequest(method, uri, map[string]interface{}{"parameters": []interface{}{body}})
@@ -142,7 +142,7 @@ func (c *sshKey) Create(label, key string) (*SshKey, error) {
 		return nil, err
 	}
 
-	var k SshKey
+	var k SSHKey
 	if err := json.Unmarshal(data, &k); err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (c *virtualGuest) Create(spec *HostSpec) (int, error) {
 	}
 
 	type createResp struct {
-		Id int `json:"id"`
+		ID int `json:"id"`
 	}
 
 	var r createResp
@@ -233,7 +233,7 @@ func (c *virtualGuest) Create(spec *HostSpec) (int, error) {
 		return -1, err
 	}
 
-	return r.Id, nil
+	return r.ID, nil
 }
 
 func (c *virtualGuest) Cancel(id int) error {
@@ -314,7 +314,7 @@ func (c *virtualGuest) Reboot(id int) error {
 	return nil
 }
 
-func (c *virtualGuest) GetPublicIp(id int) (string, error) {
+func (c *virtualGuest) GetPublicIP(id int) (string, error) {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/getPrimaryIpAddress.json", c.namespace(), id)
@@ -327,7 +327,7 @@ func (c *virtualGuest) GetPublicIp(id int) (string, error) {
 	return strings.Replace(string(data), "\"", "", -1), nil
 }
 
-func (c *virtualGuest) GetPrivateIp(id int) (string, error) {
+func (c *virtualGuest) GetPrivateIP(id int) (string, error) {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/getPrimaryBackendIpAddress.json", c.namespace(), id)

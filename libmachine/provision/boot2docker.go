@@ -150,7 +150,7 @@ DOCKER_TLS=no`, opts, authOptions.CaCertRemotePath, authOptions.ServerCertRemote
 }
 
 func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() bool {
-	return provisioner.OsReleaseInfo.Id == "boot2docker"
+	return provisioner.OsReleaseInfo.ID == "boot2docker"
 }
 
 func (provisioner *Boot2DockerProvisioner) SetOsReleaseInfo(info *OsRelease) {

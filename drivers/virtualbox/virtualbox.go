@@ -53,7 +53,7 @@ func init() {
 	})
 }
 
-// RegisterCreateFlags registers the flags this driver adds to
+// GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{

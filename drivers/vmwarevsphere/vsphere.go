@@ -28,13 +28,13 @@ import (
 )
 
 const (
-	DATASTORE_DIR      = "boot2docker-iso"
-	isoFilename        = "boot2docker-1.5.0-GH747.iso"
-	B2D_ISO_NAME       = isoFilename
-	DEFAULT_CPU_NUMBER = 2
-	dockerConfigDir    = "/var/lib/boot2docker"
-	B2D_USER           = "docker"
-	B2D_PASS           = "tcuser"
+	DatastoreDir     = "boot2docker-iso"
+	isoFilename      = "boot2docker-1.5.0-GH747.iso"
+	B2DISOName       = isoFilename
+	DefaultCPUNumber = 2
+	dockerConfigDir  = "/var/lib/boot2docker"
+	B2DUser          = "docker"
+	B2DPass          = "tcuser"
 )
 
 type Driver struct {
@@ -230,17 +230,17 @@ func (d *Driver) GetIP() (string, error) {
 		return "", errors.NewInvalidStateError(d.MachineName)
 	}
 	vcConn := NewVcConn(d)
-	rawIp, err := vcConn.VmFetchIp()
+	rawIP, err := vcConn.VMFetchIP()
 	if err != nil {
 		return "", err
 	}
-	ip := strings.Trim(strings.Split(rawIp, "\n")[0], " ")
+	ip := strings.Trim(strings.Split(rawIP, "\n")[0], " ")
 	return ip, nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
 	vcConn := NewVcConn(d)
-	stdout, err := vcConn.VmInfo()
+	stdout, err := vcConn.VMInfo()
 	if err != nil {
 		return state.None, err
 	}
@@ -334,7 +334,7 @@ func (d *Driver) Create() error {
 
 	vcConn := NewVcConn(d)
 	log.Infof("Uploading Boot2docker ISO ...")
-	if err := vcConn.DatastoreMkdir(DATASTORE_DIR); err != nil {
+	if err := vcConn.DatastoreMkdir(DatastoreDir); err != nil {
 		return err
 	}
 
@@ -347,17 +347,17 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	isoPath := fmt.Sprintf("%s/%s", DATASTORE_DIR, isoFilename)
-	if err := vcConn.VmCreate(isoPath); err != nil {
+	isoPath := fmt.Sprintf("%s/%s", DatastoreDir, isoFilename)
+	if err := vcConn.VMCreate(isoPath); err != nil {
 		return err
 	}
 
 	log.Infof("Configuring the virtual machine %s... ", d.MachineName)
-	if err := vcConn.VmDiskCreate(); err != nil {
+	if err := vcConn.VMDiskCreate(); err != nil {
 		return err
 	}
 
-	if err := vcConn.VmAttachNetwork(); err != nil {
+	if err := vcConn.VMAttachNetwork(); err != nil {
 		return err
 	}
 
@@ -371,12 +371,12 @@ func (d *Driver) Create() error {
 	}
 
 	// Copy SSH keys bundle
-	if err := vcConn.GuestUpload(B2D_USER, B2D_PASS, path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar"); err != nil {
+	if err := vcConn.GuestUpload(B2DUser, B2DPass, path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar"); err != nil {
 		return err
 	}
 
 	// Expand tar file.
-	if err := vcConn.GuestStart(B2D_USER, B2D_PASS, "/usr/bin/sudo", "/bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && /usr/bin/sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && /usr/bin/sudo chown -R docker:staff /home/docker"); err != nil {
+	if err := vcConn.GuestStart(B2DUser, B2DPass, "/usr/bin/sudo", "/bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && /usr/bin/sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && /usr/bin/sudo chown -R docker:staff /home/docker"); err != nil {
 		return err
 	}
 
@@ -396,13 +396,13 @@ func (d *Driver) Start() error {
 	case state.Stopped:
 		// TODO add transactional or error handling in the following steps
 		vcConn := NewVcConn(d)
-		err := vcConn.VmPowerOn()
+		err := vcConn.VMPowerOn()
 		if err != nil {
 			return err
 		}
 		// this step waits for the vm to start and fetch its ip address;
 		// this guarantees that the opem-vmtools has started working...
-		_, err = vcConn.VmFetchIp()
+		_, err = vcConn.VMFetchIP()
 		if err != nil {
 			return err
 		}
@@ -414,7 +414,7 @@ func (d *Driver) Start() error {
 
 func (d *Driver) Stop() error {
 	vcConn := NewVcConn(d)
-	if err := vcConn.VmShutdown(); err != nil {
+	if err := vcConn.VMShutdown(); err != nil {
 		return err
 	}
 
@@ -432,7 +432,7 @@ func (d *Driver) Remove() error {
 		}
 	}
 	vcConn := NewVcConn(d)
-	if err = vcConn.VmDestroy(); err != nil {
+	if err = vcConn.VMDestroy(); err != nil {
 		return err
 	}
 	return nil
@@ -471,7 +471,7 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) Kill() error {
 	vcConn := NewVcConn(d)
-	if err := vcConn.VmPowerOff(); err != nil {
+	if err := vcConn.VMPowerOff(); err != nil {
 		return err
 	}
 

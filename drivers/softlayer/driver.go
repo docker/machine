@@ -18,14 +18,14 @@ import (
 
 const (
 	dockerConfigDir = "/etc/docker"
-	ApiEndpoint     = "https://api.softlayer.com/rest/v3"
+	APIEndpoint     = "https://api.softlayer.com/rest/v3"
 )
 
 type Driver struct {
 	storePath      string
 	IPAddress      string
 	deviceConfig   *deviceConfig
-	Id             int
+	ID             int
 	Client         *Client
 	SSHUser        string
 	SSHPort        int
@@ -39,7 +39,7 @@ type Driver struct {
 
 type deviceConfig struct {
 	DiskSize      int
-	Cpu           int
+	CPU           int
 	Hostname      string
 	Domain        string
 	Region        string
@@ -159,7 +159,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "SOFTLAYER_API_ENDPOINT",
 			Name:   "softlayer-api-endpoint",
 			Usage:  "softlayer api endpoint to use",
-			Value:  ApiEndpoint,
+			Value:  APIEndpoint,
 		},
 		cli.BoolFlag{
 			EnvVar: "SOFTLAYER_HOURLY_BILLING",
@@ -196,7 +196,7 @@ func validateDeviceConfig(c *deviceConfig) error {
 	if c.Region == "" {
 		return fmt.Errorf("Missing required setting - --softlayer-region")
 	}
-	if c.Cpu < 1 {
+	if c.CPU < 1 {
 		return fmt.Errorf("Missing required setting - --softlayer-cpu")
 	}
 
@@ -204,7 +204,7 @@ func validateDeviceConfig(c *deviceConfig) error {
 }
 
 func validateClientConfig(c *Client) error {
-	if c.ApiKey == "" {
+	if c.APIKey == "" {
 		return fmt.Errorf("Missing required setting - --softlayer-api-key")
 	}
 
@@ -224,7 +224,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Client = &Client{
 		Endpoint: flags.String("softlayer-api-endpoint"),
 		User:     flags.String("softlayer-user"),
-		ApiKey:   flags.String("softlayer-api-key"),
+		APIKey:   flags.String("softlayer-api-key"),
 	}
 
 	d.SwarmMaster = flags.Bool("swarm-master")
@@ -240,7 +240,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.deviceConfig = &deviceConfig{
 		Hostname:      flags.String("softlayer-hostname"),
 		DiskSize:      flags.Int("softlayer-disk-size"),
-		Cpu:           flags.Int("softlayer-cpu"),
+		CPU:           flags.Int("softlayer-cpu"),
 		Domain:        flags.String("softlayer-domain"),
 		Memory:        flags.Int("softlayer-memory"),
 		PrivateNet:    flags.Bool("softlayer-private-net-only"),
@@ -275,11 +275,11 @@ func (d *Driver) GetIP() (string, error) {
 	if d.IPAddress != "" {
 		return d.IPAddress, nil
 	}
-	return d.getClient().VirtualGuest().GetPublicIp(d.Id)
+	return d.getClient().VirtualGuest().GetPublicIP(d.ID)
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	s, err := d.getClient().VirtualGuest().PowerState(d.Id)
+	s, err := d.getClient().VirtualGuest().PowerState(d.ID)
 	if err != nil {
 		return state.None, err
 	}
@@ -296,7 +296,7 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) GetActiveTransaction() (string, error) {
-	t, err := d.getClient().VirtualGuest().ActiveTransaction(d.Id)
+	t, err := d.getClient().VirtualGuest().ActiveTransaction(d.ID)
 	if err != nil {
 		return "", err
 	}
@@ -325,7 +325,7 @@ func (d *Driver) waitForStart() {
 	}
 }
 
-func (d *Driver) getIp() (string, error) {
+func (d *Driver) getIP() (string, error) {
 	log.Infof("Getting Host IP")
 	for {
 		var (
@@ -333,9 +333,9 @@ func (d *Driver) getIp() (string, error) {
 			err error
 		)
 		if d.deviceConfig.PrivateNet {
-			ip, err = d.getClient().VirtualGuest().GetPrivateIp(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPrivateIP(d.ID)
 		} else {
-			ip, err = d.getClient().VirtualGuest().GetPublicIp(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPublicIP(d.ID)
 		}
 		if err != nil {
 			time.Sleep(2 * time.Second)
@@ -385,14 +385,14 @@ func (d *Driver) Create() error {
 	}
 
 	spec := d.buildHostSpec()
-	spec.SshKeys = []*SshKey{key}
+	spec.SSHKeys = []*SSHKey{key}
 
 	id, err := d.getClient().VirtualGuest().Create(spec)
 	if err != nil {
 		return fmt.Errorf("Error creating host: %q", err)
 	}
-	d.Id = id
-	d.getIp()
+	d.ID = id
+	d.getIP()
 	d.waitForStart()
 	d.waitForSetupTransactions()
 	ssh.WaitForTCP(d.IPAddress + ":22")
@@ -414,7 +414,7 @@ func (d *Driver) buildHostSpec() *HostSpec {
 	spec := &HostSpec{
 		Hostname:       d.deviceConfig.Hostname,
 		Domain:         d.deviceConfig.Domain,
-		Cpu:            d.deviceConfig.Cpu,
+		CPU:            d.deviceConfig.CPU,
 		Memory:         d.deviceConfig.Memory,
 		Datacenter:     Datacenter{Name: d.deviceConfig.Region},
 		Os:             d.deviceConfig.Image,
@@ -427,7 +427,7 @@ func (d *Driver) buildHostSpec() *HostSpec {
 	return spec
 }
 
-func (d *Driver) createSSHKey() (*SshKey, error) {
+func (d *Driver) createSSHKey() (*SSHKey, error) {
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return nil, err
 	}
@@ -437,7 +437,7 @@ func (d *Driver) createSSHKey() (*SshKey, error) {
 		return nil, err
 	}
 
-	key, err := d.getClient().SshKey().Create(d.deviceConfig.Hostname, string(publicKey))
+	key, err := d.getClient().SSHKey().Create(d.deviceConfig.Hostname, string(publicKey))
 	if err != nil {
 		return nil, err
 	}
@@ -450,12 +450,13 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) Kill() error {
-	return d.getClient().VirtualGuest().PowerOff(d.Id)
+	return d.getClient().VirtualGuest().PowerOff(d.ID)
 }
+
 func (d *Driver) Remove() error {
 	var err error
 	for i := 0; i < 5; i++ {
-		if err = d.getClient().VirtualGuest().Cancel(d.Id); err != nil {
+		if err = d.getClient().VirtualGuest().Cancel(d.ID); err != nil {
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -463,12 +464,15 @@ func (d *Driver) Remove() error {
 	}
 	return err
 }
+
 func (d *Driver) Restart() error {
-	return d.getClient().VirtualGuest().Reboot(d.Id)
+	return d.getClient().VirtualGuest().Reboot(d.ID)
 }
+
 func (d *Driver) Start() error {
-	return d.getClient().VirtualGuest().PowerOn(d.Id)
+	return d.getClient().VirtualGuest().PowerOn(d.ID)
 }
+
 func (d *Driver) Stop() error {
-	return d.getClient().VirtualGuest().PowerOff(d.Id)
+	return d.getClient().VirtualGuest().PowerOff(d.ID)
 }

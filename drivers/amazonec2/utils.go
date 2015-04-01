@@ -13,10 +13,10 @@ var (
 )
 
 type region struct {
-	AmiId string
+	AmiID string
 }
 
-var regionDetails map[string]*region = map[string]*region{
+var regionDetails = map[string]*region{
 	"ap-northeast-1": {"ami-44f1e245"},
 	"ap-southeast-1": {"ami-f95875ab"},
 	"ap-southeast-2": {"ami-890b62b3"},

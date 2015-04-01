@@ -1,16 +1,16 @@
 package engine
 
 type EngineOptions struct {
-	Dns            []string
+	DNS            []string
 	GraphDir       string
 	Ipv6           bool
 	Labels         []string
 	LogLevel       string
 	StorageDriver  string
 	SelinuxEnabled bool
-	TlsCaCert      string
-	TlsCert        string
-	TlsKey         string
-	TlsVerify      bool
+	TLSCaCert      string
+	TLSCert        string
+	TLSKey         string
+	TLSVerify      bool
 	RegistryMirror []string
 }

@@ -40,7 +40,7 @@ import (
 type machineConfig struct {
 	machineName    string
 	machineDir     string
-	machineUrl     string
+	machineURL     string
 	clientKeyPath  string
 	serverCertPath string
 	clientCertPath string
@@ -228,7 +228,7 @@ var Commands = []cli.Command{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
 		Description: "Argument is a machine name. Will use the active machine if none is provided.",
-		Action:      cmdIp,
+		Action:      cmdIP,
 	},
 	{
 		Name:        "kill",
@@ -297,7 +297,7 @@ var Commands = []cli.Command{
 		Name:        "ssh",
 		Usage:       "Log into or run a command on a machine with SSH",
 		Description: "Arguments are [machine-name] command - Will use the active machine if none is provided.",
-		Action:      cmdSsh,
+		Action:      cmdSSH,
 	},
 	{
 		Name:        "start",
@@ -321,7 +321,7 @@ var Commands = []cli.Command{
 		Name:        "url",
 		Usage:       "Get the URL of a machine",
 		Description: "Argument is a machine name. Will use the active machine if none is provided.",
-		Action:      cmdUrl,
+		Action:      cmdURL,
 	},
 }
 
@@ -467,19 +467,19 @@ func cmdConfig(c *cli.Context) {
 		swarmPort := parts[1]
 
 		// get IP of machine to replace in case swarm host is 0.0.0.0
-		mUrl, err := url.Parse(dockerHost)
+		mURL, err := url.Parse(dockerHost)
 		if err != nil {
 			log.Fatal(err)
 		}
-		mParts := strings.Split(mUrl.Host, ":")
-		machineIp := mParts[0]
+		mParts := strings.Split(mURL.Host, ":")
+		machineIP := mParts[0]
 
-		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIP, swarmPort)
 	}
 
 	log.Debug(dockerHost)
 
-	u, err := url.Parse(cfg.machineUrl)
+	u, err := url.Parse(cfg.machineURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -518,7 +518,7 @@ func cmdInspect(c *cli.Context) {
 	fmt.Println(string(prettyJSON))
 }
 
-func cmdIp(c *cli.Context) {
+func cmdIP(c *cli.Context) {
 	ip, err := getHost(c).Driver.GetIP()
 	if err != nil {
 		log.Fatal(err)
@@ -674,11 +674,11 @@ func cmdEnv(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	if cfg.machineUrl == "" {
+	if cfg.machineURL == "" {
 		log.Fatalf("%s is not running. Please start this with docker-machine start %s", cfg.machineName, cfg.machineName)
 	}
 
-	dockerHost := cfg.machineUrl
+	dockerHost := cfg.machineURL
 	if c.Bool("swarm") {
 		if !cfg.SwarmOptions.Master {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
@@ -691,17 +691,17 @@ func cmdEnv(c *cli.Context) {
 		swarmPort := parts[1]
 
 		// get IP of machine to replace in case swarm host is 0.0.0.0
-		mUrl, err := url.Parse(cfg.machineUrl)
+		mURL, err := url.Parse(cfg.machineURL)
 		if err != nil {
 			log.Fatal(err)
 		}
-		mParts := strings.Split(mUrl.Host, ":")
-		machineIp := mParts[0]
+		mParts := strings.Split(mURL.Host, ":")
+		machineIP := mParts[0]
 
-		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIP, swarmPort)
 	}
 
-	u, err := url.Parse(cfg.machineUrl)
+	u, err := url.Parse(cfg.machineURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -759,7 +759,7 @@ func generateUsageHint(machineName string, userShell string) string {
 	return fmt.Sprintf("# Run this command to configure your shell: %s\n", cmd)
 }
 
-func cmdSsh(c *cli.Context) {
+func cmdSSH(c *cli.Context) {
 	var (
 		err    error
 		sshCmd *exec.Cmd
@@ -961,7 +961,7 @@ func cmdUpgrade(c *cli.Context) {
 	}
 }
 
-func cmdUrl(c *cli.Context) {
+func cmdURL(c *cli.Context) {
 	url, err := getHost(c).GetURL()
 	if err != nil {
 		log.Fatal(err)
@@ -1128,10 +1128,10 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	clientKey := filepath.Join(machineDir, "key.pem")
 	serverCert := filepath.Join(machineDir, "server.pem")
 	serverKey := filepath.Join(machineDir, "server-key.pem")
-	machineUrl, err := machine.GetURL()
+	machineURL, err := machine.GetURL()
 	if err != nil {
 		if err == drivers.ErrHostIsNotRunning {
-			machineUrl = ""
+			machineURL = ""
 		} else {
 			return nil, fmt.Errorf("Unexpected error getting machine url: %s", err)
 		}
@@ -1139,7 +1139,7 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	return &machineConfig{
 		machineName:    name,
 		machineDir:     machineDir,
-		machineUrl:     machineUrl,
+		machineURL:     machineURL,
 		clientKeyPath:  clientKey,
 		clientCertPath: clientCert,
 		serverCertPath: serverCert,

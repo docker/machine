@@ -41,39 +41,39 @@ type B2dUtils struct {
 	isoFilename      string
 	commonIsoPath    string
 	imgCachePath     string
-	githubApiBaseUrl string
-	githubBaseUrl    string
+	githubAPIBaseURL string
+	githubBaseURL    string
 }
 
-func NewB2dUtils(githubApiBaseUrl, githubBaseUrl string) *B2dUtils {
-	defaultBaseApiUrl := "https://api.github.com"
-	defaultBaseUrl := "https://github.com"
+func NewB2dUtils(githubAPIBaseURL, githubBaseURL string) *B2dUtils {
+	defaultBaseAPIURL := "https://api.github.com"
+	defaultBaseURL := "https://github.com"
 	imgCachePath := GetMachineCacheDir()
 	isoFilename := "boot2docker.iso"
 
-	if githubApiBaseUrl == "" {
-		githubApiBaseUrl = defaultBaseApiUrl
+	if githubAPIBaseURL == "" {
+		githubAPIBaseURL = defaultBaseAPIURL
 	}
 
-	if githubBaseUrl == "" {
-		githubBaseUrl = defaultBaseUrl
+	if githubBaseURL == "" {
+		githubBaseURL = defaultBaseURL
 	}
 
 	return &B2dUtils{
 		isoFilename:      isoFilename,
 		imgCachePath:     GetMachineCacheDir(),
 		commonIsoPath:    filepath.Join(imgCachePath, isoFilename),
-		githubApiBaseUrl: githubApiBaseUrl,
-		githubBaseUrl:    githubBaseUrl,
+		githubAPIBaseURL: githubAPIBaseURL,
+		githubBaseURL:    githubBaseURL,
 	}
 }
 
-// Get the latest boot2docker release tag name (e.g. "v0.6.0").
+// GetLatestBoot2DockerReleaseURL gets the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 	client := getClient()
-	apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
-	rsp, err := client.Get(apiUrl)
+	apiURL := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubAPIBaseURL)
+	rsp, err := client.Get(apiURL)
 	if err != nil {
 		return "", err
 	}
@@ -90,13 +90,13 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 	}
 
 	tag := t[0].TagName
-	isoUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseUrl, tag)
-	return isoUrl, nil
+	isoURL := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseURL, tag)
+	return isoURL, nil
 }
 
 // Download boot2docker ISO image for the given tag and save it at dest.
-func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
-	u, err := url.Parse(isoUrl)
+func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
+	u, err := url.Parse(isoURL)
 	var src io.ReadCloser
 	if u.Scheme == "file" || u.Scheme == "" {
 		s, err := os.Open(u.Path)
@@ -106,7 +106,7 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 		src = s
 	} else {
 		client := getClient()
-		s, err := client.Get(isoUrl)
+		s, err := client.Get(isoURL)
 		if err != nil {
 			return err
 		}
@@ -140,13 +140,13 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 }
 
 func (b *B2dUtils) DownloadLatestBoot2Docker() error {
-	latestReleaseUrl, err := b.GetLatestBoot2DockerReleaseURL()
+	latestReleaseURL, err := b.GetLatestBoot2DockerReleaseURL()
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Downloading latest boot2docker release to %s...", b.commonIsoPath)
-	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseUrl); err != nil {
+	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseURL); err != nil {
 		return err
 	}
 
