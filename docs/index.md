@@ -314,7 +314,7 @@ docker-machine create \
 ```
 
 You now have a Swarm cluster across two nodes.
-To connect to the Swarm master, use `docker-machine env --swarm swarm-master`
+To connect to the Swarm master, use `eval $(docker-machine env --swarm swarm-master)`
 
 For example:
 
