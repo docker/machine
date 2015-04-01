@@ -727,14 +727,36 @@ func cmdEnv(c *cli.Context) {
 		}
 	}
 
+	usageHint := generateUsageHint(c.Args().First(), userShell)
+
 	switch userShell {
 	case "fish":
-		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %q;\nset -x DOCKER_HOST %s;\n",
-			cfg.machineDir, dockerHost)
+		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %q;\nset -x DOCKER_HOST %s;\n\n%s\n",
+			cfg.machineDir, dockerHost, usageHint)
 	default:
-		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%q\nexport DOCKER_HOST=%s\n",
-			cfg.machineDir, dockerHost)
+		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%q\nexport DOCKER_HOST=%s\n\n%s\n",
+			cfg.machineDir, dockerHost, usageHint)
 	}
+}
+
+func generateUsageHint(machineName string, userShell string) string {
+	cmd := ""
+	switch userShell {
+	case "fish":
+		if machineName != "" {
+			cmd = fmt.Sprintf("eval (docker-machine env %s)", machineName)
+		} else {
+			cmd = "eval (docker-machine env)"
+		}
+	default:
+		if machineName != "" {
+			cmd = fmt.Sprintf("eval $(docker-machine env %s)", machineName)
+		} else {
+			cmd = "eval $(docker-machine env)"
+		}
+	}
+
+	return fmt.Sprintf("# Run this command to configure your shell: %s\n", cmd)
 }
 
 func cmdSsh(c *cli.Context) {
