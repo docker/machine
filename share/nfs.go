@@ -64,7 +64,7 @@ func (ns NfsSharedFolder) Create(d drivers.Driver) error {
 	case "darwin":
 		tmpl, err = template.New("export").Parse(`
 # docker-machine-begin-{{.Name}}-{{.Options.Name}}
-{{.Options.SrcPath}} -alldirs -mapall=root:wheel -network 192.168.99.0 -mask 255.255.255.0
+{{.Options.SrcPath}} -alldirs -maproot=root:wheel -network 192.168.99.0 -mask 255.255.255.0
 # docker-machine-end-{{.Name}}-{{.Options.Name}}
 `)
 
