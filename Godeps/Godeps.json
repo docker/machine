@@ -128,6 +128,11 @@
 			"ImportPath": "github.com/mitchellh/mapstructure",
 			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
 		},
+                {
+			"ImportPath": "github.com/nlamirault/go-scaleway",
+			"Comment": "v0.6.0",
+			"Rev": "7ac7e49345b3cd1689fc997e77656195311e37f3"
+		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
 			"Comment": "v1.0.0-473-g7ca169d",
