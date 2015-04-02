@@ -81,7 +81,7 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "rackspace-flavor-id",
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
 			Value:  "general1-1",
-			EnvVar: "RACKSPACE_FLAVOR_ID",
+			EnvVar: "OS_FLAVOR_ID",
 		},
 		cli.StringFlag{
 			Name:  "rackspace-ssh-user",
