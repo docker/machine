@@ -43,8 +43,8 @@ buildMachineWithOldIsoCheckUpgrade() {
 }
 
 @test "$DRIVER: machine should not exist" {
-  run machine active $NAME
-  [ "$status" -eq 1  ]
+  run machine ls
+  [ ${#lines[@]} -eq 1 ]
 }
 
 @test "$DRIVER: VM should not exist" {
@@ -58,8 +58,9 @@ buildMachineWithOldIsoCheckUpgrade() {
 }
 
 @test "$DRIVER: active" {
-  run machine active $NAME
-  [ "$status" -eq 0  ]
+  export DOCKER_HOST=$(machine url $NAME)
+  run machine active
+  [ "$output" = "$NAME" ]
 }
 
 @test "$DRIVER: check default machine memory size" {
