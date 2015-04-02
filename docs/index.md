@@ -74,7 +74,7 @@ INFO[0011] Creating SSH key...
 INFO[0012] Creating VirtualBox VM...
 INFO[0019] Starting VirtualBox VM...
 INFO[0020] Waiting for VM to start...
-INFO[0053] "dev" has been created and is now the active machine.
+INFO[0053] "dev" has been created.
 INFO[0053] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 ```
 
@@ -84,10 +84,8 @@ again:
 ```
 $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
-dev    *        virtualbox   Running   tcp://192.168.99.100:2376
+dev             virtualbox   Running   tcp://192.168.99.100:2376
 ```
-
-The `*` next to `dev` indicates that it is the active host.
 
 Next, as noted in the output of the `docker-machine create` command, we have to tell
 Docker to talk to that machine.  You can do this with the `docker-machine env`
@@ -193,7 +191,7 @@ $ docker-machine create \
 INFO[0000] Creating SSH key...
 INFO[0000] Creating Digital Ocean droplet...
 INFO[0002] Waiting for SSH...
-INFO[0085] "staging" has been created and is now the active machine
+INFO[0085] "staging" has been created.
 INFO[0085] To point your Docker client at it, run this in your shell: eval "$(docker-machine env staging)"
 ```
 
@@ -213,7 +211,14 @@ will be installed on the remote machine and the daemon will be configured to
 accept remote connections over TCP using TLS for authentication.  Once this
 is finished, the host is ready for connection.
 
-And then from this point, the remote host behaves much like the local host we
+To prepare the Docker client to send connections to the remote server we have
+created, we can use the subshell method again:
+
+```
+$ eval "$(docker-machine env staging)"
+```
+
+From this point, the remote host behaves much like the local host we
 created in the last section. If we look at `docker-machine`, we’ll see it is now the
 active host:
 
@@ -223,16 +228,6 @@ $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
 dev                virtualbox     Running   tcp://192.168.99.103:2376
 staging   *        digitalocean   Running   tcp://104.236.50.118:2376
-```
-
-To select an active host, you can use the `docker-machine active` command.
-
-```
-$ docker-machine active dev
-$ docker-machine ls
-NAME      ACTIVE   DRIVER         STATE     URL
-dev       *        virtualbox     Running   tcp://192.168.99.103:2376
-staging            digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
 To remove a host and all of its containers and images, use `docker-machine rm`:
@@ -344,14 +339,15 @@ Nodes: 1
 
 #### active
 
-Get or set the active machine.
+See which machine is "active" (a machine is active if the `DOCKER_HOST`
+environment variable points to it).
 
 ```
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
 dev                virtualbox     Running   tcp://192.168.99.103:2376
 staging   *        digitalocean   Running   tcp://104.236.50.118:2376
-$ docker-machine active dev
+$ eval "$(docker-machine env staging)"
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL
 dev       *        virtualbox     Running   tcp://192.168.99.103:2376
@@ -369,7 +365,7 @@ INFO[0000] Creating SSH key...
 INFO[0000] Creating VirtualBox VM...
 INFO[0007] Starting VirtualBox VM...
 INFO[0007] Waiting for VM to start...
-INFO[0038] "dev" has been created and is now the active machine.
+INFO[0038] "dev" has been created.
 INFO[0038] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 ```
 

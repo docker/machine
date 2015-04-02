@@ -60,10 +60,6 @@ func (m *Machine) Create(name string, driverName string, hostOptions *HostOption
 		return host, err
 	}
 
-	if err := m.store.SetActive(host); err != nil {
-		return nil, err
-	}
-
 	return host, nil
 }
 
@@ -75,10 +71,6 @@ func (m *Machine) GetActive() (*Host, error) {
 	return m.store.GetActive()
 }
 
-func (m *Machine) IsActive(host *Host) (bool, error) {
-	return m.store.IsActive(host)
-}
-
 func (m *Machine) List() ([]*Host, error) {
 	return m.store.List()
 }
@@ -88,17 +80,6 @@ func (m *Machine) Get(name string) (*Host, error) {
 }
 
 func (m *Machine) Remove(name string, force bool) error {
-	active, err := m.store.GetActive()
-	if err != nil {
-		return err
-	}
-
-	if active != nil && active.Name == name {
-		if err := m.RemoveActive(); err != nil {
-			return err
-		}
-	}
-
 	host, err := m.store.Get(name)
 	if err != nil {
 		return err
@@ -109,12 +90,4 @@ func (m *Machine) Remove(name string, force bool) error {
 		}
 	}
 	return m.store.Remove(name, force)
-}
-
-func (m *Machine) RemoveActive() error {
-	return m.store.RemoveActive()
-}
-
-func (m *Machine) SetActive(host *Host) error {
-	return m.store.SetActive(host)
 }
