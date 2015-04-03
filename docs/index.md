@@ -823,6 +823,7 @@ variable and CLI option are provided the CLI option takes the precedence.
 | `OS_API_KEY`         | `--rackspace-ap-key`        |
 | `OS_REGION_NAME`     | `--rackspace-region`        |
 | `OS_ENDPOINT_TYPE`   | `--rackspace-endpoint-type` |
+| `OS_FLAVOR_ID`       | `--rackspace-flavor-id`     |
 
 The Rackspace driver will use `598a4282-f14b-4e50-af4c-b3e52749d9f9` (Ubuntu 14.04 LTS) by default.
 
