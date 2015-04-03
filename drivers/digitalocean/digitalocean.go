@@ -234,12 +234,6 @@ func (d *Driver) Create() error {
 		newDroplet.Droplet.ID,
 		d.IPAddress)
 
-	log.Infof("Waiting for SSH...")
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
-		return err
-	}
-
 	return nil
 }
 
