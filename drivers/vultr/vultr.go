@@ -1,9 +1,7 @@
 package vultr
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -167,7 +165,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 func (d *Driver) PreCreateCheck() error {
 	client := d.getClient()
-	regions, _, err := client.GetRegions()
+	regions, err := client.GetRegions()
 	if err != nil {
 		return err
 	}
@@ -223,9 +221,9 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("Created virtual machine ID %s, IP address %s, Private IP address %s",
-		d.InstanceId,
-		d.IPAddress,
-		d.PrivateIPAddress,
+		d.MachineID,
+		d.PublicIP,
+		d.PrivateIP,
 	)
 
 	log.Infof("Waiting for SSH...")
