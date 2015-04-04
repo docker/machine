@@ -10,7 +10,7 @@
 		{
 			"ImportPath": "github.com/JamesClonk/vultr/lib",
 			"Comment": "v1.0",
-			"Rev": "84729121791551a2f44042c61fb5358f531badf9"
+			"Rev": "4b012b2f90a45fb9d4a84b4ac9431ef515d9cdbd"
 		},
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
