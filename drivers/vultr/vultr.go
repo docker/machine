@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -14,6 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -23,18 +23,27 @@ const (
 )
 
 type Driver struct {
-	APIKey         string
-	MachineID      string
-	MachineName    string
-	IPAddress      string
-	OSID           int
-	RegionID       int
-	PlanID         int
-	SSHKeyID       string
-	CaCertPath     string
-	PrivateKeyPath string
-	DriverKeyPath  string
-	storePath      string
+	APIKey            string
+	MachineID         string
+	MachineName       string
+	PublicIP          string
+	PrivateIP         string
+	OSID              int
+	RegionID          int
+	PlanID            int
+	SSHKeyID          string
+	SSHUser           string
+	SSHPort           int
+	IPv6              bool
+	Backups           bool
+	PrivateNetworking bool
+	CaCertPath        string
+	PrivateKeyPath    string
+	DriverKeyPath     string
+	SwarmMaster       bool
+	SwarmHost         string
+	SwarmDiscovery    string
+	storePath         string
 }
 
 func init() {
@@ -70,11 +79,66 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "Vultr plan ID (VPSPLANID). Default: 29 (768 MB RAM, 15 GB SSD, 1.00 TB BW)",
 			Value:  29,
 		},
+		cli.BoolFlag{
+			EnvVar: "VULTR__IPV6",
+			Name:   "digitalocean-ipv6",
+			Usage:  "enable ipv6 for droplet",
+		},
+		cli.BoolFlag{
+			EnvVar: "VULTR_PRIVATE_NETWORKING",
+			Name:   "digitalocean-private-networking",
+			Usage:  "enable private networking for this virtual machine",
+		},
+		cli.BoolFlag{
+			EnvVar: "VULTR_BACKUPS",
+			Name:   "vultr-backups",
+			Usage:  "enable automatic backups for this virtual machine",
+		},
 	}
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
+}
+
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "root"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
 }
 
 func (d *Driver) DriverName() string {
@@ -86,6 +150,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.OSID = flags.Int("vultr-os-id")
 	d.RegionID = flags.Int("vultr-region-id")
 	d.PlanID = flags.Int("vultr-plan-id")
+	d.IPv6 = flags.Bool("vultr-ipv6")
+	d.PrivateNetworking = flags.Bool("vultr-private-networking")
+	d.Backups = flags.Bool("vultr-backups")
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SSHUser = "root"
+	d.SSHPort = 22
 
 	if d.APIKey == "" {
 		return fmt.Errorf("vultr driver requires the --vultr-api-key option")
@@ -94,7 +166,18 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) PreCreateCheck() error {
-	return nil
+	client := d.getClient()
+	regions, _, err := client.GetRegions()
+	if err != nil {
+		return err
+	}
+	for _, region := range regions {
+		if region.ID == d.RegionID {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("vultr requires a valid region")
 }
 
 func (d *Driver) Create() error {
@@ -114,7 +197,10 @@ func (d *Driver) Create() error {
 		d.PlanID,
 		d.OSID,
 		&vultr.ServerOptions{
-			SSHKey: d.SSHKeyID,
+			SSHKey:            d.SSHKeyID,
+			IPV6:              d.IPv6,
+			PrivateNetworking: d.PrivateNetworking,
+			AutoBackups:       d.Backups,
 		})
 	if err != nil {
 		return err
@@ -126,73 +212,25 @@ func (d *Driver) Create() error {
 		if err != nil {
 			return err
 		}
-		d.IPAddress = machine.MainIP
+		d.PublicIP = machine.MainIP
+		d.PrivateIP = machine.InternalIP
 
-		if d.IPAddress != "" && d.IPAddress != "0" {
+		if d.PublicIP != "" && d.PublicIP != "0" {
 			break
 		}
 
 		time.Sleep(1 * time.Second)
 	}
 
-	log.Debugf("Created virtual machine: SUBID %s, IP address %s",
-		machine.ID,
-		d.IPAddress)
+	log.Debugf("Created virtual machine ID %s, IP address %s, Private IP address %s",
+		d.InstanceId,
+		d.IPAddress,
+		d.PrivateIPAddress,
+	)
 
 	log.Infof("Waiting for SSH...")
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.PublicIP, 22)); err != nil {
 		return err
-	}
-
-	// wait for dpkg lock to appear
-	time.Sleep(15 * time.Second)
-
-	log.Infof("Waiting for dpkg unlock...")
-	for {
-		cmd, err := d.GetSSHCommand(`lsof /var/lib/dpkg/lock >/dev/null 2>&1; [ $? = 0 ] && echo "locked"; echo ""`)
-		if err != nil {
-			return err
-		}
-
-		var out bytes.Buffer
-		go io.Copy(cmd.Stdout, &out)
-
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-
-		if !strings.Contains(out.String(), "locked") {
-			break
-		}
-
-		log.Debugf("dpkg is still locked..")
-		time.Sleep(15 * time.Second)
-	}
-
-	log.Debugf("Setting hostname: %s", d.MachineName)
-	cmd, err := d.GetSSHCommand(fmt.Sprintf(
-		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-		d.MachineName,
-		d.MachineName,
-		d.MachineName,
-	))
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	log.Debugf("Installing Docker")
-
-	cmd, err = d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
 	}
 
 	return nil
@@ -224,10 +262,10 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	if d.IPAddress == "" || d.IPAddress == "0" {
+	if d.PublicIP == "" || d.PublicIP == "0" {
 		return "", fmt.Errorf("IP address is not set")
 	}
-	return d.IPAddress, nil
+	return d.PublicIP, nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -276,56 +314,8 @@ func (d *Driver) Kill() error {
 	return d.getClient().HaltServer(d.MachineID)
 }
 
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker start")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-
-	cmd, err := d.GetSSHCommand("sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (d *Driver) GetDockerConfigDir() string {
 	return dockerConfigDir
-}
-
-func (d *Driver) Upgrade() error {
-	log.Debugf("Upgrading Docker")
-
-	cmd, err := d.GetSSHCommand("sudo apt-get update && sudo apt-get install --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
-	return cmd.Run()
-}
-
-func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return ssh.GetSSHCommand(d.IPAddress, 22, "root", d.sshKeyPath(), args...), nil
 }
 
 func (d *Driver) getClient() *vultr.Client {
