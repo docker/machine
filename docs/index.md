@@ -923,3 +923,21 @@ Options:
  - `--vmwarevsphere-vcenter`: IP/hostname for vCenter (or ESXi if connecting directly to a single host).
 
 The VMware vSphere driver uses the latest boot2docker image.
+
+#### Vultr
+
+Create machines on [Vultr](https://www.vultr.com/).
+You need to create an API key under "Settings" in the [Vultr control panel](https://my.vultr.com/settings/) and pass that to `docker-machine create` with the `--vultr-api-key` option.
+
+    $ docker-machine create --driver vultr --vultr-api-key=aa9399a2175a93b17b1c86c807e08d3fc4b79876545432a629602f61cf6ccd6b test-this
+
+Options:
+
+ - `--vultr-api-key`: Your API key for the Vultr API.
+ - `--vultr-os-id`: Operating system ID (OSID) to use. Default: `160` (Ubuntu 14.04 x64)
+ - `--vultr-region-id`: ID of the region to create the machine in, see [Regions API](https://www.vultr.com/api/#regions_region_list) for how to get a list. Default: `1` (New Jersey)
+ - `--vultr-plan-id`: Plan ID (VPSPLANID) to use. Default: `29` (768 MB RAM, 15 GB SSD, 1.00 TB BW)
+ - `--vultr-ipv6`: Enable IPv6 support for the virtual machine. Default: `false`
+ - `--vultr-private-networking`: Enable private networking support for the virtual machine. Default: `false`
+ - `--vultr-backups`: Enable Digital Oceans backups for the virtual machine. Default: `false`
+
