@@ -62,16 +62,16 @@ func (conn VcConn) DatastoreMkdir(dirName string) error {
 }
 
 func (conn VcConn) DatastoreUpload(localPath string) error {
-	stdout, err := conn.DatastoreLs(DATASTORE_DIR)
-	if err == nil && strings.Contains(stdout, B2D_ISO_NAME) {
+	stdout, err := conn.DatastoreLs(DatastoreDir)
+	if err == nil && strings.Contains(stdout, B2DISOName) {
 		log.Infof("boot2docker ISO already uploaded, skipping upload... ")
 		return nil
 	}
 
 	log.Infof("Uploading %s to %s on datastore %s of vCenter %s... ",
-		localPath, DATASTORE_DIR, conn.driver.Datastore, conn.driver.IP)
+		localPath, DatastoreDir, conn.driver.Datastore, conn.driver.IP)
 
-	dsPath := fmt.Sprintf("%s/%s", DATASTORE_DIR, B2D_ISO_NAME)
+	dsPath := fmt.Sprintf("%s/%s", DatastoreDir, B2DISOName)
 	args := []string{"datastore.upload"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--ds=%s", conn.driver.Datastore))
@@ -81,12 +81,11 @@ func (conn VcConn) DatastoreUpload(localPath string) error {
 	_, stderr, err := govcOutErr(args...)
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewDatastoreError(conn.driver.Datacenter, "upload", stderr)
 	}
+	return errors.NewDatastoreError(conn.driver.Datacenter, "upload", stderr)
 }
 
-func (conn VcConn) VmInfo() (string, error) {
+func (conn VcConn) VMInfo() (string, error) {
 	args := []string{"vm.info"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
@@ -95,12 +94,11 @@ func (conn VcConn) VmInfo() (string, error) {
 	stdout, stderr, err := govcOutErr(args...)
 	if strings.Contains(stdout, "Name") && stderr == "" && err == nil {
 		return stdout, nil
-	} else {
-		return "", errors.NewVmError("find", conn.driver.MachineName, "VM not found")
 	}
+	return "", errors.NewVMError("find", conn.driver.MachineName, "VM not found")
 }
 
-func (conn VcConn) VmCreate(isoPath string) error {
+func (conn VcConn) VMCreate(isoPath string) error {
 	log.Infof("Creating virtual machine %s of vCenter %s... ",
 		conn.driver.MachineName, conn.driver.IP)
 
@@ -128,12 +126,11 @@ func (conn VcConn) VmCreate(isoPath string) error {
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewVmError("create", conn.driver.MachineName, stderr)
 	}
+	return errors.NewVMError("create", conn.driver.MachineName, stderr)
 }
 
-func (conn VcConn) VmPowerOn() error {
+func (conn VcConn) VMPowerOn() error {
 	log.Infof("Powering on virtual machine %s of vCenter %s... ",
 		conn.driver.MachineName, conn.driver.IP)
 
@@ -146,12 +143,11 @@ func (conn VcConn) VmPowerOn() error {
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewVmError("power on", conn.driver.MachineName, stderr)
 	}
+	return errors.NewVMError("power on", conn.driver.MachineName, stderr)
 }
 
-func (conn VcConn) VmPowerOff() error {
+func (conn VcConn) VMPowerOff() error {
 	log.Infof("Powering off virtual machine %s of vCenter %s... ",
 		conn.driver.MachineName, conn.driver.IP)
 
@@ -164,12 +160,11 @@ func (conn VcConn) VmPowerOff() error {
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewVmError("power on", conn.driver.MachineName, stderr)
 	}
+	return errors.NewVMError("power on", conn.driver.MachineName, stderr)
 }
 
-func (conn VcConn) VmShutdown() error {
+func (conn VcConn) VMShutdown() error {
 	log.Infof("Powering off virtual machine %s of vCenter %s... ",
 		conn.driver.MachineName, conn.driver.IP)
 
@@ -182,12 +177,11 @@ func (conn VcConn) VmShutdown() error {
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewVmError("power on", conn.driver.MachineName, stderr)
 	}
+	return errors.NewVMError("power on", conn.driver.MachineName, stderr)
 }
 
-func (conn VcConn) VmDestroy() error {
+func (conn VcConn) VMDestroy() error {
 	log.Infof("Deleting virtual machine %s of vCenter %s... ",
 		conn.driver.MachineName, conn.driver.IP)
 
@@ -199,13 +193,11 @@ func (conn VcConn) VmDestroy() error {
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewVmError("delete", conn.driver.MachineName, stderr)
 	}
-
+	return errors.NewVMError("delete", conn.driver.MachineName, stderr)
 }
 
-func (conn VcConn) VmDiskCreate() error {
+func (conn VcConn) VMDiskCreate() error {
 	args := []string{"vm.disk.create"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
@@ -218,12 +210,11 @@ func (conn VcConn) VmDiskCreate() error {
 	_, stderr, err := govcOutErr(args...)
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewVmError("add network", conn.driver.MachineName, stderr)
 	}
+	return errors.NewVMError("add network", conn.driver.MachineName, stderr)
 }
 
-func (conn VcConn) VmAttachNetwork() error {
+func (conn VcConn) VMAttachNetwork() error {
 	args := []string{"vm.network.add"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
@@ -233,12 +224,11 @@ func (conn VcConn) VmAttachNetwork() error {
 	_, stderr, err := govcOutErr(args...)
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewVmError("add network", conn.driver.MachineName, stderr)
 	}
+	return errors.NewVMError("add network", conn.driver.MachineName, stderr)
 }
 
-func (conn VcConn) VmFetchIp() (string, error) {
+func (conn VcConn) VMFetchIP() (string, error) {
 	args := []string{"vm.ip"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
@@ -247,9 +237,8 @@ func (conn VcConn) VmFetchIp() (string, error) {
 
 	if stderr == "" && err == nil {
 		return stdout, nil
-	} else {
-		return "", errors.NewVmError("fetching IP", conn.driver.MachineName, stderr)
 	}
+	return "", errors.NewVMError("fetching IP", conn.driver.MachineName, stderr)
 }
 
 func (conn VcConn) GuestMkdir(guestUser, guestPass, dirName string) error {
@@ -264,9 +253,8 @@ func (conn VcConn) GuestMkdir(guestUser, guestPass, dirName string) error {
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewGuestError("mkdir", conn.driver.MachineName, stderr)
 	}
+	return errors.NewGuestError("mkdir", conn.driver.MachineName, stderr)
 }
 
 func (conn VcConn) GuestUpload(guestUser, guestPass, localPath, remotePath string) error {
@@ -282,9 +270,8 @@ func (conn VcConn) GuestUpload(guestUser, guestPass, localPath, remotePath strin
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewGuestError("upload", conn.driver.MachineName, stderr)
 	}
+	return errors.NewGuestError("upload", conn.driver.MachineName, stderr)
 }
 
 func (conn VcConn) GuestStart(guestUser, guestPass, remoteBin, remoteArguments string) error {
@@ -299,9 +286,8 @@ func (conn VcConn) GuestStart(guestUser, guestPass, remoteBin, remoteArguments s
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewGuestError("start", conn.driver.MachineName, stderr)
 	}
+	return errors.NewGuestError("start", conn.driver.MachineName, stderr)
 }
 
 func (conn VcConn) GuestDownload(guestUser, guestPass, remotePath, localPath string) error {
@@ -316,9 +302,8 @@ func (conn VcConn) GuestDownload(guestUser, guestPass, remotePath, localPath str
 
 	if stderr == "" && err == nil {
 		return nil
-	} else {
-		return errors.NewGuestError("download", conn.driver.MachineName, stderr)
 	}
+	return errors.NewGuestError("download", conn.driver.MachineName, stderr)
 }
 
 func (conn VcConn) AppendConnectionString(args []string) []string {
