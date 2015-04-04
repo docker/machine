@@ -8,6 +8,11 @@
 			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
 		},
 		{
+			"ImportPath": "github.com/JamesClonk/vultr/lib",
+			"Comment": "v1.0",
+			"Rev": "84729121791551a2f44042c61fb5358f531badf9"
+		},
+		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-17-g515f3ec",
 			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
