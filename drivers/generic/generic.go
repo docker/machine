@@ -15,10 +15,6 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-const (
-	dockerConfigDir = "/etc/docker"
-)
-
 type Driver struct {
 	MachineName    string
 	IPAddress      string
@@ -222,10 +218,6 @@ func (d *Driver) Kill() error {
 	}
 
 	return nil
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
 }
 
 func (d *Driver) sshKeyPath() string {
