@@ -1,0 +1,22 @@
+#!/bin/bash
+# - run this script with the BATS filename as 1st argument
+# - if the driver requires any environment variables, supply
+# - those as additional arguments in the form of ENV_VARIABLE_NAME=VALUE
+# - e.g. in order to test the digitalocean driver, execute this script with
+# - scripts/run-bats-test driver-digitalocean.bats DIGITALOCEAN_ACCESS_TOKEN=123456
+
+set -e
+
+echo "Arguments: $*"
+if [ $# -gt 1 ]; then
+  TEST_TARGET="$1"
+  ENV_VARS=("--env $2")
+  while shift && [ -n "$2" ]; do
+    ENV_VARS=("${ENV_VARS} --env $2")
+  done
+else
+  TEST_TARGET="$1"
+  ENV_VARS=
+fi
+
+docker run -t --rm ${ENV_VARS} -v `pwd`:/go/src/github.com/docker/machine docker-machine /usr/local/bin/bats /go/src/github.com/docker/machine/test/integration/${TEST_TARGET}

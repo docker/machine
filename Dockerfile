@@ -7,6 +7,10 @@ RUN go get github.com/aktau/github-release
 RUN go get github.com/tools/godep
 RUN go get code.google.com/p/go.tools/cmd/cover
 
+RUN git clone https://github.com/sstephenson/bats.git
+RUN bats/install.sh /usr/local
+RUN curl -sSL https://get.docker.com/ | sh
+
 ENV GOPATH /go/src/github.com/docker/machine/Godeps/_workspace:/go
 ENV MACHINE_BINARY /go/src/github.com/docker/machine/docker-machine
 ENV USER root
