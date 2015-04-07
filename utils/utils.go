@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,7 +23,7 @@ func GetHomeDir() string {
 func GetBaseDir() string {
 	baseDir := os.Getenv("MACHINE_STORAGE_PATH")
 	if baseDir == "" {
-		baseDir = filepath.Join(GetHomeDir(), ".docker")
+		baseDir = filepath.Join(GetHomeDir(), ".docker", "machine")
 	}
 	return baseDir
 }
@@ -31,20 +32,16 @@ func GetDockerDir() string {
 	return filepath.Join(GetHomeDir(), ".docker")
 }
 
-func GetMachineRoot() string {
-	return filepath.Join(GetBaseDir(), "machine")
-}
-
 func GetMachineDir() string {
-	return filepath.Join(GetMachineRoot(), "machines")
+	return filepath.Join(GetBaseDir(), "machines")
 }
 
 func GetMachineCertDir() string {
-	return filepath.Join(GetMachineRoot(), "certs")
+	return filepath.Join(GetBaseDir(), "certs")
 }
 
 func GetMachineCacheDir() string {
-	return filepath.Join(GetMachineRoot(), "cache")
+	return filepath.Join(GetBaseDir(), "cache")
 }
 
 func GetUsername() string {
@@ -97,6 +94,18 @@ func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration)
 
 func WaitFor(f func() bool) error {
 	return WaitForSpecific(f, 60, 3*time.Second)
+}
+
+func WaitForDocker(ip string, daemonPort int) error {
+	return WaitFor(func() bool {
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, daemonPort))
+		if err != nil {
+			log.Debugf("Got an error it was %s", err)
+			return false
+		}
+		conn.Close()
+		return true
+	})
 }
 
 func DumpVal(vals ...interface{}) {

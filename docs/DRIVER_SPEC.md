@@ -1,5 +1,3 @@
-> DRAFT
-
 # Machine Driver Specification v1
 This is the standard configuration and specification for version 1 drivers.
 
@@ -12,6 +10,9 @@ for Docker Machine.
 
 ## Base Operating System
 The provider must offer a base operating system supported by the Docker Engine.
+
+Currently Machine requires Ubuntu for non-Boot2Docker machines.  This will
+change in the future.
 
 ## API Access
 We prefer accessing the provider service via HTTP APIs and strongly recommend
@@ -83,3 +84,65 @@ If you want to use a third party library to interact with the provider, you
 will need to make sure it is compliant with the Docker license terms (non-GPL).
 For more information, contact a project maintainer.
 
+# Implementation
+The following describes what is needed to create a Machine Driver.  The driver
+interface has methods that must be implemented for all drivers.  These include
+operations such as `Create`, `Remove`, `Start`, `Stop` etc.
+
+For details see the [Driver Interface](https://github.com/docker/machine/blob/master/drivers/drivers.go#L24).
+
+To provide this functionality, most drivers use a struct similar to the following:
+
+```
+type Driver struct {
+    MachineName       string
+    IPAddress         string
+    SSHUser           string
+    SSHPort           int
+    CaCertPath        string
+    PrivateKeyPath    string
+    DriverKeyPath     string
+    SwarmMaster       bool
+    SwarmHost         string
+    SwarmDiscovery    string
+    storePath         string
+}
+```
+
+Each driver must then use an `init` func to "register" the driver:
+
+```
+func init() {
+    drivers.Register("drivername", &drivers.RegisteredDriver{
+        New:            NewDriver,
+        GetCreateFlags: GetCreateFlags,
+    })
+}
+```
+
+## Flags
+Driver flags are used for provider specific customizations.  To add flags, use
+a `GetCreateFlags` func.  For example:
+
+```
+func GetCreateFlags() []cli.Flag {
+    return []cli.Flag{
+        cli.StringFlag{
+            EnvVar: "DRIVERNAME_TOKEN",
+            Name:   "drivername-token",
+            Usage:  "Provider access token",
+        
+        },
+        cli.StringFlag{
+            EnvVar: "DRIVERNAME_IMAGE",
+            Name:   "drivername-image",
+            Usage:  "Provider Image",
+            Value:  "ubuntu-14-04-x64",
+        },
+    }
+}
+```
+
+## Examples
+You can reference the existing [Drivers](https://github.com/docker/machine/tree/master/drivers)
+as well.

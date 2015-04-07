@@ -53,27 +53,6 @@ type Driver struct {
 	client           Client
 }
 
-type CreateFlags struct {
-	AuthUrl        *string
-	Insecure       *bool
-	Username       *string
-	Password       *string
-	TenantName     *string
-	TenantId       *string
-	Region         *string
-	EndpointType   *string
-	FlavorName     *string
-	FlavorId       *string
-	ImageName      *string
-	ImageId        *string
-	NetworkName    *string
-	NetworkId      *string
-	SecurityGroups *string
-	FloatingIpPool *string
-	SSHUser        *string
-	SSHPort        *int
-}
-
 func init() {
 	drivers.Register("openstack", &drivers.RegisteredDriver{
 		New:            NewDriver,
@@ -455,7 +434,7 @@ const (
 
 func (d *Driver) checkConfig() error {
 	if d.AuthUrl == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Autentication URL", "OS_AUTH_URL", "--openstack-auth-url")
+		return fmt.Errorf(errorMandatoryEnvOrOption, "Authentication URL", "OS_AUTH_URL", "--openstack-auth-url")
 	}
 	if d.Username == "" {
 		return fmt.Errorf(errorMandatoryEnvOrOption, "Username", "OS_USERNAME", "--openstack-username")

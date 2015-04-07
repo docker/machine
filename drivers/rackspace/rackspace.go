@@ -20,24 +20,6 @@ type Driver struct {
 	APIKey string
 }
 
-// CreateFlags stores the command-line arguments given to "machine create".
-type CreateFlags struct {
-	Username       *string
-	APIKey         *string
-	Region         *string
-	MachineName    *string
-	EndpointType   *string
-	ImageID        *string
-	FlavorID       *string
-	SSHUser        *string
-	SSHPort        *int
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-}
-
 func init() {
 	drivers.Register("rackspace", &drivers.RegisteredDriver{
 		New:            NewDriver,
@@ -76,12 +58,12 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "rackspace-image-id",
 			Usage: "Rackspace image ID. Default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)",
-			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "rackspace-flavor-id",
-			Usage: "Rackspace flavor ID. Default: General Purpose 1GB",
-			Value: "general1-1",
+			Name:   "rackspace-flavor-id",
+			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
+			Value:  "general1-1",
+			EnvVar: "OS_FLAVOR_ID",
 		},
 		cli.StringFlag{
 			Name:  "rackspace-ssh-user",
