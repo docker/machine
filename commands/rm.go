@@ -1,8 +1,8 @@
 package commands
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/log"
 )
 
 func cmdRm(c *cli.Context) {

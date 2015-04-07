@@ -1,8 +1,6 @@
 package ssh
 
-import (
-	"net"
-)
+import "net"
 
 func WaitForTCP(addr string) error {
 	for {

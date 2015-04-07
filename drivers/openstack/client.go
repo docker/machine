@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/version"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"

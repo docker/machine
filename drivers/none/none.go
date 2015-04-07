@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/api"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
@@ -112,12 +111,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if url == "" {
 		return fmt.Errorf("--url option is required when no driver is selected")
 	}
-	validatedUrl, err := api.ValidateHost(url)
-	if err != nil {
-		return err
-	}
 
-	d.URL = validatedUrl
+	d.URL = url
 	return nil
 }
 

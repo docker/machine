@@ -13,11 +13,6 @@
 			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
 		},
 		{
-			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.6.1",
-			"Rev": "1f2ba2c6317323dd667bd266c1e8ebffc4a4c62f"
-		},
-		{
 			"ImportPath": "github.com/cenkalti/backoff",
 			"Rev": "9831e1e25c874e0a0601b6dc43641071414eec7a"
 		},
@@ -30,11 +25,6 @@
 			"ImportPath": "github.com/digitalocean/godo",
 			"Comment": "v0.5.0",
 			"Rev": "5478aae80694de1d2d0e02c386bbedd201266234"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/api",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/dockerversion",
@@ -103,11 +93,6 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/version",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/utils",
 			"Comment": "v1.5.0",
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
