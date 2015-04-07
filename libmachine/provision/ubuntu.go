@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"text/template"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 )

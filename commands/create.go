@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"

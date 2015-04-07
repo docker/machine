@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 )
 
 // The /etc/os-release file contains operating system identification data

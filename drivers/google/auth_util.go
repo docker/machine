@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 	raw "google.golang.org/api/compute/v1"
 )
 

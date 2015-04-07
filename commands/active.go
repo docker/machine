@@ -3,9 +3,8 @@ package commands
 import (
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
-
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/log"
 )
 
 func cmdActive(c *cli.Context) {

@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 )
 
 const (
