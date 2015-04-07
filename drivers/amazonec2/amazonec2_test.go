@@ -77,6 +77,7 @@ func getDefaultTestDriverFlags() *DriverOptionsMock {
 			"amazonec2-zone":                 "e",
 			"amazonec2-root-size":            10,
 			"amazonec2-iam-instance-profile": "",
+			"amazonec2-ssh-user":             "ubuntu",
 		},
 	}
 }
