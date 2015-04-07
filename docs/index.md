@@ -43,12 +43,12 @@ Docker Machine is supported on Windows, OSX, and Linux and is installable as one
 standalone binary.  The links to the binaries for the various platforms and
 architectures are below:
 
-- [Windows - 32bit](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-386.exe)
-- [Windows - 64bit](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_windows-amd64.exe)
-- [OSX - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-amd64)
-- [OSX - (old macs)](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-386)
-- [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-amd64)
-- [Linux - i386](https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-386)
+- [Windows - 32bit](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-386.exe)
+- [Windows - 64bit](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-amd64.exe)
+- [OSX - x86_64](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64)
+- [OSX - (old macs)](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-386)
+- [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_linux-amd64)
+- [Linux - i386](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_linux-386)
 
 ### OSX and Linux
 
@@ -57,7 +57,7 @@ To install on OSX or Linux, download the proper binary to somewhere in your
 most OSX machines these commands should suffice:
 
 ```
-$ curl https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
+$ curl https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
 $ chmod +x /usr/local/bin/docker-machine
 ```
 
@@ -105,7 +105,7 @@ Now running `docker-machine` should work.
 
 ```
 $ docker-machine -v
-machine version 0.1.0
+machine version 0.2.0
 ```
 
 ## Getting started with Docker Machine using a local VM
@@ -243,7 +243,7 @@ run `docker-machine create` again.  All created machines will appear in the
 output of `docker-machine ls`.
 
 If you are finished using a host for the time being, you can stop it with
-`docker stop` and later start it again with `docker start`:
+`docker-machine stop` and later start it again with `docker-machine start`:
 
 ```
 $ docker-machine stop
