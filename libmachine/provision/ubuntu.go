@@ -85,6 +85,10 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
+	if err := WaitForPackageManager(provisioner); err != nil {
+		return err
+	}
+
 	for _, pkg := range provisioner.packages {
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
 			return err
