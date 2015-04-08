@@ -30,19 +30,20 @@ const (
 )
 
 type Driver struct {
-	CPU            int
-	MachineName    string
-	SSHUser        string
-	SSHPort        int
-	Memory         int
-	DiskSize       int
-	Boot2DockerURL string
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-	storePath      string
+	CPU                 int
+	MachineName         string
+	SSHUser             string
+	SSHPort             int
+	Memory              int
+	DiskSize            int
+	Boot2DockerURL      string
+	CaCertPath          string
+	PrivateKeyPath      string
+	SwarmMaster         bool
+	SwarmHost           string
+	SwarmDiscovery      string
+	storePath           string
+	Boot2DockerImportVM string
 }
 
 func init() {
@@ -79,6 +80,11 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "virtualbox-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  "",
+		},
+		cli.StringFlag{
+			Name:  "virtualbox-import-boot2docker-vm",
+			Usage: "The name of a Boot2Docker VM to import",
+			Value: "",
 		},
 	}
 }
@@ -147,6 +153,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
+	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
 
 	return nil
 }
@@ -170,21 +177,36 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating SSH key...")
-
 	b2dutils := utils.NewB2dUtils("", "")
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
 
-	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
-		return err
-	}
-
 	log.Infof("Creating VirtualBox VM...")
 
-	if err := d.generateDiskImage(d.DiskSize); err != nil {
-		return err
+	// import b2d VM if requested
+	if d.Boot2DockerImportVM != "" {
+		log.Debugf("Importing disk image...")
+		if err := d.importB2DVM(d.Boot2DockerImportVM); err != nil {
+			return err
+		}
+
+		log.Debugf("Importing SSH key...")
+		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_rsa")
+		if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
+			return err
+		}
+	} else {
+		log.Debugf("Creating disk image...")
+		if err := d.generateDiskImage(d.DiskSize); err != nil {
+			return err
+		}
+
+		log.Infof("Creating SSH key...")
+
+		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+			return err
+		}
 	}
 
 	if err := vbm("createvm",
@@ -591,6 +613,26 @@ func zeroFill(w io.Writer, n int64) error {
 		}
 		n -= int64(k)
 	}
+	return nil
+}
+
+func (d Driver) importB2DVM(name string) error {
+	// make sure vm is stopped
+	_ = vbm("controlvm", name, "poweroff")
+
+	diskInfo, err := getVMDiskInfo(name)
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(diskInfo.Path); err != nil {
+		return err
+	}
+
+	if err := vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
