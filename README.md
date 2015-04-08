@@ -47,6 +47,25 @@ staging   *        digitalocean   Running   tcp://104.236.253.181:2376
 
 Full documentation [is available here](https://docs.docker.com/machine/).
 
+## Drivers
+Docker Machine has several included drivers that supports provisioning hosts
+in various providers.  If you wish to contribute a driver, we ask the following
+to ensure we keep the driver in a consistent and stable state:
+
+- Address issues filed against this driver in a timely manner
+- Review PRs for the driver
+- Be responsible for maintaining the infrastructure to run unit tests
+and integration tests on the new supported environment
+- Participate in a weekly driver maintainer meeting
+
+If you can commit to those, the next step is to make sure the driver adheres
+to the [spec](https://github.com/docker/machine/blob/master/docs/DRIVER_SPEC.md).
+
+Once you have created and tested the driver, you can open a PR.
+
+Note: even if those are met does not guarantee a driver will be accepted.
+If you have questions, please do not hesitate to contact us on IRC.
+
 ## Contributing
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
