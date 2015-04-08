@@ -192,7 +192,7 @@ func (d *Driver) Create() error {
 		}
 
 		log.Debugf("Importing SSH key...")
-		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_rsa")
+		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
 		if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
 			return err
 		}
@@ -203,7 +203,6 @@ func (d *Driver) Create() error {
 		}
 
 		log.Infof("Creating SSH key...")
-
 		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 			return err
 		}
