@@ -275,21 +275,20 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 
 func PackageManagerReadyFunc(p Provisioner) func() bool {
 	return func() bool {
-		log.Debug("waiting for package manager on destination host...")
+		log.Debug("checking/waiting for currently running package manager processes...")
 		cmd, err := p.SSHCommand("if ! ps aux | grep [d]pkg >/dev/null && ! ps aux | grep [a]pt-get >/dev/null; then printf 0; else printf 1; fi")
 		if err != nil {
-			log.Debugf("error getting ssh command checking dpgk/apt-get status: %s", err)
+			log.Debugf("error getting ssh command checking package manager status: %s", err)
 			return false
 		}
 		var buf bytes.Buffer
 		cmd.Stdout = &buf
 		if err := cmd.Run(); err != nil {
-			log.Debugf("error running ssh command checking dpgk/apt-get status: %s", err)
+			log.Debugf("error running ssh command checking package manager status: %s", err)
 			return false
 		}
 		dpkgRunState := string(buf.Bytes())
 		if dpkgRunState != "0" {
-			log.Debugf("package manager process detected on target host")
 			return false
 		}
 		return true
