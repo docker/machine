@@ -820,7 +820,7 @@ variable and CLI option are provided the CLI option takes the precedence.
 | Environment variable | CLI option                  |
 |----------------------|-----------------------------|
 | `OS_USERNAME`        | `--rackspace-username`      |
-| `OS_API_KEY`         | `--rackspace-ap-key`        |
+| `OS_API_KEY`         | `--rackspace-api-key`       |
 | `OS_REGION_NAME`     | `--rackspace-region`        |
 | `OS_ENDPOINT_TYPE`   | `--rackspace-endpoint-type` |
 
