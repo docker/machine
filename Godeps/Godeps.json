@@ -130,8 +130,8 @@
 		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
-			"Comment": "v1.0.0-473-g7ca169d",
-			"Rev": "7ca169d371b29e3dbab9e631c3a6151896b06330"
+			"Comment": "v1.0.0-558-ce0f487",
+			"Rev": "ce0f487f6747ab43c4e4404722df25349385bebd"
 		},
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",
