@@ -197,13 +197,13 @@ func (d *Driver) Create() error {
 			return err
 		}
 	} else {
-		log.Debugf("Creating disk image...")
-		if err := d.generateDiskImage(d.DiskSize); err != nil {
+		log.Infof("Creating SSH key...")
+		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 			return err
 		}
 
-		log.Infof("Creating SSH key...")
-		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+		log.Debugf("Creating disk image...")
+		if err := d.generateDiskImage(d.DiskSize); err != nil {
 			return err
 		}
 	}
