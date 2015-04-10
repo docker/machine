@@ -399,6 +399,8 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 	log.WithFields(log.Fields{
 		"AuthUrl":    d.AuthUrl,
 		"Insecure":   d.Insecure,
+		"DomainID":   d.DomainID,
+		"DomainName": d.DomainName,
 		"Username":   d.Username,
 		"TenantName": d.TenantName,
 		"TenantID":   d.TenantId,
@@ -406,6 +408,8 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint: d.AuthUrl,
+		DomainID:         d.DomainID,
+		DomainName:       d.DomainName,
 		Username:         d.Username,
 		Password:         d.Password,
 		TenantName:       d.TenantName,

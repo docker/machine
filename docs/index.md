@@ -783,6 +783,7 @@ Mandatory:
 Options:
 
  - `--openstack-auth-url`: Keystone service base URL.
+ - `--openstack-domain-name` or `--openstack-domain-id`: Domain to use for authentication (Keystone v3 only)
  - `--openstack-username`: User identifer to authenticate with.
  - `--openstack-password`: User password. It can be omitted if the standard environment variable `OS_PASSWORD` is set.
  - `--openstack-tenant-name` or `--openstack-tenant-id`: Identify the tenant in which the machine will be created.
@@ -807,6 +808,8 @@ and CLI option are provided the CLI option takes the precedence.
 | Environment variable | CLI option                  |
 |----------------------|-----------------------------|
 | `OS_AUTH_URL`        | `--openstack-auth-url`      |
+| `OS_DOMAIN_ID`       | `--openstack-domain-id`     |
+| `OS_DOMAIN_NAME`     | `--openstack-domain-name`   |
 | `OS_USERNAME`        | `--openstack-username`      |
 | `OS_PASSWORD`        | `--openstack-password`      |
 | `OS_TENANT_NAME`     | `--openstack-tenant-name`   |
