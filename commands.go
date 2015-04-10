@@ -381,7 +381,7 @@ func trimDriverFlags(driver string, cmds []cli.Command) ([]cli.Command, error) {
 
 	for i, cmd := range cmds {
 		if cmd.HasName("create") {
-			filteredCmds[i].Flags = append(sharedCreateFlags, driverFlags...)
+			filteredCmds[i].Flags = append(driverFlags, sharedCreateFlags...)
 		}
 	}
 
