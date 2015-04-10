@@ -21,10 +21,6 @@ import (
 	"github.com/docker/machine/state"
 )
 
-const (
-	dockerConfigDir = "/etc/docker"
-)
-
 type Driver struct {
 	UserName       string
 	UserPassword   string
