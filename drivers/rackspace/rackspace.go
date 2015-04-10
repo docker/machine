@@ -9,10 +9,6 @@ import (
 	"github.com/docker/machine/drivers/openstack"
 )
 
-const (
-	dockerConfigDir = "/etc/docker"
-)
-
 // Driver is a machine driver for Rackspace. It's a specialization of the generic OpenStack one.
 type Driver struct {
 	*openstack.Driver
@@ -106,10 +102,6 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 // DriverName is the user-visible name of this driver.
 func (d *Driver) DriverName() string {
 	return "rackspace"
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
 }
 
 func missingEnvOrOption(setting, envVar, opt string) error {

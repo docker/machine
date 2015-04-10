@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	dockerConfigDir = "/etc/docker"
-	ApiEndpoint     = "https://api.softlayer.com/rest/v3"
+	ApiEndpoint = "https://api.softlayer.com/rest/v3"
 )
 
 type Driver struct {

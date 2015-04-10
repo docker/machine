@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	dockerConfigDir = "/var/lib/boot2docker"
-	isoFilename     = "boot2docker.iso"
+	isoFilename = "boot2docker.iso"
 )
 
 type Driver struct {
