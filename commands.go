@@ -161,6 +161,40 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 	return nil
 }
 
+var sharedCreateFlags = []cli.Flag{
+	cli.StringFlag{
+		Name: "driver, d",
+		Usage: fmt.Sprintf(
+			"Driver to create machine with. Available drivers: %s",
+			strings.Join(drivers.GetDriverNames(), ", "),
+		),
+		Value: "none",
+	},
+	cli.BoolFlag{
+		Name:  "swarm",
+		Usage: "Configure Machine with Swarm",
+	},
+	cli.BoolFlag{
+		Name:  "swarm-master",
+		Usage: "Configure Machine to be a Swarm master",
+	},
+	cli.StringFlag{
+		Name:  "swarm-discovery",
+		Usage: "Discovery service to use with Swarm",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "swarm-host",
+		Usage: "ip/socket to listen on for Swarm master",
+		Value: "tcp://0.0.0.0:3376",
+	},
+	cli.StringFlag{
+		Name:  "swarm-addr",
+		Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
+		Value: "",
+	},
+}
+
 var Commands = []cli.Command{
 	{
 		Name:   "active",
@@ -170,37 +204,7 @@ var Commands = []cli.Command{
 	{
 		Flags: append(
 			drivers.GetCreateFlags(),
-			cli.StringFlag{
-				Name: "driver, d",
-				Usage: fmt.Sprintf(
-					"Driver to create machine with. Available drivers: %s",
-					strings.Join(drivers.GetDriverNames(), ", "),
-				),
-				Value: "none",
-			},
-			cli.BoolFlag{
-				Name:  "swarm",
-				Usage: "Configure Machine with Swarm",
-			},
-			cli.BoolFlag{
-				Name:  "swarm-master",
-				Usage: "Configure Machine to be a Swarm master",
-			},
-			cli.StringFlag{
-				Name:  "swarm-discovery",
-				Usage: "Discovery service to use with Swarm",
-				Value: "",
-			},
-			cli.StringFlag{
-				Name:  "swarm-host",
-				Usage: "ip/socket to listen on for Swarm master",
-				Value: "tcp://0.0.0.0:3376",
-			},
-			cli.StringFlag{
-				Name:  "swarm-addr",
-				Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
-				Value: "",
-			},
+			sharedCreateFlags...,
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
@@ -365,9 +369,39 @@ func cmdActive(c *cli.Context) {
 	}
 }
 
+// If the user has specified a driver, they should not see the flags for all
+// of the drivers in `docker-machine create`.  This method replaces the 100+
+// create flags with only the ones applicable to the driver specified
+func trimDriverFlags(driver string, cmds []cli.Command) ([]cli.Command, error) {
+	filteredCmds := cmds
+	driverFlags, err := drivers.GetCreateFlagsForDriver(driver)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, cmd := range cmds {
+		if cmd.HasName("create") {
+			filteredCmds[i].Flags = append(driverFlags, sharedCreateFlags...)
+		}
+	}
+
+	return filteredCmds, nil
+}
+
 func cmdCreate(c *cli.Context) {
+	var (
+		err error
+	)
 	driver := c.String("driver")
 	name := c.Args().First()
+
+	// TODO: Not really a fan of "none" as the default driver...
+	if driver != "none" {
+		c.App.Commands, err = trimDriverFlags(driver, c.App.Commands)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
