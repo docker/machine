@@ -18,6 +18,7 @@ type ComputeUtil struct {
 	instanceName  string
 	userName      string
 	project       string
+	diskTypeURL   string
 	service       *raw.Service
 	zoneURL       string
 	authTokenPath string
@@ -49,6 +50,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		instanceName:  driver.MachineName,
 		userName:      driver.SSHUser,
 		project:       driver.Project,
+		diskTypeURL:   driver.DiskType,
 		service:       service,
 		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:     apiURL + driver.Project + "/global",
@@ -60,6 +62,10 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 
 func (c *ComputeUtil) diskName() string {
 	return c.instanceName + "-disk"
+}
+
+func (c *ComputeUtil) diskType() string {
+	return apiURL + c.project + "/zones/" + c.zone + "/diskTypes/" + c.diskTypeURL
 }
 
 // disk returns the gce Disk.
@@ -180,6 +186,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 			SourceImage: imageName,
 			// The maximum supported disk size is 1000GB, the cast should be fine.
 			DiskSizeGb: int64(d.DiskSize),
+			DiskType:   c.diskType(),
 		}
 	} else {
 		instance.Disks[0].Source = c.zoneURL + "/disks/" + c.instanceName + "-disk"
