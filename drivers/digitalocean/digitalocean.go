@@ -16,10 +16,6 @@ import (
 	"github.com/docker/machine/state"
 )
 
-const (
-	dockerConfigDir = "/etc/docker"
-)
-
 type Driver struct {
 	AccessToken       string
 	DropletID         int
@@ -328,10 +324,6 @@ func (d *Driver) Restart() error {
 func (d *Driver) Kill() error {
 	_, _, err := d.getClient().DropletActions.PowerOff(d.DropletID)
 	return err
-}
-
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
 }
 
 func (d *Driver) getClient() *godo.Client {

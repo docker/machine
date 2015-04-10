@@ -29,10 +29,9 @@ import (
 )
 
 const (
-	B2D_USER        = "docker"
-	B2D_PASS        = "tcuser"
-	dockerConfigDir = "/var/lib/boot2docker"
-	isoFilename     = "boot2docker-1.5.0-GH747.iso"
+	B2D_USER    = "docker"
+	B2D_PASS    = "tcuser"
+	isoFilename = "boot2docker-1.5.0-GH747.iso"
 )
 
 // Driver for VMware Fusion

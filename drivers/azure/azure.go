@@ -22,10 +22,6 @@ import (
 	"github.com/docker/machine/state"
 )
 
-const (
-	dockerConfigDir = "/etc/docker"
-)
-
 type Driver struct {
 	MachineName             string
 	SubscriptionID          string
