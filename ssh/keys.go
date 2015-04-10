@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -79,8 +80,12 @@ func (kp *KeyPair) WriteToFile(privateKeyPath string, publicKeyPath string) erro
 			return ErrUnableToWriteFile
 		}
 
-		if err := f.Chmod(0600); err != nil {
-			return err
+		// windows does not support chmod
+		switch runtime.GOOS {
+		case "darwin", "linux":
+			if err := f.Chmod(0600); err != nil {
+				return err
+			}
 		}
 	}
 
