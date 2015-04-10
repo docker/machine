@@ -161,7 +161,7 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 	return nil
 }
 
-var CreateFlags = []cli.Flag{
+var sharedCreateFlags = []cli.Flag{
 	cli.StringFlag{
 		Name: "driver, d",
 		Usage: fmt.Sprintf(
@@ -204,7 +204,7 @@ var Commands = []cli.Command{
 	{
 		Flags: append(
 			drivers.GetCreateFlags(),
-			CreateFlags...,
+			sharedCreateFlags...,
 		),
 		Name:   "create",
 		Usage:  "Create a machine",
@@ -369,35 +369,42 @@ func cmdActive(c *cli.Context) {
 	}
 }
 
+// If the user has specified a driver, they should not see the flags for all
+// of the drivers in `docker-machine create`.  This method replaces the 100+
+// create flags with only the ones applicable to the driver specified
+func trimDriverFlags(driver string, cmds []cli.Command) ([]cli.Command, error) {
+	filteredCmds := cmds
+	driverFlags, err := drivers.GetCreateFlagsForDriver(driver)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, cmd := range cmds {
+		if cmd.HasName("create") {
+			filteredCmds[i].Flags = append(sharedCreateFlags, driverFlags...)
+		}
+	}
+
+	return filteredCmds, nil
+}
+
 func cmdCreate(c *cli.Context) {
+	var (
+		err error
+	)
 	driver := c.String("driver")
 	name := c.Args().First()
 
-	if name == "" {
-
-		hasDriver := false
-		driverFlags, err := drivers.GetCreateFlagsForDriver(driver)
+	// TODO: Not really a fan of "none" as the default driver...
+	if driver != "none" {
+		c.App.Commands, err = trimDriverFlags(driver, c.App.Commands)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			hasDriver = true
 		}
+	}
 
-		if hasDriver {
-			for i, cmd := range c.App.Commands {
-				if cmd.HasName("create") {
-					c.App.Commands[i].Flags = append(
-						driverFlags,
-						CreateFlags...,
-					)
-				}
-			}
-		}
-
+	if name == "" {
 		cli.ShowCommandHelp(c, "create")
-		if hasDriver {
-			fmt.Println("Run 'docker-machine create --help' for all options.\n")
-		}
 		log.Fatal("You must specify a machine name")
 	}
 
