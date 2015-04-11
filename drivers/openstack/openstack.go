@@ -380,7 +380,7 @@ func (d *Driver) Start() error {
 	if err := d.client.StartInstance(d); err != nil {
 		return err
 	}
-	return d.waitForInstanceToStart()
+	return nil
 }
 
 func (d *Driver) Stop() error {
@@ -392,10 +392,6 @@ func (d *Driver) Stop() error {
 		return err
 	}
 
-	log.WithField("MachineId", d.MachineId).Info("Waiting for the OpenStack instance to stop...")
-	if err := d.client.WaitForInstanceStatus(d, "SHUTOFF", 200); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -423,7 +419,7 @@ func (d *Driver) Restart() error {
 	if err := d.client.RestartInstance(d); err != nil {
 		return err
 	}
-	return d.waitForInstanceToStart()
+	return nil
 }
 
 func (d *Driver) Kill() error {
@@ -690,25 +686,6 @@ func (d *Driver) lookForIpAddress() error {
 		"MachineId": d.MachineId,
 	}).Debug("IP address found")
 	return nil
-}
-
-func (d *Driver) waitForSSHServer() error {
-	ip, err := d.GetIP()
-	if err != nil {
-		return err
-	}
-	log.WithFields(log.Fields{
-		"MachineId": d.MachineId,
-		"IP":        ip,
-	}).Debug("Waiting for the SSH server to be started...")
-	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
-}
-
-func (d *Driver) waitForInstanceToStart() error {
-	if err := d.waitForInstanceActive(); err != nil {
-		return err
-	}
-	return d.waitForSSHServer()
 }
 
 func (d *Driver) publicSSHKeyPath() string {
