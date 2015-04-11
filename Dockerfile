@@ -6,6 +6,7 @@ RUN go get github.com/mitchellh/gox
 RUN go get github.com/aktau/github-release
 RUN go get github.com/tools/godep
 RUN go get code.google.com/p/go.tools/cmd/cover
+RUN go get github.com/kolo/xmlrpc
 
 ENV GOPATH /go/src/github.com/docker/machine/Godeps/_workspace:/go
 ENV MACHINE_BINARY /go/src/github.com/docker/machine/docker-machine
