@@ -12,6 +12,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/kolo/xmlrpc"
@@ -29,6 +30,8 @@ type Driver struct {
 	storePath      string
 	CaCertPath     string
 	PrivateKeyPath string
+	SSHUser        string
+	SSHPort        int
 }
 
 const (
@@ -81,6 +84,46 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 	}, nil
 }
 
+func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
+	return nil
+}
+
+func (d *Driver) GetMachineName() string {
+	return d.MachineName
+}
+
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	return filepath.Join(d.storePath, "id_rsa")
+}
+
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = 22
+	}
+
+	return d.SSHPort, nil
+}
+
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "root"
+	}
+
+	return d.SSHUser
+}
+
+func (d *Driver) GetProviderType() provider.ProviderType {
+	return provider.Remote
+}
+
 func (d *Driver) DriverName() string {
 	return "gandi"
 }
@@ -96,6 +139,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("gandi driver requires the -gandi-api-key option")
 	}
 
+	return nil
+}
+
+func (d *Driver) PreCreateCheck() error {
+	// TODO : check valid datacenter and ?
 	return nil
 }
 
@@ -364,7 +412,7 @@ func (d *Driver) StopDocker() error {
 func (d *Driver) Upgrade() error {
 	log.Debugf("Installing Docker")
 
-	cmd, err := d.GetSSHCommand("curl get.docker.io | sudo sh -")
+	cmd, err := d.GetSSHCommand("curl -sSL https://get.docker.com/ | sh")
 	if err != nil {
 		return err
 
