@@ -369,9 +369,6 @@ func (d *Driver) Create() error {
 	if err := d.lookForIpAddress(); err != nil {
 		return err
 	}
-	if err := d.waitForSSHServer(); err != nil {
-		return err
-	}
 	return nil
 }
 

@@ -343,7 +343,7 @@ func (d *Driver) Start() error {
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Waiting for VM to start...")
+		log.Infof("Starting VM...")
 	case state.Paused:
 		if err := vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
 			return err
@@ -353,7 +353,7 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
+	return nil
 }
 
 func (d *Driver) Stop() error {
