@@ -186,10 +186,32 @@ func (d *Driver) Create() error {
 
 	// import b2d VM if requested
 	if d.Boot2DockerImportVM != "" {
-		log.Debugf("Importing disk image...")
-		if err := d.importB2DVM(d.Boot2DockerImportVM); err != nil {
+		name := d.Boot2DockerImportVM
+
+		// make sure vm is stopped
+		_ = vbm("controlvm", name, "poweroff")
+
+		diskInfo, err := getVMDiskInfo(name)
+		if err != nil {
 			return err
 		}
+
+		if _, err := os.Stat(diskInfo.Path); err != nil {
+			return err
+		}
+
+		if err := vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
+			return err
+		}
+
+		log.Debugf("Importing VM settings...")
+		vmInfo, err := getVMInfo(name)
+		if err != nil {
+			return err
+		}
+
+		d.CPU = vmInfo.CPUs
+		d.Memory = vmInfo.Memory
 
 		log.Debugf("Importing SSH key...")
 		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
@@ -214,6 +236,9 @@ func (d *Driver) Create() error {
 		"--register"); err != nil {
 		return err
 	}
+
+	log.Infof("CPUS: %d", d.CPU)
+	log.Infof("Mem: %d", d.Memory)
 
 	cpus := d.CPU
 	if cpus < 1 {
@@ -612,26 +637,6 @@ func zeroFill(w io.Writer, n int64) error {
 		}
 		n -= int64(k)
 	}
-	return nil
-}
-
-func (d Driver) importB2DVM(name string) error {
-	// make sure vm is stopped
-	_ = vbm("controlvm", name, "poweroff")
-
-	diskInfo, err := getVMDiskInfo(name)
-	if err != nil {
-		return err
-	}
-
-	if _, err := os.Stat(diskInfo.Path); err != nil {
-		return err
-	}
-
-	if err := vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
-		return err
-	}
-
 	return nil
 }
 

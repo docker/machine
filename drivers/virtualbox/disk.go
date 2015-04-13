@@ -19,7 +19,7 @@ func parseDiskInfo(r io.Reader) (*VirtualDisk, error) {
 		if line == "" {
 			continue
 		}
-		res := reEqualLine.FindStringSubmatch(line)
+		res := reEqualQuoteLine.FindStringSubmatch(line)
 		if res == nil {
 			continue
 		}
