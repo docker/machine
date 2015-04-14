@@ -146,6 +146,12 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "amazonec2-iam-instance-profile",
 			Usage: "AWS IAM Instance Profile",
 		},
+		cli.StringFlag{
+			Name:   "amazonec2-ssh-user",
+			Usage:  "set the name of the ssh user",
+			Value:  "ubuntu",
+			EnvVar: "AWS_SSH_USER",
+		},
 	}
 }
 
@@ -199,7 +205,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = "ubuntu"
+	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = 22
 
 	if d.AccessKey == "" {

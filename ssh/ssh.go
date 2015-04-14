@@ -13,8 +13,9 @@ import (
 func GetSSHCommand(host string, port int, user string, sshKey string, args ...string) *exec.Cmd {
 	defaultSSHArgs := []string{
 		"-o", "IdentitiesOnly=yes",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
+		"-o", "StrictHostKeyChecking=no", // don't bother checking in ~/.ssh/known_hosts
+		"-o", "UserKnownHostsFile=/dev/null", // don't write anything to ~/.ssh/known_hosts
+		"-o", "ConnectionAttempts=30", // retry 30 times if SSH connection fails
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-p", fmt.Sprintf("%d", port),
 		"-i", sshKey,
@@ -32,32 +33,6 @@ func GetSSHCommand(host string, port int, user string, sshKey string, args ...st
 	log.Debugf("executing: %v", strings.Join(cmd.Args, " "))
 
 	return cmd
-}
-
-func GenerateSSHKey(path string) error {
-	if _, err := exec.LookPath("ssh-keygen"); err != nil {
-		return fmt.Errorf("ssh-keygen not found in the path, please install ssh-keygen")
-	}
-
-	if _, err := os.Stat(path); err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-
-		cmd := exec.Command("ssh-keygen", "-t", "rsa", "-N", "", "-f", path)
-
-		if os.Getenv("DEBUG") != "" {
-			cmd.Stdout = os.Stdout
-		}
-
-		cmd.Stderr = os.Stderr
-		log.Debugf("executing: %v %v\n", cmd.Path, strings.Join(cmd.Args, " "))
-
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func WaitForTCP(addr string) error {

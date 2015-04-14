@@ -21,6 +21,22 @@ managing them:
  - Upgrading Docker
  - Configuring the Docker client to talk to your host
 
+## Getting help
+
+Docker Machine is still in its infancy and under active development. If you need
+help, would like to contribute, or simply want to talk about to the project with
+like-minded individuals, we have a number of open channels for communication.
+
+- To report bugs or file feature requests: please use the [issue tracker on
+  Github](https://github.com/docker/machine/issues).
+- To talk about the project with people in real time: please join the
+  `#docker-machine` channel on IRC.
+- To contribute code or documentation changes: please [submit a pull request on
+  Github](https://github.com/docker/machine/pulls).
+
+For more information and resources, please visit
+[https://docs.docker.com/project/get-help/](https://docs.docker.com/project/get-help/).
+
 ## Installation
 
 Docker Machine is supported on Windows, OSX, and Linux.  To install Docker
@@ -761,20 +777,20 @@ Create machines on [Openstack](http://www.openstack.org/software/)
 
 Mandatory:
 
- - `--openstack-flavor-id`: The flavor ID to use when creating the machine
- - `--openstack-image-id`: The image ID to use when creating the machine.
+ - `--openstack-flavor-id` or `openstack-flavor-name`: Identify the flavor that will be used for the machine.
+ - `--openstack-image-id` or `openstack-image-name`: Identify the image that will be used for the machine.
 
 Options:
 
  - `--openstack-auth-url`: Keystone service base URL.
+ - `--openstack-domain-name` or `--openstack-domain-id`: Domain to use for authentication (Keystone v3 only)
  - `--openstack-username`: User identifer to authenticate with.
  - `--openstack-password`: User password. It can be omitted if the standard environment variable `OS_PASSWORD` is set.
  - `--openstack-tenant-name` or `--openstack-tenant-id`: Identify the tenant in which the machine will be created.
  - `--openstack-region`: The region to work on. Can be omitted if there is ony one region on the OpenStack.
  - `--openstack-endpoint-type`: Endpoint type can be `internalURL`, `adminURL` on `publicURL`. If is a helper for the driver
    to choose the right URL in the OpenStack service catalog. If not provided the default id `publicURL`
- - `--openstack-net-id`: The private network id the machine will be connected on. If your OpenStack project project
-   contains only one private network it will be use automatically.
+ - `--openstack-net-id` or `--openstack-net-name`: Identify the private network the machine will be connected on. If your OpenStack project project contains only one private network it will be use automatically.
  - `--openstack-sec-groups`: If security groups are available on your OpenStack you can specify a comma separated list
    to use for the machine (e.g. `secgrp001,secgrp002`).
  - `--openstack-floatingip-pool`: The IP pool that will be used to get a public IP an assign it to the machine. If there is an
@@ -782,6 +798,7 @@ Options:
    there is no IP address already allocated a new IP will be allocated and assigned to the machine.
  - `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
+ - `--openstack-insecure`: Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's certificate will not be verified against any certificate authorities. This option should be used with caution.
 
 Environment variables:
 
@@ -791,6 +808,8 @@ and CLI option are provided the CLI option takes the precedence.
 | Environment variable | CLI option                  |
 |----------------------|-----------------------------|
 | `OS_AUTH_URL`        | `--openstack-auth-url`      |
+| `OS_DOMAIN_ID`       | `--openstack-domain-id`     |
+| `OS_DOMAIN_NAME`     | `--openstack-domain-name`   |
 | `OS_USERNAME`        | `--openstack-username`      |
 | `OS_PASSWORD`        | `--openstack-password`      |
 | `OS_TENANT_NAME`     | `--openstack-tenant-name`   |
@@ -820,9 +839,10 @@ variable and CLI option are provided the CLI option takes the precedence.
 | Environment variable | CLI option                  |
 |----------------------|-----------------------------|
 | `OS_USERNAME`        | `--rackspace-username`      |
-| `OS_API_KEY`         | `--rackspace-ap-key`        |
+| `OS_API_KEY`         | `--rackspace-api-key`       |
 | `OS_REGION_NAME`     | `--rackspace-region`        |
 | `OS_ENDPOINT_TYPE`   | `--rackspace-endpoint-type` |
+| `OS_FLAVOR_ID`       | `--rackspace-flavor-id`     |
 
 The Rackspace driver will use `598a4282-f14b-4e50-af4c-b3e52749d9f9` (Ubuntu 14.04 LTS) by default.
 
