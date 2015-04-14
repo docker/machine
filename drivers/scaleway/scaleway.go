@@ -108,6 +108,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Organization = flags.String("scaleway-organization")
 	d.Image = flags.String("scaleway-image")
 	d.Volumes = flags.String("scaleway-volumes")
+	if d.UserId == "" {
+		return fmt.Errorf("scaleway driver requires the --scaleway-userid option")
+	}
 	if d.Token == "" {
 		return fmt.Errorf("scaleway driver requires the --scaleway-token option")
 	}
