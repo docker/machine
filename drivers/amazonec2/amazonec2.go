@@ -357,7 +357,7 @@ func (d *Driver) Create() error {
 		}
 		var instanceId string
 		var spotInstanceRequestStatus string
-		log.Debug("waiting for spot instance fulfillment...")
+		log.Info("Waiting for spot instance...")
 		// check until fulfilled
 		for instanceId == "" {
 			time.Sleep(time.Second * 5)
