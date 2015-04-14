@@ -23,7 +23,8 @@ func parseDiskInfo(r io.Reader) (*VirtualDisk, error) {
 		if res == nil {
 			continue
 		}
-		switch key, val := res[1], res[2]; key {
+		key, val := res[1], res[2]
+		switch key {
 		case "SATA-1-0":
 			disk.Path = val
 		case "SATA-ImageUUID-1-0":
