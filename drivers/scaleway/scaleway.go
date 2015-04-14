@@ -65,31 +65,26 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "scaleway-userid",
 			Usage:  "Scaleway UserID",
-			Value:  "",
 			EnvVar: "SCALEWAY_USERID",
 		},
 		cli.StringFlag{
 			Name:   "scaleway-token",
 			Usage:  "Scaleway Token",
-			Value:  "",
 			EnvVar: "SCALEWAY_TOKEN",
 		},
 		cli.StringFlag{
 			Name:   "scaleway-organization",
 			Usage:  "Organization identifier",
-			Value:  "",
 			EnvVar: "SCALEWAY_ORGANIZATION",
 		},
 		cli.StringFlag{
 			Name:   "scaleway-image",
 			Usage:  "Image identifier",
-			Value:  "",
 			EnvVar: "SCALEWAY_IMAGE",
 		},
 		cli.StringFlag{
 			Name:   "scaleway-volumes",
 			Usage:  "Volumes identifier",
-			Value:  "",
 			EnvVar: "SCALEWAY_VOLUMES",
 		},
 	}
