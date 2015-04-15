@@ -15,7 +15,8 @@ func GetSSHCommand(host string, port int, user string, sshKey string, args ...st
 		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no", // don't bother checking in ~/.ssh/known_hosts
 		"-o", "UserKnownHostsFile=/dev/null", // don't write anything to ~/.ssh/known_hosts
-		"-o", "ConnectionAttempts=30", // retry 30 times if SSH connection fails
+		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
+		"-o", "ConnectTimeout=10", // timeout after 10 seconds
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-p", fmt.Sprintf("%d", port),
 		"-i", sshKey,
