@@ -198,7 +198,7 @@ var sharedCreateFlags = []cli.Flag{
 var Commands = []cli.Command{
 	{
 		Name:   "active",
-		Usage:  "Get or set the active machine",
+		Usage:  "Print which machine is active",
 		Action: cmdActive,
 	},
 	{
@@ -330,8 +330,6 @@ var Commands = []cli.Command{
 }
 
 func cmdActive(c *cli.Context) {
-	name := c.Args().First()
-
 	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
@@ -347,25 +345,18 @@ func cmdActive(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	if name == "" {
-		host, err := mcn.GetActive()
-		if err != nil {
-			log.Fatalf("error getting active host: %v", err)
-		}
-		if host != nil {
-			fmt.Println(host.Name)
-		}
-	} else if name != "" {
-		host, err := mcn.Get(name)
-		if err != nil {
-			log.Fatalf("error loading host: %v", err)
-		}
+	if len(c.Args()) > 0 {
+		log.Fatal("Too many arguments given.")
+	}
 
-		if err := mcn.SetActive(host); err != nil {
-			log.Fatalf("error setting active host: %v", err)
-		}
+	host, err := mcn.GetActive()
+	if err != nil {
+		log.Fatalf("error getting active host: %v", err)
+	}
+	if host != nil {
+		fmt.Println(host.Name)
 	} else {
-		cli.ShowCommandHelp(c, "active")
+		log.Fatal("No active host is set.")
 	}
 }
 
@@ -451,14 +442,10 @@ func cmdCreate(c *cli.Context) {
 		},
 	}
 
-	host, err := mcn.Create(name, driver, hostOptions, c)
+	_, err = mcn.Create(name, driver, hostOptions, c)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
-		log.Warn("You will want to check the provider to make sure the machine and associated resources were properly removed.")
-		log.Fatal("Error creating machine")
-	}
-	if err := mcn.SetActive(host); err != nil {
-		log.Fatalf("error setting active host: %v", err)
+		log.Fatal("You will want to check the provider to make sure the machine and associated resources were properly removed.")
 	}
 
 	info := ""
@@ -471,7 +458,7 @@ func cmdCreate(c *cli.Context) {
 		info = fmt.Sprintf(`eval "$(%s env %s)"`, c.App.Name, name)
 	}
 
-	log.Infof("%q has been created and is now the active machine.", name)
+	log.Infof("%q has been created.", name)
 
 	if info != "" {
 		log.Infof("To point your Docker client at it, run this in your shell: %s", info)
@@ -1103,11 +1090,8 @@ func getHostState(host libmachine.Host, store libmachine.Store, hostListItems ch
 		}
 	}
 
-	isActive, err := store.IsActive(&host)
-	if err != nil {
-		log.Debugf("error determining whether host %q is active: %s",
-			host.Name, err)
-	}
+	dockerHost := os.Getenv("DOCKER_HOST")
+	isActive := dockerHost == url
 
 	hostListItems <- hostListItem{
 		Name:         host.Name,

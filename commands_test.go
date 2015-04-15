@@ -350,9 +350,11 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := store.SetActive(host); err != nil {
-		t.Fatalf("error setting active host: %v", err)
+	url, err := host.Driver.GetURL()
+	if err != nil {
+		t.Fatal(err)
 	}
+	os.Setenv("DOCKER_HOST", url)
 
 	outStr := make(chan string)
 
@@ -452,9 +454,11 @@ func TestCmdEnvBash(t *testing.T) {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := mcn.SetActive(host); err != nil {
-		t.Fatalf("error setting active host: %v", err)
+	url, err := host.Driver.GetURL()
+	if err != nil {
+		t.Fatal(err)
 	}
+	os.Setenv("DOCKER_HOST", url)
 
 	outStr := make(chan string)
 
@@ -550,9 +554,11 @@ func TestCmdEnvFish(t *testing.T) {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := mcn.SetActive(host); err != nil {
-		t.Fatalf("error setting active host: %v", err)
+	url, err := host.Driver.GetURL()
+	if err != nil {
+		t.Fatal(err)
 	}
+	os.Setenv("DOCKER_HOST", url)
 
 	outStr := make(chan string)
 
