@@ -419,6 +419,7 @@ func (d *Driver) buildHostSpec() *HostSpec {
 		Os:             d.deviceConfig.Image,
 		HourlyBilling:  d.deviceConfig.HourlyBilling,
 		PrivateNetOnly: d.deviceConfig.PrivateNet,
+		LocalDisk:      d.deviceConfig.LocalDisk,
 	}
 	if d.deviceConfig.DiskSize > 0 {
 		spec.BlockDevices = []BlockDevice{{Device: "0", DiskImage: DiskImage{Capacity: d.deviceConfig.DiskSize}}}
