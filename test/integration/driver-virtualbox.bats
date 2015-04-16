@@ -106,6 +106,7 @@ buildMachineWithOldIsoCheckUpgrade() {
 
 @test "$DRIVER: docker commands with the socket should work" {
   run machine ssh $NAME -- docker version
+  [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: stop" {
