@@ -1,7 +1,7 @@
 Changelog
 ==========
 
-# 0.2.0 (2015-03-22)
+# 0.2.0 (2015-04-16)
 
 Core Stability and Driver Updates
 
