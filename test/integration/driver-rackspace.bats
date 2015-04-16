@@ -25,7 +25,6 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"$NAME"*  ]]
-  [[ ${lines[1]} == *"*"*  ]]
 }
 
 @test "$DRIVER: run busybox container" {
