@@ -399,17 +399,6 @@ func (d *Driver) Create() error {
 	d.getIp()
 	d.waitForStart()
 	d.waitForSetupTransactions()
-	ssh.WaitForTCP(d.IPAddress + ":22")
-
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq curl")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
 
 	return nil
 }
