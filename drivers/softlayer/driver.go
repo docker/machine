@@ -343,6 +343,7 @@ func (d *Driver) getIp() (string, error) {
 		// not a perfect regex, but should be just fine for our needs
 		exp := regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
 		if exp.MatchString(ip) {
+			d.IPAddress = ip         
 			return ip, nil
 		}
 		time.Sleep(2 * time.Second)
