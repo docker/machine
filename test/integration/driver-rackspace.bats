@@ -75,7 +75,7 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 }
 
 @test "$DRIVER: remove" {
-  run machine rm $NAME
+  run machine rm -f $NAME
   [ "$status" -eq 0  ]
 }
 
