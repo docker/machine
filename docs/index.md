@@ -57,7 +57,7 @@ To install on OSX or Linux, download the proper binary to somewhere in your
 most OSX machines these commands should suffice:
 
 ```
-$ curl https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
+$ curl -L https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
 $ chmod +x /usr/local/bin/docker-machine
 ```
 
