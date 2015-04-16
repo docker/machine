@@ -54,7 +54,7 @@ Now you should be able to check the version with `docker-machine -v`:
 
 ```
 $ docker-machine -v
-machine version 0.1.0
+machine version 0.2.0
 ```
 
 ## Getting started with Docker Machine using a local VM
@@ -943,3 +943,22 @@ Options:
  - `--vmwarevsphere-vcenter`: IP/hostname for vCenter (or ESXi if connecting directly to a single host).
 
 The VMware vSphere driver uses the latest boot2docker image.
+
+## Release Notes
+
+### Version 0.2.0 (April 16, 2015)
+
+For complete information on this release, see the [0.2.0 Milestone project page](https://github.com/docker/machine/wiki/0.2.0-Milestone-Project-Page).
+In addition to bug fixes and refinements, this release adds the following:
+
+* Updated and refactored Driver interface For details, see
+[PR #694](https://github.com/docker/machine/pull/694).
+
+* Initial creation of an internal API, so Machine can be used as a library. For
+details, see [PR #553](https://github.com/docker/machine/issues/553).
+
+* Improvements and isolation of provisioning functionality, so Machine can
+provision and configure the Docker Engine based on OS detection. For details,
+see [PR #553](https://github.com/docker/machine/issues/553).
+
+
