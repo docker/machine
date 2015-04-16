@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os/exec"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/utils"
 )
 
 func init() {
@@ -80,6 +82,21 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 	return nil
 }
 
+func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
+	cmd, err := provisioner.SSHCommand("sudo docker version")
+	if err != nil {
+		log.Warn("Error getting SSH command to check if the daemon is up: %s", err)
+		return false
+	}
+	if err := cmd.Run(); err != nil {
+		log.Debug("Error checking for daemon up: %s", err)
+		return false
+	}
+
+	// The daemon is up if the command worked.  Carry on.
+	return true
+}
+
 func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
@@ -92,6 +109,10 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	if err := installDockerGeneric(provisioner); err != nil {
+		return err
+	}
+
+	if err := utils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
 		return err
 	}
 

@@ -21,6 +21,22 @@ managing them:
  - Upgrading Docker
  - Configuring the Docker client to talk to your host
 
+## Getting help
+
+Docker Machine is still in its infancy and under active development. If you need
+help, would like to contribute, or simply want to talk about to the project with
+like-minded individuals, we have a number of open channels for communication.
+
+- To report bugs or file feature requests: please use the [issue tracker on
+  Github](https://github.com/docker/machine/issues).
+- To talk about the project with people in real time: please join the
+  `#docker-machine` channel on IRC.
+- To contribute code or documentation changes: please [submit a pull request on
+  Github](https://github.com/docker/machine/pulls).
+
+For more information and resources, please visit
+[https://docs.docker.com/project/get-help/](https://docs.docker.com/project/get-help/).
+
 ## Installation
 
 Docker Machine is supported on Windows, OSX, and Linux.  To install Docker
@@ -314,7 +330,7 @@ docker-machine create \
 ```
 
 You now have a Swarm cluster across two nodes.
-To connect to the Swarm master, use `docker-machine env --swarm swarm-master`
+To connect to the Swarm master, use `eval $(docker-machine env --swarm swarm-master)`
 
 For example:
 
@@ -820,7 +836,7 @@ variable and CLI option are provided the CLI option takes the precedence.
 | Environment variable | CLI option                  |
 |----------------------|-----------------------------|
 | `OS_USERNAME`        | `--rackspace-username`      |
-| `OS_API_KEY`         | `--rackspace-ap-key`        |
+| `OS_API_KEY`         | `--rackspace-api-key`       |
 | `OS_REGION_NAME`     | `--rackspace-region`        |
 | `OS_ENDPOINT_TYPE`   | `--rackspace-endpoint-type` |
 

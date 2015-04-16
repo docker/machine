@@ -750,9 +750,9 @@ func generateUsageHint(machineName string, userShell string) string {
 		}
 	default:
 		if machineName != "" {
-			cmd = fmt.Sprintf("eval $(docker-machine env %s)", machineName)
+			cmd = fmt.Sprintf("eval \"$(docker-machine env %s)\"", machineName)
 		} else {
-			cmd = "eval $(docker-machine env)"
+			cmd = "eval \"$(docker-machine env)\""
 		}
 	}
 
