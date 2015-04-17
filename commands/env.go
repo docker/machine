@@ -22,6 +22,8 @@ func cmdEnv(c *cli.Context) {
 		switch userShell {
 		case "fish":
 			fmt.Printf("set -e DOCKER_TLS_VERIFY;\nset -e DOCKER_CERT_PATH;\nset -e DOCKER_HOST;\n")
+		case "powershell":
+			fmt.Printf("Remove-Item Env:\\DOCKER_TLS_VERIFY\nRemove-Item Env:\\DOCKER_CERT_PATH\nRemove-Item Env:\\DOCKER_HOST\n")
 		default:
 			fmt.Println("unset DOCKER_TLS_VERIFY DOCKER_CERT_PATH DOCKER_HOST")
 		}
@@ -93,8 +95,8 @@ func cmdEnv(c *cli.Context) {
 		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %q;\nset -x DOCKER_HOST %s;\n\n%s\n",
 			cfg.machineDir, dockerHost, usageHint)
 	case "powershell":
-		fmt.Printf("$env:DOCKER_TLS_VERIFY=1\n$env:DOCKER_CERT_PATH=\"%s\"\n$env:DOCKER_HOST=\"%s\"\n\n%s\n",
-			cfg.machineDir, dockerHost, usageHint)
+		fmt.Printf("$Env:DOCKER_TLS_VERIFY = 1\n$Env:DOCKER_CERT_PATH = \"%s\"\n$Env:DOCKER_HOST = \"%s\"\n",
+			cfg.machineDir, dockerHost)
 	default:
 		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%q\nexport DOCKER_HOST=%s\n\n%s\n",
 			cfg.machineDir, dockerHost, usageHint)
