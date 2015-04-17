@@ -14,7 +14,10 @@ import (
 )
 
 func cmdEnv(c *cli.Context) {
-	userShell := filepath.Base(os.Getenv("SHELL"))
+	userShell := c.String("shell")
+	if userShell == "" {
+		userShell = filepath.Base(os.Getenv("SHELL"))
+	}
 	if c.Bool("unset") {
 		switch userShell {
 		case "fish":
@@ -89,6 +92,9 @@ func cmdEnv(c *cli.Context) {
 	case "fish":
 		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %q;\nset -x DOCKER_HOST %s;\n\n%s\n",
 			cfg.machineDir, dockerHost, usageHint)
+	case "powershell":
+		fmt.Printf("$env:DOCKER_TLS_VERIFY=1\n$env:DOCKER_CERT_PATH=\"%s\"\n$env:DOCKER_HOST=\"%s\"\n\n%s\n",
+			cfg.machineDir, dockerHost, usageHint)
 	default:
 		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%q\nexport DOCKER_HOST=%s\n\n%s\n",
 			cfg.machineDir, dockerHost, usageHint)
@@ -98,6 +104,12 @@ func cmdEnv(c *cli.Context) {
 func generateUsageHint(machineName string, userShell string) string {
 	cmd := ""
 	switch userShell {
+	case "powershell":
+		if machineName != "" {
+			cmd = fmt.Sprintf("Param(docker-machine env %s)", machineName)
+		} else {
+			cmd = "Param(docker-machine env)"
+		}
 	case "fish":
 		if machineName != "" {
 			cmd = fmt.Sprintf("eval (docker-machine env %s)", machineName)
