@@ -103,6 +103,14 @@ type (
 		OwnerId       string        `xml:"ownerId"`
 		Instances     []EC2Instance `xml:"instancesSet>item"`
 	}
+
+	RequestSpotInstancesResponse struct {
+		RequestId              string `xml:"requestId"`
+		SpotInstanceRequestSet []struct {
+			SpotInstanceRequestId string `xml:"spotInstanceRequestId"`
+			State                 string `xml:"state"`
+		} `xml:"spotInstanceRequestSet>item"`
+	}
 )
 
 func newAwsApiResponseError(r http.Response) error {
@@ -215,6 +223,81 @@ func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCou
 
 	instance.info = unmarshalledResponse.Instances[0]
 	return instance.info, nil
+}
+
+func (e *EC2) RequestSpotInstances(amiId string, instanceType string, zone string, instanceCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping, role string, spotPrice string) (string, error) {
+	v := url.Values{}
+	v.Set("Action", "RequestSpotInstances")
+	v.Set("LaunchSpecification.ImageId", amiId)
+	v.Set("LaunchSpecification.Placement.AvailabilityZone", e.Region+zone)
+	v.Set("InstanceCount", strconv.Itoa(instanceCount))
+	v.Set("SpotPrice", spotPrice)
+	v.Set("LaunchSpecification.KeyName", keyName)
+	v.Set("LaunchSpecification.InstanceType", instanceType)
+	v.Set("LaunchSpecification.NetworkInterface.0.DeviceIndex", "0")
+	v.Set("LaunchSpecification.NetworkInterface.0.SecurityGroupId.0", securityGroup)
+	v.Set("LaunchSpecification.NetworkInterface.0.SubnetId", subnetId)
+	v.Set("LaunchSpecification.NetworkInterface.0.AssociatePublicIpAddress", "1")
+
+	if len(role) > 0 {
+		v.Set("LaunchSpecification.IamInstanceProfile.Name", role)
+	}
+
+	if bdm != nil {
+		v.Set("LaunchSpecification.BlockDeviceMapping.0.DeviceName", bdm.DeviceName)
+		v.Set("LaunchSpecification.BlockDeviceMapping.0.VirtualName", bdm.VirtualName)
+		v.Set("LaunchSpecification.BlockDeviceMapping.0.Ebs.VolumeSize", strconv.FormatInt(bdm.VolumeSize, 10))
+		v.Set("LaunchSpecification.BlockDeviceMapping.0.Ebs.VolumeType", bdm.VolumeType)
+		deleteOnTerm := 0
+		if bdm.DeleteOnTermination {
+			deleteOnTerm = 1
+		}
+		v.Set("LaunchSpecification.BlockDeviceMapping.0.Ebs.DeleteOnTermination", strconv.Itoa(deleteOnTerm))
+	}
+
+	resp, err := e.awsApiCall(v)
+
+	if err != nil {
+		return "", newAwsApiCallError(err)
+	}
+	defer resp.Body.Close()
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("Error reading AWS response body")
+	}
+	unmarshalledResponse := RequestSpotInstancesResponse{}
+	err = xml.Unmarshal(contents, &unmarshalledResponse)
+	if err != nil {
+		return "", fmt.Errorf("Error unmarshalling AWS response XML: %s", err)
+	}
+	return unmarshalledResponse.SpotInstanceRequestSet[0].SpotInstanceRequestId, nil
+}
+
+func (e *EC2) DescribeSpotInstanceRequests(spotInstanceRequestId string) (string, string, error) {
+	v := url.Values{}
+	v.Set("Action", "DescribeSpotInstanceRequests")
+	v.Set("SpotInstanceRequestId.0", spotInstanceRequestId)
+
+	resp, err := e.awsApiCall(v)
+
+	if err != nil {
+		return "", "", newAwsApiCallError(err)
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", fmt.Errorf("Error reading AWS response body")
+	}
+	unmarshalledResponse := DescribeSpotInstanceRequestsResponse{}
+	err = xml.Unmarshal(contents, &unmarshalledResponse)
+	if err != nil {
+		return "", "", fmt.Errorf("Error unmarshalling AWS response XML: %s", err)
+	}
+	if code := unmarshalledResponse.SpotInstanceRequestSet[0].Status.Code; code != "fulfilled" {
+		return code, "", nil
+	}
+	return "fulfilled", unmarshalledResponse.SpotInstanceRequestSet[0].InstanceId, nil
 }
 
 func (e *EC2) DeleteKeyPair(name string) error {

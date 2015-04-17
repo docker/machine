@@ -6,6 +6,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+
+	"github.com/docker/machine/commands"
 	"github.com/docker/machine/utils"
 	"github.com/docker/machine/version"
 )
@@ -26,7 +28,7 @@ func main() {
 		os.Setenv("MACHINE_STORAGE_PATH", c.GlobalString("storage-path"))
 		return nil
 	}
-	app.Commands = Commands
+	app.Commands = commands.Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
 	app.Version = version.VERSION + " (" + version.GITCOMMIT + ")"
@@ -69,4 +71,14 @@ func main() {
 	}
 
 	app.Run(os.Args)
+}
+
+func cmdNotFound(c *cli.Context, command string) {
+	log.Fatalf(
+		"%s: '%s' is not a %s command. See '%s --help'.",
+		c.App.Name,
+		command,
+		c.App.Name,
+		c.App.Name,
+	)
 }
