@@ -228,6 +228,10 @@ var Commands = []cli.Command{
 				Name:  "swarm",
 				Usage: "Display the Swarm config instead of the Docker daemon",
 			},
+			cli.StringFlag{
+				Name:  "shell",
+				Usage: "Force environment to be configured for specified shell",
+			},
 			cli.BoolFlag{
 				Name:  "unset, u",
 				Usage: "Unset variables instead of setting them",
