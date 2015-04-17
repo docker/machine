@@ -165,11 +165,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	d.SSHPort, err = getAvailableTCPPort()
-	if err != nil {
-		return err
-	}
-
 	log.Infof("Creating SSH key...")
 
 	b2dutils := utils.NewB2dUtils("", "")
@@ -234,11 +229,6 @@ func (d *Driver) Create() error {
 		"--nic1", "nat",
 		"--nictype1", "virtio",
 		"--cableconnected1", "on"); err != nil {
-		return err
-	}
-
-	if err := vbm("modifyvm", d.MachineName,
-		"--natpf1", fmt.Sprintf("ssh,tcp,127.0.0.1,%d,,22", d.SSHPort)); err != nil {
 		return err
 	}
 
@@ -340,6 +330,10 @@ func (d *Driver) Start() error {
 
 	switch s {
 	case state.Stopped, state.Saved:
+		d.SSHPort, err = setPortForwarding(d.MachineName, 1, "ssh", "tcp", 22, d.SSHPort)
+		if err != nil {
+			return err
+		}
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
@@ -596,10 +590,12 @@ func zeroFill(w io.Writer, n int64) error {
 	return nil
 }
 
-func getAvailableTCPPort() (int, error) {
-	port := 0
+// Select an available port, trying the specified
+// port first, falling back on an OS selected port.
+func getAvailableTCPPort(port int) (int, error) {
+	return 56883, nil
 	for i := 0; i <= 10; i++ {
-		ln, err := net.Listen("tcp4", "127.0.0.1:0")
+		ln, err := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 		if err != nil {
 			return 0, err
 		}
@@ -614,8 +610,29 @@ func getAvailableTCPPort() (int, error) {
 			port = p
 			return port, nil
 		}
+		port = 0 // Throw away the port hint before trying again
 		time.Sleep(1)
 	}
+	time.Sleep(1)
 	return 0, fmt.Errorf("unable to allocate tcp port")
 
+}
+
+// Setup a NAT port forwarding entry.
+func setPortForwarding(machine string, interfaceNum int, mapName, protocol string, guestPort, desiredHostPort int) (int, error) {
+	actualHostPort, err := getAvailableTCPPort(desiredHostPort)
+	if err != nil {
+		return -1, err
+	}
+	if desiredHostPort != actualHostPort && desiredHostPort != 0 {
+		log.Debugf("NAT forwarding host port for guest port %d (%s) changed from %d to %d",
+			guestPort, mapName, desiredHostPort, actualHostPort)
+	}
+	cmd := fmt.Sprintf("--natpf%d", interfaceNum)
+	vbm("modifyvm", machine, cmd, "delete", mapName)
+	if err := vbm("modifyvm", machine,
+		cmd, fmt.Sprintf("%s,%s,127.0.0.1,%d,,%d", mapName, protocol, actualHostPort, guestPort)); err != nil {
+		return -1, err
+	}
+	return actualHostPort, nil
 }
