@@ -593,7 +593,6 @@ func zeroFill(w io.Writer, n int64) error {
 // Select an available port, trying the specified
 // port first, falling back on an OS selected port.
 func getAvailableTCPPort(port int) (int, error) {
-	return 56883, nil
 	for i := 0; i <= 10; i++ {
 		ln, err := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 		if err != nil {
