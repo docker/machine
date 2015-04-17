@@ -480,6 +480,85 @@ INFO[0038] "dev" has been created and is now the active machine.
 INFO[0038] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 ```
 
+##### Specifying configuration options for the created Docker engine
+
+As part of the process of creation, Docker Machine installs Docker and
+configures it with some sensible defaults.  For instance, it allows connection
+from the outside world over TCP with TLS-based encryption and defaults to AUFS
+as the [storage
+driver](https://docs.docker.com/reference/commandline/cli/#daemon-storage-driver-option)
+when available.
+
+There are several cases where the user might want to set options for the created
+Docker engine (also known as the Docker _daemon_) themselves.  For example, they
+may want to allow connection to a [registry](https://docs.docker.com/registry/)
+that they are running themselves using the `--insecure-registry` flag for the
+daemon.  Docker Machine supports the configuration of such options for the
+created engines via the `create` command flags which begin with `--engine`.
+
+Note that Docker Machine simply sets the configured parameters on the daemon
+and does not set up any of the "dependencies" for you.  For instance, if you
+specify that the created daemon should use `btrfs` as a storage driver, you
+still must ensure that the proper dependencies are installed, the BTRFS
+filesystem has been created, and so on.
+
+The following is an example usage:
+
+```
+$ docker-machine create -d virtualbox \
+    --engine-label foo=bar \
+    --engine-label spam=eggs \
+    --engine-storage-driver devicemapper \
+    --engine-insecure-registry registry.myco.com \
+    foobarmachine
+```
+
+This will create a virtual machine running locally in Virtualbox which uses the
+`devicemapper` storage backend, has the key-value pairs `foo=bar` and
+`spam=eggs` as labels on the engine, and allows pushing / pulling from the
+insecure registry located at `registry.myco.com`.  You can verify much of this
+by inspecting the output of `docker info`:
+
+```
+$ eval $(docker-machine env foobarmachine)
+$ docker version
+Containers: 0
+Images: 0
+Storage Driver: devicemapper
+...
+Name: foobarmachine
+...
+Labels:
+ foo=bar
+ spam=eggs
+ provider=virtualbox
+```
+
+The supported flags are as follows:
+
+- `--engine-insecure-registry`: Specify [insecure registries](https://docs.docker.com/reference/commandline/cli/#insecure-registries) to allow with the created engine
+- `--engine-registry-mirror`: Specify [registry mirrors](https://github.com/docker/docker/blob/master/docs/sources/articles/registry_mirror.md) to use
+- `--engine-label`: Specify [labels](https://docs.docker.com/userguide/labels-custom-metadata/#daemon-labels) for the created engine
+- `--engine-storage-driver`: Specify a [storage driver](https://docs.docker.com/reference/commandline/cli/#daemon-storage-driver-option) to use with the engine
+
+If the engine supports specifying the flag multiple times (such as with
+`--label`), then so does Docker Machine.
+
+In addition to this subset of daemon flags which are directly supported, Docker
+Machine also supports an additional flag, `--engine-flag`, which can be used to
+specify arbitrary daemon options with the syntax `--engine-flag
+flagname=value`.  For example, to specify that the daemon should use `8.8.8.8`
+as the DNS server for all containers, and always use the `syslog` [log
+driver](https://docs.docker.com/reference/run/#logging-drivers-log-driver) you
+could run the following create command:
+
+```
+$ docker-machine create -d virtualbox \
+    --engine-flag dns=8.8.8.8 \
+    --engine-flag log-driver=syslog \
+    gdns
+```
+
 #### config
 
 Show the Docker client configuration for a machine.
