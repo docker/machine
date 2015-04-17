@@ -69,7 +69,14 @@ func cmdCreate(c *cli.Context) {
 			ServerCertPath: filepath.Join(utils.GetMachineDir(), name, "server.pem"),
 			ServerKeyPath:  filepath.Join(utils.GetMachineDir(), name, "server-key.pem"),
 		},
-		EngineOptions: &engine.EngineOptions{},
+		EngineOptions: &engine.EngineOptions{
+			ArbitraryFlags:   c.StringSlice("engine-flag"),
+			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
+			Labels:           c.StringSlice("engine-label"),
+			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
+			StorageDriver:    c.String("engine-storage-driver"),
+			TlsVerify:        true,
+		},
 		SwarmOptions: &swarm.SwarmOptions{
 			IsSwarm:   c.Bool("swarm"),
 			Master:    c.Bool("swarm-master"),

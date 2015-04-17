@@ -15,14 +15,14 @@ func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 		Driver: &fakedriver.FakeDriver{},
 	}
 	dockerPort := 1234
-	authOptions := auth.AuthOptions{
+	p.AuthOptions = auth.AuthOptions{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
 		ServerCertRemotePath: "/test/server-cert",
 	}
 	engineConfigPath := "/var/lib/boot2docker/profile"
 
-	dockerCfg, err := p.GenerateDockerOptions(dockerPort, authOptions)
+	dockerCfg, err := p.GenerateDockerOptions(dockerPort)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,16 +35,16 @@ func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 		t.Fatalf("-H docker port invalid; expected %d", dockerPort)
 	}
 
-	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("CACERT=%s", authOptions.CaCertRemotePath)) == -1 {
-		t.Fatalf("CACERT option invalid; expected %s", authOptions.CaCertRemotePath)
+	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("CACERT=%s", p.AuthOptions.CaCertRemotePath)) == -1 {
+		t.Fatalf("CACERT option invalid; expected %s", p.AuthOptions.CaCertRemotePath)
 	}
 
-	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("SERVERKEY=%s", authOptions.ServerKeyRemotePath)) == -1 {
-		t.Fatalf("SERVERKEY option invalid; expected %s", authOptions.ServerKeyRemotePath)
+	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("SERVERKEY=%s", p.AuthOptions.ServerKeyRemotePath)) == -1 {
+		t.Fatalf("SERVERKEY option invalid; expected %s", p.AuthOptions.ServerKeyRemotePath)
 	}
 
-	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("SERVERCERT=%s", authOptions.ServerCertRemotePath)) == -1 {
-		t.Fatalf("SERVERCERT option invalid; expected %s", authOptions.ServerCertRemotePath)
+	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("SERVERCERT=%s", p.AuthOptions.ServerCertRemotePath)) == -1 {
+		t.Fatalf("SERVERCERT option invalid; expected %s", p.AuthOptions.ServerCertRemotePath)
 	}
 }
 
@@ -54,13 +54,13 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 	}
 	dockerPort := 2376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
-	authOptions := auth.AuthOptions{
+	p.AuthOptions = auth.AuthOptions{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
 		ServerCertRemotePath: "/test/server-cert",
 	}
 
-	cfg, err := p.GenerateDockerOptions(dockerPort, authOptions)
+	cfg, err := p.GenerateDockerOptions(dockerPort)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,13 +86,13 @@ func TestMachineCustomPortBoot2Docker(t *testing.T) {
 	}
 	dockerPort := 3376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
-	authOptions := auth.AuthOptions{
+	p.AuthOptions = auth.AuthOptions{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
 		ServerCertRemotePath: "/test/server-cert",
 	}
 
-	cfg, err := p.GenerateDockerOptions(dockerPort, authOptions)
+	cfg, err := p.GenerateDockerOptions(dockerPort)
 	if err != nil {
 		t.Fatal(err)
 	}

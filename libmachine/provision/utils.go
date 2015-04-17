@@ -37,12 +37,35 @@ func installDockerGeneric(p Provisioner) error {
 	return nil
 }
 
-func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
+func makeDockerOptionsDir(p Provisioner) error {
+	dockerDir := p.GetDockerOptionsDir()
+	if _, err := p.SSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setRemoteAuthOptions(p Provisioner) auth.AuthOptions {
+	dockerDir := p.GetDockerOptionsDir()
+	authOptions := p.GetAuthOptions()
+
+	// due to windows clients, we cannot use filepath.Join as the paths
+	// will be mucked on the linux hosts
+	authOptions.CaCertRemotePath = path.Join(dockerDir, "ca.pem")
+	authOptions.ServerCertRemotePath = path.Join(dockerDir, "server.pem")
+	authOptions.ServerKeyRemotePath = path.Join(dockerDir, "server-key.pem")
+
+	return authOptions
+}
+
+func ConfigureAuth(p Provisioner) error {
 	var (
 		err error
 	)
 
 	machineName := p.GetDriver().GetMachineName()
+	authOptions := p.GetAuthOptions()
 	org := machineName
 	bits := 2048
 
@@ -92,46 +115,30 @@ func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 		return err
 	}
 
-	dockerDir := p.GetDockerOptionsDir()
-
-	if _, err := p.SSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir)); err != nil {
-		return err
-	}
-
 	// upload certs and configure TLS auth
 	caCert, err := ioutil.ReadFile(authOptions.CaCertPath)
 	if err != nil {
 		return err
 	}
 
-	// due to windows clients, we cannot use filepath.Join as the paths
-	// will be mucked on the linux hosts
-	machineCaCertPath := path.Join(dockerDir, "ca.pem")
-	authOptions.CaCertRemotePath = machineCaCertPath
-
 	serverCert, err := ioutil.ReadFile(authOptions.ServerCertPath)
 	if err != nil {
 		return err
 	}
-	machineServerCertPath := path.Join(dockerDir, "server.pem")
-	authOptions.ServerCertRemotePath = machineServerCertPath
-
 	serverKey, err := ioutil.ReadFile(authOptions.ServerKeyPath)
 	if err != nil {
 		return err
 	}
-	machineServerKeyPath := path.Join(dockerDir, "server-key.pem")
-	authOptions.ServerKeyRemotePath = machineServerKeyPath
 
-	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), machineCaCertPath)); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), authOptions.CaCertRemotePath)); err != nil {
 		return err
 	}
 
-	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), machineServerKeyPath)); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), authOptions.ServerCertRemotePath)); err != nil {
 		return err
 	}
 
-	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), machineServerCertPath)); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), authOptions.ServerKeyRemotePath)); err != nil {
 		return err
 	}
 
@@ -153,7 +160,7 @@ func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 		dockerPort = dPort
 	}
 
-	dkrcfg, err := p.GenerateDockerOptions(dockerPort, authOptions)
+	dkrcfg, err := p.GenerateDockerOptions(dockerPort)
 	if err != nil {
 		return err
 	}
@@ -166,16 +173,12 @@ func ConfigureAuth(p Provisioner, authOptions auth.AuthOptions) error {
 		return err
 	}
 
-	return nil
-}
+	// TODO: Do not hardcode daemon port, ask the driver
+	if err := utils.WaitForDocker(ip, dockerPort); err != nil {
+		return err
+	}
 
-func getDefaultDaemonOpts(driverName string, authOptions auth.AuthOptions) string {
-	return fmt.Sprintf(`--tlsverify --tlscacert=%s --tlskey=%s --tlscert=%s %s`,
-		authOptions.CaCertRemotePath,
-		authOptions.ServerKeyRemotePath,
-		authOptions.ServerCertRemotePath,
-		fmt.Sprintf("--label=provider=%s", driverName),
-	)
+	return nil
 }
 
 func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
@@ -203,11 +206,6 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 
 	parts := strings.Split(u.Host, ":")
 	port := parts[1]
-
-	// TODO: Do not hardcode daemon port, ask the driver
-	if err := utils.WaitForDocker(ip, 2376); err != nil {
-		return err
-	}
 
 	if _, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarm.DockerImage)); err != nil {
 		return err
