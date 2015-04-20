@@ -16,7 +16,7 @@ var funcMap = template.FuncMap{
 		a, _ := json.Marshal(v)
 		return string(a)
 	},
-	"prettyJSON": func(v interface{}) string {
+	"prettyjson": func(v interface{}) string {
 		a, _ := json.MarshalIndent(v, "", "    ")
 		return string(a)
 	},

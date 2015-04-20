@@ -28,7 +28,7 @@ func TestCmdInspectFormat(t *testing.T) {
 	actual, _ = runInspectCommand(t, []string{"--format", "{{json .DriverName}}"})
 	assert.Equal(t, "\"none\"", actual)
 
-	actual, _ = runInspectCommand(t, []string{"--format", "{{prettyJSON .Driver}}"})
+	actual, _ = runInspectCommand(t, []string{"--format", "{{prettyjson .Driver}}"})
 	assert.Equal(t, "{\n    \"URL\": \"unix:///var/run/docker.sock\"\n}", actual)
 }
 
