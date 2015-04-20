@@ -12,7 +12,6 @@ import (
 	"io"
 	"os"
 	"runtime"
-	"syscall"
 
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -83,9 +82,7 @@ func (kp *KeyPair) WriteToFile(privateKeyPath string, publicKeyPath string) erro
 
 		// windows does not support chmod
 		switch runtime.GOOS {
-		case "windows":
-			syscall.Chmod(f.Name(), 0600)
-		default:
+		case "darwin", "linux":
 			if err := f.Chmod(0600); err != nil {
 				return err
 			}

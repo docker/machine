@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,6 +32,10 @@ import (
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
+)
+
+var (
+	ErrUnknownShell = errors.New("unknown shell")
 )
 
 type machineConfig struct {
@@ -647,4 +652,20 @@ func getCertPathInfo(c *cli.Context) libmachine.CertPathInfo {
 		ClientCertPath: clientCertPath,
 		ClientKeyPath:  clientKeyPath,
 	}
+}
+
+func detectShell() (string, error) {
+	// attempt to get the SHELL env var
+	shell := filepath.Base(os.Getenv("SHELL"))
+	// none detected; check for windows env
+	if shell == "." && os.Getenv("windir") != "" {
+		log.Printf("On Windows, please specify either cmd or powershell with the --shell flag.\n\n")
+		return "", ErrUnknownShell
+	}
+
+	if shell == "" {
+		return "", ErrUnknownShell
+	}
+
+	return shell, nil
 }
