@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
+	"text/template"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -13,19 +13,72 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+const (
+	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .UsageHint }}`
+)
+
+type ShellConfig struct {
+	Prefix          string
+	Delimiter       string
+	Suffix          string
+	DockerCertPath  string
+	DockerHost      string
+	DockerTLSVerify string
+	UsageHint       string
+}
+
 func cmdEnv(c *cli.Context) {
 	userShell := c.String("shell")
 	if userShell == "" {
-		userShell = filepath.Base(os.Getenv("SHELL"))
+		shell, err := detectShell()
+		if err != nil {
+			log.Fatal(err)
+		}
+		userShell = shell
 	}
+
+	t := template.New("envConfig")
+
+	usageHint := generateUsageHint(c.Args().First(), userShell)
+
+	shellCfg := ShellConfig{
+		DockerCertPath:  "",
+		DockerHost:      "",
+		DockerTLSVerify: "",
+	}
+
+	// unset vars
 	if c.Bool("unset") {
 		switch userShell {
 		case "fish":
-			fmt.Printf("set -e DOCKER_TLS_VERIFY;\nset -e DOCKER_CERT_PATH;\nset -e DOCKER_HOST;\n")
+			shellCfg.Prefix = "set -e "
+			shellCfg.Delimiter = ""
+			shellCfg.Suffix = ";\n"
 		case "powershell":
-			fmt.Printf("Remove-Item Env:\\DOCKER_TLS_VERIFY\nRemove-Item Env:\\DOCKER_CERT_PATH\nRemove-Item Env:\\DOCKER_HOST\n")
+			shellCfg.Prefix = "Remove-Item Env:\\\\"
+			shellCfg.Delimiter = ""
+			shellCfg.Suffix = "\n"
+		case "cmd":
+			// since there is no way to unset vars in cmd just reset to empty
+			shellCfg.DockerCertPath = ""
+			shellCfg.DockerHost = ""
+			shellCfg.DockerTLSVerify = ""
+			shellCfg.Prefix = "set "
+			shellCfg.Delimiter = "="
+			shellCfg.Suffix = "\n"
 		default:
-			fmt.Println("unset DOCKER_TLS_VERIFY DOCKER_CERT_PATH DOCKER_HOST")
+			shellCfg.Prefix = "unset "
+			shellCfg.Delimiter = " "
+			shellCfg.Suffix = "\n"
+		}
+
+		tmpl, err := t.Parse(envTmpl)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
+			log.Fatal(err)
 		}
 		return
 	}
@@ -88,36 +141,59 @@ func cmdEnv(c *cli.Context) {
 		}
 	}
 
-	usageHint := generateUsageHint(c.Args().First(), userShell)
+	shellCfg = ShellConfig{
+		DockerCertPath:  cfg.machineDir,
+		DockerHost:      dockerHost,
+		DockerTLSVerify: "1",
+		UsageHint:       usageHint,
+	}
 
 	switch userShell {
 	case "fish":
-		fmt.Printf("set -x DOCKER_TLS_VERIFY 1;\nset -x DOCKER_CERT_PATH %q;\nset -x DOCKER_HOST %s;\n\n%s\n",
-			cfg.machineDir, dockerHost, usageHint)
+		shellCfg.Prefix = "set -x "
+		shellCfg.Suffix = ";\n"
+		shellCfg.Delimiter = " "
 	case "powershell":
-		fmt.Printf("$Env:DOCKER_TLS_VERIFY = 1\n$Env:DOCKER_CERT_PATH = \"%s\"\n$Env:DOCKER_HOST = \"%s\"\n",
-			cfg.machineDir, dockerHost)
+		shellCfg.Prefix = "$Env:"
+		shellCfg.Suffix = "\"\n"
+		shellCfg.Delimiter = " = \""
+	case "cmd":
+		shellCfg.Prefix = "set "
+		shellCfg.Suffix = "\n"
+		shellCfg.Delimiter = "="
 	default:
-		fmt.Printf("export DOCKER_TLS_VERIFY=1\nexport DOCKER_CERT_PATH=%q\nexport DOCKER_HOST=%s\n\n%s\n",
-			cfg.machineDir, dockerHost, usageHint)
+		shellCfg.Prefix = "export "
+		shellCfg.Suffix = "\n"
+		shellCfg.Delimiter = "="
+	}
+
+	tmpl, err := t.Parse(envTmpl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
+		log.Fatal(err)
 	}
 }
 
 func generateUsageHint(machineName string, userShell string) string {
 	cmd := ""
 	switch userShell {
-	case "powershell":
-		if machineName != "" {
-			cmd = fmt.Sprintf("Param(docker-machine env %s)", machineName)
-		} else {
-			cmd = "Param(docker-machine env)"
-		}
 	case "fish":
 		if machineName != "" {
 			cmd = fmt.Sprintf("eval (docker-machine env %s)", machineName)
 		} else {
 			cmd = "eval (docker-machine env)"
 		}
+	case "powershell":
+		if machineName != "" {
+			cmd = fmt.Sprintf("docker-machine env %s | Invoke-Expression", machineName)
+		} else {
+			cmd = "Param(docker-machine env)"
+		}
+	case "cmd":
+		cmd = "copy and paste the above values into your command prompt"
 	default:
 		if machineName != "" {
 			cmd = fmt.Sprintf("eval \"$(docker-machine env %s)\"", machineName)
