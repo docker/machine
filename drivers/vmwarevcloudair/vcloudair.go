@@ -409,24 +409,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Waiting for SSH...")
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.PublicIP, d.SSHPort)); err != nil {
-		return err
-	}
-
-	connTest := "ping -c 3 www.google.com >/dev/null 2>&1 && ( echo \"Connectivity and DNS tests passed.\" ) || ( echo \"Connectivity and DNS tests failed, trying to add Nameserver to resolv.conf\"; echo \"nameserver 8.8.8.8\" >> /etc/resolv.conf )"
-
-	log.Debugf("Connectivity and DNS sanity test...")
-	cmd, err := drivers.GetSSHCommandFromDriver(d, connTest)
-	if err != nil {
-		return err
-	}
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	log.Debugf("Disconnecting from vCloud Air...")
 
 	if err = p.Disconnect(); err != nil {

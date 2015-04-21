@@ -398,12 +398,6 @@ func (d *Driver) Create() error {
 		d.PrivateIPAddress,
 	)
 
-	log.Infof("Waiting for SSH on %s:%d", d.IPAddress, 22)
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
-		return err
-	}
-
 	log.Debug("Settings tags for instance")
 	tags := map[string]string{
 		"Name": d.MachineName,
