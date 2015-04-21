@@ -3,7 +3,6 @@ package drivers
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"sort"
 
 	log "github.com/Sirupsen/logrus"
@@ -174,21 +173,32 @@ type DriverOptions interface {
 	Bool(key string) bool
 }
 
-func GetSSHCommandFromDriver(d Driver, args ...string) (*exec.Cmd, error) {
+func RunSSHCommandFromDriver(d Driver, args string) (ssh.Output, error) {
+	var output ssh.Output
+
 	host, err := d.GetSSHHostname()
 	if err != nil {
-		return nil, err
+		return output, err
 	}
 
 	port, err := d.GetSSHPort()
 	if err != nil {
-		return nil, err
+		return output, err
 	}
 
 	user := d.GetSSHUsername()
 	keyPath := d.GetSSHKeyPath()
 
-	return ssh.GetSSHCommand(host, port, user, keyPath, args...), nil
+	auth := &ssh.Auth{
+		Keys: []string{keyPath},
+	}
+
+	client, err := ssh.NewClient(user, host, port, auth)
+	if err != nil {
+		return output, err
+	}
+
+	return client.Run(args)
 }
 
 func MachineInState(d Driver, desiredState state.State) func() bool {
