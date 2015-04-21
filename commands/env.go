@@ -151,8 +151,8 @@ func cmdEnv(c *cli.Context) {
 	switch userShell {
 	case "fish":
 		shellCfg.Prefix = "set -x "
-		shellCfg.Suffix = ";\n"
-		shellCfg.Delimiter = " "
+		shellCfg.Suffix = "\";\n"
+		shellCfg.Delimiter = " \""
 	case "powershell":
 		shellCfg.Prefix = "$Env:"
 		shellCfg.Suffix = "\"\n"
@@ -163,8 +163,8 @@ func cmdEnv(c *cli.Context) {
 		shellCfg.Delimiter = "="
 	default:
 		shellCfg.Prefix = "export "
-		shellCfg.Suffix = "\n"
-		shellCfg.Delimiter = "="
+		shellCfg.Suffix = "\"\n"
+		shellCfg.Delimiter = "=\""
 	}
 
 	tmpl, err := t.Parse(envTmpl)
