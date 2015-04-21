@@ -50,12 +50,12 @@ func (provisioner *Boot2DockerProvisioner) Service(name string, action pkgaction
 }
 
 func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
-	log.Infof("Stopping machine to do the upgrade...")
-
 	switch provisioner.Driver.DriverName() {
 	case "vmwarefusion", "vmwarevsphere":
 		return errors.New("Upgrade functionality is currently not supported for these providers, as they use a custom ISO.")
 	}
+
+	log.Info("Stopping machine to do the upgrade...")
 
 	if err := provisioner.Driver.Stop(); err != nil {
 		return err
