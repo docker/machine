@@ -61,4 +61,6 @@ virtualHW.version = "10"
 msg.autoanswer = "TRUE"
 uuid.action = "create"
 numvcpus = "{{.CPUs}}"
+hgfs.mapRootShare = "FALSE"
+hgfs.linkRootShare = "FALSE"
 `
