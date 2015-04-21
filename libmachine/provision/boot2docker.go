@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os/exec"
 	"path"
 
 	log "github.com/Sirupsen/logrus"
@@ -12,6 +11,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
@@ -36,16 +36,13 @@ type Boot2DockerProvisioner struct {
 
 func (provisioner *Boot2DockerProvisioner) Service(name string, action pkgaction.ServiceAction) error {
 	var (
-		cmd *exec.Cmd
 		err error
 	)
-	cmd, err = provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String()))
-	if err != nil {
+
+	if _, err = provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String())); err != nil {
 		return err
 	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -101,15 +98,13 @@ func (provisioner *Boot2DockerProvisioner) Package(name string, action pkgaction
 }
 
 func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
-	cmd, err := provisioner.SSHCommand(fmt.Sprintf("hostname"))
+	output, err := provisioner.SSHCommand(fmt.Sprintf("hostname"))
 	if err != nil {
 		return "", err
 	}
 
 	var so bytes.Buffer
-	cmd.Stdout = &so
-
-	if err := cmd.Run(); err != nil {
+	if _, err := so.ReadFrom(output.Stdout); err != nil {
 		return "", err
 	}
 
@@ -117,16 +112,15 @@ func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
 }
 
 func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
-	cmd, err := provisioner.SSHCommand(fmt.Sprintf(
+	if _, err := provisioner.SSHCommand(fmt.Sprintf(
 		"sudo hostname %s && echo %q | sudo tee /var/lib/boot2docker/etc/hostname",
 		hostname,
 		hostname,
-	))
-	if err != nil {
+	)); err != nil {
 		return err
 	}
 
-	return cmd.Run()
+	return nil
 }
 
 func (provisioner *Boot2DockerProvisioner) GetDockerOptionsDir() string {
@@ -188,8 +182,8 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 	return nil
 }
 
-func (provisioner *Boot2DockerProvisioner) SSHCommand(args ...string) (*exec.Cmd, error) {
-	return drivers.GetSSHCommandFromDriver(provisioner.Driver, args...)
+func (provisioner *Boot2DockerProvisioner) SSHCommand(args string) (ssh.Output, error) {
+	return drivers.RunSSHCommandFromDriver(provisioner.Driver, args)
 }
 
 func (provisioner *Boot2DockerProvisioner) GetDriver() drivers.Driver {
