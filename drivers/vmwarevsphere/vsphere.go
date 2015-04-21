@@ -32,7 +32,6 @@ const (
 	isoFilename        = "boot2docker-1.5.0-GH747.iso"
 	B2D_ISO_NAME       = isoFilename
 	DEFAULT_CPU_NUMBER = 2
-	dockerConfigDir    = "/var/lib/boot2docker"
 	B2D_USER           = "docker"
 	B2D_PASS           = "tcuser"
 )

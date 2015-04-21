@@ -12,10 +12,6 @@ import (
 	"github.com/docker/machine/state"
 )
 
-const (
-	dockerConfigDir = "/etc/docker"
-)
-
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	MachineName    string

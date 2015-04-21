@@ -130,8 +130,8 @@
 		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
-			"Comment": "v1.0.0-473-g7ca169d",
-			"Rev": "7ca169d371b29e3dbab9e631c3a6151896b06330"
+			"Comment": "v1.0.0-558-ce0f487",
+			"Rev": "ce0f487f6747ab43c4e4404722df25349385bebd"
 		},
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",
@@ -151,8 +151,8 @@
 			"Rev": "66a23eaabc61518f91769939ff541886fe1dceef"
 		},
 		{
-			"ImportPath": "golang.org/x/net/context",
-			"Rev": "97d8e4e174133a4d1d2171380e510eb4dea8f5ea"
+			"ImportPath": "golang.org/x/crypto/ssh",
+			"Rev": "1fbbd62cfec66bd39d91e97749579579d4d3037e"
 		},
 		{
 			"ImportPath": "google.golang.org/api/compute/v1",

@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	dockerConfigDir = "/etc/docker"
-	ApiEndpoint     = "https://api.softlayer.com/rest/v3"
+	ApiEndpoint = "https://api.softlayer.com/rest/v3"
 )
 
 type Driver struct {
@@ -32,6 +31,7 @@ type Driver struct {
 	MachineName    string
 	CaCertPath     string
 	PrivateKeyPath string
+	SSHKeyID       int
 	SwarmMaster    bool
 	SwarmHost      string
 	SwarmDiscovery string
@@ -344,6 +344,7 @@ func (d *Driver) getIp() (string, error) {
 		// not a perfect regex, but should be just fine for our needs
 		exp := regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
 		if exp.MatchString(ip) {
+			d.IPAddress = ip
 			return ip, nil
 		}
 		time.Sleep(2 * time.Second)
@@ -384,6 +385,9 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	log.Infof("SSH key %s (%d) created in SoftLayer", key.Label, key.Id)
+	d.SSHKeyID = key.Id
+
 	spec := d.buildHostSpec()
 	spec.SshKeys = []*SshKey{key}
 
@@ -420,6 +424,7 @@ func (d *Driver) buildHostSpec() *HostSpec {
 		Os:             d.deviceConfig.Image,
 		HourlyBilling:  d.deviceConfig.HourlyBilling,
 		PrivateNetOnly: d.deviceConfig.PrivateNet,
+		LocalDisk:      d.deviceConfig.LocalDisk,
 	}
 	if d.deviceConfig.DiskSize > 0 {
 		spec.BlockDevices = []BlockDevice{{Device: "0", DiskImage: DiskImage{Capacity: d.deviceConfig.DiskSize}}}
@@ -452,7 +457,9 @@ func (d *Driver) publicSSHKeyPath() string {
 func (d *Driver) Kill() error {
 	return d.getClient().VirtualGuest().PowerOff(d.Id)
 }
+
 func (d *Driver) Remove() error {
+	log.Infof("Canceling SoftLayer instance %d...", d.Id)
 	var err error
 	for i := 0; i < 5; i++ {
 		if err = d.getClient().VirtualGuest().Cancel(d.Id); err != nil {
@@ -461,7 +468,16 @@ func (d *Driver) Remove() error {
 		}
 		break
 	}
-	return err
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Removing SSH Key %d...", d.SSHKeyID)
+	if err = d.getClient().SshKey().Delete(d.SSHKeyID); err != nil {
+		return err
+	}
+
+	return nil
 }
 func (d *Driver) Restart() error {
 	return d.getClient().VirtualGuest().Reboot(d.Id)

@@ -1,8 +1,6 @@
 package fakedriver
 
 import (
-	"os/exec"
-
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
@@ -96,20 +94,4 @@ func (d *FakeDriver) Kill() error {
 
 func (d *FakeDriver) Upgrade() error {
 	return nil
-}
-
-func (d *FakeDriver) StartDocker() error {
-	return nil
-}
-
-func (d *FakeDriver) StopDocker() error {
-	return nil
-}
-
-func (d *FakeDriver) GetDockerConfigDir() string {
-	return ""
-}
-
-func (d *FakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-	return &exec.Cmd{}, nil
 }

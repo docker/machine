@@ -18,10 +18,6 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-const (
-	dockerConfigDir = "/var/lib/boot2docker"
-)
-
 type Driver struct {
 	SSHUser        string
 	SSHPort        int
