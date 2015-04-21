@@ -583,7 +583,7 @@ INFO[0013] Regenerating TLS certificates
 
 #### restart
 
-Restart a machine.  Oftentimes this is equivalent to
+Restart a machine.  Often times this is equivalent to
 `docker-machine stop; machine start`.
 
 ```
