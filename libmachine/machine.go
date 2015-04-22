@@ -88,15 +88,15 @@ func (m *Machine) Get(name string) (*Host, error) {
 }
 
 func (m *Machine) Remove(name string, force bool) error {
-	active, err := m.store.GetActive()
+	if name == "" {
+		return fmt.Errorf("No active host")
+	}
+	exists, err := m.Exists(name)
 	if err != nil {
 		return err
 	}
-
-	if active != nil && active.Name == name {
-		if err := m.RemoveActive(); err != nil {
-			return err
-		}
+	if exists == false {
+		return fmt.Errorf("No machine %s", name)
 	}
 
 	host, err := m.store.Get(name)
