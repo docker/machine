@@ -1,19 +1,20 @@
 package commands
 
 import (
+	"io"
 	"os"
-	"os/exec"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/ssh"
 )
 
 func cmdSsh(c *cli.Context) {
 	var (
-		err    error
-		sshCmd *exec.Cmd
+		err error
 	)
 	name := c.Args().First()
 
@@ -59,19 +60,31 @@ func cmdSsh(c *cli.Context) {
 		}
 	}
 
+	var output ssh.Output
+
 	if len(c.Args()) <= 1 {
-		sshCmd, err = host.GetSSHCommand()
+		err = host.CreateSSHShell()
 	} else {
-		sshCmd, err = host.GetSSHCommand(c.Args()[1:]...)
-	}
-	if err != nil {
-		log.Fatal(err)
+		var cmd string
+		var args []string = c.Args()
+
+		for i, arg := range args {
+			if arg == "--" {
+				i++
+				cmd = strings.Join(args[i:], " ")
+				break
+			}
+		}
+		if len(cmd) == 0 {
+			cmd = strings.Join(args[1:], " ")
+		}
+		output, err = host.RunSSHCommand(cmd)
+
+		io.Copy(os.Stderr, output.Stderr)
+		io.Copy(os.Stdout, output.Stdout)
 	}
 
-	sshCmd.Stdin = os.Stdin
-	sshCmd.Stdout = os.Stdout
-	sshCmd.Stderr = os.Stderr
-	if err := sshCmd.Run(); err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 }
