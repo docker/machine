@@ -10,7 +10,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/provider"
-	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
@@ -144,11 +143,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Waiting for SSH...")
-
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)); err != nil {
-		return err
-	}
+	log.Debugf("IP: %s", d.IPAddress)
 
 	return nil
 }
@@ -195,11 +190,7 @@ func (d *Driver) Remove() error {
 func (d *Driver) Restart() error {
 	log.Debug("Restarting...")
 
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo shutdown -r now")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now"); err != nil {
 		return err
 	}
 
@@ -209,11 +200,7 @@ func (d *Driver) Restart() error {
 func (d *Driver) Kill() error {
 	log.Debug("Killing...")
 
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo shutdown -P now")
-	if err != nil {
-		return err
-	}
-	if err := cmd.Run(); err != nil {
+	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now"); err != nil {
 		return err
 	}
 
