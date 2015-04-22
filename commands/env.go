@@ -39,7 +39,7 @@ func cmdEnv(c *cli.Context) {
 
 	t := template.New("envConfig")
 
-	usageHint := generateUsageHint(c.Args().First(), userShell)
+	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell)
 
 	shellCfg := ShellConfig{
 		DockerCertPath:  "",
@@ -89,7 +89,7 @@ func cmdEnv(c *cli.Context) {
 	}
 
 	if cfg.machineUrl == "" {
-		log.Fatalf("%s is not running. Please start this with docker-machine start %s", cfg.machineName, cfg.machineName)
+		log.Fatalf("%s is not running. Please start this with %s start %s", cfg.machineName, c.App.Name, cfg.machineName)
 	}
 
 	dockerHost := cfg.machineUrl
@@ -177,28 +177,28 @@ func cmdEnv(c *cli.Context) {
 	}
 }
 
-func generateUsageHint(machineName string, userShell string) string {
+func generateUsageHint(appName, machineName, userShell string) string {
 	cmd := ""
 	switch userShell {
 	case "fish":
 		if machineName != "" {
-			cmd = fmt.Sprintf("eval (docker-machine env %s)", machineName)
+			cmd = fmt.Sprintf("eval (%s env %s)", appName, machineName)
 		} else {
-			cmd = "eval (docker-machine env)"
+			cmd = fmt.Sprintf("eval (%s env)", appName)
 		}
 	case "powershell":
 		if machineName != "" {
-			cmd = fmt.Sprintf("docker-machine env %s | Invoke-Expression", machineName)
+			cmd = fmt.Sprintf("%s env %s | Invoke-Expression", appName, machineName)
 		} else {
-			cmd = "Param(docker-machine env)"
+			cmd = fmt.Sprintf("Param(%s env)", appName)
 		}
 	case "cmd":
 		cmd = "copy and paste the above values into your command prompt"
 	default:
 		if machineName != "" {
-			cmd = fmt.Sprintf("eval \"$(docker-machine env %s)\"", machineName)
+			cmd = fmt.Sprintf("eval \"$(%s env %s)\"", appName, machineName)
 		} else {
-			cmd = "eval \"$(docker-machine env)\""
+			cmd = fmt.Sprintf("eval \"$(%s env)\"", appName)
 		}
 	}
 
