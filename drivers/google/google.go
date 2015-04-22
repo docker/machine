@@ -14,6 +14,7 @@ import (
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
+	IPAddress      string
 	MachineName    string
 	SSHUser        string
 	SSHPort        int
@@ -250,7 +251,11 @@ func (d *Driver) Start() error {
 	if err != nil {
 		return err
 	}
-	return c.createInstance(d)
+	if err = c.createInstance(d); err != nil {
+		return err
+	}
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 // Stop deletes the GCE instance, but keeps the disk.
@@ -259,7 +264,11 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
-	return c.deleteInstance()
+	if err = c.deleteInstance(); err != nil {
+		return err
+	}
+	d.IPAddress = ""
+	return nil
 }
 
 // Remove deletes the GCE instance and the disk.
