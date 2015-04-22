@@ -54,7 +54,45 @@ Now you should be able to check the version with `docker-machine -v`:
 
 ```
 $ docker-machine -v
-machine version 0.1.0
+machine version 0.2.0
+```
+
+In order to run Docker commands on your machines without having to use SSH, make
+sure to install the Docker client as well, e.g.:
+
+```
+$ curl -L https://get.docker.com/builds/Darwin/x86_64/docker-latest > /usr/local/bin/docker
+```
+
+### Windows
+
+Currently, Docker recommends that you install and use Docker Machine on Windows
+with [msysgit](https://msysgit.github.io/).  This will provide you with some
+programs that Docker Machine relies on such as `ssh`, as well as a functioning
+shell.
+
+When you have installed msysgit, start up the terminal prompt and run the
+following commands.  Here it is assumed that you are on a 64-bit Windows
+installation.  If you are on a 32-bit installation, please substitute "i386" for
+"x86_64" in the URLs mentioned.
+
+First, install the Docker client binary:
+
+```
+$ curl -L https://get.docker.com/builds/Windows/x86_64/docker-latest.exe > /bin/docker
+```
+
+Next, install the Docker Machine binary:
+
+```
+$ curl -L https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-amd64.exe > /bin/docker-machine
+```
+
+Now running `docker-machine` should work.
+
+```
+$ docker-machine -v
+machine version 0.2.0
 ```
 
 ## Getting started with Docker Machine using a local VM
