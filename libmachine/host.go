@@ -334,6 +334,15 @@ func (h *Host) SaveConfig() error {
 	return nil
 }
 
+func (h *Host) PrintIP() error {
+	if ip, err := h.Driver.GetIP(); err != nil {
+		return err
+	} else {
+		fmt.Println(ip)
+	}
+	return nil
+}
+
 func sshAvailableFunc(h *Host) func() bool {
 	return func() bool {
 		log.Debug("Getting to WaitForSSH function...")
