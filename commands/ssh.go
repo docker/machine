@@ -65,7 +65,20 @@ func cmdSsh(c *cli.Context) {
 	if len(c.Args()) <= 1 {
 		err = host.CreateSSHShell()
 	} else {
-		output, err = host.RunSSHCommand(strings.Join(c.Args()[1:], " "))
+		var cmd string
+		var args []string = c.Args()
+
+		for i, arg := range args {
+			if arg == "--" {
+				i++
+				cmd = strings.Join(args[i:], " ")
+				break
+			}
+		}
+		if len(cmd) == 0 {
+			cmd = strings.Join(args[1:], " ")
+		}
+		output, err = host.RunSSHCommand(cmd)
 
 		io.Copy(os.Stderr, output.Stderr)
 		io.Copy(os.Stdout, output.Stdout)
