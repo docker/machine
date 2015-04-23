@@ -535,11 +535,16 @@ Show help text.
 
 #### ip
 
-Get the IP address of a machine.
+Get the IP address of one or more machines.
 
 ```
 $ docker-machine ip
 192.168.99.104
+$ docker-machine ip dev
+192.168.99.104
+$ docker-machine ip dev dev2
+192.168.99.104
+192.168.99.105
 ```
 
 #### kill
@@ -1051,5 +1056,3 @@ details, see [PR #553](https://github.com/docker/machine/issues/553).
 * Improvements and isolation of provisioning functionality, so Machine can
 provision and configure the Docker Engine based on OS detection. For details,
 see [PR #553](https://github.com/docker/machine/issues/553).
-
-
