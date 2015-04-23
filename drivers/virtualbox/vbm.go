@@ -18,6 +18,8 @@ var (
 	reVMNameUUID      = regexp.MustCompile(`"(.+)" {([0-9a-f-]+)}`)
 	reVMInfoLine      = regexp.MustCompile(`(?:"(.+)"|(.+))=(?:"(.*)"|(.*))`)
 	reColonLine       = regexp.MustCompile(`(.+):\s+(.*)`)
+	reEqualLine       = regexp.MustCompile(`(.+)=(.*)`)
+	reEqualQuoteLine  = regexp.MustCompile(`"(.+)"="(.*)"`)
 	reMachineNotFound = regexp.MustCompile(`Could not find a registered machine named '(.+)'`)
 )
 
