@@ -83,6 +83,9 @@ func TestCmdEnvBash(t *testing.T) {
 
 	set := flag.NewFlagSet("config", 0)
 	c := cli.NewContext(nil, set, set)
+	c.App = &cli.App{
+		Name: "docker-machine-test",
+	}
 	cmdEnv(c)
 
 	w.Close()
@@ -181,6 +184,9 @@ func TestCmdEnvFish(t *testing.T) {
 
 	set := flag.NewFlagSet("config", 0)
 	c := cli.NewContext(nil, set, set)
+	c.App = &cli.App{
+		Name: "docker-machine-test",
+	}
 	cmdEnv(c)
 
 	w.Close()
@@ -280,6 +286,9 @@ func TestCmdEnvPowerShell(t *testing.T) {
 	set := flag.NewFlagSet("config", 0)
 	set.String("shell", "powershell", "")
 	c := cli.NewContext(nil, set, set)
+	c.App = &cli.App{
+		Name: "docker-machine-test",
+	}
 	cmdEnv(c)
 
 	w.Close()
