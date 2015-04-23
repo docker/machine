@@ -188,9 +188,9 @@ func generateUsageHint(appName, machineName, userShell string) string {
 		}
 	case "powershell":
 		if machineName != "" {
-			cmd = fmt.Sprintf("%s env %s | Invoke-Expression", appName, machineName)
+			cmd = fmt.Sprintf("%s env --shell=powershell %s | Invoke-Expression", appName, machineName)
 		} else {
-			cmd = fmt.Sprintf("Param(%s env)", appName)
+			cmd = fmt.Sprintf("%s env --shell=powershell | Invoke-Expression", appName)
 		}
 	case "cmd":
 		cmd = "copy and paste the above values into your command prompt"
