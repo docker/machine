@@ -237,8 +237,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("CPUS: %d", d.CPU)
-	log.Infof("Mem: %d", d.Memory)
+	log.Debugf("VM CPUS: %d", d.CPU)
+	log.Debugf("VM Memory: %d", d.Memory)
 
 	cpus := d.CPU
 	if cpus < 1 {
