@@ -320,7 +320,7 @@ func (d *Driver) Create() error {
 	vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
 
 	// Enable Shared Folders
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "enableSharedFolders", d.vmxPath())
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "enableSharedFolders", d.vmxPath())
 
 	var shareName, shareDir string // TODO configurable at some point
 	switch runtime.GOOS {
@@ -335,8 +335,8 @@ func (d *Driver) Create() error {
 			return err
 		} else if !os.IsNotExist(err) {
 			// add shared folder, create mountpoint and mount it.
-			vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "addSharedFolder", d.vmxPath(), shareName, shareDir)
-			vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "addSharedFolder", d.vmxPath(), shareName, shareDir)
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
 		}
 	}
 	return nil
@@ -360,7 +360,7 @@ func (d *Driver) Start() error {
 			return err
 		} else if !os.IsNotExist(err) {
 			// create mountpoint and mount shared folder
-			vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
 		}
 	}
 
