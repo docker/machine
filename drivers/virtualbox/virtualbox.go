@@ -30,19 +30,20 @@ const (
 )
 
 type Driver struct {
-	CPU            int
-	MachineName    string
-	SSHUser        string
-	SSHPort        int
-	Memory         int
-	DiskSize       int
-	Boot2DockerURL string
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-	storePath      string
+	CPU                 int
+	MachineName         string
+	SSHUser             string
+	SSHPort             int
+	Memory              int
+	DiskSize            int
+	Boot2DockerURL      string
+	CaCertPath          string
+	PrivateKeyPath      string
+	SwarmMaster         bool
+	SwarmHost           string
+	SwarmDiscovery      string
+	storePath           string
+	Boot2DockerImportVM string
 }
 
 func init() {
@@ -79,6 +80,11 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "virtualbox-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  "",
+		},
+		cli.StringFlag{
+			Name:  "virtualbox-import-boot2docker-vm",
+			Usage: "The name of a Boot2Docker VM to import",
+			Value: "",
 		},
 	}
 }
@@ -147,6 +153,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
+	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
 
 	return nil
 }
@@ -165,21 +172,57 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating SSH key...")
-
 	b2dutils := utils.NewB2dUtils("", "")
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
 
-	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
-		return err
-	}
-
 	log.Infof("Creating VirtualBox VM...")
 
-	if err := d.generateDiskImage(d.DiskSize); err != nil {
-		return err
+	// import b2d VM if requested
+	if d.Boot2DockerImportVM != "" {
+		name := d.Boot2DockerImportVM
+
+		// make sure vm is stopped
+		_ = vbm("controlvm", name, "poweroff")
+
+		diskInfo, err := getVMDiskInfo(name)
+		if err != nil {
+			return err
+		}
+
+		if _, err := os.Stat(diskInfo.Path); err != nil {
+			return err
+		}
+
+		if err := vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
+			return err
+		}
+
+		log.Debugf("Importing VM settings...")
+		vmInfo, err := getVMInfo(name)
+		if err != nil {
+			return err
+		}
+
+		d.CPU = vmInfo.CPUs
+		d.Memory = vmInfo.Memory
+
+		log.Debugf("Importing SSH key...")
+		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
+		if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
+			return err
+		}
+	} else {
+		log.Infof("Creating SSH key...")
+		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+			return err
+		}
+
+		log.Debugf("Creating disk image...")
+		if err := d.generateDiskImage(d.DiskSize); err != nil {
+			return err
+		}
 	}
 
 	if err := vbm("createvm",
@@ -188,6 +231,9 @@ func (d *Driver) Create() error {
 		"--register"); err != nil {
 		return err
 	}
+
+	log.Debugf("VM CPUS: %d", d.CPU)
+	log.Debugf("VM Memory: %d", d.Memory)
 
 	cpus := d.CPU
 	if cpus < 1 {
@@ -337,7 +383,7 @@ func (d *Driver) Start() error {
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Waiting for VM to start...")
+		log.Infof("Starting VM...")
 	case state.Paused:
 		if err := vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
 			return err
@@ -347,7 +393,7 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	return ssh.WaitForTCP(fmt.Sprintf("localhost:%d", d.SSHPort))
+	return nil
 }
 
 func (d *Driver) Stop() error {
@@ -446,19 +492,17 @@ func (d *Driver) GetIP() (string, error) {
 	if s != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "ip addr show dev eth1")
+	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show dev eth1")
 	if err != nil {
 		return "", err
 	}
 
-	// reset to nil as if using from Host Stdout is already set when using DEBUG
-	cmd.Stdout = nil
-
-	b, err := cmd.Output()
-	if err != nil {
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(output.Stdout); err != nil {
 		return "", err
 	}
-	out := string(b)
+
+	out := buf.String()
 	log.Debugf("SSH returned: %s\nEND SSH\n", out)
 	// parse to find: inet 192.168.59.103/24 brd 192.168.59.255 scope global eth1
 	lines := strings.Split(out, "\n")

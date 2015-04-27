@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 
@@ -127,23 +126,49 @@ func (h *Host) Create(name string) error {
 	return nil
 }
 
-func (h *Host) GetSSHCommand(args ...string) (*exec.Cmd, error) {
+func (h *Host) RunSSHCommand(command string) (ssh.Output, error) {
+	var output ssh.Output
+
 	addr, err := h.Driver.GetSSHHostname()
 	if err != nil {
-		return nil, err
+		return output, err
 	}
-
-	user := h.Driver.GetSSHUsername()
 
 	port, err := h.Driver.GetSSHPort()
 	if err != nil {
-		return nil, err
+		return output, err
 	}
 
-	keyPath := h.Driver.GetSSHKeyPath()
+	auth := &ssh.Auth{
+		Keys: []string{h.Driver.GetSSHKeyPath()},
+	}
 
-	cmd := ssh.GetSSHCommand(addr, port, user, keyPath, args...)
-	return cmd, nil
+	client, err := ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
+
+	return client.Run(command)
+}
+
+func (h *Host) CreateSSHShell() error {
+	addr, err := h.Driver.GetSSHHostname()
+	if err != nil {
+		return err
+	}
+
+	port, err := h.Driver.GetSSHPort()
+	if err != nil {
+		return err
+	}
+
+	auth := &ssh.Auth{
+		Keys: []string{h.Driver.GetSSHKeyPath()},
+	}
+
+	client, err := ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
+	if err != nil {
+		return err
+	}
+
+	return client.Shell()
 }
 
 func (h *Host) Start() error {
@@ -309,6 +334,15 @@ func (h *Host) SaveConfig() error {
 	return nil
 }
 
+func (h *Host) PrintIP() error {
+	if ip, err := h.Driver.GetIP(); err != nil {
+		return err
+	} else {
+		fmt.Println(ip)
+	}
+	return nil
+}
+
 func sshAvailableFunc(h *Host) func() bool {
 	return func() bool {
 		log.Debug("Getting to WaitForSSH function...")
@@ -326,13 +360,9 @@ func sshAvailableFunc(h *Host) func() bool {
 			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
 			return false
 		}
-		cmd, err := h.GetSSHCommand("exit 0")
-		if err != nil {
+
+		if _, err := h.RunSSHCommand("exit 0"); err != nil {
 			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
-			return false
-		}
-		if err := cmd.Run(); err != nil {
-			log.Debugf("Error running ssh command 'exit 0' : %s", err)
 			return false
 		}
 		return true

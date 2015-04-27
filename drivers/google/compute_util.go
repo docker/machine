@@ -194,13 +194,6 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 
-	instance, err = c.instance()
-	if err != nil {
-		return err
-	}
-	ip := instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
-	c.waitForSSH(ip)
-
 	// Update the SSH Key
 	sshKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
 	if err != nil {
@@ -241,9 +234,17 @@ func (c *ComputeUtil) deleteInstance() error {
 
 func (c *ComputeUtil) executeCommands(commands []string, ip, sshKeyPath string) error {
 	for _, command := range commands {
-		cmd := ssh.GetSSHCommand(ip, 22, c.userName, sshKeyPath, command)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("error executing command: %v %v", command, err)
+		auth := &ssh.Auth{
+			Keys: []string{sshKeyPath},
+		}
+
+		client, err := ssh.NewClient(c.userName, ip, 22, auth)
+		if err != nil {
+			return err
+		}
+
+		if _, err := client.Run(command); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -278,12 +279,6 @@ func (c *ComputeUtil) waitForGlobalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
 		return c.service.GlobalOperations.Get(c.project, name).Do()
 	})
-}
-
-// waitForSSH waits for SSH to become ready on the instance.
-func (c *ComputeUtil) waitForSSH(ip string) error {
-	log.Infof("Waiting for SSH...")
-	return ssh.WaitForTCP(fmt.Sprintf("%s:22", ip))
 }
 
 // ip retrieves and returns the external IP address of the instance.

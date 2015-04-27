@@ -142,6 +142,10 @@
 			"Rev": "1f0db8c0ee6362470abe06a94e3385927ed72a4b"
 		},
 		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
+		},
+		{
 			"ImportPath": "github.com/tent/http-link-go",
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		},
