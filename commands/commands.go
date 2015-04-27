@@ -198,6 +198,18 @@ var Commands = []cli.Command{
 		Action: cmdActive,
 	},
 	{
+		Name:        "config",
+		Usage:       "Print the connection config for machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdConfig,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+		},
+	},
+	{
 		Flags: append(
 			drivers.GetCreateFlags(),
 			sharedCreateFlags...,
@@ -207,14 +219,18 @@ var Commands = []cli.Command{
 		Action: cmdCreate,
 	},
 	{
-		Name:        "config",
-		Usage:       "Print the connection config for machine",
+		Name:        "env",
+		Usage:       "Display the commands to set up the environment for the Docker client",
 		Description: "Argument is a machine name. Will use the active machine if none is provided.",
-		Action:      cmdConfig,
+		Action:      cmdEnv,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "swarm",
 				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+			cli.BoolFlag{
+				Name:  "unset, u",
+				Usage: "Unset variables instead of setting them",
 			},
 		},
 	},
@@ -283,22 +299,6 @@ var Commands = []cli.Command{
 		Usage:       "Remove a machine",
 		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdRm,
-	},
-	{
-		Name:        "env",
-		Usage:       "Display the commands to set up the environment for the Docker client",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
-		Action:      cmdEnv,
-		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "swarm",
-				Usage: "Display the Swarm config instead of the Docker daemon",
-			},
-			cli.BoolFlag{
-				Name:  "unset, u",
-				Usage: "Unset variables instead of setting them",
-			},
-		},
 	},
 	{
 		Name:        "ssh",
