@@ -656,9 +656,7 @@ func getAvailableTCPPort(port int) (int, error) {
 		port = 0 // Throw away the port hint before trying again
 		time.Sleep(1)
 	}
-	time.Sleep(1)
 	return 0, fmt.Errorf("unable to allocate tcp port")
-
 }
 
 // Setup a NAT port forwarding entry.
