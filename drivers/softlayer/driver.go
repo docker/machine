@@ -31,6 +31,7 @@ type Driver struct {
 	MachineName    string
 	CaCertPath     string
 	PrivateKeyPath string
+	SSHKeyID       int
 	SwarmMaster    bool
 	SwarmHost      string
 	SwarmDiscovery string
@@ -384,6 +385,9 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	log.Infof("SSH key %s (%d) created in SoftLayer", key.Label, key.Id)
+	d.SSHKeyID = key.Id
+
 	spec := d.buildHostSpec()
 	spec.SshKeys = []*SshKey{key}
 
@@ -395,17 +399,6 @@ func (d *Driver) Create() error {
 	d.getIp()
 	d.waitForStart()
 	d.waitForSetupTransactions()
-	ssh.WaitForTCP(d.IPAddress + ":22")
-
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq curl")
-	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
 
 	return nil
 }
@@ -453,7 +446,9 @@ func (d *Driver) publicSSHKeyPath() string {
 func (d *Driver) Kill() error {
 	return d.getClient().VirtualGuest().PowerOff(d.Id)
 }
+
 func (d *Driver) Remove() error {
+	log.Infof("Canceling SoftLayer instance %d...", d.Id)
 	var err error
 	for i := 0; i < 5; i++ {
 		if err = d.getClient().VirtualGuest().Cancel(d.Id); err != nil {
@@ -462,7 +457,16 @@ func (d *Driver) Remove() error {
 		}
 		break
 	}
-	return err
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Removing SSH Key %d...", d.SSHKeyID)
+	if err = d.getClient().SshKey().Delete(d.SSHKeyID); err != nil {
+		return err
+	}
+
+	return nil
 }
 func (d *Driver) Restart() error {
 	return d.getClient().VirtualGuest().Reboot(d.Id)

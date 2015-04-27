@@ -1,16 +1,21 @@
 package libmachine
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
-
+	"strings"
 	"testing"
 
+	"github.com/docker/machine/drivers/fakedriver"
 	_ "github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -22,7 +27,12 @@ const (
 
 var (
 	hostTestStorePath string
+	stdout            *os.File
 )
+
+func init() {
+	stdout = os.Stdout
+}
 
 func getTestStore() (Store, error) {
 	tmpDir, err := ioutil.TempDir("", "machine-test-")
@@ -39,6 +49,7 @@ func getTestStore() (Store, error) {
 }
 
 func cleanup() {
+	os.Stdout = stdout
 	os.RemoveAll(hostTestStorePath)
 }
 
@@ -124,7 +135,7 @@ func TestValidateHostnameValid(t *testing.T) {
 	for _, v := range hosts {
 		isValid := ValidateHostName(v)
 		if !isValid {
-			t.Fatal("Thought a valid hostname was invalid: %s", v)
+			t.Fatalf("Thought a valid hostname was invalid: %s", v)
 		}
 	}
 }
@@ -139,7 +150,7 @@ func TestValidateHostnameInvalid(t *testing.T) {
 	for _, v := range hosts {
 		isValid := ValidateHostName(v)
 		if isValid {
-			t.Fatal("Thought an invalid hostname was valid: %s", v)
+			t.Fatalf("Thought an invalid hostname was valid: %s", v)
 		}
 	}
 }
@@ -171,4 +182,47 @@ func TestHostOptions(t *testing.T) {
 	if err := store.Remove(hostTestName, true); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
+	defer cleanup()
+	host, _ := getDefaultTestHost()
+
+	out, w := captureStdout()
+
+	assert.Nil(t, host.PrintIP())
+	w.Close()
+
+	assert.Equal(t, "", strings.TrimSpace(<-out))
+}
+
+func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
+	defer cleanup()
+	host, _ := getDefaultTestHost()
+	host.Driver = &fakedriver.FakeDriver{}
+
+	out, w := captureStdout()
+
+	assert.Nil(t, host.PrintIP())
+
+	w.Close()
+
+	assert.Equal(t, "1.2.3.4", strings.TrimSpace(<-out))
+}
+
+func captureStdout() (chan string, *os.File) {
+	r, w, _ := os.Pipe()
+
+	// This is reversed in cleanup()
+	os.Stdout = w
+
+	out := make(chan string)
+
+	go func() {
+		var testOutput bytes.Buffer
+		io.Copy(&testOutput, r)
+		out <- testOutput.String()
+	}()
+
+	return out, w
 }

@@ -223,11 +223,18 @@ var Commands = []cli.Command{
 		Usage:       "Inspect information about a machine",
 		Description: "Argument is a machine name. Will use the active machine if none is provided.",
 		Action:      cmdInspect,
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "format, f",
+				Usage: "Format the output using the given go template.",
+				Value: "",
+			},
+		},
 	},
 	{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdIp,
 	},
 	{
@@ -335,6 +342,7 @@ func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- e
 		"restart":       host.Restart,
 		"kill":          host.Kill,
 		"upgrade":       host.Upgrade,
+		"ip":            host.PrintIP,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, host.Name)
