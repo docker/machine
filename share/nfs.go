@@ -8,7 +8,9 @@ import (
 	"runtime"
 	"text/template"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
+	vbox "github.com/docker/machine/drivers/virtualbox"
 )
 
 type NfsSharedFolder struct {
@@ -16,8 +18,9 @@ type NfsSharedFolder struct {
 }
 
 type EtcExportsTemplateContext struct {
-	Name    string
-	Options ShareOptions
+	Name      string
+	Options   ShareOptions
+	MachineIP string
 }
 
 func (ns NfsSharedFolder) ContractFulfilled(d drivers.Driver) (bool, error) {
@@ -64,7 +67,7 @@ func (ns NfsSharedFolder) Create(d drivers.Driver) error {
 	case "darwin":
 		tmpl, err = template.New("export").Parse(`
 # docker-machine-begin-{{.Name}}-{{.Options.Name}}
-{{.Options.SrcPath}} -alldirs -maproot=root:wheel -network 192.168.99.0 -mask 255.255.255.0
+"{{.Options.SrcPath}}" {{.MachineIP}} -alldirs -mapall=501:1000
 # docker-machine-end-{{.Name}}-{{.Options.Name}}
 `)
 
@@ -75,7 +78,7 @@ func (ns NfsSharedFolder) Create(d drivers.Driver) error {
 	case "linux":
 		tmpl, err = template.New("export").Parse(`
 # docker-machine-begin-{{.Name}}-{{.Options.Name}}
-{{.Options.SrcPath}} 192.168.99.0/24(rw,no_root_squash,no_subtree_check)
+{{.Options.SrcPath}} {{.MachineIP}}(rw,no_root_squash,no_subtree_check)
 # docker-machine-end-{{.Name}}-{{.Options.Name}}
 `)
 		if err != nil {
@@ -83,9 +86,16 @@ func (ns NfsSharedFolder) Create(d drivers.Driver) error {
 		}
 		nfsdRestartCmd = exec.Command("sudo", "systemctl", "restart", "nfs-kernel-server")
 	}
+
+	machineIP, err := d.GetIP()
+	if err != nil {
+		return err
+	}
+
 	tmplContext := EtcExportsTemplateContext{
-		Name:    d.GetMachineName(),
-		Options: ns.Options,
+		Name:      d.GetMachineName(),
+		Options:   ns.Options,
+		MachineIP: machineIP,
 	}
 
 	if err := tmpl.Execute(&buf, tmplContext); err != nil {
@@ -107,8 +117,14 @@ func (ns NfsSharedFolder) Create(d drivers.Driver) error {
 }
 
 func (ns NfsSharedFolder) Mount(d drivers.Driver) error {
-	cmdFmtString := "sudo mkdir -p %s && sudo mount -t nfs -o vers=3,nolock,udp 192.168.99.1:%s %s"
-	cmd, err := drivers.GetSSHCommandFromDriver(d, fmt.Sprintf(cmdFmtString, ns.Options.SrcPath, ns.Options.SrcPath, ns.Options.DestPath))
+	hostonlyAdapterIP, err := vbox.GetHostOnlyNetworkIPv4ByMachineName(d.GetMachineName())
+	if err != nil {
+		return err
+	}
+	cmdFmtString := "sudo /usr/local/etc/init.d/nfs-client start && sudo mkdir -p %s && sudo mount -t nfs -o vers=3,nolock,udp %s:%s %s"
+	mountCmd := fmt.Sprintf(cmdFmtString, ns.Options.SrcPath, hostonlyAdapterIP, ns.Options.SrcPath, ns.Options.DestPath)
+	log.Debug(mountCmd)
+	cmd, err := drivers.GetSSHCommandFromDriver(d, mountCmd)
 	if err != nil {
 		return err
 	}

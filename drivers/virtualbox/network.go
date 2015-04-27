@@ -8,6 +8,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/utils"
 )
 
 var (
@@ -127,12 +130,17 @@ func getHostOnlyNetwork(hostIP net.IP, netmask net.IPMask) (*hostOnlyNetwork, er
 		return nil, err
 	}
 	for _, n := range nets {
+		utils.DumpVal(n)
 		if hostIP.Equal(n.IPv4.IP) &&
 			netmask.String() == n.IPv4.Mask.String() {
 			return n, nil
 		}
 	}
 	return nil, nil
+}
+
+func GetHostOnlyNetwork(hostIP net.IP, netmask net.IPMask) (*hostOnlyNetwork, error) {
+	return getHostOnlyNetwork(hostIP, netmask)
 }
 
 func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP, dhcpUpperIP net.IP, dhcpLowerIP net.IP) (*hostOnlyNetwork, error) {
@@ -261,4 +269,42 @@ func parseIPv4Mask(s string) net.IPMask {
 		return nil
 	}
 	return net.IPv4Mask(mask[12], mask[13], mask[14], mask[15])
+}
+
+func getHostOnlyAdapterNameByMachineName(machineName string) (string, error) {
+	machineInfo, err := vbmOut("showvminfo", machineName, "--machinereadable")
+	if err != nil {
+		return "", err
+	}
+
+	// Output of the command above is a bunch of k/v pairs delimited by
+	// newlines, e.g. hostonlyadapter2="foo"
+	lines := strings.Split(machineInfo, "\n")
+	for _, line := range lines {
+		splitLine := strings.Split(line, "=")
+		key, value := splitLine[0], splitLine[1]
+		log.Warn(key, value)
+		if key == "hostonlyadapter2" {
+			return value[1 : len(value)-1], nil
+		}
+	}
+	return "", errors.New("No hostonlyadapter2 key found")
+}
+
+func GetHostOnlyNetworkIPv4ByMachineName(machineName string) (string, error) {
+	adapterName, err := getHostOnlyAdapterNameByMachineName(machineName)
+	if err != nil {
+		return "", err
+	}
+	nets, err := listHostOnlyNetworks()
+	if err != nil {
+		return "", err
+	}
+	for _, n := range nets {
+		utils.DumpVal(n)
+		if n.Name == adapterName {
+			return n.IPv4.IP.String(), nil
+		}
+	}
+	return "", errors.New("Host only adapter not found for machine")
 }
