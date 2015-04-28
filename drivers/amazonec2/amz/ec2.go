@@ -173,7 +173,7 @@ func (e *EC2) awsApiCall(v url.Values) (*http.Response, error) {
 	return resp, nil
 }
 
-func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCount int, maxCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping, role string) (EC2Instance, error) {
+func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCount int, maxCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping, role string, privateIPOnly bool) (EC2Instance, error) {
 	instance := Instance{}
 	v := url.Values{}
 	v.Set("Action", "RunInstances")
@@ -186,7 +186,11 @@ func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCou
 	v.Set("NetworkInterface.0.DeviceIndex", "0")
 	v.Set("NetworkInterface.0.SecurityGroupId.0", securityGroup)
 	v.Set("NetworkInterface.0.SubnetId", subnetId)
-	v.Set("NetworkInterface.0.AssociatePublicIpAddress", "1")
+	if privateIPOnly {
+		v.Set("NetworkInterface.0.AssociatePublicIpAddress", "0")
+	} else {
+		v.Set("NetworkInterface.0.AssociatePublicIpAddress", "1")
+	}
 
 	if len(role) > 0 {
 		v.Set("IamInstanceProfile.Name", role)
