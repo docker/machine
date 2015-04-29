@@ -954,7 +954,7 @@ Options:
  - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
  - `--virtualbox-disk-size`: Size of disk for the host in MB. Default: `20000`
  - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
- - `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to number of available CPUs.
+ - `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
 
 The `--virtualbox-boot2docker-url` flag takes a few different forms.  By
 default, if no value is specified for this flag, Machine will check locally for
