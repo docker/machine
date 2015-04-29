@@ -67,7 +67,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
-			Value:  -1,
+			Value:  1,
 		},
 		cli.IntFlag{
 			EnvVar: "VIRTUALBOX_DISK_SIZE",
