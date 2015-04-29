@@ -74,7 +74,7 @@ In order to run Docker commands on your machines without having to use SSH, make
 sure to install the Docker client as well, e.g.:
 
 ```
-$ curl https://get.docker.com/builds/Darwin/x86_64/docker-latest > /usr/local/bin/docker
+$ curl -L https://get.docker.com/builds/Darwin/x86_64/docker-latest > /usr/local/bin/docker
 ```
 
 ### Windows
@@ -92,13 +92,13 @@ installation.  If you are on a 32-bit installation, please substitute "i386" for
 First, install the Docker client binary:
 
 ```
-curl https://get.docker.com/builds/Windows/x86_64/docker-latest > /bin/docker
+$ curl -L https://get.docker.com/builds/Windows/x86_64/docker-latest.exe > /bin/docker
 ```
 
 Next, install the Docker Machine binary:
 
 ```
-curl https://github.com/docker/machine/releases/docker-machine_windows-amd64.exe > /bin/docker-machine
+$ curl -L https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-amd64.exe > /bin/docker-machine
 ```
 
 Now running `docker-machine` should work.
