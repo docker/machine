@@ -196,8 +196,14 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	if err != nil {
 		return err
 	}
+
 	log.Infof("Waiting for Instance...")
 	if err = c.waitForRegionalOp(op.Name); err != nil {
+		return err
+	}
+
+	instance, err = c.instance()
+	if err != nil {
 		return err
 	}
 
