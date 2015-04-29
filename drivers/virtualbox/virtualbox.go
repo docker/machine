@@ -255,6 +255,13 @@ func (d *Driver) Create() error {
 		"--cpus", fmt.Sprintf("%d", cpus),
 		"--memory", fmt.Sprintf("%d", d.Memory),
 
+		// the DNS Host Resolver doesn't support SRV records
+		// the DNS proxy has performance issues
+		// direct DNS pass-through doesn't support roaming laptops well
+		// we can't win, so let's go direct and at least get performance
+		"--natdnshostresolver1", "off",
+		"--natdnsproxy1", "off",
+
 		"--acpi", "on",
 		"--ioapic", "on",
 		"--rtcuseutc", "on",
