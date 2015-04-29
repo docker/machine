@@ -30,7 +30,7 @@ type ComputeUtil struct {
 
 const (
 	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128"
+	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150316"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
