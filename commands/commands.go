@@ -199,6 +199,18 @@ var Commands = []cli.Command{
 		Action: cmdActive,
 	},
 	{
+		Name:        "config",
+		Usage:       "Print the connection config for machine",
+		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Action:      cmdConfig,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+		},
+	},
+	{
 		Flags: append(
 			drivers.GetCreateFlags(),
 			sharedCreateFlags...,
@@ -208,14 +220,18 @@ var Commands = []cli.Command{
 		Action: cmdCreate,
 	},
 	{
-		Name:        "config",
-		Usage:       "Print the connection config for machine",
+		Name:        "env",
+		Usage:       "Display the commands to set up the environment for the Docker client",
 		Description: "Argument is a machine name. Will use the active machine if none is provided.",
-		Action:      cmdConfig,
+		Action:      cmdEnv,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "swarm",
 				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+			cli.BoolFlag{
+				Name:  "unset, u",
+				Usage: "Unset variables instead of setting them",
 			},
 		},
 	},
@@ -235,7 +251,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
 		Action:      cmdIp,
 	},
 	{
@@ -286,22 +302,6 @@ var Commands = []cli.Command{
 		Action:      cmdRm,
 	},
 	{
-		Name:        "env",
-		Usage:       "Display the commands to set up the environment for the Docker client",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
-		Action:      cmdEnv,
-		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "swarm",
-				Usage: "Display the Swarm config instead of the Docker daemon",
-			},
-			cli.BoolFlag{
-				Name:  "unset, u",
-				Usage: "Unset variables instead of setting them",
-			},
-		},
-	},
-	{
 		Name:        "ssh",
 		Usage:       "Log into or run a command on a machine with SSH",
 		Description: "Arguments are [machine-name] command - Will use the active machine if none is provided.",
@@ -343,6 +343,7 @@ func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- e
 		"restart":       host.Restart,
 		"kill":          host.Kill,
 		"upgrade":       host.Upgrade,
+		"ip":            host.PrintIP,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, host.Name)

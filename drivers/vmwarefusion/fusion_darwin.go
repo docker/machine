@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	B2D_USER    = "docker"
-	B2D_PASS    = "tcuser"
+	B2DUser     = "docker"
+	B2DPass     = "tcuser"
 	isoFilename = "boot2docker-1.6.0-vmw.iso"
 )
 
@@ -311,16 +311,16 @@ func (d *Driver) Create() error {
 	}
 
 	// Test if /var/lib/boot2docker exists
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "directoryExistsInGuest", d.vmxPath(), "/var/lib/boot2docker")
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "directoryExistsInGuest", d.vmxPath(), "/var/lib/boot2docker")
 
 	// Copy SSH keys bundle
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "CopyFileFromHostToGuest", d.vmxPath(), path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar")
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "CopyFileFromHostToGuest", d.vmxPath(), path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar")
 
 	// Expand tar file.
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
 
 	// Enable Shared Folders
-	vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "enableSharedFolders", d.vmxPath())
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "enableSharedFolders", d.vmxPath())
 
 	var shareName, shareDir string // TODO configurable at some point
 	switch runtime.GOOS {
@@ -335,8 +335,8 @@ func (d *Driver) Create() error {
 			return err
 		} else if !os.IsNotExist(err) {
 			// add shared folder, create mountpoint and mount it.
-			vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "addSharedFolder", d.vmxPath(), shareName, shareDir)
-			vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "addSharedFolder", d.vmxPath(), shareName, shareDir)
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
 		}
 	}
 	return nil
@@ -360,7 +360,7 @@ func (d *Driver) Start() error {
 			return err
 		} else if !os.IsNotExist(err) {
 			// create mountpoint and mount shared folder
-			vmrun("-gu", B2D_USER, "-gp", B2D_PASS, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
 		}
 	}
 
@@ -399,7 +399,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("VMware Fusion does not currently support the upgrade operation.")
+	return fmt.Errorf("VMware Fusion does not currently support the upgrade operation")
 }
 
 func (d *Driver) vmxPath() string {
@@ -534,7 +534,7 @@ func (d *Driver) generateKeyBundle() error {
 		return err
 	}
 	defer tf.Close()
-	var fileWriter io.WriteCloser = tf
+	var fileWriter = tf
 
 	tw := tar.NewWriter(fileWriter)
 	defer tw.Close()
