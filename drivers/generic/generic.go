@@ -46,8 +46,8 @@ func GetCreateFlags() []cli.Flag {
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "generic-user",
-			Usage: "User to use for machine",
+			Name:  "generic-ssh-user",
+			Usage: "SSH user",
 			Value: "root",
 		},
 		cli.StringFlag{

@@ -999,6 +999,18 @@ Options:
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
+#### Generic
+Create machines using an existing VM/Host with SSH
+
+Options:
+
+ - `--generic-ip-address`: IP Address of host
+ - `--generic-ssh-user`: SSH username used to connect (default: `root`)
+ - `--generic-ssh-key`: Path to the SSH user private key
+ - `--generic-ssh-port`: Port to use for SSH (default: `22`)
+
+> Note: you must use a base Operating System supported by Machine
+
 #### Google Compute Engine
 Create machines on [Google Compute Engine](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
 
