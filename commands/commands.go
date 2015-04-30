@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -31,6 +33,10 @@ import (
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
+)
+
+var (
+	ErrUnknownShell = errors.New("unknown shell")
 )
 
 type machineConfig struct {
@@ -252,6 +258,10 @@ var Commands = []cli.Command{
 			cli.BoolFlag{
 				Name:  "swarm",
 				Usage: "Display the Swarm config instead of the Docker daemon",
+			},
+			cli.StringFlag{
+				Name:  "shell",
+				Usage: "Force environment to be configured for specified shell",
 			},
 			cli.BoolFlag{
 				Name:  "unset, u",
@@ -668,4 +678,20 @@ func getCertPathInfo(c *cli.Context) libmachine.CertPathInfo {
 		ClientCertPath: clientCertPath,
 		ClientKeyPath:  clientKeyPath,
 	}
+}
+
+func detectShell() (string, error) {
+	// attempt to get the SHELL env var
+	shell := filepath.Base(os.Getenv("SHELL"))
+	// none detected; check for windows env
+	if runtime.GOOS == "windows" {
+		log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
+		return "", ErrUnknownShell
+	}
+
+	if shell == "" {
+		return "", ErrUnknownShell
+	}
+
+	return shell, nil
 }

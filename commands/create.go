@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
@@ -96,21 +95,8 @@ func cmdCreate(c *cli.Context) {
 		log.Fatalf("error setting active host: %v", err)
 	}
 
-	info := ""
-	userShell := filepath.Base(os.Getenv("SHELL"))
-
-	switch userShell {
-	case "fish":
-		info = fmt.Sprintf("%s env %s | source", c.App.Name, name)
-	default:
-		info = fmt.Sprintf(`eval "$(%s env %s)"`, c.App.Name, name)
-	}
-
-	log.Infof("%q has been created and is now the active machine.", name)
-
-	if info != "" {
-		log.Infof("To point your Docker client at it, run this in your shell: %s", info)
-	}
+	info := fmt.Sprintf("%s env %s", c.App.Name, name)
+	log.Infof("To point your Docker client at it, run this in your shell: %s", info)
 }
 
 // If the user has specified a driver, they should not see the flags for all
