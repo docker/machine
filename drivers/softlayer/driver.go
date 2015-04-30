@@ -48,6 +48,8 @@ type deviceConfig struct {
 	HourlyBilling bool
 	LocalDisk     bool
 	PrivateNet    bool
+	PublicVLAN    int
+	PrivateVLAN   int
 }
 
 func init() {
@@ -182,6 +184,18 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "OS image for machine",
 			Value:  "UBUNTU_LATEST",
 		},
+		cli.IntFlag{
+			EnvVar: "SOFTLAYER_PUBLIC_VLAN_ID",
+			Name:   "softlayer-public-vlan-id",
+			Usage:  "",
+			Value:  0,
+		},
+		cli.IntFlag{
+			EnvVar: "SOFTLAYER_PRIVATE_VLAN_ID",
+			Name:   "softlayer-private-vlan-id",
+			Usage:  "",
+			Value:  0,
+		},
 	}
 }
 
@@ -198,6 +212,16 @@ func validateDeviceConfig(c *deviceConfig) error {
 	}
 	if c.Cpu < 1 {
 		return fmt.Errorf("Missing required setting - --softlayer-cpu")
+	}
+
+	if c.PrivateNet && c.PublicVLAN > 0 {
+		return fmt.Errorf("Can not specify both --softlayer-private-net-only and --softlayer-public-vlan-id")
+	}
+	if c.PublicVLAN > 0 && c.PrivateVLAN == 0 {
+		return fmt.Errorf("Missing required setting - --softlayer-private-vlan-id (because --softlayer-public-vlan-id is specified)")
+	}
+	if c.PrivateVLAN > 0 && !c.PrivateNet && c.PublicVLAN == 0 {
+		return fmt.Errorf("Missing required setting - --softlayer-public-vlan-id (because --softlayer-private-vlan-id is specified)")
 	}
 
 	return nil
@@ -248,6 +272,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		HourlyBilling: flags.Bool("softlayer-hourly-billing"),
 		Image:         flags.String("softlayer-image"),
 		Region:        flags.String("softlayer-region"),
+		PublicVLAN:    flags.Int("softlayer-public-vlan-id"),
+		PrivateVLAN:   flags.Int("softlayer-private-vlan-id"),
 	}
 	return validateDeviceConfig(d.deviceConfig)
 }
@@ -379,6 +405,8 @@ func (d *Driver) waitForSetupTransactions() {
 }
 
 func (d *Driver) Create() error {
+	spec := d.buildHostSpec()
+
 	log.Infof("Creating SSH key...")
 	key, err := d.createSSHKey()
 	if err != nil {
@@ -388,7 +416,6 @@ func (d *Driver) Create() error {
 	log.Infof("SSH key %s (%d) created in SoftLayer", key.Label, key.Id)
 	d.SSHKeyID = key.Id
 
-	spec := d.buildHostSpec()
 	spec.SshKeys = []*SshKey{key}
 
 	id, err := d.getClient().VirtualGuest().Create(spec)
@@ -418,6 +445,21 @@ func (d *Driver) buildHostSpec() *HostSpec {
 	if d.deviceConfig.DiskSize > 0 {
 		spec.BlockDevices = []BlockDevice{{Device: "0", DiskImage: DiskImage{Capacity: d.deviceConfig.DiskSize}}}
 	}
+	if d.deviceConfig.PublicVLAN > 0 {
+		spec.PrimaryNetworkComponent = &NetworkComponent{
+			NetworkVLAN: &NetworkVLAN{
+				Id: d.deviceConfig.PublicVLAN,
+			},
+		}
+	}
+	if d.deviceConfig.PrivateVLAN > 0 {
+		spec.PrimaryBackendNetworkComponent = &NetworkComponent{
+			NetworkVLAN: &NetworkVLAN{
+				Id: d.deviceConfig.PrivateVLAN,
+			},
+		}
+	}
+	log.Debugf("Built host spec %#v", spec)
 	return spec
 }
 
