@@ -67,7 +67,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
-			Value:  -1,
+			Value:  1,
 		},
 		cli.IntFlag{
 			EnvVar: "VIRTUALBOX_DISK_SIZE",
@@ -247,17 +247,16 @@ func (d *Driver) Create() error {
 		"--firmware", "bios",
 		"--bioslogofadein", "off",
 		"--bioslogofadeout", "off",
-		"--natdnshostresolver1", "on",
 		"--bioslogodisplaytime", "0",
 		"--biosbootmenu", "disabled",
-
 		"--ostype", "Linux26_64",
 		"--cpus", fmt.Sprintf("%d", cpus),
 		"--memory", fmt.Sprintf("%d", d.Memory),
-
 		"--acpi", "on",
 		"--ioapic", "on",
 		"--rtcuseutc", "on",
+		"--natdnshostresolver1", "off",
+		"--natdnsproxy1", "off",
 		"--cpuhotplug", "off",
 		"--pae", "on",
 		"--synthcpu", "off",
