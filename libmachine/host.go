@@ -118,7 +118,7 @@ func (h *Host) Create(name string) error {
 			return err
 		}
 
-		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions); err != nil {
+		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 			return err
 		}
 	}
@@ -315,7 +315,7 @@ func (h *Host) ConfigureAuth() error {
 		return err
 	}
 
-	if err := provision.ConfigureAuth(provisioner, *h.HostOptions.AuthOptions); err != nil {
+	if err := provision.ConfigureAuth(provisioner); err != nil {
 		return err
 	}
 

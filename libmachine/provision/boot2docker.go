@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"text/template"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/ssh"
@@ -31,6 +33,8 @@ func NewBoot2DockerProvisioner(d drivers.Driver) Provisioner {
 type Boot2DockerProvisioner struct {
 	OsReleaseInfo *OsRelease
 	Driver        drivers.Driver
+	AuthOptions   auth.AuthOptions
+	EngineOptions engine.EngineOptions
 	SwarmOptions  swarm.SwarmOptions
 }
 
@@ -127,18 +131,49 @@ func (provisioner *Boot2DockerProvisioner) GetDockerOptionsDir() string {
 	return "/var/lib/boot2docker"
 }
 
-func (provisioner *Boot2DockerProvisioner) GenerateDockerOptions(dockerPort int, authOptions auth.AuthOptions) (*DockerOptions, error) {
-	defaultDaemonOpts := getDefaultDaemonOpts(provisioner.Driver.DriverName(), authOptions)
-	daemonOpts := fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)
+func (provisioner *Boot2DockerProvisioner) GetAuthOptions() auth.AuthOptions {
+	return provisioner.AuthOptions
+}
+
+func (provisioner *Boot2DockerProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
+	var (
+		engineCfg bytes.Buffer
+	)
+
+	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
+	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
+
+	engineConfigTmpl := `
+EXTRA_ARGS='
+{{ range .EngineOptions.Labels }}--label {{.}}
+{{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}}
+{{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}}
+{{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}}
+{{ end }}
+'
+CACERT={{.AuthOptions.CaCertRemotePath}}
+DOCKER_HOST='-H tcp://0.0.0.0:{{.DockerPort}}'
+DOCKER_STORAGE={{.EngineOptions.StorageDriver}}
+DOCKER_TLS=auto
+SERVERKEY={{.AuthOptions.ServerKeyRemotePath}}
+SERVERCERT={{.AuthOptions.ServerCertRemotePath}}
+`
+	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	engineConfigContext := EngineConfigContext{
+		DockerPort:    dockerPort,
+		AuthOptions:   provisioner.AuthOptions,
+		EngineOptions: provisioner.EngineOptions,
+	}
+
+	t.Execute(&engineCfg, engineConfigContext)
+
 	daemonOptsDir := path.Join(provisioner.GetDockerOptionsDir(), "profile")
-	opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
-	daemonCfg := fmt.Sprintf(`EXTRA_ARGS='%s'
-CACERT=%s
-SERVERCERT=%s
-SERVERKEY=%s
-DOCKER_TLS=no`, opts, authOptions.CaCertRemotePath, authOptions.ServerCertRemotePath, authOptions.ServerKeyRemotePath)
 	return &DockerOptions{
-		EngineOptions:     daemonCfg,
+		EngineOptions:     engineCfg.String(),
 		EngineOptionsPath: daemonOptsDir,
 	}, nil
 }
@@ -151,7 +186,11 @@ func (provisioner *Boot2DockerProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
 
-func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
+func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+	provisioner.SwarmOptions = swarmOptions
+	provisioner.AuthOptions = authOptions
+	provisioner.EngineOptions = engineOptions
+
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
@@ -171,7 +210,13 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 		return err
 	}
 
-	if err := ConfigureAuth(provisioner, authOptions); err != nil {
+	if err := makeDockerOptionsDir(provisioner); err != nil {
+		return err
+	}
+
+	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
+
+	if err := ConfigureAuth(provisioner); err != nil {
 		return err
 	}
 
