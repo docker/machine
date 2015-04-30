@@ -12,6 +12,39 @@ import (
 	"github.com/docker/machine/version"
 )
 
+var AppHelpTemplate = `
+Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
+
+{{.Usage}}
+
+Version: {{.Version}}{{if or .Author .Email}}
+
+Author:{{if .Author}}
+  {{.Author}}{{if .Email}} - <{{.Email}}>{{end}}{{else}}
+  {{.Email}}{{end}}{{end}}
+{{if .Flags}}
+Options:
+  {{range .Flags}}{{.}}
+  {{end}}{{end}}
+Commands:
+  {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
+  {{end}}
+Run '{{.Name}} COMMAND --help' for more information on a command.
+`
+
+var CommandHelpTemplate = `
+Usage: docker-machine {{.Name}}{{if .Flags}} [OPTIONS]{{end}} [arg...]
+
+{{.Usage}}{{if .Description}}
+
+Description:
+   {{.Description}}{{end}}{{if .Flags}}
+
+Options:
+   {{range .Flags}}{{.}}
+   {{end}}{{ end }}
+`
+
 func main() {
 	for _, f := range os.Args {
 		if f == "-D" || f == "--debug" || f == "-debug" {
@@ -20,6 +53,8 @@ func main() {
 		}
 	}
 
+	cli.AppHelpTemplate = AppHelpTemplate
+	cli.CommandHelpTemplate = CommandHelpTemplate
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Author = "Docker Machine Contributors"
