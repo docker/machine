@@ -3,10 +3,12 @@ package provision
 import (
 	"bytes"
 	"fmt"
+	"text/template"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/ssh"
@@ -32,6 +34,8 @@ type UbuntuProvisioner struct {
 	packages      []string
 	OsReleaseInfo *OsRelease
 	Driver        drivers.Driver
+	AuthOptions   auth.AuthOptions
+	EngineOptions engine.EngineOptions
 	SwarmOptions  swarm.SwarmOptions
 }
 
@@ -82,7 +86,10 @@ func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
+func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+	provisioner.SwarmOptions = swarmOptions
+	provisioner.AuthOptions = authOptions
+	provisioner.EngineOptions = engineOptions
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
@@ -101,7 +108,13 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	if err := ConfigureAuth(provisioner, authOptions); err != nil {
+	if err := makeDockerOptionsDir(provisioner); err != nil {
+		return err
+	}
+
+	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
+
+	if err := ConfigureAuth(provisioner); err != nil {
 		return err
 	}
 
@@ -159,18 +172,54 @@ func (provisioner *UbuntuProvisioner) CompatibleWithHost() bool {
 	return provisioner.OsReleaseInfo.Id == "ubuntu"
 }
 
+func (provisioner *UbuntuProvisioner) GetAuthOptions() auth.AuthOptions {
+	return provisioner.AuthOptions
+}
+
 func (provisioner *UbuntuProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
 
-func (provisioner *UbuntuProvisioner) GenerateDockerOptions(dockerPort int, authOptions auth.AuthOptions) (*DockerOptions, error) {
-	defaultDaemonOpts := getDefaultDaemonOpts(provisioner.Driver.DriverName(), authOptions)
-	daemonOpts := fmt.Sprintf("--host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:%d", dockerPort)
+func (provisioner *UbuntuProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
+	var (
+		engineCfg bytes.Buffer
+	)
+
+	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
+	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
+
+	engineConfigTmpl := `
+DOCKER_OPTS='
+-H tcp://0.0.0.0:{{.DockerPort}}
+-H unix:///var/run/docker.sock
+--storage-driver {{.EngineOptions.StorageDriver}}
+--tlsverify
+--tlscacert {{.AuthOptions.CaCertRemotePath}}
+--tlscert {{.AuthOptions.ServerCertRemotePath}}
+--tlskey {{.AuthOptions.ServerKeyRemotePath}}
+{{ range .EngineOptions.Labels }}--label {{.}}
+{{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}}
+{{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}}
+{{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}}
+{{ end }}
+'
+`
+	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	engineConfigContext := EngineConfigContext{
+		DockerPort:    dockerPort,
+		AuthOptions:   provisioner.AuthOptions,
+		EngineOptions: provisioner.EngineOptions,
+	}
+
+	t.Execute(&engineCfg, engineConfigContext)
+
 	daemonOptsDir := "/etc/default/docker"
-	opts := fmt.Sprintf("%s %s", defaultDaemonOpts, daemonOpts)
-	daemonCfg := fmt.Sprintf("export DOCKER_OPTS=\\\"%s\\\"", opts)
 	return &DockerOptions{
-		EngineOptions:     daemonCfg,
+		EngineOptions:     engineCfg.String(),
 		EngineOptionsPath: daemonOptsDir,
 	}, nil
 }

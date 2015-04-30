@@ -6,6 +6,7 @@ import (
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/ssh"
@@ -16,10 +17,13 @@ var provisioners = make(map[string]*RegisteredProvisioner)
 // Distribution specific actions
 type Provisioner interface {
 	// Create the files for the daemon to consume configuration settings (return struct of content and path)
-	GenerateDockerOptions(dockerPort int, authOptions auth.AuthOptions) (*DockerOptions, error)
+	GenerateDockerOptions(dockerPort int) (*DockerOptions, error)
 
 	// Get the directory where the settings files for docker are to be found
 	GetDockerOptionsDir() string
+
+	// Return the auth options used to configure remote connection for the daemon.
+	GetAuthOptions() auth.AuthOptions
 
 	// Run a package action e.g. install
 	Package(name string, action pkgaction.PackageAction) error
@@ -39,7 +43,7 @@ type Provisioner interface {
 	//     3. Configure the daemon to accept connections over TLS.
 	//     4. Copy the needed certificates to the server and local config dir.
 	//     5. Configure / activate swarm if applicable.
-	Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error
+	Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error
 
 	// Perform action on a named service e.g. stop
 	Service(name string, action pkgaction.ServiceAction) error

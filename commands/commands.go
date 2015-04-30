@@ -166,6 +166,31 @@ var sharedCreateFlags = []cli.Flag{
 		),
 		Value: "none",
 	},
+	cli.StringSliceFlag{
+		Name:  "engine-flag",
+		Usage: "Specify arbitrary flags to include with the created engine in the form flag=value",
+		Value: &cli.StringSlice{},
+	},
+	cli.StringSliceFlag{
+		Name:  "engine-insecure-registry",
+		Usage: "Specify insecure registries to allow with the created engine",
+		Value: &cli.StringSlice{},
+	},
+	cli.StringSliceFlag{
+		Name:  "engine-registry-mirror",
+		Usage: "Specify registry mirrors to use",
+		Value: &cli.StringSlice{},
+	},
+	cli.StringSliceFlag{
+		Name:  "engine-label",
+		Usage: "Specify labels for the created engine",
+		Value: &cli.StringSlice{},
+	},
+	cli.StringFlag{
+		Name:  "engine-storage-driver",
+		Usage: "Specify a storage driver to use with the engine",
+		Value: "aufs",
+	},
 	cli.BoolFlag{
 		Name:  "swarm",
 		Usage: "Configure Machine with Swarm",
