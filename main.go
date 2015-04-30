@@ -4,10 +4,10 @@ import (
 	"os"
 	"path"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 
 	"github.com/docker/machine/commands"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
 	"github.com/docker/machine/version"
 )
@@ -49,7 +49,6 @@ func main() {
 	for _, f := range os.Args {
 		if f == "-D" || f == "--debug" || f == "-debug" {
 			os.Setenv("DEBUG", "1")
-			initLogging(log.DebugLevel)
 		}
 	}
 

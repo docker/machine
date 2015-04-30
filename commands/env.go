@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/utils"

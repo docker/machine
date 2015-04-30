@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 
 	"github.com/codegangsta/cli"
 )

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
+	"github.com/docker/machine/log"
 )
 
 type VcConn struct {

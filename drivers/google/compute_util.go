@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	raw "google.golang.org/api/compute/v1"
 )
