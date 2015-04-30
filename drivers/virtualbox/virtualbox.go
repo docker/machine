@@ -424,7 +424,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	if s == state.Running {
-		if err := d.Kill(); err != nil {
+		if err := d.Stop(); err != nil {
 			return err
 		}
 	}
