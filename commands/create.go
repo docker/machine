@@ -96,7 +96,7 @@ func cmdCreate(c *cli.Context) {
 	}
 
 	info := fmt.Sprintf("%s env %s", c.App.Name, name)
-	log.Infof("To point your Docker client at it, run this in your shell: %s", info)
+	log.Infof("To see how to connect Docker to this machine, run: %s", info)
 }
 
 // If the user has specified a driver, they should not see the flags for all
