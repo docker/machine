@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
@@ -28,6 +29,10 @@ type Driver struct {
 	SwarmDiscovery string
 	storePath      string
 }
+
+const (
+	defaultTimeout = 5 * time.Second
+)
 
 func init() {
 	drivers.Register("generic", &drivers.RegisteredDriver{
@@ -165,7 +170,7 @@ func (d *Driver) GetIP() (string, error) {
 
 func (d *Driver) GetState() (state.State, error) {
 	addr := fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)
-	_, err := net.Dial("tcp", addr)
+	_, err := net.DialTimeout("tcp", addr, defaultTimeout)
 	var st state.State
 	if err != nil {
 		st = state.Stopped
