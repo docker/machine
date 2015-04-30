@@ -300,11 +300,7 @@ func (d *Driver) Upgrade() error {
 	log.Debugf("[Scaleway] Upgrading Docker")
 	_, err := drivers.RunSSHCommandFromDriver(d,
 		"sudo apt-get update && apt-get install --upgrade lxc-docker")
-	if err != nil {
-		return err
-
-	}
-	return nil
+	return err
 }
 
 func (d *Driver) SetupHostname() error {
@@ -316,41 +312,27 @@ func (d *Driver) SetupHostname() error {
 			d.MachineName,
 			d.MachineName,
 		))
-
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (d *Driver) installDocker() error {
 	_, err := drivers.RunSSHCommandFromDriver(d,
 		"if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
-	if err != nil {
-		return err
-
-	}
-	return nil
+	return err
 }
 
 func (d *Driver) StartDocker() error {
 	log.Debug("Starting Docker...")
 	_, err := drivers.RunSSHCommandFromDriver(d,
 		"sudo service docker start")
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (d *Driver) StopDocker() error {
 	log.Debug("Stopping Docker...")
 	_, err := drivers.RunSSHCommandFromDriver(d,
 		"sudo service docker stop")
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (d *Driver) setMachineNameIfNotSet() {
