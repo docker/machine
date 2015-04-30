@@ -69,6 +69,7 @@ type Driver struct {
 	keyPath             string
 	RequestSpotInstance bool
 	SpotPrice           string
+	PrivateIPOnly       bool
 }
 
 func init() {
@@ -164,6 +165,10 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "AWS spot instance bid price (in dollar)",
 			Value: "0.50",
 		},
+		cli.BoolFlag{
+			Name:  "amazonec2-private-address-only",
+			Usage: "Only use a private IP address",
+		},
 	}
 }
 
@@ -221,6 +226,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = 22
+	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -372,7 +378,7 @@ func (d *Driver) Create() error {
 			return fmt.Errorf("Error get instance: %s", err)
 		}
 	} else {
-		inst, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile)
+		inst, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.PrivateIPOnly)
 		if err != nil {
 			return fmt.Errorf("Error launching instance: %s", err)
 		}
@@ -425,6 +431,10 @@ func (d *Driver) GetIP() (string, error) {
 	inst, err := d.getInstance()
 	if err != nil {
 		return "", err
+	}
+
+	if d.PrivateIPOnly {
+		return inst.PrivateIpAddress, nil
 	}
 
 	return inst.IpAddress, nil
