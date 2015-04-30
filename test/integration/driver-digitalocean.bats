@@ -52,6 +52,12 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   run machine ssh $NAME -- docker version
 }
 
+# currently this only checks debian/ubuntu style using 127.0.0.1
+@test "$DRIVER: hostname should be set properly" {
+  run machine ssh $NAME -- "grep -Fxq '127.0.1.1 $NAME' /etc/hosts"
+  [ "$status" -eq 0  ]
+}
+
 @test "$DRIVER: stop" {
   run machine stop $NAME
   [ "$status" -eq 0  ]
