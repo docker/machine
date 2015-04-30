@@ -202,13 +202,15 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
+	log.Debugf("[Scaleway] Waiting server ready .......")
 	if err := d.waitForServerState(state.Running); err != nil {
 		return err
 	}
+	log.Debugf("[Scaleway] Waiting SSH .......")
 	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, 22)); err != nil {
 		return err
 	}
-	log.Debugf("[Scaleway] Waiting SSH .......")
+
 	time.Sleep(10 * time.Second)
 	d.SetupHostname()
 	d.installDocker()
@@ -296,32 +298,18 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) Upgrade() error {
 	log.Debugf("[Scaleway] Upgrading Docker")
-
-	// cmd, err := d.GetSSHCommand("sudo apt-get update && apt-get install --upgrade lxc-docker")
-	cmd, err := drivers.GetSSHCommandFromDriver(d,
+	_, err := drivers.RunSSHCommandFromDriver(d,
 		"sudo apt-get update && apt-get install --upgrade lxc-docker")
 	if err != nil {
 		return err
 
 	}
-	if err := cmd.Run(); err != nil {
-		return err
-
-	}
-
-	return cmd.Run()
+	return nil
 }
 
 func (d *Driver) SetupHostname() error {
 	log.Debugf("[Scaleway] Setting hostname: %s", d.MachineName)
-	// cmd, err := d.GetSSHCommand(
-	// 	fmt.Sprintf(
-	// 		"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
-	// 		d.MachineName,
-	// 		d.MachineName,
-	// 		d.MachineName,
-	// 	))
-	cmd, err := drivers.GetSSHCommandFromDriver(d,
+	_, err := drivers.RunSSHCommandFromDriver(d,
 		fmt.Sprintf(
 			"echo \"127.0.0.1 %s\" | sudo tee -a /etc/hosts && sudo hostname %s && echo \"%s\" | sudo tee /etc/hostname",
 			d.MachineName,
@@ -332,21 +320,13 @@ func (d *Driver) SetupHostname() error {
 	if err != nil {
 		return err
 	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
 	return nil
 }
 
 func (d *Driver) installDocker() error {
-	// cmd, err := d.GetSSHCommand("if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
-	cmd, err := drivers.GetSSHCommandFromDriver(d,
+	_, err := drivers.RunSSHCommandFromDriver(d,
 		"if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
 	if err != nil {
-		return err
-
-	}
-	if err := cmd.Run(); err != nil {
 		return err
 
 	}
@@ -355,41 +335,23 @@ func (d *Driver) installDocker() error {
 
 func (d *Driver) StartDocker() error {
 	log.Debug("Starting Docker...")
-
-	// cmd, err := d.GetSSHCommand("sudo service docker start")
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo service docker start")
+	_, err := drivers.RunSSHCommandFromDriver(d,
+		"sudo service docker start")
 	if err != nil {
 		return err
 	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (d *Driver) StopDocker() error {
 	log.Debug("Stopping Docker...")
-
-	// cmd, err := d.GetSSHCommand("sudo service docker stop")
-	cmd, err := drivers.GetSSHCommandFromDriver(d, "sudo service docker stop")
+	_, err := drivers.RunSSHCommandFromDriver(d,
+		"sudo service docker stop")
 	if err != nil {
 		return err
 	}
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
 	return nil
 }
-
-// func (d *Driver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
-// 	ip, err := d.GetIP()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return ssh.GetSSHCommand(ip, 22, "root", d.GetSSHKeyPath(), args...), nil
-// }
 
 func (d *Driver) setMachineNameIfNotSet() {
 }
@@ -400,10 +362,6 @@ func (d *Driver) createSSHKey() error {
 	}
 	return nil
 }
-
-// func (d *Driver) sshKeyPath() string {
-// 	return filepath.Join(d.storePath, "id_rsa")
-// }
 
 func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
