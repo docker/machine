@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -113,7 +113,7 @@ func (d *Driver) GetProviderType() provider.ProviderType {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IPAddress = flags.String("generic-ip-address")
-	d.SSHUser = flags.String("generic-user")
+	d.SSHUser = flags.String("generic-ssh-user")
 	d.SSHKey = flags.String("generic-ssh-key")
 	d.SSHPort = flags.Int("generic-ssh-port")
 
