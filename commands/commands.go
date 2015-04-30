@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -658,8 +659,8 @@ func detectShell() (string, error) {
 	// attempt to get the SHELL env var
 	shell := filepath.Base(os.Getenv("SHELL"))
 	// none detected; check for windows env
-	if shell == "." && os.Getenv("windir") != "" {
-		log.Printf("On Windows, please specify either cmd or powershell with the --shell flag.\n\n")
+	if runtime.GOOS == "windows" {
+		log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
 		return "", ErrUnknownShell
 	}
 
