@@ -487,6 +487,47 @@ INFO[0038] "dev" has been created and is now the active machine.
 INFO[0038] To see how to connect Docker to this machine, run: docker-machine env dev"
 ```
 
+##### Filtering create flags by driver in the help text
+
+You may notice that the `docker-machine create` command has a lot of flags due
+to the huge plethora of provider-specific options which are available.
+
+```
+$ docker-machine create -h | wc -l
+145
+```
+
+While it is great to have access to all this information, sometimes you simply
+want to get a peek at the subset of flags which are applicable to the driver you
+are working with.  To that extent, specifying an argument to the `-d` flag will
+filter the create flags displayed in the help text to only what is applicable to
+that provider:
+
+```
+$ docker-machine create -d virtualbox
+Usage: docker-machine create [OPTIONS] [arg...]
+
+Create a machine
+
+Options:
+   --virtualbox-boot2docker-url                                                                         The URL of the boot2docker image. Defaults to the latest available version [$VIRTUALBOX_BOOT2DOCKER_URL]
+   --virtualbox-cpu-count "1"                                                                           number of CPUs for the machine (-1 to use the number of CPUs available) [$VIRTUALBOX_CPU_COUNT]
+   --virtualbox-disk-size "20000"                                                                       Size of disk for host in MB [$VIRTUALBOX_DISK_SIZE]
+   --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
+   --virtualbox-memory "1024"                                                                           Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
+   --driver, -d "none"                                                                                  Driver to create machine with. Available drivers: amazonec2, azure, digitalocean, exoscale, google, none, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere
+   --engine-flag [--engine-flag option --engine-flag option]                                            Specify arbitrary flags to include with the created engine in the form flag=value
+   --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
+   --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
+   --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
+   --engine-storage-driver "aufs"                                                                       Specify a storage driver to use with the engine
+   --swarm                                                                                              Configure Machine with Swarm
+   --swarm-master                                                                                       Configure Machine to be a Swarm master
+   --swarm-discovery                                                                                    Discovery service to use with Swarm
+   --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
+   --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
+```
+
 ##### Specifying configuration options for the created Docker engine
 
 As part of the process of creation, Docker Machine installs Docker and
