@@ -986,10 +986,13 @@ Options:
  - `--google-zone`: The zone to launch the instance.  Default: `us-central1-a`
  - `--google-machine-type`: The type of instance.  Default: `f1-micro`
  - `--google-username`: The username to use for the instance.  Default: `docker-user`
- - `--google-instance-name`: The name of the instance.  Default: `docker-machine`
  - `--google-project`: The name of your project to use when launching the instance.
-
-The GCE driver will use the `ubuntu-1404-trusty-v20150128` instance type unless otherwise specified.
+ - `--google-auth-token`: Your oAuth token for the Google Cloud API.
+ - `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
+ - `--google-disk-size`: The disk size of instance. Default: `10`
+ - `--google-disk-type`: The disk type of instance. Default: `pd-standard`
+ 
+The GCE driver will use the `ubuntu-1404-trusty-v20150316` instance type unless otherwise specified.
 
 #### IBM Softlayer
 
