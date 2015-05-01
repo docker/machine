@@ -156,6 +156,7 @@ dev    *        virtualbox   Running   tcp://192.168.99.100:2376
 
 The `*` next to `dev` indicates that it is the active host.
 
+
 Next, as noted in the output of the `docker-machine create` command, we have to tell
 Docker to talk to that machine.  You can do this with the `docker-machine env`
 command.  For example,
@@ -164,6 +165,11 @@ command.  For example,
 $ eval "$(docker-machine env dev)"
 $ docker ps
 ```
+
+> **Note**: If you are using `fish`, or a Windows shell such as
+> Powershell/`cmd.exe` the above method will not work as described.  Instead,
+> see [the `env` command's documentation](https://docs.docker.com/machine/#env)
+> to learn how to set the environment variables for your shell.
 
 This will set environment variables that the Docker client will read which specify
 the TLS settings. Note that you will need to do that every time you open a new tab or
@@ -384,6 +390,7 @@ Load the Machine configuration into your shell:
 ```
 $ eval "$(docker-machine env local)"
 ```
+
 Then run generate the token using the Swarm Docker image:
 
 ```
@@ -574,8 +581,8 @@ Set environment variables to dictate that `docker` should run a command against
 a particular machine.
 
 `docker-machine env machinename` will print out `export` commands which can be
-run in a subshell.  Running `docker-machine env -u` will print
-`unset` commands which reverse this effect.
+run in a subshell.  Running `docker-machine env -u` will print `unset` commands
+which reverse this effect.
 
 ```
 $ env | grep DOCKER
@@ -588,6 +595,47 @@ $ # If you run a docker command, now it will run against that host.
 $ eval "$(docker-machine env -u)"
 $ env | grep DOCKER
 $ # The environment variables have been unset.
+```
+
+The output described above is intended for the shells `bash` and `zsh` (if
+you're not sure which shell you're using, there's a very good possibility that
+it's `bash`).  However, these are not the only shells which Docker Machine
+supports.
+
+If you are using `fish` and the `SHELL` environment variable is correctly set to
+the path where `fish` is located, `docker-machine env name` will print out the
+values in the format which `fish` expects:
+
+```
+set -x DOCKER_TLS_VERIFY 1;
+set -x DOCKER_CERT_PATH "/Users/nathanleclaire/.docker/machine/machines/overlay";
+set -x DOCKER_HOST tcp://192.168.99.102:2376;
+# Run this command to configure your shell: eval (docker-machine env overlay)
+```
+
+If you are on Windows and using Powershell or `cmd.exe`, `docker-machine env`
+cannot detect your shell automatically, but it does have support for these
+shells.  In order to use them, specify which shell you would like to print the
+options for using the `--shell` flag for `docker-machine env`.
+
+For Powershell:
+
+```
+$ docker-machine.exe env --shell powershell dev
+$Env:DOCKER_TLS_VERIFY = "1"
+$Env:DOCKER_HOST = "tcp://192.168.99.101:2376"
+$Env:DOCKER_CERT_PATH = "C:\Users\captain\.docker\machine\machines\dev"
+# Run this command to configure your shell: docker-machine.exe env --shell=powershell | Invoke-Expression
+```
+
+For `cmd.exe`:
+
+```
+$ docker-machine.exe env --shell cmd dev
+set DOCKER_TLS_VERIFY=1
+set DOCKER_HOST=tcp://192.168.99.101:2376
+set DOCKER_CERT_PATH=C:\Users\captain\.docker\machine\machines\dev
+# Run this command to configure your shell: copy and paste the above values into your command prompt
 ```
 
 #### inspect
