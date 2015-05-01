@@ -37,6 +37,7 @@ const (
 )
 
 type Driver struct {
+	IPAddress      string
 	MachineName    string
 	SSHUser        string
 	SSHPort        int
@@ -406,7 +407,8 @@ func (d *Driver) Start() error {
 			return err
 		}
 
-		return nil
+		d.IPAddress, err = d.GetIP()
+		return err
 	}
 	return errors.NewInvalidStateError(d.MachineName)
 }
@@ -416,6 +418,8 @@ func (d *Driver) Stop() error {
 	if err := vcConn.VMShutdown(); err != nil {
 		return err
 	}
+
+	d.IPAddress = ""
 
 	return nil
 }
@@ -473,6 +477,8 @@ func (d *Driver) Kill() error {
 	if err := vcConn.VMPowerOff(); err != nil {
 		return err
 	}
+
+	d.IPAddress = ""
 
 	return nil
 }

@@ -29,7 +29,7 @@ func TestCmdInspectFormat(t *testing.T) {
 	assert.Equal(t, "\"none\"", actual)
 
 	actual, _ = runInspectCommand(t, []string{"--format", "{{prettyjson .Driver}}"})
-	assert.Equal(t, "{\n    \"URL\": \"unix:///var/run/docker.sock\"\n}", actual)
+	assert.Equal(t, "{\n    \"IPAddress\": \"\",\n    \"URL\": \"unix:///var/run/docker.sock\"\n}", actual)
 }
 
 func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
