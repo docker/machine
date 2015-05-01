@@ -2,6 +2,7 @@ package none
 
 import (
 	"fmt"
+	neturl "net/url"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
@@ -13,7 +14,8 @@ import (
 // connect to existing Docker hosts by specifying the URL of the host as
 // an option.
 type Driver struct {
-	URL string
+	IPAddress string
+	URL       string
 }
 
 func init() {
@@ -54,7 +56,7 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	return "", nil
+	return d.IPAddress, nil
 }
 
 func (d *Driver) GetMachineName() string {
@@ -113,6 +115,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	d.URL = url
+	u, err := neturl.Parse(url)
+	if err != nil {
+		return err
+	}
+
+	d.IPAddress = u.Host
 	return nil
 }
 

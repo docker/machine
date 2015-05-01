@@ -30,6 +30,7 @@ const (
 )
 
 type Driver struct {
+	IPAddress           string
 	CPU                 int
 	MachineName         string
 	SSHUser             string
@@ -392,7 +393,8 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	return nil
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
@@ -410,6 +412,9 @@ func (d *Driver) Stop() error {
 			break
 		}
 	}
+
+	d.IPAddress = ""
+
 	return nil
 }
 

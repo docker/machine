@@ -41,7 +41,7 @@ type Driver struct {
 	FloatingIpPoolId string
 	SSHUser          string
 	SSHPort          int
-	Ip               string
+	IPAddress        string
 	CaCertPath       string
 	PrivateKeyPath   string
 	storePath        string
@@ -278,8 +278,8 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	if d.Ip != "" {
-		return d.Ip, nil
+	if d.IPAddress != "" {
+		return d.IPAddress, nil
 	}
 
 	log.WithField("MachineId", d.MachineId).Debug("Looking for the IP address...")
@@ -663,7 +663,7 @@ func (d *Driver) assignFloatingIp() error {
 	if err := d.client.AssignFloatingIP(d, floatingIp, portId); err != nil {
 		return err
 	}
-	d.Ip = floatingIp.Ip
+	d.IPAddress = floatingIp.Ip
 	return nil
 }
 
@@ -680,7 +680,7 @@ func (d *Driver) lookForIpAddress() error {
 	if err != nil {
 		return err
 	}
-	d.Ip = ip
+	d.IPAddress = ip
 	log.WithFields(log.Fields{
 		"IP":        ip,
 		"MachineId": d.MachineId,

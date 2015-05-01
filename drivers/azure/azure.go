@@ -21,6 +21,7 @@ import (
 )
 
 type Driver struct {
+	IPAddress               string
 	MachineName             string
 	SubscriptionID          string
 	SubscriptionCert        string
@@ -312,7 +313,9 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	return nil
+	var err error
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
@@ -329,7 +332,12 @@ func (d *Driver) Stop() error {
 
 	log.Debugf("stopping %s", d.MachineName)
 
-	return vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
+	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+	return nil
 }
 
 func (d *Driver) Remove() error {
@@ -364,7 +372,8 @@ func (d *Driver) Restart() error {
 		return err
 	}
 
-	return nil
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Kill() error {
@@ -381,7 +390,12 @@ func (d *Driver) Kill() error {
 
 	log.Debugf("killing %s", d.MachineName)
 
-	return vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
+	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+	return nil
 }
 
 func generateVMName() string {
