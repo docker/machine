@@ -8,6 +8,7 @@ import (
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/log"
 )
 
 var provisioners = make(map[string]*RegisteredProvisioner)
@@ -82,6 +83,7 @@ func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 		provisioner.SetOsReleaseInfo(osReleaseInfo)
 
 		if provisioner.CompatibleWithHost() {
+			log.Debugf("Compatible OS: %s", osReleaseInfo.Id)
 			return provisioner, nil
 		}
 	}
