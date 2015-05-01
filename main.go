@@ -74,7 +74,7 @@ func main() {
 		},
 		cli.StringFlag{
 			EnvVar: "MACHINE_STORAGE_PATH",
-			Name:   "storage-path",
+			Name:   "s, storage-path",
 			Value:  utils.GetBaseDir(),
 			Usage:  "Configures storage path",
 		},
