@@ -1239,6 +1239,21 @@ Options:
 
 The VMware vSphere driver uses the latest boot2docker image.
 
+#### exoscale
+Create machines on [exoscale](https://www.exoscale.ch/).
+
+Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
+
+Options:
+
+ - `--exoscale-api-key`: Your API key.
+ - `--exoscale-api-secret-key`: Your API secret key.
+ - `--exoscale-instance-profile`: Instance profile. Default: `small`.
+ - `--exoscale-disk-size`: Disk size for the host in GB. Default: `50`.
+ - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
+
+If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
+
 ## Release Notes
 
 ### Version 0.2.0 (April 16, 2015)
