@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/pkg/term"
 	"github.com/docker/machine/log"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Client struct {
@@ -97,6 +98,28 @@ func (client *Client) Run(command string) (Output, error) {
 	output = Output{
 		Stdout: &stdout,
 		Stderr: &stderr,
+	}
+
+	fd := int(os.Stdin.Fd())
+	if err != nil {
+		return output, err
+	}
+
+	termWidth, termHeight, err := terminal.GetSize(fd)
+	if err != nil {
+		return output, err
+	}
+
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          1,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+
+	// request tty -- fixes error with hosts that use
+	// "Defaults requiretty" in /etc/sudoers - I'm looking at you RedHat
+	if err := session.RequestPty("xterm-256color", termHeight, termWidth, modes); err != nil {
+		return output, err
 	}
 
 	return output, session.Run(command)
