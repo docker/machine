@@ -999,6 +999,21 @@ Options:
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
+#### exoscale
+Create machines on [exoscale](https://www.exoscale.ch/).
+
+Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
+
+Options:
+
+ - `--exoscale-api-key`: Your API key.
+ - `--exoscale-api-secret-key`: Your API secret key.
+ - `--exoscale-instance-profile`: Instance profile. Default: `small`.
+ - `--exoscale-disk-size`: Disk size for the host in GB. Default: `50`.
+ - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
+
+If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
+
 #### Generic
 Create machines using an existing VM/Host with SSH.
 
@@ -1281,20 +1296,13 @@ Options:
 
 The VMware vSphere driver uses the latest boot2docker image.
 
-#### exoscale
-Create machines on [exoscale](https://www.exoscale.ch/).
-
-Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
-
-Options:
-
- - `--exoscale-api-key`: Your API key.
- - `--exoscale-api-secret-key`: Your API secret key.
- - `--exoscale-instance-profile`: Instance profile. Default: `small`.
- - `--exoscale-disk-size`: Disk size for the host in GB. Default: `50`.
- - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
-
-If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
+## Base Operating Systems
+The default base operating system for Machine is Boot2Docker on local providers
+(VirtualBox, Fusion, Hyper-V, etc) and the latest Ubuntu LTS supported
+by the cloud provider.  RedHat Enterprise Linux is also supported.  To use
+RHEL, you will need to select the image accordingly with the provider.  For
+example, in Amazon EC2, you could use "ami-12663b7a" as the
+`--amazonec2-ami` option which create an instance using RHEL 7.1 64-bit.
 
 ## Release Notes
 
