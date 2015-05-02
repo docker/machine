@@ -193,10 +193,10 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// No hosts set
+	// No host set
 	host, err := store.GetActive()
-	if err != nil {
-		t.Fatal(err)
+	if err == nil {
+		t.Fatal("Expected an error because there is no active host set")
 	}
 
 	if host != nil {
@@ -213,11 +213,12 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	originalHost := host
-
-	if err := store.SetActive(originalHost); err != nil {
+	url, err := host.GetURL()
+	if err != nil {
 		t.Fatal(err)
 	}
+
+	os.Setenv("DOCKER_HOST", url)
 
 	host, err = store.GetActive()
 	if err != nil {
@@ -225,26 +226,5 @@ func TestStoreGetSetActive(t *testing.T) {
 	}
 	if host.Name != host.Name {
 		t.Fatalf("Active host is not 'test', got %s", host.Name)
-	}
-	isActive, err := store.IsActive(host)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if isActive != true {
-		t.Fatal("IsActive: Active host is not test")
-	}
-
-	// remove active host altogether
-	if err := store.RemoveActive(); err != nil {
-		t.Fatal(err)
-	}
-
-	host, err = store.GetActive()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if host != nil {
-		t.Fatalf("Active host %s is not nil", host.Name)
 	}
 }

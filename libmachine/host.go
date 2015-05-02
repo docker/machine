@@ -64,6 +64,15 @@ type HostMetadata struct {
 	ClientCertPath string
 }
 
+type HostListItem struct {
+	Name         string
+	Active       bool
+	DriverName   string
+	State        state.State
+	URL          string
+	SwarmOptions swarm.SwarmOptions
+}
+
 func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
 	authOptions := hostOptions.AuthOptions
 	storePath := filepath.Join(utils.GetMachineDir(), name)
@@ -374,4 +383,47 @@ func WaitForSSH(h *Host) error {
 		return fmt.Errorf("Too many retries.  Last error: %s", err)
 	}
 	return nil
+}
+
+func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
+	currentState, err := host.Driver.GetState()
+	if err != nil {
+		log.Errorf("error getting state for host %s: %s", host.Name, err)
+	}
+
+	url, err := host.GetURL()
+	if err != nil {
+		if err == drivers.ErrHostIsNotRunning {
+			url = ""
+		} else {
+			log.Errorf("error getting URL for host %s: %s", host.Name, err)
+		}
+	}
+
+	dockerHost := os.Getenv("DOCKER_HOST")
+
+	hostListItemsChan <- HostListItem{
+		Name:         host.Name,
+		Active:       dockerHost == url && currentState != state.Stopped,
+		DriverName:   host.Driver.DriverName(),
+		State:        currentState,
+		URL:          url,
+		SwarmOptions: *host.HostOptions.SwarmOptions,
+	}
+}
+
+func GetHostListItems(hostList []*Host) []HostListItem {
+	hostListItems := []HostListItem{}
+	hostListItemsChan := make(chan HostListItem)
+
+	for _, host := range hostList {
+		go getHostState(*host, hostListItemsChan)
+	}
+
+	for _ = range hostList {
+		hostListItems = append(hostListItems, <-hostListItemsChan)
+	}
+
+	close(hostListItemsChan)
+	return hostListItems
 }

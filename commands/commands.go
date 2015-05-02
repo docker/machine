@@ -32,12 +32,13 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
-	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
 
 var (
-	ErrUnknownShell = errors.New("unknown shell")
+	ErrUnknownShell       = errors.New("Error: Unknown shell")
+	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments.")
+	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument.")
 )
 
 type machineConfig struct {
@@ -54,17 +55,8 @@ type machineConfig struct {
 	SwarmOptions   swarm.SwarmOptions
 }
 
-type hostListItem struct {
-	Name         string
-	Active       bool
-	DriverName   string
-	State        state.State
-	URL          string
-	SwarmOptions swarm.SwarmOptions
-}
-
-func sortHostListItemsByName(items []hostListItem) {
-	m := make(map[string]hostListItem, len(items))
+func sortHostListItemsByName(items []libmachine.HostListItem) {
+	m := make(map[string]libmachine.HostListItem, len(items))
 	s := make([]string, len(items))
 	for i, v := range items {
 		name := strings.ToLower(v.Name)
@@ -226,13 +218,13 @@ var sharedCreateFlags = []cli.Flag{
 var Commands = []cli.Command{
 	{
 		Name:   "active",
-		Usage:  "Get or set the active machine",
+		Usage:  "Print which machine is active",
 		Action: cmdActive,
 	},
 	{
 		Name:        "config",
 		Usage:       "Print the connection config for machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument is a machine name.",
 		Action:      cmdConfig,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -253,7 +245,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "env",
 		Usage:       "Display the commands to set up the environment for the Docker client",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument is a machine name.",
 		Action:      cmdEnv,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -273,7 +265,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "inspect",
 		Usage:       "Inspect information about a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument is a machine name.",
 		Action:      cmdInspect,
 		Flags: []cli.Flag{
 			cli.StringFlag{
@@ -286,13 +278,13 @@ var Commands = []cli.Command{
 	{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
-		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdIp,
 	},
 	{
 		Name:        "kill",
 		Usage:       "Kill a machine",
-		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdKill,
 	},
 	{
@@ -309,7 +301,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "regenerate-certs",
 		Usage:       "Regenerate TLS Certificates for a machine",
-		Description: "Argument(s) are one or more machine names.  Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdRegenerateCerts,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -321,7 +313,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "restart",
 		Usage:       "Restart a machine",
-		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdRestart,
 	},
 	{
@@ -338,32 +330,32 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:        "ssh",
-		Usage:       "Log into or run a command on a machine with SSH",
-		Description: "Arguments are [machine-name] command - Will use the active machine if none is provided.",
+		Usage:       "Log into or run a command on a machine with SSH.",
+		Description: "Arguments are [machine-name] [command]",
 		Action:      cmdSsh,
 	},
 	{
 		Name:        "start",
 		Usage:       "Start a machine",
-		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdStart,
 	},
 	{
 		Name:        "stop",
 		Usage:       "Stop a machine",
-		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdStop,
 	},
 	{
 		Name:        "upgrade",
 		Usage:       "Upgrade a machine to the latest version of Docker",
-		Description: "Argument(s) are one or more machine names. Will use the active machine if none is provided.",
+		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdUpgrade,
 	},
 	{
 		Name:        "url",
 		Usage:       "Get the URL of a machine",
-		Description: "Argument is a machine name. Will use the active machine if none is provided.",
+		Description: "Argument is a machine name.",
 		Action:      cmdUrl,
 	},
 }
@@ -443,31 +435,8 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 		return err
 	}
 
-	// No args specified, so use active.
 	if len(machines) == 0 {
-		certInfo := getCertPathInfo(c)
-		defaultStore, err := getDefaultStore(
-			c.GlobalString("storage-path"),
-			certInfo.CaCertPath,
-			certInfo.CaKeyPath,
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		mcn, err := newMcn(defaultStore)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		activeHost, err := mcn.GetActive()
-		if err != nil {
-			log.Fatalf("Unable to get active host: %v", err)
-		}
-		if activeHost == nil {
-			log.Fatalf("There is no active host. Please set it with %s active <machine name>.", c.App.Name)
-		}
-		machines = []*libmachine.Host{activeHost}
+		log.Fatal(ErrNoMachineSpecified)
 	}
 
 	runActionForeachMachine(actionName, machines)
@@ -530,18 +499,6 @@ func getHost(c *cli.Context) *libmachine.Host {
 		log.Fatal(err)
 	}
 
-	if name == "" {
-		host, err := mcn.GetActive()
-		if err != nil {
-			log.Fatalf("unable to get active host: %v", err)
-		}
-
-		if host == nil {
-			log.Fatal("unable to get active host, active file not found")
-		}
-		return host
-	}
-
 	host, err := mcn.Get(name)
 	if err != nil {
 		log.Fatalf("unable to load host: %v", err)
@@ -549,35 +506,23 @@ func getHost(c *cli.Context) *libmachine.Host {
 	return host
 }
 
-func getHostState(host libmachine.Host, store libmachine.Store, hostListItems chan<- hostListItem) {
-	currentState, err := host.Driver.GetState()
+func getDefaultMcn(c *cli.Context) *libmachine.Machine {
+	certInfo := getCertPathInfo(c)
+	defaultStore, err := getDefaultStore(
+		c.GlobalString("storage-path"),
+		certInfo.CaCertPath,
+		certInfo.CaKeyPath,
+	)
 	if err != nil {
-		log.Errorf("error getting state for host %s: %s", host.Name, err)
+		log.Fatal(err)
 	}
 
-	url, err := host.GetURL()
+	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		if err == drivers.ErrHostIsNotRunning {
-			url = ""
-		} else {
-			log.Errorf("error getting URL for host %s: %s", host.Name, err)
-		}
+		log.Fatal(err)
 	}
 
-	isActive, err := store.IsActive(&host)
-	if err != nil {
-		log.Debugf("error determining whether host %q is active: %s",
-			host.Name, err)
-	}
-
-	hostListItems <- hostListItem{
-		Name:         host.Name,
-		Active:       isActive,
-		DriverName:   host.Driver.DriverName(),
-		State:        currentState,
-		URL:          url,
-		SwarmOptions: *host.HostOptions.SwarmOptions,
-	}
+	return mcn
 }
 
 func getMachineConfig(c *cli.Context) (*machineConfig, error) {
@@ -597,33 +542,16 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		log.Fatal(err)
 	}
 
-	var machine *libmachine.Host
+	m, err := mcn.Get(name)
 
-	if name == "" {
-		m, err := mcn.GetActive()
-		if err != nil {
-			log.Fatalf("error getting active host: %v", err)
-		}
-		if m == nil {
-			return nil, fmt.Errorf("There is no active host")
-		}
-		machine = m
-	} else {
-		m, err := mcn.Get(name)
-		if err != nil {
-			return nil, fmt.Errorf("Error loading machine config: %s", err)
-		}
-		machine = m
-	}
-
-	machineDir := filepath.Join(utils.GetMachineDir(), machine.Name)
+	machineDir := filepath.Join(utils.GetMachineDir(), m.Name)
 	caCert := filepath.Join(machineDir, "ca.pem")
 	caKey := filepath.Join(utils.GetMachineCertDir(), "ca-key.pem")
 	clientCert := filepath.Join(machineDir, "cert.pem")
 	clientKey := filepath.Join(machineDir, "key.pem")
 	serverCert := filepath.Join(machineDir, "server.pem")
 	serverKey := filepath.Join(machineDir, "server-key.pem")
-	machineUrl, err := machine.GetURL()
+	machineUrl, err := m.GetURL()
 	if err != nil {
 		if err == drivers.ErrHostIsNotRunning {
 			machineUrl = ""
@@ -641,8 +569,8 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		caKeyPath:      caKey,
 		caCertPath:     caCert,
 		serverKeyPath:  serverKey,
-		AuthOptions:    *machine.HostOptions.AuthOptions,
-		SwarmOptions:   *machine.HostOptions.SwarmOptions,
+		AuthOptions:    *m.HostOptions.AuthOptions,
+		SwarmOptions:   *m.HostOptions.SwarmOptions,
 	}, nil
 }
 

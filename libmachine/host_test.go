@@ -14,6 +14,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/state"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -225,4 +226,90 @@ func captureStdout() (chan string, *os.File) {
 	}()
 
 	return out, w
+}
+
+func TestGetHostListItems(t *testing.T) {
+	defer cleanup()
+
+	hostListItemsChan := make(chan HostListItem)
+
+	store, err := getTestStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hosts := []Host{
+		{
+			Name:       "foo",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Running,
+			},
+			StorePath: store.GetPath(),
+			HostOptions: &HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+		{
+			Name:       "bar",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Stopped,
+			},
+			StorePath: store.GetPath(),
+			HostOptions: &HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+		{
+			Name:       "baz",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Running,
+			},
+			StorePath: store.GetPath(),
+			HostOptions: &HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+	}
+
+	for _, h := range hosts {
+		if err := store.Save(&h); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	expected := map[string]state.State{
+		"foo": state.Running,
+		"bar": state.Stopped,
+		"baz": state.Running,
+	}
+
+	items := []HostListItem{}
+	for _, host := range hosts {
+		go getHostState(host, hostListItemsChan)
+	}
+
+	for i := 0; i < len(hosts); i++ {
+		items = append(items, <-hostListItemsChan)
+	}
+
+	for _, item := range items {
+		if expected[item.Name] != item.State {
+			t.Fatal("Expected state did not match for item", item)
+		}
+	}
 }
