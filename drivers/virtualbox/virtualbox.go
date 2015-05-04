@@ -393,6 +393,10 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
+	if err := drivers.WaitForSSH(d); err != nil {
+		return err
+	}
+
 	d.IPAddress, err = d.GetIP()
 	return err
 }

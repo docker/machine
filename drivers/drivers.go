@@ -8,7 +8,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/provider"
-	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
 
@@ -171,34 +170,6 @@ type DriverOptions interface {
 	String(key string) string
 	Int(key string) int
 	Bool(key string) bool
-}
-
-func RunSSHCommandFromDriver(d Driver, args string) (ssh.Output, error) {
-	var output ssh.Output
-
-	host, err := d.GetSSHHostname()
-	if err != nil {
-		return output, err
-	}
-
-	port, err := d.GetSSHPort()
-	if err != nil {
-		return output, err
-	}
-
-	user := d.GetSSHUsername()
-	keyPath := d.GetSSHKeyPath()
-
-	auth := &ssh.Auth{
-		Keys: []string{keyPath},
-	}
-
-	client, err := ssh.NewClient(user, host, port, auth)
-	if err != nil {
-		return output, err
-	}
-
-	return client.Run(args)
 }
 
 func MachineInState(d Driver, desiredState state.State) func() bool {
