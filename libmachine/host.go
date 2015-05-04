@@ -136,25 +136,7 @@ func (h *Host) Create(name string) error {
 }
 
 func (h *Host) RunSSHCommand(command string) (ssh.Output, error) {
-	var output ssh.Output
-
-	addr, err := h.Driver.GetSSHHostname()
-	if err != nil {
-		return output, err
-	}
-
-	port, err := h.Driver.GetSSHPort()
-	if err != nil {
-		return output, err
-	}
-
-	auth := &ssh.Auth{
-		Keys: []string{h.Driver.GetSSHKeyPath()},
-	}
-
-	client, err := ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
-
-	return client.Run(command)
+	return drivers.RunSSHCommandFromDriver(h.Driver, command)
 }
 
 func (h *Host) CreateSSHShell() error {
@@ -352,37 +334,8 @@ func (h *Host) PrintIP() error {
 	return nil
 }
 
-func sshAvailableFunc(h *Host) func() bool {
-	return func() bool {
-		log.Debug("Getting to WaitForSSH function...")
-		hostname, err := h.Driver.GetSSHHostname()
-		if err != nil {
-			log.Debugf("Error getting IP address waiting for SSH: %s", err)
-			return false
-		}
-		port, err := h.Driver.GetSSHPort()
-		if err != nil {
-			log.Debugf("Error getting SSH port: %s", err)
-			return false
-		}
-		if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", hostname, port)); err != nil {
-			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
-			return false
-		}
-
-		if _, err := h.RunSSHCommand("exit 0"); err != nil {
-			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
-			return false
-		}
-		return true
-	}
-}
-
 func WaitForSSH(h *Host) error {
-	if err := utils.WaitFor(sshAvailableFunc(h)); err != nil {
-		return fmt.Errorf("Too many retries.  Last error: %s", err)
-	}
-	return nil
+	return drivers.WaitForSSH(h.Driver)
 }
 
 func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
