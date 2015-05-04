@@ -275,7 +275,11 @@ func (d *Driver) GetIP() (string, error) {
 	if d.IPAddress != "" {
 		return d.IPAddress, nil
 	}
-	return d.getClient().VirtualGuest().GetPublicIp(d.Id)
+	if d.deviceConfig.PrivateNet {
+		return d.getClient().VirtualGuest().GetPrivateIp(d.Id)
+	} else {
+		return d.getClient().VirtualGuest().GetPublicIp(d.Id)
+	}
 }
 
 func (d *Driver) GetState() (state.State, error) {
