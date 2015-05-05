@@ -784,7 +784,29 @@ dev    *        virtualbox   Stopped
 
 #### ls
 
-List machines.
+```
+Usage: docker-machine ls [OPTIONS] [arg...]
+
+List machines
+
+Options:
+
+   --quiet, -q					Enable quiet mode
+   --filter [--filter option --filter option]	Filter output based on conditions provided
+```
+
+##### Filtering
+
+The filtering flag (`-f` or `--filter)` format is a `key=value` pair. If there is more
+than one filter, then pass multiple flags (e.g. `--filter "foo=bar" --filter "bif=baz"`)
+
+The currently supported filters are:
+
+* driver (driver name)
+* swarm (swarm master's name)
+* state (`Running|Paused|Saved|Stopped|Stopping|Starting|Error`)
+
+##### Examples
 
 ```
 $ docker-machine ls
@@ -792,9 +814,13 @@ NAME   ACTIVE   DRIVER       STATE     URL
 dev             virtualbox   Stopped
 foo0            virtualbox   Running   tcp://192.168.99.105:2376
 foo1            virtualbox   Running   tcp://192.168.99.106:2376
-foo2            virtualbox   Running   tcp://192.168.99.107:2376
-foo3            virtualbox   Running   tcp://192.168.99.108:2376
-foo4   *        virtualbox   Running   tcp://192.168.99.109:2376
+foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
+```
+
+```
+$ docker-machine ls --filter driver=virtualbox --filter state=Stopped
+NAME   ACTIVE   DRIVER       STATE     URL   SWARM
+dev             virtualbox   Stopped
 ```
 
 #### regenerate-certs
@@ -1030,7 +1056,7 @@ Options:
  - `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
  - `--google-disk-size`: The disk size of instance. Default: `10`
  - `--google-disk-type`: The disk type of instance. Default: `pd-standard`
- 
+
 The GCE driver will use the `ubuntu-1404-trusty-v20150316` instance type unless otherwise specified.
 
 #### IBM Softlayer
