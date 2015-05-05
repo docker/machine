@@ -301,7 +301,7 @@ func (d *Driver) GetIP() (string, error) {
 	if d.IPAddress != "" {
 		return d.IPAddress, nil
 	}
-	if d.deviceConfig.PrivateNet {
+	if d.deviceConfig != nil && d.deviceConfig.PrivateNet == true {
 		return d.getClient().VirtualGuest().GetPrivateIp(d.Id)
 	} else {
 		return d.getClient().VirtualGuest().GetPublicIp(d.Id)
