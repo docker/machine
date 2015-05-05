@@ -11,7 +11,6 @@ import (
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 )
 
@@ -23,20 +22,20 @@ func init() {
 
 func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 	return &RedHatProvisioner{
-		packages: []string{
-			"curl",
+		GenericProvisioner{
+			DockerOptionsDir:  "/etc/docker",
+			DaemonOptionsFile: "/etc/sysconfig/docker",
+			OsReleaseId:       "rhel",
+			Packages: []string{
+				"curl",
+			},
+			Driver: d,
 		},
-		Driver: d,
 	}
 }
 
 type RedHatProvisioner struct {
-	packages      []string
-	OsReleaseInfo *OsRelease
-	Driver        drivers.Driver
-	AuthOptions   auth.AuthOptions
-	EngineOptions engine.EngineOptions
-	SwarmOptions  swarm.SwarmOptions
+	GenericProvisioner
 }
 
 func (provisioner *RedHatProvisioner) Service(name string, action pkgaction.ServiceAction) error {
@@ -88,6 +87,7 @@ func (provisioner *RedHatProvisioner) configureRepos() error {
 	// TODO: should this be handled differently? on aws we need to enable
 	// the extras repo different than a standalone rhel box
 
+	log.Debug("configuring extra repo")
 	repoCmd := "subscription-manager repos --enable=rhel-7-server-extras-rpms"
 	if provisioner.isAWS() {
 		repoCmd = "yum-config-manager --enable rhui-REGION-rhel-server-extras"
@@ -100,7 +100,7 @@ func (provisioner *RedHatProvisioner) configureRepos() error {
 	return nil
 }
 
-func (provisioner *RedHatProvisioner) installDocker() error {
+func installDocker(provisioner *RedHatProvisioner) error {
 	if err := provisioner.Package("docker", pkgaction.Install); err != nil {
 		return err
 	}
@@ -132,7 +132,9 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	provisioner.EngineOptions = engineOptions
 
 	// set default storage driver for redhat
-	provisioner.EngineOptions.StorageDriver = "devicemapper"
+	if provisioner.EngineOptions.StorageDriver == "" {
+		provisioner.EngineOptions.StorageDriver = "devicemapper"
+	}
 
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
@@ -143,14 +145,14 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	for _, pkg := range provisioner.packages {
+	for _, pkg := range provisioner.Packages {
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
 			return err
 		}
 	}
 
 	// install docker
-	if err := provisioner.installDocker(); err != nil {
+	if err := installDocker(provisioner); err != nil {
 		return err
 	}
 
@@ -173,63 +175,6 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	return nil
-}
-
-func (provisioner *RedHatProvisioner) Hostname() (string, error) {
-	output, err := provisioner.SSHCommand("hostname")
-	if err != nil {
-		return "", err
-	}
-
-	var so bytes.Buffer
-	if _, err := so.ReadFrom(output.Stdout); err != nil {
-		return "", err
-	}
-
-	return so.String(), nil
-}
-
-func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
-	if out, err := provisioner.SSHCommand(fmt.Sprintf(
-		"sudo hostname %s && echo %q | sudo tee /etc/hostname",
-		hostname,
-		hostname,
-	)); err != nil {
-		log.Info(out)
-		log.Errorf("error setting hostname: %s", err)
-		return err
-	}
-
-	if _, err := provisioner.SSHCommand(fmt.Sprintf(
-		"if grep -xq 127.0.1.1.* /etc/hosts; then sudo sed -i 's/^127.0.1.1.*/127.0.1.1 %s/g' /etc/hosts; else echo '127.0.1.1 %s' | sudo tee -a /etc/hosts; fi",
-		hostname,
-		hostname,
-	)); err != nil {
-		log.Errorf("error setting /etc/hosts: %s", err)
-		return err
-	}
-
-	return nil
-}
-
-func (provisioner *RedHatProvisioner) GetDockerOptionsDir() string {
-	return "/etc/docker"
-}
-
-func (provisioner *RedHatProvisioner) SSHCommand(args string) (ssh.Output, error) {
-	return drivers.RunSSHCommandFromDriver(provisioner.Driver, args)
-}
-
-func (provisioner *RedHatProvisioner) CompatibleWithHost() bool {
-	return provisioner.OsReleaseInfo.Id == "rhel"
-}
-
-func (provisioner *RedHatProvisioner) GetAuthOptions() auth.AuthOptions {
-	return provisioner.AuthOptions
-}
-
-func (provisioner *RedHatProvisioner) SetOsReleaseInfo(info *OsRelease) {
-	provisioner.OsReleaseInfo = info
 }
 
 func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
@@ -272,8 +217,4 @@ GOTRACEBACK='crash'
 		EngineOptions:     engineCfg.String(),
 		EngineOptionsPath: daemonOptsDir,
 	}, nil
-}
-
-func (provisioner *RedHatProvisioner) GetDriver() drivers.Driver {
-	return provisioner.Driver
 }
