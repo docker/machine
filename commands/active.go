@@ -8,7 +8,9 @@ import (
 )
 
 func cmdActive(c *cli.Context) {
-	name := c.Args().First()
+	if len(c.Args()) > 0 {
+		log.Fatal("Error: Too many arguments given.")
+	}
 
 	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
@@ -25,24 +27,12 @@ func cmdActive(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	if name == "" {
-		host, err := mcn.GetActive()
-		if err != nil {
-			log.Fatalf("error getting active host: %v", err)
-		}
-		if host != nil {
-			fmt.Println(host.Name)
-		}
-	} else if name != "" {
-		host, err := mcn.Get(name)
-		if err != nil {
-			log.Fatalf("error loading host: %v", err)
-		}
+	host, err := mcn.GetActive()
+	if err != nil {
+		log.Fatalf("Error getting active host: %s", err)
+	}
 
-		if err := mcn.SetActive(host); err != nil {
-			log.Fatalf("error setting active host: %v", err)
-		}
-	} else {
-		cli.ShowCommandHelp(c, "active")
+	if host != nil {
+		fmt.Println(host.Name)
 	}
 }

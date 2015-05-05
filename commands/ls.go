@@ -2,36 +2,16 @@ package commands
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"text/tabwriter"
 
-	"github.com/docker/machine/log"
-
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/libmachine"
 )
 
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
-
-	certInfo := getCertPathInfo(c)
-	defaultStore, err := getDefaultStore(
-		c.GlobalString("storage-path"),
-		certInfo.CaCertPath,
-		certInfo.CaKeyPath,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	mcn, err := newMcn(defaultStore)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	hostList, err := mcn.List()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
 
@@ -39,8 +19,11 @@ func cmdLs(c *cli.Context) {
 		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM")
 	}
 
-	items := []hostListItem{}
-	hostListItems := make(chan hostListItem)
+	mcn := getDefaultMcn(c)
+	hostList, err := mcn.List()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	swarmMasters := make(map[string]string)
 	swarmInfo := make(map[string]string)
@@ -55,20 +38,12 @@ func cmdLs(c *cli.Context) {
 			if swarmOptions.Discovery != "" {
 				swarmInfo[host.Name] = swarmOptions.Discovery
 			}
-
-			go getHostState(*host, defaultStore, hostListItems)
 		} else {
 			fmt.Fprintf(w, "%s\n", host.Name)
 		}
 	}
 
-	if !quiet {
-		for i := 0; i < len(hostList); i++ {
-			items = append(items, <-hostListItems)
-		}
-	}
-
-	close(hostListItems)
+	items := libmachine.GetHostListItems(hostList)
 
 	sortHostListItemsByName(items)
 

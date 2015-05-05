@@ -2,6 +2,7 @@ package libmachine
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -111,39 +112,23 @@ func (s Filestore) Get(name string) (*Host, error) {
 }
 
 func (s Filestore) GetActive() (*Host, error) {
-	hostName, err := ioutil.ReadFile(s.activePath())
-	if os.IsNotExist(err) {
-		return nil, nil
-	} else if err != nil {
+	hosts, err := s.List()
+	if err != nil {
 		return nil, err
 	}
-	return s.Get(string(hostName))
-}
 
-func (s Filestore) IsActive(host *Host) (bool, error) {
-	active, err := s.GetActive()
-	if err != nil {
-		return false, err
+	dockerHost := os.Getenv("DOCKER_HOST")
+	hostListItems := GetHostListItems(hosts)
+
+	for _, item := range hostListItems {
+		if dockerHost == item.URL {
+			host, err := s.Get(item.Name)
+			if err != nil {
+				return nil, err
+			}
+			return host, nil
+		}
 	}
-	if active == nil {
-		return false, nil
-	}
-	return active.Name == host.Name, nil
-}
 
-func (s Filestore) SetActive(host *Host) error {
-	if err := os.MkdirAll(filepath.Dir(s.activePath()), 0700); err != nil {
-		return err
-	}
-	return ioutil.WriteFile(s.activePath(), []byte(host.Name), 0600)
-}
-
-func (s Filestore) RemoveActive() error {
-	return os.Remove(s.activePath())
-}
-
-// activePath returns the path to the file that stores the name of the
-// active host
-func (s Filestore) activePath() string {
-	return filepath.Join(utils.GetMachineDir(), ".active")
+	return nil, errors.New("Active host not found")
 }
