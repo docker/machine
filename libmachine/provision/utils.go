@@ -107,6 +107,7 @@ func ConfigureAuth(p Provisioner) error {
 		org,
 		bits,
 	)
+
 	if err != nil {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
@@ -185,6 +186,8 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 	if !swarmOptions.IsSwarm {
 		return nil
 	}
+
+	log.Debug("configuring swarm")
 
 	basePath := p.GetDockerOptionsDir()
 	ip, err := p.GetDriver().GetIP()
