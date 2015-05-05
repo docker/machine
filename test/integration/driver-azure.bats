@@ -7,17 +7,12 @@ export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 
 @test "$DRIVER: machine should not exist" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
 @test "$DRIVER: create" {
   run machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
-
-@test "$DRIVER: active" {
-  run machine active $NAME
   [ "$status" -eq 0  ]
 }
 
@@ -98,7 +93,7 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 }
 
 @test "$DRIVER: machine should not exist" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 

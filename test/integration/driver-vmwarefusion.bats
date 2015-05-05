@@ -12,17 +12,12 @@ function setup() {
 }
 
 @test "$DRIVER: docker-machine should not exist" {
-  run docker-machine active $NAME
+  run docker-machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
 @test "$DRIVER: create" {
   run docker-machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
-
-@test "$DRIVER: active" {
-  run docker-machine active $NAME
   [ "$status" -eq 0  ]
 }
 
@@ -103,7 +98,7 @@ function setup() {
 }
 
 @test "$DRIVER: docker-machine should not exist" {
-  run docker-machine active $NAME
+  run docker-machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 

@@ -43,7 +43,7 @@ buildMachineWithOldIsoCheckUpgrade() {
 }
 
 @test "$DRIVER: machine should not exist" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
@@ -54,11 +54,6 @@ buildMachineWithOldIsoCheckUpgrade() {
 
 @test "$DRIVER: create" {
   run machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
-
-@test "$DRIVER: active" {
-  run machine active $NAME
   [ "$status" -eq 0  ]
 }
 
@@ -203,7 +198,7 @@ buildMachineWithOldIsoCheckUpgrade() {
 }
 
 @test "$DRIVER: machine should not exist after remove" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
