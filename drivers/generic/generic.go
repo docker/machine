@@ -31,7 +31,7 @@ type Driver struct {
 }
 
 const (
-	defaultTimeout = 5 * time.Second
+	defaultTimeout = 1 * time.Second
 )
 
 func init() {
