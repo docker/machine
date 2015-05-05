@@ -105,10 +105,6 @@ func (d *Driver) GetSSHPort() (int, error) {
 }
 
 func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "root"
-	}
-
 	return d.SSHUser
 }
 
