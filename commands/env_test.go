@@ -69,10 +69,6 @@ func TestCmdEnvBash(t *testing.T) {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := mcn.SetActive(host); err != nil {
-		t.Fatalf("error setting active host: %v", err)
-	}
-
 	outStr := make(chan string)
 
 	go func() {
@@ -82,6 +78,7 @@ func TestCmdEnvBash(t *testing.T) {
 	}()
 
 	set := flag.NewFlagSet("config", 0)
+	set.Parse([]string{"test-a"})
 	c := cli.NewContext(nil, set, set)
 	c.App = &cli.App{
 		Name: "docker-machine-test",
@@ -170,10 +167,6 @@ func TestCmdEnvFish(t *testing.T) {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := mcn.SetActive(host); err != nil {
-		t.Fatalf("error setting active host: %v", err)
-	}
-
 	outStr := make(chan string)
 
 	go func() {
@@ -183,6 +176,7 @@ func TestCmdEnvFish(t *testing.T) {
 	}()
 
 	set := flag.NewFlagSet("config", 0)
+	set.Parse([]string{"test-a"})
 	c := cli.NewContext(nil, set, set)
 	c.App = &cli.App{
 		Name: "docker-machine-test",
@@ -271,10 +265,6 @@ func TestCmdEnvPowerShell(t *testing.T) {
 		t.Fatalf("error loading host: %v", err)
 	}
 
-	if err := mcn.SetActive(host); err != nil {
-		t.Fatalf("error setting active host: %v", err)
-	}
-
 	outStr := make(chan string)
 
 	go func() {
@@ -284,6 +274,7 @@ func TestCmdEnvPowerShell(t *testing.T) {
 	}()
 
 	set := flag.NewFlagSet("config", 0)
+	set.Parse([]string{"test-a"})
 	set.String("shell", "powershell", "")
 	c := cli.NewContext(nil, set, set)
 	c.App = &cli.App{

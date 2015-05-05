@@ -11,6 +11,9 @@ import (
 )
 
 func cmdConfig(c *cli.Context) {
+	if len(c.Args()) != 1 {
+		log.Fatal(ErrExpectedOneMachine)
+	}
 	cfg, err := getMachineConfig(c)
 	if err != nil {
 		log.Fatal(err)

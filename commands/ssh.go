@@ -14,8 +14,14 @@ import (
 
 func cmdSsh(c *cli.Context) {
 	var (
-		err error
+		output ssh.Output
+		err    error
 	)
+
+	if len(c.Args()) == 0 {
+		log.Fatal("Error: Please specify a machine name.")
+	}
+
 	name := c.Args().First()
 
 	certInfo := getCertPathInfo(c)
@@ -33,19 +39,6 @@ func cmdSsh(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	if name == "" {
-		host, err := mcn.GetActive()
-		if err != nil {
-			log.Fatalf("unable to get active host: %v", err)
-		}
-
-		if host == nil {
-			log.Fatalf("There is no active host. Please set it with %s active <machine name>.", c.App.Name)
-		}
-
-		name = host.Name
-	}
-
 	host, err := mcn.Get(name)
 	if err != nil {
 		log.Fatal(err)
@@ -60,13 +53,13 @@ func cmdSsh(c *cli.Context) {
 		}
 	}
 
-	var output ssh.Output
-
-	if len(c.Args()) <= 1 {
+	if len(c.Args()) == 1 {
 		err = host.CreateSSHShell()
 	} else {
-		var cmd string
-		var args []string = c.Args()
+		var (
+			cmd  string
+			args []string = c.Args()
+		)
 
 		for i, arg := range args {
 			if arg == "--" {

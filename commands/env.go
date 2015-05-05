@@ -28,6 +28,9 @@ type ShellConfig struct {
 }
 
 func cmdEnv(c *cli.Context) {
+	if len(c.Args()) > 1 {
+		log.Fatal("Error: Expected either a machine name, or -u flag to unset the variables in the arguments.")
+	}
 	userShell := c.String("shell")
 	if userShell == "" {
 		shell, err := detectShell()
