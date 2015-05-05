@@ -69,7 +69,12 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
+	return &Driver{
+		MachineName:    machineName,
+		storePath:      storePath,
+		CaCertPath:     caCert,
+		PrivateKeyPath: privateKey,
+	}, nil
 }
 
 func (d *Driver) DriverName() string {
