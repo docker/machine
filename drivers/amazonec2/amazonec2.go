@@ -29,6 +29,7 @@ const (
 	defaultRootSize          = 16
 	ipRange                  = "0.0.0.0/0"
 	machineSecurityGroupName = "docker-machine"
+	sshUserName              = "ubuntu"
 )
 
 var (
@@ -150,12 +151,6 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "amazonec2-iam-instance-profile",
 			Usage: "AWS IAM Instance Profile",
 		},
-		cli.StringFlag{
-			Name:   "amazonec2-ssh-user",
-			Usage:  "set the name of the ssh user",
-			Value:  "ubuntu",
-			EnvVar: "AWS_SSH_USER",
-		},
 		cli.BoolFlag{
 			Name:  "amazonec2-request-spot-instance",
 			Usage: "Set this flag to request spot instance",
@@ -224,7 +219,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 
@@ -476,9 +470,8 @@ func (d *Driver) GetSSHPort() (int, error) {
 }
 
 func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "ubuntu"
-	}
+	//	ubuntu ami is must be ubuntu user
+	d.SSHUser = sshUserName
 
 	return d.SSHUser
 }
