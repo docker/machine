@@ -55,7 +55,7 @@ func newCertificate(org string) (*x509.Certificate, error) {
 		NotBefore: notBefore,
 		NotAfter:  notAfter,
 
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageKeyAgreement,
 		BasicConstraintsValid: true,
 	}, nil
 
@@ -72,6 +72,8 @@ func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
 
 	template.IsCA = true
 	template.KeyUsage |= x509.KeyUsageCertSign
+	template.KeyUsage |= x509.KeyUsageKeyEncipherment
+	template.KeyUsage |= x509.KeyUsageKeyAgreement
 
 	priv, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
