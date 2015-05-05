@@ -58,7 +58,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "generic-ssh-key",
 			Usage: "SSH private key path",
-			Value: "",
+			Value: filepath.Join(utils.GetHomeDir(), ".ssh", "id_rsa"),
 		},
 		cli.IntFlag{
 			Name:  "generic-ssh-port",
