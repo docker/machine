@@ -38,6 +38,12 @@ run:
 
     $ script/build -osarch="darwin/amd64"
 
+If you don't need to run the `docker build` to generate the image on each
+compile, i.e. if you have built the image already, you can skip the image build
+using the `SKIP_BUILD` environment variable, for instance:
+
+    $ SKIP_BUILD=1 script/build -osarch="darwin/amd64"
+
 If you have any questions we're in #docker-machine on Freenode.
 
 ## Unit Tests
