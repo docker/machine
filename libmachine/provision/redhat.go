@@ -14,6 +14,12 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+const (
+	// these are the custom dyn builds
+	dockerURL     = "https://docker-mcn.s3.amazonaws.com/public/redhat/1.6.0/dynbinary/docker-1.6.0"
+	dockerinitURL = "https://docker-mcn.s3.amazonaws.com/public/redhat/1.6.0/dynbinary/dockerinit-1.6.0"
+)
+
 func init() {
 	Register("RedHat", &RegisteredProvisioner{
 		New: NewRedHatProvisioner,
@@ -116,6 +122,29 @@ func installDocker(provisioner *RedHatProvisioner) error {
 	return nil
 }
 
+func (provisioner *RedHatProvisioner) installOfficialDocker() error {
+	log.Debug("installing official Docker binary")
+
+	if err := provisioner.Service("docker", pkgaction.Stop); err != nil {
+		return err
+	}
+
+	// TODO: replace with Docker RPMs when they are ready
+	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo -E curl -o /usr/bin/docker %s", dockerURL)); err != nil {
+		return err
+	}
+
+	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo -E curl -o /usr/libexec/docker/dockerinit %s", dockerinitURL)); err != nil {
+		return err
+	}
+
+	if err := provisioner.Service("docker", pkgaction.Restart); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (provisioner *RedHatProvisioner) dockerDaemonResponding() bool {
 	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
 		log.Warn("Error getting SSH command to check if the daemon is up: %s", err)
@@ -174,6 +203,10 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
+	if err := provisioner.installOfficialDocker(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -195,8 +228,8 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	// instead, it just continues with a different set of options; yeah...
 	engineConfigTmpl := `
 OPTIONS='--selinux-enabled -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}'
-DOCKER_CERT_PATH=/etc/docker
-ADD_REGISTRY='--add-registry registry.access.redhat.com'
+DOCKER_CERT_PATH={{.DockerOptionsDir}}
+ADD_REGISTRY=''
 GOTRACEBACK='crash'
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
@@ -205,9 +238,10 @@ GOTRACEBACK='crash'
 	}
 
 	engineConfigContext := EngineConfigContext{
-		DockerPort:    dockerPort,
-		AuthOptions:   provisioner.AuthOptions,
-		EngineOptions: provisioner.EngineOptions,
+		DockerPort:       dockerPort,
+		AuthOptions:      provisioner.AuthOptions,
+		EngineOptions:    provisioner.EngineOptions,
+		DockerOptionsDir: provisioner.DockerOptionsDir,
 	}
 
 	t.Execute(&engineCfg, engineConfigContext)
