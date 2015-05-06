@@ -57,6 +57,11 @@ buildMachineWithOldIsoCheckUpgrade() {
   [ "$status" -eq 0  ]
 }
 
+@test "$DRIVER: quiet ls" {
+  run machine ls -q
+  [[ ${output} == "$NAME" ]]
+}
+
 @test "$DRIVER: check default machine memory size" {
   findMemorySize
   [[ ${output} == "${DEFAULT_MEMSIZE}"  ]]
