@@ -60,7 +60,7 @@ virtualHW.productCompatibility = "hosted"
 virtualHW.version = "10"
 msg.autoanswer = "TRUE"
 uuid.action = "create"
-numvcpus = "{{.CPUs}}"
+numvcpus = "{{.CPU}}"
 hgfs.mapRootShare = "FALSE"
 hgfs.linkRootShare = "FALSE"
 `
