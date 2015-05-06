@@ -612,8 +612,8 @@ func getCertPathInfo(c *cli.Context) libmachine.CertPathInfo {
 func detectShell() (string, error) {
 	// attempt to get the SHELL env var
 	shell := filepath.Base(os.Getenv("SHELL"))
-	// none detected; check for windows env
-	if runtime.GOOS == "windows" {
+	// none detected; check for windows env and not bash (i.e. msysgit, etc)
+	if runtime.GOOS == "windows" && shell == "" {
 		log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
 		return "", ErrUnknownShell
 	}
