@@ -15,7 +15,7 @@ Changelog
 - Boot2Docker CLI migration guide (experimental)                                
 - Format option for `inspect` command                                           
 - New logging output format to improve readability and display across platforms 
-- Updated "active" machine concept - now is implicit according to `DOCKER_HOST` environmet variable.  Note: this removes the implicit "active" machine and can no longer be specified with the `active` command.  You change the "active" host by using the `env` command instead.
+- Updated "active" machine concept - now is implicit according to `DOCKER_HOST` environment variable.  Note: this removes the implicit "active" machine and can no longer be specified with the `active` command.  You change the "active" host by using the `env` command instead.
                                                                                 
 ## Drivers                                                                       
 - New: Exoscale Driver                                                          
