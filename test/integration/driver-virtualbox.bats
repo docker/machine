@@ -119,6 +119,11 @@ buildMachineWithOldIsoCheckUpgrade() {
   [[ ${lines[1]} == *"Stopped"*  ]]
 }
 
+@test "$DRIVER: machine should not allow upgrade when stopped" {
+  run machine upgrade $NAME
+  [[ "$status" -eq 1 ]]
+}
+
 @test "$DRIVER: start" {
   run machine start $NAME
   [ "$status" -eq 0  ]
