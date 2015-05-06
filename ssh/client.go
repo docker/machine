@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/docker/docker/pkg/term"
 	"golang.org/x/crypto/ssh"
@@ -138,9 +139,35 @@ func (client *Client) Shell() error {
 		return err
 	}
 
+	go func() {
+		for {
+			time.Sleep(time.Millisecond * 250)
+			h, w := client.getWinsize(fd)
+
+			payload := ssh.Marshal(&winsizeReq{
+				WidthCol:  uint32(w),
+				HeightCol: uint32(h),
+				WidthPx:   uint32(w * 8),
+				HeightPx:  uint32(h * 8),
+			})
+
+			session.SendRequest("window-change", false, payload)
+		}
+	}()
+
 	session.Wait()
 
 	return nil
+}
+
+func (client *Client) getWinsize(fd uintptr) (int, int) {
+	ws, err := term.GetWinsize(fd)
+	if err != nil {
+		if ws == nil {
+			return 24, 80
+		}
+	}
+	return int(ws.Height), int(ws.Width)
 }
 
 type Auth struct {
@@ -151,4 +178,11 @@ type Auth struct {
 type Output struct {
 	Stdout io.Reader
 	Stderr io.Reader
+}
+
+type winsizeReq struct {
+	WidthCol  uint32
+	HeightCol uint32
+	WidthPx   uint32
+	HeightPx  uint32
 }
