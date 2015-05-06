@@ -13,33 +13,34 @@ import (
 func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 
-	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
-
-	if !quiet {
-		fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM")
-	}
-
 	mcn := getDefaultMcn(c)
 	hostList, err := mcn.List()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Just print out the names if we're being quiet
+	if quiet {
+		for _, host := range hostList {
+			fmt.Println(host.Name)
+		}
+		return
+	}
+
 	swarmMasters := make(map[string]string)
 	swarmInfo := make(map[string]string)
 
+	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
+	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM")
+
 	for _, host := range hostList {
 		swarmOptions := host.HostOptions.SwarmOptions
-		if !quiet {
-			if swarmOptions.Master {
-				swarmMasters[swarmOptions.Discovery] = host.Name
-			}
+		if swarmOptions.Master {
+			swarmMasters[swarmOptions.Discovery] = host.Name
+		}
 
-			if swarmOptions.Discovery != "" {
-				swarmInfo[host.Name] = swarmOptions.Discovery
-			}
-		} else {
-			fmt.Fprintf(w, "%s\n", host.Name)
+		if swarmOptions.Discovery != "" {
+			swarmInfo[host.Name] = swarmOptions.Discovery
 		}
 	}
 
