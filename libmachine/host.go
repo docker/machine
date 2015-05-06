@@ -2,6 +2,7 @@ package libmachine
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,8 +22,9 @@ import (
 )
 
 var (
-	validHostNameChars   = `[a-zA-Z0-9\-\.]`
-	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	validHostNameChars                = `[a-zA-Z0-9\-\.]`
+	validHostNamePattern              = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
 )
 
 type Host struct {
@@ -243,6 +245,15 @@ func (h *Host) Restart() error {
 }
 
 func (h *Host) Upgrade() error {
+	machineState, err := h.Driver.GetState()
+	if err != nil {
+		return err
+	}
+
+	if machineState != state.Running {
+		log.Fatal(errMachineMustBeRunningForUpgrade)
+	}
+
 	provisioner, err := provision.DetectProvisioner(h.Driver)
 	if err != nil {
 		return err
