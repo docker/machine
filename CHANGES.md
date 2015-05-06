@@ -1,6 +1,66 @@
 Changelog
 ==========
 
+# 0.3.0 (2015-06-01)
+                                                                                
+## Features                                                                      
+- Engine option configuration (ability to configure all engine options)         
+- Swarm option configuration (ability to configure all swarm options)           
+- New Provisioning system to allow for greater flexibility and stability for installing and configuring Docker
+- RedHat provisioner (use RHEL as base OS) - (experimental)                     
+- PowerShell support (configure Windows Docker CLI)                             
+- Command Prompt (cmd.exe) support (configure Windows Docker CLI)               
+- Filter command help by driver                                                 
+- Ability to import Boot2Docker instances                                       
+- Boot2Docker CLI migration guide (experimental)                                
+- Format option for `inspect` command                                           
+- New logging output format to improve readability and display across platforms 
+- Updated "active" machine concept - now is implicit according to `DOCKER_HOST` environmet variable.  Note: this removes the implicit "active" machine and can no longer be specified with the `active` command.  You change the "active" host by using the `env` command instead.
+                                                                                
+## Drivers                                                                       
+- New: Exoscale Driver                                                          
+- New: Generic Driver (provision any host with supported base OS and SSH)          
+- Amazon EC2                                                                    
+  - SSH user is configurable                                                    
+  - Support for Spot instances                                                  
+  - Add option to use private address only                                      
+  - Base AMI updated to 20150417                                                
+- Google                                                                        
+  - Support custom disk types                                                   
+  - Updated base image to v20150316                                             
+- Openstack                                                                     
+  - Support for Keystone v3 domains                                             
+- Rackspace                                                                     
+  - Misc fixes including environment variable for Flavor Id and stability          
+- Softlayer                                                                     
+  - Enable local disk as provisioning option                                    
+  - Fixes for SSH access errors                                                 
+  - Fixed bug where public IP would always be returned when requesting private  
+  - Add support for specifying public and private VLAN IDs                      
+- VirtualBox                                                                    
+  - Stability fixes for NAT access                                              
+  - Use DNS pass through                                                        
+  - Default CPU to single core for improved performance                         
+  - Enable shared folder support for Windows hosts                                                                                                                    
+- VMware Fusion                                                                 
+  - ISO updated to Docker 1.6.0                                                 
+  - Shared folder support                                                       
+                                                                                
+## Fixes                                                                         
+- Provisioning improvements to ensure Docker is available                       
+- SSH improvements for provisioning stability                                   
+- Fixed SSH key generation bug on Windows                                       
+- Help formatting for improved readability
+
+## Special Thanks                                                                        
+We would like to thank all contributors.  Machine would not be where it is
+without you.  We would also like to give special thanks to the following
+contributors for outstanding contributions to the project:
+
+- @vincentbernat for exoscale                                                   
+- @sthulb for portable SSH library                                              
+- @hairyhenderson for several improvements to Softlayer driver, inspect formatting and lots of fixes
+
 # 0.2.0 (2015-04-16)
 
 Core Stability and Driver Updates
