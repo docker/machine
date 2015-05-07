@@ -77,8 +77,9 @@ func (client *Client) Run(command string) (Output, error) {
 			if i == maxDialAttempts {
 				return output, errors.New("Max SSH/TCP dial attempts exceeded")
 			}
+		} else {
+			break
 		}
-		break
 	}
 
 	session, err := conn.NewSession()
