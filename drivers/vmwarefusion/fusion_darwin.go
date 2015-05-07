@@ -40,7 +40,7 @@ type Driver struct {
 	IPAddress      string
 	Memory         int
 	DiskSize       int
-	CPUs           int
+	CPU            int
 	ISO            string
 	Boot2DockerURL string
 	CaCertPath     string
@@ -70,6 +70,12 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "FUSION_BOOT2DOCKER_URL",
 			Name:   "vmwarefusion-boot2docker-url",
 			Usage:  "Fusion URL for boot2docker image",
+		},
+		cli.IntFlag{
+			EnvVar: "FUSION_CPU_COUNT",
+			Name:   "vmwarefusion-cpu-count",
+			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
+			Value:  1,
 		},
 		cli.IntFlag{
 			EnvVar: "FUSION_MEMORY_SIZE",
@@ -136,21 +142,20 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("vmwarefusion-memory-size")
+	d.CPU = flags.Int("vmwarefusion-cpu-count")
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")
 	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
 	d.ISO = path.Join(d.storePath, isoFilename)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.CPUS = runtime.NumCPU()
 	d.SSHUser = "docker"
 	d.SSHPort = 22
 
 	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
 	// specs.
-	d.CPUs = int(runtime.NumCPU())
-	if d.CPUs > 16 {
-		d.CPUs = 16
+	if d.CPU > 16 {
+		d.CPU = 16
 	}
 
 	return nil
