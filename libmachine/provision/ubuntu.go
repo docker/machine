@@ -131,7 +131,7 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmOptions); err != nil {
+	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
 		return err
 	}
 
