@@ -12,8 +12,7 @@ import (
 	"github.com/docker/machine/version"
 )
 
-var AppHelpTemplate = `
-Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
+var AppHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
 
 {{.Usage}}
 
@@ -32,8 +31,7 @@ Commands:
 Run '{{.Name}} COMMAND --help' for more information on a command.
 `
 
-var CommandHelpTemplate = `
-Usage: docker-machine {{.Name}}{{if .Flags}} [OPTIONS]{{end}} [arg...]
+var CommandHelpTemplate = `Usage: docker-machine {{.Name}}{{if .Flags}} [OPTIONS]{{end}} [arg...]
 
 {{.Usage}}{{if .Description}}
 
@@ -41,8 +39,8 @@ Description:
    {{.Description}}{{end}}{{if .Flags}}
 
 Options:
-   {{range .Flags}}{{.}}
-   {{end}}{{ end }}
+   {{range .Flags}}
+   {{.}}{{end}}{{ end }}
 `
 
 func main() {
