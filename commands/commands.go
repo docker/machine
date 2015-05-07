@@ -543,6 +543,9 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 	}
 
 	m, err := mcn.Get(name)
+	if err != nil {
+		return nil, err
+	}
 
 	machineDir := filepath.Join(utils.GetMachineDir(), m.Name)
 	caCert := filepath.Join(machineDir, "ca.pem")
