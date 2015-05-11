@@ -498,7 +498,7 @@ Options:
    --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
    --virtualbox-memory "1024"                                                                           Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
    --driver, -d "none"                                                                                  Driver to create machine with. Available drivers: amazonec2, azure, digitalocean, exoscale, google, none, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere
-   --engine-flag [--engine-flag option --engine-flag option]                                            Specify arbitrary flags to include with the created engine in the form flag=value
+   --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary opts to include with the created engine in the form opt=value
    --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
    --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
    --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
@@ -575,17 +575,17 @@ If the engine supports specifying the flag multiple times (such as with
 `--label`), then so does Docker Machine.
 
 In addition to this subset of daemon flags which are directly supported, Docker
-Machine also supports an additional flag, `--engine-flag`, which can be used to
-specify arbitrary daemon options with the syntax `--engine-flag
-flagname=value`.  For example, to specify that the daemon should use `8.8.8.8`
-as the DNS server for all containers, and always use the `syslog` [log
+Machine also supports an additional flag, `--engine-opt`, which can be used to
+specify arbitrary daemon options with the syntax `--engine-opt flagname=value`.
+For example, to specify that the daemon should use `8.8.8.8` as the DNS server
+for all containers, and always use the `syslog` [log
 driver](https://docs.docker.com/reference/run/#logging-drivers-log-driver) you
 could run the following create command:
 
 ```
 $ docker-machine create -d virtualbox \
-    --engine-flag dns=8.8.8.8 \
-    --engine-flag log-driver=syslog \
+    --engine-opt dns=8.8.8.8 \
+    --engine-opt log-driver=syslog \
     gdns
 ```
 
