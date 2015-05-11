@@ -47,9 +47,10 @@ func (provisioner *UbuntuProvisioner) Service(name string, action pkgaction.Serv
 }
 
 func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.PackageAction) error {
-	var packageAction string
-
-	updateMetadata := true
+	var (
+		packageAction  string
+		updateMetadata = true
+	)
 
 	switch action {
 	case pkgaction.Install:
