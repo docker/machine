@@ -66,7 +66,7 @@ the code that you have added or modified in the same pull request.
 ## Code Coverage
 
 Machine includes a script to check for missing `*_test.go` files and to generate
-an [HTML-based repesentation of which code is covered by tests](http://blog.golang.org/cover#TOC_5.).
+an [HTML-based representation of which code is covered by tests](http://blog.golang.org/cover#TOC_5.).
 
 To run the code coverage script, execute:
 
