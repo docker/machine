@@ -69,7 +69,7 @@ func cmdCreate(c *cli.Context) {
 			ServerKeyPath:  filepath.Join(utils.GetMachineDir(), name, "server-key.pem"),
 		},
 		EngineOptions: &engine.EngineOptions{
-			ArbitraryFlags:   c.StringSlice("engine-flag"),
+			ArbitraryFlags:   c.StringSlice("engine-opt"),
 			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
 			Labels:           c.StringSlice("engine-label"),
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
