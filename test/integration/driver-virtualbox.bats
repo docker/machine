@@ -219,7 +219,7 @@ buildMachineWithOldIsoCheckUpgrade() {
 
 @test "$DRIVER: create with arbitrary engine option" {
   run machine create -d $DRIVER \
-    --engine-flag log-driver=none \
+    --engine-opt log-driver=none \
     $NAME
   [ $status -eq 0 ]
 }

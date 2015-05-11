@@ -167,7 +167,7 @@ var sharedCreateFlags = []cli.Flag{
 		Value: "none",
 	},
 	cli.StringSliceFlag{
-		Name:  "engine-flag",
+		Name:  "engine-opt",
 		Usage: "Specify arbitrary flags to include with the created engine in the form flag=value",
 		Value: &cli.StringSlice{},
 	},
