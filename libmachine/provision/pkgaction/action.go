@@ -43,3 +43,23 @@ func (s PackageAction) String() string {
 
 	return ""
 }
+
+type FirewallRuleAction int
+
+const (
+	Allow FirewallRuleAction = iota
+	Disable
+)
+
+var firewallRuleActions = []string{
+	"allow",
+	"disable",
+}
+
+func (s FirewallRuleAction) String() string {
+	if int(s) >= 0 && int(s) < len(firewallRuleActions) {
+		return firewallRuleActions[s]
+	}
+
+	return ""
+}
