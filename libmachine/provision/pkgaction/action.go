@@ -8,6 +8,7 @@ const (
 	Stop
 	Enable
 	Disable
+	DaemonReload
 )
 
 var serviceActions = []string{
@@ -16,6 +17,7 @@ var serviceActions = []string{
 	"stop",
 	"enable",
 	"disable",
+	"daemon-reload",
 }
 
 func (s ServiceAction) String() string {
