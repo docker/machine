@@ -16,16 +16,16 @@ var BashCompletionFlag = BoolFlag{
 
 // This flag prints the version for the application
 var VersionFlag = BoolFlag{
-	Name:  "version, v",
-	Usage: "print the version",
+	Name:  "v, version=false",
+	Usage: "Print version information and quit",
 }
 
 // This flag prints the help for all commands and subcommands
 // Set to the zero value (BoolFlag{}) to disable flag -- keeps subcommand
 // unless HideHelp is set to true)
 var HelpFlag = BoolFlag{
-	Name:  "help, h",
-	Usage: "show help",
+	Name:  "h, help=false",
+	Usage: "Print usage",
 }
 
 // Flag is a common interface related to parsing flags in cli.
