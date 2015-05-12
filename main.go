@@ -67,7 +67,7 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name:  "debug, D",
+			Name:  "D, debug=false",
 			Usage: "Enable debug mode",
 		},
 		cli.StringFlag{
