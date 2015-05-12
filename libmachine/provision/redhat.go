@@ -99,20 +99,6 @@ func (provisioner *RedHatProvisioner) isAWS() bool {
 	return true
 }
 
-func (provisioner *RedHatProvisioner) configureRepos() error {
-	log.Debug("configuring extra repo")
-	repoCmd := "subscription-manager repos --enable=rhel-7-server-extras-rpms"
-	if provisioner.isAWS() {
-		repoCmd = "yum-config-manager --enable rhui-REGION-rhel-server-extras"
-	}
-
-	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo %s", repoCmd)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func installDocker(provisioner *RedHatProvisioner) error {
 	if err := provisioner.installOfficialDocker(); err != nil {
 		return err
@@ -160,11 +146,6 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
-		return err
-	}
-
-	// setup extras repo
-	if err := provisioner.configureRepos(); err != nil {
 		return err
 	}
 
