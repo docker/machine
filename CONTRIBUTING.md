@@ -87,60 +87,127 @@ the coverage for the VirtualBox driver's package, browse to `/drivers/virtualbox
 You can hit `CTRL+C` to stop the server.
 
 ## Integration Tests
-We utilize [BATS](https://github.com/sstephenson/bats) for integration testing.
-This runs tests against the generated binary.  To use, make sure to install
-BATS (use that link).  Then run `./script/build` to generate the binary.  Once
-you have the binary, you can run test against a specified driver:
 
-```
-$ bats test/integration/driver-virtualbox.bats
+### Setup
+
+We utilize [BATS](https://github.com/sstephenson/bats) for integration testing.
+This runs tests against the generated binary.  To use, first make sure to
+[install BATS](https://github.com/sstephenson/bats).  Then run `./script/build`
+to generate the binary for your system.
+
+### Basic Usage
+
+Once you have the binary, the integration tests can be invoked using the
+`test/integration/run-bats.sh` wrapper script.
+
+Using this wrapper script, you can invoke a test or subset of tests for a
+particular driver.  To set the driver, use the `DRIVER` environment variable.
+
+The following examples are all shown relative to the project's root directory,
+but you should be able to invoke them from any directory without issue.
+
+To invoke just one test:
+
+```console
+$ DRIVER=virtualbox ./test/integration/run-bats.sh test/integration/core/core-commands.bats
  ✓ virtualbox: machine should not exist
- ✓ virtualbox: VM should not exist
  ✓ virtualbox: create
- ✓ virtualbox: active
  ✓ virtualbox: ls
- ✓ virtualbox: run busybox container 
+ ✓ virtualbox: run busybox container
  ✓ virtualbox: url
  ✓ virtualbox: ip
  ✓ virtualbox: ssh
+ ✓ virtualbox: docker commands with the socket should work
  ✓ virtualbox: stop
- ✓ virtualbox: machine should show stopped
+ ✓ virtualbox: machine should show stopped after stop
+ ✓ virtualbox: machine should now allow upgrade when stopped
  ✓ virtualbox: start
  ✓ virtualbox: machine should show running after start
+ ✓ virtualbox: kill
+ ✓ virtualbox: machine should show stopped after kill
  ✓ virtualbox: restart
  ✓ virtualbox: machine should show running after restart
- ✓ virtualbox: remove
- ✓ virtualbox: machine should not exist
- ✓ virtualbox: VM should not exist
-
-15 tests, 0 failures
-```
-
-You can also run the general `cli` tests:
-
-```
-$ bats test/integration/cli.bats
- ✓ cli: show info
- ✓ cli: show active help
- ✓ cli: show config help
- ✓ cli: show inspect help
- ✓ cli: show ip help
- ✓ cli: show kill help
- ✓ cli: show ls help
- ✓ cli: show restart help
- ✓ cli: show rm help
- ✓ cli: show env help
- ✓ cli: show ssh help
- ✓ cli: show start help
- ✓ cli: show stop help
- ✓ cli: show upgrade help
- ✓ cli: show url help
- ✓ flag: show version
- ✓ flag: show help
 
 17 tests, 0 failures
+Cleaning up machines...
+Successfully removed bats-virtualbox-test
 ```
+
+To invoke a shared test with a different driver:
+
+```console
+$ DRIVER=digitalocean ./test/integration/run-bats.sh test/integration/core/core-commands.bats
+...
+```
+
+To invoke a directory of tests recursively:
+
+```console
+$ DRIVER=virtualbox ./test/integration/run-bats.sh test/integration/core/
+...
+```
+
+If you want to invoke a group of tests across two or more different drivers at
+once (e.g. every test in the `drivers` directory), at the time of writing there
+is no first-class support to do so - you will have to write your own wrapper
+scripts, bash loops, etc.  However, in the future, this may gain first-class
+support as usage patterns become more clear.
+
+### Extra Create Arguments
+
+In some cases, for instance to test the creation of a specific base OS (e.g.
+RHEL) as opposed to the default with the common tests, you may want to run
+common tests with different create arguments than you get out of the box.
+
+Keep in mind that Machine supports environment variables for many of these
+flags.  So, for instance, you could run the command (substituting, of course,
+the proper secrets):
+
+```
+$ DRIVER=amazonec2 \
+  AWS_VPC_ID=vpc-xxxxxxx \
+  AWS_SECRET_ACCESS_KEY=yyyyyyyyyyyyy \
+  AWS_ACCESS_KEY_ID=zzzzzzzzzzzzzzzz \
+  AWS_AMI=ami-12663b7a \
+  AWS_SSH_USER=ec2-user \
+  ./test/integration/run-bats.sh test/integration/core
+```
+
+in order to run the core tests on Red Hat Enterprise Linux on Amazon.
+
+### Layout
+
+The `test/integration` directory is layed out to divide up tests based on the
+areas which the test.  If you are uncertain where to put yours, we are happy to
+guide you.
+
+At the time of writing, there is:
+
+1. A `core` directory which contains tests that are applicable to all drivers.
+2. A `drivers` directory which contains tests that are applicable only to
+specific drivers with sub-directories for each provider.
+3. A `cli` directory which is meant for testing functionality of the command
+line interface, without much regard for driver-specific details.
+
+### Guidelines
+
+The best practices for writing integration tests on Docker Machine are still a
+work in progress, but here are some general guidelines from the maintainers:
+
+1.  Ideally, each test file should have only one concern.
+2.  Tests generally should not spin up more than one machine unless the test is
+deliberately testing something which involves multiple machines, such as an `ls`
+test which involves several machines, or a test intended to create and check
+some property of a Swarm cluster.
+3.  BATS will print the output of commands executed during a test if the test
+fails.  This can be useful, for instance to dump the magic `$output` variable
+that BATS provides and/or to get debugging information.
+4.  It is not strictly needed to clean up the machines as part of the test.  The
+BATS wrapper script has a hook to take care of cleaning up all created machines
+after each test.
+
 # Drivers
+
 Docker Machine has several included drivers that supports provisioning hosts
 in various providers.  If you wish to contribute a driver, we ask the following
 to ensure we keep the driver in a consistent and stable state:
