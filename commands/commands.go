@@ -293,6 +293,11 @@ var Commands = []cli.Command{
 				Name:  "quiet, q",
 				Usage: "Enable quiet mode",
 			},
+			cli.StringSliceFlag{
+				Name:  "filter",
+				Usage: "Filter output based on conditions provided",
+				Value: &cli.StringSlice{},
+			},
 		},
 		Name:   "ls",
 		Usage:  "List machines",
