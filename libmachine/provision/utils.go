@@ -130,15 +130,16 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if _, err := p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(caCert), authOptions.CaCertRemotePath)); err != nil {
+	// These ones are for Jessie and Mike <3 <3 <3
+	if _, err := p.SSHCommand(fmt.Sprintf("printf \"%s\" | sudo tee %s", string(caCert), authOptions.CaCertRemotePath)); err != nil {
 		return err
 	}
 
-	if _, err := p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverCert), authOptions.ServerCertRemotePath)); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("printf \"%s\" | sudo tee %s", string(serverCert), authOptions.ServerCertRemotePath)); err != nil {
 		return err
 	}
 
-	if _, err := p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee %s", string(serverKey), authOptions.ServerKeyRemotePath)); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("printf \"%s\" | sudo tee %s", string(serverKey), authOptions.ServerKeyRemotePath)); err != nil {
 		return err
 	}
 
@@ -165,7 +166,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if _, err = p.SSHCommand(fmt.Sprintf("echo \"%s\" | sudo tee -a %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("printf \"%s\" | sudo tee %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
 		return err
 	}
 

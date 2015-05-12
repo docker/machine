@@ -312,12 +312,21 @@ func (h *Host) LoadConfig() error {
 }
 
 func (h *Host) ConfigureAuth() error {
+	if err := h.LoadConfig(); err != nil {
+		return err
+	}
+
 	provisioner, err := provision.DetectProvisioner(h.Driver)
 	if err != nil {
 		return err
 	}
 
-	if err := provision.ConfigureAuth(provisioner); err != nil {
+	// TODO: This is kind of a hack (or is it?  I'm not really sure until
+	// we have more clearly defined outlook on what the responsibilities
+	// and modularity of the provisioners should be).
+	//
+	// Call provision to re-provision the certs properly.
+	if err := provisioner.Provision(swarm.SwarmOptions{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 		return err
 	}
 
