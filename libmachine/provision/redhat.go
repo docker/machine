@@ -18,7 +18,7 @@ const (
 	// TODO: eventually the RPM install process will be integrated
 	// into the get.docker.com install script; for now
 	// we install via vendored RPMs
-	dockerRPMPath = "https://docker-mcn.s3.amazonaws.com/public/redhat/rpms/docker-engine-1.6.1-0.0.20150511.171646.git1b47f9f.el7.centos.x86_64.rpm"
+	dockerRHELRPMPath = "https://docker-mcn.s3.amazonaws.com/public/redhat/rpms/docker-engine-1.6.1-0.0.20150511.171646.git1b47f9f.el7.centos.x86_64.rpm"
 )
 
 func init() {
@@ -38,11 +38,13 @@ func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 			},
 			Driver: d,
 		},
+		dockerRHELRPMPath,
 	}
 }
 
 type RedHatProvisioner struct {
 	GenericProvisioner
+	DockerRPMPath string
 }
 
 func (provisioner *RedHatProvisioner) Service(name string, action pkgaction.ServiceAction) error {
@@ -110,7 +112,7 @@ func installDocker(provisioner *RedHatProvisioner) error {
 func (provisioner *RedHatProvisioner) installOfficialDocker() error {
 	log.Debug("installing docker")
 
-	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo yum install -y --nogpgcheck  %s", dockerRPMPath)); err != nil {
+	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo yum install -y --nogpgcheck  %s", provisioner.DockerRPMPath)); err != nil {
 		return err
 	}
 
@@ -142,6 +144,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	for _, pkg := range provisioner.Packages {
+		log.Debugf("installing base package: name=%s", pkg)
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
 			return err
 		}
