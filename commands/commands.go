@@ -14,6 +14,7 @@ import (
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/amazonec2"
 	_ "github.com/docker/machine/drivers/azure"
+	_ "github.com/docker/machine/drivers/crowbar"
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/google"
 	_ "github.com/docker/machine/drivers/hyperv"

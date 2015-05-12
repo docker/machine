@@ -27,6 +27,8 @@ Core Stability and Driver Updates
   - Fixed bug with duplicate security group authorization with Swarm
   - Support for IAM instance profile
   - Fixed bug where IP was not properly detected upon stop
+- Crowbar
+  - Initial Driver - allocates Ubuntu 14.04 image, assigns key, full power ctrl
 - DigitalOcean
   - IPv6 support
   - Backup option
@@ -79,6 +81,7 @@ Initial beta release.
 ## Included drivers
 
 - Amazon EC2
+- Crowbar (uses OpenCrowbar v2 API)
 - Digital Ocean
 - Google
 - Microsoft Azure
