@@ -22,8 +22,11 @@ func NewFedoraProvisioner(d drivers.Driver) Provisioner {
 		DockerOptionsDir:  "/etc/docker",
 		DaemonOptionsFile: "/etc/systemd/system/docker.service",
 		OsReleaseId:       "fedora",
-		Packages:          []string{},
-		Driver:            d,
+		Packages: []string{
+			"curl",
+			"yum-utils",
+		},
+		Driver: d,
 	}
 	p := &FedoraProvisioner{
 		RedHatProvisioner{
