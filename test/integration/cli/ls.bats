@@ -1,15 +1,9 @@
 #!/usr/bin/env bats
 
-load helpers
+load ${BASE_TEST_DIR}/helpers.bash
 
-teardown() {
-  echo "$BATS_TEST_NAME
-----------
-$output
-----------
-
-" >> ${BATS_LOG}
-  machine rm -f testmachine
+teardown () {
+  machine rm testmachine
 }
 
 @test "ls: filter on driver" {
