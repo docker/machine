@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	// these are the custom dyn builds
-	dockerURL     = "https://docker-mcn.s3.amazonaws.com/public/redhat/1.6.0/dynbinary/docker-1.6.0"
-	dockerinitURL = "https://docker-mcn.s3.amazonaws.com/public/redhat/1.6.0/dynbinary/dockerinit-1.6.0"
+	// TODO: eventually the RPM install process will be integrated
+	// into the get.docker.com install script; for now
+	// we install via vendored RPMs
+	dockerRPMPath = "https://docker-mcn.s3.amazonaws.com/public/redhat/1.6.0/docker-engine-1.6.1-0.0.20150511.171646.git1b47f9f.el7.centos.x86_64.rpm"
 )
 
 func init() {
@@ -30,7 +31,7 @@ func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 	return &RedHatProvisioner{
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
-			DaemonOptionsFile: "/etc/sysconfig/docker",
+			DaemonOptionsFile: "/lib/systemd/system/docker.service",
 			OsReleaseId:       "rhel",
 			Packages: []string{
 				"curl",
@@ -45,6 +46,21 @@ type RedHatProvisioner struct {
 }
 
 func (provisioner *RedHatProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+	reloadDaemon := false
+	switch action {
+	case pkgaction.Start, pkgaction.Restart:
+		reloadDaemon = true
+	}
+
+	// systemd needs reloaded when config changes on disk; we cannot
+	// be sure exactly when it changes from the provisioner so
+	// we call a reload on every restart to be safe
+	if reloadDaemon {
+		if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
+			return err
+		}
+	}
+
 	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
@@ -66,11 +82,6 @@ func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.Pack
 		packageAction = "upgrade"
 	}
 
-	switch name {
-	case "docker":
-		name = "docker"
-	}
-
 	command := fmt.Sprintf("sudo -E yum %s -y %s", packageAction, name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
@@ -89,10 +100,6 @@ func (provisioner *RedHatProvisioner) isAWS() bool {
 }
 
 func (provisioner *RedHatProvisioner) configureRepos() error {
-
-	// TODO: should this be handled differently? on aws we need to enable
-	// the extras repo different than a standalone rhel box
-
 	log.Debug("configuring extra repo")
 	repoCmd := "subscription-manager repos --enable=rhel-7-server-extras-rpms"
 	if provisioner.isAWS() {
@@ -107,7 +114,7 @@ func (provisioner *RedHatProvisioner) configureRepos() error {
 }
 
 func installDocker(provisioner *RedHatProvisioner) error {
-	if err := provisioner.Package("docker", pkgaction.Install); err != nil {
+	if err := provisioner.installOfficialDocker(); err != nil {
 		return err
 	}
 
@@ -123,22 +130,9 @@ func installDocker(provisioner *RedHatProvisioner) error {
 }
 
 func (provisioner *RedHatProvisioner) installOfficialDocker() error {
-	log.Debug("installing official Docker binary")
+	log.Debug("installing docker")
 
-	if err := provisioner.Service("docker", pkgaction.Stop); err != nil {
-		return err
-	}
-
-	// TODO: replace with Docker RPMs when they are ready
-	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo -E curl -o /usr/bin/docker %s", dockerURL)); err != nil {
-		return err
-	}
-
-	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo -E curl -o /usr/libexec/docker/dockerinit %s", dockerinitURL)); err != nil {
-		return err
-	}
-
-	if err := provisioner.Service("docker", pkgaction.Restart); err != nil {
+	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo yum install -y --nogpgcheck  %s", dockerRPMPath)); err != nil {
 		return err
 	}
 
@@ -203,17 +197,13 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	if err := provisioner.installOfficialDocker(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
 	var (
 		engineCfg  bytes.Buffer
-		configPath = "/etc/sysconfig/docker"
+		configPath = provisioner.DaemonOptionsFile
 	)
 
 	// remove existing
@@ -226,11 +216,21 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 
 	// systemd / redhat will not load options if they are on newlines
 	// instead, it just continues with a different set of options; yeah...
-	engineConfigTmpl := `
-OPTIONS='--selinux-enabled -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}'
-DOCKER_CERT_PATH={{.DockerOptionsDir}}
-ADD_REGISTRY=''
-GOTRACEBACK='crash'
+	engineConfigTmpl := `[Unit]
+Description=Docker Application Container Engine
+Documentation=http://docs.docker.com
+After=network.target docker.socket
+Required=docker.socket
+
+[Service]
+ExecStart=/usr/bin/docker -d -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+MountFlags=slave
+LimitNOFILE=1048576
+LimitNPROC=1048576
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {
