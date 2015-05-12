@@ -18,7 +18,7 @@ const (
 	// TODO: eventually the RPM install process will be integrated
 	// into the get.docker.com install script; for now
 	// we install via vendored RPMs
-	dockerRPMPath = "https://docker-mcn.s3.amazonaws.com/public/redhat/1.6.0/docker-engine-1.6.1-0.0.20150511.171646.git1b47f9f.el7.centos.x86_64.rpm"
+	dockerRPMPath = "https://docker-mcn.s3.amazonaws.com/public/redhat/rpms/docker-engine-1.6.1-0.0.20150511.171646.git1b47f9f.el7.centos.x86_64.rpm"
 )
 
 func init() {
