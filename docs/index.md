@@ -987,6 +987,7 @@ Options:
  - `--amazonec2-vpc-id`: **required** Your VPC ID to launch the instance in.
  - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e). Default: `a`
  - `--amazonec2-private-address-only`: Use the private IP address only
+ - `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 

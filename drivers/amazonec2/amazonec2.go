@@ -70,6 +70,7 @@ type Driver struct {
 	RequestSpotInstance bool
 	SpotPrice           string
 	PrivateIPOnly       bool
+	Monitoring          bool
 }
 
 func init() {
@@ -169,6 +170,10 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "amazonec2-private-address-only",
 			Usage: "Only use a private IP address",
 		},
+		cli.BoolFlag{
+			Name:  "amazonec2-monitoring",
+			Usage: "Set this flag to enable CloudWatch monitoring",
+		},
 	}
 }
 
@@ -227,6 +232,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
+	d.Monitoring = flags.Bool("amazonec2-monitoring")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -357,7 +363,7 @@ func (d *Driver) Create() error {
 	log.Debugf("launching instance in subnet %s", d.SubnetId)
 	var instance amz.EC2Instance
 	if d.RequestSpotInstance {
-		spotInstanceRequestId, err := d.getClient().RequestSpotInstances(d.AMI, d.InstanceType, d.Zone, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.SpotPrice)
+		spotInstanceRequestId, err := d.getClient().RequestSpotInstances(d.AMI, d.InstanceType, d.Zone, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.SpotPrice, d.Monitoring)
 		if err != nil {
 			return fmt.Errorf("Error request spot instance: %s", err)
 		}
@@ -378,7 +384,7 @@ func (d *Driver) Create() error {
 			return fmt.Errorf("Error get instance: %s", err)
 		}
 	} else {
-		inst, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.PrivateIPOnly)
+		inst, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.PrivateIPOnly, d.Monitoring)
 		if err != nil {
 			return fmt.Errorf("Error launching instance: %s", err)
 		}
