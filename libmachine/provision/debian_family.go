@@ -17,7 +17,7 @@ func newDebianFamilyProvisioner(d drivers.Driver, o string) DebianFamilyProvisio
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/default/docker",
-			OsReleaseId: o,
+			OsReleaseId:       o,
 			Packages: []string{
 				"curl",
 			},
@@ -25,6 +25,7 @@ func newDebianFamilyProvisioner(d drivers.Driver, o string) DebianFamilyProvisio
 		},
 	}
 }
+
 type DebianFamilyProvisioner struct {
 	GenericProvisioner
 }

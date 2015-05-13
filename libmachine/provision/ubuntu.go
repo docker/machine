@@ -10,7 +10,6 @@ func init() {
 	})
 }
 
-
 func NewUbuntuProvisioner(d drivers.Driver) Provisioner {
 	return &UbuntuProvisioner{
 		newDebianFamilyProvisioner(d, "ubuntu"),
