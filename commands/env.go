@@ -210,5 +210,5 @@ func generateUsageHint(appName, machineName, userShell string) string {
 		}
 	}
 
-	return fmt.Sprintf("# Run this command to configure your shell: %s\n", cmd)
+	return fmt.Sprintf("# Run this command to configure your shell: \n# %s\n", cmd)
 }
