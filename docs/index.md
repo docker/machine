@@ -1251,7 +1251,6 @@ Environment variables and default values:
 | `--azure-username`              | -                             | `ubuntu`              |
 
 #### Microsoft Hyper-V
-
 Creates a Boot2Docker virtual machine locally on your Windows machine
 using Hyper-V.  [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines)
 for instructions to enable Hyper-V. You will need to use an
@@ -1266,11 +1265,21 @@ Administrator level account to create and manage Hyper-V machines.
 
 Options:
 
+ - `--hyper-v-boot2docker-url`: The URL of the boot2docker ISO. Defaults to the latest available version.
  - `--hyper-v-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
- - `--hyper-v-boot2docker-url`: The URL of the boot2docker iso. Defaults to the latest available version.
- - `--hyper-v-disk-size`: Size of disk for the host in MB. Defaults to `20000`.
- - `--hyper-v-memory`: Size of memory for the host in MB. Defaults to `1024`. The machine is setup to use dynamic memory.
  - `--hyper-v-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
+ - `--hyper-v-disk-size`: Size of disk for the host in MB.
+ - `--hyper-v-memory`: Size of memory for the host in MB. By default, the machine is setup to use dynamic memory.
+
+Environment variables and default values:
+
+| CLI option                       | Environment variable | Default                  |
+|----------------------------------|----------------------| -------------------------|
+| `--hyper-v-boot2docker-url`      | -                    | *Latest boot2docker url* |
+| `--hyper-v-boot2docker-location` | -                    | -                        |
+| `--hyper-v-virtual-switch`       | -                    | *first found*            |
+| `--hyper-v-disk-size`            | -                    | `20000`                  |
+| `--hyper-v-memory`               | -                    | `1024`                   |
 
 #### Openstack
 Create machines on [Openstack](http://www.openstack.org/software/)
