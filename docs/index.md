@@ -1281,17 +1281,18 @@ Environment variables and default values:
 | `--hyper-v-disk-size`            | -                    | `20000`                  |
 | `--hyper-v-memory`               | -                    | `1024`                   |
 
-#### Openstack
-Create machines on [Openstack](http://www.openstack.org/software/)
+#### OpenStack
+Create machines on [OpenStack](http://www.openstack.org/software/)
 
 Mandatory:
 
+ - `--openstack-auth-url`: Keystone service base URL.
  - `--openstack-flavor-id` or `openstack-flavor-name`: Identify the flavor that will be used for the machine.
  - `--openstack-image-id` or `openstack-image-name`: Identify the image that will be used for the machine.
 
 Options:
 
- - `--openstack-auth-url`: Keystone service base URL.
+ - `--openstack-insecure`: Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's certificate will not be verified against any certificate authorities. This option should be used with caution.
  - `--openstack-domain-name` or `--openstack-domain-id`: Domain to use for authentication (Keystone v3 only)
  - `--openstack-username`: User identifer to authenticate with.
  - `--openstack-password`: User password. It can be omitted if the standard environment variable `OS_PASSWORD` is set.
@@ -1299,32 +1300,39 @@ Options:
  - `--openstack-region`: The region to work on. Can be omitted if there is ony one region on the OpenStack.
  - `--openstack-endpoint-type`: Endpoint type can be `internalURL`, `adminURL` on `publicURL`. If is a helper for the driver
    to choose the right URL in the OpenStack service catalog. If not provided the default id `publicURL`
- - `--openstack-net-id` or `--openstack-net-name`: Identify the private network the machine will be connected on. If your OpenStack project project contains only one private network it will be use automatically.
+ - `--openstack-net-name` or `--openstack-net-id`: Identify the private network the machine will be connected on. If your OpenStack project project contains only one private network it will be use automatically.
  - `--openstack-sec-groups`: If security groups are available on your OpenStack you can specify a comma separated list
    to use for the machine (e.g. `secgrp001,secgrp002`).
- - `--openstack-floatingip-pool`: The IP pool that will be used to get a public IP an assign it to the machine. If there is an
+ - `--openstack-floatingip-pool`: The IP pool that will be used to get a public IP can assign it to the machine. If there is an
    IP address already allocated but not assigned to any machine, this IP will be chosen and assigned to the machine. If
    there is no IP address already allocated a new IP will be allocated and assigned to the machine.
  - `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
- - `--openstack-insecure`: Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's certificate will not be verified against any certificate authorities. This option should be used with caution.
 
-Environment variables:
+Environment variables and default values:
 
-Here comes the list of the supported variables with the corresponding options. If both environment variable
-and CLI option are provided the CLI option takes the precedence.
-
-| Environment variable | CLI option                  |
-|----------------------|-----------------------------|
-| `OS_AUTH_URL`        | `--openstack-auth-url`      |
-| `OS_DOMAIN_ID`       | `--openstack-domain-id`     |
-| `OS_DOMAIN_NAME`     | `--openstack-domain-name`   |
-| `OS_USERNAME`        | `--openstack-username`      |
-| `OS_PASSWORD`        | `--openstack-password`      |
-| `OS_TENANT_NAME`     | `--openstack-tenant-name`   |
-| `OS_TENANT_ID`       | `--openstack-tenant-id`     |
-| `OS_REGION_NAME`     | `--openstack-region`        |
-| `OS_ENDPOINT_TYPE`   | `--openstack-endpoint-type` |
+| CLI option                    | Environment variable | Default |
+|-------------------------------|----------------------|---------|
+| `--openstack-auth-url`        | `OS_AUTH_URL`        | -       |
+| `--openstack-flavor-name`     | -                    | -       |
+| `--openstack-flavor-id`       | -                    | -       |
+| `--openstack-image-name`      | -                    | -       |
+| `--openstack-image-id`        | -                    | -       |
+| `--openstack-insecure`        | -                    | -       |
+| `--openstack-domain-name`     | `OS_DOMAIN_NAME`     | -       |
+| `--openstack-domain-id`       | `OS_DOMAIN_ID`       | -       |
+| `--openstack-username`        | `OS_USERNAME`        | -       |
+| `--openstack-password`        | `OS_PASSWORD`        | -       |
+| `--openstack-tenant-name`     | `OS_TENANT_NAME`     | -       |
+| `--openstack-tenant-id`       | `OS_TENANT_ID`       | -       |
+| `--openstack-region`          | `OS_REGION_NAME`     | -       |
+| `--openstack-endpoint-type`   | `OS_ENDPOINT_TYPE`   | -       |
+| `--openstack-net-name`        | -                    | -       |
+| `--openstack-net-id`          | -                    | -       |
+| `--openstack-sec-groups`      | -                    | -       |
+| `--openstack-floatingip-pool` | -                    | -       |
+| `--openstack-ssh-user`        | -                    | `root`  |
+| `--openstack-ssh-port`        | -                    | `22`    |
 
 #### Rackspace
 Create machines on [Rackspace cloud](http://www.rackspace.com/cloud)
