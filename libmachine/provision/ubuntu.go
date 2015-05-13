@@ -10,19 +10,10 @@ func init() {
 	})
 }
 
+
 func NewUbuntuProvisioner(d drivers.Driver) Provisioner {
 	return &UbuntuProvisioner{
-		DebianFamilyProvisioner{
-			GenericProvisioner{
-				OsReleaseId:       "ubuntu",
-				DockerOptionsDir:  "/etc/docker",
-				DaemonOptionsFile: "/etc/default/docker",
-				Packages: []string{
-					"curl",
-				},
-				Driver: d,
-			},
-		},
+		newDebianFamilyProvisioner(d, "ubuntu"),
 	}
 }
 

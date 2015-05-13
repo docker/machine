@@ -3,6 +3,7 @@ package provision
 import (
 	"fmt"
 
+	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
@@ -11,7 +12,19 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-
+func newDebianFamilyProvisioner(d drivers.Driver, o string) DebianFamilyProvisioner {
+	return DebianFamilyProvisioner{
+		GenericProvisioner{
+			DockerOptionsDir:  "/etc/docker",
+			DaemonOptionsFile: "/etc/default/docker",
+			OsReleaseId: o,
+			Packages: []string{
+				"curl",
+			},
+			Driver: d,
+		},
+	}
+}
 type DebianFamilyProvisioner struct {
 	GenericProvisioner
 }
