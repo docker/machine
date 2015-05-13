@@ -4,13 +4,20 @@
 MACHINE_ROOT=${BATS_TEST_DIRNAME}/../..
 
 PLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
-ARCH=`uname -m`
-
-if [ "$ARCH" = "x86_64" ]; then
+case "$(uname -m)" in
+  arm*)
+    ARCH="arm"
+    ;;
+  x86_64)
     ARCH="amd64"
-else
+    ;;
+  i*86)
     ARCH="386"
-fi
+    ;;
+  *)
+    ARCH="$(uname -m)"
+esac
+
 MACHINE_BIN_NAME=docker-machine_$PLATFORM-$ARCH
 BATS_LOG=${MACHINE_ROOT}/bats.log
 
