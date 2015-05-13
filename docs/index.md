@@ -1011,18 +1011,21 @@ Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need 
 Options:
 
  - `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
- - `--amazonec2-ami`: The AMI ID of the instance to use  Default: `ami-cc3b3ea4`
- - `--amazonec2-instance-type`: The instance type to run.  Default: `t2.micro`
- - `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile
- - `--amazonec2-region`: The region to use when launching the instance.  Default: `us-east-1`
- - `--amazonec2-root-size`: The root disk size of the instance (in GB).  Default: `16`
  - `--amazonec2-secret-key`: **required** Your secret access key for the Amazon Web Services API.
- - `--amazonec2-security-group`: AWS VPC security group name. Default: `docker-machine`
  - `--amazonec2-session-token`: Your session token for the Amazon Web Services API.
- - `--amazonec2-subnet-id`: AWS VPC subnet id
+ - `--amazonec2-ami`: The AMI ID of the instance to use.
+ - `--amazonec2-region`: The region to use when launching the instance.
  - `--amazonec2-vpc-id`: **required** Your VPC ID to launch the instance in.
- - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e). Default: `a`
- - `--amazonec2-private-address-only`: Use the private IP address only
+ - `--amazonec2-zone`: The AWS zone to launch the instance in (i.e. one of a,b,c,d,e).
+ - `--amazonec2-subnet-id`: AWS VPC subnet id.
+ - `--amazonec2-security-group`: AWS VPC security group name.
+ - `--amazonec2-instance-type`: The instance type to run.
+ - `--amazonec2-root-size`: The root disk size of the instance (in GB).
+ - `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile.
+ - `--amazonec2-ssh-user`: SSH Login user name.
+ - `--amazonec2-request-spot-instance`: Use spot instances.
+ - `--amazonec2-spot-price`: Spot instance bid price (in dollars). Require the `--amazonec2-request-spot-instance` flag.
+ - `--amazonec2-private-address-only`: Use the private IP address only.
  - `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
@@ -1040,6 +1043,28 @@ By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 |us-west-1      |ami-017f9d45|
 |us-west-2      |ami-55526765|
 |us-gov-west-1  |ami-8ffa9bac|
+
+Environment variables and default values:
+
+| CLI option                          | Environment variable    | Default          |
+|-------------------------------------|-------------------------|------------------|
+| **`--amazonec2-access-key`**        | `AWS_ACCESS_KEY_ID`     | -                |
+| **`--amazonec2-secret-key`**        | `AWS_SECRET_ACCESS_KEY` | -                |
+| `--amazonec2-session-token`         | `AWS_SESSION_TOKEN`     | -                |
+| `--amazonec2-ami`                   | `AWS_AMI`               | `ami-cc3b3ea4`   |
+| `--amazonec2-region`                | `AWS_DEFAULT_REGION`    | `us-east-1`      |
+| **`--amazonec2-vpc-id`**            | `AWS_VPC_ID`            | -                |
+| `--amazonec2-zone`                  | `AWS_ZONE`              | `a`              |
+| `--amazonec2-subnet-id`             | `AWS_SUBNET_ID`         | -                |
+| `--amazonec2-security-group`        | `AWS_SECURITY_GROUP`    | `docker-machine` |
+| `--amazonec2-instance-type`         | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
+| `--amazonec2-root-size`             | `AWS_ROOT_SIZE`         | `16`             |
+| `--amazonec2-iam-instance-profile`  | `AWS_INSTANCE_PROFILE`  | -                |
+| `--amazonec2-ssh-user`              | `AWS_SSH_USER`          | `ubuntu`         |
+| `--amazonec2-request-spot-instance` | -                       | `false`          |
+| `--amazonec2-spot-price`            | -                       | `0.50`           |
+| `--amazonec2-private-address-only`  | -                       | `false`          |
+| `--amazonec2-monitoring`            | -                       | `false`          |
 
 #### Digital Ocean
 
