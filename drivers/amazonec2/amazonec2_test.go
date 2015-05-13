@@ -81,6 +81,7 @@ func getDefaultTestDriverFlags() *DriverOptionsMock {
 			"amazonec2-request-spot-instance": false,
 			"amazonec2-spot-price":            "",
 			"amazonec2-private-address-only":  false,
+			"amazonec2-monitoring":            false,
 		},
 	}
 }
