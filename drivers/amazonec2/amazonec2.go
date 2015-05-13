@@ -148,8 +148,9 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "AWS_ROOT_SIZE",
 		},
 		cli.StringFlag{
-			Name:  "amazonec2-iam-instance-profile",
-			Usage: "AWS IAM Instance Profile",
+			Name:   "amazonec2-iam-instance-profile",
+			Usage:  "AWS IAM Instance Profile",
+			EnvVar: "AWS_INSTANCE_PROFILE",
 		},
 		cli.StringFlag{
 			Name:   "amazonec2-ssh-user",
