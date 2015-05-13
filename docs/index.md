@@ -1130,16 +1130,29 @@ The Google driver uses oAuth.  When creating the machine, you will have your bro
 
 Options:
 
- - `--google-zone`: The zone to launch the instance.  Default: `us-central1-a`
- - `--google-machine-type`: The type of instance.  Default: `f1-micro`
- - `--google-username`: The username to use for the instance.  Default: `docker-user`
- - `--google-project`: The name of your project to use when launching the instance.
+ - `--google-zone`: The zone to launch the instance.
+ - `--google-machine-type`: The type of instance.
+ - `--google-username`: The username to use for the instance.
+ - `--google-project`: **required** The name of your project to use when launching the instance.
  - `--google-auth-token`: Your oAuth token for the Google Cloud API.
  - `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
- - `--google-disk-size`: The disk size of instance. Default: `10`
- - `--google-disk-type`: The disk type of instance. Default: `pd-standard`
+ - `--google-disk-size`: The disk size of instance.
+ - `--google-disk-type`: The disk type of instance.
 
 The GCE driver will use the `ubuntu-1404-trusty-v20150316` instance type unless otherwise specified.
+
+Environment variables and default values:
+
+| CLI option                | Environment variable  | Default                              |
+|---------------------------|-----------------------|--------------------------------------|
+| `--google-zone`           | `GOOGLE_ZONE`         | `us-central1-a`                      |
+| `--google-machine-type`   | `GOOGLE_MACHINE_TYPE` | `f1-micro`                           |
+| `--google-username`       | `GOOGLE_USERNAME`     | `docker-user`                        |
+| **`--google-project`**    | `GOOGLE_PROJECT`      | -                                    |
+| `--google-auth-token`     | `GOOGLE_AUTH_TOKEN`   | -                                    |
+| `--google-scopes`         | `GOOGLE_SCOPES`       | `devstorage.read_only,logging.write` |
+| `--google-disk-size`      | `GOOGLE_DISK_SIZE`    | `10`                                 |
+| `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-statdard`                        |
 
 #### IBM Softlayer
 
