@@ -913,6 +913,30 @@ cgroup                  499.8M         0    499.8M   0% /sys/fs/cgroup
 /mnt/sda1/var/lib/docker/aufs
 ```
 
+##### Different types of SSH
+
+When Docker Machine is invoked, it will check to see if you have the venerable
+`ssh` binary around locally and will attempt to use that for the SSH commands it
+needs to run, whether they are a part of an operation such as creation or have
+been requested by the user directly.  If it does not find an external `ssh`
+binary locally, it will default to using a native Go implementation from
+[crypto/ssh](https://godoc.org/golang.org/x/crypto/ssh).  This is useful in
+situations where you may not have access to traditional UNIX tools, such as if
+you are using Docker Machine on Windows without having msysgit installed
+alongside of it.
+
+In most situations, you will not have to worry about this implementation detail
+and Docker Machine will act sensibly out of the box.  However, if you
+deliberately want to use the Go native version, you can do so with a global
+command line flag / environment variable like so:
+
+```
+$ docker-machine --native-ssh ssh dev
+```
+
+There are some variations in behavior between the two methods, so please report
+any issues or inconsistencies if you come across them.
+
 #### scp
 
 Copy files from your local host to a machine, from machine to machine, or from a

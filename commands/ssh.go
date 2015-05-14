@@ -1,28 +1,23 @@
 package commands
 
 import (
-	"io"
-	"os"
+	"fmt"
 	"strings"
 
 	"github.com/docker/machine/log"
+	"github.com/docker/machine/state"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/ssh"
 )
 
 func cmdSsh(c *cli.Context) {
-	var (
-		output ssh.Output
-		err    error
-	)
+	args := c.Args()
+	name := args.First()
+	cmd := ""
 
-	if len(c.Args()) == 0 {
+	if name == "" {
 		log.Fatal("Error: Please specify a machine name.")
 	}
-
-	name := c.Args().First()
 
 	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
@@ -44,40 +39,50 @@ func cmdSsh(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	_, err = host.GetURL()
-	if err != nil {
-		if err == drivers.ErrHostIsNotRunning {
-			log.Fatalf("%s is not running. Please start this with docker-machine start %s", host.Name, host.Name)
-		} else {
-			log.Fatalf("Unexpected error getting machine url: %s", err)
-		}
-	}
-
-	if len(c.Args()) == 1 {
-		err = host.CreateSSHShell()
-	} else {
-		var (
-			cmd  string
-			args []string = c.Args()
-		)
-
-		for i, arg := range args {
-			if arg == "--" {
-				i++
-				cmd = strings.Join(args[i:], " ")
-				break
-			}
-		}
-		if len(cmd) == 0 {
-			cmd = strings.Join(args[1:], " ")
-		}
-		output, err = host.RunSSHCommand(cmd)
-
-		io.Copy(os.Stderr, output.Stderr)
-		io.Copy(os.Stdout, output.Stdout)
-	}
-
+	currentState, err := host.Driver.GetState()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if currentState != state.Running {
+		log.Fatalf("Error: Cannot run SSH command: Host %q is not running", host.Name)
+	}
+
+	// Loop through the arguments and parse out a command which relies on
+	// flags if it exists, for instance an invocation of the form
+	// `docker-machine ssh dev -- df -h` would mandate this, otherwise we
+	// will accidentally trigger the codegangsta/cli help text because it
+	// thinks we are trying to specify codegangsta flags.
+	//
+	// TODO: I thought codegangsta/cli supported the flag parsing
+	// terminator manually, which would mitigate the need for this kind of
+	// hack.  We should investigate.
+	for i, arg := range args {
+		if arg == "--" {
+			cmd = strings.Join(args[i+1:], " ")
+			break
+		}
+	}
+
+	// It is possible that the user has specified an appended command which
+	// does not rely on the flag parsing terminator, such as
+	// `docker-machine ssh dev ls`, so this block accounts for that case.
+	if len(cmd) == 0 {
+		cmd = strings.Join(args[1:], " ")
+	}
+
+	if len(c.Args()) == 1 {
+		err := host.CreateSSHShell()
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		output, err := host.RunSSHCommand(cmd)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Print(output)
+	}
+
 }
