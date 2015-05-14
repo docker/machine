@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"strings"
 	//"time"
-
 	//"os"
 )
 
@@ -40,11 +39,10 @@ var (
 )
 
 type Driver struct {
-	Id        string
-	AccessKey string
-	SecretKey string
-	//SessionToken            string
-	Region                  string
+	Id                      string
+	AccessKey               string
+	SecretKey               string
+	Region                  ecs.Region
 	ImageID                 string
 	SSHKeyID                int
 	SSHUser                 string
@@ -71,6 +69,7 @@ type Driver struct {
 	keyPath                 string
 	PrivateIPOnly           bool
 	InternetMaxBandwidthOut int
+	client                  *ecs.Client
 }
 
 func init() {
@@ -188,21 +187,52 @@ func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
 	return nil
 }
 
+func (d *Driver) GetImageID(image string) string {
+
+	if len(image) != 0 {
+		return image
+	}
+	args := ecs.DescribeImagesArgs{
+		RegionId:        d.Region,
+		ImageOwnerAlias: ecs.ImageOwnerSystem,
+	}
+
+	// Scan registed images with prefix of ubuntu1404_64_20G_
+	for {
+		images, pagination, err := d.getClient().DescribeImages(&args)
+		if err != nil {
+			log.Errorf("Failed to describe images: %v", err)
+			break
+		} else {
+			for _, image := range images {
+				if strings.HasPrefix(image.ImageId, defaultUbuntuImagePrefix) {
+					return image.ImageId
+				}
+			}
+			nextPage := pagination.NextPage()
+			if nextPage == nil {
+				break
+			}
+			args.Pagination = *nextPage
+		}
+	}
+
+	//Default use the config Ubuntu 14.04 64bits image
+
+	image = defaultUbuntuImageID
+
+	return image
+}
+
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	region, err := validateECSRegion(flags.String("aliyunecs-region"))
 	if err != nil {
 		return err
 	}
-
-	image := flags.String("aliyunecs-ami")
-	if len(image) == 0 {
-		image = regionDetails[region].ImageID
-	}
-
 	d.AccessKey = flags.String("aliyunecs-access-key")
 	d.SecretKey = flags.String("aliyunecs-secret-key")
 	d.Region = region
-	d.ImageID = image
+	d.ImageID = flags.String("aliyunecs-ami")
 	d.InstanceType = flags.String("aliyunecs-instance-type")
 	d.VpcId = flags.String("aliyunecs-vpc-id")
 	d.SecurityGroupName = flags.String("aliyunecs-security-group")
@@ -289,13 +319,13 @@ func (d *Driver) Create() error {
 	if err := d.checkPrereqs(); err != nil {
 		return err
 	}
-
-	log.Infof("Launching instance...")
+	log.Infof("Creating key pair for instances...")
 
 	if err := d.createKeyPair(); err != nil {
 		return fmt.Errorf("unable to create key pair: %s", err)
 	}
 
+	log.Infof("Configuring security groups...")
 	if err := d.configureSecurityGroup(d.SecurityGroupName); err != nil {
 		return err
 	}
@@ -308,9 +338,12 @@ func (d *Driver) Create() error {
 	//		VolumeType:          "gp2",
 	//	}
 
+	imageID := d.GetImageID(d.ImageID)
+	log.Infof("Launching instance with image %s ...", imageID)
+
 	args := ecs.CreateInstanceArgs{
 		RegionId:                d.Region,
-		ImageId:                 d.ImageID,
+		ImageId:                 imageID,
 		InstanceType:            d.InstanceType,
 		SecurityGroupId:         d.SecurityGroupId,
 		InternetMaxBandwidthOut: d.InternetMaxBandwidthOut,
@@ -507,9 +540,12 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) getClient() *ecs.Client {
-	client := ecs.NewClient(d.AccessKey, d.SecretKey)
-	client.SetDebug(false)
-	return client
+	if d.client == nil {
+		client := ecs.NewClient(d.AccessKey, d.SecretKey)
+		client.SetDebug(false)
+		d.client = client
+	}
+	return d.client
 }
 
 func (d *Driver) GetSSHKeyPath() string {
@@ -520,28 +556,9 @@ func (d *Driver) getInstance() (*ecs.InstanceAttributesType, error) {
 	return d.getClient().DescribeInstanceAttribute(d.InstanceId)
 }
 
-//func (d *Driver) instanceIsRunning() bool {
-//	st, err := d.GetState()
-//	if err != nil {
-//		log.Debug(err)
-//	}
-//	if st == state.Running {
-//		return true
-//	}
-//	return false
-//}
-
-//func (d *Driver) waitForInstance() error {
-//	if err := utils.WaitFor(d.instanceIsRunning); err != nil {
-//		return err
-//	}
-
-//	return nil
-//}
-
 func (d *Driver) createKeyPair() error {
 
-	log.Infoln("GetSSHKeyPath: ", d.GetSSHKeyPath())
+	log.Debug("SSH key path: ", d.GetSSHKeyPath())
 
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
@@ -600,7 +617,6 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 	for _, grp := range groups {
 		if grp.SecurityGroupName == groupName {
 			log.Debugf("found existing security group (%s) in %s", groupName, d.VpcId)
-			log.Debugf("found existing security group (%s)", groupName)
 			securityGroup, _ = d.getSecurityGroup(grp.SecurityGroupId)
 			break
 		}
@@ -656,7 +672,7 @@ type IpPermission struct {
 	IpRange    string
 }
 
-func (p *IpPermission) createAuthorizeSecurityGroupArgs(regionId string, securityGroupId string) *ecs.AuthorizeSecurityGroupArgs {
+func (p *IpPermission) createAuthorizeSecurityGroupArgs(regionId ecs.Region, securityGroupId string) *ecs.AuthorizeSecurityGroupArgs {
 	args := ecs.AuthorizeSecurityGroupArgs{
 		RegionId:        regionId,
 		SecurityGroupId: securityGroupId,
@@ -761,11 +777,11 @@ func (d *Driver) uploadKeyPair() error {
 
 	command := fmt.Sprintf("mkdir -p ~/.ssh; echo '%s' > ~/.ssh/authorized_keys", string(d.PublicKey))
 
-	log.Infof("Upload the public key with command: %s", command)
+	log.Debugf("Upload the public key with command: %s", command)
 
 	output, err := sshClient.Run(command)
 
-	log.Infof(fmt.Sprintf("SSH cmd err, output: %v: %s", err, output))
+	log.Debugf(fmt.Sprintf("Upload command err, output: %v: %s", err, output))
 
 	if err != nil {
 		return err

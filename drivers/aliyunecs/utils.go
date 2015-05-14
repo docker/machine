@@ -2,6 +2,7 @@ package aliyunecs
 
 import (
 	"errors"
+	"github.com/denverdino/aliyungo/ecs"
 )
 
 var (
@@ -12,36 +13,13 @@ var (
 	errComplete       = errors.New("Complete")
 )
 
-type region struct {
-	ImageID string
-}
+const defaultUbuntuImageID = "ubuntu1404_64_20G_aliaegis_20150325.vhd"
+const defaultUbuntuImagePrefix = "ubuntu1404_64_20G_"
 
-//TODO Match the latest Ubuntu 1404 image automatically
-const IMAGE_ID = "ubuntu1404_64_20G_aliaegis_20150325.vhd"
-
-var regionDetails map[string]*region = map[string]*region{
-	"cn-shenzhen": {IMAGE_ID},
-	"cn-qingdao":  {IMAGE_ID},
-	"cn-beijing":  {IMAGE_ID},
-	"cn-hongkong": {IMAGE_ID},
-	"cn-hangzhou": {IMAGE_ID},
-	"us-west-1":   {IMAGE_ID},
-}
-
-func ecsRegionsList() []string {
-	var list []string
-
-	for k := range regionDetails {
-		list = append(list, k)
-	}
-
-	return list
-}
-
-func validateECSRegion(region string) (string, error) {
-	for _, v := range ecsRegionsList() {
-		if v == region {
-			return region, nil
+func validateECSRegion(region string) (ecs.Region, error) {
+	for _, v := range ecs.ValidRegions {
+		if v == ecs.Region(region) {
+			return v, nil
 		}
 	}
 
