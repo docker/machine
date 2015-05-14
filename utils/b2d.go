@@ -167,7 +167,11 @@ func (b *B2dUtils) DownloadLatestBoot2Docker() error {
 		return err
 	}
 
-	log.Infof("Downloading latest boot2docker release to %s...", b.commonIsoPath)
+	return b.DownloadISOFromURL(latestReleaseUrl)
+}
+
+func (b *B2dUtils) DownloadISOFromURL(latestReleaseUrl string) error {
+	log.Infof("Downloading %s to %s...", latestReleaseUrl, b.commonIsoPath)
 	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseUrl); err != nil {
 		return err
 	}
