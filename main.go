@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/machine/commands"
 	"github.com/docker/machine/log"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 	"github.com/docker/machine/version"
 )
@@ -58,6 +59,9 @@ func main() {
 	app.Email = "https://github.com/docker/machine"
 	app.Before = func(c *cli.Context) error {
 		os.Setenv("MACHINE_STORAGE_PATH", c.GlobalString("storage-path"))
+		if c.GlobalBool("native-ssh") {
+			ssh.SetDefaultClient(ssh.Native)
+		}
 		return nil
 	}
 	app.Commands = commands.Commands
@@ -99,6 +103,11 @@ func main() {
 			Name:   "tls-client-key",
 			Usage:  "Private key used in client TLS auth",
 			Value:  "",
+		},
+		cli.BoolFlag{
+			EnvVar: "MACHINE_NATIVE_SSH",
+			Name:   "native-ssh",
+			Usage:  "Use the native (Go-based) SSH implementation.",
 		},
 	}
 

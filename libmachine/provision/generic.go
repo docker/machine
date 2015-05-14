@@ -9,7 +9,6 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/ssh"
 )
 
 type GenericProvisioner struct {
@@ -25,17 +24,7 @@ type GenericProvisioner struct {
 }
 
 func (provisioner *GenericProvisioner) Hostname() (string, error) {
-	output, err := provisioner.SSHCommand("hostname")
-	if err != nil {
-		return "", err
-	}
-
-	var so bytes.Buffer
-	if _, err := so.ReadFrom(output.Stdout); err != nil {
-		return "", err
-	}
-
-	return so.String(), nil
+	return provisioner.SSHCommand("hostname")
 }
 
 func (provisioner *GenericProvisioner) SetHostname(hostname string) error {
@@ -63,7 +52,7 @@ func (provisioner *GenericProvisioner) GetDockerOptionsDir() string {
 	return provisioner.DockerOptionsDir
 }
 
-func (provisioner *GenericProvisioner) SSHCommand(args string) (ssh.Output, error) {
+func (provisioner *GenericProvisioner) SSHCommand(args string) (string, error) {
 	return drivers.RunSSHCommandFromDriver(provisioner.Driver, args)
 }
 
