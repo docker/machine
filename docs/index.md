@@ -1366,7 +1366,6 @@ Environment variables and default values:
 | `--rackspace-docker-install` | -                    | `true`                                 |
 
 #### Oracle VirtualBox
-
 Create machines locally using [VirtualBox](https://www.virtualbox.org/).
 This driver requires VirtualBox to be installed on your host.
 
@@ -1374,10 +1373,11 @@ This driver requires VirtualBox to be installed on your host.
 
 Options:
 
- - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
- - `--virtualbox-disk-size`: Size of disk for the host in MB. Default: `20000`
- - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
+ - `--virtualbox-memory`: Size of memory for the host in MB.
  - `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
+ - `--virtualbox-disk-size`: Size of disk for the host in MB.
+ - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
+ - `--virtualbox-import-boot2docker-vm`: The name of a Boot2Docker VM to import.
 
 The `--virtualbox-boot2docker-url` flag takes a few different forms.  By
 default, if no value is specified for this flag, Machine will check locally for
@@ -1396,18 +1396,15 @@ file://$HOME/Downloads/rc.iso` to test out a release candidate ISO that you have
 downloaded already.  You could also just get an ISO straight from the Internet
 using the `http://` form.
 
-Environment variables:
+Environment variables and default values:
 
-Here comes the list of the supported variables with the corresponding options. If both environment
-variable and CLI option are provided the CLI option takes the precedence.
-
-| Environment variable              | CLI option                        |
-|-----------------------------------|-----------------------------------|
-| `VIRTUALBOX_MEMORY_SIZE`          | `--virtualbox-memory`             |
-| `VIRTUALBOX_CPU_COUNT`            | `--virtualbox-cpu-count`          |
-| `VIRTUALBOX_DISK_SIZE`            | `--virtualbox-disk-size`          |
-| `VIRTUALBOX_BOOT2DOCKER_URL`      | `--virtualbox-boot2docker-url`    |
-
+| CLI option                           | Environment variable         | Default                  |
+|--------------------------------------|------------------------------|--------------------------|
+| `--virtualbox-memory`                | `VIRTUALBOX_MEMORY_SIZE`     | `1024`                   |
+| `--virtualbox-cpu-count`             | `VIRTUALBOX_CPU_COUNT`       | `1`                      |
+| `--virtualbox-disk-size`             | `VIRTUALBOX_DISK_SIZE`       | `20000`                  |
+| `--virtualbox-boot2docker-url`       | `VIRTUALBOX_BOOT2DOCKER_URL` | *Latest boot2docker url* |
+| `--virtualbox-import-boot2docker-vm` | -                            | `boot2docker-vm`         |
 
 #### VMware Fusion
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.
