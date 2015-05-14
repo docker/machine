@@ -2,7 +2,6 @@ package ssh
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/docker/docker/pkg/term"
 	"github.com/docker/machine/log"
+	"github.com/docker/machine/utils"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -63,23 +63,29 @@ func NewConfig(user string, auth *Auth) (*ssh.ClientConfig, error) {
 	}, nil
 }
 
+func dialSuccess(client *Client) func() bool {
+	return func() bool {
+		if _, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), client.Config); err != nil {
+			log.Debugf("Error dialing TCP: %s", err)
+			return false
+		}
+		return true
+	}
+}
+
 func (client *Client) Run(command string) (Output, error) {
 	var (
-		output Output
-		conn   *ssh.Client
-		err    error
+		output         Output
+		stdout, stderr bytes.Buffer
 	)
 
-	for i := 0; ; i++ {
-		conn, err = ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), client.Config)
-		if err != nil {
-			log.Errorf("Error dialing TCP: %s", err)
-			if i == maxDialAttempts {
-				return output, errors.New("Max SSH/TCP dial attempts exceeded")
-			}
-		} else {
-			break
-		}
+	if err := utils.WaitFor(dialSuccess(client)); err != nil {
+		return output, fmt.Errorf("Error attempting SSH client dial: %s", err)
+	}
+
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), client.Config)
+	if err != nil {
+		return output, fmt.Errorf("Mysterious error dialing TCP for SSH (we already succeeded at least once) : %s", err)
 	}
 
 	session, err := conn.NewSession()
@@ -88,8 +94,6 @@ func (client *Client) Run(command string) (Output, error) {
 	}
 
 	defer session.Close()
-
-	var stdout, stderr bytes.Buffer
 
 	session.Stdout = &stdout
 	session.Stderr = &stderr
