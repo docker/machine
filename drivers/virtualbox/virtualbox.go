@@ -77,9 +77,9 @@ func GetCreateFlags() []cli.Flag {
 			Value:  20000,
 		},
 		cli.StringFlag{
-			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
-			Name:   "virtualbox-boot2docker-url",
-			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
+			EnvVar: "VIRTUALBOX_ISO",
+			Name:   "virtualbox-iso",
+			Usage:  "The URL / path of the VirtualBox ISO image. Defaults to the latest available version of Boot2Docker",
 			Value:  "",
 		},
 		cli.StringFlag{
