@@ -22,6 +22,18 @@
 			"Rev": "e1712f381785e32046927f64a7c86fe569203196"
 		},
 		{
+			"ImportPath": "github.com/denverdino/aliyungo/ecs",
+			"Rev": "3dbde2e494174efb57dae55ce09557d9eb6ff203"
+		},
+		{
+			"ImportPath": "github.com/denverdino/aliyungo/util",
+			"Rev": "3dbde2e494174efb57dae55ce09557d9eb6ff203"
+		},
+		{
+			"ImportPath": "github.com/denverdino/aliyungo/common",
+			"Rev": "3dbde2e494174efb57dae55ce09557d9eb6ff203"
+		},
+		{
 			"ImportPath": "github.com/digitalocean/godo",
 			"Comment": "v0.5.0",
 			"Rev": "5478aae80694de1d2d0e02c386bbedd201266234"

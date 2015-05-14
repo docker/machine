@@ -12,6 +12,7 @@ identifier="smn_machine_drivers"
 # Supported Drivers
 
 * [Amazon Web Services](/drivers/aws.md)
+* [Aliyun Elastic Compute Service](aliyun.md)
 * [Microsoft Azure](/drivers/azure.md)
 * [Digital Ocean](/drivers/digital-ocean.md)
 * [Exoscale](/drivers/exoscale.md)

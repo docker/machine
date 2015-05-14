@@ -3,6 +3,7 @@ package driverfactory
 import (
 	"fmt"
 
+	"github.com/docker/machine/drivers/aliyunecs"
 	"github.com/docker/machine/drivers/amazonec2"
 	"github.com/docker/machine/drivers/azure"
 	"github.com/docker/machine/drivers/digitalocean"
@@ -55,6 +56,8 @@ func NewDriver(driverName, hostName, storePath string) (drivers.Driver, error) {
 		driver = vmwarevcloudair.NewDriver(hostName, storePath)
 	case "vmwarevsphere":
 		driver = vmwarevsphere.NewDriver(hostName, storePath)
+	case "aliyunecs":
+		driver = aliyunecs.NewDriver(hostName, storePath)
 	case "none":
 		driver = none.NewDriver(hostName, storePath)
 	default:
