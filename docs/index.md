@@ -492,7 +492,7 @@ Usage: docker-machine create [OPTIONS] [arg...]
 Create a machine
 
 Options:
-   --virtualbox-boot2docker-url                                                                         The URL of the boot2docker image. Defaults to the latest available version [$VIRTUALBOX_BOOT2DOCKER_URL]
+   --virtualbox-iso                                                                         The URL / path of the VirtualBox ISO image. Defaults to the latest available version of Boot2Docker [$VIRTUALBOX_ISO]
    --virtualbox-cpu-count "1"                                                                           number of CPUs for the machine (-1 to use the number of CPUs available) [$VIRTUALBOX_CPU_COUNT]
    --virtualbox-disk-size "20000"                                                                       Size of disk for host in MB [$VIRTUALBOX_DISK_SIZE]
    --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
@@ -953,8 +953,8 @@ INFO[0008] Starting machine back up...
 INFO[0008] Waiting for VM to start...
 ```
 
-> **Note**: If you are using a custom boot2docker ISO specified using
-> `--virtualbox-boot2docker-url` or an equivalent flag, running an upgrade on
+> **Note**: If you are using a custom VirtualBox ISO specified using
+> `--virtualbox-iso` or an equivalent flag, running an upgrade on
 > that machine will completely replace the specified ISO with the latest
 > "vanilla" boot2docker ISO available.
 
@@ -1219,24 +1219,24 @@ This driver requires VirtualBox to be installed on your host.
 
 Options:
 
- - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
+ - `--virtualbox-iso`: The URL / path of the VirtualBox ISO image. Defaults to the latest available version of Boot2Docker.
  - `--virtualbox-disk-size`: Size of disk for the host in MB. Default: `20000`
  - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
  - `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
 
-The `--virtualbox-boot2docker-url` flag takes a few different forms.  By
+The `--virtualbox-iso` flag takes a few different forms.  By
 default, if no value is specified for this flag, Machine will check locally for
 a boot2docker ISO.  If one is found, that will be used as the ISO for the
-created machine.  If one is not found, the latest ISO release available on
-[boot2docker/boot2docker](https://github.com/boot2docker/boot2docker) will be
-downloaded and stored locally for future use.  Note that this means you must run
-`docker-machine upgrade` deliberately on a machine if you wish to update the "cached"
-boot2docker ISO.
+created machine.  If one is not found, the latest ISO release of Boot2Docker
+ available on [boot2docker/boot2docker](https://github.com/boot2docker/boot2docker) 
+will be downloaded and stored locally for future use.  Note that this means 
+you must run `docker-machine upgrade` deliberately on a machine if you wish to 
+update the "cached" boot2docker ISO.
 
-This is the default behavior (when `--virtualbox-boot2docker-url=""`), but the
+This is the default behavior (when `--virtualbox-iso=""`), but the
 option also supports specifying ISOs by the `http://` and `file://` protocols.
 `file://` will look at the path specified locally to locate the ISO: for
-instance, you could specify `--virtualbox-boot2docker-url
+instance, you could specify `--virtualbox-iso
 file://$HOME/Downloads/rc.iso` to test out a release candidate ISO that you have
 downloaded already.  You could also just get an ISO straight from the Internet
 using the `http://` form.
@@ -1251,7 +1251,7 @@ variable and CLI option are provided the CLI option takes the precedence.
 | `VIRTUALBOX_MEMORY_SIZE`          | `--virtualbox-memory`             |
 | `VIRTUALBOX_CPU_COUNT`            | `--virtualbox-cpu-count`          |
 | `VIRTUALBOX_DISK_SIZE`            | `--virtualbox-disk-size`          |
-| `VIRTUALBOX_BOOT2DOCKER_URL`      | `--virtualbox-boot2docker-url`    |
+| `VIRTUALBOX_BOOT2DOCKER_URL`      | `--virtualbox-iso`    |
 
 
 #### VMware Fusion
