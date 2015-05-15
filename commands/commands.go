@@ -340,6 +340,18 @@ var Commands = []cli.Command{
 		Action:      cmdSsh,
 	},
 	{
+		Name:        "scp",
+		Usage:       "Copy files between machines",
+		Description: "Arguments are [machine:][path] [machine:][path].",
+		Action:      cmdScp,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "recursive, r",
+				Usage: "Copy files recursively (required to copy directories)",
+			},
+		},
+	},
+	{
 		Name:        "start",
 		Usage:       "Start a machine",
 		Description: "Argument(s) are one or more machine names.",
