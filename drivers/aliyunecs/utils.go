@@ -1,6 +1,7 @@
 package aliyunecs
 
 import (
+	"crypto/rand"
 	"errors"
 	"github.com/denverdino/aliyungo/ecs"
 )
@@ -24,4 +25,16 @@ func validateECSRegion(region string) (ecs.Region, error) {
 	}
 
 	return "", errInvalidRegion
+}
+
+const dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+const paswordLen = 16
+
+func randomPassword() string {
+	var bytes = make([]byte, paswordLen)
+	rand.Read(bytes)
+	for k, v := range bytes {
+		bytes[k] = dictionary[v%byte(len(dictionary))]
+	}
+	return string(bytes)
 }

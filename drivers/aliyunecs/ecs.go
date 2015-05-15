@@ -149,7 +149,6 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "aliyunecs-ssh-password",
 			Usage:  "set the password of the ssh user",
-			Value:  "dockerTest", //TODO generate the password if not apply
 			EnvVar: "ECS_SSH_PASSWORD",
 		},
 		cli.BoolFlag{
@@ -337,6 +336,11 @@ func (d *Driver) Create() error {
 	//		DeleteOnTermination: true,
 	//		VolumeType:          "gp2",
 	//	}
+
+	if d.SSHPassword == "" {
+		d.SSHPassword = randomPassword()
+		log.Info("Launching instance with generated password, please update password in console or log in with ssh key.")
+	}
 
 	imageID := d.GetImageID(d.ImageID)
 	log.Infof("Launching instance with image %s ...", imageID)
@@ -612,7 +616,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 		return err
 	}
 
-	log.Printf("DescribeSecurityGroups: %++v\n", groups)
+	log.Debugf("DescribeSecurityGroups: %++v\n", groups)
 
 	for _, grp := range groups {
 		if grp.SecurityGroupName == groupName {
@@ -666,7 +670,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 }
 
 type IpPermission struct {
-	IpProtocol string
+	IpProtocol ecs.IpProtocol
 	FromPort   int
 	ToPort     int
 	IpRange    string
@@ -705,7 +709,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ecs.DescribeSecurityGr
 
 	if !hasSshPort {
 		perms = append(perms, IpPermission{
-			IpProtocol: "tcp",
+			IpProtocol: ecs.IpProtocolTCP,
 			FromPort:   22,
 			ToPort:     22,
 			IpRange:    ipRange,
@@ -786,6 +790,12 @@ func (d *Driver) uploadKeyPair() error {
 	if err != nil {
 		return err
 	}
+
+	log.Debugf("Upload the public key with command: %s", command)
+
+	// Fix the routing rule
+	output, err = sshClient.Run("route del -net 172.16.0.0/12")
+	log.Debugf(fmt.Sprintf("route del command err, output: %v: %s", err, output))
 
 	return nil
 }
