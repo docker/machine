@@ -305,17 +305,27 @@ func (d *Driver) Create() (err error) {
 	if err_kh := exec.Command(cmd, args...).Run(); err_kh != nil {
 		log.Infof("You may need to cleanup your known_hosts file: \"ssh-keygen -f ~/.ssh/known_hosts -R %s\" (Automatic attempt returned: %v)", ip, err_kh)
 	}
-	log.Infof("Crowbar preparing node %s (process may take several minutes)", node.Name)
+	log.Infof("Crowbar preparing node %s (process may take upto 15 minutes)", node.Name)
 	// if we are not ready, then loop a bit
-	for s, i := state.None, 0; i<40 && s != state.Running; s, err = d.GetState() {
+	errorcount := 3
+	readycount := 2
+	for s, i := state.None, 90; i>0 && errorcount>0 && readycount>0; s, err = d.GetState() {
 		log.Debugf("Crowbar waiting for %s machine (state %v)", node.Name, s)
-		time.Sleep(time.Second*15)
+		time.Sleep(time.Second*10)
 		if err != nil {
 			return err
 		} else if s == state.Error {
-			return errors.New("node state reported error")
+			// on error, retry
+			node.retry()
+			errorcount -= 1
+		} else if s == state.Running {
+			// we want to make sure that we're really ready
+			readycount -= 1
 		}
-		i += 1
+		i -= 1
+	}
+	if errorcount == 0 {
+		return errors.New("node state reported error")
 	}
 	return err
 }

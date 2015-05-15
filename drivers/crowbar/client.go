@@ -211,6 +211,28 @@ func (r *Role) get(role string) (err error) {
 
 // NODE ROLE SPECIFIC
 
+// look for failed node roles and retry them
+func (n *Node) retry() (err error) {
+    raw := &[]NodeRole{}
+    err = session.Request("GET", "nodes/" + strconv.FormatInt(n.ID,10) + "/node_roles", "node_role.list", &raw, nil)
+    roles := make([]NodeRole, len(*raw))
+    roles = *raw
+    if err != nil {
+        return err
+    }
+    for i := range roles {
+        if roles[i].State == -1 {
+            roles[i].retry()
+        }
+    }
+    return nil
+}
+
+// retry a specific node role
+func (nr *NodeRole) retry() (err error) {
+    return session.Request("PUT", "node_roles/" + strconv.FormatInt(nr.ID,10) + "/retry", "node_role.obj", nil, nil)
+}
+
 func (nr *NodeRole) add() (err error) {
     nnr := NewNodeRole{
         DeploymentID: nr.DeploymentID,
