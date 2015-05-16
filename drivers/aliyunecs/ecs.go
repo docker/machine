@@ -57,7 +57,6 @@ type Driver struct {
 	SecurityGroupId         string
 	SecurityGroupName       string
 	ReservationId           string
-	RootSize                int64
 	VpcId                   string
 	Zone                    string
 	CaCertPath              string
@@ -94,21 +93,15 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "ECS_SECRET_ACCESS_KEY",
 		},
 		cli.StringFlag{
-			Name:   "aliyunecs-session-token",
-			Usage:  "ECS Session Token",
-			Value:  "",
-			EnvVar: "ECS_SESSION_TOKEN",
-		},
-		cli.StringFlag{
-			Name:   "aliyunecs-ami",
+			Name:   "aliyunecs-image-id",
 			Usage:  "ECS machine image",
-			EnvVar: "ECS_AMI",
+			EnvVar: "ECS_IMAGE_ID",
 		},
 		cli.StringFlag{
 			Name:   "aliyunecs-region",
-			Usage:  "ECS region",
+			Usage:  "ECS region, default cn-hangzhou",
 			Value:  defaultRegion,
-			EnvVar: "ECS_DEFAULT_REGION",
+			EnvVar: "ECS_REGION",
 		},
 		cli.StringFlag{
 			Name:   "aliyunecs-vpc-id",
@@ -118,8 +111,8 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:   "aliyunecs-zone",
-			Usage:  "ECS zone for instance, default cn-hangzhou)",
-			Value:  "a",
+			Usage:  "ECS zone for instance",
+			Value:  "",
 			EnvVar: "ECS_ZONE",
 		},
 		cli.StringFlag{
@@ -133,12 +126,6 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "ECS instance type",
 			Value:  defaultInstanceType,
 			EnvVar: "ECS_INSTANCE_TYPE",
-		},
-		cli.IntFlag{
-			Name:   "aliyunecs-root-size",
-			Usage:  "ECS root disk size (in GB)",
-			Value:  defaultRootSize,
-			EnvVar: "ECS_ROOT_SIZE",
 		},
 		//		cli.StringFlag{
 		//			Name:   "aliyunecs-ssh-user",
@@ -158,7 +145,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.IntFlag{
 			Name:   "aliyunecs-internet-max-bandwidth",
 			Usage:  "Maxium bandwidth for Internet access (in Mbps), default 1",
-			EnvVar: "ECS_INTERNET_ MAX_BANDWIDTH",
+			EnvVar: "ECS_INTERNET_MAX_BANDWIDTH",
 		},
 	}
 }
@@ -231,13 +218,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AccessKey = flags.String("aliyunecs-access-key")
 	d.SecretKey = flags.String("aliyunecs-secret-key")
 	d.Region = region
-	d.ImageID = flags.String("aliyunecs-ami")
+	d.ImageID = flags.String("aliyunecs-image-id")
 	d.InstanceType = flags.String("aliyunecs-instance-type")
 	d.VpcId = flags.String("aliyunecs-vpc-id")
 	d.SecurityGroupName = flags.String("aliyunecs-security-group")
 	zone := flags.String("aliyunecs-zone")
 	d.Zone = zone[:]
-	d.RootSize = int64(flags.Int("aliyunecs-root-size"))
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -300,19 +286,6 @@ func (d *Driver) checkPrereqs() error {
 func (d *Driver) PreCreateCheck() error {
 	return d.checkPrereqs()
 }
-
-//func (d *Driver) instanceIpAvailable() bool {
-//	ip, err := d.GetIP()
-//	if err != nil {
-//		log.Debug(err)
-//	}
-//	if ip != "" {
-//		d.IPAddress = ip
-//		log.Debugf("Got the IP Address, it's %q", d.IPAddress)
-//		return true
-//	}
-//	return false
-//}
 
 func (d *Driver) Create() error {
 	if err := d.checkPrereqs(); err != nil {
