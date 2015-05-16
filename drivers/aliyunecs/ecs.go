@@ -768,7 +768,10 @@ func (d *Driver) uploadKeyPair() error {
 
 	// Fix the routing rule
 	output, err = sshClient.Run("route del -net 172.16.0.0/12")
-	log.Debugf(fmt.Sprintf("route del command err, output: %v: %s", err, output))
+	log.Debugf(fmt.Sprintf("Delete route command err, output: %v: %s", err, output))
+
+	output, err = sshClient.Run("sed -i -r 's/^(up route add \\-net 172\\..*)$/#\\1/' /etc/network/interfaces")
+	log.Debugf(fmt.Sprintf("Fix route in /etc/network/interfaces command err, output: %v: %s", err, output))
 
 	return nil
 }

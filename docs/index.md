@@ -1103,7 +1103,7 @@ Options:
  - `--aliyunecs-instance-type`: The instance type to run.  Default: `ecs.t1.small`
  - `--aliyunecs-internet-max-bandwidth`: Maxium bandwidth for Internet access (in Mbps), default 1
  - `--aliyunecs-private-address-only`: Use the private IP address only
- - `--aliyunecs-region`: The **required** region to use when launching the instance.  Default: `cn-hangzhou`
+ - `--aliyunecs-region`: **required** The region to use when launching the instance.  Default: `cn-hangzhou`
  - `--aliyunecs-secret-key`: **required** Your secret access key for the Aliyun ECS API.
  - `--aliyunecs-security-group`: Aliyun security group name. Default: `docker-machine`
  - `--aliyunecs-ssh-password`: SSH password for created virtual machine. Default is random generated.
