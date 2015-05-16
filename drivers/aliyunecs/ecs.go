@@ -145,6 +145,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.IntFlag{
 			Name:   "aliyunecs-internet-max-bandwidth",
 			Usage:  "Maxium bandwidth for Internet access (in Mbps), default 1",
+			Value:  1,
 			EnvVar: "ECS_INTERNET_MAX_BANDWIDTH",
 		},
 	}
@@ -480,6 +481,14 @@ func (d *Driver) Stop() error {
 	if err := d.getClient().StopInstance(d.InstanceId, false); err != nil {
 		return err
 	}
+
+	// Wait for stopped
+	err := d.getClient().WaitForInstance(d.InstanceId, ecs.Stopped, 300)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
