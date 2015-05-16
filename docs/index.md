@@ -792,8 +792,18 @@ Grab your subscription ID from the portal, then run `docker-machine create` with
 
 Options:
 
- - `--azure-subscription-id`: Your Azure subscription ID (A GUID like `d255d8d7-5af0-4f5c-8a3e-1545044b861e`).
- - `--azure-subscription-cert`: Your Azure subscription cert.
+At the time of writing the below is a complete list of options, use docker-machine create --help to retrieve the currently available options.
+
+ - `--azure-docker-port "2376"`: Azure Docker port
+ - `--azure-image`: Azure image name. Default is Ubuntu 14.04 LTS x64 [$AZURE_IMAGE]
+ - `--azure-location "West US"`: Azure location [$AZURE_LOCATION]
+ - `--azure-password`: Azure user password
+ - `--azure-publish-settings-file`: Azure publish settings file [$AZURE_PUBLISH_SETTINGS_FILE]
+ - `--azure-size "Small"`: Azure size [$AZURE_SIZE]
+ - `--azure-ssh-port "22"`: Azure SSH port
+ - `--azure-subscription-cert`: **required** Azure subscription cert [$AZURE_SUBSCRIPTION_CERT]
+ - `--azure-subscription-id`: **required** Azure subscription ID [$AZURE_SUBSCRIPTION_ID]
+ - `--azure-username "ubuntu"`: Azure username
 
 The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
 image by default. Note, this image is not available in the Chinese regions. In China you should
