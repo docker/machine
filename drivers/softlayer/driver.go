@@ -148,8 +148,8 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_HOSTNAME",
 			Name:   "softlayer-hostname",
-			Usage:  "hostname for the machine",
-			Value:  "docker",
+			Usage:  "hostname for the machine - defaults to machine name",
+			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_DOMAIN",
@@ -200,9 +200,6 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func validateDeviceConfig(c *deviceConfig) error {
-	if c.Hostname == "" {
-		return fmt.Errorf("Missing required setting - --softlayer-hostname")
-	}
 	if c.Domain == "" {
 		return fmt.Errorf("Missing required setting - --softlayer-domain")
 	}
@@ -275,6 +272,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		PublicVLAN:    flags.Int("softlayer-public-vlan-id"),
 		PrivateVLAN:   flags.Int("softlayer-private-vlan-id"),
 	}
+
+	if d.deviceConfig.Hostname == "" {
+		d.deviceConfig.Hostname = d.GetMachineName()
+	}
+
 	return validateDeviceConfig(d.deviceConfig)
 }
 

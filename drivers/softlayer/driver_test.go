@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -81,10 +83,16 @@ func getTestDriver() (*Driver, error) {
 }
 
 func TestSetConfigFromFlagsSetsImage(t *testing.T) {
-	d, _ := getTestDriver()
+	d, err := getTestDriver()
 
-	img := d.deviceConfig.Image
-	if img != "MY_TEST_IMAGE" {
-		t.Fatalf("expected 'MY_TEST_IMAGE'; received %s", img)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "MY_TEST_IMAGE", d.deviceConfig.Image)
+	}
+}
+
+func TestHostnameDefaultsToMachineName(t *testing.T) {
+	d, err := getTestDriver()
+	if assert.NoError(t, err) {
+		assert.Equal(t, machineTestName, d.deviceConfig.Hostname)
 	}
 }
