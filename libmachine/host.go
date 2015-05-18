@@ -233,7 +233,7 @@ func (h *Host) Upgrade() error {
 	}
 
 	if machineState != state.Running {
-		log.Fatal(errMachineMustBeRunningForUpgrade)
+		log.Fatalln(errMachineMustBeRunningForUpgrade)
 	}
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)

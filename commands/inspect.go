@@ -33,21 +33,21 @@ func cmdInspect(c *cli.Context) {
 
 		jsonHost, err := json.Marshal(getHost(c))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		obj := make(map[string]interface{})
 		if err := json.Unmarshal(jsonHost, &obj); err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 
 		if err := tmpl.Execute(os.Stderr, obj); err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		os.Stderr.Write([]byte{'\n'})
 	} else {
 		prettyJSON, err := json.MarshalIndent(getHost(c), "", "    ")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 
 		fmt.Println(string(prettyJSON))

@@ -8,6 +8,6 @@ import (
 
 func cmdStop(c *cli.Context) {
 	if err := runActionWithContext("stop", c); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

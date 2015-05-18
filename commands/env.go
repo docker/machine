@@ -34,13 +34,13 @@ type ShellConfig struct {
 
 func cmdEnv(c *cli.Context) {
 	if len(c.Args()) != 1 && !c.Bool("unset") {
-		log.Fatal(improperEnvArgsError)
+		log.Fatalln(improperEnvArgsError)
 	}
 	userShell := c.String("shell")
 	if userShell == "" {
 		shell, err := detectShell()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		userShell = shell
 	}
@@ -82,32 +82,32 @@ func cmdEnv(c *cli.Context) {
 
 		tmpl, err := t.Parse(envTmpl)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 
 		if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		return
 	}
 
 	cfg, err := getMachineConfig(c)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if cfg.machineUrl == "" {
-		log.Fatalf("%s is not running. Please start this with %s start %s", cfg.machineName, c.App.Name, cfg.machineName)
+		log.Fatalf("%s is not running. Please start this with %s start %s\n", cfg.machineName, c.App.Name, cfg.machineName)
 	}
 
 	dockerHost := cfg.machineUrl
 	if c.Bool("swarm") {
 		if !cfg.SwarmOptions.Master {
-			log.Fatalf("%s is not a swarm master", cfg.machineName)
+			log.Fatalf("%s is not a swarm master\n", cfg.machineName)
 		}
 		u, err := url.Parse(cfg.SwarmOptions.Host)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		parts := strings.Split(u.Host, ":")
 		swarmPort := parts[1]
@@ -115,7 +115,7 @@ func cmdEnv(c *cli.Context) {
 		// get IP of machine to replace in case swarm host is 0.0.0.0
 		mUrl, err := url.Parse(cfg.machineUrl)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		mParts := strings.Split(mUrl.Host, ":")
 		machineIp := mParts[0]
@@ -125,7 +125,7 @@ func cmdEnv(c *cli.Context) {
 
 	u, err := url.Parse(cfg.machineUrl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if u.Scheme != "unix" {
@@ -137,14 +137,14 @@ func cmdEnv(c *cli.Context) {
 			cfg.serverKeyPath,
 		)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 
 		if !valid {
 			log.Debugf("invalid certs detected; regenerating for %s\n", u.Host)
 
 			if err := runActionWithContext("configureAuth", c); err != nil {
-				log.Fatal(err)
+				log.Fatalln(err)
 			}
 		}
 	}
@@ -177,11 +177,11 @@ func cmdEnv(c *cli.Context) {
 
 	tmpl, err := t.Parse(envTmpl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }
 

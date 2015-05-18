@@ -11,7 +11,7 @@ import (
 func cmdUrl(c *cli.Context) {
 	url, err := getHost(c).GetURL()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(url)

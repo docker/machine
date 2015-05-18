@@ -8,6 +8,6 @@ import (
 
 func cmdRestart(c *cli.Context) {
 	if err := runActionWithContext("restart", c); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

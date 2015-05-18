@@ -26,13 +26,13 @@ func cmdCreate(c *cli.Context) {
 	if driver != "none" {
 		c.App.Commands, err = trimDriverFlags(driver, c.App.Commands)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 	}
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
-		log.Fatal("You must specify a machine name")
+		log.Fatalln("You must specify a machine name")
 	}
 
 	certInfo := getCertPathInfo(c)
@@ -42,7 +42,7 @@ func cmdCreate(c *cli.Context) {
 		certInfo.CaKeyPath,
 		certInfo.ClientCertPath,
 		certInfo.ClientKeyPath); err != nil {
-		log.Fatalf("Error generating certificates: %s", err)
+		log.Fatalf("Error generating certificates: %s\n", err)
 	}
 
 	defaultStore, err := getDefaultStore(
@@ -51,12 +51,12 @@ func cmdCreate(c *cli.Context) {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	hostOptions := &libmachine.HostOptions{

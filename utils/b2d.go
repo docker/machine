@@ -97,7 +97,7 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 func removeFileIfExists(name string) error {
 	if _, err := os.Stat(name); err == nil {
 		if err := os.Remove(name); err != nil {
-			log.Fatalf("Error removing temporary download file: %s", err)
+			log.Fatalf("Error removing temporary download file: %s\n", err)
 		}
 	}
 	return nil
@@ -132,7 +132,7 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 
 	defer func() {
 		if err := removeFileIfExists(f.Name()); err != nil {
-			log.Fatalf("Error removing file: %s", err)
+			log.Fatalf("Error removing file: %s\n", err)
 		}
 	}()
 

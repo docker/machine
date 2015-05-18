@@ -224,7 +224,7 @@ func (d *Driver) Create() error {
 		//// until then always use "latest"
 		//isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
 		//if err != nil {
-		//	log.Warnf("Unable to check for the latest release: %s", err)
+		//	log.Warnf("Unable to check for the latest release: %s\n", err)
 		//}
 
 		// see https://github.com/boot2docker/boot2docker/pull/747

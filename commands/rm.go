@@ -8,7 +8,7 @@ import (
 func cmdRm(c *cli.Context) {
 	if len(c.Args()) == 0 {
 		cli.ShowCommandHelp(c, "rm")
-		log.Fatal("You must specify a machine name")
+		log.Fatalln("You must specify a machine name")
 	}
 
 	force := c.Bool("force")
@@ -22,12 +22,12 @@ func cmdRm(c *cli.Context) {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	for _, host := range c.Args() {
@@ -39,6 +39,6 @@ func cmdRm(c *cli.Context) {
 		}
 	}
 	if isError {
-		log.Fatal("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
+		log.Fatalln("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
 	}
 }
