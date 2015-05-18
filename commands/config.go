@@ -46,7 +46,7 @@ func cmdConfig(c *cli.Context) {
 		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
 	}
 
-	log.Debug(dockerHost)
+	log.Debugln(dockerHost)
 
 	u, err := url.Parse(cfg.machineUrl)
 	if err != nil {
@@ -66,7 +66,7 @@ func cmdConfig(c *cli.Context) {
 		}
 
 		if !valid {
-			log.Debugf("invalid certs detected; regenerating for %s", u.Host)
+			log.Debugf("invalid certs detected; regenerating for %s\n", u.Host)
 
 			if err := runActionWithContext("configureAuth", c); err != nil {
 				log.Fatal(err)

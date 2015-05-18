@@ -342,14 +342,14 @@ func (d *Driver) waitForStart() {
 	for {
 		s, err := d.GetState()
 		if err != nil {
-			log.Debugf("Failed to GetState - %+v", err)
+			log.Debugf("Failed to GetState - %+v\n", err)
 			continue
 		}
 
 		if s == state.Running {
 			break
 		} else {
-			log.Debugf("Still waiting - state is %s...", s)
+			log.Debugf("Still waiting - state is %s...\n", s)
 		}
 		time.Sleep(2 * time.Second)
 	}
@@ -391,7 +391,7 @@ func (d *Driver) waitForSetupTransactions() {
 		t, err := d.GetActiveTransaction()
 		if err != nil {
 			noActiveCount = 0
-			log.Debugf("Failed to GetActiveTransaction - %+v", err)
+			log.Debugf("Failed to GetActiveTransaction - %+v\n", err)
 			continue
 		}
 
@@ -402,7 +402,7 @@ func (d *Driver) waitForSetupTransactions() {
 			noActiveCount++
 		} else {
 			noActiveCount = 0
-			log.Debugf("Still waiting - active transaction is %s...", t)
+			log.Debugf("Still waiting - active transaction is %s...\n", t)
 		}
 		time.Sleep(2 * time.Second)
 	}
@@ -463,7 +463,7 @@ func (d *Driver) buildHostSpec() *HostSpec {
 			},
 		}
 	}
-	log.Debugf("Built host spec %#v", spec)
+	log.Debugf("Built host spec %#v\n", spec)
 	return spec
 }
 

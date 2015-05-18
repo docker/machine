@@ -226,7 +226,7 @@ func (d *Driver) Create() error {
 		time.Sleep(1 * time.Second)
 	}
 
-	log.Debugf("Created droplet ID %d, IP address %s",
+	log.Debugf("Created droplet ID %d, IP address %s\n",
 		newDroplet.Droplet.ID,
 		d.IPAddress)
 

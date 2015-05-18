@@ -141,7 +141,7 @@ func cmdEnv(c *cli.Context) {
 		}
 
 		if !valid {
-			log.Debugf("invalid certs detected; regenerating for %s", u.Host)
+			log.Debugf("invalid certs detected; regenerating for %s\n", u.Host)
 
 			if err := runActionWithContext("configureAuth", c); err != nil {
 				log.Fatal(err)

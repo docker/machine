@@ -149,7 +149,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("IP: %s", d.IPAddress)
+	log.Debugf("IP: %s\n", d.IPAddress)
 
 	return nil
 }
@@ -194,7 +194,7 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
-	log.Debug("Restarting...")
+	log.Debugln("Restarting...")
 
 	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now"); err != nil {
 		return err
@@ -204,7 +204,7 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	log.Debug("Killing...")
+	log.Debugln("Killing...")
 
 	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now"); err != nil {
 		return err

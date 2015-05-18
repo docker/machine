@@ -112,7 +112,7 @@ func WaitForDocker(ip string, daemonPort int) error {
 	return WaitFor(func() bool {
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, daemonPort))
 		if err != nil {
-			log.Debugf("Daemon not responding yet: %s", err)
+			log.Debugf("Daemon not responding yet: %s\n", err)
 			return false
 		}
 		conn.Close()
@@ -126,7 +126,7 @@ func DumpVal(vals ...interface{}) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Debug(string(prettyJSON))
+		log.Debugln(string(prettyJSON))
 	}
 }
 

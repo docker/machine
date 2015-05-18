@@ -255,7 +255,7 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Error, err
 	}
 
-	log.Debug("Connecting to vCloud Air to fetch vApp Status...")
+	log.Debugln("Connecting to vCloud Air to fetch vApp Status...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -410,7 +410,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Disconnecting from vCloud Air...")
+	log.Debugln("Disconnecting from vCloud Air...")
 
 	if err = p.Disconnect(); err != nil {
 		return err
@@ -475,7 +475,7 @@ func (d *Driver) Remove() error {
 
 	}
 
-	log.Debugf("Undeploying %s...", d.MachineName)
+	log.Debugf("Undeploying %s...\n", d.MachineName)
 	task, err = vapp.Undeploy()
 	if err != nil {
 		return err

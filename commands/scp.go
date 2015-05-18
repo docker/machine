@@ -97,7 +97,7 @@ func getScpCmd(src, dest string, sshArgs []string, mcn libmachine.Machine) (*exe
 	sshArgs = append(sshArgs, locationArg)
 
 	cmd := exec.Command(cmdPath, sshArgs...)
-	log.Debug(*cmd)
+	log.Debugln(*cmd)
 	return cmd, nil
 }
 

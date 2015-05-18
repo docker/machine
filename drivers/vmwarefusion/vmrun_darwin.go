@@ -36,7 +36,7 @@ func vmrun(args ...string) (string, string, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	log.Debugf("executing: %v %v", vmrunbin, strings.Join(args, " "))
+	log.Debugf("executing: %v %v\n", vmrunbin, strings.Join(args, " "))
 
 	err := cmd.Run()
 	if err != nil {

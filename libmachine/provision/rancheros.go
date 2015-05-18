@@ -96,27 +96,27 @@ func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.SwarmOptions
 		return fmt.Errorf("Unsupported storage driver: %s", provisioner.EngineOptions.StorageDriver)
 	}
 
-	log.Debugf("Setting hostname %s", provisioner.Driver.GetMachineName())
+	log.Debugf("Setting hostname %s\n", provisioner.Driver.GetMachineName())
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
 
 	for _, pkg := range provisioner.Packages {
-		log.Debugf("Installing package %s", pkg)
+		log.Debugf("Installing package %s\n", pkg)
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
 			return err
 		}
 	}
 
-	log.Debugf("Preparing certificates")
+	log.Debugln("Preparing certificates")
 	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
 
-	log.Debugf("Setting up certificates")
+	log.Debugln("Setting up certificates")
 	if err := ConfigureAuth(provisioner); err != nil {
 		return err
 	}
 
-	log.Debugf("Configuring swarm")
+	log.Debugln("Configuring swarm")
 	if err := configureSwarm(provisioner, swarmOptions); err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 }
 
 func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
-	log.Debugf("Reading %s", versionsUrl)
+	log.Debugf("Reading %s\n", versionsUrl)
 	resp, err := http.Get(versionsUrl)
 	if err != nil {
 		return "", err
@@ -213,7 +213,7 @@ func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "current: ") {
-			log.Debugf("Found %s", line)
+			log.Debugf("Found %s\n", line)
 			return fmt.Sprintf(isoUrl, strings.Split(line, ":")[2]), err
 		}
 	}

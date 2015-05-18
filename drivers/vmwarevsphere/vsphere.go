@@ -452,7 +452,7 @@ func (d *Driver) Restart() error {
 			return err
 		}
 		if machineState == state.Running {
-			log.Debugf("Not there yet %d/%d", i, 60)
+			log.Debugf("Not there yet %d/%d\n", i, 60)
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -542,7 +542,7 @@ func downloadISO(dir, file, url string) error {
 
 // Make a boot2docker userdata.tar key bundle
 func (d *Driver) generateKeyBundle() error {
-	log.Debugf("Creating Tar key bundle...")
+	log.Debugln("Creating Tar key bundle...")
 
 	magicString := "boot2docker, this is vmware speaking"
 

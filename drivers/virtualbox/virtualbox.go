@@ -200,7 +200,7 @@ func (d *Driver) Create() error {
 			return err
 		}
 
-		log.Debugf("Importing VM settings...")
+		log.Debugln("Importing VM settings...")
 		vmInfo, err := getVMInfo(name)
 		if err != nil {
 			return err
@@ -209,7 +209,7 @@ func (d *Driver) Create() error {
 		d.CPU = vmInfo.CPUs
 		d.Memory = vmInfo.Memory
 
-		log.Debugf("Importing SSH key...")
+		log.Debugln("Importing SSH key...")
 		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
 		if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
 			return err
@@ -220,7 +220,7 @@ func (d *Driver) Create() error {
 			return err
 		}
 
-		log.Debugf("Creating disk image...")
+		log.Debugln("Creating disk image...")
 		if err := d.generateDiskImage(d.DiskSize); err != nil {
 			return err
 		}
@@ -233,8 +233,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("VM CPUS: %d", d.CPU)
-	log.Debugf("VM Memory: %d", d.Memory)
+	log.Debugf("VM CPUS: %d\n", d.CPU)
+	log.Debugf("VM Memory: %d\n", d.Memory)
 
 	cpus := d.CPU
 	if cpus < 1 {
@@ -537,7 +537,7 @@ func (d *Driver) diskPath() string {
 
 // Make a boot2docker VM disk image.
 func (d *Driver) generateDiskImage(size int) error {
-	log.Debugf("Creating %d MB hard disk image...", size)
+	log.Debugf("Creating %d MB hard disk image...\n", size)
 
 	magicString := "boot2docker, please format-me"
 
@@ -677,7 +677,7 @@ func setPortForwarding(machine string, interfaceNum int, mapName, protocol strin
 		return -1, err
 	}
 	if desiredHostPort != actualHostPort && desiredHostPort != 0 {
-		log.Debugf("NAT forwarding host port for guest port %d (%s) changed from %d to %d",
+		log.Debugf("NAT forwarding host port for guest port %d (%s) changed from %d to %d\n",
 			guestPort, mapName, desiredHostPort, actualHostPort)
 	}
 	cmd := fmt.Sprintf("--natpf%d", interfaceNum)

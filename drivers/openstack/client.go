@@ -404,7 +404,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		"Username":   d.Username,
 		"TenantName": d.TenantName,
 		"TenantID":   d.TenantId,
-	}).Debug("Authenticating...")
+	}).Debugln("Authenticating...")
 
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint: d.AuthUrl,

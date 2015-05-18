@@ -232,7 +232,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Availability zone %v doesn't exist",
 			d.AvailabilityZone)
 	}
-	log.Debugf("Availability zone %v = %s", d.AvailabilityZone, zone)
+	log.Debugf("Availability zone %v = %s\n", d.AvailabilityZone, zone)
 
 	// Image UUID
 	var tpl string
@@ -244,7 +244,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Unable to find image %v with size %d",
 			d.Image, d.DiskSize)
 	}
-	log.Debugf("Image %v(%d) = %s", d.Image, d.DiskSize, tpl)
+	log.Debugf("Image %v(%d) = %s\n", d.Image, d.DiskSize, tpl)
 
 	// Profile UUID
 	profile, ok := topology.Profiles[strings.ToLower(d.InstanceProfile)]
@@ -252,12 +252,12 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Unable to find the %s profile",
 			d.InstanceProfile)
 	}
-	log.Debugf("Profile %v = %s", d.InstanceProfile, profile)
+	log.Debugf("Profile %v = %s\n", d.InstanceProfile, profile)
 
 	// Security group
 	sg, ok := topology.SecurityGroups[d.SecurityGroup]
 	if !ok {
-		log.Infof("Security group %v does not exist, create it",
+		log.Infof("Security group %v does not exist, create it\n",
 			d.SecurityGroup)
 		rules := []egoscale.SecurityGroupRule{
 			{
@@ -288,7 +288,7 @@ func (d *Driver) Create() error {
 		}
 		sg = sgresp.Id
 	}
-	log.Debugf("Security group %v = %s", d.SecurityGroup, sg)
+	log.Debugf("Security group %v = %s\n", d.SecurityGroup, sg)
 
 	if d.KeyPair == "" {
 		log.Infof("Generate an SSH keypair...")
@@ -309,8 +309,8 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("Using the following cloud-init file:")
-	log.Debugf("%s", userdata)
+	log.Debugln("Using the following cloud-init file:")
+	log.Debugln(userdata)
 
 	machineProfile := egoscale.MachineProfile{
 		Template:        tpl,

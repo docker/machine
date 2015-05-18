@@ -53,7 +53,7 @@ func token(storePath, authTokenPath string, config *oauth.Config) *oauth.Token {
 	if authTokenPath == "" {
 		tokenPath = filepath.Join(storePath, "gce_token")
 	}
-	log.Debugf("using auth token: %s", tokenPath)
+	log.Debugf("using auth token: %s\n", tokenPath)
 	token, err := tokenFromCache(tokenPath)
 	if err != nil {
 		token = tokenFromWeb(config)

@@ -86,7 +86,7 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 		"storePath":   storePath,
 		"caCert":      caCert,
 		"privateKey":  privateKey,
-	}).Debug("Instantiating Rackspace driver.")
+	}).Debugln("Instantiating Rackspace driver.")
 
 	client := &Client{}
 	inner, err := openstack.NewDerivedDriver(machineName, storePath, client, caCert, privateKey)

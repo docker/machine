@@ -30,32 +30,32 @@ func RunSSHCommandFromDriver(d Driver, command string) (ssh.Output, error) {
 		return output, err
 	}
 
-	log.Debugf("About to run SSH command:\n%s", command)
+	log.Debugf("About to run SSH command:\n%s\n", command)
 	output, err = client.Run(command)
-	log.Debugf("SSH cmd err, output: %v: %s", err, output)
+	log.Debugf("SSH cmd err, output: %v: %s\n", err, output)
 	return output, err
 }
 
 func sshAvailableFunc(d Driver) func() bool {
 	return func() bool {
-		log.Debug("Getting to WaitForSSH function...")
+		log.Debugln("Getting to WaitForSSH function...")
 		hostname, err := d.GetSSHHostname()
 		if err != nil {
-			log.Debugf("Error getting IP address waiting for SSH: %s", err)
+			log.Debugf("Error getting IP address waiting for SSH: %s\n", err)
 			return false
 		}
 		port, err := d.GetSSHPort()
 		if err != nil {
-			log.Debugf("Error getting SSH port: %s", err)
+			log.Debugf("Error getting SSH port: %s\n", err)
 			return false
 		}
 		if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", hostname, port)); err != nil {
-			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
+			log.Debugf("Error waiting for TCP waiting for SSH: %s\n", err)
 			return false
 		}
 
 		if _, err := RunSSHCommandFromDriver(d, "exit 0"); err != nil {
-			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
+			log.Debugf("Error getting ssh command 'exit 0' : %s\n", err)
 			return false
 		}
 		return true

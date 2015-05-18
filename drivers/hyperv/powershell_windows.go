@@ -25,14 +25,14 @@ func init() {
 
 func execute(args []string) (string, error) {
 	cmd := exec.Command(powershell, args...)
-	log.Debugf("[executing ==>] : %v %v", powershell, strings.Join(args, " "))
+	log.Debugf("[executing ==>] : %v %v\n", powershell, strings.Join(args, " "))
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
-	log.Debugf("[stdout =====>] : %s", stdout.String())
-	log.Debugf("[stderr =====>] : %s", stderr.String())
+	log.Debugf("[stdout =====>] : %s\n", stdout.String())
+	log.Debugf("[stderr =====>] : %s\n", stderr.String())
 	return stdout.String(), err
 }
 

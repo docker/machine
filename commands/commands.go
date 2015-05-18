@@ -390,7 +390,7 @@ func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- e
 		"ip":            host.PrintIP,
 	}
 
-	log.Debugf("command=%s machine=%s", actionName, host.Name)
+	log.Debugf("command=%s machine=%s\n", actionName, host.Name)
 
 	if err := commands[actionName](); err != nil {
 		errorChan <- err
