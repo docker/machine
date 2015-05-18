@@ -61,4 +61,4 @@ When migrating a Boot2Docker VM to Docker Machine the Boot2Docker VM is left int
 
 ** `ls` will show all machines including their status
 
-** the `url` command reports the entire Docker URL including the IP / Hostname
+*** the `url` command reports the entire Docker URL including the IP / Hostname
