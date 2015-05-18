@@ -1,19 +1,24 @@
 package log
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
-func TestTerminalLoggerWithFields(t *testing.T) {
-	logger := TerminalLogger{}
+func TestStandardLoggerWithFields(t *testing.T) {
+	buffer := bytes.NewBuffer(nil)
+
+	logger := newStandardLogger(buffer, buffer, make(Fields))
 	withFieldsLogger := logger.WithFields(Fields{
-		"foo":  "bar",
 		"spam": "eggs",
+		"foo":  "bar",
 	})
-	withFieldsTerminalLogger, ok := withFieldsLogger.(TerminalLogger)
-	if !ok {
-		t.Fatal("Type assertion to TerminalLogger failed")
-	}
-	expectedOutFields := "\t\t foo=bar spam=eggs"
-	if withFieldsTerminalLogger.fieldOut != expectedOutFields {
-		t.Fatalf("Expected %q, got %q", expectedOutFields, withFieldsTerminalLogger.fieldOut)
+	withFieldsLogger.Println("woot")
+	logger.Print("hello")
+
+	expected := "woot\t\t foo=bar spam=eggs\nhello"
+	actual := buffer.String()
+	if expected != actual {
+		t.Fatalf("expected %q, got %q", expected, actual)
 	}
 }
