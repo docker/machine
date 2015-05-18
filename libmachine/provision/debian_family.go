@@ -2,6 +2,7 @@ package provision
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
@@ -31,7 +32,16 @@ type DebianFamilyProvisioner struct {
 }
 
 func (provisioner *DebianFamilyProvisioner) Service(name string, action pkgaction.ServiceAction) error {
-	command := fmt.Sprintf("sudo service %s %s", name, action.String())
+	var command string
+	if provisioner.GetInitSubsystem() == SYSTEMD {
+		if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
+			return err
+		}
+
+		command = fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
+	} else {
+		command = fmt.Sprintf("sudo service %s %s", name, action.String())
+	}
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
@@ -130,4 +140,18 @@ func (provisioner *DebianFamilyProvisioner) Provision(swarmOptions swarm.SwarmOp
 	}
 
 	return nil
+}
+
+func (provisioner *DebianFamilyProvisioner) GetInitSubsystem() int {
+	if provisioner.OsReleaseId == "debian" {
+		version, _ := strconv.Atoi(provisioner.OsReleaseInfo.VersionId)
+		if version <= 7 {
+			return SYSVINIT
+		}
+		provisioner.DaemonOptionsFile = "/lib/systemd/system/docker.service"
+		return SYSTEMD
+	} else if provisioner.OsReleaseId == "ubuntu" {
+		return UPSTART
+	}
+	return SYSVINIT
 }

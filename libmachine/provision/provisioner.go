@@ -14,10 +14,16 @@ import (
 
 var provisioners = make(map[string]*RegisteredProvisioner)
 
+const (
+	SYSVINIT = iota
+	SYSTEMD  = iota
+	UPSTART  = iota
+)
+
 // Distribution specific actions
 type Provisioner interface {
 	// Create the files for the daemon to consume configuration settings (return struct of content and path)
-	GenerateDockerOptions(dockerPort int) (*DockerOptions, error)
+	GenerateDockerOptions(dockerPort int, initSystem int) (*DockerOptions, error)
 
 	// Get the directory where the settings files for docker are to be found
 	GetDockerOptionsDir() string
@@ -57,6 +63,8 @@ type Provisioner interface {
 	// Set the OS Release info depending on how it's represented
 	// internally
 	SetOsReleaseInfo(info *OsRelease)
+
+	GetInitSubsystem() int
 }
 
 // Detection

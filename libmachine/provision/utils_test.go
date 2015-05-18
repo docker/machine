@@ -22,7 +22,7 @@ func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 	}
 	engineConfigPath := "/var/lib/boot2docker/profile"
 
-	dockerCfg, err := p.GenerateDockerOptions(dockerPort)
+	dockerCfg, err := p.GenerateDockerOptions(dockerPort, SYSVINIT)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 		ServerCertRemotePath: "/test/server-cert",
 	}
 
-	cfg, err := p.GenerateDockerOptions(dockerPort)
+	cfg, err := p.GenerateDockerOptions(dockerPort, SYSVINIT)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestMachineCustomPortBoot2Docker(t *testing.T) {
 		ServerCertRemotePath: "/test/server-cert",
 	}
 
-	cfg, err := p.GenerateDockerOptions(dockerPort)
+	cfg, err := p.GenerateDockerOptions(dockerPort, SYSVINIT)
 	if err != nil {
 		t.Fatal(err)
 	}
