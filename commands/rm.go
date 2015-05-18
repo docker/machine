@@ -35,7 +35,7 @@ func cmdRm(c *cli.Context) {
 			log.Errorf("Error removing machine %s: %s", host, err)
 			isError = true
 		} else {
-			log.Infof("Successfully removed %s", host)
+			log.Infof("Successfully removed %s\n", host)
 		}
 	}
 	if isError {

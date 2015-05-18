@@ -182,14 +182,14 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Creating host...")
+	log.Infoln("Creating host...")
 	// Check if the instance already exists. There will be an error if the instance
 	// doesn't exist, so just check instance for nil.
 	if instance, _ := c.instance(); instance != nil {
 		return fmt.Errorf("Instance %v already exists.", d.MachineName)
 	}
 
-	log.Infof("Generating SSH Key")
+	log.Infoln("Generating SSH Key")
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}

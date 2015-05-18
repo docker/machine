@@ -344,7 +344,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Launching instance...")
+	log.Infoln("Launching instance...")
 
 	if err := d.createKeyPair(); err != nil {
 		return fmt.Errorf("unable to create key pair: %s", err)
@@ -370,7 +370,7 @@ func (d *Driver) Create() error {
 		}
 		var instanceId string
 		var spotInstanceRequestStatus string
-		log.Info("Waiting for spot instance...")
+		log.Infoln("Waiting for spot instance...")
 		// check until fulfilled
 		for instanceId == "" {
 			time.Sleep(time.Second * 5)

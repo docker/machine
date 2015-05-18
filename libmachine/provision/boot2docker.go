@@ -56,7 +56,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 		return errors.New("Upgrade functionality is currently not supported for these providers, as they use a custom ISO.")
 	}
 
-	log.Info("Stopping machine to do the upgrade...")
+	log.Infoln("Stopping machine to do the upgrade...")
 
 	if err := provisioner.Driver.Stop(); err != nil {
 		return err
@@ -68,7 +68,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 
 	machineName := provisioner.GetDriver().GetMachineName()
 
-	log.Infof("Upgrading machine %s...", machineName)
+	log.Infof("Upgrading machine %s...\n", machineName)
 
 	b2dutils := utils.NewB2dUtils("", "")
 
@@ -83,7 +83,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 		return err
 	}
 
-	log.Infof("Starting machine back up...")
+	log.Infoln("Starting machine back up...")
 
 	if err := provisioner.Driver.Start(); err != nil {
 		return err

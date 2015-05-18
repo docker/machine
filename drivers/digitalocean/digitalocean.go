@@ -177,7 +177,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Creating SSH key...")
+	log.Infoln("Creating SSH key...")
 
 	key, err := d.createSSHKey()
 	if err != nil {
@@ -186,7 +186,7 @@ func (d *Driver) Create() error {
 
 	d.SSHKeyID = key.ID
 
-	log.Infof("Creating Digital Ocean droplet...")
+	log.Infoln("Creating Digital Ocean droplet...")
 
 	client := d.getClient()
 
@@ -301,14 +301,14 @@ func (d *Driver) Remove() error {
 	client := d.getClient()
 	if resp, err := client.Keys.DeleteByID(d.SSHKeyID); err != nil {
 		if resp.StatusCode == 404 {
-			log.Infof("Digital Ocean SSH key doesn't exist, assuming it is already deleted")
+			log.Infoln("Digital Ocean SSH key doesn't exist, assuming it is already deleted")
 		} else {
 			return err
 		}
 	}
 	if resp, err := client.Droplets.Delete(d.DropletID); err != nil {
 		if resp.StatusCode == 404 {
-			log.Infof("Digital Ocean droplet doesn't exist, assuming it is already deleted")
+			log.Infoln("Digital Ocean droplet doesn't exist, assuming it is already deleted")
 		} else {
 			return err
 		}

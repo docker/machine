@@ -285,7 +285,7 @@ func (d *Driver) Create() error {
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+		log.Infof("Downloading boot2docker.iso from %s...\n", isoURL)
 		if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
 			return err
 
@@ -306,7 +306,7 @@ func (d *Driver) Create() error {
 		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.6.0-vmw/boot2docker-1.6.0-vmw.iso"
 
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+			log.Infof("Downloading boot2docker.iso to %s...\n", commonIsoPath)
 			// just in case boot2docker.iso has been manually deleted
 			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 				if err := os.Mkdir(imgPath, 0700); err != nil {
@@ -327,13 +327,13 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Generating SSH Keypair...")
+	log.Infoln("Generating SSH Keypair...")
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
 	vcConn := NewVcConn(d)
-	log.Infof("Uploading Boot2docker ISO ...")
+	log.Infoln("Uploading Boot2docker ISO ...")
 	if err := vcConn.DatastoreMkdir(DatastoreDir); err != nil {
 		return err
 	}
@@ -352,7 +352,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Configuring the virtual machine %s... ", d.MachineName)
+	log.Infof("Configuring the virtual machine %s...\n", d.MachineName)
 	if err := vcConn.VMDiskCreate(); err != nil {
 		return err
 	}
@@ -391,7 +391,7 @@ func (d *Driver) Start() error {
 
 	switch machineState {
 	case state.Running:
-		log.Infof("VM %s has already been started", d.MachineName)
+		log.Infof("VM %s has already been started\n", d.MachineName)
 		return nil
 	case state.Stopped:
 		// TODO add transactional or error handling in the following steps

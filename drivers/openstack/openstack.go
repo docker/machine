@@ -373,7 +373,7 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.WithField("MachineId", d.MachineId).Info("Starting OpenStack instance...")
+	log.WithField("MachineId", d.MachineId).Infoln("Starting OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -384,7 +384,7 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	log.WithField("MachineId", d.MachineId).Info("Stopping OpenStack instance...")
+	log.WithField("MachineId", d.MachineId).Infoln("Stopping OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -397,7 +397,7 @@ func (d *Driver) Stop() error {
 
 func (d *Driver) Remove() error {
 	log.WithField("MachineId", d.MachineId).Debug("deleting instance...")
-	log.Info("Deleting OpenStack instance...")
+	log.Infoln("Deleting OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -412,7 +412,7 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
-	log.WithField("MachineId", d.MachineId).Info("Restarting OpenStack instance...")
+	log.WithField("MachineId", d.MachineId).Infoln("Restarting OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
 	}

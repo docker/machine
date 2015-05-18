@@ -139,7 +139,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Importing SSH key...")
+	log.Infoln("Importing SSH key...")
 
 	if err := utils.CopyFile(d.SSHKey, d.sshKeyPath()); err != nil {
 		return fmt.Errorf("unable to copy ssh key: %s", err)

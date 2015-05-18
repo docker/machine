@@ -219,7 +219,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Querying exoscale for the requested parameters...")
+	log.Infof("Querying exoscale for the requested parameters...\n")
 	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
 	topology, err := client.GetTopology()
 	if err != nil {
@@ -291,7 +291,7 @@ func (d *Driver) Create() error {
 	log.Debugf("Security group %v = %s\n", d.SecurityGroup, sg)
 
 	if d.KeyPair == "" {
-		log.Infof("Generate an SSH keypair...")
+		log.Infoln("Generate an SSH keypair...")
 		kpresp, err := client.CreateKeypair(d.MachineName)
 		if err != nil {
 			return err
@@ -303,7 +303,7 @@ func (d *Driver) Create() error {
 		d.KeyPair = d.MachineName
 	}
 
-	log.Infof("Spawn exoscale host...")
+	log.Infoln("Spawn exoscale host...")
 
 	userdata, err := d.getCloudInit()
 	if err != nil {
@@ -343,7 +343,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 	if vmstate == state.Running || vmstate == state.Starting {
-		log.Infof("Host is already running or starting")
+		log.Infoln("Host is already running or starting")
 		return nil
 	}
 
@@ -365,7 +365,7 @@ func (d *Driver) Stop() error {
 		return err
 	}
 	if vmstate == state.Stopped {
-		log.Infof("Host is already stopped")
+		log.Infoln("Host is already stopped")
 		return nil
 	}
 
@@ -421,7 +421,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.DeployVirtualMachineResponse, error) {
-	log.Infof("Waiting for VM...")
+	log.Infoln("Waiting for VM...")
 	maxRepeats := 60
 	i := 0
 	var resp *egoscale.QueryAsyncJobResultResponse

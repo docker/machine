@@ -40,7 +40,7 @@ func (conn VcConn) DatastoreMkdir(dirName string) error {
 		return nil
 	}
 
-	log.Infof("Creating directory %s on datastore %s of vCenter %s... ",
+	log.Infof("Creating directory %s on datastore %s of vCenter %s...\n",
 		dirName, conn.driver.Datastore, conn.driver.IP)
 
 	args := []string{"datastore.mkdir"}
@@ -64,11 +64,11 @@ func (conn VcConn) DatastoreMkdir(dirName string) error {
 func (conn VcConn) DatastoreUpload(localPath string) error {
 	stdout, err := conn.DatastoreLs(DatastoreDir)
 	if err == nil && strings.Contains(stdout, B2DISOName) {
-		log.Infof("boot2docker ISO already uploaded, skipping upload... ")
+		log.Infoln("boot2docker ISO already uploaded, skipping upload... ")
 		return nil
 	}
 
-	log.Infof("Uploading %s to %s on datastore %s of vCenter %s... ",
+	log.Infof("Uploading %s to %s on datastore %s of vCenter %s...\n",
 		localPath, DatastoreDir, conn.driver.Datastore, conn.driver.IP)
 
 	dsPath := fmt.Sprintf("%s/%s", DatastoreDir, B2DISOName)
@@ -99,7 +99,7 @@ func (conn VcConn) VMInfo() (string, error) {
 }
 
 func (conn VcConn) VMCreate(isoPath string) error {
-	log.Infof("Creating virtual machine %s of vCenter %s... ",
+	log.Infof("Creating virtual machine %s of vCenter %s...\n",
 		conn.driver.MachineName, conn.driver.IP)
 
 	args := []string{"vm.create"}
@@ -131,7 +131,7 @@ func (conn VcConn) VMCreate(isoPath string) error {
 }
 
 func (conn VcConn) VMPowerOn() error {
-	log.Infof("Powering on virtual machine %s of vCenter %s... ",
+	log.Infof("Powering on virtual machine %s of vCenter %s...\n",
 		conn.driver.MachineName, conn.driver.IP)
 
 	args := []string{"vm.power"}
@@ -148,7 +148,7 @@ func (conn VcConn) VMPowerOn() error {
 }
 
 func (conn VcConn) VMPowerOff() error {
-	log.Infof("Powering off virtual machine %s of vCenter %s... ",
+	log.Infof("Powering off virtual machine %s of vCenter %s...\n",
 		conn.driver.MachineName, conn.driver.IP)
 
 	args := []string{"vm.power"}
@@ -165,7 +165,7 @@ func (conn VcConn) VMPowerOff() error {
 }
 
 func (conn VcConn) VMShutdown() error {
-	log.Infof("Powering off virtual machine %s of vCenter %s... ",
+	log.Infof("Powering off virtual machine %s of vCenter %s...\n",
 		conn.driver.MachineName, conn.driver.IP)
 
 	args := []string{"vm.power"}
@@ -182,7 +182,7 @@ func (conn VcConn) VMShutdown() error {
 }
 
 func (conn VcConn) VMDestroy() error {
-	log.Infof("Deleting virtual machine %s of vCenter %s... ",
+	log.Infof("Deleting virtual machine %s of vCenter %s...\n",
 		conn.driver.MachineName, conn.driver.IP)
 
 	args := []string{"vm.destroy"}

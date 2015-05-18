@@ -119,7 +119,7 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 	}
 
 	if _, err := os.Stat(caCertPath); os.IsNotExist(err) {
-		log.Infof("Creating CA: %s", caCertPath)
+		log.Infof("Creating CA: %s\n", caCertPath)
 
 		// check if the key path exists; if so, error
 		if _, err := os.Stat(caKeyPath); err == nil {
@@ -127,12 +127,12 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 		}
 
 		if err := utils.GenerateCACertificate(caCertPath, caKeyPath, org, bits); err != nil {
-			log.Infof("Error generating CA certificate: %s", err)
+			log.Infof("Error generating CA certificate: %s\n", err)
 		}
 	}
 
 	if _, err := os.Stat(clientCertPath); os.IsNotExist(err) {
-		log.Infof("Creating client certificate: %s", clientCertPath)
+		log.Infof("Creating client certificate: %s\n", clientCertPath)
 
 		if _, err := os.Stat(utils.GetMachineCertDir()); err != nil {
 			if os.IsNotExist(err) {

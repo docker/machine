@@ -338,7 +338,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) waitForStart() {
-	log.Infof("Waiting for host to become available")
+	log.Infoln("Waiting for host to become available")
 	for {
 		s, err := d.GetState()
 		if err != nil {
@@ -356,7 +356,7 @@ func (d *Driver) waitForStart() {
 }
 
 func (d *Driver) getIp() (string, error) {
-	log.Infof("Getting Host IP")
+	log.Infoln("Getting Host IP")
 	for {
 		var (
 			ip  string
@@ -382,7 +382,7 @@ func (d *Driver) getIp() (string, error) {
 }
 
 func (d *Driver) waitForSetupTransactions() {
-	log.Infof("Waiting for host setup transactions to complete")
+	log.Infoln("Waiting for host setup transactions to complete")
 	// sometimes we'll hit a case where there's no active transaction, but if
 	// we check again in a few seconds, it moves to the next transaction. We
 	// don't want to get false-positives, so we check a few times in a row to make sure!
@@ -411,13 +411,13 @@ func (d *Driver) waitForSetupTransactions() {
 func (d *Driver) Create() error {
 	spec := d.buildHostSpec()
 
-	log.Infof("Creating SSH key...")
+	log.Infoln("Creating SSH key...")
 	key, err := d.createSSHKey()
 	if err != nil {
 		return err
 	}
 
-	log.Infof("SSH key %s (%d) created in SoftLayer", key.Label, key.Id)
+	log.Infof("SSH key %s (%d) created in SoftLayer\n", key.Label, key.Id)
 	d.SSHKeyID = key.Id
 
 	spec.SshKeys = []*SshKey{key}
@@ -494,7 +494,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Remove() error {
-	log.Infof("Canceling SoftLayer instance %d...", d.Id)
+	log.Infoln("Canceling SoftLayer instance %d...\n", d.Id)
 	var err error
 	for i := 0; i < 5; i++ {
 		if err = d.getClient().VirtualGuest().Cancel(d.Id); err != nil {
@@ -507,7 +507,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	log.Infof("Removing SSH Key %d...", d.SSHKeyID)
+	log.Infof("Removing SSH Key %d...\n", d.SSHKeyID)
 	if err = d.getClient().SshKey().Delete(d.SSHKeyID); err != nil {
 		return err
 	}

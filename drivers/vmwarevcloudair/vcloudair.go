@@ -302,7 +302,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Connecting to vCloud Air...")
+	log.Infoln("Connecting to vCloud Air...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -348,7 +348,7 @@ func (d *Driver) Create() error {
 	// Create a new empty vApp
 	vapp := govcloudair.NewVApp(p)
 
-	log.Infof("Creating a new vApp: %s...", d.MachineName)
+	log.Infof("Creating a new vApp: %s...\n", d.MachineName)
 	// Compose the vApp with ComposeVApp
 	task, err := vapp.ComposeVApp(net, vapptemplate, d.MachineName, "Container Host created with Docker Host")
 	if err != nil {
@@ -394,13 +394,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Waiting for the VM to power on and run the customization script...")
+	log.Infoln("Waiting for the VM to power on and run the customization script...")
 
 	if err = task.WaitTaskCompletion(); err != nil {
 		return err
 	}
 
-	log.Infof("Creating NAT and Firewall Rules on %s...", d.EdgeGateway)
+	log.Infof("Creating NAT and Firewall Rules on %s...\n", d.EdgeGateway)
 	task, err = edge.Create1to1Mapping(vapp.VApp.Children.VM[0].NetworkConnectionSection.NetworkConnection.IPAddress, d.PublicIP, d.MachineName)
 	if err != nil {
 		return err
@@ -429,7 +429,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	log.Infof("Connecting to vCloud Air...")
+	log.Infoln("Connecting to vCloud Air...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -444,7 +444,7 @@ func (d *Driver) Remove() error {
 
 	vapp, err := v.FindVAppByID(d.VAppID)
 	if err != nil {
-		log.Infof("Can't find the vApp, assuming it was deleted already...")
+		log.Infoln("Can't find the vApp, assuming it was deleted already...")
 		return nil
 	}
 
@@ -453,7 +453,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	log.Infof("Removing NAT and Firewall Rules on %s...", d.EdgeGateway)
+	log.Infof("Removing NAT and Firewall Rules on %s...\n", d.EdgeGateway)
 	task, err := edge.Remove1to1Mapping(vapp.VApp.Children.VM[0].NetworkConnectionSection.NetworkConnection.IPAddress, d.PublicIP)
 	if err != nil {
 		return err
@@ -464,7 +464,7 @@ func (d *Driver) Remove() error {
 
 	if status == "POWERED_ON" {
 		// If it's powered on, power it off before deleting
-		log.Infof("Powering Off %s...", d.MachineName)
+		log.Infof("Powering Off %s...\n", d.MachineName)
 		task, err = vapp.PowerOff()
 		if err != nil {
 			return err
@@ -484,7 +484,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	log.Infof("Deleting %s...", d.MachineName)
+	log.Infof("Deleting %s...\n", d.MachineName)
 	task, err = vapp.Delete()
 	if err != nil {
 		return err
@@ -507,7 +507,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	log.Infof("Connecting to vCloud Air...")
+	log.Infoln("Connecting to vCloud Air...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -525,7 +525,7 @@ func (d *Driver) Start() error {
 	}
 
 	if status == "POWERED_OFF" {
-		log.Infof("Starting %s...", d.MachineName)
+		log.Infof("Starting %s...\n", d.MachineName)
 		task, err := vapp.PowerOn()
 		if err != nil {
 			return err
@@ -551,7 +551,7 @@ func (d *Driver) Stop() error {
 		return err
 	}
 
-	log.Infof("Connecting to vCloud Air...")
+	log.Infoln("Connecting to vCloud Air...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -569,7 +569,7 @@ func (d *Driver) Stop() error {
 	}
 
 	if status == "POWERED_ON" {
-		log.Infof("Shutting down %s...", d.MachineName)
+		log.Infof("Shutting down %s...\n", d.MachineName)
 		task, err := vapp.Shutdown()
 		if err != nil {
 			return err
@@ -596,7 +596,7 @@ func (d *Driver) Restart() error {
 		return err
 	}
 
-	log.Infof("Connecting to vCloud Air...")
+	log.Infoln("Connecting to vCloud Air...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -615,7 +615,7 @@ func (d *Driver) Restart() error {
 
 	if status == "POWERED_ON" {
 		// If it's powered on, restart the machine
-		log.Infof("Restarting %s...", d.MachineName)
+		log.Infof("Restarting %s...\n", d.MachineName)
 		task, err := vapp.Reset()
 		if err != nil {
 			return err
@@ -626,7 +626,7 @@ func (d *Driver) Restart() error {
 
 	} else {
 		// If it's not powered on, start it.
-		log.Infof("Docker host %s is powered off, powering it back on...", d.MachineName)
+		log.Infof("Docker host %s is powered off, powering it back on...\n", d.MachineName)
 		task, err := vapp.PowerOn()
 		if err != nil {
 			return err
@@ -651,7 +651,7 @@ func (d *Driver) Kill() error {
 		return err
 	}
 
-	log.Infof("Connecting to vCloud Air...")
+	log.Infoln("Connecting to vCloud Air...")
 	// Authenticate to vCloud Air
 	v, err := p.Authenticate(d.UserName, d.UserPassword, d.ComputeID, d.VDCID)
 	if err != nil {
@@ -669,7 +669,7 @@ func (d *Driver) Kill() error {
 	}
 
 	if status == "POWERED_ON" {
-		log.Infof("Stopping %s...", d.MachineName)
+		log.Infof("Stopping %s...\n", d.MachineName)
 		task, err := vapp.PowerOff()
 		if err != nil {
 			return err

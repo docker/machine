@@ -146,12 +146,12 @@ func (provisioner *RancherProvisioner) upgrade() error {
 	case "virtualbox":
 		return provisioner.upgradeIso()
 	default:
-		log.Infof("Running upgrade")
+		log.Infoln("Running upgrade")
 		if _, err := provisioner.SSHCommand("sudo rancherctl os upgrade -f --no-reboot"); err != nil {
 			return err
 		}
 
-		log.Infof("Upgrade succeeded, rebooting")
+		log.Infoln("Upgrade succeeded, rebooting")
 		// ignore errors here because the SSH connection will close
 		provisioner.SSHCommand("sudo reboot")
 
@@ -161,7 +161,7 @@ func (provisioner *RancherProvisioner) upgrade() error {
 
 func (provisioner *RancherProvisioner) upgradeIso() error {
 	// Largely copied from Boot2Docker provisioner, we should find a way to share this code
-	log.Info("Stopping machine to do the upgrade...")
+	log.Infoln("Stopping machine to do the upgrade...")
 
 	if err := provisioner.Driver.Stop(); err != nil {
 		return err
@@ -173,7 +173,7 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 
 	machineName := provisioner.GetDriver().GetMachineName()
 
-	log.Infof("Upgrading machine %s...", machineName)
+	log.Infof("Upgrading machine %s...\n", machineName)
 
 	b2dutils := utils.NewB2dUtils("", "")
 
@@ -191,7 +191,7 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 		return err
 	}
 
-	log.Infof("Starting machine back up...")
+	log.Infoln("Starting machine back up...")
 
 	if err := provisioner.Driver.Start(); err != nil {
 		return err

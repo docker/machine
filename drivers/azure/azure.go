@@ -229,7 +229,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Info("Creating Azure machine...")
+	log.Infoln("Creating Azure machine...")
 	vmConfig, err := vmClient.CreateAzureVMConfiguration(d.MachineName, d.Size, d.Image, d.Location)
 	if err != nil {
 		return err
@@ -303,7 +303,7 @@ func (d *Driver) Start() error {
 	if vmState, err := d.GetState(); err != nil {
 		return err
 	} else if vmState == state.Running || vmState == state.Starting {
-		log.Infof("Host is already running or starting")
+		log.Infoln("Host is already running or starting")
 		return nil
 	}
 
@@ -326,7 +326,7 @@ func (d *Driver) Stop() error {
 	if vmState, err := d.GetState(); err != nil {
 		return err
 	} else if vmState == state.Stopped {
-		log.Infof("Host is already stopped")
+		log.Infoln("Host is already stopped")
 		return nil
 	}
 
@@ -384,7 +384,7 @@ func (d *Driver) Kill() error {
 	if vmState, err := d.GetState(); err != nil {
 		return err
 	} else if vmState == state.Stopped {
-		log.Infof("Host is already stopped")
+		log.Infoln("Host is already stopped")
 		return nil
 	}
 

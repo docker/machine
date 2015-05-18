@@ -178,7 +178,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating VirtualBox VM...")
+	log.Infoln("Creating VirtualBox VM...")
 
 	// import b2d VM if requested
 	if d.Boot2DockerImportVM != "" {
@@ -215,7 +215,7 @@ func (d *Driver) Create() error {
 			return err
 		}
 	} else {
-		log.Infof("Creating SSH key...")
+		log.Infoln("Creating SSH key...")
 		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 			return err
 		}
@@ -362,7 +362,7 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Starting VirtualBox VM...")
+	log.Infoln("Starting VirtualBox VM...")
 
 	if err := d.Start(); err != nil {
 		return err
@@ -386,14 +386,14 @@ func (d *Driver) Start() error {
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Starting VM...")
+		log.Infoln("Starting VM...")
 	case state.Paused:
 		if err := vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Resuming VM ...")
+		log.Infoln("Resuming VM ...")
 	default:
-		log.Infof("VM not in restartable state")
+		log.Infoln("VM not in restartable state")
 	}
 
 	if err := drivers.WaitForSSH(d); err != nil {
@@ -429,7 +429,7 @@ func (d *Driver) Remove() error {
 	s, err := d.GetState()
 	if err != nil {
 		if err == ErrMachineNotExist {
-			log.Infof("machine does not exist, assuming it has been removed already")
+			log.Infoln("machine does not exist, assuming it has been removed already")
 			return nil
 		}
 		return err
