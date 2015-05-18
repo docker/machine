@@ -32,7 +32,7 @@ func cmdRm(c *cli.Context) {
 
 	for _, host := range c.Args() {
 		if err := mcn.Remove(host, force); err != nil {
-			log.Errorf("Error removing machine %s: %s", host, err)
+			log.Errorf("Error removing machine %s: %s\n", host, err)
 			isError = true
 		} else {
 			log.Infof("Successfully removed %s\n", host)

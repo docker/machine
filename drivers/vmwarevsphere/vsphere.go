@@ -339,7 +339,7 @@ func (d *Driver) Create() error {
 	}
 
 	if _, err := os.Stat(d.ISO); os.IsNotExist(err) {
-		log.Errorf("Unable to find boot2docker ISO at %s", d.ISO)
+		log.Errorf("Unable to find boot2docker ISO at %s\n", d.ISO)
 		return errors.NewIncompleteVsphereConfigError(d.ISO)
 	}
 

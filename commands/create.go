@@ -87,8 +87,8 @@ func cmdCreate(c *cli.Context) {
 
 	_, err = mcn.Create(name, driver, hostOptions, c)
 	if err != nil {
-		log.Errorf("Error creating machine: %s", err)
-		log.Fatal("You will want to check the provider to make sure the machine and associated resources were properly removed.")
+		log.Errorf("Error creating machine: %s\n", err)
+		log.Fatalln("You will want to check the provider to make sure the machine and associated resources were properly removed.")
 	}
 
 	info := fmt.Sprintf("%s env %s", c.App.Name, name)
