@@ -1388,7 +1388,7 @@ The default base operating system for Machine is Boot2Docker on local providers
 (VirtualBox, Fusion, Hyper-V, etc) and the latest Ubuntu LTS supported
 by the cloud provider.  RedHat Enterprise Linux is also supported.  To use
 RHEL, you will need to select the image accordingly with the provider.  For
-example, in Amazon EC2, you could use "ami-12663b7a" as the
+example, in Amazon EC2, you could use a RedHat 7.1 AMI ("ami-12663b7a") as the
 `--amazonec2-ami` option which create an instance using RHEL 7.1 64-bit.
 
 ## Release Notes
