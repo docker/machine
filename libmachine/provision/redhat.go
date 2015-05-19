@@ -31,7 +31,7 @@ func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 	return &RedHatProvisioner{
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
-			DaemonOptionsFile: "/lib/systemd/system/docker.service",
+			DaemonOptionsFile: "/etc/systemd/system/docker.service",
 			OsReleaseId:       "rhel",
 			Packages: []string{
 				"curl",
@@ -155,6 +155,11 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		}
 	}
 
+	// update OS -- this is needed for libdevicemapper and the docker install
+	if _, err := provisioner.SSHCommand("sudo yum -y update"); err != nil {
+		return err
+	}
+
 	// install docker
 	if err := installDocker(provisioner); err != nil {
 		return err
@@ -188,30 +193,21 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	)
 
 	// remove existing
-	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo rm %s", configPath)); err != nil {
-		return nil, err
-	}
+	//if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo rm %s", configPath)); err != nil {
+	//	return nil, err
+	//}
 
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
 	// systemd / redhat will not load options if they are on newlines
 	// instead, it just continues with a different set of options; yeah...
-	engineConfigTmpl := `[Unit]
-Description=Docker Application Container Engine
-Documentation=http://docs.docker.com
-After=network.target docker.socket
-Required=docker.socket
-
-[Service]
+	engineConfigTmpl := `[Service]
 ExecStart=/usr/bin/docker -d -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
 MountFlags=slave
 LimitNOFILE=1048576
 LimitNPROC=1048576
 LimitCORE=infinity
-
-[Install]
-WantedBy=multi-user.target
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {
