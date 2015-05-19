@@ -229,6 +229,12 @@ func (n *Node) retry() (err error) {
 }
 
 // retry a specific node role
+
+func (nr *NodeRole) delete() (err error) {
+    return session.Request("DELETE", "node_roles/" + strconv.FormatInt(nr.ID,10), "node_role.obj", nil, nil)
+}
+
+
 func (nr *NodeRole) retry() (err error) {
     return session.Request("PUT", "node_roles/" + strconv.FormatInt(nr.ID,10) + "/retry", "node_role.obj", nil, nil)
 }

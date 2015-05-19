@@ -351,10 +351,20 @@ func (d *Driver) Remove() error {
 	log.Debugf("Crowbar releasing node %s back to deployment %s", node.Name, source.Name)
 	node.propose()
 	node.Available = true
-	node.Description = "Released from Docker-Machine"
+	node.Description = "Released by Docker-Machine"
 	node.DeploymentID = source.ID
 	err = node.update() 
 	node.addSSHkey(1,"key-removed")
+	// remove the docker roles from the node
+	roles := [...]string{"docker-ready", "docker-prep"}
+	nr := &NodeRole{}
+	for i := range roles {
+		nr, _ = node.role(roles[i])
+		if nr !=nil {
+			nr.delete()
+		}
+	}
+	// now, we want a fresh start
 	node.redeploy()
 	node.commit()
 	log.Debugf("Crowbar started redeploy request for node %s", node.Name)
