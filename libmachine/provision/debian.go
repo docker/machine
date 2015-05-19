@@ -26,7 +26,7 @@ func NewDebianProvisioner(d drivers.Driver) Provisioner {
 	return &DebianProvisioner{
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
-			DaemonOptionsFile: "/lib/systemd/system/docker.service",
+			DaemonOptionsFile: "/etc/systemd/system/docker.service",
 			OsReleaseId:       "debian",
 			Packages: []string{
 				"curl",
@@ -41,7 +41,7 @@ type DebianProvisioner struct {
 }
 
 func (provisioner *DebianProvisioner) Service(name string, action pkgaction.ServiceAction) error {
-	// WAT: for daemon-reload to catch config updates; systemd -- ugh
+	// daemon-reload to catch config updates; systemd -- ugh
 	if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
 		return err
 	}
@@ -157,16 +157,6 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	log.Debug("creating options directory")
-	if err := makeDockerOptionsDir(provisioner); err != nil {
-		return err
-	}
-
-	// remove existing systemd config file
-	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo rm %s", provisioner.DaemonOptionsFile)); err != nil {
-		return err
-	}
-
 	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
 
 	log.Debug("configuring auth")
@@ -196,21 +186,13 @@ func (provisioner *DebianProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
-	engineConfigTmpl := `[Unit]
-Description=Docker Application Container Engine
-Documentation=http://docs.docker.com
-After=network.target docker.socket
-Requires=docker.socket
-
-[Service]
+	engineConfigTmpl := `[Service]
 ExecStart=/usr/bin/docker -d -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
 MountFlags=slave
 LimitNOFILE=1048576
 LimitNPROC=1048576
 LimitCORE=infinity
-
-[Install]
-WantedBy=multi-user.target`
+`
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {
 		return nil, err
