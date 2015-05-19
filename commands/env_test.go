@@ -103,9 +103,10 @@ func TestCmdEnvBash(t *testing.T) {
 	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
 
 	expected := map[string]string{
-		"DOCKER_TLS_VERIFY": "\"1\"",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s\"", testMachineDir),
-		"DOCKER_HOST":       "\"unix:///var/run/docker.sock\"",
+		"DOCKER_TLS_VERIFY":   "\"1\"",
+		"DOCKER_CERT_PATH":    fmt.Sprintf("\"%s\"", testMachineDir),
+		"DOCKER_HOST":         "\"unix:///var/run/docker.sock\"",
+		"DOCKER_MACHINE_NAME": `"test-a"`,
 	}
 
 	for k, v := range envvars {
@@ -201,9 +202,10 @@ func TestCmdEnvFish(t *testing.T) {
 	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
 
 	expected := map[string]string{
-		"DOCKER_TLS_VERIFY": "\"1\"",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s\"", testMachineDir),
-		"DOCKER_HOST":       "\"unix:///var/run/docker.sock\"",
+		"DOCKER_TLS_VERIFY":   "\"1\"",
+		"DOCKER_CERT_PATH":    fmt.Sprintf("\"%s\"", testMachineDir),
+		"DOCKER_HOST":         "\"unix:///var/run/docker.sock\"",
+		"DOCKER_MACHINE_NAME": `"test-a"`,
 	}
 
 	for k, v := range envvars {
@@ -300,9 +302,10 @@ func TestCmdEnvPowerShell(t *testing.T) {
 	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
 
 	expected := map[string]string{
-		"DOCKER_TLS_VERIFY": "\"1\"",
-		"DOCKER_CERT_PATH":  fmt.Sprintf("\"%s\"", testMachineDir),
-		"DOCKER_HOST":       "\"unix:///var/run/docker.sock\"",
+		"DOCKER_TLS_VERIFY":   "\"1\"",
+		"DOCKER_CERT_PATH":    fmt.Sprintf("\"%s\"", testMachineDir),
+		"DOCKER_HOST":         "\"unix:///var/run/docker.sock\"",
+		"DOCKER_MACHINE_NAME": `"test-a"`,
 	}
 
 	for k, v := range envvars {
