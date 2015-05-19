@@ -91,14 +91,6 @@ func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.Pack
 	return nil
 }
 
-func (provisioner *RedHatProvisioner) isAWS() bool {
-	if _, err := provisioner.SSHCommand("curl -s http://169.254.169.254/latest/meta-data/ami-id"); err != nil {
-		return false
-	}
-
-	return true
-}
-
 func installDocker(provisioner *RedHatProvisioner) error {
 	if err := provisioner.installOfficialDocker(); err != nil {
 		return err
