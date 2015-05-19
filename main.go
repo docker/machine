@@ -58,6 +58,7 @@ func main() {
 	app.Email = "https://github.com/docker/machine"
 	app.Before = func(c *cli.Context) error {
 		os.Setenv("MACHINE_STORAGE_PATH", c.GlobalString("storage-path"))
+		os.Setenv("DOCKER_INSTALL_COMMAND", c.GlobalString("docker-install-command"))
 		return nil
 	}
 	app.Commands = commands.Commands
@@ -98,6 +99,12 @@ func main() {
 			EnvVar: "MACHINE_TLS_CLIENT_KEY",
 			Name:   "tls-client-key",
 			Usage:  "Private key used in client TLS auth",
+			Value:  "",
+		},
+		cli.StringFlag{
+			EnvVar: "DOCKER_INSTALL_COMMAND",
+			Name:   "docker-install-command",
+			Usage:  "Command for installing docker",
 			Value:  "",
 		},
 	}
