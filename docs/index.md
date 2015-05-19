@@ -175,9 +175,12 @@ To see what will be set, run `docker-machine env dev`.
 
 ```
 $ docker-machine env dev
-export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH=/Users/<your username>/.docker/machine/machines/dev
-export DOCKER_HOST=tcp://192.168.99.100:2376
+export DOCKER_TLS_VERIFY="1"
+export DOCKER_HOST="tcp://172.16.62.130:2376"
+export DOCKER_CERT_PATH="/Users/<your username>/.docker/machine/machines/dev"
+export DOCKER_MACHINE_NAME="dev"
+# Run this command to configure your shell:
+# eval "$(docker-machine env dev)"
 ```
 
 You can now run Docker commands on this host:
@@ -614,6 +617,7 @@ $ env | grep DOCKER
 DOCKER_HOST=tcp://192.168.99.101:2376
 DOCKER_CERT_PATH=/Users/nathanleclaire/.docker/machines/.client
 DOCKER_TLS_VERIFY=1
+DOCKER_MACHINE_NAME=dev
 $ # If you run a docker command, now it will run against that host.
 $ eval "$(docker-machine env -u)"
 $ env | grep DOCKER
@@ -633,7 +637,9 @@ values in the format which `fish` expects:
 set -x DOCKER_TLS_VERIFY 1;
 set -x DOCKER_CERT_PATH "/Users/nathanleclaire/.docker/machine/machines/overlay";
 set -x DOCKER_HOST tcp://192.168.99.102:2376;
-# Run this command to configure your shell: eval (docker-machine env overlay)
+set -x DOCKER_MACHINE_NAME overlay
+# Run this command to configure your shell:
+# eval "$(docker-machine env overlay)"
 ```
 
 If you are on Windows and using Powershell or `cmd.exe`, `docker-machine env`
@@ -648,7 +654,9 @@ $ docker-machine.exe env --shell powershell dev
 $Env:DOCKER_TLS_VERIFY = "1"
 $Env:DOCKER_HOST = "tcp://192.168.99.101:2376"
 $Env:DOCKER_CERT_PATH = "C:\Users\captain\.docker\machine\machines\dev"
-# Run this command to configure your shell: docker-machine.exe env --shell=powershell | Invoke-Expression
+$Env:DOCKER_MACHINE_NAME = "dev"
+# Run this command to configure your shell:
+# docker-machine.exe env --shell=powershell | Invoke-Expression
 ```
 
 For `cmd.exe`:
@@ -658,6 +666,7 @@ $ docker-machine.exe env --shell cmd dev
 set DOCKER_TLS_VERIFY=1
 set DOCKER_HOST=tcp://192.168.99.101:2376
 set DOCKER_CERT_PATH=C:\Users\captain\.docker\machine\machines\dev
+set DOCKER_MACHINE_NAME=dev
 # Run this command to configure your shell: copy and paste the above values into your command prompt
 ```
 
