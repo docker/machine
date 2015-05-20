@@ -2,8 +2,8 @@ package egoscale
 
 import (
 	"encoding/json"
-	"net/url"
 	"fmt"
+	"net/url"
 )
 
 func (exo *Client) CreateEgressRule(rule SecurityGroupRule) (*AuthorizeSecurityGroupEgressResponse, error) {
@@ -16,7 +16,7 @@ func (exo *Client) CreateEgressRule(rule SecurityGroupRule) (*AuthorizeSecurityG
 	if rule.Protocol == "ICMP" {
 		params.Set("icmpcode", fmt.Sprintf("%d", rule.IcmpCode))
 		params.Set("icmptype", fmt.Sprintf("%d", rule.IcmpType))
-	} else if (rule.Protocol == "TCP" || rule.Protocol == "UDP") {
+	} else if rule.Protocol == "TCP" || rule.Protocol == "UDP" {
 		params.Set("startport", fmt.Sprintf("%d", rule.Port))
 		params.Set("endport", fmt.Sprintf("%d", rule.Port))
 	} else {
@@ -46,7 +46,7 @@ func (exo *Client) CreateIngressRule(rule SecurityGroupRule) (*AuthorizeSecurity
 	if rule.Protocol == "ICMP" {
 		params.Set("icmpcode", fmt.Sprintf("%d", rule.IcmpCode))
 		params.Set("icmptype", fmt.Sprintf("%d", rule.IcmpType))
-	} else if (rule.Protocol == "TCP" || rule.Protocol == "UDP") {
+	} else if rule.Protocol == "TCP" || rule.Protocol == "UDP" {
 		params.Set("startport", fmt.Sprintf("%d", rule.Port))
 		params.Set("endport", fmt.Sprintf("%d", rule.Port))
 	} else {
@@ -85,18 +85,18 @@ func (exo *Client) CreateSecurityGroupWithRules(name string, ingress []SecurityG
 
 	sgid := r.Wrapped.Id
 
-	for _, erule := range(egress) {
+	for _, erule := range egress {
 		erule.SecurityGroupId = sgid
 		_, err = exo.CreateEgressRule(erule)
-		if (err != nil) {
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	for _, inrule := range(ingress) {
+	for _, inrule := range ingress {
 		inrule.SecurityGroupId = sgid
 		_, err = exo.CreateIngressRule(inrule)
-		if (err != nil) {
+		if err != nil {
 			return nil, err
 		}
 	}
