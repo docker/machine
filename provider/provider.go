@@ -1,15 +1,19 @@
 package provider
 
+import "fmt"
+
 // ProviderType represents the type of a provider for a machine
-type ProviderType int
+type ProviderType uint
 
 const (
-	None ProviderType = iota
+	Invalid ProviderType = iota
+	None
 	Local
 	Remote
 )
 
-var providerTypes = []string{
+var providerNames = []string{
+	"Invalid",
 	"",
 	"Local",
 	"Remote",
@@ -17,9 +21,8 @@ var providerTypes = []string{
 
 // Given a type, returns its string representation
 func (t ProviderType) String() string {
-	if int(t) >= 0 && int(t) < len(providerTypes) {
-		return providerTypes[t]
-	} else {
-		return ""
+	if int(t) < len(providerNames) {
+		return providerNames[t]
 	}
+	return fmt.Sprintf("ProviderType%d", int(t))
 }
