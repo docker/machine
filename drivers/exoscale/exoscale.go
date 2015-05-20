@@ -96,11 +96,6 @@ func GetCreateFlags() []cli.Flag {
 			Value:  "ch-gva-2",
 			Usage:  "exoscale availibility zone",
 		},
-		cli.StringFlag{
-			EnvVar: "EXOSCALE_KEYPAIR",
-			Name:   "exoscale-keypair",
-			Usage:  "exoscale keypair name",
-		},
 	}
 }
 
@@ -153,7 +148,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Image = flags.String("exoscale-image")
 	d.SecurityGroup = flags.String("exoscale-security-group")
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
-	d.KeyPair = flags.String("exoscale-keypair")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -290,18 +284,17 @@ func (d *Driver) Create() error {
 	}
 	log.Debugf("Security group %v = %s", d.SecurityGroup, sg)
 
-	if d.KeyPair == "" {
-		log.Infof("Generate an SSH keypair...")
-		kpresp, err := client.CreateKeypair(d.MachineName)
-		if err != nil {
-			return err
-		}
-		err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(kpresp.Privatekey), 0600)
-		if err != nil {
-			return err
-		}
-		d.KeyPair = d.MachineName
+	log.Infof("Generate an SSH keypair...")
+	keypairName := fmt.Sprintf("docker-machine-%s", d.MachineName)
+	kpresp, err := client.CreateKeypair(keypairName)
+	if err != nil {
+		return err
 	}
+	err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(kpresp.Privatekey), 0600)
+	if err != nil {
+		return err
+	}
+	d.KeyPair = keypairName
 
 	log.Infof("Spawn exoscale host...")
 
@@ -383,6 +376,14 @@ func (d *Driver) Stop() error {
 
 func (d *Driver) Remove() error {
 	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
+
+	// Destroy the SSH key
+	_, err := client.DeleteKeypair(d.KeyPair)
+	if err != nil {
+		return err
+	}
+
+	// Destroy the virtual machine
 	dvmresp, err := client.DestroyVirtualMachine(d.Id)
 	if err != nil {
 		return err
