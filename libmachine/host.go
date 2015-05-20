@@ -233,7 +233,7 @@ func (h *Host) Upgrade() error {
 	}
 
 	if machineState != state.Running {
-		log.Fatal(errMachineMustBeRunningForUpgrade)
+		log.Fatalln(errMachineMustBeRunningForUpgrade)
 	}
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)
@@ -271,7 +271,7 @@ func (h *Host) removeStorePath() error {
 		return err
 	}
 	if !file.IsDir() {
-		return fmt.Errorf("%q is not a directory", h.StorePath)
+		return fmt.Errorf("%q is not a directory\n", h.StorePath)
 	}
 	return os.RemoveAll(h.StorePath)
 }

@@ -97,7 +97,7 @@ func getScpCmd(src, dest string, sshArgs []string, mcn libmachine.Machine) (*exe
 	sshArgs = append(sshArgs, locationArg)
 
 	cmd := exec.Command(cmdPath, sshArgs...)
-	log.Debug(*cmd)
+	log.Debugln(*cmd)
 	return cmd, nil
 }
 
@@ -106,7 +106,7 @@ func runCmdWithStdIo(cmd exec.Cmd) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	return nil
 }
@@ -115,7 +115,7 @@ func cmdScp(c *cli.Context) {
 	args := c.Args()
 	if len(args) != 2 {
 		cli.ShowCommandHelp(c, "scp")
-		log.Fatal("Improper number of arguments.")
+		log.Fatalln("Improper number of arguments.")
 	}
 
 	// TODO: Check that "-3" flag is available in user's version of scp.
@@ -133,9 +133,9 @@ func cmdScp(c *cli.Context) {
 	cmd, err := getScpCmd(src, dest, sshArgs, *mcn)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	if err := runCmdWithStdIo(*cmd); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

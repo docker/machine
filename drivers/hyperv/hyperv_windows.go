@@ -190,7 +190,7 @@ func (d *Driver) Create() error {
 	if d.boot2DockerLoc == "" {
 		if d.boot2DockerURL != "" {
 			isoURL = d.boot2DockerURL
-			log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+			log.Infof("Downloading boot2docker.iso from %s...\n", isoURL)
 			if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
 				return err
 			}
@@ -199,7 +199,7 @@ func (d *Driver) Create() error {
 			// until then always use "latest"
 			isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
 			if err != nil {
-				log.Warnf("Unable to check for the latest release: %s", err)
+				log.Warnf("Unable to check for the latest release: %s\n", err)
 
 			}
 			// todo: use real constant for .docker
@@ -207,7 +207,7 @@ func (d *Driver) Create() error {
 			imgPath := filepath.Join(rootPath, "images")
 			commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
 			if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-				log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+				log.Infof("Downloading boot2docker.iso to %s...\n", commonIsoPath)
 				// just in case boot2docker.iso has been manually deleted
 				if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 					if err := os.Mkdir(imgPath, 0700); err != nil {
@@ -234,13 +234,13 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Creating SSH key...")
+	log.Infoln("Creating SSH key...")
 
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
-	log.Infof("Creating VM...")
+	log.Infoln("Creating VM...")
 
 	virtualSwitch, err := d.chooseVirtualSwitch()
 	if err != nil {
@@ -289,7 +289,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Starting  VM...")
+	log.Infoln("Starting  VM...")
 	if err := d.Start(); err != nil {
 		return err
 	}
@@ -309,14 +309,14 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 	}
 	switches := parseStdout(stdout)
 	if len(switches) > 0 {
-		log.Infof("Using switch %s", switches[0])
+		log.Infof("Using switch %s\n", switches[0])
 		return switches[0], nil
 	}
 	return "", fmt.Errorf("no vswitch found")
 }
 
 func (d *Driver) wait() error {
-	log.Infof("Waiting for host to start...")
+	log.Infoln("Waiting for host to start...")
 	for {
 		ip, _ := d.GetIP()
 		if ip != "" {
@@ -451,7 +451,7 @@ func (d *Driver) generateDiskImage() error {
 
 	d.diskImage = filepath.Join(d.storePath, "disk.vhd")
 	fixed := filepath.Join(d.storePath, "fixed.vhd")
-	log.Infof("Creating VHD")
+	log.Infoln("Creating VHD")
 	command := []string{
 		"New-VHD",
 		"-Path", fmt.Sprintf("'%s'", fixed),

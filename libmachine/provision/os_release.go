@@ -72,7 +72,7 @@ func (osr *OsRelease) ParseOsRelease(osReleaseContents []byte) error {
 			return err
 		}
 		if err := osr.setIfPossible(key, val); err != nil {
-			log.Debug(err)
+			log.Debugln(err)
 		}
 	}
 	return nil

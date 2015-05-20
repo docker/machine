@@ -329,11 +329,11 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) instanceIpAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {
-		log.Debug(err)
+		log.Debugln(err)
 	}
 	if ip != "" {
 		d.IPAddress = ip
-		log.Debugf("Got the IP Address, it's %q", d.IPAddress)
+		log.Debugf("Got the IP Address, it's %q\n", d.IPAddress)
 		return true
 	}
 	return false
@@ -344,7 +344,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Launching instance...")
+	log.Infoln("Launching instance...")
 
 	if err := d.createKeyPair(); err != nil {
 		return fmt.Errorf("unable to create key pair: %s", err)
@@ -361,7 +361,7 @@ func (d *Driver) Create() error {
 		VolumeType:          "gp2",
 	}
 
-	log.Debugf("launching instance in subnet %s", d.SubnetId)
+	log.Debugf("launching instance in subnet %s\n", d.SubnetId)
 	var instance amz.EC2Instance
 	if d.RequestSpotInstance {
 		spotInstanceRequestId, err := d.getClient().RequestSpotInstances(d.AMI, d.InstanceType, d.Zone, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.SpotPrice, d.Monitoring)
@@ -370,7 +370,7 @@ func (d *Driver) Create() error {
 		}
 		var instanceId string
 		var spotInstanceRequestStatus string
-		log.Info("Waiting for spot instance...")
+		log.Infoln("Waiting for spot instance...")
 		// check until fulfilled
 		for instanceId == "" {
 			time.Sleep(time.Second * 5)
@@ -378,7 +378,7 @@ func (d *Driver) Create() error {
 			if err != nil {
 				return fmt.Errorf("Error describe spot instance request: %s", err)
 			}
-			log.Debugf("spot instance request status: %s", spotInstanceRequestStatus)
+			log.Debugf("spot instance request status: %s\n", spotInstanceRequestStatus)
 		}
 		instance, err = d.getClient().GetInstance(instanceId)
 		if err != nil {
@@ -394,7 +394,7 @@ func (d *Driver) Create() error {
 
 	d.InstanceId = instance.InstanceId
 
-	log.Debug("waiting for ip address to become available")
+	log.Debugln("waiting for ip address to become available")
 	if err := utils.WaitFor(d.instanceIpAvailable); err != nil {
 		return err
 	}
@@ -405,13 +405,13 @@ func (d *Driver) Create() error {
 
 	d.waitForInstance()
 
-	log.Debugf("created instance ID %s, IP address %s, Private IP address %s",
+	log.Debugf("created instance ID %s, IP address %s, Private IP address %s\n",
 		d.InstanceId,
 		d.IPAddress,
 		d.PrivateIPAddress,
 	)
 
-	log.Debug("Settings tags for instance")
+	log.Debugln("Settings tags for instance")
 	tags := map[string]string{
 		"Name": d.MachineName,
 	}
@@ -558,7 +558,7 @@ func (d *Driver) getInstance() (*amz.EC2Instance, error) {
 func (d *Driver) instanceIsRunning() bool {
 	st, err := d.GetState()
 	if err != nil {
-		log.Debug(err)
+		log.Debugln(err)
 	}
 	if st == state.Running {
 		return true
@@ -587,7 +587,7 @@ func (d *Driver) createKeyPair() error {
 
 	keyName := d.MachineName
 
-	log.Debugf("creating key pair: %s", keyName)
+	log.Debugf("creating key pair: %s\n", keyName)
 
 	if err := d.getClient().ImportKeyPair(keyName, string(publicKey)); err != nil {
 		return err
@@ -602,7 +602,7 @@ func (d *Driver) terminate() error {
 		return fmt.Errorf("unknown instance")
 	}
 
-	log.Debugf("terminating instance: %s", d.InstanceId)
+	log.Debugf("terminating instance: %s\n", d.InstanceId)
 	if err := d.getClient().TerminateInstance(d.InstanceId); err != nil {
 		return fmt.Errorf("unable to terminate instance: %s", err)
 	}
@@ -620,13 +620,13 @@ func (d *Driver) securityGroupAvailableFunc(id string) func() bool {
 		if err == nil {
 			return true
 		}
-		log.Debug(err)
+		log.Debugln(err)
 		return false
 	}
 }
 
 func (d *Driver) configureSecurityGroup(groupName string) error {
-	log.Debugf("configuring security group in %s", d.VpcId)
+	log.Debugf("configuring security group in %s\n", d.VpcId)
 
 	var securityGroup *amz.SecurityGroup
 
@@ -637,7 +637,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 
 	for _, grp := range groups {
 		if grp.GroupName == groupName {
-			log.Debugf("found existing security group (%s) in %s", groupName, d.VpcId)
+			log.Debugf("found existing security group (%s) in %s\n", groupName, d.VpcId)
 			securityGroup = &grp
 			break
 		}
@@ -645,14 +645,14 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 
 	// if not found, create
 	if securityGroup == nil {
-		log.Debugf("creating security group (%s) in %s", groupName, d.VpcId)
+		log.Debugf("creating security group (%s) in %s\n", groupName, d.VpcId)
 		group, err := d.getClient().CreateSecurityGroup(groupName, "Docker Machine", d.VpcId)
 		if err != nil {
 			return err
 		}
 		securityGroup = group
 		// wait until created (dat eventual consistency)
-		log.Debugf("waiting for group (%s) to become available", group.GroupId)
+		log.Debugf("waiting for group (%s) to become available\n", group.GroupId)
 		if err := utils.WaitFor(d.securityGroupAvailableFunc(group.GroupId)); err != nil {
 			return err
 		}
@@ -663,7 +663,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 	perms := d.configureSecurityGroupPermissions(securityGroup)
 
 	if len(perms) != 0 {
-		log.Debugf("authorizing group %s with permissions: %v", securityGroup.GroupName, perms)
+		log.Debugf("authorizing group %s with permissions: %v\n", securityGroup.GroupName, perms)
 		if err := d.getClient().AuthorizeSecurityGroup(d.SecurityGroupId, perms); err != nil {
 			return err
 		}
@@ -717,13 +717,13 @@ func (d *Driver) configureSecurityGroupPermissions(group *amz.SecurityGroup) []a
 		})
 	}
 
-	log.Debugf("configuring security group authorization for %s", ipRange)
+	log.Debugf("configuring security group authorization for %s\n", ipRange)
 
 	return perms
 }
 
 func (d *Driver) deleteSecurityGroup() error {
-	log.Debugf("deleting security group %s", d.SecurityGroupId)
+	log.Debugf("deleting security group %s\n", d.SecurityGroupId)
 
 	if err := d.getClient().DeleteSecurityGroup(d.SecurityGroupId); err != nil {
 		return err
@@ -733,7 +733,7 @@ func (d *Driver) deleteSecurityGroup() error {
 }
 
 func (d *Driver) deleteKeyPair() error {
-	log.Debugf("deleting key pair: %s", d.KeyName)
+	log.Debugf("deleting key pair: %s\n", d.KeyName)
 
 	if err := d.getClient().DeleteKeyPair(d.KeyName); err != nil {
 		return err
@@ -746,7 +746,7 @@ func generateId() string {
 	rb := make([]byte, 10)
 	_, err := rand.Read(rb)
 	if err != nil {
-		log.Fatalf("unable to generate id: %s", err)
+		log.Fatalf("unable to generate id: %s\n", err)
 	}
 
 	h := md5.New()

@@ -78,18 +78,18 @@ func ConfigureAuth(p Provisioner) error {
 	machineDir := filepath.Join(utils.GetMachineDir(), machineName)
 
 	if err := utils.CopyFile(authOptions.CaCertPath, filepath.Join(machineDir, "ca.pem")); err != nil {
-		log.Fatalf("Error copying ca.pem to machine dir: %s", err)
+		log.Fatalf("Error copying ca.pem to machine dir: %s\n", err)
 	}
 
 	if err := utils.CopyFile(authOptions.ClientCertPath, filepath.Join(machineDir, "cert.pem")); err != nil {
-		log.Fatalf("Error copying cert.pem to machine dir: %s", err)
+		log.Fatalf("Error copying cert.pem to machine dir: %s\n", err)
 	}
 
 	if err := utils.CopyFile(authOptions.ClientKeyPath, filepath.Join(machineDir, "key.pem")); err != nil {
-		log.Fatalf("Error copying key.pem to machine dir: %s", err)
+		log.Fatalf("Error copying key.pem to machine dir: %s\n", err)
 	}
 
-	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s",
+	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s\n",
 		authOptions.ServerCertPath,
 		authOptions.CaCertPath,
 		authOptions.PrivateKeyPath,
@@ -220,8 +220,8 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 
 	// if master start master agent
 	if swarmOptions.Master {
-		log.Debug("launching swarm master")
-		log.Debugf("master args: %s", masterArgs)
+		log.Debugln("launching swarm master")
+		log.Debugf("master args: %s\n", masterArgs)
 		if _, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
 			port, port, dockerDir, dockerDir, swarm.DockerImage, masterArgs)); err != nil {
 			return err
@@ -229,8 +229,8 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 	}
 
 	// start node agent
-	log.Debug("launching swarm node")
-	log.Debugf("node args: %s", nodeArgs)
+	log.Debugln("launching swarm node")
+	log.Debugf("node args: %s\n", nodeArgs)
 	if _, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
 		dockerDir, dockerDir, swarm.DockerImage, nodeArgs)); err != nil {
 		return err

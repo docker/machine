@@ -8,6 +8,6 @@ import (
 
 func cmdKill(c *cli.Context) {
 	if err := runActionWithContext("kill", c); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

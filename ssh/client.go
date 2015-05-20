@@ -66,7 +66,7 @@ func NewConfig(user string, auth *Auth) (*ssh.ClientConfig, error) {
 func dialSuccess(client *Client) func() bool {
 	return func() bool {
 		if _, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), client.Config); err != nil {
-			log.Debugf("Error dialing TCP: %s", err)
+			log.Debugf("Error dialing TCP: %s\n", err)
 			return false
 		}
 		return true

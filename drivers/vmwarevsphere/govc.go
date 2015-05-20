@@ -19,7 +19,7 @@ var (
 func govc(args ...string) error {
 	cmd := exec.Command(GovcCmd, args...)
 
-	log.Debugf("govc executing: %v %v", GovcCmd, strings.Join(args, " "))
+	log.Debugf("govc executing: %v %v\n", GovcCmd, strings.Join(args, " "))
 
 	if err := cmd.Run(); err != nil {
 		return err
@@ -30,7 +30,7 @@ func govc(args ...string) error {
 func govcOutErr(args ...string) (string, string, error) {
 	cmd := exec.Command(GovcCmd, args...)
 
-	log.Debugf("govcOutErr executing: %v %v", GovcCmd, strings.Join(args, " "))
+	log.Debugf("govcOutErr executing: %v %v\n", GovcCmd, strings.Join(args, " "))
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

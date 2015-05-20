@@ -9,7 +9,7 @@ import (
 
 func WaitForTCP(addr string) error {
 	for {
-		log.Debugf("Testing TCP connection to: %s", addr)
+		log.Debugf("Testing TCP connection to: %s\n", addr)
 		conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
 
 		if err != nil {

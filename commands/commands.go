@@ -71,12 +71,12 @@ func sortHostListItemsByName(items []libmachine.HostListItem) {
 }
 
 func confirmInput(msg string) bool {
-	fmt.Printf("%s (y/n): ", msg)
+	fmt.Printf("%s (y/n): \n", msg)
 	var resp string
 	_, err := fmt.Scanln(&resp)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 
 	}
 
@@ -111,46 +111,46 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 	if _, err := os.Stat(utils.GetMachineCertDir()); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(utils.GetMachineCertDir(), 0700); err != nil {
-				log.Fatalf("Error creating machine config dir: %s", err)
+				log.Fatalf("Error creating machine config dir: %s\n", err)
 			}
 		} else {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 	}
 
 	if _, err := os.Stat(caCertPath); os.IsNotExist(err) {
-		log.Infof("Creating CA: %s", caCertPath)
+		log.Infof("Creating CA: %s\n", caCertPath)
 
 		// check if the key path exists; if so, error
 		if _, err := os.Stat(caKeyPath); err == nil {
-			log.Fatalf("The CA key already exists.  Please remove it or specify a different key/cert.")
+			log.Fatalln("The CA key already exists.  Please remove it or specify a different key/cert.")
 		}
 
 		if err := utils.GenerateCACertificate(caCertPath, caKeyPath, org, bits); err != nil {
-			log.Infof("Error generating CA certificate: %s", err)
+			log.Infof("Error generating CA certificate: %s\n", err)
 		}
 	}
 
 	if _, err := os.Stat(clientCertPath); os.IsNotExist(err) {
-		log.Infof("Creating client certificate: %s", clientCertPath)
+		log.Infof("Creating client certificate: %s\n", clientCertPath)
 
 		if _, err := os.Stat(utils.GetMachineCertDir()); err != nil {
 			if os.IsNotExist(err) {
 				if err := os.Mkdir(utils.GetMachineCertDir(), 0700); err != nil {
-					log.Fatalf("Error creating machine client cert dir: %s", err)
+					log.Fatalf("Error creating machine client cert dir: %s\n", err)
 				}
 			} else {
-				log.Fatal(err)
+				log.Fatalln(err)
 			}
 		}
 
 		// check if the key path exists; if so, error
 		if _, err := os.Stat(clientKeyPath); err == nil {
-			log.Fatalf("The client key already exists.  Please remove it or specify a different key/cert.")
+			log.Fatalln("The client key already exists.  Please remove it or specify a different key/cert.")
 		}
 
 		if err := utils.GenerateCert([]string{""}, clientCertPath, clientKeyPath, caCertPath, caKeyPath, org, bits); err != nil {
-			log.Fatalf("Error generating client certificate: %s", err)
+			log.Fatalf("Error generating client certificate: %s\n", err)
 		}
 	}
 
@@ -390,7 +390,7 @@ func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- e
 		"ip":            host.PrintIP,
 	}
 
-	log.Debugf("command=%s machine=%s", actionName, host.Name)
+	log.Debugf("command=%s machine=%s\n", actionName, host.Name)
 
 	if err := commands[actionName](); err != nil {
 		errorChan <- err
@@ -453,7 +453,7 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 	}
 
 	if len(machines) == 0 {
-		log.Fatal(ErrNoMachineSpecified)
+		log.Fatalln(ErrNoMachineSpecified)
 	}
 
 	runActionForeachMachine(actionName, machines)
@@ -483,12 +483,12 @@ func loadMachine(name string, c *cli.Context) (*libmachine.Host, error) {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	host, err := mcn.Get(name)
@@ -508,17 +508,17 @@ func getHost(c *cli.Context) *libmachine.Host {
 		c.GlobalString("tls-ca-key"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	host, err := mcn.Get(name)
 	if err != nil {
-		log.Fatalf("unable to load host: %v", err)
+		log.Fatalf("unable to load host: %v\n", err)
 	}
 	return host
 }
@@ -531,12 +531,12 @@ func getDefaultMcn(c *cli.Context) *libmachine.Machine {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return mcn
@@ -551,12 +551,12 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	m, err := mcn.Get(name)

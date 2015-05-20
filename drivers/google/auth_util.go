@@ -53,7 +53,7 @@ func token(storePath, authTokenPath string, config *oauth.Config) *oauth.Token {
 	if authTokenPath == "" {
 		tokenPath = filepath.Join(storePath, "gce_token")
 	}
-	log.Debugf("using auth token: %s", tokenPath)
+	log.Debugf("using auth token: %s\n", tokenPath)
 	token, err := tokenFromCache(tokenPath)
 	if err != nil {
 		token = tokenFromWeb(config)
@@ -78,13 +78,13 @@ func tokenFromWeb(config *oauth.Config) *oauth.Token {
 	config.RedirectURL = RedirectURI
 	authURL := config.AuthCodeURL(randState)
 
-	log.Info("Opening auth URL in browser.")
-	log.Info(authURL)
-	log.Info("If the URL doesn't open please open it manually and copy the code here.")
+	log.Infoln("Opening auth URL in browser.")
+	log.Infoln(authURL)
+	log.Infoln("If the URL doesn't open please open it manually and copy the code here.")
 	openURL(authURL)
 	code := getCodeFromStdin()
 
-	log.Infof("Got code: %s", code)
+	log.Infof("Got code: %s\n", code)
 
 	t := &oauth.Transport{
 		Config:    config,
@@ -92,7 +92,7 @@ func tokenFromWeb(config *oauth.Config) *oauth.Token {
 	}
 	_, err := t.Exchange(code)
 	if err != nil {
-		log.Fatalf("Token exchange error: %v", err)
+		log.Fatalf("Token exchange error: %v\n", err)
 	}
 	return t.Token
 }
@@ -116,10 +116,10 @@ func openURL(url string) {
 
 func saveToken(storePath string, token *oauth.Token) {
 	tokenPath := path.Join(storePath, "gce_token")
-	log.Infof("Saving token in %v", tokenPath)
+	log.Infof("Saving token in %v\n", tokenPath)
 	f, err := os.Create(tokenPath)
 	if err != nil {
-		log.Infof("Warning: failed to cache oauth token: %v", err)
+		log.Infof("Warning: failed to cache oauth token: %v\n", err)
 		return
 	}
 	defer f.Close()

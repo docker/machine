@@ -29,7 +29,7 @@ func (c *Client) Authenticate(d *openstack.Driver) error {
 
 	log.WithFields(log.Fields{
 		"Username": d.Username,
-	}).Debug("Authenticating to Rackspace.")
+	}).Debugln("Authenticating to Rackspace.")
 
 	apiKey := c.driver.APIKey
 	opts := gophercloud.AuthOptions{

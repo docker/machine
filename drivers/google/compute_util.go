@@ -75,12 +75,12 @@ func (c *ComputeUtil) disk() (*raw.Disk, error) {
 
 // deleteDisk deletes the persistent disk.
 func (c *ComputeUtil) deleteDisk() error {
-	log.Infof("Deleting disk.")
+	log.Infoln("Deleting disk.")
 	op, err := c.service.Disks.Delete(c.project, c.zone, c.diskName()).Do()
 	if err != nil {
 		return err
 	}
-	log.Infof("Waiting for disk to delete.")
+	log.Infoln("Waiting for disk to delete.")
 	return c.waitForRegionalOp(op.Name)
 }
 
@@ -89,7 +89,7 @@ func (c *ComputeUtil) firewallRule() (*raw.Firewall, error) {
 }
 
 func (c *ComputeUtil) createFirewallRule() error {
-	log.Infof("Creating firewall rule.")
+	log.Infoln("Creating firewall rule.")
 	allowed := []*raw.FirewallAllowed{
 
 		{
@@ -139,7 +139,7 @@ func (c *ComputeUtil) instance() (*raw.Instance, error) {
 
 // createInstance creates a GCE VM instance.
 func (c *ComputeUtil) createInstance(d *Driver) error {
-	log.Infof("Creating instance.")
+	log.Infoln("Creating instance.")
 	// The rule will either exist or be nil in case of an error.
 	if rule, _ := c.firewallRule(); rule == nil {
 		if err := c.createFirewallRule(); err != nil {
@@ -197,7 +197,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 
-	log.Infof("Waiting for Instance...")
+	log.Infoln("Waiting for Instance...")
 	if err = c.waitForRegionalOp(op.Name); err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Uploading SSH Key")
+	log.Infoln("Uploading SSH Key")
 	op, err = c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
 		Fingerprint: instance.Metadata.Fingerprint,
 		Items: []*raw.MetadataItems{
@@ -225,7 +225,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Waiting for SSH Key")
+	log.Infoln("Waiting for SSH Key")
 	err = c.waitForRegionalOp(op.Name)
 	if err != nil {
 		return err
@@ -236,12 +236,12 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 
 // deleteInstance deletes the instance, leaving the persistent disk.
 func (c *ComputeUtil) deleteInstance() error {
-	log.Infof("Deleting instance.")
+	log.Infoln("Deleting instance.")
 	op, err := c.service.Instances.Delete(c.project, c.zone, c.instanceName).Do()
 	if err != nil {
 		return err
 	}
-	log.Infof("Waiting for instance to delete.")
+	log.Infoln("Waiting for instance to delete.")
 	return c.waitForRegionalOp(op.Name)
 }
 
@@ -269,7 +269,7 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("operation %q status: %s", op.Name, op.Status)
+		log.Debugf("operation %q status: %s\n", op.Name, op.Status)
 		if op.Status == "DONE" {
 			if op.Error != nil {
 				return fmt.Errorf("Operation error: %v", *op.Error.Errors[0])

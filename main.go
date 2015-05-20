@@ -107,7 +107,7 @@ func main() {
 
 func cmdNotFound(c *cli.Context, command string) {
 	log.Fatalf(
-		"%s: '%s' is not a %s command. See '%s --help'.",
+		"%s: '%s' is not a %s command. See '%s --help'.\n",
 		c.App.Name,
 		command,
 		c.App.Name,

@@ -178,7 +178,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating VirtualBox VM...")
+	log.Infoln("Creating VirtualBox VM...")
 
 	// import b2d VM if requested
 	if d.Boot2DockerImportVM != "" {
@@ -200,7 +200,7 @@ func (d *Driver) Create() error {
 			return err
 		}
 
-		log.Debugf("Importing VM settings...")
+		log.Debugln("Importing VM settings...")
 		vmInfo, err := getVMInfo(name)
 		if err != nil {
 			return err
@@ -209,18 +209,18 @@ func (d *Driver) Create() error {
 		d.CPU = vmInfo.CPUs
 		d.Memory = vmInfo.Memory
 
-		log.Debugf("Importing SSH key...")
+		log.Debugln("Importing SSH key...")
 		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
 		if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
 			return err
 		}
 	} else {
-		log.Infof("Creating SSH key...")
+		log.Infoln("Creating SSH key...")
 		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 			return err
 		}
 
-		log.Debugf("Creating disk image...")
+		log.Debugln("Creating disk image...")
 		if err := d.generateDiskImage(d.DiskSize); err != nil {
 			return err
 		}
@@ -233,8 +233,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("VM CPUS: %d", d.CPU)
-	log.Debugf("VM Memory: %d", d.Memory)
+	log.Debugf("VM CPUS: %d\n", d.CPU)
+	log.Debugf("VM Memory: %d\n", d.Memory)
 
 	cpus := d.CPU
 	if cpus < 1 {
@@ -362,7 +362,7 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Starting VirtualBox VM...")
+	log.Infoln("Starting VirtualBox VM...")
 
 	if err := d.Start(); err != nil {
 		return err
@@ -386,14 +386,14 @@ func (d *Driver) Start() error {
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Starting VM...")
+		log.Infoln("Starting VM...")
 	case state.Paused:
 		if err := vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Resuming VM ...")
+		log.Infoln("Resuming VM ...")
 	default:
-		log.Infof("VM not in restartable state")
+		log.Infoln("VM not in restartable state")
 	}
 
 	if err := drivers.WaitForSSH(d); err != nil {
@@ -429,7 +429,7 @@ func (d *Driver) Remove() error {
 	s, err := d.GetState()
 	if err != nil {
 		if err == ErrMachineNotExist {
-			log.Infof("machine does not exist, assuming it has been removed already")
+			log.Infoln("machine does not exist, assuming it has been removed already")
 			return nil
 		}
 		return err
@@ -537,7 +537,7 @@ func (d *Driver) diskPath() string {
 
 // Make a boot2docker VM disk image.
 func (d *Driver) generateDiskImage(size int) error {
-	log.Debugf("Creating %d MB hard disk image...", size)
+	log.Debugf("Creating %d MB hard disk image...\n", size)
 
 	magicString := "boot2docker, please format-me"
 
@@ -677,7 +677,7 @@ func setPortForwarding(machine string, interfaceNum int, mapName, protocol strin
 		return -1, err
 	}
 	if desiredHostPort != actualHostPort && desiredHostPort != 0 {
-		log.Debugf("NAT forwarding host port for guest port %d (%s) changed from %d to %d",
+		log.Debugf("NAT forwarding host port for guest port %d (%s) changed from %d to %d\n",
 			guestPort, mapName, desiredHostPort, actualHostPort)
 	}
 	cmd := fmt.Sprintf("--natpf%d", interfaceNum)

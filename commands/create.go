@@ -26,13 +26,13 @@ func cmdCreate(c *cli.Context) {
 	if driver != "none" {
 		c.App.Commands, err = trimDriverFlags(driver, c.App.Commands)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 	}
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
-		log.Fatal("You must specify a machine name")
+		log.Fatalln("You must specify a machine name")
 	}
 
 	certInfo := getCertPathInfo(c)
@@ -42,7 +42,7 @@ func cmdCreate(c *cli.Context) {
 		certInfo.CaKeyPath,
 		certInfo.ClientCertPath,
 		certInfo.ClientKeyPath); err != nil {
-		log.Fatalf("Error generating certificates: %s", err)
+		log.Fatalf("Error generating certificates: %s\n", err)
 	}
 
 	defaultStore, err := getDefaultStore(
@@ -51,12 +51,12 @@ func cmdCreate(c *cli.Context) {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	hostOptions := &libmachine.HostOptions{
@@ -87,12 +87,12 @@ func cmdCreate(c *cli.Context) {
 
 	_, err = mcn.Create(name, driver, hostOptions, c)
 	if err != nil {
-		log.Errorf("Error creating machine: %s", err)
-		log.Fatal("You will want to check the provider to make sure the machine and associated resources were properly removed.")
+		log.Errorf("Error creating machine: %s\n", err)
+		log.Fatalln("You will want to check the provider to make sure the machine and associated resources were properly removed.")
 	}
 
 	info := fmt.Sprintf("%s env %s", c.App.Name, name)
-	log.Infof("To see how to connect Docker to this machine, run: %s", info)
+	log.Infof("To see how to connect Docker to this machine, run: %s\n", info)
 }
 
 // If the user has specified a driver, they should not see the flags for all

@@ -12,25 +12,25 @@ import (
 
 func cmdConfig(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		log.Fatal(ErrExpectedOneMachine)
+		log.Fatalln(ErrExpectedOneMachine)
 	}
 	cfg, err := getMachineConfig(c)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	dockerHost, err := getHost(c).Driver.GetURL()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if c.Bool("swarm") {
 		if !cfg.SwarmOptions.Master {
-			log.Fatalf("%s is not a swarm master", cfg.machineName)
+			log.Fatalf("%s is not a swarm master\n", cfg.machineName)
 		}
 		u, err := url.Parse(cfg.SwarmOptions.Host)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		parts := strings.Split(u.Host, ":")
 		swarmPort := parts[1]
@@ -38,7 +38,7 @@ func cmdConfig(c *cli.Context) {
 		// get IP of machine to replace in case swarm host is 0.0.0.0
 		mUrl, err := url.Parse(dockerHost)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		mParts := strings.Split(mUrl.Host, ":")
 		machineIp := mParts[0]
@@ -46,11 +46,11 @@ func cmdConfig(c *cli.Context) {
 		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
 	}
 
-	log.Debug(dockerHost)
+	log.Debugln(dockerHost)
 
 	u, err := url.Parse(cfg.machineUrl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if u.Scheme != "unix" {
@@ -62,14 +62,14 @@ func cmdConfig(c *cli.Context) {
 			cfg.serverKeyPath,
 		)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 
 		if !valid {
-			log.Debugf("invalid certs detected; regenerating for %s", u.Host)
+			log.Debugf("invalid certs detected; regenerating for %s\n", u.Host)
 
 			if err := runActionWithContext("configureAuth", c); err != nil {
-				log.Fatal(err)
+				log.Fatalln(err)
 			}
 		}
 	}

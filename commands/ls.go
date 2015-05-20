@@ -22,13 +22,13 @@ func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn := getDefaultMcn(c)
 	hostList, err := mcn.List()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	hostList = filterHosts(hostList, filters)

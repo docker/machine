@@ -176,7 +176,7 @@ func MachineInState(d Driver, desiredState state.State) func() bool {
 	return func() bool {
 		currentState, err := d.GetState()
 		if err != nil {
-			log.Debugf("Error getting machine state: %s", err)
+			log.Debugf("Error getting machine state: %s\n", err)
 		}
 		if currentState == desiredState {
 			return true

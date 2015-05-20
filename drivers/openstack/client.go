@@ -65,7 +65,7 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 		}
 	}
 
-	log.Info("Creating machine...")
+	log.Infoln("Creating machine...")
 
 	server, err := servers.Create(c.Compute, keypairs.CreateOptsExt{
 		serverOpts,
@@ -404,7 +404,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		"Username":   d.Username,
 		"TenantName": d.TenantName,
 		"TenantID":   d.TenantId,
-	}).Debug("Authenticating...")
+	}).Debugln("Authenticating...")
 
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint: d.AuthUrl,

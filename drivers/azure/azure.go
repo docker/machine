@@ -229,29 +229,29 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Info("Creating Azure machine...")
+	log.Infoln("Creating Azure machine...")
 	vmConfig, err := vmClient.CreateAzureVMConfiguration(d.MachineName, d.Size, d.Image, d.Location)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("Generating certificate for Azure...")
+	log.Debugln("Generating certificate for Azure...")
 	if err := d.generateCertForAzure(); err != nil {
 		return err
 	}
 
-	log.Debug("Adding Linux provisioning...")
+	log.Debugln("Adding Linux provisioning...")
 	vmConfig, err = vmClient.AddAzureLinuxProvisioningConfig(vmConfig, d.GetSSHUsername(), d.UserPassword, d.azureCertPath(), d.SSHPort)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("Authorizing ports...")
+	log.Debugln("Authorizing ports...")
 	if err := d.addDockerEndpoint(vmConfig); err != nil {
 		return err
 	}
 
-	log.Debug("Creating VM...")
+	log.Debugln("Creating VM...")
 	if err := vmClient.CreateAzureVM(vmConfig, d.MachineName, d.Location); err != nil {
 		return err
 	}
@@ -303,11 +303,11 @@ func (d *Driver) Start() error {
 	if vmState, err := d.GetState(); err != nil {
 		return err
 	} else if vmState == state.Running || vmState == state.Starting {
-		log.Infof("Host is already running or starting")
+		log.Infoln("Host is already running or starting")
 		return nil
 	}
 
-	log.Debugf("starting %s", d.MachineName)
+	log.Debugf("starting %s\n", d.MachineName)
 
 	if err := vmClient.StartRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
@@ -326,11 +326,11 @@ func (d *Driver) Stop() error {
 	if vmState, err := d.GetState(); err != nil {
 		return err
 	} else if vmState == state.Stopped {
-		log.Infof("Host is already stopped")
+		log.Infoln("Host is already stopped")
 		return nil
 	}
 
-	log.Debugf("stopping %s", d.MachineName)
+	log.Debugf("stopping %s\n", d.MachineName)
 
 	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
@@ -350,7 +350,7 @@ func (d *Driver) Remove() error {
 		return nil
 	}
 
-	log.Debugf("removing %s", d.MachineName)
+	log.Debugf("removing %s\n", d.MachineName)
 
 	return vmClient.DeleteHostedService(d.MachineName)
 }
@@ -366,7 +366,7 @@ func (d *Driver) Restart() error {
 		return errors.New("Host is already stopped, use start command to run it")
 	}
 
-	log.Debugf("restarting %s", d.MachineName)
+	log.Debugf("restarting %s\n", d.MachineName)
 
 	if err := vmClient.RestartRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
@@ -384,11 +384,11 @@ func (d *Driver) Kill() error {
 	if vmState, err := d.GetState(); err != nil {
 		return err
 	} else if vmState == state.Stopped {
-		log.Infof("Host is already stopped")
+		log.Infoln("Host is already stopped")
 		return nil
 	}
 
-	log.Debugf("killing %s", d.MachineName)
+	log.Debugf("killing %s\n", d.MachineName)
 
 	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
@@ -425,7 +425,7 @@ func (d *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 			Port:      d.DockerPort,
 			LocalPort: d.DockerPort}
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
-		log.Debugf("added Docker endpoint (port %d) to configuration", d.DockerPort)
+		log.Debugf("added Docker endpoint (port %d) to configuration\n", d.DockerPort)
 	}
 	return nil
 }

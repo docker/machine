@@ -97,7 +97,7 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 func removeFileIfExists(name string) error {
 	if _, err := os.Stat(name); err == nil {
 		if err := os.Remove(name); err != nil {
-			log.Fatalf("Error removing temporary download file: %s", err)
+			log.Fatalf("Error removing temporary download file: %s\n", err)
 		}
 	}
 	return nil
@@ -132,7 +132,7 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 
 	defer func() {
 		if err := removeFileIfExists(f.Name()); err != nil {
-			log.Fatalf("Error removing file: %s", err)
+			log.Fatalf("Error removing file: %s\n", err)
 		}
 	}()
 
@@ -171,7 +171,7 @@ func (b *B2dUtils) DownloadLatestBoot2Docker() error {
 }
 
 func (b *B2dUtils) DownloadISOFromURL(latestReleaseUrl string) error {
-	log.Infof("Downloading %s to %s...", latestReleaseUrl, b.commonIsoPath)
+	log.Infof("Downloading %s to %s...\n", latestReleaseUrl, b.commonIsoPath)
 	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseUrl); err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 	// just in case the cache dir has been manually deleted,
 	// check for it and recreate it if it's gone
 	if _, err := os.Stat(b.imgCachePath); os.IsNotExist(err) {
-		log.Infof("Image cache does not exist, creating it at %s...", b.imgCachePath)
+		log.Infof("Image cache does not exist, creating it at %s...\n", b.imgCachePath)
 		if err := os.Mkdir(b.imgCachePath, 0700); err != nil {
 			return err
 		}
@@ -200,7 +200,7 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 		}
 	} else {
 		// But if ISO is specified go get it directly
-		log.Infof("Downloading %s from %s...", b.isoFilename, isoURL)
+		log.Infof("Downloading %s from %s...\n", b.isoFilename, isoURL)
 		if err := b.DownloadISO(filepath.Join(machinesDir, machineName), b.isoFilename, isoURL); err != nil {
 			return err
 		}
@@ -211,7 +211,7 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 
 func (b *B2dUtils) copyDefaultIsoToMachine(machineIsoPath string) error {
 	if _, err := os.Stat(b.commonIsoPath); os.IsNotExist(err) {
-		log.Info("No default boot2docker iso found locally, downloading the latest release...")
+		log.Infoln("No default boot2docker iso found locally, downloading the latest release...")
 		if err := b.DownloadLatestBoot2Docker(); err != nil {
 			return err
 		}

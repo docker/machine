@@ -1,15 +1,13 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/log"
 )
 
 func cmdActive(c *cli.Context) {
 	if len(c.Args()) > 0 {
-		log.Fatal("Error: Too many arguments given.")
+		log.Fatalln("Error: Too many arguments given.")
 	}
 
 	certInfo := getCertPathInfo(c)
@@ -19,20 +17,20 @@ func cmdActive(c *cli.Context) {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	host, err := mcn.GetActive()
 	if err != nil {
-		log.Fatalf("Error getting active host: %s", err)
+		log.Fatalf("Error getting active host: %s\n", err)
 	}
 
 	if host != nil {
-		fmt.Println(host.Name)
+		log.Println(host.Name)
 	}
 }

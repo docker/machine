@@ -86,7 +86,7 @@ func (s Filestore) List() ([]*Host, error) {
 		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
 			host, err := s.Get(file.Name())
 			if err != nil {
-				log.Errorf("error loading host %q: %s", file.Name(), err)
+				log.Errorf("error loading host %q: %s\n", file.Name(), err)
 				continue
 			}
 			hosts = append(hosts, host)

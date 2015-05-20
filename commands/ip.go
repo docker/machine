@@ -7,6 +7,6 @@ import (
 
 func cmdIp(c *cli.Context) {
 	if err := runActionWithContext("ip", c); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

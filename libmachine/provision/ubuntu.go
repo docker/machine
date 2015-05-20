@@ -86,7 +86,7 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 
 func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
 	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
-		log.Warnf("Error getting SSH command to check if the daemon is up: %s", err)
+		log.Warnf("Error getting SSH command to check if the daemon is up: %s\n", err)
 		return false
 	}
 

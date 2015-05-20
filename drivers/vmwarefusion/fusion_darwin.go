@@ -213,7 +213,7 @@ func (d *Driver) Create() error {
 
 	if d.Boot2DockerURL != "" {
 		isoURL = d.Boot2DockerURL
-		log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+		log.Infof("Downloading boot2docker.iso from %s...\n", isoURL)
 		if err := b2dutils.DownloadISO(d.storePath, isoFilename, isoURL); err != nil {
 			return err
 		}
@@ -224,14 +224,14 @@ func (d *Driver) Create() error {
 		//// until then always use "latest"
 		//isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
 		//if err != nil {
-		//	log.Warnf("Unable to check for the latest release: %s", err)
+		//	log.Warnf("Unable to check for the latest release: %s\n", err)
 		//}
 
 		// see https://github.com/boot2docker/boot2docker/pull/747
 		isoURL := "https://github.com/cloudnativeapps/boot2docker/releases/download/v1.6.0-vmw/boot2docker-1.6.0-vmw.iso"
 
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
-			log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+			log.Infof("Downloading boot2docker.iso to %s...\n", commonIsoPath)
 			// just in case boot2docker.iso has been manually deleted
 			if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 				if err := os.Mkdir(imgPath, 0700); err != nil {
@@ -249,12 +249,12 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Creating SSH key...")
+	log.Infoln("Creating SSH key...")
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
-	log.Infof("Creating VM...")
+	log.Infoln("Creating VM...")
 	if err := os.MkdirAll(d.storePath, 0755); err != nil {
 		return err
 	}
@@ -283,22 +283,22 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Starting %s...", d.MachineName)
+	log.Infof("Starting %s...\n", d.MachineName)
 	vmrun("start", d.vmxPath(), "nogui")
 
 	var ip string
 
-	log.Infof("Waiting for VM to come online...")
+	log.Infoln("Waiting for VM to come online...")
 	for i := 1; i <= 60; i++ {
 		ip, err = d.getIPfromDHCPLease()
 		if err != nil {
-			log.Debugf("Not there yet %d/%d, error: %s", i, 60, err)
+			log.Debugf("Not there yet %d/%d, error: %s\n", i, 60, err)
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
 		if ip != "" {
-			log.Debugf("Got an ip: %s", ip)
+			log.Debugf("Got an ip: %s\n", ip)
 			break
 		}
 	}
@@ -348,10 +348,10 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.Infof("Starting %s...", d.MachineName)
+	log.Infof("Starting %s...\n", d.MachineName)
 	vmrun("start", d.vmxPath(), "nogui")
 
-	log.Debugf("Mounting Shared Folders...")
+	log.Debugln("Mounting Shared Folders...")
 	var shareName, shareDir string // TODO configurable at some point
 	switch runtime.GOOS {
 	case "darwin":
@@ -373,7 +373,7 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	log.Infof("Gracefully shutting down %s...", d.MachineName)
+	log.Infof("Gracefully shutting down %s...\n", d.MachineName)
 	vmrun("stop", d.vmxPath(), "nogui")
 	return nil
 }
@@ -386,19 +386,19 @@ func (d *Driver) Remove() error {
 			return fmt.Errorf("Error stopping VM before deletion")
 		}
 	}
-	log.Infof("Deleting %s...", d.MachineName)
+	log.Infof("Deleting %s...\n", d.MachineName)
 	vmrun("deleteVM", d.vmxPath(), "nogui")
 	return nil
 }
 
 func (d *Driver) Restart() error {
-	log.Infof("Gracefully restarting %s...", d.MachineName)
+	log.Infof("Gracefully restarting %s...\n", d.MachineName)
 	vmrun("reset", d.vmxPath(), "nogui")
 	return nil
 }
 
 func (d *Driver) Kill() error {
-	log.Infof("Forcibly halting %s...", d.MachineName)
+	log.Infof("Forcibly halting %s...\n", d.MachineName)
 	vmrun("stop", d.vmxPath(), "hard nogui")
 	return nil
 }
@@ -480,7 +480,7 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 		return "", fmt.Errorf("couldn't find MAC address in VMX file %s", d.vmxPath())
 	}
 
-	log.Debugf("MAC address in VMX: %s", macaddr)
+	log.Debugf("MAC address in VMX: %s\n", macaddr)
 	if dhcpfh, err = os.Open(dhcpfile); err != nil {
 		return "", err
 	}
@@ -519,7 +519,7 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", macaddr)
 	}
 
-	log.Debugf("IP found in DHCP lease table: %s", currentip)
+	log.Debugf("IP found in DHCP lease table: %s\n", currentip)
 	return currentip, nil
 
 }
@@ -530,7 +530,7 @@ func (d *Driver) publicSSHKeyPath() string {
 
 // Make a boot2docker userdata.tar key bundle
 func (d *Driver) generateKeyBundle() error {
-	log.Debugf("Creating Tar key bundle...")
+	log.Debugln("Creating Tar key bundle...")
 
 	magicString := "boot2docker, this is vmware speaking"
 

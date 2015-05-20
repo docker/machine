@@ -8,6 +8,6 @@ import (
 
 func cmdUpgrade(c *cli.Context) {
 	if err := runActionWithContext("upgrade", c); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

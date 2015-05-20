@@ -19,7 +19,7 @@ func cmdSsh(c *cli.Context) {
 	)
 
 	if len(c.Args()) == 0 {
-		log.Fatal("Error: Please specify a machine name.")
+		log.Fatalln("Error: Please specify a machine name.")
 	}
 
 	name := c.Args().First()
@@ -31,25 +31,25 @@ func cmdSsh(c *cli.Context) {
 		certInfo.CaKeyPath,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	mcn, err := newMcn(defaultStore)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	host, err := mcn.Get(name)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	_, err = host.GetURL()
 	if err != nil {
 		if err == drivers.ErrHostIsNotRunning {
-			log.Fatalf("%s is not running. Please start this with docker-machine start %s", host.Name, host.Name)
+			log.Fatalf("%s is not running. Please start this with docker-machine start %s\n", host.Name, host.Name)
 		} else {
-			log.Fatalf("Unexpected error getting machine url: %s", err)
+			log.Fatalf("Unexpected error getting machine url: %s\n", err)
 		}
 	}
 
@@ -78,6 +78,6 @@ func cmdSsh(c *cli.Context) {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

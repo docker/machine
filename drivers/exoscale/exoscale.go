@@ -219,7 +219,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Querying exoscale for the requested parameters...")
+	log.Infof("Querying exoscale for the requested parameters...\n")
 	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
 	topology, err := client.GetTopology()
 	if err != nil {
@@ -232,7 +232,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Availability zone %v doesn't exist",
 			d.AvailabilityZone)
 	}
-	log.Debugf("Availability zone %v = %s", d.AvailabilityZone, zone)
+	log.Debugf("Availability zone %v = %s\n", d.AvailabilityZone, zone)
 
 	// Image UUID
 	var tpl string
@@ -244,7 +244,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Unable to find image %v with size %d",
 			d.Image, d.DiskSize)
 	}
-	log.Debugf("Image %v(%d) = %s", d.Image, d.DiskSize, tpl)
+	log.Debugf("Image %v(%d) = %s\n", d.Image, d.DiskSize, tpl)
 
 	// Profile UUID
 	profile, ok := topology.Profiles[strings.ToLower(d.InstanceProfile)]
@@ -252,12 +252,12 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Unable to find the %s profile",
 			d.InstanceProfile)
 	}
-	log.Debugf("Profile %v = %s", d.InstanceProfile, profile)
+	log.Debugf("Profile %v = %s\n", d.InstanceProfile, profile)
 
 	// Security group
 	sg, ok := topology.SecurityGroups[d.SecurityGroup]
 	if !ok {
-		log.Infof("Security group %v does not exist, create it",
+		log.Infof("Security group %v does not exist, create it\n",
 			d.SecurityGroup)
 		rules := []egoscale.SecurityGroupRule{
 			{
@@ -288,10 +288,10 @@ func (d *Driver) Create() error {
 		}
 		sg = sgresp.Id
 	}
-	log.Debugf("Security group %v = %s", d.SecurityGroup, sg)
+	log.Debugf("Security group %v = %s\n", d.SecurityGroup, sg)
 
 	if d.KeyPair == "" {
-		log.Infof("Generate an SSH keypair...")
+		log.Infoln("Generate an SSH keypair...")
 		kpresp, err := client.CreateKeypair(d.MachineName)
 		if err != nil {
 			return err
@@ -303,14 +303,14 @@ func (d *Driver) Create() error {
 		d.KeyPair = d.MachineName
 	}
 
-	log.Infof("Spawn exoscale host...")
+	log.Infoln("Spawn exoscale host...")
 
 	userdata, err := d.getCloudInit()
 	if err != nil {
 		return err
 	}
-	log.Debugf("Using the following cloud-init file:")
-	log.Debugf("%s", userdata)
+	log.Debugln("Using the following cloud-init file:")
+	log.Debugln(userdata)
 
 	machineProfile := egoscale.MachineProfile{
 		Template:        tpl,
@@ -343,7 +343,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 	if vmstate == state.Running || vmstate == state.Starting {
-		log.Infof("Host is already running or starting")
+		log.Infoln("Host is already running or starting")
 		return nil
 	}
 
@@ -365,7 +365,7 @@ func (d *Driver) Stop() error {
 		return err
 	}
 	if vmstate == state.Stopped {
-		log.Infof("Host is already stopped")
+		log.Infoln("Host is already stopped")
 		return nil
 	}
 
@@ -421,7 +421,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.DeployVirtualMachineResponse, error) {
-	log.Infof("Waiting for VM...")
+	log.Infoln("Waiting for VM...")
 	maxRepeats := 60
 	i := 0
 	var resp *egoscale.QueryAsyncJobResultResponse
