@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 )
 
@@ -25,7 +27,19 @@ type DockerOptions struct {
 func installDockerGeneric(p Provisioner) error {
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
-	if output, err := p.SSHCommand("if ! type docker; then curl -sSL https://get.docker.com | sh -; fi"); err != nil {
+	var (
+		err    error
+		output ssh.Output
+	)
+
+	dockerInstallCmd := os.Getenv("DOCKER_INSTALL_COMMAND")
+	if len(dockerInstallCmd) == 0 {
+		output, err = p.SSHCommand("if ! type docker; then curl -sSL https://get.docker.com | sh -; fi")
+	} else {
+		output, err = p.SSHCommand(dockerInstallCmd)
+	}
+
+	if err != nil {
 		var buf bytes.Buffer
 		if _, err := buf.ReadFrom(output.Stderr); err != nil {
 			return err
