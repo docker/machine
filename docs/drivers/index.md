@@ -21,6 +21,7 @@ identifier="smn_machine_drivers"
 * [OpenStack](openstack.md)
 * [Rackspace](rackspace.md)
 * [IBM Softlayer](soft-layer.md)
+* [Joyent Triton](triton.md)
 * [Oracle VirtualBox](virtualbox.md)
 * [VMware vCloud Air](vm-cloud.md)
 * [VMware Fusion](vm-fusion.md)
