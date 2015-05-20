@@ -2,10 +2,10 @@ package egoscale
 
 import (
 	"encoding/json"
-	"net/url"
-	"strings"
 	"fmt"
+	"net/url"
 	"regexp"
+	"strings"
 )
 
 func (exo *Client) GetSecurityGroups() (map[string]string, error) {
@@ -23,7 +23,7 @@ func (exo *Client) GetSecurityGroups() (map[string]string, error) {
 	}
 
 	sgs = make(map[string]string)
-	for _, sg := range(r.SecurityGroups) {
+	for _, sg := range r.SecurityGroups {
 		sgs[sg.Name] = sg.Id
 	}
 	return sgs, nil
@@ -44,7 +44,7 @@ func (exo *Client) GetZones() (map[string]string, error) {
 	}
 
 	zones = make(map[string]string)
-	for _, zone := range(r.Zones) {
+	for _, zone := range r.Zones {
 		zones[zone.Name] = zone.Id
 	}
 	return zones, nil
@@ -66,7 +66,7 @@ func (exo *Client) GetProfiles() (map[string]string, error) {
 	}
 
 	profiles = make(map[string]string)
-	for _, offering := range(r.ServiceOfferings) {
+	for _, offering := range r.ServiceOfferings {
 		profiles[strings.ToLower(offering.Name)] = offering.Id
 	}
 
@@ -90,7 +90,7 @@ func (exo *Client) GetKeypairs() ([]string, error) {
 	}
 
 	keypairs = make([]string, r.Count, r.Count)
-	for i, keypair := range(r.SSHKeyPairs) {
+	for i, keypair := range r.SSHKeyPairs {
 		keypairs[i] = keypair.Name
 	}
 	return keypairs, nil
@@ -115,7 +115,7 @@ func (exo *Client) GetImages() (map[string]map[int]string, error) {
 	}
 
 	re := regexp.MustCompile(`^Linux (?P<name>Ubuntu|Debian) (?P<version>[0-9.]+).*$`)
-	for _, template := range(r.Templates) {
+	for _, template := range r.Templates {
 		size := template.Size / (1024 * 1024 * 1024)
 		submatch := re.FindStringSubmatch(template.Name)
 		if len(submatch) > 0 {
@@ -124,7 +124,7 @@ func (exo *Client) GetImages() (map[string]map[int]string, error) {
 			image := fmt.Sprintf("%s-%s", name, version)
 
 			_, present := images[image]
-			if (!present) {
+			if !present {
 				images[image] = make(map[int]string)
 			}
 			images[image][size] = template.Id
@@ -138,31 +138,31 @@ func (exo *Client) GetImages() (map[string]map[int]string, error) {
 func (exo *Client) GetTopology() (*Topology, error) {
 
 	zones, err := exo.GetZones()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	images, err := exo.GetImages()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	groups, err := exo.GetSecurityGroups()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	keypairs, err := exo.GetKeypairs()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	profiles, err := exo.GetProfiles()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 
 	topo := &Topology{
-		Zones: zones,
-		Profiles: profiles,
-		Images: images,
-		Keypairs: keypairs,
+		Zones:          zones,
+		Profiles:       profiles,
+		Images:         images,
+		Keypairs:       keypairs,
 		SecurityGroups: groups,
 	}
 
