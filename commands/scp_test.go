@@ -9,7 +9,6 @@ import (
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -65,10 +64,6 @@ func (d ScpFakeDriver) PreCreateCheck() error {
 
 func (d ScpFakeDriver) Create() error {
 	return nil
-}
-
-func (d ScpFakeDriver) GetProviderType() provider.ProviderType {
-	return provider.Local
 }
 
 func (d ScpFakeDriver) Remove() error {
