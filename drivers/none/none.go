@@ -6,7 +6,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -85,10 +84,6 @@ func (d *Driver) GetURL() (string, error) {
 
 func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.None
 }
 
 func (d *Driver) Kill() error {
