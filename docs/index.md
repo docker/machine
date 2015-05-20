@@ -1107,12 +1107,21 @@ Machine to manage.
 
 Options:
 
- - `--generic-ip-address`: IP Address of host
- - `--generic-ssh-user`: SSH username used to connect (default: `root`)
- - `--generic-ssh-key`: Path to the SSH user private key
- - `--generic-ssh-port`: Port to use for SSH (default: `22`)
+ - `--generic-ip-address`: **required** IP Address of host.
+ - `--generic-ssh-user`: SSH username used to connect.
+ - `--generic-ssh-key`: Path to the SSH user private key.
+ - `--generic-ssh-port`: Port to use for SSH.
 
 > Note: you must use a base Operating System supported by Machine.
+
+Environment variables and default values:
+
+| CLI option                 | Environment variable | Default             |
+|----------------------------|----------------------|---------------------|
+| **`--generic-ip-address`** | -                    | -                   |
+| `--generic-ssh-user`       | -                    | `root`              |
+| `--generic-ssh-key`        | -                    | `$HOME/.ssh/id_rsa` |
+| `--generic-ssh-port`       | -                    | `22`                |
 
 #### Google Compute Engine
 Create machines on [Google Compute Engine](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
