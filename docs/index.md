@@ -1357,7 +1357,7 @@ Options:
  - `--exoscale-disk-size`: Disk size for the host in GB. Default: `50`.
  - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
 
-If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
+If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule.
 
 ## Release Notes
 
