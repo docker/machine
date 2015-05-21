@@ -12,24 +12,38 @@ type TerminalLogger struct {
 }
 
 func (t TerminalLogger) log(args ...interface{}) {
+	if Spinner.isActive {
+		Spinner.Clear()
+		defer Spinner.Start(Spinner.title)
+	}
 	fmt.Print(args...)
 	fmt.Print(t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
 func (t TerminalLogger) logf(fmtString string, args ...interface{}) {
+	if Spinner.isActive {
+		Spinner.Clear()
+		defer Spinner.Start(Spinner.title)
+	}
 	fmt.Printf(fmtString, args...)
 	fmt.Print(t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
 func (t TerminalLogger) err(args ...interface{}) {
+	if Spinner.isActive {
+		Spinner.StopWithError()
+	}
 	fmt.Fprint(os.Stderr, args...)
 	fmt.Fprint(os.Stderr, t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
 func (t TerminalLogger) errf(fmtString string, args ...interface{}) {
+	if Spinner.isActive {
+		Spinner.StopWithError()
+	}
 	fmt.Fprintf(os.Stderr, fmtString, args...)
 	fmt.Fprint(os.Stderr, t.fieldOut, "\n")
 	t.fieldOut = ""

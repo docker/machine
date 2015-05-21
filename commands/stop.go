@@ -7,7 +7,9 @@ import (
 )
 
 func cmdStop(c *cli.Context) {
+	log.Spinner.Start("Stopping machine(s)")
 	if err := runActionWithContext("stop", c); err != nil {
 		log.Fatal(err)
 	}
+	log.Spinner.Stop()
 }

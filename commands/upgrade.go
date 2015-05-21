@@ -7,7 +7,9 @@ import (
 )
 
 func cmdUpgrade(c *cli.Context) {
+	log.Spinner.Start("Upgrading machine(s)")
 	if err := runActionWithContext("upgrade", c); err != nil {
 		log.Fatal(err)
 	}
+	log.Spinner.Stop()
 }

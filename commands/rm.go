@@ -31,10 +31,12 @@ func cmdRm(c *cli.Context) {
 	}
 
 	for _, host := range c.Args() {
+		log.Spinner.Start("Removing machine")
 		if err := provider.Remove(host, force); err != nil {
 			log.Errorf("Error removing machine %s: %s", host, err)
 			isError = true
 		} else {
+			log.Spinner.Stop()
 			log.Infof("Successfully removed %s", host)
 		}
 	}
