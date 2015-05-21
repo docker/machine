@@ -256,7 +256,7 @@ func (c *ComputeUtil) executeCommands(commands []string, ip, sshKeyPath string) 
 			return err
 		}
 
-		if _, err := client.Run(command); err != nil {
+		if _, err := client.Output(command); err != nil {
 			return err
 		}
 	}

@@ -1,7 +1,6 @@
 package provision
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/docker/machine/drivers"
@@ -9,7 +8,6 @@ import (
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/ssh"
 )
 
 var provisioners = make(map[string]*RegisteredProvisioner)
@@ -52,7 +50,7 @@ type Provisioner interface {
 	GetDriver() drivers.Driver
 
 	// Short-hand for accessing an SSH command from the driver.
-	SSHCommand(args string) (ssh.Output, error)
+	SSHCommand(args string) (string, error)
 
 	// Set the OS Release info depending on how it's represented
 	// internally
@@ -69,19 +67,12 @@ func Register(name string, p *RegisteredProvisioner) {
 }
 
 func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
-	var (
-		osReleaseOut bytes.Buffer
-	)
-	catOsReleaseOutput, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
+	osReleaseOut, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
 	if err != nil {
 		return nil, fmt.Errorf("Error getting SSH command: %s", err)
 	}
 
-	if _, err := osReleaseOut.ReadFrom(catOsReleaseOutput.Stdout); err != nil {
-		return nil, err
-	}
-
-	osReleaseInfo, err := NewOsRelease(osReleaseOut.Bytes())
+	osReleaseInfo, err := NewOsRelease([]byte(osReleaseOut))
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing /etc/os-release file: %s", err)
 	}

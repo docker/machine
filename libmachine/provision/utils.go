@@ -1,7 +1,6 @@
 package provision
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -26,12 +25,7 @@ func installDockerGeneric(p Provisioner) error {
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
 	if output, err := p.SSHCommand("if ! type docker; then curl -sSL https://get.docker.com | sh -; fi"); err != nil {
-		var buf bytes.Buffer
-		if _, err := buf.ReadFrom(output.Stderr); err != nil {
-			return err
-		}
-
-		return fmt.Errorf("error installing docker: %s\n", buf.String())
+		return fmt.Errorf("error installing docker: %s\n", output)
 	}
 
 	return nil

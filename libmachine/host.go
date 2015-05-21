@@ -137,26 +137,30 @@ func (h *Host) Create(name string) error {
 	return nil
 }
 
-func (h *Host) RunSSHCommand(command string) (ssh.Output, error) {
+func (h *Host) RunSSHCommand(command string) (string, error) {
 	return drivers.RunSSHCommandFromDriver(h.Driver, command)
 }
 
-func (h *Host) CreateSSHShell() error {
+func (h *Host) CreateSSHClient() (ssh.Client, error) {
 	addr, err := h.Driver.GetSSHHostname()
 	if err != nil {
-		return err
+		return ssh.ExternalClient{}, err
 	}
 
 	port, err := h.Driver.GetSSHPort()
 	if err != nil {
-		return err
+		return ssh.ExternalClient{}, err
 	}
 
 	auth := &ssh.Auth{
 		Keys: []string{h.Driver.GetSSHKeyPath()},
 	}
 
-	client, err := ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
+	return ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
+}
+
+func (h *Host) CreateSSHShell() error {
+	client, err := h.CreateSSHClient()
 	if err != nil {
 		return err
 	}

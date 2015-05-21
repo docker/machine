@@ -13,7 +13,6 @@ import (
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
@@ -102,17 +101,7 @@ func (provisioner *Boot2DockerProvisioner) Package(name string, action pkgaction
 }
 
 func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
-	output, err := provisioner.SSHCommand(fmt.Sprintf("hostname"))
-	if err != nil {
-		return "", err
-	}
-
-	var so bytes.Buffer
-	if _, err := so.ReadFrom(output.Stdout); err != nil {
-		return "", err
-	}
-
-	return so.String(), nil
+	return provisioner.SSHCommand("hostname")
 }
 
 func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
@@ -231,7 +220,7 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 	return nil
 }
 
-func (provisioner *Boot2DockerProvisioner) SSHCommand(args string) (ssh.Output, error) {
+func (provisioner *Boot2DockerProvisioner) SSHCommand(args string) (string, error) {
 	return drivers.RunSSHCommandFromDriver(provisioner.Driver, args)
 }
 
