@@ -16,7 +16,6 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/amazonec2/amz"
 	"github.com/docker/machine/log"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -187,10 +186,6 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 		CaCertPath:     caCert,
 		PrivateKeyPath: privateKey,
 	}, nil
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Remote
 }
 
 func (d *Driver) AuthorizePort(ports []*drivers.Port) error {

@@ -11,7 +11,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/log"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -97,10 +96,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Remote
 }
 
 func GetCreateFlags() []cli.Flag {

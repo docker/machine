@@ -2,7 +2,6 @@ package fakedriver
 
 import (
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -32,10 +31,6 @@ func (d *FakeDriver) GetURL() (string, error) {
 
 func (d *FakeDriver) GetMachineName() string {
 	return ""
-}
-
-func (d *FakeDriver) GetProviderType() provider.ProviderType {
-	return provider.None
 }
 
 func (d *FakeDriver) GetIP() (string, error) {

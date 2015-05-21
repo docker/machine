@@ -21,7 +21,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -179,10 +178,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Local
 }
 
 func (d *Driver) DriverName() string {
