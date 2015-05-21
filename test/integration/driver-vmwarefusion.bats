@@ -59,6 +59,18 @@ function setup() {
   [[ ${lines[1]} == *"Stopped"*  ]]
 }
 
+@test "$DRIVER: url should show an error when machine is stopped" {
+  run machine url $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == "host is not running" ]]
+}
+
+@test "$DRIVER: env should show an error when machine is stopped" {
+  run machine env $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == *"not running. Please start this with"* ]]
+}
+
 @test "$DRIVER: start" {
   run machine start $NAME
   [ "$status" -eq 0  ]
