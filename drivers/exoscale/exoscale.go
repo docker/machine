@@ -367,8 +367,7 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
-	_, err = d.waitForVM(client, svmresp)
-	if err != nil {
+	if _, err = d.waitForVM(client, svmresp); err != nil {
 		return err
 	}
 	return nil
@@ -378,8 +377,7 @@ func (d *Driver) Remove() error {
 	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
 
 	// Destroy the SSH key
-	_, err := client.DeleteKeypair(d.KeyPair)
-	if err != nil {
+	if _, err := client.DeleteKeypair(d.KeyPair); err != nil {
 		return err
 	}
 
@@ -409,8 +407,7 @@ func (d *Driver) Restart() error {
 	if err != nil {
 		return err
 	}
-	_, err = d.waitForVM(client, svmresp)
-	if err != nil {
+	if _, err = d.waitForVM(client, svmresp); err != nil {
 		return err
 	}
 
