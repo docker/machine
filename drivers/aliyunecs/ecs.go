@@ -767,7 +767,7 @@ func (d *Driver) uploadKeyPair() error {
 
 	output, err := sshClient.Run(command)
 
-	log.Debugf(fmt.Sprintf("Upload command err, output: %v: %s", err, output))
+	log.Debugf("Upload command err, output: %v: %s", err, output)
 
 	if err != nil {
 		return err
@@ -775,12 +775,19 @@ func (d *Driver) uploadKeyPair() error {
 
 	log.Debugf("Upload the public key with command: %s", command)
 
-	// Fix the routing rule
-	output, err = sshClient.Run("route del -net 172.16.0.0/12")
-	log.Debugf(fmt.Sprintf("Delete route command err, output: %v: %s", err, output))
-
-	output, err = sshClient.Run("sed -i -r 's/^(up route add \\-net 172\\..*)$/#\\1/' /etc/network/interfaces")
-	log.Debugf(fmt.Sprintf("Fix route in /etc/network/interfaces command err, output: %v: %s", err, output))
+	fixRoutingRules(sshClient)
 
 	return nil
+}
+
+// Fix the routing rules
+func fixRoutingRules(sshClient *ssh.Client) {
+	output, err := sshClient.Run("route del -net 172.16.0.0/12")
+	log.Debugf("Delete route command err, output: %v: %s", err, output)
+
+	output, err = sshClient.Run("if [ -e /etc/network/interfaces ]; then sed -i -r 's/^(up route add \\-net 172\\.16\\..*)$/#\\1/' /etc/network/interfaces; fi")
+	log.Debugf("Fix route in /etc/network/interfaces command err, output: %v: %s", err, output)
+
+	output, err = sshClient.Run("if [ -e /etc/sysconfig/network-scripts/route-eth0 ]; then sed -i -r 's/^(172\\.16\\..* dev eth0)$/#\\1/' /etc/sysconfig/network-scripts/route-eth0; fi")
+	log.Debugf("Fix route in /etc/sysconfig/network-scripts/route-eth0 command err, output: %v: %s", err, output)
 }
