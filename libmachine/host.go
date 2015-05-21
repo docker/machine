@@ -109,6 +109,8 @@ func ValidateHostName(name string) bool {
 
 func (h *Host) Create(name string) error {
 	// create the instance
+	log.Progress.Start("Creating the instance")
+	defer log.Progress.Stop()
 	if err := h.Driver.Create(); err != nil {
 		return err
 	}
@@ -120,6 +122,7 @@ func (h *Host) Create(name string) error {
 
 	// TODO: Not really a fan of just checking "none" here.
 	if h.Driver.DriverName() != "none" {
+		log.Progress.Start("Waiting for instance to come up")
 		if err := WaitForSSH(h); err != nil {
 			return err
 		}
@@ -129,6 +132,7 @@ func (h *Host) Create(name string) error {
 			return err
 		}
 
+		log.Progress.Start("Provisioning the instance")
 		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 			return err
 		}
@@ -252,6 +256,8 @@ func (h *Host) Upgrade() error {
 }
 
 func (h *Host) Remove(force bool) error {
+	log.Progress.Start("Removing the instance")
+	defer log.Progress.Stop()
 	if err := h.Driver.Remove(); err != nil {
 		if !force {
 			return err

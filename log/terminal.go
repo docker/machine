@@ -12,12 +12,20 @@ type TerminalLogger struct {
 }
 
 func (t TerminalLogger) log(args ...interface{}) {
+	if Progress.isActive {
+		Progress.Stop()
+		defer Progress.Start(Progress.title)
+	}
 	fmt.Print(args...)
 	fmt.Print(t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
 func (t TerminalLogger) logf(fmtString string, args ...interface{}) {
+	if Progress.isActive {
+		Progress.Stop()
+		defer Progress.Start(Progress.title)
+	}
 	fmt.Printf(fmtString, args...)
 	fmt.Print(t.fieldOut, "\n")
 	t.fieldOut = ""
