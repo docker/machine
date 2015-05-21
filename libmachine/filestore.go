@@ -25,7 +25,9 @@ func NewFilestore(rootPath string, caCert string, privateKey string) *Filestore 
 func (s Filestore) loadHost(name string) (*Host, error) {
 	hostPath := filepath.Join(utils.GetMachineDir(), name)
 	if _, err := os.Stat(hostPath); os.IsNotExist(err) {
-		return nil, ErrHostDoesNotExist
+		return nil, ErrHostDoesNotExist{
+			Name: name,
+		}
 	}
 
 	host := &Host{Name: name, StorePath: hostPath}

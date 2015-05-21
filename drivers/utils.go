@@ -8,17 +8,15 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-func RunSSHCommandFromDriver(d Driver, command string) (ssh.Output, error) {
-	var output ssh.Output
-
+func RunSSHCommandFromDriver(d Driver, command string) (string, error) {
 	addr, err := d.GetSSHHostname()
 	if err != nil {
-		return output, err
+		return "", err
 	}
 
 	port, err := d.GetSSHPort()
 	if err != nil {
-		return output, err
+		return "", err
 	}
 
 	auth := &ssh.Auth{
@@ -27,11 +25,11 @@ func RunSSHCommandFromDriver(d Driver, command string) (ssh.Output, error) {
 
 	client, err := ssh.NewClient(d.GetSSHUsername(), addr, port, auth)
 	if err != nil {
-		return output, err
+		return "", err
 	}
 
 	log.Debugf("About to run SSH command:\n%s", command)
-	output, err = client.Run(command)
+	output, err := client.Output(command)
 	log.Debugf("SSH cmd err, output: %v: %s", err, output)
 	return output, err
 }
