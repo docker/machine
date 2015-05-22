@@ -4,28 +4,64 @@ import (
 	"os"
 	"path"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 
 	"github.com/docker/machine/commands"
+	"github.com/docker/machine/log"
+	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
 	"github.com/docker/machine/version"
 )
+
+var AppHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
+
+{{.Usage}}
+
+Version: {{.Version}}{{if or .Author .Email}}
+
+Author:{{if .Author}}
+  {{.Author}}{{if .Email}} - <{{.Email}}>{{end}}{{else}}
+  {{.Email}}{{end}}{{end}}
+{{if .Flags}}
+Options:
+  {{range .Flags}}{{.}}
+  {{end}}{{end}}
+Commands:
+  {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
+  {{end}}
+Run '{{.Name}} COMMAND --help' for more information on a command.
+`
+
+var CommandHelpTemplate = `Usage: docker-machine {{.Name}}{{if .Flags}} [OPTIONS]{{end}} [arg...]
+
+{{.Usage}}{{if .Description}}
+
+Description:
+   {{.Description}}{{end}}{{if .Flags}}
+
+Options:
+   {{range .Flags}}
+   {{.}}{{end}}{{ end }}
+`
 
 func main() {
 	for _, f := range os.Args {
 		if f == "-D" || f == "--debug" || f == "-debug" {
 			os.Setenv("DEBUG", "1")
-			initLogging(log.DebugLevel)
 		}
 	}
 
+	cli.AppHelpTemplate = AppHelpTemplate
+	cli.CommandHelpTemplate = CommandHelpTemplate
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Author = "Docker Machine Contributors"
 	app.Email = "https://github.com/docker/machine"
 	app.Before = func(c *cli.Context) error {
 		os.Setenv("MACHINE_STORAGE_PATH", c.GlobalString("storage-path"))
+		if c.GlobalBool("native-ssh") {
+			ssh.SetDefaultClient(ssh.Native)
+		}
 		return nil
 	}
 	app.Commands = commands.Commands
@@ -40,7 +76,7 @@ func main() {
 		},
 		cli.StringFlag{
 			EnvVar: "MACHINE_STORAGE_PATH",
-			Name:   "storage-path",
+			Name:   "s, storage-path",
 			Value:  utils.GetBaseDir(),
 			Usage:  "Configures storage path",
 		},
@@ -67,6 +103,11 @@ func main() {
 			Name:   "tls-client-key",
 			Usage:  "Private key used in client TLS auth",
 			Value:  "",
+		},
+		cli.BoolFlag{
+			EnvVar: "MACHINE_NATIVE_SSH",
+			Name:   "native-ssh",
+			Usage:  "Use the native (Go-based) SSH implementation.",
 		},
 	}
 

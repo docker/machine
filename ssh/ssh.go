@@ -2,19 +2,21 @@ package ssh
 
 import (
 	"net"
+	"time"
+
+	"github.com/docker/machine/log"
 )
 
 func WaitForTCP(addr string) error {
 	for {
-		conn, err := net.Dial("tcp", addr)
+		log.Debugf("Testing TCP connection to: %s", addr)
+		conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
+
 		if err != nil {
 			continue
 		}
+
 		defer conn.Close()
-		if _, err = conn.Read(make([]byte, 1)); err != nil {
-			continue
-		}
-		break
+		return nil
 	}
-	return nil
 }

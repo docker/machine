@@ -2,27 +2,29 @@ package libmachine
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
 
 var (
-	validHostNameChars   = `[a-zA-Z0-9\-\.]`
-	validHostNamePattern = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	validHostNameChars                = `[a-zA-Z0-9\-\.]`
+	validHostNamePattern              = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
 )
 
 type Host struct {
@@ -62,6 +64,15 @@ type HostMetadata struct {
 	ServerCertPath string
 	ServerKeyPath  string
 	ClientCertPath string
+}
+
+type HostListItem struct {
+	Name         string
+	Active       bool
+	DriverName   string
+	State        state.State
+	URL          string
+	SwarmOptions swarm.SwarmOptions
 }
 
 func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
@@ -118,7 +129,7 @@ func (h *Host) Create(name string) error {
 			return err
 		}
 
-		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions); err != nil {
+		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 			return err
 		}
 	}
@@ -126,44 +137,30 @@ func (h *Host) Create(name string) error {
 	return nil
 }
 
-func (h *Host) RunSSHCommand(command string) (ssh.Output, error) {
-	var output ssh.Output
+func (h *Host) RunSSHCommand(command string) (string, error) {
+	return drivers.RunSSHCommandFromDriver(h.Driver, command)
+}
 
+func (h *Host) CreateSSHClient() (ssh.Client, error) {
 	addr, err := h.Driver.GetSSHHostname()
 	if err != nil {
-		return output, err
+		return ssh.ExternalClient{}, err
 	}
 
 	port, err := h.Driver.GetSSHPort()
 	if err != nil {
-		return output, err
+		return ssh.ExternalClient{}, err
 	}
 
 	auth := &ssh.Auth{
 		Keys: []string{h.Driver.GetSSHKeyPath()},
 	}
 
-	client, err := ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
-
-	return client.Run(command)
+	return ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
 }
 
 func (h *Host) CreateSSHShell() error {
-	addr, err := h.Driver.GetSSHHostname()
-	if err != nil {
-		return err
-	}
-
-	port, err := h.Driver.GetSSHPort()
-	if err != nil {
-		return err
-	}
-
-	auth := &ssh.Auth{
-		Keys: []string{h.Driver.GetSSHKeyPath()},
-	}
-
-	client, err := ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
+	client, err := h.CreateSSHClient()
 	if err != nil {
 		return err
 	}
@@ -234,6 +231,15 @@ func (h *Host) Restart() error {
 }
 
 func (h *Host) Upgrade() error {
+	machineState, err := h.Driver.GetState()
+	if err != nil {
+		return err
+	}
+
+	if machineState != state.Running {
+		log.Fatal(errMachineMustBeRunningForUpgrade)
+	}
+
 	provisioner, err := provision.DetectProvisioner(h.Driver)
 	if err != nil {
 		return err
@@ -310,12 +316,21 @@ func (h *Host) LoadConfig() error {
 }
 
 func (h *Host) ConfigureAuth() error {
+	if err := h.LoadConfig(); err != nil {
+		return err
+	}
+
 	provisioner, err := provision.DetectProvisioner(h.Driver)
 	if err != nil {
 		return err
 	}
 
-	if err := provision.ConfigureAuth(provisioner, *h.HostOptions.AuthOptions); err != nil {
+	// TODO: This is kind of a hack (or is it?  I'm not really sure until
+	// we have more clearly defined outlook on what the responsibilities
+	// and modularity of the provisioners should be).
+	//
+	// Call provision to re-provision the certs properly.
+	if err := provisioner.Provision(swarm.SwarmOptions{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 		return err
 	}
 
@@ -343,35 +358,49 @@ func (h *Host) PrintIP() error {
 	return nil
 }
 
-func sshAvailableFunc(h *Host) func() bool {
-	return func() bool {
-		log.Debug("Getting to WaitForSSH function...")
-		hostname, err := h.Driver.GetSSHHostname()
-		if err != nil {
-			log.Debugf("Error getting IP address waiting for SSH: %s", err)
-			return false
-		}
-		port, err := h.Driver.GetSSHPort()
-		if err != nil {
-			log.Debugf("Error getting SSH port: %s", err)
-			return false
-		}
-		if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", hostname, port)); err != nil {
-			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
-			return false
-		}
+func WaitForSSH(h *Host) error {
+	return drivers.WaitForSSH(h.Driver)
+}
 
-		if _, err := h.RunSSHCommand("exit 0"); err != nil {
-			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
-			return false
+func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
+	currentState, err := host.Driver.GetState()
+	if err != nil {
+		log.Errorf("error getting state for host %s: %s", host.Name, err)
+	}
+
+	url, err := host.GetURL()
+	if err != nil {
+		if err == drivers.ErrHostIsNotRunning {
+			url = ""
+		} else {
+			log.Errorf("error getting URL for host %s: %s", host.Name, err)
 		}
-		return true
+	}
+
+	dockerHost := os.Getenv("DOCKER_HOST")
+
+	hostListItemsChan <- HostListItem{
+		Name:         host.Name,
+		Active:       dockerHost == url && currentState != state.Stopped,
+		DriverName:   host.Driver.DriverName(),
+		State:        currentState,
+		URL:          url,
+		SwarmOptions: *host.HostOptions.SwarmOptions,
 	}
 }
 
-func WaitForSSH(h *Host) error {
-	if err := utils.WaitFor(sshAvailableFunc(h)); err != nil {
-		return fmt.Errorf("Too many retries.  Last error: %s", err)
+func GetHostListItems(hostList []*Host) []HostListItem {
+	hostListItems := []HostListItem{}
+	hostListItemsChan := make(chan HostListItem)
+
+	for _, host := range hostList {
+		go getHostState(*host, hostListItemsChan)
 	}
-	return nil
+
+	for _ = range hostList {
+		hostListItems = append(hostListItems, <-hostListItemsChan)
+	}
+
+	close(hostListItemsChan)
+	return hostListItems
 }

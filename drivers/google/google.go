@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
+	IPAddress      string
 	MachineName    string
 	SSHUser        string
 	SSHPort        int
@@ -138,10 +138,6 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Remote
-}
-
 // DriverName returns the name of the driver.
 func (d *Driver) DriverName() string {
 	return "google"
@@ -250,7 +246,11 @@ func (d *Driver) Start() error {
 	if err != nil {
 		return err
 	}
-	return c.createInstance(d)
+	if err = c.createInstance(d); err != nil {
+		return err
+	}
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 // Stop deletes the GCE instance, but keeps the disk.
@@ -259,7 +259,11 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
-	return c.deleteInstance()
+	if err = c.deleteInstance(); err != nil {
+		return err
+	}
+	d.IPAddress = ""
+	return nil
 }
 
 // Remove deletes the GCE instance and the disk.

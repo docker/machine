@@ -56,10 +56,6 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := store.SetActive(host); err != nil {
-		t.Fatalf("error setting active host: %v", err)
-	}
-
 	outStr := make(chan string)
 
 	go func() {
@@ -69,6 +65,7 @@ func TestCmdConfig(t *testing.T) {
 	}()
 
 	set := flag.NewFlagSet("config", 0)
+	set.Parse([]string{"test-a"})
 	globalSet := flag.NewFlagSet("test", 0)
 	globalSet.String("storage-path", store.GetPath(), "")
 

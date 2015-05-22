@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 )
 
 const (
@@ -94,6 +94,15 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 	return isoUrl, nil
 }
 
+func removeFileIfExists(name string) error {
+	if _, err := os.Stat(name); err == nil {
+		if err := os.Remove(name); err != nil {
+			log.Fatalf("Error removing temporary download file: %s", err)
+		}
+	}
+	return nil
+}
+
 // Download boot2docker ISO image for the given tag and save it at dest.
 func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 	u, err := url.Parse(isoUrl)
@@ -121,7 +130,11 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 		return err
 	}
 
-	defer os.Remove(f.Name())
+	defer func() {
+		if err := removeFileIfExists(f.Name()); err != nil {
+			log.Fatalf("Error removing file: %s", err)
+		}
+	}()
 
 	if _, err := io.Copy(f, src); err != nil {
 		// TODO: display download progress?
@@ -132,7 +145,16 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 		return err
 	}
 
-	if err := os.Rename(f.Name(), filepath.Join(dir, file)); err != nil {
+	// Dest is the final path of the boot2docker.iso file.
+	dest := filepath.Join(dir, file)
+
+	// Windows can't rename in place, so remove the old file before
+	// renaming the temporary downloaded file.
+	if err := removeFileIfExists(dest); err != nil {
+		return err
+	}
+
+	if err := os.Rename(f.Name(), dest); err != nil {
 		return err
 	}
 
@@ -145,7 +167,11 @@ func (b *B2dUtils) DownloadLatestBoot2Docker() error {
 		return err
 	}
 
-	log.Infof("Downloading latest boot2docker release to %s...", b.commonIsoPath)
+	return b.DownloadISOFromURL(latestReleaseUrl)
+}
+
+func (b *B2dUtils) DownloadISOFromURL(latestReleaseUrl string) error {
+	log.Infof("Downloading %s to %s...", latestReleaseUrl, b.commonIsoPath)
 	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseUrl); err != nil {
 		return err
 	}

@@ -11,99 +11,106 @@ function setup() {
   sleep 1
 }
 
-@test "$DRIVER: docker-machine should not exist" {
-  run docker-machine active $NAME
+@test "$DRIVER: machine should not exist" {
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
 @test "$DRIVER: create" {
-  run docker-machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
-
-@test "$DRIVER: active" {
-  run docker-machine active $NAME
+  run machine create -d $DRIVER $NAME
   [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: ls" {
-  run docker-machine ls
+  run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"$NAME"*  ]]
 }
 
 @test "$DRIVER: run busybox container" {
-  run docker $(docker-machine config $NAME) run busybox echo hello world
+  run docker $(machine config $NAME) run busybox echo hello world
   [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: url" {
-  run docker-machine url $NAME
+  run machine url $NAME
   [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: ip" {
-  run docker-machine ip $NAME
+  run machine ip $NAME
   [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: ssh" {
-  run docker-machine ssh $NAME -- ls -lah /
+  run machine ssh $NAME -- ls -lah /
   [ "$status" -eq 0  ]
   [[ ${lines[0]} =~ "total"  ]]
 }
 
 @test "$DRIVER: stop" {
-  run docker-machine stop $NAME
+  run machine stop $NAME
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: docker-machine should show stopped after stop" {
-  run docker-machine ls
+@test "$DRIVER: machine should show stopped after stop" {
+  run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Stopped"*  ]]
 }
 
+@test "$DRIVER: url should show an error when machine is stopped" {
+  run machine url $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == "host is not running" ]]
+}
+
+@test "$DRIVER: env should show an error when machine is stopped" {
+  run machine env $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == *"not running. Please start this with"* ]]
+}
+
 @test "$DRIVER: start" {
-  run docker-machine start $NAME
+  run machine start $NAME
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: docker-machine should show running after start" {
-  run docker-machine ls
+@test "$DRIVER: machine should show running after start" {
+  run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
 }
 
 @test "$DRIVER: kill" {
-  run docker-machine kill $NAME
+  run machine kill $NAME
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: docker-machine should show stopped after kill" {
-  run docker-machine ls
+@test "$DRIVER: machine should show stopped after kill" {
+  run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Stopped"*  ]]
 }
 
 @test "$DRIVER: restart" {
-  run docker-machine restart $NAME
+  run machine restart $NAME
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: docker-machine should show running after restart" {
-  run docker-machine ls
+@test "$DRIVER: machine should show running after restart" {
+  run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
 }
 
 @test "$DRIVER: remove" {
-  run docker-machine rm -f $NAME
+  run machine rm -f $NAME
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: docker-machine should not exist" {
-  run docker-machine active $NAME
+@test "$DRIVER: machine should not exist" {
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 

@@ -18,18 +18,18 @@ import (
 )
 
 func TestCmdInspectFormat(t *testing.T) {
-	actual, host := runInspectCommand(t, []string{})
+	actual, host := runInspectCommand(t, []string{"test-a"})
 	expected, _ := json.MarshalIndent(host, "", "    ")
 	assert.Equal(t, string(expected), actual)
 
-	actual, _ = runInspectCommand(t, []string{"--format", "{{.DriverName}}"})
+	actual, _ = runInspectCommand(t, []string{"--format", "{{.DriverName}}", "test-a"})
 	assert.Equal(t, "none", actual)
 
-	actual, _ = runInspectCommand(t, []string{"--format", "{{json .DriverName}}"})
+	actual, _ = runInspectCommand(t, []string{"--format", "{{json .DriverName}}", "test-a"})
 	assert.Equal(t, "\"none\"", actual)
 
-	actual, _ = runInspectCommand(t, []string{"--format", "{{prettyjson .Driver}}"})
-	assert.Equal(t, "{\n    \"URL\": \"unix:///var/run/docker.sock\"\n}", actual)
+	actual, _ = runInspectCommand(t, []string{"--format", "{{prettyjson .Driver}}", "test-a"})
+	assert.Equal(t, "{\n    \"IPAddress\": \"\",\n    \"URL\": \"unix:///var/run/docker.sock\"\n}", actual)
 }
 
 func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {

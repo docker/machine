@@ -5,13 +5,15 @@ import (
 	"net/url"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
-
 	"github.com/codegangsta/cli"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
 )
 
 func cmdConfig(c *cli.Context) {
+	if len(c.Args()) != 1 {
+		log.Fatal(ErrExpectedOneMachine)
+	}
 	cfg, err := getMachineConfig(c)
 	if err != nil {
 		log.Fatal(err)

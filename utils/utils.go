@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,9 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 )
 
 func GetHomeDir() string {
@@ -109,7 +112,7 @@ func WaitForDocker(ip string, daemonPort int) error {
 	return WaitFor(func() bool {
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, daemonPort))
 		if err != nil {
-			log.Debugf("Got an error it was %s", err)
+			log.Debugf("Daemon not responding yet: %s", err)
 			return false
 		}
 		conn.Close()
@@ -124,5 +127,34 @@ func DumpVal(vals ...interface{}) {
 			log.Fatal(err)
 		}
 		log.Debug(string(prettyJSON))
+	}
+}
+
+// Following two functions are from github.com/docker/docker/utils module. It
+// was way overkill to include the whole module, so we just have these bits
+// that we're using here.
+func TruncateID(id string) string {
+	shortLen := 12
+	if len(id) < shortLen {
+		shortLen = len(id)
+	}
+	return id[:shortLen]
+}
+
+// GenerateRandomID returns an unique id
+func GenerateRandomID() string {
+	for {
+		id := make([]byte, 32)
+		if _, err := io.ReadFull(rand.Reader, id); err != nil {
+			panic(err) // This shouldn't happen
+		}
+		value := hex.EncodeToString(id)
+		// if we try to parse the truncated for as an int and we don't have
+		// an error then the value is all numberic and causes issues when
+		// used as a hostname. ref #3869
+		if _, err := strconv.ParseInt(TruncateID(value), 10, 64); err == nil {
+			continue
+		}
+		return value
 	}
 }

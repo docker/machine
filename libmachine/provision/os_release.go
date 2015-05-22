@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 )
 
 // The /etc/os-release file contains operating system identification data
@@ -29,7 +29,7 @@ type OsRelease struct {
 }
 
 func stripQuotes(val string) string {
-	if val[0] == '"' {
+	if len(val) > 0 && val[0] == '"' {
 		return val[1 : len(val)-1]
 	}
 	return val

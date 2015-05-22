@@ -11,16 +11,16 @@ import (
 	azure "github.com/MSOpenTech/azure-sdk-for-go"
 	"github.com/MSOpenTech/azure-sdk-for-go/clients/vmClient"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 type Driver struct {
+	IPAddress               string
 	MachineName             string
 	SubscriptionID          string
 	SubscriptionCert        string
@@ -145,10 +145,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Remote
 }
 
 func (d *Driver) DriverName() string {
@@ -312,7 +308,9 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	return nil
+	var err error
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
@@ -329,7 +327,12 @@ func (d *Driver) Stop() error {
 
 	log.Debugf("stopping %s", d.MachineName)
 
-	return vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
+	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+	return nil
 }
 
 func (d *Driver) Remove() error {
@@ -364,7 +367,8 @@ func (d *Driver) Restart() error {
 		return err
 	}
 
-	return nil
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Kill() error {
@@ -381,7 +385,12 @@ func (d *Driver) Kill() error {
 
 	log.Debugf("killing %s", d.MachineName)
 
-	return vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName)
+	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+	return nil
 }
 
 func generateVMName() string {

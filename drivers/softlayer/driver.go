@@ -8,10 +8,9 @@ import (
 	"regexp"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -48,6 +47,8 @@ type deviceConfig struct {
 	HourlyBilling bool
 	LocalDisk     bool
 	PrivateNet    bool
+	PublicVLAN    int
+	PrivateVLAN   int
 }
 
 func init() {
@@ -97,10 +98,6 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Remote
-}
-
 func GetCreateFlags() []cli.Flag {
 	// Set hourly billing to true by default since codegangsta cli doesn't take default bool values
 	if os.Getenv("SOFTLAYER_HOURLY_BILLING") == "" {
@@ -146,8 +143,8 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_HOSTNAME",
 			Name:   "softlayer-hostname",
-			Usage:  "hostname for the machine",
-			Value:  "docker",
+			Usage:  "hostname for the machine - defaults to machine name",
+			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_DOMAIN",
@@ -182,13 +179,22 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "OS image for machine",
 			Value:  "UBUNTU_LATEST",
 		},
+		cli.IntFlag{
+			EnvVar: "SOFTLAYER_PUBLIC_VLAN_ID",
+			Name:   "softlayer-public-vlan-id",
+			Usage:  "",
+			Value:  0,
+		},
+		cli.IntFlag{
+			EnvVar: "SOFTLAYER_PRIVATE_VLAN_ID",
+			Name:   "softlayer-private-vlan-id",
+			Usage:  "",
+			Value:  0,
+		},
 	}
 }
 
 func validateDeviceConfig(c *deviceConfig) error {
-	if c.Hostname == "" {
-		return fmt.Errorf("Missing required setting - --softlayer-hostname")
-	}
 	if c.Domain == "" {
 		return fmt.Errorf("Missing required setting - --softlayer-domain")
 	}
@@ -198,6 +204,16 @@ func validateDeviceConfig(c *deviceConfig) error {
 	}
 	if c.Cpu < 1 {
 		return fmt.Errorf("Missing required setting - --softlayer-cpu")
+	}
+
+	if c.PrivateNet && c.PublicVLAN > 0 {
+		return fmt.Errorf("Can not specify both --softlayer-private-net-only and --softlayer-public-vlan-id")
+	}
+	if c.PublicVLAN > 0 && c.PrivateVLAN == 0 {
+		return fmt.Errorf("Missing required setting - --softlayer-private-vlan-id (because --softlayer-public-vlan-id is specified)")
+	}
+	if c.PrivateVLAN > 0 && !c.PrivateNet && c.PublicVLAN == 0 {
+		return fmt.Errorf("Missing required setting - --softlayer-public-vlan-id (because --softlayer-private-vlan-id is specified)")
 	}
 
 	return nil
@@ -248,7 +264,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		HourlyBilling: flags.Bool("softlayer-hourly-billing"),
 		Image:         flags.String("softlayer-image"),
 		Region:        flags.String("softlayer-region"),
+		PublicVLAN:    flags.Int("softlayer-public-vlan-id"),
+		PrivateVLAN:   flags.Int("softlayer-private-vlan-id"),
 	}
+
+	if d.deviceConfig.Hostname == "" {
+		d.deviceConfig.Hostname = d.GetMachineName()
+	}
+
 	return validateDeviceConfig(d.deviceConfig)
 }
 
@@ -275,7 +298,11 @@ func (d *Driver) GetIP() (string, error) {
 	if d.IPAddress != "" {
 		return d.IPAddress, nil
 	}
-	return d.getClient().VirtualGuest().GetPublicIp(d.Id)
+	if d.deviceConfig != nil && d.deviceConfig.PrivateNet == true {
+		return d.getClient().VirtualGuest().GetPrivateIp(d.Id)
+	} else {
+		return d.getClient().VirtualGuest().GetPublicIp(d.Id)
+	}
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -379,6 +406,8 @@ func (d *Driver) waitForSetupTransactions() {
 }
 
 func (d *Driver) Create() error {
+	spec := d.buildHostSpec()
+
 	log.Infof("Creating SSH key...")
 	key, err := d.createSSHKey()
 	if err != nil {
@@ -388,7 +417,6 @@ func (d *Driver) Create() error {
 	log.Infof("SSH key %s (%d) created in SoftLayer", key.Label, key.Id)
 	d.SSHKeyID = key.Id
 
-	spec := d.buildHostSpec()
 	spec.SshKeys = []*SshKey{key}
 
 	id, err := d.getClient().VirtualGuest().Create(spec)
@@ -418,6 +446,21 @@ func (d *Driver) buildHostSpec() *HostSpec {
 	if d.deviceConfig.DiskSize > 0 {
 		spec.BlockDevices = []BlockDevice{{Device: "0", DiskImage: DiskImage{Capacity: d.deviceConfig.DiskSize}}}
 	}
+	if d.deviceConfig.PublicVLAN > 0 {
+		spec.PrimaryNetworkComponent = &NetworkComponent{
+			NetworkVLAN: &NetworkVLAN{
+				Id: d.deviceConfig.PublicVLAN,
+			},
+		}
+	}
+	if d.deviceConfig.PrivateVLAN > 0 {
+		spec.PrimaryBackendNetworkComponent = &NetworkComponent{
+			NetworkVLAN: &NetworkVLAN{
+				Id: d.deviceConfig.PrivateVLAN,
+			},
+		}
+	}
+	log.Debugf("Built host spec %#v", spec)
 	return spec
 }
 

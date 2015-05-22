@@ -7,11 +7,10 @@ import (
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/digitalocean/godo"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 )
@@ -130,10 +129,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Remote
 }
 
 func (d *Driver) DriverName() string {

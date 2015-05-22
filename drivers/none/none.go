@@ -2,11 +2,10 @@ package none
 
 import (
 	"fmt"
+	neturl "net/url"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/api"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/state"
 )
 
@@ -14,7 +13,8 @@ import (
 // connect to existing Docker hosts by specifying the URL of the host as
 // an option.
 type Driver struct {
-	URL string
+	IPAddress string
+	URL       string
 }
 
 func init() {
@@ -55,7 +55,7 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	return "", nil
+	return d.IPAddress, nil
 }
 
 func (d *Driver) GetMachineName() string {
@@ -86,10 +86,6 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.None
-}
-
 func (d *Driver) Kill() error {
 	return fmt.Errorf("hosts without a driver cannot be killed")
 }
@@ -112,12 +108,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if url == "" {
 		return fmt.Errorf("--url option is required when no driver is selected")
 	}
-	validatedUrl, err := api.ValidateHost(url)
+
+	d.URL = url
+	u, err := neturl.Parse(url)
 	if err != nil {
 		return err
 	}
 
-	d.URL = validatedUrl
+	d.IPAddress = u.Host
 	return nil
 }
 

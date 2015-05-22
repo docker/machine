@@ -9,16 +9,16 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
 )
 
 type Driver struct {
+	IPAddress      string
 	SSHUser        string
 	SSHPort        int
 	storePath      string
@@ -124,10 +124,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Local
 }
 
 func (d *Driver) DriverName() string {
@@ -334,7 +330,13 @@ func (d *Driver) Start() error {
 	if err != nil {
 		return err
 	}
-	return d.wait()
+
+	if err := d.wait(); err != nil {
+		return err
+	}
+
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
@@ -356,6 +358,7 @@ func (d *Driver) Stop() error {
 			break
 		}
 	}
+	d.IPAddress = ""
 	return nil
 }
 
@@ -406,6 +409,7 @@ func (d *Driver) Kill() error {
 			break
 		}
 	}
+	d.IPAddress = ""
 	return nil
 }
 

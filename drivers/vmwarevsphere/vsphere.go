@@ -16,12 +16,11 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
-	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -37,6 +36,7 @@ const (
 )
 
 type Driver struct {
+	IPAddress      string
 	MachineName    string
 	SSHUser        string
 	SSHPort        int
@@ -178,10 +178,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Local
 }
 
 func (d *Driver) DriverName() string {
@@ -406,7 +402,8 @@ func (d *Driver) Start() error {
 			return err
 		}
 
-		return nil
+		d.IPAddress, err = d.GetIP()
+		return err
 	}
 	return errors.NewInvalidStateError(d.MachineName)
 }
@@ -416,6 +413,8 @@ func (d *Driver) Stop() error {
 	if err := vcConn.VMShutdown(); err != nil {
 		return err
 	}
+
+	d.IPAddress = ""
 
 	return nil
 }
@@ -473,6 +472,8 @@ func (d *Driver) Kill() error {
 	if err := vcConn.VMPowerOff(); err != nil {
 		return err
 	}
+
+	d.IPAddress = ""
 
 	return nil
 }

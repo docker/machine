@@ -1,47 +1,119 @@
 package ssh
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 
 	"github.com/docker/docker/pkg/term"
+	"github.com/docker/machine/log"
+	"github.com/docker/machine/utils"
 	"golang.org/x/crypto/ssh"
 )
 
-type Client struct {
-	Config   *ssh.ClientConfig
+type Client interface {
+	Output(command string) (string, error)
+	Shell() error
+}
+
+type ExternalClient struct {
+	BaseArgs   []string
+	BinaryPath string
+}
+
+type NativeClient struct {
+	Config   ssh.ClientConfig
 	Hostname string
 	Port     int
 }
 
-func NewClient(user string, host string, port int, auth *Auth) (*Client, error) {
-	config, err := NewConfig(user, auth)
+type Auth struct {
+	Passwords []string
+	Keys      []string
+}
+
+type SSHClientType string
+
+const (
+	maxDialAttempts = 10
+)
+
+const (
+	External SSHClientType = "external"
+	Native   SSHClientType = "native"
+)
+
+var (
+	baseSSHArgs = []string{
+		"-o", "IdentitiesOnly=yes",
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "UserKnownHostsFile=/dev/null",
+		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
+		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
+		"-o", "ConnectTimeout=10", // timeout after 10 seconds
+	}
+	defaultClientType SSHClientType = External
+)
+
+func SetDefaultClient(clientType SSHClientType) {
+	// Allow over-riding of default client type, so that even if ssh binary
+	// is found in PATH we can still use the Go native implementation if
+	// desired.
+	switch clientType {
+	case External:
+		defaultClientType = External
+	case Native:
+		defaultClientType = Native
+	}
+}
+
+func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
+	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
-		return nil, err
+		if defaultClientType == External {
+			log.Fatal("Requested shellout SSH client type but no ssh binary available")
+		}
+		log.Debug("ssh binary not found, using native Go implementation")
+		return NewNativeClient(user, host, port, auth)
 	}
 
-	return &Client{
+	if defaultClientType == Native {
+		log.Debug("Using SSH client type: native")
+		return NewNativeClient(user, host, port, auth)
+	}
+
+	log.Debug("Using SSH client type: external")
+	return NewExternalClient(sshBinaryPath, user, host, port, auth)
+}
+
+func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
+	config, err := NewNativeConfig(user, auth)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting config for native Go SSH: %s", err)
+	}
+
+	return NativeClient{
 		Config:   config,
 		Hostname: host,
 		Port:     port,
 	}, nil
 }
 
-func NewConfig(user string, auth *Auth) (*ssh.ClientConfig, error) {
-	var authMethods []ssh.AuthMethod
+func NewNativeConfig(user string, auth *Auth) (ssh.ClientConfig, error) {
+	var (
+		authMethods []ssh.AuthMethod
+	)
 
 	for _, k := range auth.Keys {
 		key, err := ioutil.ReadFile(k)
 		if err != nil {
-			return nil, err
+			return ssh.ClientConfig{}, err
 		}
 
 		privateKey, err := ssh.ParsePrivateKey(key)
 		if err != nil {
-			return nil, err
+			return ssh.ClientConfig{}, err
 		}
 
 		authMethods = append(authMethods, ssh.PublicKeys(privateKey))
@@ -51,42 +123,47 @@ func NewConfig(user string, auth *Auth) (*ssh.ClientConfig, error) {
 		authMethods = append(authMethods, ssh.Password(p))
 	}
 
-	return &ssh.ClientConfig{
+	return ssh.ClientConfig{
 		User: user,
 		Auth: authMethods,
 	}, nil
 }
 
-func (client *Client) Run(command string) (Output, error) {
-	var output Output
+func (client NativeClient) dialSuccess() bool {
+	if _, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), &client.Config); err != nil {
+		log.Debugf("Error dialing TCP: %s", err)
+		return false
+	}
+	return true
+}
 
-	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), client.Config)
+func (client NativeClient) Output(command string) (string, error) {
+	if err := utils.WaitFor(client.dialSuccess); err != nil {
+		return "", fmt.Errorf("Error attempting SSH client dial: %s", err)
+	}
+
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), &client.Config)
 	if err != nil {
-		return output, err
+		return "", fmt.Errorf("Mysterious error dialing TCP for SSH (we already succeeded at least once) : %s", err)
 	}
 
 	session, err := conn.NewSession()
 	if err != nil {
-		return output, err
+		return "", fmt.Errorf("Error getting new session: %s", err)
 	}
 
 	defer session.Close()
 
-	var stdout, stderr bytes.Buffer
+	output, err := session.CombinedOutput(command)
 
-	session.Stdout = &stdout
-	session.Stderr = &stderr
-
-	output = Output{
-		Stdout: &stdout,
-		Stderr: &stderr,
-	}
-
-	return output, session.Run(command)
+	return string(output), err
 }
 
-func (client *Client) Shell() error {
-	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), client.Config)
+func (client NativeClient) Shell() error {
+	var (
+		termWidth, termHeight int
+	)
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), &client.Config)
 	if err != nil {
 		return err
 	}
@@ -106,14 +183,10 @@ func (client *Client) Shell() error {
 		ssh.ECHO: 1,
 	}
 
-	var termWidth, termHeight int
-
 	fd := os.Stdin.Fd()
 
 	if term.IsTerminal(fd) {
-		var oldState *term.State
-
-		oldState, err = term.MakeRaw(fd)
+		oldState, err := term.MakeRaw(fd)
 		if err != nil {
 			return err
 		}
@@ -143,12 +216,51 @@ func (client *Client) Shell() error {
 	return nil
 }
 
-type Auth struct {
-	Passwords []string
-	Keys      []string
+func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (ExternalClient, error) {
+	client := ExternalClient{
+		BinaryPath: sshBinaryPath,
+	}
+
+	// Base args take care of settings some options for us, e.g. don't use
+	// the authorized hosts file.
+	args := baseSSHArgs
+
+	// Specify which private keys to use to authorize the SSH request.
+	for _, privateKeyPath := range auth.Keys {
+		args = append(args, "-i", privateKeyPath)
+	}
+
+	// Set which port to use for SSH.
+	args = append(args, "-p", fmt.Sprintf("%d", port))
+
+	// Set the user and hostname, e.g. ubuntu@12.34.56.78
+	args = append(args, fmt.Sprintf("%s@%s", user, host))
+
+	client.BaseArgs = args
+
+	return client, nil
 }
 
-type Output struct {
-	Stdout io.Reader
-	Stderr io.Reader
+func (client ExternalClient) Output(command string) (string, error) {
+	args := append(client.BaseArgs, command)
+
+	cmd := exec.Command(client.BinaryPath, args...)
+	log.Debug(cmd)
+
+	// Allow piping of local things to remote commands.
+	cmd.Stdin = os.Stdin
+
+	output, err := cmd.CombinedOutput()
+	return string(output), err
+}
+
+func (client ExternalClient) Shell() error {
+	cmd := exec.Command(client.BinaryPath, client.BaseArgs...)
+	log.Debug(cmd)
+
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }

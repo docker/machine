@@ -43,7 +43,7 @@ buildMachineWithOldIsoCheckUpgrade() {
 }
 
 @test "$DRIVER: machine should not exist" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
@@ -57,9 +57,9 @@ buildMachineWithOldIsoCheckUpgrade() {
   [ "$status" -eq 0  ]
 }
 
-@test "$DRIVER: active" {
-  run machine active $NAME
-  [ "$status" -eq 0  ]
+@test "$DRIVER: quiet ls" {
+  run machine ls -q
+  [[ ${output} == "$NAME" ]]
 }
 
 @test "$DRIVER: check default machine memory size" {
@@ -117,6 +117,23 @@ buildMachineWithOldIsoCheckUpgrade() {
   run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Stopped"*  ]]
+}
+
+@test "$DRIVER: machine should not allow upgrade when stopped" {
+  run machine upgrade $NAME
+  [[ "$status" -eq 1 ]]
+}
+
+@test "$DRIVER: url should show an error when machine is stopped" {
+  run machine url $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == "host is not running" ]]
+}
+
+@test "$DRIVER: env should show an error when machine is stopped" {
+  run machine env $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == *"not running. Please start this with"* ]]
 }
 
 @test "$DRIVER: start" {
@@ -203,13 +220,61 @@ buildMachineWithOldIsoCheckUpgrade() {
 }
 
 @test "$DRIVER: machine should not exist after remove" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
 @test "$DRIVER: VM should not exist after remove" {
   run VBoxManage showvminfo $NAME
   [ "$status" -eq 1  ]
+}
+
+@test "$DRIVER: create with arbitrary engine option" {
+  run machine create -d $DRIVER \
+    --engine-opt log-driver=none \
+    $NAME
+  [ $status -eq 0 ]
+}
+
+@test "$DRIVER: check created engine option (log driver)" {
+  docker $(machine config $NAME) run --name nolog busybox echo this should not be logged
+  run docker $(machine config $NAME) logs nolog
+  [ $status -eq 1 ]
+}
+
+@test "$DRIVER: rm after arbitrary engine option create" {
+  run machine rm $NAME
+  [ $status -eq 0 ]
+}
+
+@test "$DRIVER: create with supported engine options" {
+  run machine create -d $DRIVER \
+    --engine-label spam=eggs \
+    --engine-storage-driver devicemapper \
+    --engine-insecure-registry registry.myco.com \
+    $NAME
+  echo "$output"
+  [ $status -eq 0 ]
+}
+
+@test "$DRIVER: check for engine labels" {
+  spamlabel=$(docker $(machine config $NAME) info | grep spam)
+  [[ $spamlabel =~ "spam=eggs" ]]
+}
+
+@test "$DRIVER: check for engine storage driver" {
+  storage_driver_info=$(docker $(machine config $NAME) info | grep "Storage Driver")
+  [[ $storage_driver_info =~ "devicemapper" ]]
+}
+
+@test "$DRIVER: check for insecure registry setting" {
+  ir_option=$(machine ssh $NAME -- cat /var/lib/boot2docker/profile | grep insecure-registry)
+  [[ $ir_option =~ "registry.myco.com" ]]
+}
+
+@test "$DRIVER: rm after supported engine option create" {
+  run machine rm $NAME
+  [ $status -eq 0 ]
 }
 
 @test "$DRIVER: create too small disk size" {
@@ -256,6 +321,11 @@ buildMachineWithOldIsoCheckUpgrade() {
 
 @test "$DRIVER: remove after bad boot2docker url" {
   run machine rm -f $NAME
+  [ "$status" -eq 0  ]
+}
+
+@test "$DRIVER: create with no storage driver" {
+  run machine create -d $DRIVER --engine-storage-driver "" $NAME
   [ "$status" -eq 0  ]
 }
 
@@ -309,7 +379,6 @@ buildMachineWithOldIsoCheckUpgrade() {
   findCPUCount
   [[ ${output} == "$CUSTOM_CPUCOUNT" ]]
 }
-
 
 @test "$DRIVER: machine should show running after create with env" {
   run machine ls

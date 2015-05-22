@@ -12,16 +12,16 @@ import (
 
 	"github.com/vmware/govcloudair"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/docker/utils"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 )
 
 type Driver struct {
+	IPAddress      string
 	UserName       string
 	UserPassword   string
 	ComputeID      string
@@ -179,10 +179,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Remote
 }
 
 // Driver interface implementation
@@ -418,8 +414,8 @@ func (d *Driver) Create() error {
 	// Set VAppID with ID of the created VApp
 	d.VAppID = vapp.VApp.ID
 
-	return nil
-
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Remove() error {
@@ -497,7 +493,6 @@ func (d *Driver) Remove() error {
 	}
 
 	return nil
-
 }
 
 func (d *Driver) Start() error {
@@ -540,8 +535,8 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	return nil
-
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
@@ -584,8 +579,9 @@ func (d *Driver) Stop() error {
 		return err
 	}
 
-	return nil
+	d.IPAddress = ""
 
+	return nil
 }
 
 func (d *Driver) Restart() error {
@@ -640,8 +636,8 @@ func (d *Driver) Restart() error {
 		return err
 	}
 
-	return nil
-
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Kill() error {
@@ -683,8 +679,9 @@ func (d *Driver) Kill() error {
 		return err
 	}
 
-	return nil
+	d.IPAddress = ""
 
+	return nil
 }
 
 // Helpers

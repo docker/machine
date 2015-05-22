@@ -7,17 +7,12 @@ export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 
 @test "$DRIVER: machine should not exist" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 
 @test "$DRIVER: create" {
   run machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
-
-@test "$DRIVER: active" {
-  run machine active $NAME
   [ "$status" -eq 0  ]
 }
 
@@ -50,6 +45,12 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 
 @test "$DRIVER: docker commands with the socket should work" {
   run machine ssh $NAME -- docker version
+}
+
+# currently this only checks debian/ubuntu style using 127.0.0.1
+@test "$DRIVER: hostname should be set properly" {
+  run machine ssh $NAME -- "grep -Fxq '127.0.1.1 $NAME' /etc/hosts"
+  [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: stop" {
@@ -102,8 +103,57 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   [ "$status" -eq 0  ]
 }
 
+@test "$DRIVER: create with arbitrary engine option" {
+  run machine create -d $DRIVER \
+    --engine-opt log-driver=none \
+    $NAME
+  [ $status -eq 0 ]
+}
+
+@test "$DRIVER: check created engine option (log driver)" {
+  docker $(machine config $NAME) run --name nolog busybox echo this should not be logged
+  run docker $(machine config $NAME) logs nolog
+  [ $status -eq 1 ]
+}
+
+@test "$DRIVER: rm after arbitrary engine option create" {
+  run machine rm $NAME
+  [ $status -eq 0 ]
+}
+
+@test "$DRIVER: create with supported engine options" {
+  run machine create -d $DRIVER \
+    --engine-label spam=eggs \
+    --engine-storage-driver devicemapper \
+    --engine-insecure-registry registry.myco.com \
+    $NAME
+  echo "$output"
+  [ $status -eq 0 ]
+}
+
+@test "$DRIVER: check for engine labels" {
+  spamlabel=$(docker $(machine config $NAME) info | grep spam)
+  [[ $spamlabel =~ "spam=eggs" ]]
+}
+
+@test "$DRIVER: check for engine storage driver" {
+  storage_driver_info=$(docker $(machine config $NAME) info | grep "Storage Driver")
+  [[ $storage_driver_info =~ "devicemapper" ]]
+}
+
+@test "$DRIVER: check for insecure registry setting" {
+  ir_option=$(machine ssh $NAME -- cat /etc/default/docker | grep insecure-registry)
+  [[ $ir_option =~ "registry.myco.com" ]]
+}
+
+@test "$DRIVER: rm after supported engine option create" {
+  run machine rm $NAME
+  [ $status -eq 0 ]
+}
+
+
 @test "$DRIVER: machine should not exist" {
-  run machine active $NAME
+  run machine inspect $NAME
   [ "$status" -eq 1  ]
 }
 

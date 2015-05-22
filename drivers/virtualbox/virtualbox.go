@@ -16,10 +16,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -30,6 +29,7 @@ const (
 )
 
 type Driver struct {
+	IPAddress           string
 	CPU                 int
 	MachineName         string
 	SSHUser             string
@@ -123,10 +123,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Local
 }
 
 func (d *Driver) DriverName() string {
@@ -329,10 +325,13 @@ func (d *Driver) Create() error {
 
 	var shareName, shareDir string // TODO configurable at some point
 	switch runtime.GOOS {
+	case "windows":
+		shareName = "c/Users"
+		shareDir = "c:\\Users"
 	case "darwin":
 		shareName = "Users"
 		shareDir = "/Users"
-		// TODO "linux" and "windows"
+		// TODO "linux"
 	}
 
 	if shareDir != "" {
@@ -392,7 +391,12 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	return nil
+	if err := drivers.WaitForSSH(d); err != nil {
+		return err
+	}
+
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
@@ -410,6 +414,9 @@ func (d *Driver) Stop() error {
 			break
 		}
 	}
+
+	d.IPAddress = ""
+
 	return nil
 }
 
@@ -423,7 +430,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	if s == state.Running {
-		if err := d.Kill(); err != nil {
+		if err := d.Stop(); err != nil {
 			return err
 		}
 	}
@@ -491,20 +498,15 @@ func (d *Driver) GetIP() (string, error) {
 	if s != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
+
 	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show dev eth1")
 	if err != nil {
 		return "", err
 	}
 
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(output.Stdout); err != nil {
-		return "", err
-	}
-
-	out := buf.String()
-	log.Debugf("SSH returned: %s\nEND SSH\n", out)
+	log.Debugf("SSH returned: %s\nEND SSH\n", output)
 	// parse to find: inet 192.168.59.103/24 brd 192.168.59.255 scope global eth1
-	lines := strings.Split(out, "\n")
+	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		vals := strings.Split(strings.TrimSpace(line), " ")
 		if len(vals) >= 2 && vals[0] == "inet" {
@@ -512,7 +514,7 @@ func (d *Driver) GetIP() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("No IP address found %s", out)
+	return "", fmt.Errorf("No IP address found %s", output)
 }
 
 func (d *Driver) publicSSHKeyPath() string {
