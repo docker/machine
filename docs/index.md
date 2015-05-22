@@ -1,7 +1,7 @@
 ---
 page_title: Docker Machine
 page_description: Working with Docker Machine
-page_keywords: docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarevcloudair, vmwarevsphere
+page_keywords: docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale
 ---
 
 
@@ -1035,18 +1035,21 @@ Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need 
 Options:
 
  - `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
- - `--amazonec2-ami`: The AMI ID of the instance to use  Default: `ami-cc3b3ea4`
- - `--amazonec2-instance-type`: The instance type to run.  Default: `t2.micro`
- - `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile
- - `--amazonec2-region`: The region to use when launching the instance.  Default: `us-east-1`
- - `--amazonec2-root-size`: The root disk size of the instance (in GB).  Default: `16`
  - `--amazonec2-secret-key`: **required** Your secret access key for the Amazon Web Services API.
- - `--amazonec2-security-group`: AWS VPC security group name. Default: `docker-machine`
  - `--amazonec2-session-token`: Your session token for the Amazon Web Services API.
- - `--amazonec2-subnet-id`: AWS VPC subnet id
+ - `--amazonec2-ami`: The AMI ID of the instance to use.
+ - `--amazonec2-region`: The region to use when launching the instance.
  - `--amazonec2-vpc-id`: **required** Your VPC ID to launch the instance in.
- - `--amazonec2-zone`: The AWS zone launch the instance in (i.e. one of a,b,c,d,e). Default: `a`
- - `--amazonec2-private-address-only`: Use the private IP address only
+ - `--amazonec2-zone`: The AWS zone to launch the instance in (i.e. one of a,b,c,d,e).
+ - `--amazonec2-subnet-id`: AWS VPC subnet id.
+ - `--amazonec2-security-group`: AWS VPC security group name.
+ - `--amazonec2-instance-type`: The instance type to run.
+ - `--amazonec2-root-size`: The root disk size of the instance (in GB).
+ - `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile.
+ - `--amazonec2-ssh-user`: SSH Login user name.
+ - `--amazonec2-request-spot-instance`: Use spot instances.
+ - `--amazonec2-spot-price`: Spot instance bid price (in dollars). Require the `--amazonec2-request-spot-instance` flag.
+ - `--amazonec2-private-address-only`: Use the private IP address only.
  - `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
@@ -1065,8 +1068,29 @@ By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 |us-west-2      |ami-55526765|
 |us-gov-west-1  |ami-8ffa9bac|
 
-#### Digital Ocean
+Environment variables and default values:
 
+| CLI option                          | Environment variable    | Default          |
+|-------------------------------------|-------------------------|------------------|
+| **`--amazonec2-access-key`**        | `AWS_ACCESS_KEY_ID`     | -                |
+| **`--amazonec2-secret-key`**        | `AWS_SECRET_ACCESS_KEY` | -                |
+| `--amazonec2-session-token`         | `AWS_SESSION_TOKEN`     | -                |
+| `--amazonec2-ami`                   | `AWS_AMI`               | `ami-cc3b3ea4`   |
+| `--amazonec2-region`                | `AWS_DEFAULT_REGION`    | `us-east-1`      |
+| **`--amazonec2-vpc-id`**            | `AWS_VPC_ID`            | -                |
+| `--amazonec2-zone`                  | `AWS_ZONE`              | `a`              |
+| `--amazonec2-subnet-id`             | `AWS_SUBNET_ID`         | -                |
+| `--amazonec2-security-group`        | `AWS_SECURITY_GROUP`    | `docker-machine` |
+| `--amazonec2-instance-type`         | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
+| `--amazonec2-root-size`             | `AWS_ROOT_SIZE`         | `16`             |
+| `--amazonec2-iam-instance-profile`  | `AWS_INSTANCE_PROFILE`  | -                |
+| `--amazonec2-ssh-user`              | `AWS_SSH_USER`          | `ubuntu`         |
+| `--amazonec2-request-spot-instance` | -                       | `false`          |
+| `--amazonec2-spot-price`            | -                       | `0.50`           |
+| `--amazonec2-private-address-only`  | -                       | `false`          |
+| `--amazonec2-monitoring`            | -                       | `false`          |
+
+#### Digital Ocean
 Create Docker machines on [Digital Ocean](https://www.digitalocean.com/).
 
 You need to create a personal access token under "Apps & API" in the Digital Ocean
@@ -1076,15 +1100,27 @@ Control Panel and pass that to `docker-machine create` with the `--digitalocean-
 
 Options:
 
- - `--digitalocean-access-token`: Your personal access token for the Digital Ocean API.
- - `--digitalocean-image`: The name of the Digital Ocean image to use. Default: `docker`
- - `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list. Default: `nyc3`
- - `--digitalocean-size`: The size of the Digital Ocean droplet (larger than default options are of the form `2gb`). Default: `512mb`
- - `--digitalocean-ipv6`: Enable IPv6 support for the droplet. Default: `false`
- - `--digitalocean-private-networking`: Enable private networking support for the droplet. Default: `false`
- - `--digitalocean-backups`: Enable Digital Oceans backups for the droplet. Default: `false`
+ - `--digitalocean-access-token`: **required** Your personal access token for the Digital Ocean API.
+ - `--digitalocean-image`: The name of the Digital Ocean image to use.
+ - `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list.
+ - `--digitalocean-size`: The size of the Digital Ocean droplet (larger than default options are of the form `2gb`).
+ - `--digitalocean-ipv6`: Enable IPv6 support for the droplet.
+ - `--digitalocean-private-networking`: Enable private networking support for the droplet.
+ - `--digitalocean-backups`: Enable Digital Oceans backups for the droplet.
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
+
+Environment variables and default values:
+
+| CLI option                          | Environment variable              | Default  |
+|-------------------------------------|-----------------------------------|----------|
+| **`--digitalocean-access-token`**   | `DIGITALOCEAN_ACCESS_TOKEN`       | -        |
+| `--digitalocean-image`              | `DIGITALOCEAN_IMAGE`              | `docker` |
+| `--digitalocean-region`             | `DIGITALOCEAN_REGION`             | `nyc3`   |
+| `--digitalocean-size`               | `DIGITALOCEAN_SIZE`               | `512mb`  |
+| `--digitalocean-ipv6`               | `DIGITALOCEAN_IPV6`               | `false`  |
+| `--digitalocean-private-networking` | `DIGITALOCEAN_PRIVATE_NETWORKING` | `false`  |
+| `--digitalocean-backups`            | `DIGITALOCEAN_BACKUPS`            | `false`  |
 
 #### Generic
 Create machines using an existing VM/Host with SSH.
@@ -1095,12 +1131,21 @@ Machine to manage.
 
 Options:
 
- - `--generic-ip-address`: IP Address of host
- - `--generic-ssh-user`: SSH username used to connect (default: `root`)
- - `--generic-ssh-key`: Path to the SSH user private key
- - `--generic-ssh-port`: Port to use for SSH (default: `22`)
+ - `--generic-ip-address`: **required** IP Address of host.
+ - `--generic-ssh-user`: SSH username used to connect.
+ - `--generic-ssh-key`: Path to the SSH user private key.
+ - `--generic-ssh-port`: Port to use for SSH.
 
 > Note: you must use a base Operating System supported by Machine.
+
+Environment variables and default values:
+
+| CLI option                 | Environment variable | Default             |
+|----------------------------|----------------------|---------------------|
+| **`--generic-ip-address`** | -                    | -                   |
+| `--generic-ssh-user`       | -                    | `root`              |
+| `--generic-ssh-key`        | -                    | `$HOME/.ssh/id_rsa` |
+| `--generic-ssh-port`       | -                    | `22`                |
 
 #### Google Compute Engine
 Create machines on [Google Compute Engine](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
@@ -1109,19 +1154,31 @@ The Google driver uses oAuth.  When creating the machine, you will have your bro
 
 Options:
 
- - `--google-zone`: The zone to launch the instance.  Default: `us-central1-a`
- - `--google-machine-type`: The type of instance.  Default: `f1-micro`
- - `--google-username`: The username to use for the instance.  Default: `docker-user`
- - `--google-project`: The name of your project to use when launching the instance.
+ - `--google-zone`: The zone to launch the instance.
+ - `--google-machine-type`: The type of instance.
+ - `--google-username`: The username to use for the instance.
+ - `--google-project`: **required** The name of your project to use when launching the instance.
  - `--google-auth-token`: Your oAuth token for the Google Cloud API.
  - `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
- - `--google-disk-size`: The disk size of instance. Default: `10`
- - `--google-disk-type`: The disk type of instance. Default: `pd-standard`
+ - `--google-disk-size`: The disk size of instance.
+ - `--google-disk-type`: The disk type of instance.
 
 The GCE driver will use the `ubuntu-1404-trusty-v20150316` instance type unless otherwise specified.
 
-#### IBM Softlayer
+Environment variables and default values:
 
+| CLI option                | Environment variable  | Default                              |
+|---------------------------|-----------------------|--------------------------------------|
+| `--google-zone`           | `GOOGLE_ZONE`         | `us-central1-a`                      |
+| `--google-machine-type`   | `GOOGLE_MACHINE_TYPE` | `f1-micro`                           |
+| `--google-username`       | `GOOGLE_USERNAME`     | `docker-user`                        |
+| **`--google-project`**    | `GOOGLE_PROJECT`      | -                                    |
+| `--google-auth-token`     | `GOOGLE_AUTH_TOKEN`   | -                                    |
+| `--google-scopes`         | `GOOGLE_SCOPES`       | `devstorage.read_only,logging.write` |
+| `--google-disk-size`      | `GOOGLE_DISK_SIZE`    | `10`                                 |
+| `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-statdard`                        |
+
+#### IBM Softlayer
 Create machines on [Softlayer](http://softlayer.com).
 
 You need to generate an API key in the softlayer control panel.
@@ -1129,25 +1186,45 @@ You need to generate an API key in the softlayer control panel.
 
 Options:
 
-  - `--softlayer-api-endpoint`: Change softlayer API endpoint
-  - `--softlayer-user`: **required** username for your softlayer account, api key needs to match this user.
-  - `--softlayer-api-key`: **required** API key for your user account
+  - `--softlayer-memory`: Memory for host in MB.
+  - `--softlayer-disk-size`: A value of `0` will set the SoftLayer default.
+  - `--softlayer-user`: **required** Username for your SoftLayer account, api key needs to match this user.
+  - `--softlayer-api-key`: **required** API key for your user account.
+  - `--softlayer-region`: SoftLayer region.
   - `--softlayer-cpu`: Number of CPU's for the machine.
-  - `--softlayer-disk-size: Size of the disk in MB. `0` sets the softlayer default.
-  - `--softlayer-domain`: **required** domain name for the machine
-  - `--softlayer-hostname`: hostname for the machine
-  - `--softlayer-hourly-billing`: Sets the hourly billing flag (default), otherwise uses monthly billing
-  - `--softlayer-image`: OS Image to use
-  - `--softlayer-local-disk`: Use local machine disk instead of softlayer SAN.
-  - `--softlayer-memory`: Memory for host in MB
-  - `--softlayer-private-net-only`: Disable public networking
-  - `--softlayer-region`: softlayer region
+  - `--softlayer-hostname`: Hostname for the machine.
+  - `--softlayer-domain`: **required** Domain name for the machine.
+  - `--softlayer-api-endpoint`: Change SoftLayer API endpoint.
+  - `--softlayer-hourly-billing`: Specifies that hourly billing should be used (default), otherwise monthly billing is used.
+  - `--softlayer-local-disk`: Use local machine disk instead of SoftLayer SAN.
+  - `--softlayer-private-net-only`: Disable public networking.
+  - `--softlayer-image`: OS Image to use.
+  - `--softlayer-public-vlan-id`: Your public VLAN ID.
+  - `--softlayer-private-vlan-id`: Your private VLAN ID.
 
 The SoftLayer driver will use `UBUNTU_LATEST` as the image type by default.
 
+Environment variables and default values:
+
+| CLI option                     | Environment variable        | Default                     |
+|--------------------------------|-----------------------------|-----------------------------|
+| `--softlayer-memory`           | `SOFTLAYER_MEMORY`          | `1024`                      |
+| `--softlayer-disk-size`        | `SOFTLAYER_DISK_SIZE`       | `0`                         |
+| **`--softlayer-user`**         | `SOFTLAYER_USER`            | -                           |
+| **`--softlayer-api-key`**      | `SOFTLAYER_API_KEY`         | -                           |
+| `--softlayer-region`           | `SOFTLAYER_REGION`          | `dal01`                     |
+| `--softlayer-cpu`              | `SOFTLAYER_CPU`             | `1`                         |
+| `--softlayer-hostname`         | `SOFTLAYER_HOSTNAME`        | `docker`                    |
+| **`--softlayer-domain`**       | `SOFTLAYER_DOMAIN`          | -                           |
+| `--softlayer-api-endpoint`     | `SOFTLAYER_API_ENDPOINT`    | `api.softlayer.com/rest/v3` |
+| `--softlayer-hourly-billing`   | `SOFTLAYER_HOURLY_BILLING`  | `false`                     |
+| `--softlayer-local-disk`       | `SOFTLAYER_LOCAL_DISK`      | `false`                     |
+| `--softlayer-private-net-only` | `SOFTLAYER_PRIVATE_NET`     | `false`                     |
+| `--softlayer-image`            | `SOFTLAYER_IMAGE`           | `UBUNTU_LATEST`             |
+| `--softlayer-public-vlan-id`   | `SOFTLAYER_PUBLIC_VLAN_ID`  | `0`                         |
+| `--softlayer-private-vlan-id`  | `SOFTLAYER_PRIVATE_VLAN_ID` | `0`                         |
 
 #### Microsoft Azure
-
 Create machines on [Microsoft Azure](http://azure.microsoft.com/).
 
 You need to create a subscription with a cert. Run these commands and answer the questions:
@@ -1163,19 +1240,41 @@ Grab your subscription ID from the portal, then run `docker-machine create` with
 
     $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem" A-VERY-UNIQUE-NAME
 
-Options:
-
- - `--azure-subscription-id`: Your Azure subscription ID (A GUID like `d255d8d7-5af0-4f5c-8a3e-1545044b861e`).
- - `--azure-subscription-cert`: Your Azure subscription cert.
-
 The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
 image by default. Note, this image is not available in the Chinese regions. In China you should
  specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`.
 
 You may need to `machine ssh` in to the virtual machine and reboot to ensure that the OS is updated.
 
-#### Microsoft Hyper-V
+Options:
 
+ - `--azure-docker-port`: Port for Docker daemon.
+ - `--azure-image`: Azure image name. See [How to: Get the Windows Azure Image Name](https://msdn.microsoft.com/en-us/library/dn135249%28v=nav.70%29.aspx)
+ - `--azure-location`: Machine instance location.
+ - `--azure-password`: Your Azure password.
+ - `--azure-publish-settings-file`: Azure setting file. See [How to: Download and Import Publish Settings and Subscription Information](https://msdn.microsoft.com/en-us/library/dn385850%28v=nav.70%29.aspx)
+ - `--azure-size`: Azure disk size.
+ - `--azure-ssh-port`: Azure SSH port.
+ - `--azure-subscription-id`: **required** Your Azure subscription ID (A GUID like `d255d8d7-5af0-4f5c-8a3e-1545044b861e`).
+ - `--azure-subscription-cert`: **required** Your Azure subscription cert.
+ - `--azure-username`: Azure login user name.
+
+Environment variables and default values:
+
+| CLI option                      | Environment variable          | Default               |
+|---------------------------------|-------------------------------| ----------------------|
+| `--azure-docker-port`           | -                             | `2376`                |
+| `--azure-image`                 | `AZURE_IMAGE`                 | *Ubuntu 14.04 LTS x64*|
+| `--azure-location`              | `AZURE_LOCATION`              | `West US`             |
+| `--azure-password`              | -                             | -                     |
+| `--azure-publish-settings-file` | `AZURE_PUBLISH_SETTINGS_FILE` | -                     |
+| `--azure-size`                  | `AZURE_SIZE`                  | `Small`               |
+| `--azure-ssh-port`              | -                             | `22`                  |
+| **`--azure-subscription-cert`** | `AZURE_SUBSCRIPTION_CERT`     | -                     |
+| **`--azure-subscription-id`**   | `AZURE_SUBSCRIPTION_ID`       | -                     |
+| `--azure-username`              | -                             | `ubuntu`              |
+
+#### Microsoft Hyper-V
 Creates a Boot2Docker virtual machine locally on your Windows machine
 using Hyper-V.  [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines)
 for instructions to enable Hyper-V. You will need to use an
@@ -1190,23 +1289,34 @@ Administrator level account to create and manage Hyper-V machines.
 
 Options:
 
+ - `--hyper-v-boot2docker-url`: The URL of the boot2docker ISO. Defaults to the latest available version.
  - `--hyper-v-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
- - `--hyper-v-boot2docker-url`: The URL of the boot2docker iso. Defaults to the latest available version.
- - `--hyper-v-disk-size`: Size of disk for the host in MB. Defaults to `20000`.
- - `--hyper-v-memory`: Size of memory for the host in MB. Defaults to `1024`. The machine is setup to use dynamic memory.
  - `--hyper-v-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
+ - `--hyper-v-disk-size`: Size of disk for the host in MB.
+ - `--hyper-v-memory`: Size of memory for the host in MB. By default, the machine is setup to use dynamic memory.
 
-#### Openstack
-Create machines on [Openstack](http://www.openstack.org/software/)
+Environment variables and default values:
+
+| CLI option                       | Environment variable | Default                  |
+|----------------------------------|----------------------| -------------------------|
+| `--hyper-v-boot2docker-url`      | -                    | *Latest boot2docker url* |
+| `--hyper-v-boot2docker-location` | -                    | -                        |
+| `--hyper-v-virtual-switch`       | -                    | *first found*            |
+| `--hyper-v-disk-size`            | -                    | `20000`                  |
+| `--hyper-v-memory`               | -                    | `1024`                   |
+
+#### OpenStack
+Create machines on [OpenStack](http://www.openstack.org/software/)
 
 Mandatory:
 
+ - `--openstack-auth-url`: Keystone service base URL.
  - `--openstack-flavor-id` or `openstack-flavor-name`: Identify the flavor that will be used for the machine.
  - `--openstack-image-id` or `openstack-image-name`: Identify the image that will be used for the machine.
 
 Options:
 
- - `--openstack-auth-url`: Keystone service base URL.
+ - `--openstack-insecure`: Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's certificate will not be verified against any certificate authorities. This option should be used with caution.
  - `--openstack-domain-name` or `--openstack-domain-id`: Domain to use for authentication (Keystone v3 only)
  - `--openstack-username`: User identifer to authenticate with.
  - `--openstack-password`: User password. It can be omitted if the standard environment variable `OS_PASSWORD` is set.
@@ -1214,64 +1324,72 @@ Options:
  - `--openstack-region`: The region to work on. Can be omitted if there is ony one region on the OpenStack.
  - `--openstack-endpoint-type`: Endpoint type can be `internalURL`, `adminURL` on `publicURL`. If is a helper for the driver
    to choose the right URL in the OpenStack service catalog. If not provided the default id `publicURL`
- - `--openstack-net-id` or `--openstack-net-name`: Identify the private network the machine will be connected on. If your OpenStack project project contains only one private network it will be use automatically.
+ - `--openstack-net-name` or `--openstack-net-id`: Identify the private network the machine will be connected on. If your OpenStack project project contains only one private network it will be use automatically.
  - `--openstack-sec-groups`: If security groups are available on your OpenStack you can specify a comma separated list
    to use for the machine (e.g. `secgrp001,secgrp002`).
- - `--openstack-floatingip-pool`: The IP pool that will be used to get a public IP an assign it to the machine. If there is an
+ - `--openstack-floatingip-pool`: The IP pool that will be used to get a public IP can assign it to the machine. If there is an
    IP address already allocated but not assigned to any machine, this IP will be chosen and assigned to the machine. If
    there is no IP address already allocated a new IP will be allocated and assigned to the machine.
  - `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
- - `--openstack-insecure`: Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's certificate will not be verified against any certificate authorities. This option should be used with caution.
 
-Environment variables:
+Environment variables and default values:
 
-Here comes the list of the supported variables with the corresponding options. If both environment variable
-and CLI option are provided the CLI option takes the precedence.
-
-| Environment variable | CLI option                  |
-|----------------------|-----------------------------|
-| `OS_AUTH_URL`        | `--openstack-auth-url`      |
-| `OS_DOMAIN_ID`       | `--openstack-domain-id`     |
-| `OS_DOMAIN_NAME`     | `--openstack-domain-name`   |
-| `OS_USERNAME`        | `--openstack-username`      |
-| `OS_PASSWORD`        | `--openstack-password`      |
-| `OS_TENANT_NAME`     | `--openstack-tenant-name`   |
-| `OS_TENANT_ID`       | `--openstack-tenant-id`     |
-| `OS_REGION_NAME`     | `--openstack-region`        |
-| `OS_ENDPOINT_TYPE`   | `--openstack-endpoint-type` |
+| CLI option                    | Environment variable | Default |
+|-------------------------------|----------------------|---------|
+| `--openstack-auth-url`        | `OS_AUTH_URL`        | -       |
+| `--openstack-flavor-name`     | -                    | -       |
+| `--openstack-flavor-id`       | -                    | -       |
+| `--openstack-image-name`      | -                    | -       |
+| `--openstack-image-id`        | -                    | -       |
+| `--openstack-insecure`        | -                    | -       |
+| `--openstack-domain-name`     | `OS_DOMAIN_NAME`     | -       |
+| `--openstack-domain-id`       | `OS_DOMAIN_ID`       | -       |
+| `--openstack-username`        | `OS_USERNAME`        | -       |
+| `--openstack-password`        | `OS_PASSWORD`        | -       |
+| `--openstack-tenant-name`     | `OS_TENANT_NAME`     | -       |
+| `--openstack-tenant-id`       | `OS_TENANT_ID`       | -       |
+| `--openstack-region`          | `OS_REGION_NAME`     | -       |
+| `--openstack-endpoint-type`   | `OS_ENDPOINT_TYPE`   | -       |
+| `--openstack-net-name`        | -                    | -       |
+| `--openstack-net-id`          | -                    | -       |
+| `--openstack-sec-groups`      | -                    | -       |
+| `--openstack-floatingip-pool` | -                    | -       |
+| `--openstack-ssh-user`        | -                    | `root`  |
+| `--openstack-ssh-port`        | -                    | `22`    |
 
 #### Rackspace
 Create machines on [Rackspace cloud](http://www.rackspace.com/cloud)
 
 Options:
 
- - `--rackspace-username`: Rackspace account username
- - `--rackspace-api-key`: Rackspace API key
- - `--rackspace-region`: Rackspace region name
- - `--rackspace-endpoint-type`: Rackspace endpoint type (adminURL, internalURL or the default publicURL)
- - `--rackspace-image-id`: Rackspace image ID. Default: Ubuntu 14.10 (Utopic Unicorn) (PVHVM)
- - `--rackspace-flavor-id`: Rackspace flavor ID. Default: General Purpose 1GB
- - `--rackspace-ssh-user`: SSH user for the newly booted machine. Set to root by default
- - `--rackspace-ssh-port`: SSH port for the newly booted machine. Set to 22 by default
-
-Environment variables:
-
-Here comes the list of the supported variables with the corresponding options. If both environment
-variable and CLI option are provided the CLI option takes the precedence.
-
-| Environment variable | CLI option                  |
-|----------------------|-----------------------------|
-| `OS_USERNAME`        | `--rackspace-username`      |
-| `OS_API_KEY`         | `--rackspace-api-key`       |
-| `OS_REGION_NAME`     | `--rackspace-region`        |
-| `OS_ENDPOINT_TYPE`   | `--rackspace-endpoint-type` |
-| `OS_FLAVOR_ID`       | `--rackspace-flavor-id`     |
+ - `--rackspace-username`: **required** Rackspace account username.
+ - `--rackspace-api-key`: **required** Rackspace API key.
+ - `--rackspace-region`: **required** Rackspace region name.
+ - `--rackspace-endpoint-type`: Rackspace endpoint type (`adminURL`, `internalURL` or the default `publicURL`).
+ - `--rackspace-image-id`: Rackspace image ID. Default: Ubuntu 14.10 (Utopic Unicorn) (PVHVM).
+ - `--rackspace-flavor-id`: Rackspace flavor ID. Default: General Purpose 1GB.
+ - `--rackspace-ssh-user`: SSH user for the newly booted machine.
+ - `--rackspace-ssh-port`: SSH port for the newly booted machine.
+ - `--rackspace-docker-install`: Set if Docker has to be installed on the machine.
 
 The Rackspace driver will use `598a4282-f14b-4e50-af4c-b3e52749d9f9` (Ubuntu 14.04 LTS) by default.
 
-#### Oracle VirtualBox
+Environment variables and default values:
 
+| CLI option                   | Environment variable | Default                                |
+|------------------------------|----------------------|----------------------------------------|
+| **`--rackspace-username`**   | `OS_USERNAME`        | -                                      |
+| **`--rackspace-api-key`**    | `OS_API_KEY`         | -                                      |
+| **`--rackspace-region`**     | `OS_REGION_NAME`     | -                                      |
+| `--rackspace-endpoint-type`  | `OS_ENDPOINT_TYPE`   | `publicURL`                            |
+| `--rackspace-image-id`       | -                    | `598a4282-f14b-4e50-af4c-b3e52749d9f9` |
+| `--rackspace-flavor-id`      | `OS_FLAVOR_ID`       | `general1-1`                           |
+| `--rackspace-ssh-user`       | -                    | `root`                                 |
+| `--rackspace-ssh-port`       | -                    | `22`                                   |
+| `--rackspace-docker-install` | -                    | `true`                                 |
+
+#### Oracle VirtualBox
 Create machines locally using [VirtualBox](https://www.virtualbox.org/).
 This driver requires VirtualBox to be installed on your host.
 
@@ -1279,10 +1397,11 @@ This driver requires VirtualBox to be installed on your host.
 
 Options:
 
- - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
- - `--virtualbox-disk-size`: Size of disk for the host in MB. Default: `20000`
- - `--virtualbox-memory`: Size of memory for the host in MB. Default: `1024`
+ - `--virtualbox-memory`: Size of memory for the host in MB.
  - `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
+ - `--virtualbox-disk-size`: Size of disk for the host in MB.
+ - `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
+ - `--virtualbox-import-boot2docker-vm`: The name of a Boot2Docker VM to import.
 
 The `--virtualbox-boot2docker-url` flag takes a few different forms.  By
 default, if no value is specified for this flag, Machine will check locally for
@@ -1301,18 +1420,15 @@ file://$HOME/Downloads/rc.iso` to test out a release candidate ISO that you have
 downloaded already.  You could also just get an ISO straight from the Internet
 using the `http://` form.
 
-Environment variables:
+Environment variables and default values:
 
-Here comes the list of the supported variables with the corresponding options. If both environment
-variable and CLI option are provided the CLI option takes the precedence.
-
-| Environment variable              | CLI option                        |
-|-----------------------------------|-----------------------------------|
-| `VIRTUALBOX_MEMORY_SIZE`          | `--virtualbox-memory`             |
-| `VIRTUALBOX_CPU_COUNT`            | `--virtualbox-cpu-count`          |
-| `VIRTUALBOX_DISK_SIZE`            | `--virtualbox-disk-size`          |
-| `VIRTUALBOX_BOOT2DOCKER_URL`      | `--virtualbox-boot2docker-url`    |
-
+| CLI option                           | Environment variable         | Default                  |
+|--------------------------------------|------------------------------|--------------------------|
+| `--virtualbox-memory`                | `VIRTUALBOX_MEMORY_SIZE`     | `1024`                   |
+| `--virtualbox-cpu-count`             | `VIRTUALBOX_CPU_COUNT`       | `1`                      |
+| `--virtualbox-disk-size`             | `VIRTUALBOX_DISK_SIZE`       | `20000`                  |
+| `--virtualbox-boot2docker-url`       | `VIRTUALBOX_BOOT2DOCKER_URL` | *Latest boot2docker url* |
+| `--virtualbox-import-boot2docker-vm` | -                            | `boot2docker-vm`         |
 
 #### VMware Fusion
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.
@@ -1320,53 +1436,99 @@ Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusio
 Options:
 
  - `--vmwarefusion-boot2docker-url`: URL for boot2docker image.
- - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB). Default: `20000`
- - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB). Default: `1024`
+ - `--vmwarefusion-cpu-count`: Number of CPUs for the machine (-1 to use the number of CPUs available)
+ - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB).
+ - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB).
 
-The VMware Fusion driver uses the latest boot2docker image.
+The VMware Fusion driver uses the latest boot2docker image.  
+See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
+
+Environment variables and default values:
+
+| CLI option                       | Environment variable     | Default                  |
+|----------------------------------|--------------------------|--------------------------|
+| `--vmwarefusion-boot2docker-url` | `FUSION_BOOT2DOCKER_URL` | *Latest boot2docker url* |
+| `--vmwarefusion-cpu-count`       | `FUSION_CPU_COUNT`       | `1`                      |
+| `--vmwarefusion-disk-size`       | `FUSION_MEMORY_SIZE`     | `20000`                  |
+| `--vmwarefusion-memory-size`     | `FUSION_DISK_SIZE`       | `1024`                   |
 
 #### VMware vCloud Air
 Creates machines on [vCloud Air](http://vcloud.vmware.com) subscription service. You need an account within an existing subscription of vCloud Air VPC or Dedicated Cloud.
 
 Options:
 
- - `--vmwarevcloudair-username`: vCloud Air Username.
- - `--vmwarevcloudair-password`: vCloud Air Password.
- - `--vmwarevcloudair-catalog`: Catalog. Default: `Public Catalog`
- - `--vmwarevcloudair-catalogitem`: Catalog Item. Default: `Ubuntu Server 12.04 LTS (amd64 20140927)`
+ - `--vmwarevcloudair-username`: **required** vCloud Air Username.
+ - `--vmwarevcloudair-password`: **required** vCloud Air Password.
  - `--vmwarevcloudair-computeid`: Compute ID (if using Dedicated Cloud).
- - `--vmwarevcloudair-cpu-count`: VM Cpu Count. Default: `1`
- - `--vmwarevcloudair-docker-port`: Docker port. Default: `2376`
- - `--vmwarevcloudair-edgegateway`: Organization Edge Gateway. Default: `<vdcid>`
- - `--vmwarevcloudair-memory-size`: VM Memory Size in MB. Default: `2048`
- - `--vmwarevcloudair-name`: vApp Name. Default: `<autogenerated>`
- - `--vmwarevcloudair-orgvdcnetwork`: Organization VDC Network to attach. Default: `<vdcid>-default-routed`
- - `--vmwarevcloudair-provision`: Install Docker binaries. Default: `true`
- - `--vmwarevcloudair-publicip`: Org Public IP to use.
- - `--vmwarevcloudair-ssh-port`: SSH port. Default: `22`
  - `--vmwarevcloudair-vdcid`: Virtual Data Center ID.
+ - `--vmwarevcloudair-orgvdcnetwork`: Organization VDC Network to attach.
+ - `--vmwarevcloudair-edgegateway`: Organization Edge Gateway.
+ - `--vmwarevcloudair-publicip`: Org Public IP to use.
+ - `--vmwarevcloudair-catalog`: Catalog.
+ - `--vmwarevcloudair-catalogitem`: Catalog Item.
+ - `--vmwarevcloudair-provision`: Install Docker binaries.
+ - `--vmwarevcloudair-cpu-count`: VM CPU Count.
+ - `--vmwarevcloudair-memory-size`: VM Memory Size in MB.
+ - `--vmwarevcloudair-ssh-port`: SSH port.
+ - `--vmwarevcloudair-docker-port`: Docker port.
 
 The VMware vCloud Air driver will use the `Ubuntu Server 12.04 LTS (amd64 20140927)` image by default.
+
+Environment variables and default values:
+
+| CLI option                        | Environment variable      | Default                                    |
+|-----------------------------------|---------------------------|--------------------------------------------|
+| **`--vmwarevcloudair-username`**  | `VCLOUDAIR_USERNAME`      | -                                          |
+| **`--vmwarevcloudair-password`**  | `VCLOUDAIR_PASSWORD`      | -                                          |
+| `--vmwarevcloudair-computeid`     | `VCLOUDAIR_COMPUTEID`     | -                                          |
+| `--vmwarevcloudair-vdcid`         | `VCLOUDAIR_VDCID`         | -                                          |
+| `--vmwarevcloudair-orgvdcnetwork` | `VCLOUDAIR_ORGVDCNETWORK` | `<vdcid>-default-routed`                   |
+| `--vmwarevcloudair-edgegateway`   | `VCLOUDAIR_EDGEGATEWAY`   | `<vdcid>`                                  |
+| `--vmwarevcloudair-publicip`      | `VCLOUDAIR_PUBLICIP`      | -                                          |
+| `--vmwarevcloudair-catalog`       | `VCLOUDAIR_CATALOG`       | `Public Catalog`                           |
+| `--vmwarevcloudair-catalogitem`   | `VCLOUDAIR_CATALOGITEM`   | `Ubuntu Server 12.04 LTS (amd64 20140927)` |
+| `--vmwarevcloudair-provision`     | `VCLOUDAIR_PROVISION`     | `true`                                     |
+| `--vmwarevcloudair-cpu-count`     | `VCLOUDAIR_CPU_COUNT`     | `1`                                        |
+| `--vmwarevcloudair-memory-size`   | `VCLOUDAIR_MEMORY_SIZE`   | `2048`                                     |
+| `--vmwarevcloudair-ssh-port`      | `VCLOUDAIR_SSH_PORT`      | `22`                                       |
+| `--vmwarevcloudair-docker-port`   | `VCLOUDAIR_DOCKER_PORT`   | `2376`                                     |
 
 #### VMware vSphere
 Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. Requires a working vSphere (ESXi and optionally vCenter) installation. The vSphere driver depends on [`govc`](https://github.com/vmware/govmomi/tree/master/govc) (must be in path) and has been tested with [vmware/govmomi@`c848630`](https://github.com/vmware/govmomi/commit/c8486300bfe19427e4f3226e3b3eac067717ef17).
 
 Options:
 
- - `--vmwarevsphere-username`: vSphere Username.
- - `--vmwarevsphere-password`: vSphere Password.
+ - `--vmwarevsphere-cpu-count`: CPU number for Docker VM.
+ - `--vmwarevsphere-memory-size`: Size of memory for Docker VM (in MB).
  - `--vmwarevsphere-boot2docker-url`: URL for boot2docker image.
- - `--vmwarevsphere-compute-ip`: Compute host IP where the Docker VM will be instantiated.
- - `--vmwarevsphere-cpu-count`: CPU number for Docker VM. Default: `2`
- - `--vmwarevsphere-datacenter`: Datacenter for Docker VM (must be set to `ha-datacenter` when connecting to a single host).
- - `--vmwarevsphere-datastore`: Datastore for Docker VM.
- - `--vmwarevsphere-disk-size`: Size of disk for Docker VM (in MB). Default: `20000`
- - `--vmwarevsphere-memory-size`: Size of memory for Docker VM (in MB). Default: `2048`
- - `--vmwarevsphere-network`: Network where the Docker VM will be attached.
- - `--vmwarevsphere-pool`: Resource pool for Docker VM.
  - `--vmwarevsphere-vcenter`: IP/hostname for vCenter (or ESXi if connecting directly to a single host).
+ - `--vmwarevsphere-disk-size`: Size of disk for Docker VM (in MB).
+ - `--vmwarevsphere-username`: **required** vSphere Username.
+ - `--vmwarevsphere-password`: **required** vSphere Password.
+ - `--vmwarevsphere-network`: Network where the Docker VM will be attached.
+ - `--vmwarevsphere-datastore`: Datastore for Docker VM.
+ - `--vmwarevsphere-datacenter`: Datacenter for Docker VM (must be set to `ha-datacenter` when connecting to a single host).
+ - `--vmwarevsphere-pool`: Resource pool for Docker VM.
+ - `--vmwarevsphere-compute-ip`: Compute host IP where the Docker VM will be instantiated.
 
 The VMware vSphere driver uses the latest boot2docker image.
+
+Environment variables and default values:
+
+| CLI option                        | Environment variable      | Default                  |
+|-----------------------------------|---------------------------|--------------------------|
+| `--vmwarevsphere-cpu-count`       | `VSPHERE_CPU_COUNT`       | `2`                      |
+| `--vmwarevsphere-memory-size`     | `VSPHERE_MEMORY_SIZE`     | `2048`                   |
+| `--vmwarevsphere-disk-size`       | `VSPHERE_DISK_SIZE`       | `20000`                  |
+| `--vmwarevsphere-boot2docker-url` | `VSPHERE_BOOT2DOCKER_URL` | *Latest boot2docker url* |
+| `--vmwarevsphere-vcenter`         | `VSPHERE_VCENTER`         | -                        |
+| **`--vmwarevsphere-username`**    | `VSPHERE_USERNAME`        | -                        |
+| **`--vmwarevsphere-password`**    | `VSPHERE_PASSWORD`        | -                        |
+| `--vmwarevsphere-network`         | `VSPHERE_NETWORK`         | -                        |
+| `--vmwarevsphere-datastore`       | `VSPHERE_DATASTORE`       | -                        |
+| `--vmwarevsphere-datacenter`      | `VSPHERE_DATACENTER`      | -                        |
+| `--vmwarevsphere-pool`            | `VSPHERE_POOL`            | -                        |
+| `--vmwarevsphere-compute-ip`      | `VSPHERE_COMPUTE_IP`      | -                        |
 
 #### exoscale
 Create machines on [exoscale](https://www.exoscale.ch/).
@@ -1375,13 +1537,31 @@ Get your API key and API secret key from [API details](https://portal.exoscale.c
 
 Options:
 
- - `--exoscale-api-key`: Your API key.
- - `--exoscale-api-secret-key`: Your API secret key.
- - `--exoscale-instance-profile`: Instance profile. Default: `small`.
- - `--exoscale-disk-size`: Disk size for the host in GB. Default: `50`.
- - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
+ - `--exoscale-url`: **required** Your API endpoint.
+ - `--exoscale-api-key`: **required** Your API key.
+ - `--exoscale-api-secret-key`: **required** Your API secret key.
+ - `--exoscale-instance-profile`: Instance profile.
+ - `--exoscale-disk-size`: Disk size for the host in GB.
+ - `--exoscale-image`: exoscale disk size. (10, 50, 100, 200, 400)
+ - `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
+ - `--exoscale-availability-zone`: exoscale availibility zone.
+ - `--exoscale-keypair`: exoscale keypair name.
 
 If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
+
+Environment variables and default values:
+
+| CLI option                      | Environment variable         | Default          |
+|---------------------------------|------------------------------|------------------|
+| **`--exoscale-url`**            | `EXOSCALE_ENDPOINT`          | -                |
+| **`--exoscale-api-key`**        | `EXOSCALE_API_KEY`           | -                |
+| **`--exoscale-api-secret-key`** | `EXOSCALE_API_SECRET`        | -                |
+| `--exoscale-instance-profile`   | `EXOSCALE_INSTANCE_PROFILE`  | `small`          |
+| `--exoscale-disk-size`          | `EXOSCALE_DISK_SIZE`         | `50`             |
+| `--exoscale-image`              | `EXSOCALE_IMAGE`             | `ubuntu-14.04`   |
+| `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine` |
+| `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`       |
+| `--exoscale-keypair`            | `EXOSCALE_KEYPAIR`           | -                |
 
 ## Release Notes
 
