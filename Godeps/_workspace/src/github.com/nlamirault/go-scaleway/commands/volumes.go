@@ -77,11 +77,6 @@ var commandCreateVolume = cli.Command{
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "organizationid",
-			Usage: "Organization unique identifier",
-			Value: "",
-		},
-		cli.StringFlag{
 			Name:  "type",
 			Usage: "The volume type (l_hdd|l_ssd)",
 			Value: "",
@@ -145,18 +140,15 @@ func doDeleteVolume(c *cli.Context) {
 func doCreateVolume(c *cli.Context) {
 	log.Infof("Create volume %s %s %s %s",
 		c.String("name"),
-		c.String("organizationid"),
 		c.String("type"),
 		c.Int("size"))
 	client := getClient(c)
 	// b, err := client.CreateVolume(
 	// 	c.String("name"),
-	// 	c.String("organizationid"),
 	// 	c.String("type"),
 	// 	c.Int("size"))
 	response, err := client.CreateVolume(
 		c.String("name"),
-		c.String("organizationid"),
 		c.String("type"),
 		c.Int("size"))
 	if err != nil {

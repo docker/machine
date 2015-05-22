@@ -84,7 +84,7 @@ var verboseFlag = cli.BoolFlag{
 
 func getClient(c *cli.Context) *api.ScalewayClient {
 	return api.NewClient(
-		c.GlobalString("scaleway-userid"),
 		c.GlobalString("scaleway-token"),
+		c.GlobalString("scaleway-userid"),
 		c.GlobalString("scaleway-organization"))
 }

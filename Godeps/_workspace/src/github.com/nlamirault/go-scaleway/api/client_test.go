@@ -41,8 +41,8 @@ func loadJSON(path string) (string, error) {
 
 func getClient() *ScalewayClient {
 	return NewClient(
-		ScalewayUserID,
 		ScalewayToken,
+		ScalewayUserID,
 		ScalewayOrganization)
 }
 
@@ -69,7 +69,7 @@ func TestGettingUser(t *testing.T) {
 	defer ts.Close()
 	c := getClient()
 	c.AccountURL = ts.URL
-	response, err := c.GetUserInformations("12345678-520a-4ab7-9707-8bc1819a9e19")
+	response, err := c.GetUserInformations()
 	// response, err := GetUserFromJSON(b)
 	if err != nil {
 		t.Fatalf("Can't decode json: %v", err)

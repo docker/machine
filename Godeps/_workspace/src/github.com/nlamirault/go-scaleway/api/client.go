@@ -29,24 +29,26 @@ const (
 )
 
 // ScalewayClient is a client for the Scaleway API.
-// UserID represents your user identifiant
 // Token is to authenticate to the API
+// UserID represents your user identifiant
 // Organization is the ID of the user's organization
 type ScalewayClient struct {
-	UserID       string
 	Token        string
+	UserID       string
 	Organization string
 	Client       *http.Client
 	ComputeURL   string
 	AccountURL   string
 }
 
-// NewClient creates a new Scaleway API client using userId, API token and organization
-func NewClient(userid string, token string, organization string) *ScalewayClient {
-	log.Debugf("Creating client using userID=%s token=%s org=%s", userid, token, organization)
+// NewClient creates a new Scaleway API client using API token.
+// userid can be an empty string - defaults to the token's user id
+// organization can be an empty string - defaults to the user's primary organization
+func NewClient(token string, userid string, organization string) *ScalewayClient {
+	log.Debugf("Creating client using token=%s userid=%s org=%s", token, userid, organization)
 	client := &ScalewayClient{
-		UserID:       userid,
 		Token:        token,
+		UserID:       userid,
 		Organization: organization,
 		Client:       &http.Client{},
 		ComputeURL:   computeURL,
@@ -58,12 +60,43 @@ func NewClient(userid string, token string, organization string) *ScalewayClient
 // GetUserInformations list informations about your user account
 func (c ScalewayClient) GetUserInformations() (UserResponse, error) {
 	var data UserResponse
+	if err := c.SetUserFromToken(); err != nil {
+		return data, err
+	}
 	err := getAPIResource(
 		c.Client,
 		c.Token,
 		fmt.Sprintf("%s/users/%s", c.AccountURL, c.UserID),
 		&data)
 	return data, err
+}
+
+// Set UserID from Token if left empty
+func (c ScalewayClient) SetUserFromToken() (error) {
+	if c.UserID != "" {
+		return nil
+	}
+	response, err := c.GetUserToken(c.Token)
+	if err != nil {
+		return err
+	}
+	c.UserID = response.Token.UserID
+	return nil
+}
+
+// Set Organization from Token if left empty
+func (c ScalewayClient) SetOrganizationFromToken() (error) {
+	if c.Organization != "" {
+		return nil
+	}
+	response, err := c.GetUserOrganizations()
+	if err != nil {
+		return err
+	}
+	if len(response.Organizations) > 0 {
+		c.Organization = response.Organizations[0].ID
+	}
+	return nil
 }
 
 // GetUserOrganizations list all organizations associate with your account
@@ -143,12 +176,14 @@ func (c ScalewayClient) UpdateToken(tokenID string) (TokenResponse, error) {
 
 // CreateServer creates a new server
 // name is the server name
-// organization is the organization unique identifier
 // image is the image unique identifier
-func (c ScalewayClient) CreateServer(name string, organization string, image string) (ServerResponse, error) {
+func (c ScalewayClient) CreateServer(name string, image string) (ServerResponse, error) {
 	var data ServerResponse
+	if err := c.SetOrganizationFromToken(); err != nil {
+		return data, err
+	}
 	json := fmt.Sprintf(`{"name": "%s", "organization": "%s", "image": "%s", "tags": ["docker-machine"]}`,
-		name, organization, image)
+		name, c.Organization, image)
 	err := postAPIResource(
 		c.Client,
 		c.Token,
@@ -230,13 +265,15 @@ func (c ScalewayClient) DeleteVolume(volumeID string) error {
 
 // CreateVolume creates a new volume
 // name is the volume name
-// organization is the organization unique identifier
 // volume_type is the volume type
 // size is the volume size
-func (c ScalewayClient) CreateVolume(name string, organization string, volume_type string, size int) (VolumeResponse, error) {
+func (c ScalewayClient) CreateVolume(name string, volume_type string, size int) (VolumeResponse, error) {
 	var data VolumeResponse
+	if err := c.SetOrganizationFromToken(); err != nil {
+		return data, err
+	}
 	json := fmt.Sprintf(`{"name": "%s", "organization": "%s", "volume_type": "%s", "size": %d}`,
-		name, organization, volume_type, size)
+		name, c.Organization, volume_type, size)
 	err := postAPIResource(
 		c.Client,
 		c.Token,
@@ -291,10 +328,12 @@ func (c ScalewayClient) DeleteImage(imageID string) error {
 }
 
 // UploadPublicKey update user SSH keys
-// userId is the user unique identifier
 // keyPath is the complete path of the SSH key
-func (c ScalewayClient) UploadPublicKey(userid string, keyPath string) (UserResponse, error) {
+func (c ScalewayClient) UploadPublicKey(keyPath string) (UserResponse, error) {
 	var data UserResponse
+	if err := c.SetUserFromToken(); err != nil {
+		return data, err
+	}
 	publicKey, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		return data, err
@@ -304,7 +343,7 @@ func (c ScalewayClient) UploadPublicKey(userid string, keyPath string) (UserResp
 	err = patchAPIResource(
 		c.Client,
 		c.Token,
-		fmt.Sprintf("%s/users/%s", c.AccountURL, userid),
+		fmt.Sprintf("%s/users/%s", c.AccountURL, c.UserID),
 		[]byte(json),
 		&data)
 	return data, err

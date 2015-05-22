@@ -35,7 +35,7 @@ type Server struct {
 	Organization     string   `json:"organization,omitempty"`
 	CreationDate     string   `json:"creation_date,omitempty"`
 	ModificationDate string   `json:"modification_date,omitempty"`
-	Arch             string   `json:"arch,omitempty"`
+	Image            Image    `json:"image,omitempty"`
 	PublicIP         PublicIP `json:"public_ip,omitempty"`
 	State            string   `json:"state,omitempty"`
 	Tags             []string `json:"tags,omitempty"`
@@ -73,9 +73,11 @@ type ServersResponse struct {
 // }
 
 func (s Server) Display() {
-	log.Infof("Id   : %s", s.ID)
-	log.Infof("Name : %s", s.Name)
-	log.Infof("Date : %s", s.ModificationDate)
-	log.Infof("IP   : %s", s.PublicIP.Address)
-	log.Infof("Tags : %s", s.Tags)
+	log.Infof("Id    : %s", s.ID)
+	log.Infof("Name  : %s", s.Name)
+	log.Infof("Image : %s", s.Image.Name)
+	log.Infof("Date  : %s", s.ModificationDate)
+	log.Infof("IP    : %s", s.PublicIP.Address)
+	log.Infof("Tags  : %s", s.Tags)
+	log.Infof("State : %s", s.State)
 }

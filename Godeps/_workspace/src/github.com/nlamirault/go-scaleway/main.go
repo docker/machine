@@ -44,16 +44,16 @@ func makeApp() *cli.App {
 			Usage: fmt.Sprintf("Log level (options: debug, info, warn, error, fatal, panic)"),
 		},
 		cli.StringFlag{
-			Name:   "scaleway-userid",
-			Usage:  "Scaleway UserID",
-			Value:  "",
-			EnvVar: "SCALEWAY_USERID",
-		},
-		cli.StringFlag{
 			Name:   "scaleway-token",
 			Usage:  "Scaleway Token",
 			Value:  "",
 			EnvVar: "SCALEWAY_TOKEN",
+		},
+		cli.StringFlag{
+			Name:   "scaleway-userid",
+			Usage:  "Scaleway UserID",
+			Value:  "",
+			EnvVar: "SCALEWAY_USERID",
 		},
 		cli.StringFlag{
 			Name:   "scaleway-organization",

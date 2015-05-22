@@ -180,7 +180,7 @@ func (d *Driver) Create() error {
 	log.Infof("[Scaleway] Creating instance...")
 	client := d.getClient()
 	response, err := client.CreateServer(
-		d.MachineName, d.Organization, d.Image)
+		d.MachineName, d.Image)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 	log.Debugf("[Scaleway] Upload SSH key")
-	_, err = client.UploadPublicKey(d.UserId, d.publicSSHKeyPath())
+	_, err = client.UploadPublicKey(d.publicSSHKeyPath())
 	if err != nil {
 		return err
 	}
