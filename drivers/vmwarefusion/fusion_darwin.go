@@ -168,6 +168,14 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	s, err := d.GetState()
+	if err != nil {
+		return "", err
+	}
+	if s != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
 	ip, err := d.getIPfromDHCPLease()
 	if err != nil {
 		return "", err
