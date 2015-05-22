@@ -1547,7 +1547,7 @@ Options:
  - `--exoscale-availability-zone`: exoscale availibility zone.
  - `--exoscale-keypair`: exoscale keypair name.
 
-If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
+If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule.
 
 Environment variables and default values:
 

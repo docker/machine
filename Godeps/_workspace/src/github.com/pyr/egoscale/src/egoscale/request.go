@@ -23,7 +23,7 @@ func rawValue(b json.RawMessage) (json.RawMessage, error) {
 	return nil, fmt.Errorf("Unable to extract raw value from:\n\n%s\n\n", string(b))
 }
 
-func (exo *Client) Request (command string, params url.Values) (json.RawMessage, error) {
+func (exo *Client) Request(command string, params url.Values) (json.RawMessage, error) {
 
 	mac := hmac.New(sha1.New, []byte(exo.apiSecret))
 
