@@ -1,7 +1,7 @@
 ---
 page_title: Docker Machine
 page_description: Working with Docker Machine
-page_keywords: docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale
+page_keywords: docker, machine, amazonec2, azure, digitalocean, google, hypriot, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale
 ---
 
 
@@ -1177,6 +1177,32 @@ Environment variables and default values:
 | `--google-scopes`         | `GOOGLE_SCOPES`       | `devstorage.read_only,logging.write` |
 | `--google-disk-size`      | `GOOGLE_DISK_SIZE`    | `10`                                 |
 | `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-statdard`                        |
+
+#### Hypriot
+Create machines using an existing Raspberry Pi with installed Hypriot image (based on Raspbian).
+
+Before using the `docker-machine create` command you have to copy your SSH keys to the device:
+        $ ssh-copy-id root@$HYPRIOT_IP_ADDRESS
+Now you can easily provision your Docker engine with:
+        $ docker-machine create --driver hypriot --hypriot-ip-address=$HYPRIOT_IP_ADDRESS black-pearl
+
+Options:
+
+ - `--hypriot-ip-address`: **required** IP Address of host.
+ - `--hypriot-ssh-user`: SSH username used to connect.
+ - `--hypriot-ssh-key`: Path to the SSH user private key.
+ - `--hypriot-ssh-port`: Port to use for SSH.
+
+> Note: currently only a numerical IP address is supported.
+
+Environment variables and default values:
+
+| CLI option                 | Environment variable | Default             |
+|----------------------------|----------------------|---------------------|
+| **`--hypriot-ip-address`** | -                    | -                   |
+| `--hypriot-ssh-user`       | -                    | `root`              |
+| `--hypriot-ssh-key`        | -                    | `$HOME/.ssh/id_rsa` |
+| `--hypriot-ssh-port`       | -                    | `22`                |
 
 #### IBM Softlayer
 Create machines on [Softlayer](http://softlayer.com).
