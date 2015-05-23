@@ -57,7 +57,7 @@ func (provisioner *HypriotProvisioner) Package(name string, action pkgaction.Pac
 		packageAction = "remove"
 		updateMetadata = false
 	case pkgaction.Upgrade:
-		packageAction = "upgrade"
+		packageAction = "install --only-upgrade"
 	}
 
 	switch name {
