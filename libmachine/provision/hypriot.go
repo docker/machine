@@ -62,20 +62,19 @@ func (provisioner *HypriotProvisioner) Package(name string, action pkgaction.Pac
 		packageAction = "upgrade"
 	}
 
-	// TODO: This should probably have a const
 	switch name {
 	case "docker":
-		name = "lxc-docker"
+		name = "docker-hypriot"
 	}
 
 	if updateMetadata {
-		// issue apt-get update for metadata
+		// invoke apt-get update for metadata
 		if _, err := provisioner.SSHCommand("sudo -E apt-get update"); err != nil {
 			return err
 		}
 	}
 
-	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
+	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y %s", packageAction, name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
