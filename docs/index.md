@@ -2,7 +2,7 @@
 +++
 title = "Overview of Docker Machine"
 description = "Introduction and Overview of Machine"
-keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
+keywords = ["docker, machine, amazonec2, azure, digitalocean, google, hypriot, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
 [menu.main]
 parent="smn_workw_machine"
 +++
@@ -1248,6 +1248,32 @@ Environment variables and default values:
 | `--google-disk-size`      | `GOOGLE_DISK_SIZE`    | `10`                                 |
 | `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-standard`                        |
 
+#### Hypriot
+Create machines using an existing Raspberry Pi with installed Hypriot image (based on Raspbian).
+
+Before using the `docker-machine create` command you have to copy your SSH keys to the device:
+        $ ssh-copy-id root@$HYPRIOT_IP_ADDRESS
+Now you can easily provision your Docker engine with:
+        $ docker-machine create --driver hypriot --hypriot-ip-address=$HYPRIOT_IP_ADDRESS black-pearl
+
+Options:
+
+ - `--hypriot-ip-address`: **required** IP Address of host.
+ - `--hypriot-ssh-user`: SSH username used to connect.
+ - `--hypriot-ssh-key`: Path to the SSH user private key.
+ - `--hypriot-ssh-port`: Port to use for SSH.
+
+> Note: currently only a numerical IP address is supported.
+
+Environment variables and default values:
+
+| CLI option                 | Environment variable | Default             |
+|----------------------------|----------------------|---------------------|
+| **`--hypriot-ip-address`** | -                    | -                   |
+| `--hypriot-ssh-user`       | -                    | `root`              |
+| `--hypriot-ssh-key`        | -                    | `$HOME/.ssh/id_rsa` |
+| `--hypriot-ssh-port`       | -                    | `22`                |
+
 #### IBM Softlayer
 Create machines on [Softlayer](http://softlayer.com).
 
@@ -1466,7 +1492,7 @@ Create machines locally using [VirtualBox](https://www.virtualbox.org/).
 This driver requires VirtualBox to be installed on your host.
 
     $ docker-machine create --driver=virtualbox vbox-test
-    
+
 You can create an entirely new machine or you can convert a Boot2Docker VM into
 a machine by importing the VM. To convert a Boot2Docker VM, you'd use the following
 command:
@@ -1502,11 +1528,11 @@ using the `http://` form.
 
 To customize the host only adapter, you can use the `--virtualbox-hostonly-cidr`
 flag.  This will specify the host IP and Machine will calculate the VirtualBox
-DHCP server address (a random IP on the subnet between `.1` and `.25`) so 
+DHCP server address (a random IP on the subnet between `.1` and `.25`) so
 it does not clash with the specified host IP.
 Machine will also specify the DHCP lower bound to `.100` and the upper bound
 to `.254`.  For example, a specified CIDR of `192.168.24.1/24` would have a
-DHCP server between `192.168.24.2-25`, a lower bound of `192.168.24.100` and 
+DHCP server between `192.168.24.2-25`, a lower bound of `192.168.24.100` and
 upper bound of `192.168.24.254`.
 
 Environment variables and default values:
@@ -1530,7 +1556,7 @@ Options:
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB).
  - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB).
 
-The VMware Fusion driver uses the latest boot2docker image. 
+The VMware Fusion driver uses the latest boot2docker image.
 See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
 
 Environment variables and default values:
