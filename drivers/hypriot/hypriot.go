@@ -144,6 +144,10 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	if err := utils.CopyFile(fmt.Sprintf("%s.pub", d.SSHKey), d.publicSSHKeyPath()); err != nil {
+		return fmt.Errorf("unable to copy public ssh key: %s", err)
+	}
+
 	log.Debugf("IP: %s", d.IPAddress)
 
 	return nil
