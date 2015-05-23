@@ -93,6 +93,17 @@ func (provisioner *HypriotProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
+func (provisioner *HypriotProvisioner) setHostnameHypriot(hostname string) error {
+	if _, err := provisioner.SSHCommand(fmt.Sprintf(
+		"if [ -f /boot/occidentalis.txt ]; then sudo sed -i 's/^hostname.*=.*/hostname=%s/g' /boot/occidentalis.txt; fi",
+		hostname,
+	)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
@@ -103,6 +114,10 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 	}
 
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
+		return err
+	}
+
+	if err := provisioner.setHostnameHypriot(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
 
