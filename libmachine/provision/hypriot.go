@@ -24,10 +24,8 @@ func NewHypriotProvisioner(d drivers.Driver) Provisioner {
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/default/docker",
 			OsReleaseId:       "raspbian",
-			Packages: []string{
-				"curl",
-			},
-			Driver: d,
+			Packages:          []string{},
+			Driver:            d,
 		},
 	}
 }
@@ -93,6 +91,15 @@ func (provisioner *HypriotProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
+func (provisioner *HypriotProvisioner) dockerDaemonInstalled() bool {
+	if _, err := provisioner.SSHCommand("type docker"); err != nil {
+		log.Warnf("Docker not installed, let's install it")
+		return false
+	}
+
+	return true
+}
+
 func (provisioner *HypriotProvisioner) setHostnameHypriot(hostname string) error {
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(
 		"if [ -f /boot/occidentalis.txt ]; then sudo sed -i 's/^hostname.*=.*/hostname=%s/g' /boot/occidentalis.txt; fi",
@@ -121,14 +128,14 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 		return err
 	}
 
+	if !provisioner.dockerDaemonInstalled() {
+		provisioner.Packages = append(provisioner.Packages, "docker")
+	}
+
 	for _, pkg := range provisioner.Packages {
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
 			return err
 		}
-	}
-
-	if err := installDockerGeneric(provisioner); err != nil {
-		return err
 	}
 
 	if err := utils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
