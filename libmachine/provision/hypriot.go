@@ -100,6 +100,15 @@ func (provisioner *HypriotProvisioner) dockerDaemonInstalled() bool {
 	return true
 }
 
+func (provisioner *HypriotProvisioner) dockerDaemonRunning() bool {
+	if _, err := provisioner.SSHCommand("sudo service docker status"); err != nil {
+		log.Warnf("Docker not running")
+		return false
+	}
+
+	return true
+}
+
 func (provisioner *HypriotProvisioner) setHostnameHypriot(hostname string) error {
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(
 		"if [ -f /boot/occidentalis.txt ]; then sudo sed -i 's/^hostname.*=.*/hostname=%s/g' /boot/occidentalis.txt; fi",
@@ -146,6 +155,12 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 
 	for _, pkg := range provisioner.Packages {
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
+			return err
+		}
+	}
+
+	if !provisioner.dockerDaemonRunning() {
+		if err := provisioner.Service("docker", pkgaction.Start); err != nil {
 			return err
 		}
 	}
