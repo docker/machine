@@ -111,6 +111,14 @@ func (provisioner *HypriotProvisioner) setHostnameHypriot(hostname string) error
 	return nil
 }
 
+func (provisioner *HypriotProvisioner) setHypriotAptRepo() error {
+	if _, err := provisioner.SSHCommand("if [ ! -f /etc/apt/sources.list.d/hypriot.list ]; then echo 'deb http://repository.hypriot.com/ wheezy main' | sudo tee /etc/apt/sources.list.d/hypriot.list; fi"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
@@ -125,6 +133,10 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 	}
 
 	if err := provisioner.setHostnameHypriot(provisioner.Driver.GetMachineName()); err != nil {
+		return err
+	}
+
+	if err := provisioner.setHypriotAptRepo(); err != nil {
 		return err
 	}
 
