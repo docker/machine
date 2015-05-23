@@ -121,7 +121,7 @@ func (provisioner *HypriotProvisioner) setHostnameHypriot(hostname string) error
 }
 
 func (provisioner *HypriotProvisioner) setHypriotAptRepo() error {
-	if _, err := provisioner.SSHCommand("if [ ! -f /etc/apt/sources.list.d/hypriot.list ]; then echo 'deb http://repository.hypriot.com/ wheezy main' | sudo tee /etc/apt/sources.list.d/hypriot.list; fi"); err != nil {
+	if _, err := provisioner.SSHCommand("if [ ! -f /etc/apt/sources.list.d/hypriot.list ]; then sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DC4CEA6F; echo 'deb http://repository.hypriot.com/ wheezy main' | sudo tee /etc/apt/sources.list.d/hypriot.list; fi"); err != nil {
 		return err
 	}
 
