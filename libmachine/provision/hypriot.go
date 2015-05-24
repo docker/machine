@@ -34,6 +34,14 @@ type HypriotProvisioner struct {
 	GenericProvisioner
 }
 
+func (provisioner *HypriotProvisioner) CompatibleWithHost() bool {
+	if _, err := provisioner.SSHCommand("cat /etc/hypriot_release"); err != nil {
+		return false
+	}
+
+	return provisioner.OsReleaseInfo.Id == provisioner.OsReleaseId
+}
+
 func (provisioner *HypriotProvisioner) Service(name string, action pkgaction.ServiceAction) error {
 	command := fmt.Sprintf("sudo service %s %s", name, action.String())
 
