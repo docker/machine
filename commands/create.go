@@ -178,6 +178,7 @@ func cmdCreateInner(c CommandLine) error {
 			ServerCertPath:   filepath.Join(mcndirs.GetMachineDir(), name, "server.pem"),
 			ServerKeyPath:    filepath.Join(mcndirs.GetMachineDir(), name, "server-key.pem"),
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
+			ServerCertSANs: c.GlobalStringSlice("tls-san"),
 		},
 		EngineOptions: &engine.Options{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),
