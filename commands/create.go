@@ -67,6 +67,7 @@ func cmdCreate(c *cli.Context) {
 			ClientKeyPath:  certInfo.ClientKeyPath,
 			ServerCertPath: filepath.Join(utils.GetMachineDir(), name, "server.pem"),
 			ServerKeyPath:  filepath.Join(utils.GetMachineDir(), name, "server-key.pem"),
+			ServerCertSANs: c.GlobalStringSlice("tls-san"),
 		},
 		EngineOptions: &engine.EngineOptions{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),

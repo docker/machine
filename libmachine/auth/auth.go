@@ -11,4 +11,5 @@ type AuthOptions struct {
 	ServerKeyRemotePath  string
 	PrivateKeyPath       string
 	ClientCertPath       string
+	ServerCertSANs       []string
 }

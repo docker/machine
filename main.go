@@ -104,6 +104,12 @@ func main() {
 			Usage:  "Private key used in client TLS auth",
 			Value:  "",
 		},
+		cli.StringSliceFlag{
+			EnvVar: "MACHINE_TLS_SAN",
+			Name:   "tls-san",
+			Usage:  "Support extra SANs for TLS certs",
+			Value:  &cli.StringSlice{},
+		},
 		cli.BoolFlag{
 			EnvVar: "MACHINE_NATIVE_SSH",
 			Name:   "native-ssh",
