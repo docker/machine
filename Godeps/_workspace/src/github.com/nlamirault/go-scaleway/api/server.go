@@ -18,7 +18,8 @@ import (
 	// "encoding/json"
 	//"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	//log "github.com/Sirupsen/logrus"
+	"github.com/nlamirault/go-scaleway/log"
 )
 
 // PublicIP represents IP address of a server
@@ -51,27 +52,13 @@ type ServersResponse struct {
 	Servers []Server
 }
 
-// GetServerFromJSON load bytes and return a ServerResponse
-// func GetServerFromJSON(b []byte) (*ServerResponse, error) {
-// 	var response ServerResponse
-// 	//fmt.Printf("Response JSON: %s\n", (string(b)))
-// 	err := json.Unmarshal(b, &response)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &response, nil
-// }
+// ServerActionsResponse represents JSON response of available actions
+// for a server
+type ServerActionsResponse struct {
+	Actions []string
+}
 
-// // GetServersFromJSON load bytes and return a ServersResponse
-// func GetServersFromJSON(b []byte) (*ServersResponse, error) {
-// 	var response ServersResponse
-// 	err := json.Unmarshal(b, &response)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &response, nil
-// }
-
+// Display log the server caracteristics
 func (s Server) Display() {
 	log.Infof("Id    : %s", s.ID)
 	log.Infof("Name  : %s", s.Name)

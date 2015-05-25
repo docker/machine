@@ -18,9 +18,11 @@ import (
 	"encoding/json"
 	//"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	//log "github.com/Sirupsen/logrus"
+	"github.com/nlamirault/go-scaleway/log"
 )
 
+// IPAddress represents an IP entity
 type IPAddress struct {
 	ID           string `json:"id,omitempty"`
 	Address      string `json:"address,omitempty"`
@@ -41,7 +43,6 @@ type IPAddressesResponse struct {
 // GetIPAddressFromJSON load bytes and return a IPAddressResponse
 func GetIPAddressFromJSON(b []byte) (*IPAddressResponse, error) {
 	var response IPAddressResponse
-	//fmt.Printf("Response JSON: %s\n", (string(b)))
 	err := json.Unmarshal(b, &response)
 	if err != nil {
 		return nil, err
@@ -59,6 +60,7 @@ func GetIPAddressesFromJSON(b []byte) (*IPAddressesResponse, error) {
 	return &response, nil
 }
 
+// Display log the IPAddress caracteristics
 func (ip IPAddress) Display() {
 	log.Infof("Id           : %s", ip.ID)
 	log.Infof("Address      : %s", ip.Address)

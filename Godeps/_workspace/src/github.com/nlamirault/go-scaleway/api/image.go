@@ -17,9 +17,11 @@ package api
 import (
 	// "encoding/json"
 
-	log "github.com/Sirupsen/logrus"
+	//log "github.com/Sirupsen/logrus"
+	"github.com/nlamirault/go-scaleway/log"
 )
 
+// Image represents the image entity
 type Image struct {
 	ID           string `json:"id,omitempty"`
 	Arch         string `json:"arch,omitempty"`
@@ -40,26 +42,7 @@ type ImagesResponse struct {
 	Images []Image
 }
 
-// GetImageFromJSON load bytes and//  return a ImagesResponse
-// func GetImageFromJSON(b []byte) (*ImageResponse, error) {
-// 	var response ImageResponse
-// 	err := json.Unmarshal(b, &response)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &response, nil
-// }
-
-// // GetImagesFromJSON load bytes and return a ImagesResponse
-// func GetImagesFromJSON(b []byte) (*ImagesResponse, error) {
-// 	var response ImagesResponse
-// 	err := json.Unmarshal(b, &response)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &response, nil
-// }
-
+// Display log the Image caracteristics
 func (i Image) Display() {
 	log.Infof("Id            : %s", i.ID)
 	log.Infof("Name          : %s", i.Name)

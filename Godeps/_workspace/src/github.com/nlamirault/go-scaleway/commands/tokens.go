@@ -1,25 +1,25 @@
 // Copyright (C) 2015 Nicolas Lamirault <nicolas.lamirault@gmail.com>
 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+//     http://www.apache.org/licenses/LICENSE-2.0
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package commands
 
 import (
 	//"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	//log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/nlamirault/go-scaleway/log"
 )
 
 var commandGetToken = cli.Command{
@@ -104,17 +104,11 @@ var commandUpdateToken = cli.Command{
 func doListUserTokens(c *cli.Context) {
 	log.Infof("List user tokens")
 	client := getClient(c)
-	// b, err := client.GetUserTokens()
 	response, err := client.GetUserTokens()
 	if err != nil {
 		log.Errorf("Failed user tokens response %v", err)
 		return
 	}
-	// response, err := api.GetTokensFromJSON(b)
-	// if err != nil {
-	// 	log.Errorf("Failed user tokens %v", err)
-	// 	return
-	// }
 	log.Infof("User tokens:")
 	for _, token := range response.Tokens {
 		log.Infof("----------------------------------------------")
@@ -125,43 +119,24 @@ func doListUserTokens(c *cli.Context) {
 func doGetUserToken(c *cli.Context) {
 	log.Infof("Get user token : %s", c.String("tokenid"))
 	client := getClient(c)
-	// b, err := client.GetUserToken(c.String("tokenid"))
 	response, err := client.GetUserToken(c.String("tokenid"))
 	if err != nil {
 		log.Errorf("Failed user token response %v", err)
 		return
 	}
-	// response, err := api.GetTokenFromJSON(b)
-	// if err != nil {
-	// 	log.Errorf("Failed user token  %v", err)
-	// 	return
-	// }
-	log.Infof("Token: ")
 	response.Token.Display()
 }
 
 func doCreateToken(c *cli.Context) {
 	log.Infof("Create token %s %s %s",
-		c.String("email"),
-		c.String("password"),
-		c.Bool("expires"))
+		c.String("email"), c.String("password"), c.Bool("expires"))
 	client := getClient(c)
-	// b, err := client.CreateToken(
-	// 	c.String("email"),
-	// 	c.String("password"),
-	// 	c.Bool("expires"))
 	response, err := client.CreateToken(
-		c.String("email"),
-		c.String("password"),
-		c.Bool("expires"))
+		c.String("email"), c.String("password"), c.Bool("expires"))
 	if err != nil {
 		log.Errorf("Creating token: %v", err)
+		return
 	}
-	// response, err := api.GetTokenFromJSON(b)
-	// if err != nil {
-	// 	log.Errorf("Failed response %v", err)
-	// 	return
-	// }
 	log.Infof("Token created: ")
 	response.Token.Display()
 }
@@ -169,10 +144,10 @@ func doCreateToken(c *cli.Context) {
 func doDeleteToken(c *cli.Context) {
 	log.Infof("Remove token %s", c.String("tokenid"))
 	client := getClient(c)
-	// b, err := client.DeleteToken(c.String("tokenid"))
 	err := client.DeleteToken(c.String("tokenid"))
 	if err != nil {
 		log.Errorf("Retrieving token: %v", err)
+		return
 	}
 	log.Infof("Token deleted")
 }
@@ -180,16 +155,11 @@ func doDeleteToken(c *cli.Context) {
 func doUpdateToken(c *cli.Context) {
 	log.Infof("Update token expiration time %s", c.String("tokenid"))
 	client := getClient(c)
-	// b, err := client.UpdateToken(c.String("tokenid"))
 	response, err := client.UpdateToken(c.String("tokenid"))
 	if err != nil {
 		log.Errorf("Retrieving token: %v", err)
+		return
 	}
-	// response, err := api.GetTokenFromJSON(b)
-	// if err != nil {
-	// 	log.Errorf("Failed response %v", err)
-	// 	return
-	// }
 	log.Infof("Token updated: ")
 	response.Token.Display()
 }

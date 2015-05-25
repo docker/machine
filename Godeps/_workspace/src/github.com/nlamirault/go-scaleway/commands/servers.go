@@ -1,25 +1,25 @@
 // Copyright (C) 2015  Nicolas Lamirault <nicolas.lamirault@gmail.com>
 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+//     http://www.apache.org/licenses/LICENSE-2.0
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package commands
 
 import (
 	//"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	//log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/nlamirault/go-scaleway/log"
 )
 
 var commandListServers = cli.Command{
@@ -27,6 +27,15 @@ var commandListServers = cli.Command{
 	Usage:       "List all servers associate with your account",
 	Description: ``,
 	Action:      doListServers,
+	Flags: []cli.Flag{
+		verboseFlag,
+	},
+}
+var commandListServerActions = cli.Command{
+	Name:        "actions",
+	Usage:       "List actions to be applied on a server",
+	Description: ``,
+	Action:      doListActions,
 	Flags: []cli.Flag{
 		verboseFlag,
 	},
@@ -85,17 +94,11 @@ var commandActionServer = cli.Command{
 func doListServers(c *cli.Context) {
 	log.Infof("List servers")
 	client := getClient(c)
-	// b, err := client.GetServers()
 	response, err := client.GetServers()
 	if err != nil {
 		log.Errorf("Retrieving servers %v", err)
 		return
 	}
-	// response, err := api.GetServersFromJSON(b)
-	// if err != nil {
-	// 	log.Errorf("Reading servers %v", err)
-	// 	return
-	// }
 	log.Infof("Servers: ")
 	for _, server := range response.Servers {
 		log.Infof("----------------------------------------------")
@@ -106,16 +109,11 @@ func doListServers(c *cli.Context) {
 func doGetServer(c *cli.Context) {
 	log.Infof("Getting server %s", c.String("serverid"))
 	client := getClient(c)
-	// b, err := client.GetServer(c.String("serverid"))
 	response, err := client.GetServer(c.String("serverid"))
 	if err != nil {
 		log.Errorf("Retrieving server: %v", err)
+		return
 	}
-	// response, err := api.GetServerFromJSON(b)
-	// if err != nil {
-	// 	log.Errorf("Failed response %v", err)
-	// 	return
-	// }
 	log.Infof("Server: ")
 	response.Server.Display()
 }
@@ -123,31 +121,39 @@ func doGetServer(c *cli.Context) {
 func doDeleteServer(c *cli.Context) {
 	log.Infof("Remove server %s", c.String("serverid"))
 	client := getClient(c)
-	// b, err := client.DeleteServer(c.String("serverid"))
 	err := client.DeleteServer(c.String("serverid"))
 	if err != nil {
 		log.Errorf("Retrieving server: %v", err)
+		return
 	}
 	log.Infof("Server deleted")
+}
+
+func doListActions(c *cli.Context) {
+	log.Infof("List actions to be applied on a server")
+	client := getClient(c)
+	response, err := client.ListServerActions(c.String("serverid"))
+	if err != nil {
+		log.Errorf("List server actions: %v", err)
+		return
+	}
+	log.Infof("Actions: ")
+	for _, action := range response.Actions {
+		log.Infof("----------------------------------------------")
+		log.Infof("Name: %s", action)
+	}
 }
 
 func doActionServer(c *cli.Context) {
 	log.Infof("Perform action %s on server %s",
 		c.String("action"), c.String("serverid"))
 	client := getClient(c)
-	// b, err := client.PerformServerAction(
-	// 	c.String("serverid"), c.String("action"))
 	response, err := client.PerformServerAction(
 		c.String("serverid"), c.String("action"))
 	if err != nil {
 		log.Errorf("Failed: %v", err)
 		return
 	}
-	// response, err := api.GetTaskFromJSON(b)
-	// if err != nil {
-	// 	log.Errorf("Failed response %v", err)
-	// 	return
-	// }
 	log.Infof("Task: ")
 	log.Infof("Id          : %s", response.Task.ID)
 	log.Infof("Status      : %s", response.Task.Status)

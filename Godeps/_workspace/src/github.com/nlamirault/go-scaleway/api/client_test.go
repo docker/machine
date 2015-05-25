@@ -167,6 +167,24 @@ func TestGettingServer(t *testing.T) {
 	}
 }
 
+func TestListServerActions(t *testing.T) {
+	json, err := loadJSON("test_fixtures/server_actions.json")
+	if err != nil {
+		t.Fatalf("Can't load JSON: %v", err)
+	}
+	ts := newServer(json)
+	defer ts.Close()
+	c := getClient()
+	c.ComputeURL = ts.URL
+	response, err := c.ListServerActions("56e98092-6e05-4c89-9e76-b3610d38478c")
+	if err != nil {
+		t.Fatalf("Can't decode json: %v", err)
+	}
+	if len(response.Actions) != 3 {
+		t.Fatalf("Invalid server actions")
+	}
+}
+
 func TestGettingServers(t *testing.T) {
 	json, err := loadJSON("test_fixtures/servers.json")
 	if err != nil {
