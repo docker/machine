@@ -3,8 +3,6 @@ package provision
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
-	"strings"
 	"text/template"
 
 	"github.com/docker/machine/drivers"
@@ -111,28 +109,10 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		provisioner.EngineOptions.StorageDriver = "aufs"
 	}
 
-	// HACK: since debian does not come with sudo by default,
-	// we check if present and install first
-	out, err := provisioner.SSHCommand("which sudo")
-	if err != nil {
-		log.Debug("sudo not found; attempting to install")
-		// HACK: command not found which is what we are looking for;
-		// since we only get back the string we check it :(
-		if strings.Index(err.Error(), "Process exited with: 1") != -1 {
-			res, err := ioutil.ReadAll(out.Stdout)
-			if err != nil {
-				return err
-			}
-
-			if string(res) == "" {
-				log.Debug("installing sudo")
-				if _, err := provisioner.SSHCommand("apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y sudo"); err != nil {
-					return err
-				}
-			}
-		} else {
-			return err
-		}
+	// HACK: since debian does not come with sudo by default we install
+	log.Debug("installing sudo")
+	if _, err := provisioner.SSHCommand("if ! type sudo; then apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y sudo; fi"); err != nil {
+		return err
 	}
 
 	log.Debug("setting hostname")
