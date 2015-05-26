@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Client interface {
@@ -46,12 +47,14 @@ const (
 
 var (
 	baseSSHArgs = []string{
+		"-o", "PasswordAuthentication=no",
 		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
 		"-o", "ConnectTimeout=10", // timeout after 10 seconds
+		"-t", // force tty allocation
 	}
 	defaultClientType SSHClientType = External
 )
@@ -156,7 +159,29 @@ func (client NativeClient) Output(command string) (string, error) {
 
 	output, err := session.CombinedOutput(command)
 
-	return string(output), err
+	fd := int(os.Stdin.Fd())
+	if err != nil {
+		return string(output), err
+	}
+
+	termWidth, termHeight, err := terminal.GetSize(fd)
+	if err != nil {
+		return string(output), err
+	}
+
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          1,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+
+	// request tty -- fixes error with hosts that use
+	// "Defaults requiretty" in /etc/sudoers - I'm looking at you RedHat
+	if err := session.RequestPty("xterm-256color", termHeight, termWidth, modes); err != nil {
+		return string(output), err
+	}
+
+	return string(output), session.Run(command)
 }
 
 func (client NativeClient) Shell() error {

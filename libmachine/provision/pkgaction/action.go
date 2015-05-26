@@ -6,12 +6,18 @@ const (
 	Restart ServiceAction = iota
 	Start
 	Stop
+	Enable
+	Disable
+	DaemonReload
 )
 
 var serviceActions = []string{
 	"restart",
 	"start",
 	"stop",
+	"enable",
+	"disable",
+	"daemon-reload",
 }
 
 func (s ServiceAction) String() string {
