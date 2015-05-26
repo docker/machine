@@ -9,32 +9,32 @@ import (
 type DiskType string
 
 const (
-	DiskTypeAll       = "all" //Default
-	DiskTypeAllSystem = "system"
-	DiskTypeAllData   = "data"
+	DiskTypeAll       = DiskType("all") //Default
+	DiskTypeAllSystem = DiskType("system")
+	DiskTypeAllData   = DiskType("data")
 )
 
 // Categories of disks
 type DiskCategory string
 
 const (
-	DiskCategoryAll          = "all" //Default
-	DiskCategoryCloud        = "cloud"
-	DiskCategoryEphemeral    = "ephemeral"
-	DiskCategoryEphemeralSSD = "ephemeral_ssd"
+	DiskCategoryAll          = DiskCategory("all") //Default
+	DiskCategoryCloud        = DiskCategory("cloud")
+	DiskCategoryEphemeral    = DiskCategory("ephemeral")
+	DiskCategoryEphemeralSSD = DiskCategory("ephemeral_ssd")
 )
 
 // Status of disks
 type DiskStatus string
 
 const (
-	DiskStatusInUse     = "In_use"
-	DiskStatusAvailable = "Available"
-	DiskStatusAttaching = "Attaching"
-	DiskStatusDetaching = "Detaching"
-	DiskStatusCreating  = "Creating"
-	DiskStatusReIniting = "ReIniting"
-	DiskStatusAll       = "All" //Default
+	DiskStatusInUse     = DiskStatus("In_use")
+	DiskStatusAvailable = DiskStatus("Available")
+	DiskStatusAttaching = DiskStatus("Attaching")
+	DiskStatusDetaching = DiskStatus("Detaching")
+	DiskStatusCreating  = DiskStatus("Creating")
+	DiskStatusReIniting = DiskStatus("ReIniting")
+	DiskStatusAll       = DiskStatus("All") //Default
 )
 
 // A DescribeDisksArgs defines the arguments to describe disks
@@ -67,7 +67,7 @@ type DiskItemType struct {
 	SourceSnapshotId   string
 	ProductCode        string
 	Portable           bool
-	Status             string
+	Status             DiskStatus
 	OperationLocks     OperationLocksType
 	InstanceId         string
 	Device             string
@@ -241,16 +241,10 @@ func (client *Client) ModifyDiskAttribute(args *ModifyDiskAttributeArgs) error {
 	return err
 }
 
-// Interval for checking disk status in WaitForDisk method
-const DiskWaitForInterval = 5
-
-// Default timeout value for WaitForDisk method
-const DiskWaitForDefaultTimeout = 60
-
 // WaitForDisk waits for disk to given status
-func (client *Client) WaitForDisk(regionId Region, diskId string, status string, timeout int) error {
+func (client *Client) WaitForDisk(regionId Region, diskId string, status DiskStatus, timeout int) error {
 	if timeout <= 0 {
-		timeout = DiskWaitForDefaultTimeout
+		timeout = DefaultTimeout
 	}
 	args := DescribeDisksArgs{
 		RegionId: regionId,
@@ -268,11 +262,11 @@ func (client *Client) WaitForDisk(regionId Region, diskId string, status string,
 		if disks[0].Status == status {
 			break
 		}
-		timeout = timeout - DiskWaitForInterval
+		timeout = timeout - DefaultWaitForInterval
 		if timeout <= 0 {
 			return getECSErrorFromString("Timeout")
 		}
-		time.Sleep(DiskWaitForInterval * time.Second)
+		time.Sleep(DefaultWaitForInterval * time.Second)
 	}
 	return nil
 }

@@ -14,6 +14,12 @@ import (
 // ECSDefaultEndpoint is the default API endpoint of ECS services
 const ECSDefaultEndpoint = "https://ecs.aliyuncs.com"
 
+// Interval for checking status in WaitForXXX method
+const DefaultWaitForInterval = 5
+
+// Default timeout value for WaitForXXX method
+const DefaultTimeout = 60
+
 // A Client represents a client of ECS services
 type Client struct {
 	AccessKeyId     string //Access Key Id

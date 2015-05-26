@@ -95,6 +95,9 @@ func setQueryValues(i interface{}, values *url.Values, prefix string) {
 
 		default:
 			switch field.Interface().(type) {
+			case ISO6801Time:
+				t := field.Interface().(ISO6801Time)
+				value = t.String()
 			case time.Time:
 				t := field.Interface().(time.Time)
 				value = GetISO8601TimeStamp(t)

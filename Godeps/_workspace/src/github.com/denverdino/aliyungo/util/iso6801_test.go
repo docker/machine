@@ -7,7 +7,7 @@ import (
 )
 
 func TestISO8601Time(t *testing.T) {
-	now := New(time.Now().UTC())
+	now := ISO6801Time(time.Now().UTC())
 
 	data, err := json.Marshal(now)
 	if err != nil {
@@ -46,5 +46,5 @@ func TestISO8601Time(t *testing.T) {
 	if !testValue.B.IsDefault() {
 		t.Fatal("Invaid Unmarshal result for ISO6801Time from empty value")
 	}
-
+	t.Logf("ISO6801Time String(): %s", now2.String())
 }

@@ -23,7 +23,7 @@ type Request struct {
 	AccessKeyId          string
 	Signature            string
 	SignatureMethod      string
-	Timestamp            time.Time
+	Timestamp            util.ISO6801Time
 	SignatureVersion     string
 	SignatureNonce       string
 	ResourceOwnerAccount string
@@ -32,7 +32,7 @@ type Request struct {
 
 func (request *Request) init(action string, AccessKeyId string) {
 	request.Format = JSONResponseFormat
-	request.Timestamp = time.Now()
+	request.Timestamp = util.NewISO6801Time(time.Now().UTC())
 	request.Version = ECSAPIVersion
 	request.SignatureVersion = SignatureVersion
 	request.SignatureMethod = SignatureMethod

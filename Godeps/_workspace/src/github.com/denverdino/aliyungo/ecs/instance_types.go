@@ -9,7 +9,7 @@ type InstanceTypeItemType struct {
 	MemorySize     float64
 }
 
-type DescribeInstanceTypesRespones struct {
+type DescribeInstanceTypesResponse struct {
 	CommonResponse
 	InstanceTypes struct {
 		InstanceType []InstanceTypeItemType
@@ -18,7 +18,7 @@ type DescribeInstanceTypesRespones struct {
 
 // DescribeInstanceTypes describes all instance types
 func (client *Client) DescribeInstanceTypes() (instanceTypes []InstanceTypeItemType, err error) {
-	response := DescribeInstanceTypesRespones{}
+	response := DescribeInstanceTypesResponse{}
 
 	err = client.Invoke("DescribeInstanceTypes", &DescribeInstanceTypesArgs{}, &response)
 

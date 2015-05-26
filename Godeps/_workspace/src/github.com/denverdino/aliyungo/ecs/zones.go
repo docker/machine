@@ -27,7 +27,7 @@ type ZoneType struct {
 	AvailableDiskCategories   AvailableDiskCategoriesType
 }
 
-type DescribeZonesRespones struct {
+type DescribeZonesResponse struct {
 	CommonResponse
 	Zones struct {
 		Zone []ZoneType
@@ -39,7 +39,7 @@ func (client *Client) DescribeZones(regionId Region) (zones []ZoneType, err erro
 	args := DescribeZonesArgs{
 		RegionId: regionId,
 	}
-	response := DescribeZonesRespones{}
+	response := DescribeZonesResponse{}
 
 	err = client.Invoke("DescribeZones", &args, &response)
 

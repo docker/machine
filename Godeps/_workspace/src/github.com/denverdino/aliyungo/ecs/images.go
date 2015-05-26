@@ -43,6 +43,15 @@ type DiskDeviceMapping struct {
 	Device string
 }
 
+type ImageStatus string
+
+const (
+	ImageStatusAvailable    = ImageStatus("Available")
+	ImageStatusUnAvailable  = ImageStatus("UnAvailable")
+	ImageStatusCreating     = ImageStatus("Creating")
+	ImageStatusCreateFailed = ImageStatus("CreateFailed")
+)
+
 type ImageType struct {
 	ImageId            string
 	ImageVersion       string
@@ -58,7 +67,7 @@ type ImageType struct {
 	ProductCode  string
 	IsSubscribed bool
 	Progress     string
-	Status       string
+	Status       ImageStatus
 	CreationTime util.ISO6801Time
 }
 

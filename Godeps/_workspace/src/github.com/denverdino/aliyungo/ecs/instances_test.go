@@ -8,8 +8,11 @@ func TestECSInstance(t *testing.T) {
 
 	client := NewClient(TestAccessKeyId, TestAccessKeySecret)
 	instance, err := client.DescribeInstanceAttribute(TestInstanceId)
+	if err != nil {
+		t.Fatalf("Failed to describe instance %s: %v", TestInstanceId, err)
+	}
 	t.Logf("Instance: %++v  %v", instance, err)
-	err = client.StopInstance(TestInstanceId, false)
+	err = client.StopInstance(TestInstanceId, true)
 	if err != nil {
 		t.Errorf("Failed to stop instance %s: %v", TestInstanceId, err)
 	}
@@ -63,6 +66,9 @@ func TestECSInstanceCreationAndDeletion(t *testing.T) {
 
 	instance, err = client.DescribeInstanceAttribute(instanceId)
 	t.Logf("Instance: %++v  %v", instance, err)
+
+	err = client.WaitForInstance(instanceId, Stopped, 60)
+
 	err = client.StartInstance(instanceId)
 	if err != nil {
 		t.Errorf("Failed to start instance %s: %v", instanceId, err)

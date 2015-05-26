@@ -28,7 +28,7 @@ func TestSnapshot(t *testing.T) {
 	}
 }
 
-func aTestSnapshotCreationAndDeletion(t *testing.T) {
+func TestSnapshotCreationAndDeletion(t *testing.T) {
 
 	client := NewClient(TestAccessKeyId, TestAccessKeySecret)
 
@@ -37,8 +37,18 @@ func aTestSnapshotCreationAndDeletion(t *testing.T) {
 		t.Errorf("Failed to DescribeInstanceAttribute for instance %s: %v", TestInstanceId, err)
 	}
 
-	//TODO
-	diskId := "d-25z6kd44o"
+	//Describe disk monitor data
+	diskArgs := DescribeDisksArgs{
+		InstanceId: TestInstanceId,
+		RegionId:   instance.RegionId,
+	}
+
+	disks, _, err := client.DescribeDisks(&diskArgs)
+	if err != nil {
+		t.Fatalf("Failed to DescribeDisks for instance %s: %v", TestInstanceId, err)
+	}
+
+	diskId := disks[0].DiskId
 
 	args := CreateSnapshotArgs{
 		DiskId:       diskId,

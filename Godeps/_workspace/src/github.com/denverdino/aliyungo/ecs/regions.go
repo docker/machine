@@ -25,7 +25,7 @@ type RegionType struct {
 	LocalName string
 }
 
-type DescribeRegionsRespones struct {
+type DescribeRegionsResponse struct {
 	CommonResponse
 	Regions struct {
 		Region []RegionType
@@ -34,7 +34,7 @@ type DescribeRegionsRespones struct {
 
 // DescribeRegions describes regions
 func (client *Client) DescribeRegions() (regions []RegionType, err error) {
-	response := DescribeRegionsRespones{}
+	response := DescribeRegionsResponse{}
 
 	err = client.Invoke("DescribeRegions", &DescribeRegionsArgs{}, &response)
 

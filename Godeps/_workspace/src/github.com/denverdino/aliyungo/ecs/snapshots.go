@@ -87,16 +87,13 @@ func (client *Client) CreateSnapshot(args *CreateSnapshotArgs) (snapshotId strin
 	return snapshotId, err
 }
 
-// Interval for checking snapshot status in WaitForSnapShotReady method
-const SnapshotWaitForInterval = 5
-
 // Default timeout value for WaitForSnapShotReady method
-const SnapshotDefaultTimeout = 60
+const SnapshotDefaultTimeout = 120
 
 // WaitForSnapShotReady waits for snapshot ready
 func (client *Client) WaitForSnapShotReady(regionId Region, snapshotId string, timeout int) error {
 	if timeout <= 0 {
-		timeout = DiskWaitForDefaultTimeout
+		timeout = SnapshotDefaultTimeout
 	}
 	for {
 		args := DescribeSnapshotsArgs{
@@ -114,11 +111,11 @@ func (client *Client) WaitForSnapShotReady(regionId Region, snapshotId string, t
 		if snapshots[0].Progress == "100%" {
 			break
 		}
-		timeout = timeout - DiskWaitForInterval
+		timeout = timeout - DefaultWaitForInterval
 		if timeout <= 0 {
 			return getECSErrorFromString("Timeout")
 		}
-		time.Sleep(DiskWaitForInterval * time.Second)
+		time.Sleep(DefaultWaitForInterval * time.Second)
 
 		time.Sleep(5 * time.Second)
 	}
