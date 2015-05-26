@@ -1109,7 +1109,23 @@ Options:
  - `--aliyunecs-ssh-password`: SSH password for created virtual machine. Default is random generated.
  - `--aliyunecs-vpc-id`: Your VPC ID to launch the instance in.
  - `--aliyunecs-zone`: The availabilty zone launch the instance
- 
+
+Environment variables and default values:
+
+| CLI option                          | Environment variable        | Default          |
+|-------------------------------------|-----------------------------|------------------|
+| **`--aliyunecs-access-key`**        | `ECS_ACCESS_KEY_ID`         | -                |
+| **`--aliyunecs-image-id`**          | `ECS_IMAGE_ID`              | -                |
+| `--aliyunecs-instance-type`         | `ECS_INSTANCE_TYPE`         | `ecs.t1.small`   |
+| `--aliyunecs-internet-max-bandwidth`| `ECS_INTERNET_MAX_BANDWIDTH`| `1`              |
+| `--aliyunecs-private-address-only`  | -                           | `false`          |
+| `--aliyunecs-region`                | `ECS_REGION`                | `cn-hangzhou`    |
+| **`--aliyunecs-secret-key`**        | `ECS_SECRET_ACCESS_KEY`     | -                |
+| `--aliyunecs-security-group`        | `ECS_SECURITY_GROUP`        | -                |
+| `--aliyunecs-ssh-password`          | `ECS_SSH_PASSWORD`          | -                |
+| `--aliyunecs-vpc-id`                | `ECS_VPC_ID`                | -                |
+| `--aliyunecs-zone`                  | `ECS_ZONE`                  | -                |
+
 
 #### Amazon Web Services
 Create machines on [Amazon Web Services](http://aws.amazon.com). You will need an Access Key ID, Secret Access Key and a VPC ID. To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs. Select the one where you would like to launch the instance.
