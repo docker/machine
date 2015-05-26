@@ -188,13 +188,11 @@ func (d *Driver) Create() error {
 		return err
 	}
 	log.Debugf("[Scaleway] Upload SSH key")
-	_, err = client.UploadPublicKey(d.publicSSHKeyPath())
-	if err != nil {
+	if _, err = client.UploadPublicKey(d.publicSSHKeyPath()); err != nil {
 		return err
 	}
 
-	err = d.Start()
-	if err != nil {
+	if err = d.Start(); err != nil {
 		return err
 	}
 	log.Debugf("[Scaleway] Waiting server ready .......")
@@ -240,16 +238,9 @@ func (d *Driver) GetState() (state.State, error) {
 func (d *Driver) Start() error {
 	log.Infof("[Scaleway] Starting instance...")
 	client := d.getClient()
-	_, err := client.PerformServerAction(d.Id, "poweron")
-	if err != nil {
+	if _, err := client.PerformServerAction(d.Id, "poweron"); err != nil {
 		return err
 	}
-	// response, err := getTaskFromJson(b)
-	// if err != nil {
-	// 	return err
-	// }
-	// log.Debugf("[Scaleway] Starting server %s task %s",
-	// 	d.Id, response.Task.Description)
 	d.waitForServerState(state.Running)
 	return nil
 }
@@ -257,8 +248,7 @@ func (d *Driver) Start() error {
 func (d *Driver) Stop() error {
 	log.Infof("[Scaleway] Stopping instance...")
 	client := d.getClient()
-	_, err := client.PerformServerAction(d.Id, "poweroff")
-	if err != nil {
+	if _, err := client.PerformServerAction(d.Id, "poweroff"); err != nil {
 		return err
 	}
 	d.waitForServerState(state.Stopped)
@@ -268,8 +258,7 @@ func (d *Driver) Stop() error {
 func (d *Driver) Remove() error {
 	log.Infof("[Scaleway] Removing instance... ")
 	client := d.getClient()
-	err := client.DeleteServer(d.Id)
-	if err != nil {
+	if err := client.DeleteServer(d.Id); err != nil {
 		return err
 	}
 	d.waitForServerState(state.Stopped)
@@ -279,8 +268,7 @@ func (d *Driver) Remove() error {
 func (d *Driver) Restart() error {
 	log.Infof("[Scaleway] Rebooting instance...")
 	client := d.getClient()
-	_, err := client.PerformServerAction(d.Id, "reboot")
-	if err != nil {
+	if _, err := client.PerformServerAction(d.Id, "reboot"); err != nil {
 		return err
 	}
 	d.waitForServerState(state.Running)
