@@ -1,0 +1,7 @@
+{
+  "actions": [
+    "poweron",
+    "poweroff",
+    "reboot"
+  ]
+}
