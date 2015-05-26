@@ -61,17 +61,17 @@ func (conn VcConn) DatastoreMkdir(dirName string) error {
 	return nil
 }
 
-func (conn VcConn) DatastoreUpload(localPath string) error {
-	stdout, err := conn.DatastoreLs(DatastoreDir)
+func (conn VcConn) DatastoreUpload(localPath, destination string) error {
+	stdout, err := conn.DatastoreLs(destination)
 	if err == nil && strings.Contains(stdout, B2DISOName) {
 		log.Infof("boot2docker ISO already uploaded, skipping upload... ")
 		return nil
 	}
 
 	log.Infof("Uploading %s to %s on datastore %s of vCenter %s... ",
-		localPath, DatastoreDir, conn.driver.Datastore, conn.driver.IP)
+		localPath, destination, conn.driver.Datastore, conn.driver.IP)
 
-	dsPath := fmt.Sprintf("%s/%s", DatastoreDir, B2DISOName)
+	dsPath := fmt.Sprintf("%s/%s", destination, B2DISOName)
 	args := []string{"datastore.upload"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--ds=%s", conn.driver.Datastore))
@@ -203,7 +203,7 @@ func (conn VcConn) VMDiskCreate() error {
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
 	args = append(args, fmt.Sprintf("--vm=%s", conn.driver.MachineName))
 	args = append(args, fmt.Sprintf("--ds=%s", conn.driver.Datastore))
-	args = append(args, fmt.Sprintf("--name=%s", conn.driver.MachineName))
+	args = append(args, fmt.Sprintf("--name=%s/%s", conn.driver.MachineName, conn.driver.MachineName))
 	diskSize := strconv.Itoa(conn.driver.DiskSize)
 	args = append(args, fmt.Sprintf("--size=%sMiB", diskSize))
 
