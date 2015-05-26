@@ -145,7 +145,7 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	log.Debug("configuring swarm")
-	if err := configureSwarm(provisioner, swarmOptions); err != nil {
+	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
 		return err
 	}
 
