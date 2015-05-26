@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/docker/machine/log"
 )
 
 // TODO check these

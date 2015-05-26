@@ -13,10 +13,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/provider"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
@@ -65,7 +64,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "PARALLELS_CPU_COUNT",
 			Name:   "parallels-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
-			Value:  -1,
+			Value:  1,
 		},
 		cli.IntFlag{
 			EnvVar: "PARALLELS_DISK_SIZE",
@@ -116,10 +115,6 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
-}
-
-func (d *Driver) GetProviderType() provider.ProviderType {
-	return provider.Local
 }
 
 func (d *Driver) DriverName() string {
@@ -284,12 +279,12 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	ip, err := d.GetIP()
-	if err != nil {
+	if err := drivers.WaitForSSH(d); err != nil {
 		return err
 	}
 
-	return ssh.WaitForTCP(fmt.Sprintf("%s:%d", ip, d.SSHPort))
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
