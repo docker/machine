@@ -27,8 +27,8 @@ func NewCentosProvisioner(d drivers.Driver) Provisioner {
 	}
 	p := &CentosProvisioner{
 		RedHatProvisioner{
-			g,
-			dockerCentosRPMPath,
+			GenericProvisioner: g,
+			DockerRPMPath:      dockerCentosRPMPath,
 		},
 	}
 	return p

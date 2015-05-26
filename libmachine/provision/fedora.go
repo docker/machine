@@ -27,8 +27,8 @@ func NewFedoraProvisioner(d drivers.Driver) Provisioner {
 	}
 	p := &FedoraProvisioner{
 		RedHatProvisioner{
-			g,
-			dockerFedoraRPMPath,
+			GenericProvisioner: g,
+			DockerRPMPath:      dockerFedoraRPMPath,
 		},
 	}
 	return p

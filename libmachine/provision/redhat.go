@@ -29,7 +29,7 @@ func init() {
 
 func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 	return &RedHatProvisioner{
-		GenericProvisioner{
+		GenericProvisioner: GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/systemd/system/docker.service",
 			OsReleaseId:       "rhel",
@@ -38,7 +38,7 @@ func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 			},
 			Driver: d,
 		},
-		dockerRHELRPMPath,
+		DockerRPMPath: dockerRHELRPMPath,
 	}
 }
 
