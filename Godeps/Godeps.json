@@ -114,6 +114,10 @@
 			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
 		},
 		{
+			"ImportPath": "github.com/packethost/packngo",
+			"Rev": "4634130cb49fd0543f231adcec91344760a2d273"
+		},
+		{
 			"ImportPath": "github.com/rackspace/gophercloud",
 			"Comment": "v1.0.0-558-ce0f487",
 			"Rev": "ce0f487f6747ab43c4e4404722df25349385bebd"
