@@ -220,3 +220,7 @@ func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
 
 	return "", fmt.Errorf("Failed to find current version")
 }
+
+func (provisioner *RancherProvisioner) GetInitSubsystem() int {
+	return SYSTEMD
+}

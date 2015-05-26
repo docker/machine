@@ -159,7 +159,7 @@ func ConfigureAuth(p Provisioner) error {
 		dockerPort = dPort
 	}
 
-	dkrcfg, err := p.GenerateDockerOptions(dockerPort)
+	dkrcfg, err := p.GenerateDockerOptions(dockerPort, p.GetInitSubsystem())
 	if err != nil {
 		return err
 	}

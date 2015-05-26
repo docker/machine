@@ -124,7 +124,11 @@ func (provisioner *Boot2DockerProvisioner) GetAuthOptions() auth.AuthOptions {
 	return provisioner.AuthOptions
 }
 
-func (provisioner *Boot2DockerProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
+func (provisioner *Boot2DockerProvisioner) GetInitSubsystem() int {
+	return SYSVINIT
+}
+
+func (provisioner *Boot2DockerProvisioner) GenerateDockerOptions(dockerPort int, initSystem int) (*DockerOptions, error) {
 	var (
 		engineCfg bytes.Buffer
 	)

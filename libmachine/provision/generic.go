@@ -68,15 +68,29 @@ func (provisioner *GenericProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
 
-func (provisioner *GenericProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
-	var (
-		engineCfg bytes.Buffer
-	)
+func (provisioner *GenericProvisioner) GetDaemonOptionsFile() string {
+	return provisioner.DaemonOptionsFile
+}
 
-	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
-	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
+func (provisioner *GenericProvisioner) GetEngineConfigTmpl(initSystem int) string {
+	if initSystem == SYSTEMD {
+		return `[Unit]
+Description=Docker Application Container Engine
+Documentation=http://docs.docker.com
+After=network.target docker.socket
+Requires=docker.socket
 
-	engineConfigTmpl := `
+[Service]
+ExecStart=/usr/bin/docker -d -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+MountFlags=slave
+LimitNOFILE=1048576
+LimitNPROC=1048576
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target`
+	}
+	return `
 DOCKER_OPTS='
 -H tcp://0.0.0.0:{{.DockerPort}}
 -H unix:///var/run/docker.sock
@@ -92,7 +106,17 @@ DOCKER_OPTS='
 {{ end }}
 '
 `
-	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
+}
+
+func (provisioner *GenericProvisioner) GenerateDockerOptions(dockerPort int, initSystem int) (*DockerOptions, error) {
+	var (
+		engineCfg bytes.Buffer
+	)
+
+	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
+	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
+
+	t, err := template.New("engineConfig").Parse(provisioner.GetEngineConfigTmpl(initSystem))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +131,7 @@ DOCKER_OPTS='
 
 	return &DockerOptions{
 		EngineOptions:     engineCfg.String(),
-		EngineOptionsPath: provisioner.DaemonOptionsFile,
+		EngineOptionsPath: provisioner.GetDaemonOptionsFile(),
 	}, nil
 }
 
