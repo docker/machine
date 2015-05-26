@@ -6,16 +6,17 @@ const (
 )
 
 type SwarmOptions struct {
-	IsSwarm    bool
-	Address    string
-	Discovery  string
-	Master     bool
-	Host       string
-	Strategy   string
-	Heartbeat  int
-	Overcommit float64
-	TlsCaCert  string
-	TlsCert    string
-	TlsKey     string
-	TlsVerify  bool
+	IsSwarm        bool
+	Address        string
+	Discovery      string
+	Master         bool
+	Host           string
+	Strategy       string
+	Heartbeat      int
+	Overcommit     float64
+	TlsCaCert      string
+	TlsCert        string
+	TlsKey         string
+	TlsVerify      bool
+	ArbitraryFlags []string
 }
