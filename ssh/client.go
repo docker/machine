@@ -47,6 +47,7 @@ const (
 
 var (
 	baseSSHArgs = []string{
+		"-o", "PasswordAuthentication=no",
 		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",

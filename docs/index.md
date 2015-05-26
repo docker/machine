@@ -1111,6 +1111,7 @@ Options:
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                          | Environment variable              | Default  |
@@ -1137,7 +1138,6 @@ Options:
  - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
 
 If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
->>>>>>> 18cfe58... redhat: updated docs to explain base operating systems
 
 #### Generic
 Create machines using an existing VM/Host with SSH.
@@ -1531,6 +1531,7 @@ Options:
 The VMware vSphere driver uses the latest boot2docker image.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                        | Environment variable      | Default                  |
@@ -1580,6 +1581,8 @@ Environment variables and default values:
 | `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine` |
 | `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`       |
 | `--exoscale-keypair`            | `EXOSCALE_KEYPAIR`           | -                |
+
+=======
 
 ## Base Operating Systems
 The default base operating system for Machine is Boot2Docker on local providers
