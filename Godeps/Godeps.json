@@ -115,8 +115,8 @@
 		},
                 {
 			"ImportPath": "github.com/nlamirault/go-scaleway",
-			"Comment": "v0.7.0",
-			"Rev": "ad63f165b5d50ad8998d3e8c7e9acb97b81ecc8a"
+			"Comment": "v0.8.0",
+			"Rev": "b4e733cae3b9cbfafc46f5db502f247513ce831a"
 		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
