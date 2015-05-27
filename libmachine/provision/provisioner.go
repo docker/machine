@@ -83,7 +83,7 @@ func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 		provisioner.SetOsReleaseInfo(osReleaseInfo)
 
 		if provisioner.CompatibleWithHost() {
-			log.Debugf("Compatible OS: %s", osReleaseInfo.Id)
+			log.Debugf("found compatible host: %s", osReleaseInfo.Id)
 			return provisioner, nil
 		}
 	}
