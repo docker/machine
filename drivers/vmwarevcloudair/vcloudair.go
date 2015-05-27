@@ -103,7 +103,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VCLOUDAIR_CATALOGITEM",
 			Name:   "vmwarevcloudair-catalogitem",
 			Usage:  "vCloud Air Catalog Item (default is Ubuntu Precise)",
-			Value:  "Ubuntu Server 12.04 LTS (amd64 20140927)",
+			Value:  "Ubuntu Server 12.04 LTS (amd64 20150127)",
 		},
 
 		// BoolTFlag is true by default.
