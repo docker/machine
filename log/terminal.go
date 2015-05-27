@@ -31,7 +31,7 @@ func (t TerminalLogger) err(args ...interface{}) {
 
 func (t TerminalLogger) errf(fmtString string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, fmtString, args...)
-	fmt.Print(t.fieldOut, "\n")
+	fmt.Fprint(os.Stderr, t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
