@@ -54,7 +54,6 @@ var (
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
 		"-o", "ConnectTimeout=10", // timeout after 10 seconds
-		"-t", // force tty allocation
 	}
 	defaultClientType SSHClientType = External
 )
