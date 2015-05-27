@@ -36,20 +36,11 @@ var (
 )
 
 type Driver struct {
-	IPAddress           string
+	*drivers.BaseDriver
 	CPU                 int
-	MachineName         string
-	SSHUser             string
-	SSHPort             int
 	Memory              int
 	DiskSize            int
 	Boot2DockerURL      string
-	CaCertPath          string
-	PrivateKeyPath      string
-	SwarmMaster         bool
-	SwarmHost           string
-	SwarmDiscovery      string
-	storePath           string
 	Boot2DockerImportVM string
 	HostOnlyCIDR        string
 }
@@ -104,31 +95,12 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return "localhost", nil
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -237,7 +209,7 @@ func (d *Driver) Create() error {
 	}
 
 	if err := vbm("createvm",
-		"--basefolder", d.storePath,
+		"--basefolder", d.ResolveStorePath("."),
 		"--name", d.MachineName,
 		"--register"); err != nil {
 		return err
@@ -304,7 +276,7 @@ func (d *Driver) Create() error {
 		"--port", "0",
 		"--device", "0",
 		"--type", "dvddrive",
-		"--medium", filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
+		"--medium", d.ResolveStorePath("boot2docker.iso")); err != nil {
 		return err
 	}
 
@@ -553,7 +525,7 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) diskPath() string {
-	return filepath.Join(d.storePath, "disk.vmdk")
+	return d.ResolveStorePath("disk.vmdk")
 }
 
 // Make a boot2docker VM disk image.

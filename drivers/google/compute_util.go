@@ -40,7 +40,7 @@ const (
 
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
-	service, err := newGCEService(driver.storePath, driver.AuthTokenPath)
+	service, err := newGCEService(driver.ResolveStorePath("."), driver.AuthTokenPath)
 	if err != nil {
 		return nil, err
 	}

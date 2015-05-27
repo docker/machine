@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	azure "github.com/MSOpenTech/azure-sdk-for-go"
@@ -20,8 +19,7 @@ import (
 )
 
 type Driver struct {
-	IPAddress               string
-	MachineName             string
+	*drivers.BaseDriver
 	SubscriptionID          string
 	SubscriptionCert        string
 	PublishSettingsFilePath string
@@ -29,15 +27,7 @@ type Driver struct {
 	Size                    string
 	UserPassword            string
 	Image                   string
-	SSHUser                 string
-	SSHPort                 int
 	DockerPort              int
-	CaCertPath              string
-	PrivateKeyPath          string
-	SwarmMaster             bool
-	SwarmHost               string
-	SwarmDiscovery          string
-	storePath               string
 }
 
 func init() {
@@ -107,36 +97,13 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	d := &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	d := &Driver{BaseDriver: inner}
 	return d, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -426,20 +393,16 @@ func (d *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 }
 
 func (d *Driver) generateCertForAzure() error {
-	if err := ssh.GenerateSSHKey(d.sshKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
-	cmd := exec.Command("openssl", "req", "-x509", "-key", d.sshKeyPath(), "-nodes", "-days", "365", "-newkey", "rsa:2048", "-out", d.azureCertPath(), "-subj", "/C=AU/ST=Some-State/O=InternetWidgitsPtyLtd/CN=\\*")
+	cmd := exec.Command("openssl", "req", "-x509", "-key", d.GetSSHKeyPath(), "-nodes", "-days", "365", "-newkey", "rsa:2048", "-out", d.azureCertPath(), "-subj", "/C=AU/ST=Some-State/O=InternetWidgitsPtyLtd/CN=\\*")
 	return cmd.Run()
 }
 
-func (d *Driver) sshKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
 func (d *Driver) azureCertPath() string {
-	return filepath.Join(d.storePath, "azure_cert.pem")
+	return d.ResolveStorePath("azure_cert.pem")
 }
 
 func (d *Driver) getHostname() string {

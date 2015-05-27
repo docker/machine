@@ -38,7 +38,7 @@ level maintenance.
 
 ## Maintainer
 To be supported as an official driver, it will need to be maintained.  There
-can be multiple driver maintainers and they will be identified in the 
+can be multiple driver maintainers and they will be identified in the
 maintainers file.
 
 # Provider Operations
@@ -102,21 +102,12 @@ operations such as `Create`, `Remove`, `Start`, `Stop` etc.
 
 For details see the [Driver Interface](https://github.com/docker/machine/blob/master/drivers/drivers.go#L24).
 
-To provide this functionality, most drivers use a struct similar to the following:
+To provide this functionality, you should embed the `drivers.BaseDriver` struct, similar to the following:
 
 ```
 type Driver struct {
-    MachineName       string
-    IPAddress         string
-    SSHUser           string
-    SSHPort           int
-    CaCertPath        string
-    PrivateKeyPath    string
-    DriverKeyPath     string
-    SwarmMaster       bool
-    SwarmHost         string
-    SwarmDiscovery    string
-    storePath         string
+    *drivers.BaseDriver
+    DriverSpecificField string
 }
 ```
 
@@ -142,7 +133,7 @@ func GetCreateFlags() []cli.Flag {
             EnvVar: "DRIVERNAME_TOKEN",
             Name:   "drivername-token",
             Usage:  "Provider access token",
-        
+
         },
         cli.StringFlag{
             EnvVar: "DRIVERNAME_IMAGE",
