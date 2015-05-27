@@ -33,7 +33,7 @@ compilation by overriding the default argument that the build script passes
 to [gox](https://github.com/mitchellh/gox).  This is very useful if you want
 to iterate quickly on a new feature, bug fix, etc.
 
-For instance, if you only want to compile for use on OSX with the x86_64 arch,
+For instance, if you only want to compile for use on OS X with the x86_64 arch,
 run:
 
     $ script/build -osarch="darwin/amd64"
@@ -66,7 +66,7 @@ the code that you have added or modified in the same pull request.
 ## Code Coverage
 
 Machine includes a script to check for missing `*_test.go` files and to generate
-an [HTML-based repesentation of which code is covered by tests](http://blog.golang.org/cover#TOC_5.).
+an [HTML-based representation of which code is covered by tests](http://blog.golang.org/cover#TOC_5.).
 
 To run the code coverage script, execute:
 

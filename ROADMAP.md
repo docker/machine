@@ -6,7 +6,7 @@ environments.
 
 This is not a simple task -- production is inherently far more complex than
 development -- but there are three things which are big steps towards that goal:
-**client/server achitecture**, **swarm integration** and **flexible
+**client/server architecture**, **swarm integration** and **flexible
 provisioning**.
 
 (Note: this document is a high-level overview of where we are taking Machine.
@@ -20,7 +20,7 @@ Currently there are only a few things that can be configured in the Docker Engin
 Currently both Machine and Boot2Docker provider similar functionality.  This will enable users to migrate from boot2docker to machine.
 
 ### Expand Provisioner
-Machine currently supports running Boot2Docker for "local" providers and Ubuntu for "remote" providers.  This will expand the provisioning capabilities to include other base operating systems such as RedHat like distributions and possibly other "just enough" operating systems.
+Machine currently supports running Boot2Docker for "local" providers and Ubuntu for "remote" providers.  This will expand the provisioning capabilities to include other base operating systems such as Red Hat-like distributions and possibly other "just enough" operating systems.
 
 ### Windows Experience
 Currently, the Machine on Windows experience is not as good as the Mac / Linux.  There is no "recommended" path to use Machine and there are several inconsistencies on Windows such as logging and output formatting.
