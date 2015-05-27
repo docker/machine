@@ -419,14 +419,21 @@ func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.Dep
 	i := 0
 	var resp *egoscale.QueryAsyncJobResultResponse
 	var err error
+WaitLoop:
 	for ; i < maxRepeats; i++ {
 		resp, err = client.PollAsyncJob(jobid)
 		if err != nil {
 			return nil, err
 		}
-
-		if resp.Jobstatus == 1 {
-			break
+		switch resp.Jobstatus {
+		case 0: // Job is still in progress
+			continue
+		case 1: // Job has successfully completed
+			break WaitLoop
+		case 2: // Job has failed to complete
+			return nil, fmt.Errorf("Operation failed to complete")
+		default: // Some other code
+			continue
 		}
 		time.Sleep(2 * time.Second)
 	}
