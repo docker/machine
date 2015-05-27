@@ -205,6 +205,16 @@ var sharedCreateFlags = []cli.Flag{
 		Value: "",
 	},
 	cli.StringFlag{
+		Name:  "swarm-strategy",
+		Usage: "Define a default scheduling strategy for Swarm",
+		Value: "spread",
+	},
+	cli.StringSliceFlag{
+		Name:  "swarm-opt",
+		Usage: "Define arbitrary flags for swarm",
+		Value: &cli.StringSlice{},
+	},
+	cli.StringFlag{
 		Name:  "swarm-host",
 		Usage: "ip/socket to listen on for Swarm master",
 		Value: "tcp://0.0.0.0:3376",

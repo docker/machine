@@ -117,7 +117,7 @@ func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.SwarmOptions
 	}
 
 	log.Debugf("Configuring swarm")
-	if err := configureSwarm(provisioner, swarmOptions); err != nil {
+	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
 		return err
 	}
 

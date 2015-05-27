@@ -77,11 +77,13 @@ func cmdCreate(c *cli.Context) {
 			TlsVerify:        true,
 		},
 		SwarmOptions: &swarm.SwarmOptions{
-			IsSwarm:   c.Bool("swarm"),
-			Master:    c.Bool("swarm-master"),
-			Discovery: c.String("swarm-discovery"),
-			Address:   c.String("swarm-addr"),
-			Host:      c.String("swarm-host"),
+			IsSwarm:        c.Bool("swarm"),
+			Master:         c.Bool("swarm-master"),
+			Discovery:      c.String("swarm-discovery"),
+			Address:        c.String("swarm-addr"),
+			Host:           c.String("swarm-host"),
+			Strategy:       c.String("swarm-strategy"),
+			ArbitraryFlags: c.StringSlice("swarm-opt"),
 		},
 	}
 

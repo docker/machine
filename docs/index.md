@@ -592,6 +592,40 @@ $ docker-machine create -d virtualbox \
     gdns
 ```
 
+##### Specifying Swarm options for the created machine
+
+In addition to being able to configure Docker Engine options as listed above,
+you can use Machine to specify how the created Swarm master should be
+configured).  There is a `--swarm-strategy` flag, which you can use to specify
+the [scheduling strategy](https://docs.docker.com/swarm/scheduler/strategy/)
+which Docker Swarm should use (Machine defaults to the `spread` strategy).
+There is also a general purpose `--swarm-opt` option which works similar to how
+the aforementioned `--engine-opt` option does, except that it specifies options
+for the `swarm manage` command (used to boot a master node) instead of the base
+command.  You can use this to configure features that power users might be
+interested in, such as configuring the heartbeat interval or Swarm's willingness
+to over-commit resources.
+
+If you're not sure how to configure these options, it is best to not specify
+configuration at all.  Docker Machine will choose sensible defaults for you and
+you won't have to worry about it.
+
+Example create:
+
+```
+$ docker-machine create -d virtualbox \
+    --swarm \
+    --swarm-master \
+    --swarm-discovery token://<token> \
+    --swarm-strategy binpack \
+    --swarm-opt heartbeat=5 \
+    upbeat
+```
+
+This will set the swarm scheduling strategy to "binpack" (pack in containers as
+tightly as possible per host instead of spreading them out), and the "heartbeat"
+interval to 5 seconds.
+
 #### config
 
 Show the Docker client configuration for a machine.
@@ -1110,6 +1144,8 @@ Options:
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                          | Environment variable              | Default  |
@@ -1121,6 +1157,21 @@ Environment variables and default values:
 | `--digitalocean-ipv6`               | `DIGITALOCEAN_IPV6`               | `false`  |
 | `--digitalocean-private-networking` | `DIGITALOCEAN_PRIVATE_NETWORKING` | `false`  |
 | `--digitalocean-backups`            | `DIGITALOCEAN_BACKUPS`            | `false`  |
+=======
+#### exoscale
+Create machines on [exoscale](https://www.exoscale.ch/).
+
+Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
+
+Options:
+
+ - `--exoscale-api-key`: Your API key.
+ - `--exoscale-api-secret-key`: Your API secret key.
+ - `--exoscale-instance-profile`: Instance profile. Default: `small`.
+ - `--exoscale-disk-size`: Disk size for the host in GB. Default: `50`.
+ - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
+
+If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
 
 #### Generic
 Create machines using an existing VM/Host with SSH.
@@ -1513,6 +1564,8 @@ Options:
 
 The VMware vSphere driver uses the latest boot2docker image.
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                        | Environment variable      | Default                  |
@@ -1562,6 +1615,16 @@ Environment variables and default values:
 | `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine` |
 | `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`       |
 | `--exoscale-keypair`            | `EXOSCALE_KEYPAIR`           | -                |
+
+=======
+
+## Base Operating Systems
+The default base operating system for Machine is Boot2Docker on local providers
+(VirtualBox, Fusion, Hyper-V, etc) and the latest Ubuntu LTS supported
+by the cloud provider.  RedHat Enterprise Linux is also supported.  To use
+RHEL, you will need to select the image accordingly with the provider.  For
+example, in Amazon EC2, you could use a RedHat 7.1 AMI ("ami-12663b7a") as the
+`--amazonec2-ami` option which create an instance using RHEL 7.1 64-bit.
 
 ## Release Notes
 
