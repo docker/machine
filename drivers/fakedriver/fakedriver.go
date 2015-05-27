@@ -6,19 +6,12 @@ import (
 )
 
 type FakeDriver struct {
+	*drivers.BaseDriver
 	MockState state.State
 }
 
 func (d *FakeDriver) DriverName() string {
 	return "fakedriver"
-}
-
-func (d *FakeDriver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *FakeDriver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
 }
 
 func (d *FakeDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {

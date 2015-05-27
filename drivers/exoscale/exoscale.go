@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -18,6 +17,7 @@ import (
 )
 
 type Driver struct {
+	*drivers.BaseDriver
 	URL              string
 	ApiKey           string
 	ApiSecretKey     string
@@ -26,18 +26,9 @@ type Driver struct {
 	Image            string
 	SecurityGroup    string
 	AvailabilityZone string
-	MachineName      string
 	KeyPair          string
-	IPAddress        string
 	PublicKey        string
 	Id               string
-	CaCertPath       string
-	PrivateKeyPath   string
-	DriverKeyPath    string
-	SwarmMaster      bool
-	SwarmHost        string
-	SwarmDiscovery   string
-	storePath        string
 }
 
 func init() {
@@ -100,31 +91,12 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	return 22, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
