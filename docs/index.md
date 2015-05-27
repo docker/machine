@@ -1144,8 +1144,6 @@ Options:
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                          | Environment variable              | Default  |
@@ -1564,8 +1562,6 @@ Options:
 
 The VMware vSphere driver uses the latest boot2docker image.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                        | Environment variable      | Default                  |
