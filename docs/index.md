@@ -1163,7 +1163,7 @@ Get your API key and API secret key from [API details](https://portal.exoscale.c
 
 Options:
 
- - `--exoscale-url`: **required** Your API endpoint.
+ - `--exoscale-url`: Your API endpoint.
  - `--exoscale-api-key`: **required** Your API key.
  - `--exoscale-api-secret-key`: **required** Your API secret key.
  - `--exoscale-instance-profile`: Instance profile.
@@ -1176,16 +1176,16 @@ If a custom security group is provided, you need to ensure that you allow TCP po
 
 Environment variables and default values:
 
-| CLI option                      | Environment variable         | Default          |
-|---------------------------------|------------------------------|------------------|
-| **`--exoscale-url`**            | `EXOSCALE_ENDPOINT`          | -                |
-| **`--exoscale-api-key`**        | `EXOSCALE_API_KEY`           | -                |
-| **`--exoscale-api-secret-key`** | `EXOSCALE_API_SECRET`        | -                |
-| `--exoscale-instance-profile`   | `EXOSCALE_INSTANCE_PROFILE`  | `small`          |
-| `--exoscale-disk-size`          | `EXOSCALE_DISK_SIZE`         | `50`             |
-| `--exoscale-image`              | `EXSOCALE_IMAGE`             | `ubuntu-14.04`   |
-| `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine` |
-| `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`       |
+| CLI option                      | Environment variable         | Default                           |
+|---------------------------------|------------------------------|-----------------------------------|
+| `--exoscale-url`                | `EXOSCALE_ENDPOINT`          | `https://api.exoscale.ch/compute` |
+| **`--exoscale-api-key`**        | `EXOSCALE_API_KEY`           | -                                 |
+| **`--exoscale-api-secret-key`** | `EXOSCALE_API_SECRET`        | -                                 |
+| `--exoscale-instance-profile`   | `EXOSCALE_INSTANCE_PROFILE`  | `small`                           |
+| `--exoscale-disk-size`          | `EXOSCALE_DISK_SIZE`         | `50`                              |
+| `--exoscale-image`              | `EXSOCALE_IMAGE`             | `ubuntu-14.04`                    |
+| `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine`                  |
+| `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`                        |
 
 #### Generic
 Create machines using an existing VM/Host with SSH.
