@@ -433,13 +433,11 @@ WaitLoop:
 		}
 		switch resp.Jobstatus {
 		case 0: // Job is still in progress
-			continue
 		case 1: // Job has successfully completed
 			break WaitLoop
 		case 2: // Job has failed to complete
 			return nil, fmt.Errorf("Operation failed to complete")
 		default: // Some other code
-			continue
 		}
 		time.Sleep(2 * time.Second)
 	}
