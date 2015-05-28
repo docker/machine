@@ -57,6 +57,7 @@ type Driver struct {
 	SecurityGroupName       string
 	ReservationId           string
 	VpcId                   string
+	VSwitchId               string
 	Zone                    string
 	CaCertPath              string
 	PrivateKeyPath          string
@@ -107,6 +108,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "ECS VPC id",
 			Value:  "",
 			EnvVar: "ECS_VPC_ID",
+		},
+		cli.StringFlag{
+			Name:   "aliyunecs-vswitch-id",
+			Usage:  "ECS VSwitch id",
+			Value:  "",
+			EnvVar: "ECS_VSWITCH_ID",
 		},
 		cli.StringFlag{
 			Name:   "aliyunecs-zone",
@@ -217,6 +224,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ImageID = flags.String("aliyunecs-image-id")
 	d.InstanceType = flags.String("aliyunecs-instance-type")
 	d.VpcId = flags.String("aliyunecs-vpc-id")
+	d.VSwitchId = flags.String("aliyunecs-vswitch-id")
 	d.SecurityGroupName = flags.String("aliyunecs-security-group")
 	zone := flags.String("aliyunecs-zone")
 	d.Zone = zone[:]
@@ -247,6 +255,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	// VpcId is optional
+	if (d.VpcId == "" && d.VSwitchId != "") || (d.VpcId != "" && d.VSwitchId == "") {
+		return fmt.Errorf("aliyunecs driver requires both the --aliyunecs-vpc-id and --aliyunecs-vswitch-id for Virtual Private Cloud")
+	}
 
 	if d.isSwarmMaster() {
 		u, err := url.Parse(d.SwarmHost)
@@ -299,12 +310,6 @@ func (d *Driver) Create() error {
 	}
 
 	// TODO Support data disk
-	//	bdm := &amz.BlockDeviceMapping{
-	//		DeviceName:          "/dev/sda1",
-	//		VolumeSize:          d.RootSize,
-	//		DeleteOnTermination: true,
-	//		VolumeType:          "gp2",
-	//	}
 
 	if d.SSHPassword == "" {
 		d.SSHPassword = randomPassword()
@@ -315,13 +320,21 @@ func (d *Driver) Create() error {
 	log.Infof("Launching instance with image %s ...", imageID)
 
 	args := ecs.CreateInstanceArgs{
-		RegionId:                d.Region,
-		ImageId:                 imageID,
-		InstanceType:            d.InstanceType,
-		SecurityGroupId:         d.SecurityGroupId,
-		InternetMaxBandwidthOut: d.InternetMaxBandwidthOut,
-		Password:                d.SSHPassword,
+		RegionId:        d.Region,
+		ImageId:         imageID,
+		InstanceType:    d.InstanceType,
+		SecurityGroupId: d.SecurityGroupId,
+		Password:        d.SSHPassword,
+		VSwitchId:       d.VSwitchId,
+		ClientToken:     d.getClient().GenerateClientToken(),
 	}
+
+	// Set InternetMaxBandwidthOut only for classic network
+	if d.VSwitchId == "" {
+		args.InternetMaxBandwidthOut = d.InternetMaxBandwidthOut
+	}
+
+	//log.Debugf("CreateInstanceArgs: %++v", args)
 
 	// Create instance
 	instanceId, err := d.getClient().CreateInstance(&args)
@@ -333,7 +346,7 @@ func (d *Driver) Create() error {
 	d.InstanceId = instanceId
 
 	// Wait for creation successfully
-	err = d.getClient().WaitForInstance(instanceId, ecs.Stopped, 60)
+	err = d.getClient().WaitForInstance(instanceId, ecs.Stopped, 120)
 
 	if err != nil {
 		return fmt.Errorf("Error wait instance to Stopped: %s", err)
@@ -341,9 +354,35 @@ func (d *Driver) Create() error {
 
 	// Assign public IP if not private IP only
 	if !d.PrivateIPOnly {
-		_, err := d.getClient().AllocatePublicIpAddress(instanceId)
-		if err != nil {
-			return fmt.Errorf("Error allocate public IP address for instance %s: %v", instanceId, err)
+		if d.VSwitchId == "" {
+			// Allocate public IP address for classic network
+			_, err := d.getClient().AllocatePublicIpAddress(instanceId)
+			if err != nil {
+				return fmt.Errorf("Error allocate public IP address for instance %s: %v", instanceId, err)
+			}
+		} else {
+			// Create EIP for virtual private cloud
+			eipArgs := ecs.AllocateEipAddressArgs{
+				RegionId:    d.Region,
+				Bandwidth:   d.InternetMaxBandwidthOut,
+				ClientToken: d.getClient().GenerateClientToken(),
+			}
+			_, allocationId, err := d.getClient().AllocateEipAddress(&eipArgs)
+			if err != nil {
+				return fmt.Errorf("Failed to allocate EIP address: %v", err)
+			}
+			err = d.getClient().WaitForEip(d.Region, allocationId, ecs.EipStatusAvailable, 60)
+			if err != nil {
+				return fmt.Errorf("Failed to wait EIP %s: %v", allocationId, err)
+			}
+			err = d.getClient().AssociateEipAddress(allocationId, instanceId)
+			if err != nil {
+				return fmt.Errorf("Failed to associate EIP address: %v", err)
+			}
+			err = d.getClient().WaitForEip(d.Region, allocationId, ecs.EipStatusInUse, 60)
+			if err != nil {
+				return fmt.Errorf("Failed to wait EIP %s: %v", allocationId, err)
+			}
 		}
 	}
 
@@ -371,6 +410,8 @@ func (d *Driver) Create() error {
 	}
 
 	d.IPAddress = d.getIP(instance)
+
+	ssh.SetDefaultClient(ssh.Native)
 
 	d.uploadKeyPair()
 
@@ -412,6 +453,9 @@ func (d *Driver) getIP(inst *ecs.InstanceAttributesType) string {
 	}
 	if inst.PublicIpAddress.IpAddress != nil && len(inst.PublicIpAddress.IpAddress) > 0 {
 		return inst.PublicIpAddress.IpAddress[0]
+	}
+	if len(inst.EipAddress.IpAddress) > 0 {
+		return inst.EipAddress.IpAddress
 	}
 	return ""
 }
@@ -495,6 +539,30 @@ func (d *Driver) Remove() error {
 	if err == nil && s == state.Running {
 		if err := d.Stop(); err != nil {
 			log.Errorf("unable to stop instance: %s", err)
+		}
+	}
+
+	instance, err := d.getInstance()
+	if err != nil {
+		log.Errorf("unable to describe instance: %s", err)
+	} else {
+		// Check and release EIP if exists
+		if len(instance.EipAddress.AllocationId) != 0 {
+
+			allocationId := instance.EipAddress.AllocationId
+
+			err = d.getClient().UnassociateEipAddress(allocationId, instance.InstanceId)
+			if err != nil {
+				log.Errorf("Failed to unassociate EIP address: %v", err)
+			}
+			err = d.getClient().WaitForEip(instance.RegionId, allocationId, ecs.EipStatusAvailable, 0)
+			if err != nil {
+				log.Errorf("Failed to wait EIP %s: %v", allocationId, err)
+			}
+			err = d.getClient().ReleaseEipAddress(allocationId)
+			if err != nil {
+				log.Errorf("Failed to release EIP address: %v", err)
+			}
 		}
 	}
 
@@ -595,7 +663,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 	log.Debugf("DescribeSecurityGroups: %++v\n", groups)
 
 	for _, grp := range groups {
-		if grp.SecurityGroupName == groupName {
+		if grp.SecurityGroupName == groupName && grp.VpcId == d.VpcId {
 			log.Debugf("found existing security group (%s) in %s", groupName, d.VpcId)
 			securityGroup, _ = d.getSecurityGroup(grp.SecurityGroupId)
 			break
@@ -779,9 +847,9 @@ func fixRoutingRules(sshClient ssh.Client) {
 	output, err := sshClient.Output("route del -net 172.16.0.0/12")
 	log.Debugf("Delete route command err, output: %v: %s", err, output)
 
-	output, err = sshClient.Output("if [ -e /etc/network/interfaces ]; then sed -i -r 's/^(up route add \\-net 172\\.16\\..*)$/#\\1/' /etc/network/interfaces; fi")
+	output, err = sshClient.Output("if [ -e /etc/network/interfaces ]; then sed -i -r 's/^(up route add \\-net 172\\.16\\.0\\.0\\..*)$/#\\1/' /etc/network/interfaces; fi")
 	log.Debugf("Fix route in /etc/network/interfaces command err, output: %v: %s", err, output)
 
-	output, err = sshClient.Output("if [ -e /etc/sysconfig/network-scripts/route-eth0 ]; then sed -i -r 's/^(172\\.16\\..* dev eth0)$/#\\1/' /etc/sysconfig/network-scripts/route-eth0; fi")
+	output, err = sshClient.Output("if [ -e /etc/sysconfig/network-scripts/route-eth0 ]; then sed -i -r 's/^(172\\.16\\.0\\.0\\..* dev eth0)$/#\\1/' /etc/sysconfig/network-scripts/route-eth0; fi")
 	log.Debugf("Fix route in /etc/sysconfig/network-scripts/route-eth0 command err, output: %v: %s", err, output)
 }

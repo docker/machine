@@ -1103,11 +1103,12 @@ Options:
  - `--aliyunecs-instance-type`: The instance type to run.  Default: `ecs.t1.small`
  - `--aliyunecs-internet-max-bandwidth`: Maxium bandwidth for Internet access (in Mbps), default 1
  - `--aliyunecs-private-address-only`: Use the private IP address only
- - `--aliyunecs-region`: **required** The region to use when launching the instance.  Default: `cn-hangzhou`
+ - `--aliyunecs-region`: The region to use when launching the instance. Default: `cn-hangzhou`
  - `--aliyunecs-secret-key`: **required** Your secret access key for the Aliyun ECS API.
  - `--aliyunecs-security-group`: Aliyun security group name. Default: `docker-machine`
  - `--aliyunecs-ssh-password`: SSH password for created virtual machine. Default is random generated.
  - `--aliyunecs-vpc-id`: Your VPC ID to launch the instance in.
+ - `--aliyunecs-vswitch-id`: Your VSwitch ID to launch the instance with.
  - `--aliyunecs-zone`: The availabilty zone launch the instance
 
 Environment variables and default values:
@@ -1115,7 +1116,7 @@ Environment variables and default values:
 | CLI option                          | Environment variable        | Default          |
 |-------------------------------------|-----------------------------|------------------|
 | **`--aliyunecs-access-key`**        | `ECS_ACCESS_KEY_ID`         | -                |
-| **`--aliyunecs-image-id`**          | `ECS_IMAGE_ID`              | -                |
+| `--aliyunecs-image-id`              | `ECS_IMAGE_ID`              | -                |
 | `--aliyunecs-instance-type`         | `ECS_INSTANCE_TYPE`         | `ecs.t1.small`   |
 | `--aliyunecs-internet-max-bandwidth`| `ECS_INTERNET_MAX_BANDWIDTH`| `1`              |
 | `--aliyunecs-private-address-only`  | -                           | `false`          |
@@ -1124,6 +1125,7 @@ Environment variables and default values:
 | `--aliyunecs-security-group`        | `ECS_SECURITY_GROUP`        | -                |
 | `--aliyunecs-ssh-password`          | `ECS_SSH_PASSWORD`          | -                |
 | `--aliyunecs-vpc-id`                | `ECS_VPC_ID`                | -                |
+| `--aliyunecs-vswitch-id`            | `ECS_VSWITCH_ID`            | -                |
 | `--aliyunecs-zone`                  | `ECS_ZONE`                  | -                |
 
 
