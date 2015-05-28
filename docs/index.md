@@ -1171,7 +1171,6 @@ Options:
  - `--exoscale-image`: exoscale disk size. (10, 50, 100, 200, 400)
  - `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
  - `--exoscale-availability-zone`: exoscale availability zone.
- - `--exoscale-keypair`: exoscale keypair name.
 
 If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule.
 
@@ -1187,7 +1186,6 @@ Environment variables and default values:
 | `--exoscale-image`              | `EXSOCALE_IMAGE`             | `ubuntu-14.04`   |
 | `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine` |
 | `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`       |
-| `--exoscale-keypair`            | `EXOSCALE_KEYPAIR`           | -                |
 
 #### Generic
 Create machines using an existing VM/Host with SSH.
