@@ -116,7 +116,7 @@ func (exo *Client) GetImages() (map[string]map[int]string, error) {
 
 	re := regexp.MustCompile(`^Linux (?P<name>Ubuntu|Debian) (?P<version>[0-9.]+).*$`)
 	for _, template := range r.Templates {
-		size := template.Size / (1024 * 1024 * 1024)
+		size := int(template.Size / (1024 * 1024 * 1024))
 		submatch := re.FindStringSubmatch(template.Name)
 		if len(submatch) > 0 {
 			name := strings.ToLower(submatch[1])
