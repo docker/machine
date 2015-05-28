@@ -39,7 +39,7 @@ For more information and resources, please visit
 
 ## Installation
 
-Docker Machine is supported on Windows, OSX, and Linux and is installable as one
+Docker Machine is supported on Windows, OS X, and Linux and is installable as one
 standalone binary.  The links to the binaries for the various platforms and
 architectures are below:
 
@@ -1004,7 +1004,7 @@ A file created remotely!
 
 Files are copied recursively by default (`scp`'s `-r` flag).
 
-In the case of transfering files from machine to machine, they go through the
+In the case of transferring files from machine to machine, they go through the
 local host's filesystem first (using `scp`'s `-3` flag).
 
 #### start
@@ -1144,8 +1144,6 @@ Options:
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                          | Environment variable              | Default  |
@@ -1157,7 +1155,7 @@ Environment variables and default values:
 | `--digitalocean-ipv6`               | `DIGITALOCEAN_IPV6`               | `false`  |
 | `--digitalocean-private-networking` | `DIGITALOCEAN_PRIVATE_NETWORKING` | `false`  |
 | `--digitalocean-backups`            | `DIGITALOCEAN_BACKUPS`            | `false`  |
-=======
+
 #### exoscale
 Create machines on [exoscale](https://www.exoscale.ch/).
 
@@ -1165,13 +1163,31 @@ Get your API key and API secret key from [API details](https://portal.exoscale.c
 
 Options:
 
- - `--exoscale-api-key`: Your API key.
- - `--exoscale-api-secret-key`: Your API secret key.
- - `--exoscale-instance-profile`: Instance profile. Default: `small`.
- - `--exoscale-disk-size`: Disk size for the host in GB. Default: `50`.
- - `--exoscale-security-group`: Security group. It will be created if it doesn't exist. Default: `docker-machine`.
+ - `--exoscale-url`: **required** Your API endpoint.
+ - `--exoscale-api-key`: **required** Your API key.
+ - `--exoscale-api-secret-key`: **required** Your API secret key.
+ - `--exoscale-instance-profile`: Instance profile.
+ - `--exoscale-disk-size`: Disk size for the host in GB.
+ - `--exoscale-image`: exoscale disk size. (10, 50, 100, 200, 400)
+ - `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
+ - `--exoscale-availability-zone`: exoscale availability zone.
+ - `--exoscale-keypair`: exoscale keypair name.
 
-If a custom security group is provided, you need to ensure that you allow TCP port 2376 in an ingress rule.
+If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule.
+
+Environment variables and default values:
+
+| CLI option                      | Environment variable         | Default          |
+|---------------------------------|------------------------------|------------------|
+| **`--exoscale-url`**            | `EXOSCALE_ENDPOINT`          | -                |
+| **`--exoscale-api-key`**        | `EXOSCALE_API_KEY`           | -                |
+| **`--exoscale-api-secret-key`** | `EXOSCALE_API_SECRET`        | -                |
+| `--exoscale-instance-profile`   | `EXOSCALE_INSTANCE_PROFILE`  | `small`          |
+| `--exoscale-disk-size`          | `EXOSCALE_DISK_SIZE`         | `50`             |
+| `--exoscale-image`              | `EXSOCALE_IMAGE`             | `ubuntu-14.04`   |
+| `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine` |
+| `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`       |
+| `--exoscale-keypair`            | `EXOSCALE_KEYPAIR`           | -                |
 
 #### Generic
 Create machines using an existing VM/Host with SSH.
@@ -1227,7 +1243,7 @@ Environment variables and default values:
 | `--google-auth-token`     | `GOOGLE_AUTH_TOKEN`   | -                                    |
 | `--google-scopes`         | `GOOGLE_SCOPES`       | `devstorage.read_only,logging.write` |
 | `--google-disk-size`      | `GOOGLE_DISK_SIZE`    | `10`                                 |
-| `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-statdard`                        |
+| `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-standard`                        |
 
 #### IBM Softlayer
 Create machines on [Softlayer](http://softlayer.com).
@@ -1242,7 +1258,7 @@ Options:
   - `--softlayer-user`: **required** Username for your SoftLayer account, api key needs to match this user.
   - `--softlayer-api-key`: **required** API key for your user account.
   - `--softlayer-region`: SoftLayer region.
-  - `--softlayer-cpu`: Number of CPU's for the machine.
+  - `--softlayer-cpu`: Number of CPUs for the machine.
   - `--softlayer-hostname`: Hostname for the machine.
   - `--softlayer-domain`: **required** Domain name for the machine.
   - `--softlayer-api-endpoint`: Change SoftLayer API endpoint.
@@ -1369,10 +1385,10 @@ Options:
 
  - `--openstack-insecure`: Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's certificate will not be verified against any certificate authorities. This option should be used with caution.
  - `--openstack-domain-name` or `--openstack-domain-id`: Domain to use for authentication (Keystone v3 only)
- - `--openstack-username`: User identifer to authenticate with.
+ - `--openstack-username`: User identifier to authenticate with.
  - `--openstack-password`: User password. It can be omitted if the standard environment variable `OS_PASSWORD` is set.
  - `--openstack-tenant-name` or `--openstack-tenant-id`: Identify the tenant in which the machine will be created.
- - `--openstack-region`: The region to work on. Can be omitted if there is ony one region on the OpenStack.
+ - `--openstack-region`: The region to work on. Can be omitted if there is only one region on the OpenStack.
  - `--openstack-endpoint-type`: Endpoint type can be `internalURL`, `adminURL` on `publicURL`. If is a helper for the driver
    to choose the right URL in the OpenStack service catalog. If not provided the default id `publicURL`
  - `--openstack-net-name` or `--openstack-net-id`: Identify the private network the machine will be connected on. If your OpenStack project project contains only one private network it will be use automatically.
@@ -1564,8 +1580,6 @@ Options:
 
 The VMware vSphere driver uses the latest boot2docker image.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 Environment variables and default values:
 
 | CLI option                        | Environment variable      | Default                  |
@@ -1582,41 +1596,6 @@ Environment variables and default values:
 | `--vmwarevsphere-datacenter`      | `VSPHERE_DATACENTER`      | -                        |
 | `--vmwarevsphere-pool`            | `VSPHERE_POOL`            | -                        |
 | `--vmwarevsphere-compute-ip`      | `VSPHERE_COMPUTE_IP`      | -                        |
-
-#### exoscale
-Create machines on [exoscale](https://www.exoscale.ch/).
-
-Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
-
-Options:
-
- - `--exoscale-url`: **required** Your API endpoint.
- - `--exoscale-api-key`: **required** Your API key.
- - `--exoscale-api-secret-key`: **required** Your API secret key.
- - `--exoscale-instance-profile`: Instance profile.
- - `--exoscale-disk-size`: Disk size for the host in GB.
- - `--exoscale-image`: exoscale disk size. (10, 50, 100, 200, 400)
- - `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
- - `--exoscale-availability-zone`: exoscale availibility zone.
- - `--exoscale-keypair`: exoscale keypair name.
-
-If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule.
-
-Environment variables and default values:
-
-| CLI option                      | Environment variable         | Default          |
-|---------------------------------|------------------------------|------------------|
-| **`--exoscale-url`**            | `EXOSCALE_ENDPOINT`          | -                |
-| **`--exoscale-api-key`**        | `EXOSCALE_API_KEY`           | -                |
-| **`--exoscale-api-secret-key`** | `EXOSCALE_API_SECRET`        | -                |
-| `--exoscale-instance-profile`   | `EXOSCALE_INSTANCE_PROFILE`  | `small`          |
-| `--exoscale-disk-size`          | `EXOSCALE_DISK_SIZE`         | `50`             |
-| `--exoscale-image`              | `EXSOCALE_IMAGE`             | `ubuntu-14.04`   |
-| `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine` |
-| `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`       |
-| `--exoscale-keypair`            | `EXOSCALE_KEYPAIR`           | -                |
-
-=======
 
 ## Base Operating Systems
 The default base operating system for Machine is Boot2Docker on local providers

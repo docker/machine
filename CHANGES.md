@@ -44,7 +44,7 @@ Core Stability and Driver Updates
   - SSH keys persistent across reboots
   - Stop now gracefully stops VM
   - vCPUs now match host CPUs
-- Softlayer
+- SoftLayer
   - Fixed provision bug where `curl` was not present
 - VirtualBox
   - Correct power operations with Saved VM state
