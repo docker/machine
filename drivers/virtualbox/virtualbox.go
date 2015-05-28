@@ -357,8 +357,6 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Starting VirtualBox VM...")
-
 	if err := d.Start(); err != nil {
 		return err
 	}
@@ -381,12 +379,10 @@ func (d *Driver) Start() error {
 		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Starting VM...")
 	case state.Paused:
 		if err := vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Resuming VM ...")
 	default:
 		log.Infof("VM not in restartable state")
 	}
