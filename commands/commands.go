@@ -25,6 +25,7 @@ import (
 	_ "github.com/docker/machine/drivers/rackspace"
 	_ "github.com/docker/machine/drivers/softlayer"
 	_ "github.com/docker/machine/drivers/virtualbox"
+	_ "github.com/docker/machine/drivers/vmwareappcatalyst"
 	_ "github.com/docker/machine/drivers/vmwarefusion"
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
