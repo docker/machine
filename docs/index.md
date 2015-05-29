@@ -1376,8 +1376,8 @@ Create machines on [OpenStack](http://www.openstack.org/software/)
 Mandatory:
 
  - `--openstack-auth-url`: Keystone service base URL.
- - `--openstack-flavor-id` or `openstack-flavor-name`: Identify the flavor that will be used for the machine.
- - `--openstack-image-id` or `openstack-image-name`: Identify the image that will be used for the machine.
+ - `--openstack-flavor-id` or `--openstack-flavor-name`: Identify the flavor that will be used for the machine.
+ - `--openstack-image-id` or `--openstack-image-name`: Identify the image that will be used for the machine.
 
 Options:
 
