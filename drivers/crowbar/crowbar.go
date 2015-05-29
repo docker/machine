@@ -1,4 +1,5 @@
-package crowbar  // http://github.com/opencrowbar/core
+package crowbar
+// http://github.com/opencrowbar/core
 // Apache 2 License 2015 by Rob Hirschfeld for RackN
 
 import (
@@ -14,12 +15,13 @@ import (
 	"github.com/docker/machine/provider"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
+	ocb "github.com/rackn/ocb-client-go/api"
 )
 
 // we can initialize these here, short runs mean they have to re-checked
-var target 		*Deployment
-var source 		*Deployment
-var node    	*Node
+var target 		*ocb.Deployment
+var source 		*ocb.Deployment
+var node    	*ocb.Node
 var password 	string
 
 const (
@@ -83,18 +85,18 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 }
 
 func (d *Driver) CrowbarSession() (error) {
-	if session == nil {
-		log.Debugf("Starting Crowbar Driver for %s", d.MachineName)
-		if password == "" {
-			log.Warnf("Missing password!  Assuming default")
-			password = DEFAULT_PASS
-		}
-		var err error
-		session, err = NewClient(d.User, password, d.URL)
+	log.Debugf("Starting Crowbar Driver for %s", d.MachineName)
+	if password == "" {
+		log.Warnf("Missing password!  Assuming default")
+		password = DEFAULT_PASS
+	}
+	if ocb.Session == nil {
+	    var err error
+		ocb.Session, err = ocb.NewClient(d.User, password, d.URL)
 		if err != nil {
 			return fmt.Errorf("Could not start Crowbar Driver: %s", err)
 		} else {
-			log.Debugf("Started Crowbar Driver for %s", d.MachineName)
+			log.Debugf("Started Crowbar Driver for %s against %s", d.MachineName, ocb.Session.URL)
 		}
 	}
 	return nil
@@ -103,8 +105,8 @@ func (d *Driver) CrowbarSession() (error) {
 func (d *Driver)InitNode() (err error) {
 	d.CrowbarSession()
 	if node == nil {
-		node = &Node{}
-		err = node.get(d.Node)
+		node = &ocb.Node{}
+		err = node.Get(d.Node)
 		if err != nil {
 			log.Warnf("Did not find Machine %s assigned to Crowbar Node %s.  Returned error: %s", d.MachineName, d.Node, err)
 		}
@@ -115,23 +117,23 @@ func (d *Driver)InitNode() (err error) {
 func (d *Driver)InitDeployments() (err error) {
 	d.CrowbarSession()
 	if target == nil {
-		target = &Deployment{}
-		err = target.get(d.TargetPool)
+		target = &ocb.Deployment{}
+		err = target.Get(d.TargetPool)
 		if err != nil {
-			log.Warnf("Adding Target %s Deployment %s", d.TargetPool, session.URL)
-			err = target.add(&NewDeployment{Name: d.TargetPool, Description: "Added for Docker Machine"})
+			log.Warnf("Adding Target %s Deployment %s", d.TargetPool, d.URL)
+			err = target.Add(&ocb.NewDeployment{Name: d.TargetPool, Description: "Added for Docker Machine"})
 			if err != nil {
 				return
 			}
 		}
-		target.commit()
+		target.Commit()
 	}
 	if source == nil {
-		source = &Deployment{}
-		err = source.get(d.SourcePool)
+		source = &ocb.Deployment{}
+		err = source.Get(d.SourcePool)
 		if err != nil {
-			log.Warnf("Adding Source %s Deployment %s", d.SourcePool, session.URL)
-			err = source.add(&NewDeployment{Name: d.SourcePool, Description: "Added for Docker Machine"})
+			log.Warnf("Adding Source %s Deployment %s", d.SourcePool, d.URL)
+			err = source.Add(&ocb.NewDeployment{Name: d.SourcePool, Description: "Added for Docker Machine"})
 			if err != nil {
 				return
 			}
@@ -170,7 +172,7 @@ func (d *Driver) GetURL() (string, error) {
 
 func (d *Driver) GetIP() (string, error) {
 	d.InitNode()
-	addresses, err := node.address("admin")
+	addresses, err := node.Address("admin")
 	// assume that this gets IPv4 - IPv6 is the first returned
 	addr := addresses[1]
 	sz := len(addr)
@@ -205,15 +207,15 @@ func (d *Driver) GetSSHUsername() string {
 
 func (d *Driver) GetState() (state.State, error) {
 	// to ensure refresheness, get a new node object
-	n := &Node{}
-	err := n.get(d.Node)
+	n := &ocb.Node{}
+	err := n.Get(d.Node)
 	if err != nil {
 		log.Errorf("Crowbar Node %s error getting state: %v", d.Node, err)
 		return state.Error, err
 	}
 	if n.Alive {
 			// power on, need to look at target role
-			nr, err1 := n.role(d.ReadyState)
+			nr, err1 := n.Role(d.ReadyState)
 			if nr.NodeError || err1 != nil {
 				return state.Error, err1
 			} 
@@ -234,22 +236,22 @@ func (d *Driver) GetState() (state.State, error) {
 
 func (d *Driver) PreCreateCheck() (error) {
 	d.InitDeployments()
-	candidates, err := source.nodes()
+	candidates, err := source.Nodes()
 	if err != nil {
-		log.Errorf("Error retrieving candidate nodes from %s: %s", session.URL, err)
+		log.Errorf("Error retrieving candidate nodes from %s: %s", d.URL, err)
 		return err
 	} else if len(candidates) == 0 {
-		log.Warnf("No machines in %s deployment %s", session.URL, source.Name)
+		log.Warnf("No machines in %s deployment %s", d.URL, source.Name)
 	} else {
-		log.Debugf("Found %d machines in %s deployment %s (some may not be available)", len(candidates), session.URL, source.Name)
+		log.Debugf("Found %d machines in %s deployment %s (some may not be available)", len(candidates), d.URL, source.Name)
 	}
 	return err
 }
 
 func (d *Driver) Create() (err error) {
-	log.Debugf("Crowbar allocating (aka creating) %s using %s", d.MachineName, session.URL)
+	log.Debugf("Crowbar allocating (aka creating) %s using %s", d.MachineName, d.URL)
 	d.InitDeployments()
-	candidates, _ := source.nodes()
+	candidates, _ := source.Nodes()
 	for i := 0; i<len(candidates) && node == nil; i+=1{
 		candidate := candidates[i]
  		//log.Debugf("Crowbar inspect %d node %s: !Admin %v !System &v Avail &v", i, candidate.Name, candidate.ID, !candidate.Admin, !candidate.System, candidate.Available)
@@ -258,44 +260,44 @@ func (d *Driver) Create() (err error) {
  		}
 	}
 	if node == nil {
-		log.Errorf("No available machines in %s deployment %s", session.URL, source.Name)
+		log.Errorf("No available machines in %s deployment %s", d.URL, source.Name)
 		return errors.New("No machines")
 	}
 	log.Debugf("Crowbar picked node %s (%d)", node.Name, node.ID)
 	node.Description = "Docker-Machine " + d.MachineName
 	node.DeploymentID = target.ID
-	err = node.update()
+	err = node.Update()
 	if err != nil {
 		return err
 	}
 	d.Node = node.Name
 	log.Infof("Crowbar assigned node %s from %s to %s (%d)", node.Name, d.SourcePool, d.TargetPool, node.DeploymentID)
 	// start setting values
-	node.propose()
+	node.Propose()
 	// add os install target
-	osrole := &Role{}
-	osrole.get(OS_INSTALL)
-	osinstall := &NodeRole{DeploymentID: target.ID, NodeID: node.ID, RoleID: osrole.ID, Order: 1000 }
-	osinstall.add()
+	osrole := &ocb.Role{}
+	osrole.Get(OS_INSTALL)
+	osinstall := &ocb.NodeRole{DeploymentID: target.ID, NodeID: node.ID, RoleID: osrole.ID, Order: 1000 }
+	osinstall.Add()
 	// add ready state target
-	role := &Role{}
-	role.get(d.ReadyState)
-	ready := &NodeRole{DeploymentID: target.ID, NodeID: node.ID, RoleID: role.ID, Order: 2000 }
-	ready.add()
+	role := &ocb.Role{}
+	role.Get(d.ReadyState)
+	ready := &ocb.NodeRole{DeploymentID: target.ID, NodeID: node.ID, RoleID: role.ID, Order: 2000 }
+	ready.Add()
 	// inject key for docker
 	sshkey, err := d.createKeyPair()
-	node.addSSHkey(1,sshkey)
+	node.AddSSHkey(1,sshkey)
 	log.Debugf("Crowbar added public key [%s...] to node %s", sshkey[:25], node.Name)
 	// set operating system
 	log.Debugf("Crowbar set %s operating system to %s", node.Name, d.TargetOS)
-	if osAvailable(d.TargetOS) {
-		node.setOS(d.TargetOS)
+	if ocb.OsAvailable(d.TargetOS) {
+		node.SetOS(d.TargetOS)
 	} else {
 		return errors.New("Requested operating system has not been configured in Crowbar")
 	}
 	// start processing
-	node.commit()
-	node.refresh()
+	node.Commit()
+	node.Refresh()
 	log.Debugf("Crowbar node %s Ready State target set to %s (%d)", node.Name, role.Name, role.ID)
 	// Crowbar reuses servers, so we need to cleanups known hosts
 	ip, _ := d.GetIP()
@@ -316,7 +318,7 @@ func (d *Driver) Create() (err error) {
 			return err
 		} else if s == state.Error {
 			// on error, retry
-			node.retry()
+			node.Retry()
 			errorcount -= 1
 		} else if s == state.Running {
 			// we want to make sure that we're really ready
@@ -349,24 +351,24 @@ func (d *Driver) Remove() error {
 	err := d.InitNode()
 	d.InitDeployments()
 	log.Debugf("Crowbar releasing node %s back to deployment %s", node.Name, source.Name)
-	node.propose()
+	node.Propose()
 	node.Available = true
 	node.Description = "Released by Docker-Machine"
 	node.DeploymentID = source.ID
-	err = node.update() 
-	node.addSSHkey(1,"key-removed")
+	err = node.Update() 
+	node.AddSSHkey(1,"key-removed")
 	// remove the docker roles from the node
 	roles := [...]string{"docker-ready", "docker-prep"}
-	nr := &NodeRole{}
+	nr := &ocb.NodeRole{}
 	for i := range roles {
-		nr, _ = node.role(roles[i])
+		nr, _ = node.Role(roles[i])
 		if nr !=nil {
-			nr.delete()
+			nr.Delete()
 		}
 	}
 	// now, we want a fresh start
-	node.redeploy()
-	node.commit()
+	node.Redeploy()
+	node.Commit()
 	log.Debugf("Crowbar started redeploy request for node %s", node.Name)
 	return err
 }
@@ -374,28 +376,28 @@ func (d *Driver) Remove() error {
 func (d *Driver) Start() error {
 	log.Debugf("Crowbar starting node")
 	err := d.InitNode()
-	node.power("on", "on")
+	node.Power("on", "on")
 	return err
 }
 
 func (d *Driver) Stop() error {
 	log.Debugf("Crowbar stopping node")
 	err := d.InitNode()
-	node.power("off", "reboot")
+	node.Power("off", "reboot")
 	return err
 }
 
 func (d *Driver) Restart() error {
 	log.Debugf("Crowbar restarting node")
 	err := d.InitNode()
-	node.power("reboot", "reset")
+	node.Power("reboot", "reset")
 	return err
 }
 
 func (d *Driver) Kill() error {
 	log.Debugf("Crowbar killing node")
 	err := d.InitNode()
-	node.power("halt", "reboot")
+	node.Power("halt", "reboot")
 	return err
 }
 

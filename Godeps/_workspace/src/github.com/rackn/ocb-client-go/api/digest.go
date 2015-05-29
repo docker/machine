@@ -36,6 +36,10 @@ type OCBClient struct {
 
 func (session *OCBClient) Request(method, uri, metatype string, objOut interface{}, objIn interface{}) (err error) {
 
+    if session == nil {
+        return fmt.Errorf("OCB Client Session not set")
+    }
+
     var body io.Reader 
 
     if objIn != nil {

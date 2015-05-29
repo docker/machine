@@ -129,6 +129,10 @@
 			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
 		},
 		{
+			"ImportPath": "github.com/rackn/ocb-client-go/api",
+			"Rev": "7d65d4a87928fe182ceb8aa7bb064cf192627a9e"
+		},
+		{
 			"ImportPath": "github.com/rackspace/gophercloud",
 			"Comment": "v1.0.0-558-ce0f487",
 			"Rev": "ce0f487f6747ab43c4e4404722df25349385bebd"
