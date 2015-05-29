@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 	"github.com/pyr/egoscale/src/egoscale"
 )
 
@@ -421,28 +422,24 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.DeployVirtualMachineResponse, error) {
 	log.Infof("Waiting for VM...")
-	maxRepeats := 60
-	i := 0
 	var resp *egoscale.QueryAsyncJobResultResponse
 	var err error
-WaitLoop:
-	for ; i < maxRepeats; i++ {
+	if err = utils.WaitForSpecificOrError(func() (bool, error) {
 		resp, err = client.PollAsyncJob(jobid)
 		if err != nil {
-			return nil, err
+			return true, err
 		}
 		switch resp.Jobstatus {
 		case 0: // Job is still in progress
 		case 1: // Job has successfully completed
-			break WaitLoop
+			return true, nil
 		case 2: // Job has failed to complete
-			return nil, fmt.Errorf("Operation failed to complete")
+			return true, fmt.Errorf("Operation failed to complete")
 		default: // Some other code
 		}
-		time.Sleep(2 * time.Second)
-	}
-	if i == maxRepeats {
-		return nil, fmt.Errorf("Timeout while waiting for VM")
+		return false, nil
+	}, 60, 2*time.Second); err != nil {
+		return nil, err
 	}
 	vm, err := client.AsyncToVirtualMachine(*resp)
 	if err != nil {
