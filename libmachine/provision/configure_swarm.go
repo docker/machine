@@ -74,11 +74,11 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions 
 		Port:          port,
 		AuthOptions:   authOptions,
 		SwarmOptions:  swarmOptions,
-		SwarmImage:    swarm.DockerImage,
+		SwarmImage:    swarmOptions.Image,
 	}
 
 	// First things first, get the swarm image.
-	if _, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarm.DockerImage)); err != nil {
+	if _, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarmOptions.Image)); err != nil {
 		return err
 	}
 

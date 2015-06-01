@@ -20,10 +20,10 @@ type DockerOptions struct {
 	EngineOptionsPath string
 }
 
-func installDockerGeneric(p Provisioner) error {
+func installDockerGeneric(p Provisioner, baseURL string) error {
 	// install docker - until cloudinit we use ubuntu everywhere so we
 	// just install it using the docker repos
-	if output, err := p.SSHCommand("if ! type docker; then curl -sSL https://get.docker.com | sh -; fi"); err != nil {
+	if output, err := p.SSHCommand(fmt.Sprintf("if ! type docker; then curl -sSL %s | sh -; fi", baseURL)); err != nil {
 		return fmt.Errorf("error installing docker: %s\n", output)
 	}
 
