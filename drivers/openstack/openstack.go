@@ -664,7 +664,7 @@ func (d *Driver) assignFloatingIp() error {
 
 func (d *Driver) waitForInstanceActive() error {
 	log.WithField("MachineId", d.MachineId).Debug("Waiting for the OpenStack instance to be ACTIVE...")
-	if err := d.client.WaitForInstanceStatus(d, "ACTIVE", 200); err != nil {
+	if err := d.client.WaitForInstanceStatus(d, "ACTIVE"); err != nil {
 		return err
 	}
 	return nil
