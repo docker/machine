@@ -248,9 +248,9 @@ func (e *EC2) RequestSpotInstances(amiId string, instanceType string, zone strin
 	v.Set("LaunchSpecification.NetworkInterface.0.SubnetId", subnetId)
 	v.Set("LaunchSpecification.NetworkInterface.0.AssociatePublicIpAddress", "1")
 	if monitoring {
-		v.Set("Monitoring.Enabled", "1")
+		v.Set("LaunchSpecification.Monitoring.Enabled", "1")
 	} else {
-		v.Set("Monitoring.Enabled", "0")
+		v.Set("LaunchSpecification.Monitoring.Enabled", "0")
 	}
 
 	if len(role) > 0 {
