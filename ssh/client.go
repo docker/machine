@@ -139,48 +139,60 @@ func (client NativeClient) dialSuccess() bool {
 	return true
 }
 
-func (client NativeClient) Output(command string) (string, error) {
+func (client NativeClient) session(command string) (*ssh.Session, error) {
 	if err := utils.WaitFor(client.dialSuccess); err != nil {
-		return "", fmt.Errorf("Error attempting SSH client dial: %s", err)
+		return nil, fmt.Errorf("Error attempting SSH client dial: %s", err)
 	}
 
 	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Hostname, client.Port), &client.Config)
 	if err != nil {
-		return "", fmt.Errorf("Mysterious error dialing TCP for SSH (we already succeeded at least once) : %s", err)
+		return nil, fmt.Errorf("Mysterious error dialing TCP for SSH (we already succeeded at least once) : %s", err)
 	}
 
-	session, err := conn.NewSession()
+	return conn.NewSession()
+}
+
+func (client NativeClient) Output(command string) (string, error) {
+	session, err := client.session(command)
 	if err != nil {
-		return "", fmt.Errorf("Error getting new session: %s", err)
+		return "", nil
 	}
-
-	defer session.Close()
 
 	output, err := session.CombinedOutput(command)
+	defer session.Close()
+
+	return string(output), err
+}
+
+func (client NativeClient) OutputWithPty(command string) (string, error) {
+	session, err := client.session(command)
+	if err != nil {
+		return "", nil
+	}
 
 	fd := int(os.Stdin.Fd())
-	if err != nil {
-		return string(output), err
-	}
 
 	termWidth, termHeight, err := terminal.GetSize(fd)
 	if err != nil {
-		return string(output), err
+		return "", err
 	}
 
 	modes := ssh.TerminalModes{
-		ssh.ECHO:          1,
+		ssh.ECHO:          0,
 		ssh.TTY_OP_ISPEED: 14400,
 		ssh.TTY_OP_OSPEED: 14400,
 	}
 
 	// request tty -- fixes error with hosts that use
 	// "Defaults requiretty" in /etc/sudoers - I'm looking at you RedHat
-	if err := session.RequestPty("xterm-256color", termHeight, termWidth, modes); err != nil {
-		return string(output), err
+	if err := session.RequestPty("xterm", termHeight, termWidth, modes); err != nil {
+		return "", err
 	}
 
-	return string(output), session.Run(command)
+	output, err := session.CombinedOutput(command)
+	defer session.Close()
+
+	return string(output), err
 }
 
 func (client NativeClient) Shell() error {

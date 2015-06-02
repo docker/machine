@@ -56,11 +56,12 @@ func (provisioner *RedHatProvisioner) SSHCommand(args string) (string, error) {
 
 	// redhat needs "-t" for tty allocation on ssh therefore we check for the
 	// external client and add as needed
-	// TODO: does this need to be done for the native ssh client?
-	if c, ok := client.(ssh.ExternalClient); ok {
-		log.Debugf("detected external ssh; added tty allocation flag")
+	switch c := client.(type) {
+	case ssh.ExternalClient:
 		c.BaseArgs = append(c.BaseArgs, "-t")
 		client = c
+	case ssh.NativeClient:
+		return c.OutputWithPty(args)
 	}
 
 	return client.Output(args)
