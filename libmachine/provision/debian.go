@@ -128,7 +128,7 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	log.Debug("installing docker")
-	if err := installDockerGeneric(provisioner); err != nil {
+	if err := installDockerGeneric(provisioner, engineOptions.InstallURL); err != nil {
 		return err
 	}
 
