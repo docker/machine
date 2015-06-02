@@ -2,6 +2,8 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
+force_env DRIVER virtualbox
+
 export BAD_URL="http://dev.null:9111/bad.iso"
 
 @test "$DRIVER: Should not allow machine creation with bad ISO" {
