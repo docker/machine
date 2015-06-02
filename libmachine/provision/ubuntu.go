@@ -113,7 +113,7 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		}
 	}
 
-	if err := installDockerGeneric(provisioner); err != nil {
+	if err := installDockerGeneric(provisioner, engineOptions.InstallURL); err != nil {
 		return err
 	}
 

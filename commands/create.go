@@ -75,9 +75,11 @@ func cmdCreate(c *cli.Context) {
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
 			StorageDriver:    c.String("engine-storage-driver"),
 			TlsVerify:        true,
+			InstallURL:       c.String("engine-install-url"),
 		},
 		SwarmOptions: &swarm.SwarmOptions{
 			IsSwarm:        c.Bool("swarm"),
+			Image:          c.String("swarm-image"),
 			Master:         c.Bool("swarm-master"),
 			Discovery:      c.String("swarm-discovery"),
 			Address:        c.String("swarm-addr"),
