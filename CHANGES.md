@@ -20,6 +20,7 @@ Changelog
 - Format option for `inspect` command
 - New logging output format to improve readability and display across platforms 
 - Updated "active" machine concept - now is implicit according to `DOCKER_HOST` environment variable.  Note: this removes the implicit "active" machine and can no longer be specified with the `active` command.  You change the "active" host by using the `env` command instead.
+- Specify Swarm version (`--swarm-image` flag)
 
 ## Drivers
 - New: Exoscale Driver
@@ -56,6 +57,10 @@ Changelog
 - SSH improvements for provisioning stability
 - Fixed SSH key generation bug on Windows
 - Help formatting for improved readability
+
+## Breaking Changes
+- "Short-Form" name reference no longer supported Instead of "docker-machine " implying the active host you must now use docker-machine
+- VMware shared folders require Boot2Docker 1.7
 
 ## Special Thanks                                                                        
 We would like to thank all contributors.  Machine would not be where it is
