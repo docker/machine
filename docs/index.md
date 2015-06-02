@@ -359,9 +359,6 @@ custombox   *        none      Running   tcp://50.134.234.20:2376
 Docker Machine can also provision [Swarm](https://github.com/docker/swarm)
 clusters. This can be used with any driver and will be secured with TLS.
 
-> **Note**: This is an experimental feature so the subcommands and
-> options are likely to change in future versions.
-
 First, create a Swarm token.  Optionally, you can use another discovery service.
 See the Swarm docs for details.
 
@@ -1605,7 +1602,7 @@ by the cloud provider.
 |----------------------------|------------------|-------------------------|
 | Boot2Docker                | 1.5+             | default for local       |
 | Ubuntu                     | 12.04+           | default for remote      |
-| Rancher                    | 0.3+             |                         |
+| RancherOS                  | 0.3+             |                         |
 | Debian                     | 8.0+             | experimental            |
 | RedHat Enterprise Linux    | 7.0+             | experimental            |
 | CentOS                     | 7+               | experimental            |
@@ -1615,3 +1612,8 @@ If you want to use a different base operating system on a remote provider,
 you will need to select the image accordingly for that provider.  For
 example, on DigitalOcean you would use the `--digitalocean-image` flag.
 For Amazon AWS, you would use the `--amazonec2-ami` flag.
+
+> Note: if you change the base image for a provider you may also need to change
+the SSH user as well. For example, the default Red Hat AMI on EC2 expects the 
+SSH user to be ec2-user, so you would have to specify this with 
+`--amazonec2-ssh-user ec2-user`.
