@@ -16,6 +16,9 @@ export SECOND_MACHINE="$NAME-2"
 }
 
 @test "$DRIVER: test machine scp command from host to remote" {
+  teardown () {
+    rm foo.txt
+  }
   echo A file created locally! >foo.txt
   machine scp foo.txt $NAME:/tmp/foo.txt
   [[ $(machine ssh $NAME cat /tmp/foo.txt) == "A file created locally!" ]]

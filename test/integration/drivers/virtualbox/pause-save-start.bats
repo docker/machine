@@ -2,6 +2,8 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
+force_env DRIVER virtualbox
+
 @test "$DRIVER: create" {
   run machine create -d $DRIVER $NAME
   [ "$status" -eq 0  ]

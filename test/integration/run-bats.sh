@@ -35,11 +35,13 @@ function run_bats() {
         # BATS returns non-zero to indicate the tests have failed, we shouldn't
         # neccesarily bail in this case, so that's the reason for the e toggle.
         set +e
+        echo "=> $bats_file"
         bats "$bats_file"
         if [[ $? -ne 0 ]]; then
             EXIT_STATUS=1
         fi
         set -e
+        echo
         cleanup_machines
     done
 }
@@ -71,7 +73,7 @@ if [ ! -e "$MACHINE_ROOT"/"$MACHINE_BIN_NAME" ]; then
 fi
 
 if [[ -z "$DRIVER" ]]; then
-    echo "The DRIVER environment variable must be set."
+    echo "You must specify the DRIVER environment variable."
     exit 1
 fi
 
