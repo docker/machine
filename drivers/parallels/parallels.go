@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	isoFilename = "boot2docker.iso"
+	isoFilename = "boot2docker-1.6.2-prl.iso"
 	minDiskSize = 32
 )
 
@@ -161,8 +161,43 @@ func (d *Driver) Create() error {
 	}
 
 	b2dutils := utils.NewB2dUtils("", "")
-	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
-		return err
+	imgCachePath := utils.GetMachineCacheDir()
+	commonIsoPath := filepath.Join(imgCachePath, isoFilename)
+
+	// just in case the cache dir has been manually deleted,
+	// check for it and recreate it if it's gone
+	if _, err := os.Stat(imgCachePath); os.IsNotExist(err) {
+		log.Infof("Image cache does not exist, creating it at %s...", imgCachePath)
+		if err := os.Mkdir(imgCachePath, 0700); err != nil {
+			return err
+		}
+	}
+
+	if d.Boot2DockerURL != "" {
+		log.Infof("Downloading %s from %s...", isoFilename, d.Boot2DockerURL)
+		if err := b2dutils.DownloadISO(d.storePath, isoFilename, d.Boot2DockerURL); err != nil {
+			return err
+		}
+	} else {
+		isoURL := "https://github.com/Parallels/boot2docker/releases/download/v1.6.2-prl-tools/boot2docker.iso"
+
+		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+			log.Infof("Downloading %s to %s...", isoFilename, commonIsoPath)
+			// just in case boot2docker.iso has been manually deleted
+			if _, err := os.Stat(imgCachePath); os.IsNotExist(err) {
+				if err := os.Mkdir(imgCachePath, 0700); err != nil {
+					return err
+				}
+			}
+			if err := b2dutils.DownloadISO(imgCachePath, isoFilename, isoURL); err != nil {
+				return err
+			}
+		}
+
+		isoDest := filepath.Join(d.storePath, isoFilename)
+		if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Creating SSH key...")
