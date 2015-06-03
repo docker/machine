@@ -273,20 +273,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
-		net.ParseIP("192.168.99.1"),
-		net.IPv4Mask(255, 255, 255, 0),
-		net.ParseIP("192.168.99.2"),
-		net.ParseIP("192.168.99.100"),
-		net.ParseIP("192.168.99.254"))
-	if err != nil {
-		return err
-	}
-	if err := vbm("modifyvm", d.MachineName,
-		"--nic2", "hostonly",
-		"--nictype2", "82540EM",
-		"--hostonlyadapter2", hostOnlyNetwork.Name,
-		"--cableconnected2", "on"); err != nil {
+	if err := setupHostOnlyNetwork(d.MachineName); err != nil {
 		return err
 	}
 
@@ -369,6 +356,11 @@ func (d *Driver) Create() error {
 func (d *Driver) Start() error {
 	s, err := d.GetState()
 	if err != nil {
+		return err
+	}
+
+	// check network to re-create if needed
+	if err := setupHostOnlyNetwork(d.MachineName); err != nil {
 		return err
 	}
 
@@ -677,4 +669,28 @@ func setPortForwarding(machine string, interfaceNum int, mapName, protocol strin
 		return -1, err
 	}
 	return actualHostPort, nil
+}
+
+func setupHostOnlyNetwork(machineName string) error {
+	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
+		net.ParseIP("192.168.99.1"),
+		net.IPv4Mask(255, 255, 255, 0),
+		net.ParseIP("192.168.99.2"),
+		net.ParseIP("192.168.99.100"),
+		net.ParseIP("192.168.99.254"),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if err := vbm("modifyvm", machineName,
+		"--nic2", "hostonly",
+		"--nictype2", "82540EM",
+		"--hostonlyadapter2", hostOnlyNetwork.Name,
+		"--cableconnected2", "on"); err != nil {
+		return err
+	}
+
+	return nil
 }
