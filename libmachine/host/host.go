@@ -146,7 +146,14 @@ func (h *Host) Upgrade() error {
 }
 
 func (h *Host) GetURL() (string, error) {
-	return h.Driver.GetURL()
+	s, err := h.Driver.GetState()
+	if err != nil {
+		return "", err
+	}
+	if s == state.Running {
+		return h.Driver.GetURL()
+	}
+	return "", nil
 }
 
 func (h *Host) ConfigureAuth() error {
