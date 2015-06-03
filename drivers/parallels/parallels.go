@@ -22,8 +22,10 @@ import (
 )
 
 const (
-	isoFilename = "boot2docker-1.6.2-prl.iso"
-	minDiskSize = 32
+	isoFilename     = "boot2docker-1.6.2-prl.iso"
+	shareFolderName = "Users"
+	shareFolderPath = "/Users"
+	minDiskSize     = 32
 )
 
 type Driver struct {
@@ -259,7 +261,20 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	// Don't use Start() since it expects to have a dhcp lease allready
+	// Enable Shared Folders
+	if err := prlctl("set", d.MachineName, "--shf-host", "on"); err != nil {
+		return err
+	}
+
+	if err := prlctl("set", d.MachineName,
+		"--shf-host-add", shareFolderName,
+		"--path", shareFolderPath); err != nil {
+		return err
+	}
+
+	log.Infof("Starting Parallels Desktop VM...")
+
+	// Don't use Start() since it expects to have a dhcp lease already
 	if err := prlctl("start", d.MachineName); err != nil {
 		return err
 	}
@@ -286,8 +301,6 @@ func (d *Driver) Create() error {
 	}
 
 	d.IPAddress = ip
-
-	log.Infof("Starting Parallels Desktop VM...")
 
 	if err := d.Start(); err != nil {
 		return err
@@ -319,7 +332,16 @@ func (d *Driver) Start() error {
 	}
 
 	d.IPAddress, err = d.GetIP()
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Mount Share Folder
+	if err := d.mountShareFolder(shareFolderName, shareFolderPath); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Driver) Stop() error {
@@ -461,6 +483,24 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) diskPath() string {
 	return filepath.Join(d.storePath, "disk.hdd")
+}
+
+func (d *Driver) mountShareFolder(shareName string, mountPoint string) error {
+	cmd := "sudo mkdir -p " + mountPoint + " && sudo mount -t prl_fs " + shareName + " " + mountPoint
+
+	if _, err := os.Stat(mountPoint); err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		} else {
+			log.Infof("Host path '%s' does not exist. Skipping mount to VM...", mountPoint)
+		}
+	} else {
+		if _, err := drivers.RunSSHCommandFromDriver(d, cmd); err != nil {
+			return fmt.Errorf("Error mounting shared folder: %s", err)
+		}
+	}
+
+	return nil
 }
 
 // Make a boot2docker VM disk image.
