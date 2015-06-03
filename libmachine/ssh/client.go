@@ -49,7 +49,6 @@ const (
 var (
 	baseSSHArgs = []string{
 		"-o", "PasswordAuthentication=no",
-		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
@@ -262,9 +261,17 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 
 	args := append(baseSSHArgs, fmt.Sprintf("%s@%s", user, host))
 
+	// If no identities are explicitly provided, also look at the identities
+	// offered by ssh-agent
+	if len(auth.Keys) > 0 {
+		args = append(args, "-o", "IdentitiesOnly=yes")
+	}
+
 	// Specify which private keys to use to authorize the SSH request.
 	for _, privateKeyPath := range auth.Keys {
-		args = append(args, "-i", privateKeyPath)
+		if privateKeyPath != "" {
+			args = append(args, "-i", privateKeyPath)
+		}
 	}
 
 	// Set which port to use for SSH.

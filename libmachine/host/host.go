@@ -69,8 +69,13 @@ func (h *Host) CreateSSHClient() (ssh.Client, error) {
 		return ssh.ExternalClient{}, err
 	}
 
-	auth := &ssh.Auth{
-		Keys: []string{h.Driver.GetSSHKeyPath()},
+	var auth *ssh.Auth
+	if h.Driver.GetSSHKeyPath() == "" {
+		auth = &ssh.Auth{}
+	} else {
+		auth = &ssh.Auth{
+			Keys: []string{h.Driver.GetSSHKeyPath()},
+		}
 	}
 
 	return ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
