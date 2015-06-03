@@ -188,10 +188,6 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 		return err
 	}
 
-	if err := installDockerGeneric(provisioner); err != nil {
-		return err
-	}
-
 	ip, err := provisioner.GetDriver().GetIP()
 	if err != nil {
 		return err

@@ -15,4 +15,5 @@ type EngineOptions struct {
 	TlsKey           string
 	TlsVerify        bool
 	RegistryMirror   []string
+	InstallURL       string
 }

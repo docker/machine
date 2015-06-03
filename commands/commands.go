@@ -167,6 +167,12 @@ var sharedCreateFlags = []cli.Flag{
 		),
 		Value: "none",
 	},
+	cli.StringFlag{
+		Name:   "engine-install-url",
+		Usage:  "Custom URL to use for engine installation",
+		Value:  "https://get.docker.com",
+		EnvVar: "MACHINE_DOCKER_INSTALL_URL",
+	},
 	cli.StringSliceFlag{
 		Name:  "engine-opt",
 		Usage: "Specify arbitrary flags to include with the created engine in the form flag=value",
@@ -194,6 +200,12 @@ var sharedCreateFlags = []cli.Flag{
 	cli.BoolFlag{
 		Name:  "swarm",
 		Usage: "Configure Machine with Swarm",
+	},
+	cli.StringFlag{
+		Name:   "swarm-image",
+		Usage:  "Specify Docker image to use for Swarm",
+		Value:  "swarm:latest",
+		EnvVar: "MACHINE_SWARM_IMAGE",
 	},
 	cli.BoolFlag{
 		Name:  "swarm-master",

@@ -1,10 +1,6 @@
 #!/usr/bin/env bats
 
-load helpers
-
-export DRIVER=virtualbox
-export NAME="bats-$DRIVER-test"
-export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
+load ${BASE_TEST_DIR}/helpers.bash
 
 # Basic smoke test for SSH backends
 
@@ -32,14 +28,3 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   run machine --native-ssh ssh $NAME echo foo
   [[ "$output" == "foo"  ]]
 }
-
-@test "$DRIVER: remove machine after ssh backend test" {
-  run machine rm -f $NAME
-}
-
-# Cleanup of machine store should always be the last 'test'
-@test "$DRIVER: cleanup" {
-  run rm -rf $MACHINE_STORAGE_PATH
-  [ "$status" -eq 0  ]
-}
-

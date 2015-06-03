@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load helpers
+load ${BASE_TEST_DIR}/helpers.bash
 
 @test "cli: show info" {
   run machine

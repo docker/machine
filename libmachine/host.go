@@ -120,6 +120,10 @@ func (h *Host) Create(name string) error {
 
 	// TODO: Not really a fan of just checking "none" here.
 	if h.Driver.DriverName() != "none" {
+		if err := utils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
+			return err
+		}
+
 		if err := WaitForSSH(h); err != nil {
 			return err
 		}

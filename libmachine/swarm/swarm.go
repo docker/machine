@@ -1,7 +1,6 @@
 package swarm
 
 const (
-	DockerImage              = "swarm:latest"
 	DiscoveryServiceEndpoint = "https://discovery-stage.hub.docker.com/v1"
 )
 
@@ -11,6 +10,7 @@ type SwarmOptions struct {
 	Discovery      string
 	Master         bool
 	Host           string
+	Image          string
 	Strategy       string
 	Heartbeat      int
 	Overcommit     float64
