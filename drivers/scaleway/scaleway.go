@@ -163,9 +163,9 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
-func (d *Driver) GetDockerConfigDir() string {
-	return dockerConfigDir
-}
+// func (d *Driver) GetDockerConfigDir() string {
+// 	return dockerConfigDir
+// }
 
 func (d *Driver) PreCreateCheck() error {
 	return nil
@@ -205,8 +205,8 @@ func (d *Driver) Create() error {
 	}
 
 	time.Sleep(10 * time.Second)
-	d.SetupHostname()
-	d.installDocker()
+	d.setupHostname()
+	//d.installDocker()
 	return nil
 }
 
@@ -279,14 +279,14 @@ func (d *Driver) Kill() error {
 	return d.Stop()
 }
 
-func (d *Driver) Upgrade() error {
-	log.Debugf("[Scaleway] Upgrading Docker")
-	_, err := drivers.RunSSHCommandFromDriver(d,
-		"sudo apt-get update && apt-get install --upgrade lxc-docker")
-	return err
-}
+// func (d *Driver) Upgrade() error {
+// 	log.Debugf("[Scaleway] Upgrading Docker")
+// 	_, err := drivers.RunSSHCommandFromDriver(d,
+// 		"sudo apt-get update && apt-get install --upgrade lxc-docker")
+// 	return err
+// }
 
-func (d *Driver) SetupHostname() error {
+func (d *Driver) setupHostname() error {
 	log.Debugf("[Scaleway] Setting hostname: %s", d.MachineName)
 	_, err := drivers.RunSSHCommandFromDriver(d,
 		fmt.Sprintf(
@@ -298,25 +298,25 @@ func (d *Driver) SetupHostname() error {
 	return err
 }
 
-func (d *Driver) installDocker() error {
-	_, err := drivers.RunSSHCommandFromDriver(d,
-		"if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
-	return err
-}
+// func (d *Driver) installDocker() error {
+// 	_, err := drivers.RunSSHCommandFromDriver(d,
+// 		"if [ ! -e /usr/bin/docker ]; then curl -sL https://get.docker.com | sh -; fi")
+// 	return err
+// }
 
-func (d *Driver) StartDocker() error {
-	log.Debug("Starting Docker...")
-	_, err := drivers.RunSSHCommandFromDriver(d,
-		"sudo service docker start")
-	return err
-}
+// func (d *Driver) StartDocker() error {
+// 	log.Debug("Starting Docker...")
+// 	_, err := drivers.RunSSHCommandFromDriver(d,
+// 		"sudo service docker start")
+// 	return err
+// }
 
-func (d *Driver) StopDocker() error {
-	log.Debug("Stopping Docker...")
-	_, err := drivers.RunSSHCommandFromDriver(d,
-		"sudo service docker stop")
-	return err
-}
+// func (d *Driver) StopDocker() error {
+// 	log.Debug("Stopping Docker...")
+// 	_, err := drivers.RunSSHCommandFromDriver(d,
+// 		"sudo service docker stop")
+// 	return err
+// }
 
 func (d *Driver) setMachineNameIfNotSet() {
 }
