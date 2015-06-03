@@ -20,7 +20,7 @@ function quiet_run () {
 }
 
 function cleanup_machines() {
-    if [[ $(docker-machine ls -q | wc -l) -ne 0 ]]; then
+    if [[ $(machine ls -q | wc -l) -ne 0 ]]; then
         quiet_run machine stop $(machine ls -q)
         quiet_run machine rm $(machine ls -q)
     fi
