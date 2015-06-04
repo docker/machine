@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"os/exec"
@@ -44,6 +45,7 @@ type Driver struct {
 	SwarmDiscovery      string
 	storePath           string
 	Boot2DockerImportVM string
+	HostOnlyCIDR        string
 }
 
 func init() {
@@ -85,6 +87,12 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "virtualbox-import-boot2docker-vm",
 			Usage: "The name of a Boot2Docker VM to import",
 			Value: "",
+		},
+		cli.StringFlag{
+			Name:   "virtualbox-hostonly-cidr",
+			Usage:  "Specify the Host Only CIDR",
+			Value:  "192.168.99.1/24",
+			EnvVar: "VIRTUALBOX_HOSTONLY_CIDR",
 		},
 	}
 }
@@ -150,6 +158,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
 	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
+	d.HostOnlyCIDR = flags.String("virtualbox-hostonly-cidr")
 
 	return nil
 }
@@ -273,7 +282,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := setupHostOnlyNetwork(d.MachineName); err != nil {
+	if err := d.setupHostOnlyNetwork(d.MachineName); err != nil {
 		return err
 	}
 
@@ -360,7 +369,7 @@ func (d *Driver) Start() error {
 	}
 
 	// check network to re-create if needed
-	if err := setupHostOnlyNetwork(d.MachineName); err != nil {
+	if err := d.setupHostOnlyNetwork(d.MachineName); err != nil {
 		return err
 	}
 
@@ -564,6 +573,44 @@ func (d *Driver) generateDiskImage(size int) error {
 	return createDiskImage(d.diskPath(), size, raw)
 }
 
+func (d *Driver) setupHostOnlyNetwork(machineName string) error {
+	ip, network, err := net.ParseCIDR(d.HostOnlyCIDR)
+	nAddr := network.IP.To4()
+
+	var dhcpAddr net.IP
+	// select pseudo-random DHCP addr; make sure not to clash with the host
+	for {
+		n := rand.Intn(25)
+		if byte(n) != nAddr[3] {
+			dhcpAddr = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(1))
+			log.Debugf("using %s for dhcp address", dhcpAddr)
+			break
+		}
+	}
+
+	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
+		ip,
+		network.Mask,
+		dhcpAddr,
+		net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100)),
+		net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254)),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if err := vbm("modifyvm", machineName,
+		"--nic2", "hostonly",
+		"--nictype2", "82540EM",
+		"--hostonlyadapter2", hostOnlyNetwork.Name,
+		"--cableconnected2", "on"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // createDiskImage makes a disk image at dest with the given size in MB. If r is
 // not nil, it will be read as a raw disk image to convert from.
 func createDiskImage(dest string, size int, r io.Reader) error {
@@ -669,28 +716,4 @@ func setPortForwarding(machine string, interfaceNum int, mapName, protocol strin
 		return -1, err
 	}
 	return actualHostPort, nil
-}
-
-func setupHostOnlyNetwork(machineName string) error {
-	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
-		net.ParseIP("192.168.99.1"),
-		net.IPv4Mask(255, 255, 255, 0),
-		net.ParseIP("192.168.99.2"),
-		net.ParseIP("192.168.99.100"),
-		net.ParseIP("192.168.99.254"),
-	)
-
-	if err != nil {
-		return err
-	}
-
-	if err := vbm("modifyvm", machineName,
-		"--nic2", "hostonly",
-		"--nictype2", "82540EM",
-		"--hostonlyadapter2", hostOnlyNetwork.Name,
-		"--cableconnected2", "on"); err != nil {
-		return err
-	}
-
-	return nil
 }
