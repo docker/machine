@@ -242,6 +242,14 @@ var Commands = []cli.Command{
 				Usage: "Display the Swarm config instead of the Docker daemon",
 			},
 		},
+		BashComplete: func(c *cli.Context) {
+			if len(c.Args()) > 0 {
+				return
+			}
+			for _, f := range c.App.Flags { // displays global flags
+				fmt.Printf("%s ", f)
+			}
+		},
 	},
 	{
 		Flags: append(
@@ -251,6 +259,14 @@ var Commands = []cli.Command{
 		Name:   "create",
 		Usage:  "Create a machine",
 		Action: cmdCreate,
+		BashComplete: func(c *cli.Context) {
+			if len(c.Args()) > 0 {
+				return
+			}
+			for _, f := range c.Command.Flags { // this is probably the same as c.FlagNames()
+				fmt.Printf("%s ", f)
+			}
+		},
 	},
 	{
 		Name:        "env",
@@ -270,6 +286,14 @@ var Commands = []cli.Command{
 				Name:  "unset, u",
 				Usage: "Unset variables instead of setting them",
 			},
+		},
+		BashComplete: func(c *cli.Context) {
+			if len(c.Args()) > 0 {
+				return
+			}
+			for _, f := range c.FlagNames() {
+				fmt.Println(f)
+			}
 		},
 	},
 	{
