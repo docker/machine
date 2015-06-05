@@ -122,7 +122,9 @@ func (s Filestore) GetActive() (*Host, error) {
 	hostListItems := GetHostListItems(hosts)
 
 	for _, item := range hostListItems {
-		if dockerHost == item.URL {
+		// TODO: hard-coding the swarm port is a travesty...
+		deSwarmedHost := strings.Replace(dockerHost, ":3376", ":2376", 1)
+		if dockerHost == item.URL || deSwarmedHost == item.URL {
 			host, err := s.Get(item.Name)
 			if err != nil {
 				return nil, err
