@@ -1085,19 +1085,19 @@ Options:
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 
-| Region        | AMI ID     |
-|:--------------|:-----------|
-|ap-northeast-1 |ami-fc11d4fc|
-|ap-southeast-1 |ami-7854692a|
-|ap-southeast-2 |ami-c5611cff|
-|cn-north-1     |ami-7cd84545|
-|eu-west-1      |ami-2d96f65a|
-|eu-central-1   |ami-3cdae621|
-|sa-east-1      |ami-71b2376c|
-|us-east-1      |ami-cc3b3ea4|
-|us-west-1      |ami-017f9d45|
-|us-west-2      |ami-55526765|
-|us-gov-west-1  |ami-8ffa9bac|
+| Region         | AMI ID       |
+|----------------|--------------|
+| ap-northeast-1 | ami-f4b06cf4 |
+| ap-southeast-1 | ami-b899a2ea |
+| ap-southeast-2 | ami-b59ce48f |
+| cn-north-1     | ami-da930ee3 |
+| eu-west-1      | ami-45d8a532 |
+| eu-central-1   | ami-b6e0d9ab |
+| sa-east-1      | ami-1199190c |
+| us-east-1      | ami-5f709f34 |
+| us-west-1      | ami-615cb725 |
+| us-west-2      | ami-7f675e4f |
+| us-gov-west-1  | ami-99a9c9ba |
 
 Environment variables and default values:
 
@@ -1106,7 +1106,7 @@ Environment variables and default values:
 | **`--amazonec2-access-key`**        | `AWS_ACCESS_KEY_ID`     | -                |
 | **`--amazonec2-secret-key`**        | `AWS_SECRET_ACCESS_KEY` | -                |
 | `--amazonec2-session-token`         | `AWS_SESSION_TOKEN`     | -                |
-| `--amazonec2-ami`                   | `AWS_AMI`               | `ami-cc3b3ea4`   |
+| `--amazonec2-ami`                   | `AWS_AMI`               | `ami-5f709f34`   |
 | `--amazonec2-region`                | `AWS_DEFAULT_REGION`    | `us-east-1`      |
 | **`--amazonec2-vpc-id`**            | `AWS_VPC_ID`            | -                |
 | `--amazonec2-zone`                  | `AWS_ZONE`              | `a`              |
