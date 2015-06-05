@@ -15,8 +15,3 @@ load ${BASE_TEST_DIR}/helpers.bash
   run docker $(machine config $NAME) version
   [[ ${status} -eq 0 ]]
 }
-
-@test "cleanup" {
-  machine rm $NAME
-  [[ ${status} -eq 0 ]]
-}
