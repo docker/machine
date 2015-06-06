@@ -54,10 +54,11 @@ type GenericClient struct {
 
 func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 	serverOpts := servers.CreateOpts{
-		Name:           d.MachineName,
-		FlavorRef:      d.FlavorId,
-		ImageRef:       d.ImageId,
-		SecurityGroups: d.SecurityGroups,
+		Name:             d.MachineName,
+		FlavorRef:        d.FlavorId,
+		ImageRef:         d.ImageId,
+		SecurityGroups:   d.SecurityGroups,
+		AvailabilityZone: d.AvailabilityZone,
 	}
 	if d.NetworkId != "" {
 		serverOpts.Networks = []servers.Network{
