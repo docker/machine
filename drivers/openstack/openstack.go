@@ -25,6 +25,7 @@ type Driver struct {
 	TenantName       string
 	TenantId         string
 	Region           string
+	AvailabilityZone string
 	EndpointType     string
 	MachineName      string
 	MachineId        string
@@ -109,6 +110,12 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "OS_REGION_NAME",
 			Name:   "openstack-region",
 			Usage:  "OpenStack region name",
+			Value:  "",
+		},
+		cli.StringFlag{
+			EnvVar: "OS_AVAILABILITY_ZONE",
+			Name:   "openstack-availability-zone",
+			Usage:  "OpenStack availability zone",
 			Value:  "",
 		},
 		cli.StringFlag{
@@ -241,6 +248,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.TenantName = flags.String("openstack-tenant-name")
 	d.TenantId = flags.String("openstack-tenant-id")
 	d.Region = flags.String("openstack-region")
+	d.AvailabilityZone = flags.String("openstack-availability-zone")
 	d.EndpointType = flags.String("openstack-endpoint-type")
 	d.FlavorId = flags.String("openstack-flavor-id")
 	d.FlavorName = flags.String("openstack-flavor-name")
