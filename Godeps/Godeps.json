@@ -135,6 +135,11 @@
 			"Rev": "bbaa67324aeeacc90430c1fe0a9c620d3929512e"
 		},
 		{
+			"ImportPath": "github.com/xanzy/go-cloudstack/cloudstack",
+			"Comment": "v1.2.0-21-g7362689",
+			"Rev": "7362689cc86b1e0cb01b194aafd93f006a6743c2"
+		},
+		{
 			"ImportPath": "github.com/tent/http-link-go",
 			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		},
