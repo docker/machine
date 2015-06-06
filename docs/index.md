@@ -1174,7 +1174,7 @@ Options:
  - `--exoscale-instance-profile`: Instance profile.
  - `--exoscale-disk-size`: Disk size for the host in GB.
  - `--exoscale-image`: exoscale disk size. (10, 50, 100, 200, 400)
- - `--exoscale-security-group`: Comma-separated list of security groups. Non-existent groups will be created.
+ - `--exoscale-security-group`: Security group. Non-existent groups will be created. Can be repeated.
  - `--exoscale-availability-zone`: exoscale availability zone.
 
 If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule. Moreover, if you want to use Swarm, also add TCP port 3376.
