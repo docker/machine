@@ -84,10 +84,10 @@ func GetCreateFlags() []cli.Flag {
 			Value:  "ubuntu-14.04",
 			Usage:  "exoscale image template",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			EnvVar: "EXOSCALE_SECURITY_GROUP",
 			Name:   "exoscale-security-group",
-			Value:  "docker-machine",
+			Value:  &cli.StringSlice{},
 			Usage:  "exoscale security group",
 		},
 		cli.StringFlag{
@@ -142,8 +142,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.InstanceProfile = flags.String("exoscale-instance-profile")
 	d.DiskSize = flags.Int("exoscale-disk-size")
 	d.Image = flags.String("exoscale-image")
-	if flags.String("exoscale-security-group") != "" {
-		d.SecurityGroups = strings.Split(flags.String("exoscale-security-group"), ",")
+	d.SecurityGroups = flags.StringSlice("exoscale-security-group")
+	if len(d.SecurityGroups) == 0 {
+		d.SecurityGroups = []string{"docker-machine"}
 	}
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
 	d.SwarmMaster = flags.Bool("swarm-master")
