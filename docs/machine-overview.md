@@ -1,8 +1,12 @@
----
-page_title: Docker Machine
-page_description: Working with Docker Machine
-page_keywords: docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale
----
+<!--[metadata]>
++++
+title = "Overview of Docker Machine"
+description = "Introduction and Overview of Machine"
+keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
+[menu.main]
+parent="smn_workw_machine"
++++
+<![end-metadata]-->
 
 
 # Docker Machine

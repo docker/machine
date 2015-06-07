@@ -1,3 +1,14 @@
+<!--[metadata]>
++++
+draft=true
+title = "Docker Machine"
+description = "machine"
+keywords = ["machine, orchestration, install, installation, docker, documentation"]
+[menu.main]
+parent="mn_install"
++++
+<![end-metadata]-->
+
 # Boot2Docker Migration
 This document is a rough guide to what will need to be completed to support
 migrating from boot2docker-cli to Machine.  It is not meant to be a user guide
