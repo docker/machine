@@ -359,9 +359,6 @@ custombox   *        none      Running   tcp://50.134.234.20:2376
 Docker Machine can also provision [Swarm](https://github.com/docker/swarm)
 clusters. This can be used with any driver and will be secured with TLS.
 
-> **Note**: This is an experimental feature so the subcommands and
-> options are likely to change in future versions.
-
 First, create a Swarm token.  Optionally, you can use another discovery service.
 See the Swarm docs for details.
 
@@ -1088,19 +1085,19 @@ Options:
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 
-| Region        | AMI ID     |
-|:--------------|:-----------|
-|ap-northeast-1 |ami-fc11d4fc|
-|ap-southeast-1 |ami-7854692a|
-|ap-southeast-2 |ami-c5611cff|
-|cn-north-1     |ami-7cd84545|
-|eu-west-1      |ami-2d96f65a|
-|eu-central-1   |ami-3cdae621|
-|sa-east-1      |ami-71b2376c|
-|us-east-1      |ami-cc3b3ea4|
-|us-west-1      |ami-017f9d45|
-|us-west-2      |ami-55526765|
-|us-gov-west-1  |ami-8ffa9bac|
+| Region         | AMI ID       |
+|----------------|--------------|
+| ap-northeast-1 | ami-f4b06cf4 |
+| ap-southeast-1 | ami-b899a2ea |
+| ap-southeast-2 | ami-b59ce48f |
+| cn-north-1     | ami-da930ee3 |
+| eu-west-1      | ami-45d8a532 |
+| eu-central-1   | ami-b6e0d9ab |
+| sa-east-1      | ami-1199190c |
+| us-east-1      | ami-5f709f34 |
+| us-west-1      | ami-615cb725 |
+| us-west-2      | ami-7f675e4f |
+| us-gov-west-1  | ami-99a9c9ba |
 
 Environment variables and default values:
 
@@ -1109,7 +1106,7 @@ Environment variables and default values:
 | **`--amazonec2-access-key`**        | `AWS_ACCESS_KEY_ID`     | -                |
 | **`--amazonec2-secret-key`**        | `AWS_SECRET_ACCESS_KEY` | -                |
 | `--amazonec2-session-token`         | `AWS_SESSION_TOKEN`     | -                |
-| `--amazonec2-ami`                   | `AWS_AMI`               | `ami-cc3b3ea4`   |
+| `--amazonec2-ami`                   | `AWS_AMI`               | `ami-5f709f34`   |
 | `--amazonec2-region`                | `AWS_DEFAULT_REGION`    | `us-east-1`      |
 | **`--amazonec2-vpc-id`**            | `AWS_VPC_ID`            | -                |
 | `--amazonec2-zone`                  | `AWS_ZONE`              | `a`              |
@@ -1172,7 +1169,7 @@ Options:
  - `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
  - `--exoscale-availability-zone`: exoscale availability zone.
 
-If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule.
+If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule. Moreover, if you want to use Swarm, also add TCP port 3376.
 
 Environment variables and default values:
 
@@ -1376,8 +1373,8 @@ Create machines on [OpenStack](http://www.openstack.org/software/)
 Mandatory:
 
  - `--openstack-auth-url`: Keystone service base URL.
- - `--openstack-flavor-id` or `openstack-flavor-name`: Identify the flavor that will be used for the machine.
- - `--openstack-image-id` or `openstack-image-name`: Identify the image that will be used for the machine.
+ - `--openstack-flavor-id` or `--openstack-flavor-name`: Identify the flavor that will be used for the machine.
+ - `--openstack-image-id` or `--openstack-image-name`: Identify the image that will be used for the machine.
 
 Options:
 
@@ -1596,26 +1593,27 @@ Environment variables and default values:
 | `--vmwarevsphere-compute-ip`      | `VSPHERE_COMPUTE_IP`      | -                        |
 
 ## Base Operating Systems
-The default base operating system for Machine is Boot2Docker on local providers
+The Machine provisioning system supports several base operating systems.
+The default base operating system is Boot2Docker on local providers
 (VirtualBox, Fusion, Hyper-V, etc) and the latest Ubuntu LTS supported
-by the cloud provider.  RedHat Enterprise Linux is also supported.  To use
-RHEL, you will need to select the image accordingly with the provider.  For
-example, in Amazon EC2, you could use a RedHat 7.1 AMI ("ami-12663b7a") as the
-`--amazonec2-ami` option which create an instance using RHEL 7.1 64-bit.
+by the cloud provider.
 
-## Release Notes
+| Operating System           | Version          | Notes                   |
+|----------------------------|------------------|-------------------------|
+| Boot2Docker                | 1.5+             | default for local       |
+| Ubuntu                     | 12.04+           | default for remote      |
+| RancherOS                  | 0.3+             |                         |
+| Debian                     | 8.0+             | experimental            |
+| RedHat Enterprise Linux    | 7.0+             | experimental            |
+| CentOS                     | 7+               | experimental            |
+| Fedora                     | 21+              | experimental            |
 
-### Version 0.2.0 (April 16, 2015)
+If you want to use a different base operating system on a remote provider,
+you will need to select the image accordingly for that provider.  For
+example, on DigitalOcean you would use the `--digitalocean-image` flag.
+For Amazon AWS, you would use the `--amazonec2-ami` flag.
 
-For complete information on this release, see the [0.2.0 Milestone project page](https://github.com/docker/machine/wiki/0.2.0-Milestone-Project-Page).
-In addition to bug fixes and refinements, this release adds the following:
-
-* Updated and refactored Driver interface For details, see
-[PR #694](https://github.com/docker/machine/pull/694).
-
-* Initial creation of an internal API, so Machine can be used as a library. For
-details, see [PR #553](https://github.com/docker/machine/issues/553).
-
-* Improvements and isolation of provisioning functionality, so Machine can
-provision and configure the Docker Engine based on OS detection. For details,
-see [PR #553](https://github.com/docker/machine/issues/553).
+> Note: if you change the base image for a provider you may also need to change
+the SSH user as well. For example, the default Red Hat AMI on EC2 expects the 
+SSH user to be ec2-user, so you would have to specify this with 
+`--amazonec2-ssh-user ec2-user`.

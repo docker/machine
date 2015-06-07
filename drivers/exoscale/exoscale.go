@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/state"
+	"github.com/docker/machine/utils"
 	"github.com/pyr/egoscale/src/egoscale"
 )
 
@@ -264,6 +265,12 @@ func (d *Driver) Create() error {
 			{
 				SecurityGroupId: "",
 				Cidr:            "0.0.0.0/0",
+				Protocol:        "TCP",
+				Port:            3376,
+			},
+			{
+				SecurityGroupId: "",
+				Cidr:            "0.0.0.0/0",
 				Protocol:        "ICMP",
 				IcmpType:        8,
 				IcmpCode:        0,
@@ -340,8 +347,7 @@ func (d *Driver) Start() error {
 	if err != nil {
 		return err
 	}
-	_, err = d.waitForVM(client, svmresp)
-	if err != nil {
+	if err = d.waitForJob(client, svmresp); err != nil {
 		return err
 	}
 	return nil
@@ -362,7 +368,7 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
-	if _, err = d.waitForVM(client, svmresp); err != nil {
+	if err = d.waitForJob(client, svmresp); err != nil {
 		return err
 	}
 	return nil
@@ -381,8 +387,7 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	_, err = d.waitForVM(client, dvmresp)
-	if err != nil {
+	if err = d.waitForJob(client, dvmresp); err != nil {
 		return err
 	}
 	return nil
@@ -402,7 +407,7 @@ func (d *Driver) Restart() error {
 	if err != nil {
 		return err
 	}
-	if _, err = d.waitForVM(client, svmresp); err != nil {
+	if err = d.waitForJob(client, svmresp); err != nil {
 		return err
 	}
 
@@ -413,32 +418,36 @@ func (d *Driver) Kill() error {
 	return d.Stop()
 }
 
-func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.DeployVirtualMachineResponse, error) {
-	log.Infof("Waiting for VM...")
-	maxRepeats := 60
-	i := 0
-	var resp *egoscale.QueryAsyncJobResultResponse
-	var err error
-WaitLoop:
-	for ; i < maxRepeats; i++ {
-		resp, err = client.PollAsyncJob(jobid)
-		if err != nil {
-			return nil, err
-		}
-		switch resp.Jobstatus {
-		case 0: // Job is still in progress
-			continue
-		case 1: // Job has successfully completed
-			break WaitLoop
-		case 2: // Job has failed to complete
-			return nil, fmt.Errorf("Operation failed to complete")
-		default: // Some other code
-			continue
-		}
-		time.Sleep(2 * time.Second)
+func (d *Driver) jobIsDone(client *egoscale.Client, jobid string) (bool, error) {
+	resp, err := client.PollAsyncJob(jobid)
+	if err != nil {
+		return true, err
 	}
-	if i == maxRepeats {
-		return nil, fmt.Errorf("Timeout while waiting for VM")
+	switch resp.Jobstatus {
+	case 0: // Job is still in progress
+	case 1: // Job has successfully completed
+		return true, nil
+	case 2: // Job has failed to complete
+		return true, fmt.Errorf("Operation failed to complete")
+	default: // Some other code
+	}
+	return false, nil
+}
+
+func (d *Driver) waitForJob(client *egoscale.Client, jobid string) error {
+	log.Infof("Waiting for job to complete...")
+	return utils.WaitForSpecificOrError(func() (bool, error) {
+		return d.jobIsDone(client, jobid)
+	}, 60, 2*time.Second)
+}
+
+func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.DeployVirtualMachineResponse, error) {
+	if err := d.waitForJob(client, jobid); err != nil {
+		return nil, err
+	}
+	resp, err := client.PollAsyncJob(jobid)
+	if err != nil {
+		return nil, err
 	}
 	vm, err := client.AsyncToVirtualMachine(*resp)
 	if err != nil {

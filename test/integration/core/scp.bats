@@ -1,10 +1,7 @@
 #!/usr/bin/env bats
 
-load helpers
+load ${BASE_TEST_DIR}/helpers.bash
 
-export DRIVER=virtualbox
-export NAME="bats-$DRIVER-test"
-export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 export SECOND_MACHINE="$NAME-2"
 
 @test "$DRIVER: create" {
@@ -19,6 +16,9 @@ export SECOND_MACHINE="$NAME-2"
 }
 
 @test "$DRIVER: test machine scp command from host to remote" {
+  teardown () {
+    rm foo.txt
+  }
   echo A file created locally! >foo.txt
   machine scp foo.txt $NAME:/tmp/foo.txt
   [[ $(machine ssh $NAME cat /tmp/foo.txt) == "A file created locally!" ]]
@@ -33,9 +33,4 @@ export SECOND_MACHINE="$NAME-2"
   run machine ssh $NAME 'echo A file hopping around! >/tmp/foo.txt'
   run machine scp $NAME:/tmp/foo.txt $SECOND_MACHINE:/tmp/foo.txt
   [[ $(machine ssh ${SECOND_MACHINE} cat /tmp/foo.txt) == "A file hopping around!" ]]
-}
-
-@test "cleanup" {
-  rm foo.txt
-  machine rm $NAME
 }

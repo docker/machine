@@ -1,13 +1,10 @@
 #!/usr/bin/env bats
 
-load helpers
-
-export DRIVER=vmwarevcloudair
-export NAME="bats-$DRIVER-test"
-export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
+load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: machine should not exist" {
   run machine inspect $NAME
+  echo ${output}
   [ "$status" -eq 1  ]
 }
 
@@ -43,6 +40,10 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   [[ ${lines[0]} =~ "total"  ]]
 }
 
+@test "$DRIVER: docker commands with the socket should work" {
+  run machine ssh $NAME -- docker version
+}
+
 @test "$DRIVER: stop" {
   run machine stop $NAME
   [ "$status" -eq 0  ]
@@ -52,6 +53,23 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   run machine ls
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Stopped"*  ]]
+}
+
+@test "$DRIVER: url should show an error when machine is stopped" {
+  run machine url $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == *"not running"* ]]
+}
+
+@test "$DRIVER: env should show an error when machine is stopped" {
+  run machine env $NAME
+  [ "$status" -eq 1 ]
+  [[ ${output} == *"not running. Please start this with"* ]]
+}
+
+@test "$DRIVER: machine should not allow upgrade when stopped" {
+  run machine upgrade $NAME
+  [[ "$status" -eq 1 ]]
 }
 
 @test "$DRIVER: start" {
@@ -86,19 +104,3 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
 }
-
-@test "$DRIVER: remove" {
-  run machine rm -f $NAME
-  [ "$status" -eq 0  ]
-}
-
-@test "$DRIVER: machine should not exist" {
-  run machine inspect $NAME
-  [ "$status" -eq 1  ]
-}
-
-@test "$DRIVER: cleanup" {
-  run rm -rf $MACHINE_STORAGE_PATH
-  [ "$status" -eq 0  ]
-}
-
