@@ -48,7 +48,8 @@ func cmdEnv(c *cli.Context) {
 
 	t := template.New("envConfig")
 
-	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell)
+  // TODO refactor by simply passing a cli.Context and extracting values
+	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell, c)
 
 	shellCfg := ShellConfig{
 		DockerCertPath:  "",
@@ -188,28 +189,35 @@ func cmdEnv(c *cli.Context) {
 	}
 }
 
-func generateUsageHint(appName, machineName, userShell string) string {
+func generateUsageHint(appName, machineName, userShell string, c *cli.Context) string {
 	cmd := ""
-	switch userShell {
+	swarmCmd := ""
+
+	if (c.Bool("swarm")) {
+		// leading space required
+		swarmCmd = " --swarm"
+	}
+
+		switch userShell {
 	case "fish":
 		if machineName != "" {
-			cmd = fmt.Sprintf("eval (%s env %s)", appName, machineName)
+			cmd = fmt.Sprintf("eval (%s env %s%s)", appName, machineName, swarmCmd)
 		} else {
-			cmd = fmt.Sprintf("eval (%s env)", appName)
+			cmd = fmt.Sprintf("eval (%s env%s)", appName, swarmCmd)
 		}
 	case "powershell":
 		if machineName != "" {
-			cmd = fmt.Sprintf("%s env --shell=powershell %s | Invoke-Expression", appName, machineName)
+			cmd = fmt.Sprintf("%s env --shell=powershell %s%s | Invoke-Expression", appName, machineName, swarmCmd)
 		} else {
-			cmd = fmt.Sprintf("%s env --shell=powershell | Invoke-Expression", appName)
+			cmd = fmt.Sprintf("%s env --shell=powershell%s | Invoke-Expression", appName, swarmCmd)
 		}
 	case "cmd":
 		cmd = "copy and paste the above values into your command prompt"
 	default:
 		if machineName != "" {
-			cmd = fmt.Sprintf("eval \"$(%s env %s)\"", appName, machineName)
+			cmd = fmt.Sprintf("eval \"$(%s env %s%s)\"", appName, machineName, swarmCmd)
 		} else {
-			cmd = fmt.Sprintf("eval \"$(%s env)\"", appName)
+			cmd = fmt.Sprintf("eval \"$(%s env%s)\"", appName, swarmCmd)
 		}
 	}
 
