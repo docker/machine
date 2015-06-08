@@ -26,11 +26,19 @@ var (
 	swarmPort  = 3376
 )
 
+type configError struct {
+	option string
+}
+
+func (e *configError) Error() string {
+	return fmt.Sprintf("cloudstack driver requires the --cloudstack-%s option", e.option)
+}
+
 type Driver struct {
-	Id                string
+	ID                string
 	MachineName       string
-	ApiURL            string
-	ApiKey            string
+	APIURL            string
+	APIKey            string
 	SecretKey         string
 	Zone              string
 	Template          string
@@ -43,8 +51,8 @@ type Driver struct {
 	SSHUser           string
 	SSHKeyPair        string
 	SourceCIDR        string
-	FWRuleIds         []string
-	PFRuleIds         []string
+	FWRuleIDs         []string
+	PFRuleIDs         []string
 	SecurityGroupName string
 	Expunge           bool
 	CaCertPath        string
@@ -71,45 +79,37 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "cloudstack-api-url",
 			Usage:  "CloudStack API URL",
-			Value:  "",
 			EnvVar: "CLOUDSTACK_API_URL",
 		},
 		cli.StringFlag{
 			Name:   "cloudstack-api-key",
 			Usage:  "CloudStack API key",
-			Value:  "",
 			EnvVar: "CLOUDSTACK_API_KEY",
 		},
 		cli.StringFlag{
 			Name:   "cloudstack-secret-key",
 			Usage:  "CloudStack API secret key",
-			Value:  "",
 			EnvVar: "CLOUDSTACK_SECRET_KEY",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-zone",
 			Usage: "CloudStack zone",
-			Value: "",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-template",
 			Usage: "CloudStack template",
-			Value: "",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-service-offering",
 			Usage: "CloudStack service offering",
-			Value: "",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-network",
 			Usage: "CloudStack network",
-			Value: "",
 		},
 		cli.StringFlag{
 			Name:  "cloudstack-public-ip",
 			Usage: "Public IP, leave empty to use Private IP",
-			Value: "",
 		},
 		cli.IntFlag{
 			Name:  "cloudstack-ssh-port",
@@ -133,7 +133,11 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+func NewDriver(
+	machineName string,
+	storePath string,
+	caCert string,
+	privateKey string) (drivers.Driver, error) {
 	return &Driver{
 		MachineName:    machineName,
 		storePath:      storePath,
@@ -150,38 +154,16 @@ func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
 	return nil
 }
 
-func (d *Driver) getPublicIPID() (string, error) {
-
-	if d.PublicIP == "" {
-		return "", nil
-	}
-
-	cs := d.getClient()
-
-	log.Debugf("Retrieving UUID of IP address: %q", d.PublicIP)
-	ip := cs.Address.NewListPublicIpAddressesParams()
-	ip.SetIpaddress(d.PublicIP)
-
-	l, err := cs.Address.ListPublicIpAddresses(ip)
-	if err != nil {
-		return "", err
-	}
-	if l.Count != 1 {
-		return "", fmt.Errorf("Could not find UUID of IP address: %s", d.PublicIP)
-	}
-	return l.PublicIpAddresses[0].Id, nil
-}
-
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	// required
-	d.ApiURL = flags.String("cloudstack-api-url")
-	d.ApiKey = flags.String("cloudstack-api-key")
+	// Required
+	d.APIURL = flags.String("cloudstack-api-url")
+	d.APIKey = flags.String("cloudstack-api-key")
 	d.SecretKey = flags.String("cloudstack-secret-key")
-	d.Zone = flags.String("cloudstack-zone")
-	d.Template = flags.String("cloudstack-template")
 	d.ServiceOffering = flags.String("cloudstack-service-offering")
+	d.Template = flags.String("cloudstack-template")
+	d.Zone = flags.String("cloudstack-zone")
 
-	// optional
+	// Optional
 	d.Network = flags.String("cloudstack-network")
 	d.PublicIP = flags.String("cloudstack-public-ip")
 	d.SSHPort = flags.Int("cloudstack-ssh-port")
@@ -189,36 +171,33 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SourceCIDR = flags.String("cloudstack-source-cidr")
 	d.Expunge = flags.Bool("cloudstack-expunge")
 
+	// Swarm
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 
-	if d.ApiURL == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-api-url option")
+	if d.APIURL == "" {
+		return &configError{option: "api-url"}
 	}
 
-	if d.ApiKey == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-api-key option")
+	if d.APIKey == "" {
+		return &configError{option: "api-key"}
 	}
 
 	if d.SecretKey == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-secret-key option")
-	}
-
-	if d.Zone == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-zone option")
+		return &configError{option: "secret-key"}
 	}
 
 	if d.Template == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-template option")
+		return &configError{option: "template"}
 	}
 
 	if d.ServiceOffering == "" {
-		return fmt.Errorf("cloudstack driver requires the --cloudstack-service-offering option")
+		return &configError{option: "service-offering"}
 	}
 
-	if d.SourceCIDR == "" {
-		d.SourceCIDR = "0.0.0.0/0"
+	if d.Zone == "" {
+		return &configError{option: "zone"}
 	}
 
 	ipaddressid, err := d.getPublicIPID()
@@ -244,14 +223,34 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
-func (d *Driver) GetURL() (string, error) {
-	ip, err := d.GetIP()
+func (d *Driver) getPublicIPID() (string, error) {
+	if d.PublicIP == "" {
+		return "", nil
+	}
+
+	cs := d.getClient()
+
+	log.Debugf("Retrieving UUID of IP address: %q", d.PublicIP)
+	p := cs.Address.NewListPublicIpAddressesParams()
+	p.SetIpaddress(d.PublicIP)
+
+	l, err := cs.Address.ListPublicIpAddresses(p)
 	if err != nil {
 		return "", err
 	}
-	if ip == "" {
-		return "", nil
+	if l.Count != 1 {
+		return "", fmt.Errorf("Could not find UUID of IP address: %s", d.PublicIP)
 	}
+
+	return l.PublicIpAddresses[0].Id, nil
+}
+
+func (d *Driver) GetURL() (string, error) {
+	ip, err := d.GetIP()
+	if err != nil || ip == "" {
+		return "", err
+	}
+
 	return fmt.Sprintf("tcp://%s:%d", ip, dockerPort), nil
 }
 
@@ -271,18 +270,10 @@ func (d *Driver) GetSSHHostname() (string, error) {
 }
 
 func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
 	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = sshUser
-	}
-
 	return d.SSHUser
 }
 
@@ -292,13 +283,13 @@ func (d *Driver) GetSSHKeyPath() string {
 
 func (d *Driver) GetState() (state.State, error) {
 	cs := d.getClient()
-	vm, count, err := cs.VirtualMachine.GetVirtualMachineByID(d.Id)
+	vm, count, err := cs.VirtualMachine.GetVirtualMachineByID(d.ID)
 	if err != nil {
 		return state.Error, err
 	}
 
 	if count == 0 {
-		return state.None, fmt.Errorf("Machine doesn not exist, use create command to create it")
+		return state.None, fmt.Errorf("Machine does not exist, use create command to create it")
 	}
 
 	switch vm.State {
@@ -338,7 +329,7 @@ func (d *Driver) checkVMConflict() error {
 		return err
 	}
 	if r.Count > 0 {
-		return fmt.Errorf("Error vm %s already exists on CloudStack", d.MachineName)
+		return fmt.Errorf("Error machine %s already exists on CloudStack", d.MachineName)
 	}
 
 	return nil
@@ -373,6 +364,7 @@ func (d *Driver) checkFWPFRuleConflict() error {
 	if err != nil {
 		return err
 	}
+
 	pfparam := cs.Firewall.NewListPortForwardingRulesParams()
 	pfparam.SetIpaddressid(d.PublicIPID)
 	pfrules, err := cs.Firewall.ListPortForwardingRules(pfparam)
@@ -405,9 +397,9 @@ func (d *Driver) checkFWPFRuleConflict() error {
 func (d *Driver) checkSecurityGroupConflict() error {
 	cs := d.getClient()
 
-	param := cs.SecurityGroup.NewListSecurityGroupsParams()
-	param.SetSecuritygroupname(fmt.Sprintf("docker-machine-%s", d.MachineName))
-	sgs, err := cs.SecurityGroup.ListSecurityGroups(param)
+	p := cs.SecurityGroup.NewListSecurityGroupsParams()
+	p.SetSecuritygroupname(fmt.Sprintf("docker-machine-%s", d.MachineName))
+	sgs, err := cs.SecurityGroup.ListSecurityGroups(p)
 	if err != nil {
 		return err
 	}
@@ -419,7 +411,6 @@ func (d *Driver) checkSecurityGroupConflict() error {
 }
 
 func (d *Driver) checkPrereqs() error {
-
 	var err error
 
 	if err = d.checkVMConflict(); err != nil {
@@ -453,6 +444,7 @@ func (d *Driver) getNetworkType() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error retrieving zone %q: %v", d.Zone, err)
 	}
+
 	return zone.Networktype, nil
 }
 
@@ -461,11 +453,12 @@ func (d *Driver) createSSHKeyPair() error {
 
 	log.Info("Creating an SSH keypair...")
 	keypairName := fmt.Sprintf("docker-machine-%s", d.MachineName)
-	param := cs.SSH.NewCreateSSHKeyPairParams(keypairName)
-	keypair, err := cs.SSH.CreateSSHKeyPair(param)
+	p := cs.SSH.NewCreateSSHKeyPairParams(keypairName)
+	keypair, err := cs.SSH.CreateSSHKeyPair(p)
 	if err != nil {
 		return err
 	}
+
 	err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(keypair.Privatekey), 0600)
 	if err != nil {
 		return err
@@ -509,9 +502,11 @@ func (d *Driver) deployVirtualMachine() error {
 	p.SetName(d.MachineName)
 	p.SetDisplayname(d.MachineName)
 	p.SetKeypair(d.SSHKeyPair)
+
 	if networkid != "" {
 		p.SetNetworkids([]string{networkid})
 	}
+
 	if d.SecurityGroupName != "" {
 		p.SetSecuritygroupnames([]string{d.SecurityGroupName})
 	}
@@ -522,7 +517,7 @@ func (d *Driver) deployVirtualMachine() error {
 		return err
 	}
 
-	d.Id = vm.Id
+	d.ID = vm.Id
 	d.IPAddress = vm.Nic[0].Ipaddress
 
 	return nil
@@ -533,10 +528,11 @@ func (d *Driver) createSecurityGroup() error {
 
 	log.Info("Creating security group...")
 	sgName := fmt.Sprintf("docker-machine-%s", d.MachineName)
-	param := cs.SecurityGroup.NewCreateSecurityGroupParams(sgName)
-	if _, err := cs.SecurityGroup.CreateSecurityGroup(param); err != nil {
+	p := cs.SecurityGroup.NewCreateSecurityGroupParams(sgName)
+	if _, err := cs.SecurityGroup.CreateSecurityGroup(p); err != nil {
 		return err
 	}
+
 	d.SecurityGroupName = sgName
 
 	ports := []int{dockerPort, d.SSHPort}
@@ -545,13 +541,13 @@ func (d *Driver) createSecurityGroup() error {
 	}
 
 	for _, port := range ports {
-		param := cs.SecurityGroup.NewAuthorizeSecurityGroupIngressParams()
-		param.SetSecuritygroupname(d.SecurityGroupName)
-		param.SetCidrlist([]string{d.SourceCIDR})
-		param.SetProtocol("tcp")
-		param.SetStartport(port)
-		param.SetEndport(port)
-		if _, err := cs.SecurityGroup.AuthorizeSecurityGroupIngress(param); err != nil {
+		p := cs.SecurityGroup.NewAuthorizeSecurityGroupIngressParams()
+		p.SetSecuritygroupname(d.SecurityGroupName)
+		p.SetCidrlist([]string{d.SourceCIDR})
+		p.SetProtocol("tcp")
+		p.SetStartport(port)
+		p.SetEndport(port)
+		if _, err := cs.SecurityGroup.AuthorizeSecurityGroupIngress(p); err != nil {
 			return err
 		}
 	}
@@ -568,18 +564,17 @@ func (d *Driver) createFirewallRules() error {
 	}
 
 	log.Info("Creating firewall rules...")
-
 	for _, port := range ports {
-		param := cs.Firewall.NewCreateFirewallRuleParams(d.PublicIPID, "tcp")
-		param.SetCidrlist([]string{d.SourceCIDR})
-		param.SetStartport(port)
-		param.SetEndport(port)
+		p := cs.Firewall.NewCreateFirewallRuleParams(d.PublicIPID, "tcp")
+		p.SetCidrlist([]string{d.SourceCIDR})
+		p.SetStartport(port)
+		p.SetEndport(port)
 
-		rule, err := cs.Firewall.CreateFirewallRule(param)
+		rule, err := cs.Firewall.CreateFirewallRule(p)
 		if err != nil {
 			return err
 		}
-		d.FWRuleIds = append(d.FWRuleIds, rule.Id)
+		d.FWRuleIDs = append(d.FWRuleIDs, rule.Id)
 	}
 
 	return nil
@@ -591,31 +586,33 @@ func (d *Driver) createPortForwardingRules() error {
 	type pair struct {
 		public, private int
 	}
+
 	ports := []pair{
 		{public: dockerPort, private: dockerPort},
-		{public: d.SSHPort, private: 22},
+		{public: d.SSHPort, private: sshPort},
 	}
+
 	if d.SwarmMaster {
 		ports = append(ports, pair{public: swarmPort, private: swarmPort})
 	}
 
 	log.Info("Creating port forwarding rules...")
 	for _, port := range ports {
-		param := cs.Firewall.NewCreatePortForwardingRuleParams(
-			d.PublicIPID, port.private, "tcp", port.public, d.Id)
-		param.SetOpenfirewall(false)
-		rule, err := cs.Firewall.CreatePortForwardingRule(param)
+		p := cs.Firewall.NewCreatePortForwardingRuleParams(
+			d.PublicIPID, port.private, "tcp", port.public, d.ID)
+		p.SetOpenfirewall(false)
+		rule, err := cs.Firewall.CreatePortForwardingRule(p)
 		if err != nil {
 			return err
 		}
-		d.PFRuleIds = append(d.PFRuleIds, rule.Id)
+
+		d.PFRuleIDs = append(d.PFRuleIDs, rule.Id)
 	}
 
 	return nil
 }
 
 func (d *Driver) Create() error {
-
 	if err := d.checkPrereqs(); err != nil {
 		return err
 	}
@@ -657,46 +654,46 @@ func (d *Driver) Remove() error {
 
 	if d.SSHKeyPair != "" {
 		log.Info("Removing ssh keypair...")
-		param := cs.SSH.NewDeleteSSHKeyPairParams(d.SSHKeyPair)
-		if _, err := cs.SSH.DeleteSSHKeyPair(param); err != nil {
+		p := cs.SSH.NewDeleteSSHKeyPairParams(d.SSHKeyPair)
+		if _, err := cs.SSH.DeleteSSHKeyPair(p); err != nil {
 			return err
 		}
 	}
 
-	if len(d.PFRuleIds) > 0 {
+	if len(d.PFRuleIDs) > 0 {
 		log.Info("Removing port forwarding rules...")
-		for _, id := range d.PFRuleIds {
-			param := cs.Firewall.NewDeletePortForwardingRuleParams(id)
-			if _, err := cs.Firewall.DeletePortForwardingRule(param); err != nil {
+		for _, id := range d.PFRuleIDs {
+			p := cs.Firewall.NewDeletePortForwardingRuleParams(id)
+			if _, err := cs.Firewall.DeletePortForwardingRule(p); err != nil {
 				return err
 			}
 		}
 	}
 
-	if len(d.FWRuleIds) > 0 {
+	if len(d.FWRuleIDs) > 0 {
 		log.Info("Removing firewall rules...")
-		for _, id := range d.FWRuleIds {
-			param := cs.Firewall.NewDeleteFirewallRuleParams(id)
-			if _, err := cs.Firewall.DeleteFirewallRule(param); err != nil {
+		for _, id := range d.FWRuleIDs {
+			p := cs.Firewall.NewDeleteFirewallRuleParams(id)
+			if _, err := cs.Firewall.DeleteFirewallRule(p); err != nil {
 				return err
 			}
 		}
 	}
 
-	if d.Id != "" {
+	if d.ID != "" {
 		log.Info("Removing CloudStack instance...")
-		param := cs.VirtualMachine.NewDestroyVirtualMachineParams(d.Id)
-		param.SetExpunge(d.Expunge)
-		if _, err := cs.VirtualMachine.DestroyVirtualMachine(param); err != nil {
+		p := cs.VirtualMachine.NewDestroyVirtualMachineParams(d.ID)
+		p.SetExpunge(d.Expunge)
+		if _, err := cs.VirtualMachine.DestroyVirtualMachine(p); err != nil {
 			return err
 		}
 	}
 
 	if d.SecurityGroupName != "" && d.Expunge {
 		log.Info("Removing CloudStack security group...")
-		param := cs.SecurityGroup.NewDeleteSecurityGroupParams()
-		param.SetName(d.SecurityGroupName)
-		if _, err := cs.SecurityGroup.DeleteSecurityGroup(param); err != nil {
+		p := cs.SecurityGroup.NewDeleteSecurityGroupParams()
+		p.SetName(d.SecurityGroupName)
+		if _, err := cs.SecurityGroup.DeleteSecurityGroup(p); err != nil {
 			return err
 		}
 	}
@@ -721,7 +718,7 @@ func (d *Driver) Start() error {
 	}
 
 	cs := d.getClient()
-	p := cs.VirtualMachine.NewStartVirtualMachineParams(d.Id)
+	p := cs.VirtualMachine.NewStartVirtualMachineParams(d.ID)
 	if _, err = cs.VirtualMachine.StartVirtualMachine(p); err != nil {
 		return err
 	}
@@ -741,7 +738,7 @@ func (d *Driver) Stop() error {
 	}
 
 	cs := d.getClient()
-	p := cs.VirtualMachine.NewStopVirtualMachineParams(d.Id)
+	p := cs.VirtualMachine.NewStopVirtualMachineParams(d.ID)
 	if _, err = cs.VirtualMachine.StopVirtualMachine(p); err != nil {
 		return err
 	}
@@ -760,7 +757,7 @@ func (d *Driver) Restart() error {
 	}
 
 	cs := d.getClient()
-	p := cs.VirtualMachine.NewRebootVirtualMachineParams(d.Id)
+	p := cs.VirtualMachine.NewRebootVirtualMachineParams(d.ID)
 	if _, err = cs.VirtualMachine.RebootVirtualMachine(p); err != nil {
 		return err
 	}
@@ -773,7 +770,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) getClient() *cloudstack.CloudStackClient {
-	cs := cloudstack.NewAsyncClient(d.ApiURL, d.ApiKey, d.SecretKey, false)
+	cs := cloudstack.NewAsyncClient(d.APIURL, d.APIKey, d.SecretKey, false)
 	cs.AsyncTimeout(180)
 	return cs
 }
