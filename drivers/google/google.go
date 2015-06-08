@@ -19,6 +19,7 @@ type Driver struct {
 	SSHPort        int
 	Zone           string
 	MachineType    string
+	MachineImage   string
 	DiskType       string
 	Scopes         string
 	DiskSize       int
@@ -54,6 +55,11 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "GCE Machine Type",
 			Value:  "f1-micro",
 			EnvVar: "GOOGLE_MACHINE_TYPE",
+		},
+		cli.StringFlag{
+			Name:   "google-machine-image",
+			Usage:  "GCE Machine Image Absolute URL",
+			EnvVar: "GOOGLE_MACHINE_IMAGE",
 		},
 		cli.StringFlag{
 			Name:   "google-username",
@@ -147,6 +153,7 @@ func (d *Driver) DriverName() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Zone = flags.String("google-zone")
 	d.MachineType = flags.String("google-machine-type")
+	d.MachineImage = flags.String("google-machine-image")
 	d.DiskSize = flags.Int("google-disk-size")
 	d.DiskType = flags.String("google-disk-type")
 	d.AuthTokenPath = flags.String("google-auth-token")

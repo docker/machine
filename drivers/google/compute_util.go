@@ -30,7 +30,7 @@ type ComputeUtil struct {
 
 const (
 	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150316"
+	defaultImageName   = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150316"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
@@ -181,6 +181,10 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	}
 	disk, err := c.disk()
 	if disk == nil || err != nil {
+		imageName := defaultImageName
+		if d.MachineImage != "" {
+			imageName = d.MachineImage
+		}
 		instance.Disks[0].InitializeParams = &raw.AttachedDiskInitializeParams{
 			DiskName:    c.diskName(),
 			SourceImage: imageName,
