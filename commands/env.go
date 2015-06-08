@@ -48,7 +48,7 @@ func cmdEnv(c *cli.Context) {
 
 	t := template.New("envConfig")
 
-  // TODO refactor by simply passing a cli.Context and extracting values
+	// TODO refactor by simply passing a cli.Context and extracting values
 	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell, c)
 
 	shellCfg := ShellConfig{
@@ -193,12 +193,12 @@ func generateUsageHint(appName, machineName, userShell string, c *cli.Context) s
 	cmd := ""
 	swarmCmd := ""
 
-	if (c.Bool("swarm")) {
+	if c.Bool("swarm") {
 		// leading space required
 		swarmCmd = " --swarm"
 	}
 
-		switch userShell {
+	switch userShell {
 	case "fish":
 		if machineName != "" {
 			cmd = fmt.Sprintf("eval (%s env %s%s)", appName, machineName, swarmCmd)
