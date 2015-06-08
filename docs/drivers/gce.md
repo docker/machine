@@ -43,6 +43,7 @@ $ docker-machine create --driver google \
 - `--google-project`: **required** The id of your project to use when launching the instance.
  - `--google-zone`: The zone to launch the instance.
  - `--google-machine-type`: The type of instance.
+ - `--google-machine-image`: The absolute URL to a base VM image to instantiate.
  - `--google-username`: The username to use for the instance.
  - `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
  - `--google-disk-size`: The disk size of instance.
@@ -51,7 +52,11 @@ $ docker-machine create --driver google \
  - `--google-preemptible`: Instance preemptibility.
  - `--google-tags`: Instance tags (comma-separated).
 
-The driver uses the `ubuntu-1404-trusty-v20150909a` disk image.
+The GCE driver will use the `ubuntu-1404-trusty-v20150909a` instance image unless otherwise specified. To obtain a
+list of image URLs run:
+```
+gcloud compute images list --uri
+```
 
 Environment variables and default values:
 
@@ -60,6 +65,7 @@ Environment variables and default values:
 | **`--google-project`**    | `GOOGLE_PROJECT`      | -                                    |
 | `--google-zone`           | `GOOGLE_ZONE`         | `us-central1-a`                      |
 | `--google-machine-type`   | `GOOGLE_MACHINE_TYPE` | `n1-standard-1`                      |
+| `--google-machine-image`  | `GOOGLE_MACHINE_IMAGE`| `ubuntu-1404-trusty-v20150909a`      |
 | `--google-username`       | `GOOGLE_USERNAME`     | `docker-user`                        |
 | `--google-scopes`         | `GOOGLE_SCOPES`       | `devstorage.read_only,logging.write` |
 | `--google-disk-size`      | `GOOGLE_DISK_SIZE`    | `10`                                 |
