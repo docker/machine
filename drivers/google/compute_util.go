@@ -35,7 +35,6 @@ type ComputeUtil struct {
 
 const (
 	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150909a"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
@@ -231,7 +230,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	if disk == nil || err != nil {
 		instance.Disks[0].InitializeParams = &raw.AttachedDiskInitializeParams{
 			DiskName:    c.diskName(),
-			SourceImage: imageName,
+			SourceImage: d.MachineImage,
 			// The maximum supported disk size is 1000GB, the cast should be fine.
 			DiskSizeGb: int64(d.DiskSize),
 			DiskType:   c.diskType(),
