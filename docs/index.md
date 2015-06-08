@@ -1087,6 +1087,12 @@ $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --a
 
 This example assumes the VPC ID was found in the `a` availability zone. Use the` --amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
 
+Use `amazonec2` for the `--driver` and include the 3 required parameters. Depending upon the configured VPC, you may have to specify `--amazonec2-zone` if a subnet does not exist in Availability Zone `a`.
+
+```
+$ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C********* --amazonec2-vpc-id vpc-****** aws01
+```
+
 Options:
 
  - `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
