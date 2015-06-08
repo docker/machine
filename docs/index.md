@@ -75,6 +75,7 @@ sure to install the Docker client as well, e.g.:
 
 ```
 $ curl -L https://get.docker.com/builds/Darwin/x86_64/docker-latest > /usr/local/bin/docker
+$ chmod +x /usr/local/bin/docker
 ```
 
 ### Windows
@@ -1062,6 +1063,12 @@ tcp://192.168.99.109:2376
 
 #### Amazon Web Services
 Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and a VPC ID.  To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs.  Select the one where you would like to launch the instance.
+
+Use `amazonec2` for the `--driver` and include the 3 required parameters. Depending upon the configured VPC, you may have to specify `--amazonec2-zone` if a subnet does not exist in Availability Zone `a`.
+
+```
+$ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C********* --amazonec2-vpc-id vpc-****** aws01
+```
 
 Options:
 
