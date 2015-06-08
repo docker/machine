@@ -260,6 +260,15 @@ func (h *Host) Upgrade() error {
 }
 
 func (h *Host) Remove(force bool) error {
+	machineState, err := h.Driver.GetState()
+	if err != nil {
+		return err
+	}
+
+	if machineState != state.Stopped {
+		return fmt.Errorf("Cannot remove machine %q: it is not stopped", h.Name)
+	}
+
 	if err := h.Driver.Remove(); err != nil {
 		if !force {
 			return err
@@ -267,7 +276,9 @@ func (h *Host) Remove(force bool) error {
 	}
 
 	if err := h.SaveConfig(); err != nil {
-		return err
+		if !force {
+			return err
+		}
 	}
 
 	return h.removeStorePath()

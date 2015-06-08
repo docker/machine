@@ -334,10 +334,44 @@ dev                virtualbox     Running   tcp://192.168.99.103:2376
 staging   *        digitalocean   Running   tcp://104.236.50.118:2376
 ```
 
-To remove a host and all of its containers and images, use `docker-machine rm`:
+To remove a host and all of its containers and images, you can use the
+`docker-machine rm` command, but first you must stop it using `docker-machine
+stop`.  If a machine is not stopped, it cannot be removed.
 
 ```
-$ docker-machine rm dev staging
+$ docker-machine rm foo1 staging
+Running action "remove" on machine "foo1"...
+Error running action "remove" on machine "foo1": Cannot remove machine "foo1": it is not stopped
+Running action "remove" on machine "staging"...
+Error running action "remove" on machine "staging": Cannot remove machine "staging": it is not stopped
+There was an error removing one or more machines.
+```
+
+Note that you can pass multiple machine names to commands such as `stop`, `rm`,
+etc:
+
+```
+$ docker-machine stop foo1 staging
+Running action "stop" on machine "staging"...
+Running action "stop" on machine "foo1"...
+Successfully ran action "stop" on machine "foo1".
+Successfully ran action "stop" on machine "staging".
+```
+
+When the machines are stopped, you can run `docker-machine rm` to remove them:
+
+```
+$ docker-machine rm foo1 staging
+Running action "remove" on machine "foo1"...
+Successfully removed foo1
+Running action "remove" on machine "staging"...
+Successfully removed staging
+```
+
+You can see with `docker-machine ls` that the references to these machines are
+no longer present.
+
+```
 $ docker-machine ls
 NAME      ACTIVE   DRIVER       STATE     URL
 ```
@@ -886,13 +920,15 @@ INFO[0005] Waiting for VM to start...
 #### rm
 
 Remove a machine.  This will remove the local reference as well as delete it
-on the cloud provider or virtualization management platform.
+on the cloud provider or virtualization management platform.  A machine must be
+stopped before it can be removed.
 
 ```
 $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL
 foo0            virtualbox   Running   tcp://192.168.99.105:2376
 foo1            virtualbox   Running   tcp://192.168.99.106:2376
+$ docker-machine stop foo1
 $ docker-machine rm foo1
 $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL

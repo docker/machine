@@ -42,6 +42,16 @@ var (
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument.")
 )
 
+type ErrorMachineAction struct {
+	actionName    string
+	machineName   string
+	originalError error
+}
+
+func (e ErrorMachineAction) Error() string {
+	return fmt.Sprintf("Error running action %q on machine %q: %s", e.actionName, e.machineName, e.originalError)
+}
+
 type machineConfig struct {
 	machineName    string
 	machineDir     string
@@ -412,13 +422,16 @@ func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- e
 		"ip":            host.PrintIP,
 	}
 
-	log.Debugf("command=%s machine=%s", actionName, host.Name)
-
 	if err := commands[actionName](); err != nil {
-		errorChan <- err
+		errorChan <- ErrorMachineAction{
+			actionName:    actionName,
+			machineName:   host.Name,
+			originalError: err,
+		}
 		return
 	}
 
+	log.Info(host.Name)
 	errorChan <- nil
 }
 
@@ -451,7 +464,7 @@ func runActionForeachMachine(actionName string, machines []*libmachine.Host) {
 		serialChan := make(chan error)
 		go machineCommand(actionName, machine, serialChan)
 		if err := <-serialChan; err != nil {
-			log.Errorln(err)
+			log.Error(err)
 		}
 		close(serialChan)
 	}
@@ -461,7 +474,7 @@ func runActionForeachMachine(actionName string, machines []*libmachine.Host) {
 	// rate limit us.
 	for i := 0; i < numConcurrentActions; i++ {
 		if err := <-errorChan; err != nil {
-			log.Errorln(err)
+			log.Error(err)
 		}
 	}
 
