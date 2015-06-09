@@ -40,7 +40,7 @@ For more information and resources, please visit
 ## Installation
 
 Docker Machine is supported on Windows, OS X, and Linux and is installable as one
-standalone binary.  The links to the binaries for the various platforms and
+standalone binary. The links to the binaries for the various platforms and
 architectures are below:
 
 - [Windows - 32bit](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-386.exe)
@@ -50,11 +50,11 @@ architectures are below:
 - [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_linux-amd64)
 - [Linux - i386](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_linux-386)
 
-### OSX and Linux
+### OS X and Linux
 
-To install on OSX or Linux, download the proper binary to somewhere in your
-`PATH` (e.g. `/usr/local/bin`) and make it executable.  For instance, to install on
-most OSX machines these commands should suffice:
+To install on OS X or Linux, download the proper binary to somewhere in your
+`PATH` (e.g. `/usr/local/bin`) and make it executable. For instance, to install on
+most OS X machines these commands should suffice:
 
 ```
 $ curl -L https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
@@ -80,13 +80,13 @@ $ curl -L https://get.docker.com/builds/Darwin/x86_64/docker-latest > /usr/local
 ### Windows
 
 Currently, Docker recommends that you install and use Docker Machine on Windows
-with [msysgit](https://msysgit.github.io/).  This will provide you with some
+with [msysgit](https://msysgit.github.io/). This will provide you with some
 programs that Docker Machine relies on such as `ssh`, as well as a functioning
 shell.
 
 When you have installed msysgit, start up the terminal prompt and run the
-following commands.  Here it is assumed that you are on a 64-bit Windows
-installation.  If you are on a 32-bit installation, please substitute "i386" for
+following commands. Here it is assumed that you are on a 64-bit Windows
+installation. If you are on a 32-bit installation, please substitute "i386" for
 "x86_64" in the URLs mentioned.
 
 First, install the Docker client binary:
@@ -126,7 +126,7 @@ NAME   ACTIVE   DRIVER   STATE   URL
 ```
 
 To create one, we run the `docker-machine create` command, passing the string
-`virtualbox` to the `--driver` flag.  The final argument we pass is the name of
+`virtualbox` to the `--driver` flag. The final argument we pass is the name of
 the machine - in this case, we will name our machine "dev".
 
 This command will download a lightweight Linux distribution
@@ -154,8 +154,8 @@ dev             virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
 Next, as noted in the output of the `docker-machine create` command, we have to tell
-Docker to talk to that machine.  You can do this with the `docker-machine env`
-command.  For example,
+Docker to talk to that machine. You can do this with the `docker-machine env`
+command. For example,
 
 ```
 $ eval "$(docker-machine env dev)"
@@ -163,7 +163,7 @@ $ docker ps
 ```
 
 > **Note**: If you are using `fish`, or a Windows shell such as
-> Powershell/`cmd.exe` the above method will not work as described.  Instead,
+> Powershell/`cmd.exe` the above method will not work as described. Instead,
 > see [the `env` command's documentation](https://docs.docker.com/machine/#env)
 > to learn how to set the environment variables for your shell.
 
@@ -212,7 +212,7 @@ $ docker run -d -p 8000:80 nginx
 ```
 
 When the image is finished pulling, you can hit the server at port 8000 on the
-IP address given to you by `docker-machine ip`.  For instance:
+IP address given to you by `docker-machine ip`. For instance:
 
 ```
 $ curl $(docker-machine ip dev):8000
@@ -244,7 +244,7 @@ Commercial support is available at
 ```
 
 You can create and manage as many local VMs running Docker as you please- just
-run `docker-machine create` again.  All created machines will appear in the
+run `docker-machine create` again. All created machines will appear in the
 output of `docker-machine ls`.
 
 If you are finished using a host for the time being, you can stop it with
@@ -259,16 +259,16 @@ $ docker-machine start dev
 ## Using Docker Machine with a cloud provider
 
 Creating a local virtual machine running Docker is useful and fun, but it is not
-the only thing Docker Machine is capable of.  Docker Machine supports several
+the only thing Docker Machine is capable of. Docker Machine supports several
 “drivers” which let you use the same interface to create hosts on many different
-cloud or local virtualization platforms.  This is accomplished by using the
-`docker-machine create` command with the `--driver` flag.  Here we will be
+cloud or local virtualization platforms. This is accomplished by using the
+`docker-machine create` command with the `--driver` flag. Here we will be
 demonstrating the [Digital Ocean](https://digitalocean.com) driver (called
 `digitalocean`), but there are drivers included for several providers including
 Amazon Web Services, Google Compute Engine, and Microsoft Azure.
 
 Usually it is required that you pass account verification credentials for these
-providers as flags to `docker-machine create`.  These flags are unique for each driver.
+providers as flags to `docker-machine create`. These flags are unique for each driver.
 For instance, to pass a Digital Ocean access token you use the
 `--digitalocean-access-token` flag.
 
@@ -302,18 +302,18 @@ INFO[0085] To see how to connect Docker to this machine, run: docker-machine env
 
 For convenience, `docker-machine` will use sensible defaults for choosing
 settings such as the image that the VPS is based on, but they can also be
-overridden using their respective flags (e.g. `--digitalocean-image`).  This is
+overridden using their respective flags (e.g. `--digitalocean-image`). This is
 useful if, for instance, you want to create a nice large instance with a lot of
-memory and CPUs (by default `docker-machine` creates a small VPS).  For a full
+memory and CPUs (by default `docker-machine` creates a small VPS). For a full
 list of the flags/settings available and their defaults, see the output of
 `docker-machine create -h`.
 
 When the creation of a host is initiated, a unique SSH key for accessing the
 host (initially for provisioning, then directly later if the user runs the
 `docker-machine ssh` command) will be created automatically and stored in the
-client's directory in `~/.docker/machines`.  After the creation of the SSH key,
+client's directory in `~/.docker/machines`. After the creation of the SSH key,
 Docker will be installed on the remote machine and the daemon will be configured
-to accept remote connections over TCP using TLS for authentication.  Once this
+to accept remote connections over TCP using TLS for authentication. Once this
 is finished, the host is ready for connection.
 
 To prepare the Docker client to send commands to the remote server we have
@@ -324,7 +324,7 @@ $ eval "$(docker-machine env staging)"
 ```
 
 From this point, the remote host behaves much like the local host we created in
-the last section.  If we look at `docker-machine ls`, we'll see it is now the
+the last section. If we look at `docker-machine ls`, we'll see it is now the
 "active" host, indicated by an asterisk (`*`) in that column:
 
 ```
@@ -359,10 +359,10 @@ custombox   *        none      Running   tcp://50.134.234.20:2376
 Docker Machine can also provision [Swarm](https://github.com/docker/swarm)
 clusters. This can be used with any driver and will be secured with TLS.
 
-First, create a Swarm token.  Optionally, you can use another discovery service.
+First, create a Swarm token. Optionally, you can use another discovery service.
 See the Swarm docs for details.
 
-To create the token, first create a Machine.  This example will use VirtualBox.
+To create the token, first create a Machine. This example will use VirtualBox.
 
 ```
 $ docker-machine create -d virtualbox local
@@ -382,7 +382,7 @@ $ docker run swarm create
 ```
 Once you have the token, you can create the cluster.
 
-### Swarm Master
+### Swarm master
 
 Create the Swarm master:
 
@@ -398,7 +398,7 @@ docker-machine create \
 Replace `<TOKEN-FROM-ABOVE>` with your random token.
 This will create the Swarm master and add itself as a Swarm node.
 
-### Swarm Nodes
+### Swarm nodes
 
 Now, create more Swarm nodes:
 
@@ -481,7 +481,7 @@ $ docker-machine create -h | wc -l
 
 While it is great to have access to all this information, sometimes you simply
 want to get a peek at the subset of flags which are applicable to the driver you
-are working with.  To that extent, specifying an argument to the `-d` flag will
+are working with. To that extent, specifying an argument to the `-d` flag will
 filter the create flags displayed in the help text to only what is applicable to
 that provider:
 
@@ -513,21 +513,21 @@ Options:
 ##### Specifying configuration options for the created Docker engine
 
 As part of the process of creation, Docker Machine installs Docker and
-configures it with some sensible defaults.  For instance, it allows connection
+configures it with some sensible defaults. For instance, it allows connection
 from the outside world over TCP with TLS-based encryption and defaults to AUFS
 as the [storage
 driver](https://docs.docker.com/reference/commandline/cli/#daemon-storage-driver-option)
 when available.
 
 There are several cases where the user might want to set options for the created
-Docker engine (also known as the Docker _daemon_) themselves.  For example, they
+Docker engine (also known as the Docker _daemon_) themselves. For example, they
 may want to allow connection to a [registry](https://docs.docker.com/registry/)
 that they are running themselves using the `--insecure-registry` flag for the
-daemon.  Docker Machine supports the configuration of such options for the
+daemon. Docker Machine supports the configuration of such options for the
 created engines via the `create` command flags which begin with `--engine`.
 
 Note that Docker Machine simply sets the configured parameters on the daemon
-and does not set up any of the "dependencies" for you.  For instance, if you
+and does not set up any of the "dependencies" for you. For instance, if you
 specify that the created daemon should use `btrfs` as a storage driver, you
 still must ensure that the proper dependencies are installed, the BTRFS
 filesystem has been created, and so on.
@@ -546,7 +546,7 @@ $ docker-machine create -d virtualbox \
 This will create a virtual machine running locally in Virtualbox which uses the
 `devicemapper` storage backend, has the key-value pairs `foo=bar` and
 `spam=eggs` as labels on the engine, and allows pushing / pulling from the
-insecure registry located at `registry.myco.com`.  You can verify much of this
+insecure registry located at `registry.myco.com`. You can verify much of this
 by inspecting the output of `docker info`:
 
 ```
@@ -589,22 +589,22 @@ $ docker-machine create -d virtualbox \
     gdns
 ```
 
-##### Specifying Swarm options for the created machine
+##### Specifying Docker Swarm options for the created machine
 
 In addition to being able to configure Docker Engine options as listed above,
 you can use Machine to specify how the created Swarm master should be
-configured).  There is a `--swarm-strategy` flag, which you can use to specify
+configured). There is a `--swarm-strategy` flag, which you can use to specify
 the [scheduling strategy](https://docs.docker.com/swarm/scheduler/strategy/)
 which Docker Swarm should use (Machine defaults to the `spread` strategy).
 There is also a general purpose `--swarm-opt` option which works similar to how
 the aforementioned `--engine-opt` option does, except that it specifies options
 for the `swarm manage` command (used to boot a master node) instead of the base
-command.  You can use this to configure features that power users might be
+command. You can use this to configure features that power users might be
 interested in, such as configuring the heartbeat interval or Swarm's willingness
 to over-commit resources.
 
 If you're not sure how to configure these options, it is best to not specify
-configuration at all.  Docker Machine will choose sensible defaults for you and
+configuration at all. Docker Machine will choose sensible defaults for you and
 you won't have to worry about it.
 
 Example create:
@@ -638,7 +638,7 @@ Set environment variables to dictate that `docker` should run a command against
 a particular machine.
 
 `docker-machine env machinename` will print out `export` commands which can be
-run in a subshell.  Running `docker-machine env -u` will print `unset` commands
+run in a subshell. Running `docker-machine env -u` will print `unset` commands
 which reverse this effect.
 
 ```
@@ -657,7 +657,7 @@ $ # The environment variables have been unset.
 
 The output described above is intended for the shells `bash` and `zsh` (if
 you're not sure which shell you're using, there's a very good possibility that
-it's `bash`).  However, these are not the only shells which Docker Machine
+it's `bash`). However, these are not the only shells which Docker Machine
 supports.
 
 If you are using `fish` and the `SHELL` environment variable is correctly set to
@@ -675,7 +675,7 @@ set -x DOCKER_MACHINE_NAME overlay
 
 If you are on Windows and using Powershell or `cmd.exe`, `docker-machine env`
 cannot detect your shell automatically, but it does have support for these
-shells.  In order to use them, specify which shell you would like to print the
+shells. In order to use them, specify which shell you would like to print the
 options for using the `--shell` flag for `docker-machine env`.
 
 For Powershell:
@@ -875,7 +875,7 @@ INFO[0013] Regenerating TLS certificates
 
 #### restart
 
-Restart a machine.  Oftentimes this is equivalent to
+Restart a machine. Oftentimes this is equivalent to
 `docker-machine stop; machine start`.
 
 ```
@@ -885,7 +885,7 @@ INFO[0005] Waiting for VM to start...
 
 #### rm
 
-Remove a machine.  This will remove the local reference as well as delete it
+Remove a machine. This will remove the local reference as well as delete it
 on the cloud provider or virtualization management platform.
 
 ```
@@ -958,15 +958,15 @@ cgroup                  499.8M         0    499.8M   0% /sys/fs/cgroup
 When Docker Machine is invoked, it will check to see if you have the venerable
 `ssh` binary around locally and will attempt to use that for the SSH commands it
 needs to run, whether they are a part of an operation such as creation or have
-been requested by the user directly.  If it does not find an external `ssh`
+been requested by the user directly. If it does not find an external `ssh`
 binary locally, it will default to using a native Go implementation from
-[crypto/ssh](https://godoc.org/golang.org/x/crypto/ssh).  This is useful in
+[crypto/ssh](https://godoc.org/golang.org/x/crypto/ssh). This is useful in
 situations where you may not have access to traditional UNIX tools, such as if
 you are using Docker Machine on Windows without having msysgit installed
 alongside of it.
 
 In most situations, you will not have to worry about this implementation detail
-and Docker Machine will act sensibly out of the box.  However, if you
+and Docker Machine will act sensibly out of the box. However, if you
 deliberately want to use the Go native version, you can do so with a global
 command line flag / environment variable like so:
 
@@ -1029,9 +1029,9 @@ dev    *        virtualbox   Stopped
 
 #### upgrade
 
-Upgrade a machine to the latest version of Docker.  If the machine uses Ubuntu
+Upgrade a machine to the latest version of Docker. If the machine uses Ubuntu
 as the underlying operating system, it will upgrade the package `lxc-docker`
-(our recommended install method).  If the machine uses boot2docker, this command
+(our recommended install method). If the machine uses boot2docker, this command
 will download the latest boot2docker ISO and replace the machine's existing ISO
 with the latest.
 
@@ -1061,7 +1061,7 @@ tcp://192.168.99.109:2376
 ## Drivers
 
 #### Amazon Web Services
-Create machines on [Amazon Web Services](http://aws.amazon.com).  You will need an Access Key ID, Secret Access Key and a VPC ID.  To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs.  Select the one where you would like to launch the instance.
+Create machines on [Amazon Web Services](http://aws.amazon.com). You will need an Access Key ID, Secret Access Key and a VPC ID. To find the VPC ID, login to the AWS console and go to Services -> VPC -> Your VPCs. Select the one where you would like to launch the instance.
 
 Options:
 
@@ -1198,7 +1198,7 @@ Options:
  - `--generic-ssh-key`: Path to the SSH user private key.
  - `--generic-ssh-port`: Port to use for SSH.
 
-> Note: you must use a base Operating System supported by Machine.
+> **Note**: You must use a base operating system supported by Machine.
 
 Environment variables and default values:
 
@@ -1210,9 +1210,9 @@ Environment variables and default values:
 | `--generic-ssh-port`       | -                    | `22`                |
 
 #### Google Compute Engine
-Create machines on [Google Compute Engine](https://cloud.google.com/compute/).  You will need a Google account and project name.  See https://cloud.google.com/compute/docs/projects for details on projects.
+Create machines on [Google Compute Engine](https://cloud.google.com/compute/). You will need a Google account and project name. See https://cloud.google.com/compute/docs/projects for details on projects.
 
-The Google driver uses oAuth.  When creating the machine, you will have your browser opened to authorize.  Once authorized, paste the code given in the prompt to launch the instance.
+The Google driver uses oAuth. When creating the machine, you will have your browser opened to authorize. Once authorized, paste the code given in the prompt to launch the instance.
 
 Options:
 
@@ -1338,12 +1338,12 @@ Environment variables and default values:
 
 #### Microsoft Hyper-V
 Creates a Boot2Docker virtual machine locally on your Windows machine
-using Hyper-V.  [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines)
+using Hyper-V. [See here](http://windows.microsoft.com/en-us/windows-8/hyper-v-run-virtual-machines)
 for instructions to enable Hyper-V. You will need to use an
 Administrator level account to create and manage Hyper-V machines.
 
 > **Note**: You will need an existing virtual switch to use the
-> driver.  Hyper-V can share an external network interface (aka
+> driver. Hyper-V can share an external network interface (aka
 > bridging), see [this blog](http://blogs.technet.com/b/canitpro/archive/2014/03/11/step-by-step-enabling-hyper-v-for-use-on-windows-8-1.aspx).
 > If you would like to use NAT, create an internal network, and use
 > [Internet Connection
@@ -1466,12 +1466,12 @@ Options:
  - `--virtualbox-import-boot2docker-vm`: The name of a Boot2Docker VM to import.
  - `--virtualbox-hostonly-cidr`: The CIDR of the host only adapter.
 
-The `--virtualbox-boot2docker-url` flag takes a few different forms.  By
+The `--virtualbox-boot2docker-url` flag takes a few different forms. By
 default, if no value is specified for this flag, Machine will check locally for
-a boot2docker ISO.  If one is found, that will be used as the ISO for the
-created machine.  If one is not found, the latest ISO release available on
+a boot2docker ISO. If one is found, that will be used as the ISO for the
+created machine. If one is not found, the latest ISO release available on
 [boot2docker/boot2docker](https://github.com/boot2docker/boot2docker) will be
-downloaded and stored locally for future use.  Note that this means you must run
+downloaded and stored locally for future use. Note that this means you must run
 `docker-machine upgrade` deliberately on a machine if you wish to update the "cached"
 boot2docker ISO.
 
@@ -1480,7 +1480,7 @@ option also supports specifying ISOs by the `http://` and `file://` protocols.
 `file://` will look at the path specified locally to locate the ISO: for
 instance, you could specify `--virtualbox-boot2docker-url
 file://$HOME/Downloads/rc.iso` to test out a release candidate ISO that you have
-downloaded already.  You could also just get an ISO straight from the Internet
+downloaded already. You could also just get an ISO straight from the Internet
 using the `http://` form.
 
 To customize the host only adapter, you can use the `--virtualbox-hostonly-cidr`
@@ -1513,7 +1513,7 @@ Options:
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB).
  - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB).
 
-The VMware Fusion driver uses the latest boot2docker image.  
+The VMware Fusion driver uses the latest boot2docker image. 
 See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
 
 Environment variables and default values:
@@ -1603,11 +1603,12 @@ Environment variables and default values:
 | `--vmwarevsphere-pool`            | `VSPHERE_POOL`            | -                        |
 | `--vmwarevsphere-compute-ip`      | `VSPHERE_COMPUTE_IP`      | -                        |
 
-## Base Operating Systems
-The Machine provisioning system supports several base operating systems.
-The default base operating system is Boot2Docker on local providers
-(VirtualBox, Fusion, Hyper-V, etc) and the latest Ubuntu LTS supported
-by the cloud provider.
+## Specify a base operating systems
+
+The Machine provisioning system supports several base operating systems. For
+local providers such as VirtualBox, Fusion, Hyper-V, and so forth, the default
+base operating system is Boot2Docker. For cloud providers, the base operating
+system is the latest Ubuntu LTS the provider supports.
 
 | Operating System           | Version          | Notes                   |
 |----------------------------|------------------|-------------------------|
@@ -1619,12 +1620,13 @@ by the cloud provider.
 | CentOS                     | 7+               | experimental            |
 | Fedora                     | 21+              | experimental            |
 
-If you want to use a different base operating system on a remote provider,
-you will need to select the image accordingly for that provider.  For
-example, on DigitalOcean you would use the `--digitalocean-image` flag.
-For Amazon AWS, you would use the `--amazonec2-ami` flag.
+To use a different base operating system on a remote provider, specify the
+provider's image flag and one of its available images. For example, to
+select a `debian-8-x64` image on DigitalOcean you would supply the following:
 
-> Note: if you change the base image for a provider you may also need to change
-the SSH user as well. For example, the default Red Hat AMI on EC2 expects the 
-SSH user to be ec2-user, so you would have to specify this with 
+    --digitalocean-image=debian-8-x64`
+
+If you change the base image for a provider, you may also need to change
+the SSH user. For example, the default Red Hat AMI on EC2 expects the
+SSH user to be `ec2-user`, so you would have to specify this with
 `--amazonec2-ssh-user ec2-user`.
