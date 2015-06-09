@@ -24,3 +24,8 @@ Machine currently supports running Boot2Docker for "local" providers and Ubuntu 
 
 ### Windows Experience
 Currently, the Machine on Windows experience is not as good as the Mac / Linux.  There is no "recommended" path to use Machine and there are several inconsistencies on Windows such as logging and output formatting.
+
+Project Planning
+================
+
+An [Open-Source Planning Process](https://github.com/docker/machine/wiki/Open-Source-Planning-Process) is used to define the Roadmap. [Project Pages](https://github.com/docker/machine/wiki) define the goals for each Milestone and identify current progress.
