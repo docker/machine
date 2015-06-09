@@ -4,23 +4,15 @@ Machine currently works really well for development and test environments. The
 goal is to make it work better for provisioning and managing production
 environments.
 
-This is not a simple task -- production is inherently far more complex than
-development -- but there are three things which are big steps towards that goal:
-**client/server architecture**, **swarm integration** and **flexible
-provisioning**.
-
 (Note: this document is a high-level overview of where we are taking Machine.
 For what is coming in specific releases, see our [upcoming
 milestones](https://github.com/docker/machine/milestones).)
 
-### Docker Engine / Swarm Configuration
-Currently there are only a few things that can be configured in the Docker Engine and Swarm.  This will enable more operations such as Engine labels and Swarm strategies.
+### Boot2Docker OS Migration
+In 0.3.0 we added support for migrating B2D VMs to Machine and deprecated the Boot2Docker CLI.  This will finalize the migration by moving to an official Docker supported minimal Machine operating system for local environments.
 
-### Boot2Docker Migration Support
-Currently both Machine and Boot2Docker provider similar functionality.  This will enable users to migrate from boot2docker to machine.
+### Provisioning Stability
+The creation process varies greatly from provider to provider.  Issues like network partitions, provider API hiccups, etc can cause issues.  Currently, Machine does not handle those very well.  Errors are not always reported well and the user must remove whatever has been created and start over.  This affects users using Machine directly as well as indirectly (i.e. Kitematic, Rancher, Machinery).  We should improve the provision process to handle various types of failure and better report them when they occur.
 
-### Expand Provisioner
-Machine currently supports running Boot2Docker for "local" providers and Ubuntu for "remote" providers.  This will expand the provisioning capabilities to include other base operating systems such as Red Hat-like distributions and possibly other "just enough" operating systems.
-
-### Windows Experience
-Currently, the Machine on Windows experience is not as good as the Mac / Linux.  There is no "recommended" path to use Machine and there are several inconsistencies on Windows such as logging and output formatting.
+### Local Provider Improvements
+In 0.3.0 we added several improvements for the VirtualBox provider however, the user experience is still a bit lacking for the other "local" providers.  Machine 0.3.0 also added support for VMware shared directories however not all features for local drivers match.  For example, VirtualBox on Linux does not map shared directories.  Hyper-V does not have shared directories at all.  We should work to get the local drivers as stable and feature complete as possible.
