@@ -3,6 +3,7 @@ package virtualbox
 import (
 	"archive/tar"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -27,6 +28,10 @@ import (
 
 const (
 	isoFilename = "boot2docker.iso"
+)
+
+var (
+	ErrUnableToGenerateRandomIP = errors.New("unable to generate random IP")
 )
 
 type Driver struct {
@@ -577,23 +582,22 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 	ip, network, err := net.ParseCIDR(d.HostOnlyCIDR)
 	nAddr := network.IP.To4()
 
-	var dhcpAddr net.IP
-	// select pseudo-random DHCP addr; make sure not to clash with the host
-	for {
-		n := rand.Intn(25)
-		if byte(n) != nAddr[3] {
-			dhcpAddr = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(1))
-			log.Debugf("using %s for dhcp address", dhcpAddr)
-			break
-		}
+	dhcpAddr, err := getRandomIPinSubnet(network.IP)
+	if err != nil {
+		return err
 	}
+
+	lowerDHCPIP := net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100))
+	upperDHCPIP := net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254))
+
+	log.Debugf("using %s for dhcp address", dhcpAddr)
 
 	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
 		ip,
 		network.Mask,
 		dhcpAddr,
-		net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100)),
-		net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254)),
+		lowerDHCPIP,
+		upperDHCPIP,
 	)
 
 	if err != nil {
@@ -716,4 +720,27 @@ func setPortForwarding(machine string, interfaceNum int, mapName, protocol strin
 		return -1, err
 	}
 	return actualHostPort, nil
+}
+
+// getRandomIPinSubnet returns a pseudo-random net.IP in the same
+// subnet as the IP passed
+func getRandomIPinSubnet(baseIP net.IP) (net.IP, error) {
+	var dhcpAddr net.IP
+
+	nAddr := baseIP.To4()
+	// select pseudo-random DHCP addr; make sure not to clash with the host
+	// only try 5 times and bail if no random received
+	for i := 0; i < 5; i++ {
+		n := rand.Intn(25)
+		if byte(n) != nAddr[3] {
+			dhcpAddr = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(1))
+			break
+		}
+	}
+
+	if dhcpAddr == nil {
+		return nil, ErrUnableToGenerateRandomIP
+	}
+
+	return dhcpAddr, nil
 }
