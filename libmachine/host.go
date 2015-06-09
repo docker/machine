@@ -1,13 +1,16 @@
 package libmachine
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
@@ -75,6 +78,10 @@ type HostListItem struct {
 	SwarmOptions swarm.SwarmOptions
 }
 
+type HostContext struct {
+	BaseDir string
+}
+
 func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
 	authOptions := hostOptions.AuthOptions
 	storePath := filepath.Join(utils.GetMachineDir(), name)
@@ -96,7 +103,11 @@ func LoadHost(name string, StorePath string) (*Host, error) {
 		return nil, fmt.Errorf("Host %q does not exist", name)
 	}
 
-	host := &Host{Name: name, StorePath: StorePath}
+	host := &Host{
+		Name:      name,
+		StorePath: StorePath,
+	}
+
 	if err := host.LoadConfig(); err != nil {
 		return nil, err
 	}
@@ -259,10 +270,6 @@ func (h *Host) Remove(force bool) error {
 		}
 	}
 
-	if err := h.SaveConfig(); err != nil {
-		return err
-	}
-
 	return h.removeStorePath()
 }
 
@@ -282,14 +289,31 @@ func (h *Host) GetURL() (string, error) {
 }
 
 func (h *Host) LoadConfig() error {
-	data, err := ioutil.ReadFile(filepath.Join(h.StorePath, "config.json"))
+	var (
+		templatedDataBuffer bytes.Buffer
+	)
+
+	configFileContents, err := ioutil.ReadFile(filepath.Join(h.StorePath, "config.json"))
 	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New("templatifiedHost").Parse(string(configFileContents))
+	if err != nil {
+		return err
+	}
+
+	hostContext := HostContext{
+		BaseDir: utils.GetBaseDir(),
+	}
+
+	if err := tmpl.Execute(&templatedDataBuffer, hostContext); err != nil {
 		return err
 	}
 
 	// First pass: find the driver name and load the driver
 	var hostMetadata HostMetadata
-	if err := json.Unmarshal(data, &hostMetadata); err != nil {
+	if err := json.Unmarshal(templatedDataBuffer.Bytes(), &hostMetadata); err != nil {
 		return err
 	}
 
@@ -305,7 +329,7 @@ func (h *Host) LoadConfig() error {
 	h.Driver = driver
 
 	// Second pass: unmarshal driver config into correct driver
-	if err := json.Unmarshal(data, &h); err != nil {
+	if err := json.Unmarshal(templatedDataBuffer.Bytes(), &h); err != nil {
 		return err
 	}
 
@@ -339,6 +363,10 @@ func (h *Host) SaveConfig() error {
 	if err != nil {
 		return err
 	}
+
+	templatifiedHost := strings.Replace(string(data), utils.GetBaseDir(), "{{.BaseDir}}", -1)
+
+	data = []byte(templatifiedHost)
 
 	if err := ioutil.WriteFile(filepath.Join(h.StorePath, "config.json"), data, 0600); err != nil {
 		return err
