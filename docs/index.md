@@ -1085,29 +1085,6 @@ $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --a
 
 This example assumes the VPC ID was found in the `a` availability zone. Use the` --amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
 
-To create machines on [Amazon Web Services](http://aws.amazon.com), you must supply three required parameters:
-
- - Access Key ID
- - Secret Access Key
- - VPC ID
-
-Obtain your IDs and Keys from AWS. To find the VPC ID:
-
-  1. Login to the AWS console
-  2. Go to **Services -> VPC -> Your VPCs**.
-  3. Locate the VPC ID you want from the *VPC* column.
-  4. Go to **Services -> VPC -> Subnets**. Examine the *Availability Zone* column to verify that zone `a` exists and matches your VPC ID. 
-
-  For example, `us-east1-a` is in the `a` availability zone. If the `a` zone is not present, you can create a new subnet in that zone or specify a different zone when you create the machine.
-
-To create the machine instance, specify `--driver amazonec2` and the three required parameters.
-
-```
-$ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C********* --amazonec2-vpc-id vpc-****** aws01
-```
-
-This example assumes the VPC ID was found in the `a` availability zone. Use the` --amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
-
 Options:
 
  - `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
