@@ -41,7 +41,7 @@ fi
 
 # Script will bomb out on some dirs if there are no buildable source files,
 # we shouldn't be checking these anyway so skip over them.
-EXCLUDED_DIRS="${DIR}/Godeps ${DIR}/test ${DIR}/docs ${DIR}/script"
+EXCLUDED_DIRS="${DIR}/Godeps ${DIR}/test ${DIR}/docs ${DIR}/script ${DIR}/experimental"
 
 generate_coverage_for_dir ${DIR}
 echo "Done checking and generating coverage!"

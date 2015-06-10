@@ -1,3 +1,5 @@
+# Migrate from Boot2Docker CLI to Docker Machine
+
 This guide explains migrating from the Boot2Docker CLI to Docker Machine.
 
 This guide assumes basic knowledge of the Boot2Docker CLI and Docker Machine.  If you are not familiar, please review those docs prior to migrating.
