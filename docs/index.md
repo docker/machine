@@ -1456,6 +1456,13 @@ Create machines locally using [VirtualBox](https://www.virtualbox.org/).
 This driver requires VirtualBox to be installed on your host.
 
     $ docker-machine create --driver=virtualbox vbox-test
+    
+You can create an entirely new machine or you can convert a Boot2Docker VM into
+a machine by importing the VM. To convert a Boot2Docker VM, you'd use the following
+command:
+
+    $ docker-machine create -d virtualbox --virtualbox-import-boot2docker-vm boot2docker-vm b2d
+
 
 Options:
 
