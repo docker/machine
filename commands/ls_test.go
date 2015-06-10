@@ -475,6 +475,7 @@ func TestGetHostStateTimeout(t *testing.T) {
 	assert.Equal(t, "foo", hostItem.Name)
 	assert.Equal(t, state.Timeout, hostItem.State)
 	assert.Equal(t, "Driver", hostItem.DriverName)
+	assert.Equal(t, stateTimeoutDuration, hostItem.ResponseTime)
 }
 
 func TestGetHostStateError(t *testing.T) {
