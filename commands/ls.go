@@ -46,7 +46,7 @@ func cmdLs(c *cli.Context) {
 	swarmInfo := make(map[string]string)
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
-	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM")
+	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM\tRESPONSE")
 
 	for _, host := range hostList {
 		swarmOptions := host.HostOptions.SwarmOptions
@@ -77,8 +77,9 @@ func cmdLs(c *cli.Context) {
 				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
 			}
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo)
+
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo, item.ApiResponseTime)
 	}
 
 	w.Flush()

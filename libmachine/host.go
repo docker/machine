@@ -55,12 +55,13 @@ type HostMetadata struct {
 }
 
 type HostListItem struct {
-	Name         string
-	Active       bool
-	DriverName   string
-	State        state.State
-	URL          string
-	SwarmOptions swarm.SwarmOptions
+	ApiResponseTime time.Duration
+	Name            string
+	Active          bool
+	DriverName      string
+	State           state.State
+	URL             string
+	SwarmOptions    swarm.SwarmOptions
 }
 
 type ErrSavingConfig struct {
@@ -360,6 +361,7 @@ func WaitForSSH(h *Host) error {
 }
 
 func attemptGetHostState(host Host, stateQueryChan chan<- HostListItem) {
+	requestBeginning := time.Now()
 	currentState, err := host.Driver.GetState()
 	if err != nil {
 		log.Errorf("error getting state for host %s: %s", host.Name, err)
@@ -377,12 +379,13 @@ func attemptGetHostState(host Host, stateQueryChan chan<- HostListItem) {
 	dockerHost := os.Getenv("DOCKER_HOST")
 
 	stateQueryChan <- HostListItem{
-		Name:         host.Name,
-		Active:       dockerHost == url && currentState != state.Stopped,
-		DriverName:   host.Driver.DriverName(),
-		State:        currentState,
-		URL:          url,
-		SwarmOptions: *host.HostOptions.SwarmOptions,
+		ApiResponseTime: time.Now().Round(time.Millisecond).Sub(requestBeginning.Round(time.Millisecond)),
+		Name:            host.Name,
+		Active:          dockerHost == url && currentState != state.Stopped,
+		DriverName:      host.Driver.DriverName(),
+		State:           currentState,
+		URL:             url,
+		SwarmOptions:    *host.HostOptions.SwarmOptions,
 	}
 }
 
@@ -402,9 +405,10 @@ func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
 	// Otherwise, give up after a predetermined duration.
 	case <-time.After(stateTimeoutDuration):
 		hostListItemsChan <- HostListItem{
-			Name:       host.Name,
-			DriverName: host.Driver.DriverName(),
-			State:      state.Timeout,
+			ApiResponseTime: stateTimeoutDuration,
+			Name:            host.Name,
+			DriverName:      host.Driver.DriverName(),
+			State:           state.Timeout,
 		}
 	}
 }
