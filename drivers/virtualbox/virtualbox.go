@@ -582,6 +582,8 @@ func (d *Driver) generateDiskImage(size int) error {
 func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 	hostOnlyCIDR := d.HostOnlyCIDR
 
+	// This is to assist in migrating from version 0.2 to 0.3 format
+	// it should be removed in a later release
 	if hostOnlyCIDR == "" {
 		hostOnlyCIDR = defaultHostOnlyCIDR
 	}
