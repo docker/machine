@@ -368,6 +368,20 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+func (d *Driver) hostOnlyIpAvailable() bool {
+	ip, err := d.GetIP()
+	if err != nil {
+		log.Debug("ERROR getting IP: %s", err)
+		return false
+	}
+	if ip != "" {
+		log.Debugf("IP is %s", ip)
+		return true
+	}
+	log.Debug("Strangely, there was no error attempting to get the IP, but it was still empty.")
+	return false
+}
+
 func (d *Driver) Start() error {
 	s, err := d.GetState()
 	if err != nil {
@@ -398,11 +412,18 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
+	// Wait for SSH over NAT to be available before returning to user
 	if err := drivers.WaitForSSH(d); err != nil {
 		return err
 	}
 
+	// Bail if we don't get an IP from DHCP after a given number of seconds.
+	if err := utils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
+		return err
+	}
+
 	d.IPAddress, err = d.GetIP()
+
 	return err
 }
 
@@ -512,6 +533,7 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	log.Debugf("SSH returned: %s\nEND SSH\n", output)
+
 	// parse to find: inet 192.168.59.103/24 brd 192.168.59.255 scope global eth1
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
