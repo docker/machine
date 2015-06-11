@@ -172,8 +172,13 @@ func (h *Host) CreateSSHShell() error {
 	return client.Shell()
 }
 
-func (h *Host) Start() error {
-	if err := h.Driver.Start(); err != nil {
+func (h *Host) runActionForState(action func() error, desiredState state.State) error {
+	if drivers.MachineInState(h.Driver, desiredState)() {
+		log.Debug("Machine already in state %s, returning", desiredState)
+		return nil
+	}
+
+	if err := action(); err != nil {
 		return err
 	}
 
@@ -181,31 +186,19 @@ func (h *Host) Start() error {
 		return err
 	}
 
-	return utils.WaitFor(drivers.MachineInState(h.Driver, state.Running))
+	return utils.WaitFor(drivers.MachineInState(h.Driver, desiredState))
+}
+
+func (h *Host) Start() error {
+	return h.runActionForState(h.Driver.Start, state.Running)
 }
 
 func (h *Host) Stop() error {
-	if err := h.Driver.Stop(); err != nil {
-		return err
-	}
-
-	if err := h.SaveConfig(); err != nil {
-		return err
-	}
-
-	return utils.WaitFor(drivers.MachineInState(h.Driver, state.Stopped))
+	return h.runActionForState(h.Driver.Stop, state.Stopped)
 }
 
 func (h *Host) Kill() error {
-	if err := h.Driver.Stop(); err != nil {
-		return err
-	}
-
-	if err := h.SaveConfig(); err != nil {
-		return err
-	}
-
-	return utils.WaitFor(drivers.MachineInState(h.Driver, state.Stopped))
+	return h.runActionForState(h.Driver.Kill, state.Stopped)
 }
 
 func (h *Host) Restart() error {
