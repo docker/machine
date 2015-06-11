@@ -123,6 +123,7 @@ func WaitForDocker(ip string, daemonPort int) error {
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, daemonPort))
 		if err != nil {
 			log.Debugf("Daemon not responding yet: %s", err)
+			log.Debug("Could a firewall be blocking the docker port? Try 'machine ssh [machine]' to investigate if this message continues.")
 			return false
 		}
 		conn.Close()
