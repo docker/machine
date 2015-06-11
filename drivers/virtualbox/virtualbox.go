@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	isoFilename = "boot2docker.iso"
+	isoFilename         = "boot2docker.iso"
+	defaultHostOnlyCIDR = "192.168.99.1/24"
 )
 
 var (
@@ -96,7 +97,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "virtualbox-hostonly-cidr",
 			Usage:  "Specify the Host Only CIDR",
-			Value:  "192.168.99.1/24",
+			Value:  defaultHostOnlyCIDR,
 			EnvVar: "VIRTUALBOX_HOSTONLY_CIDR",
 		},
 	}
@@ -579,7 +580,18 @@ func (d *Driver) generateDiskImage(size int) error {
 }
 
 func (d *Driver) setupHostOnlyNetwork(machineName string) error {
-	ip, network, err := net.ParseCIDR(d.HostOnlyCIDR)
+	hostOnlyCIDR := d.HostOnlyCIDR
+
+	if hostOnlyCIDR == "" {
+		hostOnlyCIDR = defaultHostOnlyCIDR
+	}
+
+	ip, network, err := net.ParseCIDR(hostOnlyCIDR)
+
+	if err != nil {
+		return err
+	}
+
 	nAddr := network.IP.To4()
 
 	dhcpAddr, err := getRandomIPinSubnet(network.IP)
