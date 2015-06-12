@@ -35,6 +35,9 @@ type Driver interface {
 	// e.g. 1.2.3.4 or docker-host-d60b70a14d3a.cloudapp.net
 	GetIP() (string, error)
 
+	// GetPrivateIP returns an internal host IP
+	GetPrivateIP() (string, error)
+
 	// GetMachineName returns the name of the machine
 	GetMachineName() string
 

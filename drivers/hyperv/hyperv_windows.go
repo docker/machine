@@ -3,6 +3,7 @@ package hyperv
 import (
 	"archive/tar"
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -434,6 +435,10 @@ func (d *Driver) GetIP() (string, error) {
 		return "", fmt.Errorf("IP not found")
 	}
 	return resp[0], nil
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func (d *Driver) publicSSHKeyPath() string {

@@ -14,18 +14,19 @@ import (
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
 type ComputeUtil struct {
-	zone          string
-	instanceName  string
-	userName      string
-	project       string
-	diskTypeURL   string
-	service       *raw.Service
-	zoneURL       string
-	authTokenPath string
-	globalURL     string
-	ipAddress     string
-	SwarmMaster   bool
-	SwarmHost     string
+	zone             string
+	instanceName     string
+	userName         string
+	project          string
+	diskTypeURL      string
+	service          *raw.Service
+	zoneURL          string
+	authTokenPath    string
+	globalURL        string
+	ipAddress        string
+	privateIpAddress string
+	SwarmMaster      bool
+	SwarmHost        string
 }
 
 const (
@@ -304,4 +305,16 @@ func (c *ComputeUtil) ip() (string, error) {
 		c.ipAddress = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
 	}
 	return c.ipAddress, nil
+}
+
+// returns an internal IP address of the instance.
+func (c *ComputeUtil) privateIp() (string, error) {
+	if c.privateIpAddress == "" {
+		instance, err := c.service.Instances.Get(c.project, c.zone, c.instanceName).Do()
+		if err != nil {
+			return "", err
+		}
+		c.privateIpAddress = instance.NetworkInterfaces[0].NetworkIP
+	}
+	return c.privateIpAddress, nil
 }

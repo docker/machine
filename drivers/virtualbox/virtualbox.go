@@ -496,6 +496,15 @@ func (d *Driver) setMachineNameIfNotSet() {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	return d._getIp(false)
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return d._getIp(true)
+}
+
+// helper function to get an external/internal IP based on the flag (true for private)
+func (d *Driver) _getIp(private bool) (string, error) {
 	// DHCP is used to get the IP, so virtualbox hosts don't have IPs unless
 	// they are running
 	s, err := d.GetState()
@@ -506,7 +515,14 @@ func (d *Driver) GetIP() (string, error) {
 		return "", drivers.ErrHostIsNotRunning
 	}
 
-	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show dev eth1")
+	// eth1 for public
+	network := "eth1"
+	if private {
+		network = "eth0"
+	}
+
+	sshCmd := fmt.Sprintf("ip addr show dev %s", network)
+	output, err := drivers.RunSSHCommandFromDriver(d, sshCmd)
 	if err != nil {
 		return "", err
 	}

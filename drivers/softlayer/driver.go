@@ -1,6 +1,7 @@
 package softlayer
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -303,6 +304,11 @@ func (d *Driver) GetIP() (string, error) {
 	} else {
 		return d.getClient().VirtualGuest().GetPublicIp(d.Id)
 	}
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	// TODO there's some private ip code in GetIP(), review for applicability
+	return "", errors.New("not implemented")
 }
 
 func (d *Driver) GetState() (state.State, error) {

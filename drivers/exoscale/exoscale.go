@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -171,6 +172,10 @@ func (d *Driver) GetIP() (string, error) {
 		return "", fmt.Errorf("IP address is not set")
 	}
 	return d.IPAddress, nil
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func (d *Driver) GetState() (state.State, error) {

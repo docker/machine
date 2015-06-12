@@ -1,6 +1,7 @@
 package openstack
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -310,6 +311,10 @@ func (d *Driver) GetIP() (string, error) {
 		time.Sleep(2 * time.Second)
 	}
 	return "", fmt.Errorf("No IP found for the machine")
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func (d *Driver) GetState() (state.State, error) {

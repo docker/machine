@@ -362,6 +362,15 @@ func (h *Host) PrintIP() error {
 	return nil
 }
 
+func (h *Host) PrintPrivateIP() error {
+	if ip, err := h.Driver.GetPrivateIP(); err != nil {
+		return err
+	} else {
+		fmt.Println(ip)
+	}
+	return nil
+}
+
 func WaitForSSH(h *Host) error {
 	return drivers.WaitForSSH(h.Driver)
 }

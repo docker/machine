@@ -6,6 +6,7 @@ package vmwarevsphere
 
 import (
 	"archive/tar"
+	sysErrors "errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -226,6 +227,10 @@ func (d *Driver) GetIP() (string, error) {
 	}
 	ip := strings.Trim(strings.Split(rawIP, "\n")[0], " ")
 	return ip, nil
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", sysErrors.New("not implemented")
 }
 
 func (d *Driver) GetState() (state.State, error) {
