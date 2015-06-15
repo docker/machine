@@ -19,7 +19,7 @@ const (
 	// TODO: eventually the RPM install process will be integrated
 	// into the get.docker.com install script; for now
 	// we install via vendored RPMs
-	dockerRHELRPMPath = "https://test.docker.com/rpm/1.7.0-rc1/centos-7/RPMS/x86_64/docker-engine-1.7.0-0.1.rc1.el7.centos.x86_64.rpm"
+	dockerRHELRPMPath = "https://test.docker.com/rpm/1.7.0-rc3/centos-7/RPMS/x86_64/docker-engine-1.7.0-0.3.rc3.el7.centos.x86_64.rpm"
 )
 
 func init() {
