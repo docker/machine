@@ -462,6 +462,8 @@ func (d *Driver) Remove() error {
 			return err
 		}
 	}
+	// vbox will not release it's lock immediately after the stop
+	time.Sleep(1 * time.Second)
 	return vbm("unregistervm", "--delete", d.MachineName)
 }
 
