@@ -1,3 +1,14 @@
+<!--[metadata]>
++++
+draft=true
+title = "Docker Machine"
+description = "machine"
+keywords = ["machine, orchestration, install, installation, docker, documentation"]
+[menu.main]
+parent="mn_install"
++++
+<![end-metadata]-->
+
 # Machine Driver Specification v1
 This is the standard configuration and specification for version 1 drivers.
 
