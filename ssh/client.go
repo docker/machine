@@ -73,10 +73,7 @@ func SetDefaultClient(clientType SSHClientType) {
 func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
-		if defaultClientType == External {
-			log.Fatal("Requested shellout SSH client type but no ssh binary available")
-		}
-		log.Debug("ssh binary not found, using native Go implementation")
+		log.Debug("SSH binary not found, using native Go implementation")
 		return NewNativeClient(user, host, port, auth)
 	}
 
