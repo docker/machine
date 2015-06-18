@@ -1,6 +1,79 @@
 Changelog
 ==========
 
+# 0.3.0 (2015-06-18)
+
+## Features
+- Engine option configuration (ability to configure all engine options)
+- Swarm option configuration (ability to configure all swarm options)
+- New Provisioning system to allow for greater flexibility and stability for installing and configuring Docker
+- New Provisioners
+  - Rancher OS
+  - RedHat Enterprise Linux 7.0+ (experimental)
+  - Fedora 21+ (experimental)
+  - Debian 8+ (experimental)
+- PowerShell support (configure Windows Docker CLI)
+- Command Prompt (cmd.exe) support (configure Windows Docker CLI)
+- Filter command help by driver
+- Ability to import Boot2Docker instances
+- Boot2Docker CLI migration guide (experimental)
+- Format option for `inspect` command
+- New logging output format to improve readability and display across platforms 
+- Updated "active" machine concept - now is implicit according to `DOCKER_HOST` environment variable.  Note: this removes the implicit "active" machine and can no longer be specified with the `active` command.  You change the "active" host by using the `env` command instead.
+- Specify Swarm version (`--swarm-image` flag)
+
+## Drivers
+- New: Exoscale Driver
+- New: Generic Driver (provision any host with supported base OS and SSH)
+- Amazon EC2
+  - SSH user is configurable
+  - Support for Spot instances
+  - Add option to use private address only
+  - Base AMI updated to 20150417
+- Google
+  - Support custom disk types
+  - Updated base image to v20150316
+- Openstack
+  - Support for Keystone v3 domains
+- Rackspace
+  - Misc fixes including environment variable for Flavor Id and stability
+- Softlayer
+  - Enable local disk as provisioning option
+  - Fixes for SSH access errors
+  - Fixed bug where public IP would always be returned when requesting private
+  - Add support for specifying public and private VLAN IDs
+- VirtualBox
+  - Use Intel network interface driver (adds great stability)
+  - Stability fixes for NAT access
+  - Use DNS pass through
+  - Default CPU to single core for improved performance
+  - Enable shared folder support for Windows hosts
+- VMware Fusion
+  - Boot2Docker ISO updated
+  - Shared folder support
+
+## Fixes
+- Provisioning improvements to ensure Docker is available
+- SSH improvements for provisioning stability
+- Fixed SSH key generation bug on Windows
+- Help formatting for improved readability
+
+## Breaking Changes
+- "Short-Form" name reference no longer supported Instead of "docker-machine " implying the active host you must now use docker-machine
+- VMware shared folders require Boot2Docker 1.7
+
+## Special Thanks                                                                        
+We would like to thank all contributors.  Machine would not be where it is
+without you.  We would also like to give special thanks to the following
+contributors for outstanding contributions to the project:
+
+- @frapposelli for VMware updates and fixes
+- @hairyhenderson for several improvements to Softlayer driver, inspect formatting and lots of fixes
+- @ibuildthecloud for rancher os provisioning
+- @sthulb for portable SSH library                                              
+- @vincentbernat for exoscale                                                   
+- @zchee for Amazon updates and great doc updates
+
 # 0.2.0 (2015-04-16)
 
 Core Stability and Driver Updates
