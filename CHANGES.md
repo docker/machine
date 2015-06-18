@@ -1,7 +1,7 @@
 Changelog
 ==========
 
-# 0.3.0 (2015-06-01)
+# 0.3.0 (2015-06-18)
 
 ## Features
 - Engine option configuration (ability to configure all engine options)
