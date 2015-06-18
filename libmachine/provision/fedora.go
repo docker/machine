@@ -8,7 +8,7 @@ const (
 	// TODO: eventually the RPM install process will be integrated
 	// into the get.docker.com install script; for now
 	// we install via vendored RPMs
-	dockerFedoraRPMPath = "https://test.docker.com/rpm/1.7.0-rc3/fedora-21/RPMS/x86_64/docker-engine-1.7.0-0.3.rc3.fc21.x86_64.rpm"
+	dockerFedoraRPMPath = "https://get.docker.com/rpm/1.7.0/fedora-21/RPMS/x86_64/docker-engine-1.7.0-1.fc21.x86_64.rpm"
 )
 
 func init() {
