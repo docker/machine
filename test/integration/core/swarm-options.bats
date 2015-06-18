@@ -25,12 +25,3 @@ export TOKEN=$(curl -sS -X POST "https://discovery-stage.hub.docker.com/v1/clust
     echo ${heartbeat_arg}
     [[ "$heartbeat_arg" == "--heartbeat=5" ]]
 }
-
-@test "clean up created nodes" {
-    run machine rm queenbee workerbee
-    [[ "$status" -eq 0 ]]
-}
-
-@test "remove dir" {
-    rm -rf $MACHINE_STORAGE_PATH
-}
