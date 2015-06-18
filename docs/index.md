@@ -47,12 +47,12 @@ Docker Machine is supported on Windows, OS X, and Linux and is installable as on
 standalone binary. The links to the binaries for the various platforms and
 architectures are below:
 
-- [Windows - 32bit](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-386.exe)
-- [Windows - 64bit](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-amd64.exe)
-- [OSX - x86_64](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64)
-- [OSX - (old macs)](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-386)
-- [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_linux-amd64)
-- [Linux - i386](https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_linux-386)
+- [Windows - 32bit](https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_windows-386.exe)
+- [Windows - 64bit](https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_windows-amd64.exe)
+- [OSX - x86_64](https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_darwin-amd64)
+- [OSX - (old macs)](https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_darwin-386)
+- [Linux - x86_64](https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64)
+- [Linux - i386](https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-386)
 
 ### OS X and Linux
 
@@ -61,7 +61,7 @@ To install on OS X or Linux, download the proper binary to somewhere in your
 most OS X machines these commands should suffice:
 
 ```
-$ curl -L https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
+$ curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
 $ chmod +x /usr/local/bin/docker-machine
 ```
 
@@ -71,7 +71,7 @@ Now you should be able to check the version with `docker-machine -v`:
 
 ```
 $ docker-machine -v
-machine version 0.2.0
+machine version 0.3.0
 ```
 
 In order to run Docker commands on your machines without having to use SSH, make
@@ -102,14 +102,14 @@ $ curl -L https://get.docker.com/builds/Windows/x86_64/docker-latest.exe > /bin/
 Next, install the Docker Machine binary:
 
 ```
-$ curl -L https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_windows-amd64.exe > /bin/docker-machine
+$ curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_windows-amd64.exe > /bin/docker-machine
 ```
 
 Now running `docker-machine` should work.
 
 ```
 $ docker-machine -v
-machine version 0.2.0
+machine version 0.3.0
 ```
 
 ## Getting started with Docker Machine using a local VM
@@ -118,7 +118,7 @@ Let's take a look at using `docker-machine` for creating, using, and managing a
 Docker host inside of [VirtualBox](https://www.virtualbox.org/).
 
 First, ensure that
-[VirtualBox 4.3.26](https://www.virtualbox.org/wiki/Downloads) is correctly
+[VirtualBox 4.3.28](https://www.virtualbox.org/wiki/Downloads) is correctly
 installed on your system.
 
 If you run the `docker-machine ls` command to show all available machines, you will see
