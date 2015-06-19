@@ -15,23 +15,43 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-func cmdCreate(c *cli.Context) {
-	var (
-		err error
-	)
-	driver := c.String("driver")
+func init() {
+	buildCmdCreate()
+}
+
+func buildCmdCreate() {
+	cmd := cli.Command{
+		Flags: sharedCreateFlags,
+		Name:  "create",
+		Usage: "Create a machine",
+	}
+	subCmds := []cli.Command{}
+	names := drivers.GetDriverNames()
+	for _, name := range names {
+		subCmd := cli.Command{
+			Name:   name,
+			Usage:  "Create a machine using the " + name + " driver",
+			Action: cmdCreateRedux,
+		}
+		// if there is an error here there is something really wrong
+		flags, err := drivers.GetCreateFlagsForDriver(name)
+		if err != nil {
+			panic(err)
+		}
+		subCmd.Flags = append(flags, sharedCreateFlags...)
+
+		subCmds = append(subCmds, subCmd)
+	}
+	cmd.Subcommands = subCmds
+	Commands = append(Commands, cmd)
+}
+
+func cmdCreateRedux(c *cli.Context) {
+	driver := c.Command.Name
 	name := c.Args().First()
 
-	// TODO: Not really a fan of "none" as the default driver...
-	if driver != "none" {
-		c.App.Commands, err = trimDriverFlags(driver, c.App.Commands)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	if name == "" {
-		cli.ShowCommandHelp(c, "create")
+		cli.ShowCommandHelp(c, driver)
 		log.Fatal("You must specify a machine name")
 	}
 
@@ -97,23 +117,4 @@ func cmdCreate(c *cli.Context) {
 
 	info := fmt.Sprintf("%s env %s", c.App.Name, name)
 	log.Infof("To see how to connect Docker to this machine, run: %s", info)
-}
-
-// If the user has specified a driver, they should not see the flags for all
-// of the drivers in `docker-machine create`.  This method replaces the 100+
-// create flags with only the ones applicable to the driver specified
-func trimDriverFlags(driver string, cmds []cli.Command) ([]cli.Command, error) {
-	filteredCmds := cmds
-	driverFlags, err := drivers.GetCreateFlagsForDriver(driver)
-	if err != nil {
-		return nil, err
-	}
-
-	for i, cmd := range cmds {
-		if cmd.HasName("create") {
-			filteredCmds[i].Flags = append(driverFlags, sharedCreateFlags...)
-		}
-	}
-
-	return filteredCmds, nil
 }
