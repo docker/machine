@@ -72,96 +72,96 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:   "amazonec2-access-key",
+			Name:   "access-key",
 			Usage:  "AWS Access Key",
 			Value:  "",
 			EnvVar: "AWS_ACCESS_KEY_ID",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-secret-key",
+			Name:   "secret-key",
 			Usage:  "AWS Secret Key",
 			Value:  "",
 			EnvVar: "AWS_SECRET_ACCESS_KEY",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-session-token",
+			Name:   "session-token",
 			Usage:  "AWS Session Token",
 			Value:  "",
 			EnvVar: "AWS_SESSION_TOKEN",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-ami",
+			Name:   "ami",
 			Usage:  "AWS machine image",
 			EnvVar: "AWS_AMI",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-region",
+			Name:   "region",
 			Usage:  "AWS region",
 			Value:  defaultRegion,
 			EnvVar: "AWS_DEFAULT_REGION",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-vpc-id",
+			Name:   "vpc-id",
 			Usage:  "AWS VPC id",
 			Value:  "",
 			EnvVar: "AWS_VPC_ID",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-zone",
+			Name:   "zone",
 			Usage:  "AWS zone for instance (i.e. a,b,c,d,e)",
 			Value:  "a",
 			EnvVar: "AWS_ZONE",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-subnet-id",
+			Name:   "subnet-id",
 			Usage:  "AWS VPC subnet id",
 			Value:  "",
 			EnvVar: "AWS_SUBNET_ID",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-security-group",
+			Name:   "security-group",
 			Usage:  "AWS VPC security group",
 			Value:  "docker-machine",
 			EnvVar: "AWS_SECURITY_GROUP",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-instance-type",
+			Name:   "instance-type",
 			Usage:  "AWS instance type",
 			Value:  defaultInstanceType,
 			EnvVar: "AWS_INSTANCE_TYPE",
 		},
 		cli.IntFlag{
-			Name:   "amazonec2-root-size",
+			Name:   "root-size",
 			Usage:  "AWS root disk size (in GB)",
 			Value:  defaultRootSize,
 			EnvVar: "AWS_ROOT_SIZE",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-iam-instance-profile",
+			Name:   "iam-instance-profile",
 			Usage:  "AWS IAM Instance Profile",
 			EnvVar: "AWS_INSTANCE_PROFILE",
 		},
 		cli.StringFlag{
-			Name:   "amazonec2-ssh-user",
+			Name:   "ssh-user",
 			Usage:  "set the name of the ssh user",
 			Value:  "ubuntu",
 			EnvVar: "AWS_SSH_USER",
 		},
 		cli.BoolFlag{
-			Name:  "amazonec2-request-spot-instance",
+			Name:  "request-spot-instance",
 			Usage: "Set this flag to request spot instance",
 		},
 		cli.StringFlag{
-			Name:  "amazonec2-spot-price",
+			Name:  "spot-price",
 			Usage: "AWS spot instance bid price (in dollar)",
 			Value: "0.50",
 		},
 		cli.BoolFlag{
-			Name:  "amazonec2-private-address-only",
+			Name:  "private-address-only",
 			Usage: "Only use a private IP address",
 		},
 		cli.BoolFlag{
-			Name:  "amazonec2-monitoring",
+			Name:  "monitoring",
 			Usage: "Set this flag to enable CloudWatch monitoring",
 		},
 	}
@@ -177,38 +177,38 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	region, err := validateAwsRegion(flags.String("amazonec2-region"))
+	region, err := validateAwsRegion(flags.String("region"))
 	if err != nil {
 		return err
 	}
 
-	image := flags.String("amazonec2-ami")
+	image := flags.String("ami")
 	if len(image) == 0 {
 		image = regionDetails[region].AmiId
 	}
 
-	d.AccessKey = flags.String("amazonec2-access-key")
-	d.SecretKey = flags.String("amazonec2-secret-key")
-	d.SessionToken = flags.String("amazonec2-session-token")
+	d.AccessKey = flags.String("access-key")
+	d.SecretKey = flags.String("secret-key")
+	d.SessionToken = flags.String("session-token")
 	d.Region = region
 	d.AMI = image
-	d.RequestSpotInstance = flags.Bool("amazonec2-request-spot-instance")
-	d.SpotPrice = flags.String("amazonec2-spot-price")
-	d.InstanceType = flags.String("amazonec2-instance-type")
-	d.VpcId = flags.String("amazonec2-vpc-id")
-	d.SubnetId = flags.String("amazonec2-subnet-id")
-	d.SecurityGroupName = flags.String("amazonec2-security-group")
-	zone := flags.String("amazonec2-zone")
+	d.RequestSpotInstance = flags.Bool("request-spot-instance")
+	d.SpotPrice = flags.String("spot-price")
+	d.InstanceType = flags.String("instance-type")
+	d.VpcId = flags.String("vpc-id")
+	d.SubnetId = flags.String("subnet-id")
+	d.SecurityGroupName = flags.String("security-group")
+	zone := flags.String("zone")
 	d.Zone = zone[:]
-	d.RootSize = int64(flags.Int("amazonec2-root-size"))
-	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
+	d.RootSize = int64(flags.Int("root-size"))
+	d.IamInstanceProfile = flags.String("iam-instance-profile")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = flags.String("amazonec2-ssh-user")
+	d.SSHUser = flags.String("ssh-user")
 	d.SSHPort = 22
-	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
-	d.Monitoring = flags.Bool("amazonec2-monitoring")
+	d.PrivateIPOnly = flags.Bool("private-address-only")
+	d.Monitoring = flags.Bool("monitoring")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")

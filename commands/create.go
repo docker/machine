@@ -21,32 +21,31 @@ func init() {
 
 func buildCmdCreate() {
 	cmd := cli.Command{
-		Flags: sharedCreateFlags,
 		Name:  "create",
 		Usage: "Create a machine",
 	}
 	subCmds := []cli.Command{}
 	names := drivers.GetDriverNames()
+	var err error
 	for _, name := range names {
 		subCmd := cli.Command{
 			Name:   name,
 			Usage:  "Create a machine using the " + name + " driver",
-			Action: cmdCreateRedux,
+			Action: cmdCreate,
 		}
 		// if there is an error here there is something really wrong
-		flags, err := drivers.GetCreateFlagsForDriver(name)
+		subCmd.Flags, err = drivers.GetCreateFlagsForDriver(name)
 		if err != nil {
 			panic(err)
 		}
-		subCmd.Flags = append(flags, sharedCreateFlags...)
-
+		subCmd.Flags = append(subCmd.Flags, sharedCreateFlags...)
 		subCmds = append(subCmds, subCmd)
 	}
 	cmd.Subcommands = subCmds
 	Commands = append(Commands, cmd)
 }
 
-func cmdCreateRedux(c *cli.Context) {
+func cmdCreate(c *cli.Context) {
 	driver := c.Command.Name
 	name := c.Args().First()
 

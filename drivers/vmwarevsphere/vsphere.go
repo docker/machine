@@ -62,65 +62,65 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
 			EnvVar: "VSPHERE_CPU_COUNT",
-			Name:   "vmwarevsphere-cpu-count",
+			Name:   "cpu-count",
 			Usage:  "vSphere CPU number for docker VM",
 			Value:  2,
 		},
 		cli.IntFlag{
 			EnvVar: "VSPHERE_MEMORY_SIZE",
-			Name:   "vmwarevsphere-memory-size",
+			Name:   "memory-size",
 			Usage:  "vSphere size of memory for docker VM (in MB)",
 			Value:  2048,
 		},
 		cli.IntFlag{
 			EnvVar: "VSPHERE_DISK_SIZE",
-			Name:   "vmwarevsphere-disk-size",
+			Name:   "disk-size",
 			Usage:  "vSphere size of disk for docker VM (in MB)",
 			Value:  20000,
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_BOOT2DOCKER_URL",
-			Name:   "vmwarevsphere-boot2docker-url",
+			Name:   "boot2docker-url",
 			Usage:  "vSphere URL for boot2docker image",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_VCENTER",
-			Name:   "vmwarevsphere-vcenter",
+			Name:   "vcenter",
 			Usage:  "vSphere IP/hostname for vCenter",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_USERNAME",
-			Name:   "vmwarevsphere-username",
+			Name:   "username",
 			Usage:  "vSphere username",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_PASSWORD",
-			Name:   "vmwarevsphere-password",
+			Name:   "password",
 			Usage:  "vSphere password",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_NETWORK",
-			Name:   "vmwarevsphere-network",
+			Name:   "network",
 			Usage:  "vSphere network where the docker VM will be attached",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_DATASTORE",
-			Name:   "vmwarevsphere-datastore",
+			Name:   "datastore",
 			Usage:  "vSphere datastore for docker VM",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_DATACENTER",
-			Name:   "vmwarevsphere-datacenter",
+			Name:   "datacenter",
 			Usage:  "vSphere datacenter for docker VM",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_POOL",
-			Name:   "vmwarevsphere-pool",
+			Name:   "pool",
 			Usage:  "vSphere resource pool for docker VM",
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_COMPUTE_IP",
-			Name:   "vmwarevsphere-compute-ip",
+			Name:   "compute-ip",
 			Usage:  "vSphere compute host IP where the docker VM will be instantiated",
 		},
 	}
@@ -150,18 +150,18 @@ func (d *Driver) DriverName() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = "docker"
 	d.SSHPort = 22
-	d.CPU = flags.Int("vmwarevsphere-cpu-count")
-	d.Memory = flags.Int("vmwarevsphere-memory-size")
-	d.DiskSize = flags.Int("vmwarevsphere-disk-size")
-	d.Boot2DockerURL = flags.String("vmwarevsphere-boot2docker-url")
-	d.IP = flags.String("vmwarevsphere-vcenter")
-	d.Username = flags.String("vmwarevsphere-username")
-	d.Password = flags.String("vmwarevsphere-password")
-	d.Network = flags.String("vmwarevsphere-network")
-	d.Datastore = flags.String("vmwarevsphere-datastore")
-	d.Datacenter = flags.String("vmwarevsphere-datacenter")
-	d.Pool = flags.String("vmwarevsphere-pool")
-	d.HostIP = flags.String("vmwarevsphere-compute-ip")
+	d.CPU = flags.Int("cpu-count")
+	d.Memory = flags.Int("memory-size")
+	d.DiskSize = flags.Int("disk-size")
+	d.Boot2DockerURL = flags.String("boot2docker-url")
+	d.IP = flags.String("vcenter")
+	d.Username = flags.String("username")
+	d.Password = flags.String("password")
+	d.Network = flags.String("network")
+	d.Datastore = flags.String("datastore")
+	d.Datacenter = flags.String("datacenter")
+	d.Pool = flags.String("pool")
+	d.HostIP = flags.String("compute-ip")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")

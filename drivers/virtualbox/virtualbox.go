@@ -58,35 +58,35 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
 			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
-			Name:   "virtualbox-memory",
+			Name:   "memory",
 			Usage:  "Size of memory for host in MB",
 			Value:  1024,
 		},
 		cli.IntFlag{
 			EnvVar: "VIRTUALBOX_CPU_COUNT",
-			Name:   "virtualbox-cpu-count",
+			Name:   "cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  1,
 		},
 		cli.IntFlag{
 			EnvVar: "VIRTUALBOX_DISK_SIZE",
-			Name:   "virtualbox-disk-size",
+			Name:   "disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  20000,
 		},
 		cli.StringFlag{
 			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
-			Name:   "virtualbox-boot2docker-url",
+			Name:   "boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  "",
 		},
 		cli.StringFlag{
-			Name:  "virtualbox-import-boot2docker-vm",
+			Name:  "import-boot2docker-vm",
 			Usage: "The name of a Boot2Docker VM to import",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:   "virtualbox-hostonly-cidr",
+			Name:   "hostonly-cidr",
 			Usage:  "Specify the Host Only CIDR",
 			Value:  defaultHostOnlyCIDR,
 			EnvVar: "VIRTUALBOX_HOSTONLY_CIDR",
@@ -127,16 +127,16 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.CPU = flags.Int("virtualbox-cpu-count")
-	d.Memory = flags.Int("virtualbox-memory")
-	d.DiskSize = flags.Int("virtualbox-disk-size")
-	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
+	d.CPU = flags.Int("cpu-count")
+	d.Memory = flags.Int("memory")
+	d.DiskSize = flags.Int("disk-size")
+	d.Boot2DockerURL = flags.String("boot2docker-url")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
-	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
-	d.HostOnlyCIDR = flags.String("virtualbox-hostonly-cidr")
+	d.Boot2DockerImportVM = flags.String("import-boot2docker-vm")
+	d.HostOnlyCIDR = flags.String("hostonly-cidr")
 
 	return nil
 }

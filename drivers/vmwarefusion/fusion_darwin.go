@@ -53,24 +53,24 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			EnvVar: "FUSION_BOOT2DOCKER_URL",
-			Name:   "vmwarefusion-boot2docker-url",
+			Name:   "boot2docker-url",
 			Usage:  "Fusion URL for boot2docker image",
 		},
 		cli.IntFlag{
 			EnvVar: "FUSION_CPU_COUNT",
-			Name:   "vmwarefusion-cpu-count",
+			Name:   "cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  1,
 		},
 		cli.IntFlag{
 			EnvVar: "FUSION_MEMORY_SIZE",
-			Name:   "vmwarefusion-memory-size",
+			Name:   "memory-size",
 			Usage:  "Fusion size of memory for host VM (in MB)",
 			Value:  1024,
 		},
 		cli.IntFlag{
 			EnvVar: "FUSION_DISK_SIZE",
-			Name:   "vmwarefusion-disk-size",
+			Name:   "disk-size",
 			Usage:  "Fusion size of disk for host VM (in MB)",
 			Value:  20000,
 		},
@@ -99,10 +99,10 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Memory = flags.Int("vmwarefusion-memory-size")
-	d.CPU = flags.Int("vmwarefusion-cpu-count")
-	d.DiskSize = flags.Int("vmwarefusion-disk-size")
-	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
+	d.Memory = flags.Int("memory-size")
+	d.CPU = flags.Int("cpu-count")
+	d.DiskSize = flags.Int("disk-size")
+	d.Boot2DockerURL = flags.String("boot2docker-url")
 	d.ISO = d.ResolveStorePath(isoFilename)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")

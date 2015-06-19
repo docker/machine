@@ -44,46 +44,46 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			EnvVar: "EXOSCALE_ENDPOINT",
-			Name:   "exoscale-url",
+			Name:   "url",
 			Usage:  "exoscale API endpoint",
 		},
 		cli.StringFlag{
 			EnvVar: "EXOSCALE_API_KEY",
-			Name:   "exoscale-api-key",
+			Name:   "api-key",
 			Usage:  "exoscale API key",
 		},
 		cli.StringFlag{
 			EnvVar: "EXOSCALE_API_SECRET",
-			Name:   "exoscale-api-secret-key",
+			Name:   "api-secret-key",
 			Usage:  "exoscale API secret key",
 		},
 		cli.StringFlag{
 			EnvVar: "EXOSCALE_INSTANCE_PROFILE",
-			Name:   "exoscale-instance-profile",
+			Name:   "instance-profile",
 			Value:  "small",
 			Usage:  "exoscale instance profile (small, medium, large, ...)",
 		},
 		cli.IntFlag{
 			EnvVar: "EXOSCALE_DISK_SIZE",
-			Name:   "exoscale-disk-size",
+			Name:   "disk-size",
 			Value:  50,
 			Usage:  "exoscale disk size (10, 50, 100, 200, 400)",
 		},
 		cli.StringFlag{
 			EnvVar: "EXSOCALE_IMAGE",
-			Name:   "exoscale-image",
+			Name:   "image",
 			Value:  "ubuntu-14.04",
 			Usage:  "exoscale image template",
 		},
 		cli.StringSliceFlag{
 			EnvVar: "EXOSCALE_SECURITY_GROUP",
-			Name:   "exoscale-security-group",
+			Name:   "security-group",
 			Value:  &cli.StringSlice{},
 			Usage:  "exoscale security group",
 		},
 		cli.StringFlag{
 			EnvVar: "EXOSCALE_AVAILABILITY_ZONE",
-			Name:   "exoscale-availability-zone",
+			Name:   "availability-zone",
 			Value:  "ch-gva-2",
 			Usage:  "exoscale availibility zone",
 		},
@@ -108,18 +108,18 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.URL = flags.String("exoscale-endpoint")
-	d.ApiKey = flags.String("exoscale-api-key")
-	d.ApiSecretKey = flags.String("exoscale-api-secret-key")
-	d.InstanceProfile = flags.String("exoscale-instance-profile")
-	d.DiskSize = flags.Int("exoscale-disk-size")
-	d.Image = flags.String("exoscale-image")
-	securityGroups := flags.StringSlice("exoscale-security-group")
+	d.URL = flags.String("endpoint")
+	d.ApiKey = flags.String("api-key")
+	d.ApiSecretKey = flags.String("api-secret-key")
+	d.InstanceProfile = flags.String("instance-profile")
+	d.DiskSize = flags.Int("disk-size")
+	d.Image = flags.String("image")
+	securityGroups := flags.StringSlice("security-group")
 	if len(securityGroups) == 0 {
 		securityGroups = []string{"docker-machine"}
 	}
 	d.SecurityGroup = strings.Join(securityGroups, ",")
-	d.AvailabilityZone = flags.String("exoscale-availability-zone")
+	d.AvailabilityZone = flags.String("availability-zone")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")

@@ -65,88 +65,88 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_MEMORY",
-			Name:   "softlayer-memory",
+			Name:   "memory",
 			Usage:  "Memory in MB for machine",
 			Value:  1024,
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_DISK_SIZE",
-			Name:   "softlayer-disk-size",
+			Name:   "disk-size",
 			Usage:  "Disk size for machine, a value of 0 uses the default size on softlayer",
 			Value:  0,
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_USER",
-			Name:   "softlayer-user",
+			Name:   "user",
 			Usage:  "softlayer user account name",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_API_KEY",
-			Name:   "softlayer-api-key",
+			Name:   "api-key",
 			Usage:  "softlayer user API key",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_REGION",
-			Name:   "softlayer-region",
+			Name:   "region",
 			Usage:  "softlayer region for machine",
 			Value:  "dal01",
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_CPU",
-			Name:   "softlayer-cpu",
+			Name:   "cpu",
 			Usage:  "number of CPU's for the machine",
 			Value:  1,
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_HOSTNAME",
-			Name:   "softlayer-hostname",
+			Name:   "hostname",
 			Usage:  "hostname for the machine - defaults to machine name",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_DOMAIN",
-			Name:   "softlayer-domain",
+			Name:   "domain",
 			Usage:  "domain name for machine",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_API_ENDPOINT",
-			Name:   "softlayer-api-endpoint",
+			Name:   "api-endpoint",
 			Usage:  "softlayer api endpoint to use",
 			Value:  ApiEndpoint,
 		},
 		cli.BoolFlag{
 			EnvVar: "SOFTLAYER_HOURLY_BILLING",
-			Name:   "softlayer-hourly-billing",
+			Name:   "hourly-billing",
 			Usage:  "set hourly billing for machine - on by default",
 		},
 		cli.BoolFlag{
 			EnvVar: "SOFTLAYER_LOCAL_DISK",
-			Name:   "softlayer-local-disk",
+			Name:   "local-disk",
 			Usage:  "use machine local disk instead of softlayer SAN",
 		},
 		cli.BoolFlag{
 			EnvVar: "SOFTLAYER_PRIVATE_NET",
-			Name:   "softlayer-private-net-only",
+			Name:   "private-net-only",
 			Usage:  "Use only private networking",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_IMAGE",
-			Name:   "softlayer-image",
+			Name:   "image",
 			Usage:  "OS image for machine",
 			Value:  "UBUNTU_LATEST",
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_PUBLIC_VLAN_ID",
-			Name:   "softlayer-public-vlan-id",
+			Name:   "public-vlan-id",
 			Usage:  "",
 			Value:  0,
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_PRIVATE_VLAN_ID",
-			Name:   "softlayer-private-vlan-id",
+			Name:   "private-vlan-id",
 			Usage:  "",
 			Value:  0,
 		},
@@ -197,9 +197,9 @@ func validateClientConfig(c *Client) error {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.Client = &Client{
-		Endpoint: flags.String("softlayer-api-endpoint"),
-		User:     flags.String("softlayer-user"),
-		ApiKey:   flags.String("softlayer-api-key"),
+		Endpoint: flags.String("api-endpoint"),
+		User:     flags.String("user"),
+		ApiKey:   flags.String("api-key"),
 	}
 
 	d.SwarmMaster = flags.Bool("swarm-master")
@@ -213,18 +213,18 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	d.deviceConfig = &deviceConfig{
-		Hostname:      flags.String("softlayer-hostname"),
-		DiskSize:      flags.Int("softlayer-disk-size"),
-		Cpu:           flags.Int("softlayer-cpu"),
-		Domain:        flags.String("softlayer-domain"),
-		Memory:        flags.Int("softlayer-memory"),
-		PrivateNet:    flags.Bool("softlayer-private-net-only"),
-		LocalDisk:     flags.Bool("softlayer-local-disk"),
-		HourlyBilling: flags.Bool("softlayer-hourly-billing"),
-		Image:         flags.String("softlayer-image"),
-		Region:        flags.String("softlayer-region"),
-		PublicVLAN:    flags.Int("softlayer-public-vlan-id"),
-		PrivateVLAN:   flags.Int("softlayer-private-vlan-id"),
+		Hostname:      flags.String("hostname"),
+		DiskSize:      flags.Int("disk-size"),
+		Cpu:           flags.Int("cpu"),
+		Domain:        flags.String("domain"),
+		Memory:        flags.Int("memory"),
+		PrivateNet:    flags.Bool("private-net-only"),
+		LocalDisk:     flags.Bool("local-disk"),
+		HourlyBilling: flags.Bool("hourly-billing"),
+		Image:         flags.String("image"),
+		Region:        flags.String("region"),
+		PublicVLAN:    flags.Int("public-vlan-id"),
+		PrivateVLAN:   flags.Int("private-vlan-id"),
 	}
 
 	if d.deviceConfig.Hostname == "" {

@@ -39,24 +39,24 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  "hyper-v-boot2docker-url",
+			Name:  "boot2docker-url",
 			Usage: "Hyper-V URL of the boot2docker image. Defaults to the latest available version.",
 		},
 		cli.StringFlag{
-			Name:  "hyper-v-boot2docker-location",
+			Name:  "boot2docker-location",
 			Usage: "Hyper-V local boot2docker iso. Overrides URL.",
 		},
 		cli.StringFlag{
-			Name:  "hyper-v-virtual-switch",
+			Name:  "virtual-switch",
 			Usage: "Hyper-V virtual switch name. Defaults to first found.",
 		},
 		cli.IntFlag{
-			Name:  "hyper-v-disk-size",
+			Name:  "disk-size",
 			Usage: "Hyper-V disk size for host in MB.",
 			Value: 20000,
 		},
 		cli.IntFlag{
-			Name:  "hyper-v-memory",
+			Name:  "memory",
 			Usage: "Hyper-V memory size for host in MB.",
 			Value: 1024,
 		},
@@ -64,11 +64,11 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.boot2DockerURL = flags.String("hyper-v-boot2docker-url")
-	d.boot2DockerLoc = flags.String("hyper-v-boot2docker-location")
-	d.vSwitch = flags.String("hyper-v-virtual-switch")
-	d.diskSize = flags.Int("hyper-v-disk-size")
-	d.memSize = flags.Int("hyper-v-memory")
+	d.boot2DockerURL = flags.String("boot2docker-url")
+	d.boot2DockerLoc = flags.String("boot2docker-location")
+	d.vSwitch = flags.String("virtual-switch")
+	d.diskSize = flags.Int("disk-size")
+	d.memSize = flags.Int("memory")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")

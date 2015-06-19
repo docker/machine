@@ -34,47 +34,47 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:   "google-zone",
+			Name:   "zone",
 			Usage:  "GCE Zone",
 			Value:  "us-central1-a",
 			EnvVar: "GOOGLE_ZONE",
 		},
 		cli.StringFlag{
-			Name:   "google-machine-type",
+			Name:   "machine-type",
 			Usage:  "GCE Machine Type",
 			Value:  "f1-micro",
 			EnvVar: "GOOGLE_MACHINE_TYPE",
 		},
 		cli.StringFlag{
-			Name:   "google-username",
+			Name:   "username",
 			Usage:  "GCE User Name",
 			Value:  "docker-user",
 			EnvVar: "GOOGLE_USERNAME",
 		},
 		cli.StringFlag{
-			Name:   "google-project",
+			Name:   "project",
 			Usage:  "GCE Project",
 			EnvVar: "GOOGLE_PROJECT",
 		},
 		cli.StringFlag{
-			Name:   "google-auth-token",
+			Name:   "auth-token",
 			Usage:  "GCE oAuth token",
 			EnvVar: "GOOGLE_AUTH_TOKEN",
 		},
 		cli.StringFlag{
-			Name:   "google-scopes",
+			Name:   "scopes",
 			Usage:  "GCE Scopes (comma-separated if multiple scopes)",
 			Value:  "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write",
 			EnvVar: "GOOGLE_SCOPES",
 		},
 		cli.IntFlag{
-			Name:   "google-disk-size",
+			Name:   "disk-size",
 			Usage:  "GCE Instance Disk Size (in GB)",
 			Value:  10,
 			EnvVar: "GOOGLE_DISK_SIZE",
 		},
 		cli.StringFlag{
-			Name:   "google-disk-type",
+			Name:   "disk-type",
 			Usage:  "GCE Instance Disk type",
 			Value:  "pd-standard",
 			EnvVar: "GOOGLE_DISK_TYPE",
@@ -107,20 +107,20 @@ func (d *Driver) DriverName() string {
 
 // SetConfigFromFlags initializes the driver based on the command line flags.
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Zone = flags.String("google-zone")
-	d.MachineType = flags.String("google-machine-type")
-	d.DiskSize = flags.Int("google-disk-size")
-	d.DiskType = flags.String("google-disk-type")
-	d.AuthTokenPath = flags.String("google-auth-token")
-	d.Project = flags.String("google-project")
-	d.Scopes = flags.String("google-scopes")
+	d.Zone = flags.String("zone")
+	d.MachineType = flags.String("machine-type")
+	d.DiskSize = flags.Int("disk-size")
+	d.DiskType = flags.String("disk-type")
+	d.AuthTokenPath = flags.String("auth-token")
+	d.Project = flags.String("project")
+	d.Scopes = flags.String("scopes")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	if d.Project == "" {
 		return fmt.Errorf("Please specify the Google Cloud Project name using the option --google-project.")
 	}
-	d.SSHUser = flags.String("google-username")
+	d.SSHUser = flags.String("username")
 	d.SSHPort = 22
 	return nil
 }
