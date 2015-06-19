@@ -69,7 +69,8 @@ func TestCmdConfig(t *testing.T) {
 	globalSet := flag.NewFlagSet("test", 0)
 	globalSet.String("storage-path", store.GetPath(), "")
 
-	c := cli.NewContext(nil, set, globalSet)
+	parentCtx := cli.NewContext(nil, globalSet, nil)
+	c := cli.NewContext(nil, set, parentCtx)
 
 	cmdConfig(c)
 
