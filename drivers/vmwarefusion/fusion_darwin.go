@@ -293,7 +293,7 @@ func (d *Driver) Create() error {
 		} else if !os.IsNotExist(err) {
 			// add shared folder, create mountpoint and mount it.
 			vmrun("-gu", B2DUser, "-gp", B2DPass, "addSharedFolder", d.vmxPath(), shareName, shareDir)
-			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs -o uid=$(id -u),gid=$(id  -g) .host:/"+shareName+" "+shareDir)
 		}
 	}
 	return nil
