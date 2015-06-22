@@ -1466,7 +1466,7 @@ Create machines locally using [VirtualBox](https://www.virtualbox.org/).
 This driver requires VirtualBox to be installed on your host.
 
     $ docker-machine create --driver=virtualbox vbox-test
-    
+
 You can create an entirely new machine or you can convert a Boot2Docker VM into
 a machine by importing the VM. To convert a Boot2Docker VM, you'd use the following
 command:
@@ -1502,11 +1502,11 @@ using the `http://` form.
 
 To customize the host only adapter, you can use the `--virtualbox-hostonly-cidr`
 flag.  This will specify the host IP and Machine will calculate the VirtualBox
-DHCP server address (a random IP on the subnet between `.1` and `.25`) so 
+DHCP server address (a random IP on the subnet between `.1` and `.25`) so
 it does not clash with the specified host IP.
 Machine will also specify the DHCP lower bound to `.100` and the upper bound
 to `.254`.  For example, a specified CIDR of `192.168.24.1/24` would have a
-DHCP server between `192.168.24.2-25`, a lower bound of `192.168.24.100` and 
+DHCP server between `192.168.24.2-25`, a lower bound of `192.168.24.100` and
 upper bound of `192.168.24.254`.
 
 Environment variables and default values:
@@ -1530,7 +1530,7 @@ Options:
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB).
  - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB).
 
-The VMware Fusion driver uses the latest boot2docker image. 
+The VMware Fusion driver uses the latest boot2docker image.
 See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
 
 Environment variables and default values:
