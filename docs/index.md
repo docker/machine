@@ -1121,7 +1121,7 @@ Environment variables and default values:
 | `--aliyunecs-internet-max-bandwidth`| `ECS_INTERNET_MAX_BANDWIDTH`| `1`              |
 | `--aliyunecs-private-address-only`  | -                           | `false`          |
 | `--aliyunecs-region`                | `ECS_REGION`                | `cn-hangzhou`    |
-| **`--aliyunecs-secret-key`**        | `ECS_SECRET_ACCESS_KEY`     | -                |
+| **`--aliyunecs-secret-key`**        | `ECS_ACCESS_KEY_SECRET`     | -                |
 | `--aliyunecs-security-group`        | `ECS_SECURITY_GROUP`        | -                |
 | `--aliyunecs-ssh-password`          | `ECS_SSH_PASSWORD`          | -                |
 | `--aliyunecs-vpc-id`                | `ECS_VPC_ID`                | -                |

@@ -82,15 +82,15 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   "aliyunecs-access-key",
-			Usage:  "ECS Access Key",
+			Usage:  "ECS Access Key ID",
 			Value:  "",
 			EnvVar: "ECS_ACCESS_KEY_ID",
 		},
 		cli.StringFlag{
 			Name:   "aliyunecs-secret-key",
-			Usage:  "ECS Secret Key",
+			Usage:  "ECS Access Key Secret",
 			Value:  "",
-			EnvVar: "ECS_SECRET_ACCESS_KEY",
+			EnvVar: "ECS_ACCESS_KEY_SECRET",
 		},
 		cli.StringFlag{
 			Name:   "aliyunecs-image-id",
@@ -660,7 +660,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 		return err
 	}
 
-	log.Debugf("DescribeSecurityGroups: %++v\n", groups)
+	//log.Debugf("DescribeSecurityGroups: %++v\n", groups)
 
 	for _, grp := range groups {
 		if grp.SecurityGroupName == groupName && grp.VpcId == d.VpcId {
@@ -735,11 +735,18 @@ func (d *Driver) configureSecurityGroupPermissions(group *ecs.DescribeSecurityGr
 	hasSshPort := false
 	hasDockerPort := false
 	hasSwarmPort := false
+	hasAllIncomingPort := false
 	for _, p := range group.Permissions.Permission {
 		portRange := strings.Split(p.PortRange, "/")
+		//log.Debugf("Permission : %++v", p)
+
 		log.Debug("portRange", portRange)
 		fromPort, _ := strconv.Atoi(portRange[0])
 		switch fromPort {
+		case -1:
+			if portRange[1] == "-1" && p.IpProtocol == "ALL" && p.Policy == "Accept" {
+				hasAllIncomingPort = true
+			}
 		case 22:
 			hasSshPort = true
 		case dockerPort:
@@ -762,7 +769,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ecs.DescribeSecurityGr
 
 	if !hasDockerPort {
 		perms = append(perms, IpPermission{
-			IpProtocol: "tcp",
+			IpProtocol: ecs.IpProtocolTCP,
 			FromPort:   dockerPort,
 			ToPort:     dockerPort,
 			IpRange:    ipRange,
@@ -771,14 +778,23 @@ func (d *Driver) configureSecurityGroupPermissions(group *ecs.DescribeSecurityGr
 
 	if !hasSwarmPort && d.SwarmMaster {
 		perms = append(perms, IpPermission{
-			IpProtocol: "tcp",
+			IpProtocol: ecs.IpProtocolTCP,
 			FromPort:   swarmPort,
 			ToPort:     swarmPort,
 			IpRange:    ipRange,
 		})
 	}
 
-	log.Debugf("configuring security group authorization for %s", ipRange)
+	if !hasAllIncomingPort {
+		perms = append(perms, IpPermission{
+			IpProtocol: ecs.IpProtocolAll,
+			FromPort:   -1,
+			ToPort:     -1,
+			IpRange:    ipRange,
+		})
+	}
+
+	log.Debugf("Configuring new permissions: %v", perms)
 
 	return perms
 }
