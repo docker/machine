@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	isoFilename     = "boot2docker-1.6.2-prl.iso"
+	isoFilename     = "boot2docker-1.7.0-prl.iso"
 	shareFolderName = "Users"
 	shareFolderPath = "/Users"
 	minDiskSize     = 32
@@ -205,7 +205,7 @@ func (d *Driver) Create() error {
 			return err
 		}
 	} else {
-		isoURL := "https://github.com/Parallels/boot2docker/releases/download/v1.6.2-prl-tools/boot2docker.iso"
+		isoURL := "https://github.com/Parallels/boot2docker/releases/download/v1.7.0-prl-tools/boot2docker.iso"
 
 		if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
 			log.Infof("Downloading %s to %s...", isoFilename, commonIsoPath)
