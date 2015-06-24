@@ -285,6 +285,12 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	// Disable Time Sync feature because it has an issue with timezones.
+	// TODO: Turn it back as soon as Time Sync is fixed in Parallels Tools
+	if err := prlctl("set", d.MachineName, "--time-sync", "off"); err != nil {
+		return err
+	}
+
 	// Enable Shared Folders
 	if err := prlctl("set", d.MachineName, "--shf-host", "on"); err != nil {
 		return err
