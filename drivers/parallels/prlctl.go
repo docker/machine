@@ -18,6 +18,7 @@ var (
 	reVMInfoLine      = regexp.MustCompile(`(?:"(.+)"|(.+))=(?:"(.*)"|(.*))`)
 	reColonLine       = regexp.MustCompile(`(.+):\s+(.*)`)
 	reMachineNotFound = regexp.MustCompile(`Failed to get VM config: The virtual machine could not be found..*`)
+	reMajorVersion    = regexp.MustCompile(`prlctl version (\d+)\.\d+\.\d+.*`)
 )
 
 var (

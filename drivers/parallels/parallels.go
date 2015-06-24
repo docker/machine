@@ -149,6 +149,35 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) PreCreateCheck() error {
+	// Check platform type
+	if runtime.GOOS != "darwin" {
+		return fmt.Errorf("Driver \"parallels\" works only on OS X!")
+	}
+
+	// Check prlctl binary is available
+	stdout, stderr, err := prlctlOutErr("--version")
+	if err != nil {
+		if err == ErrPrlctlNotFound {
+			return err
+		}
+		return fmt.Errorf(string(stderr))
+	}
+
+	// Check Parallels Desktop version
+	res := reMajorVersion.FindStringSubmatch(string(stdout))
+	if res == nil {
+		return fmt.Errorf("Parallels Desktop version could not be parsed: %s", stdout)
+	}
+
+	ver, err := strconv.Atoi(res[1])
+	if err != nil {
+		return err
+	}
+
+	if ver < 11 {
+		return fmt.Errorf("Driver \"parallels\" supports only Parallels Desktop 11 and higher. You use: Paralells Desktop %d.", ver)
+	}
+
 	return nil
 }
 
@@ -156,11 +185,6 @@ func (d *Driver) Create() error {
 	var (
 		err error
 	)
-
-	// Check that prctl exists and works
-	if err = prlctl("--version"); err != nil {
-		return err
-	}
 
 	b2dutils := utils.NewB2dUtils("", "")
 	imgCachePath := utils.GetMachineCacheDir()
