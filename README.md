@@ -1,5 +1,7 @@
 # Docker Machine
 
+![](/docs/img/logo.png)
+
 Machine lets you create Docker hosts on your computer, on cloud providers, and
 inside your own data center. It creates servers, installs Docker on them, then
 configures the Docker client to talk to them.
