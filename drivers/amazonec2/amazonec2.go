@@ -70,6 +70,8 @@ type Driver struct {
 	SpotPrice           string
 	PrivateIPOnly       bool
 	Monitoring          bool
+	Endpoint            string
+	InsecureEndpoint    bool
 }
 
 func init() {
@@ -174,6 +176,17 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "amazonec2-monitoring",
 			Usage: "Set this flag to enable CloudWatch monitoring",
 		},
+		cli.StringFlag{
+			Name:   "amazonec2-endpoint",
+			Usage:  "Custom endpoint including the region",
+			Value:  "",
+			EnvVar: "AWS_ENDPOINT",
+		},
+		cli.BoolFlag{
+			Name:   "amazonec2-insecure-endpoint",
+			Usage:  "Skip endpoint ssl certificate checking",
+			EnvVar: "AWS_INSECURE_ENDPOINT",
+		},
 	}
 }
 
@@ -197,8 +210,10 @@ func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.Endpoint = flags.String("amazonec2-endpoint")
+
 	region, err := validateAwsRegion(flags.String("amazonec2-region"))
-	if err != nil {
+	if err != nil && d.Endpoint == "" {
 		return err
 	}
 
@@ -229,6 +244,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
+	d.InsecureEndpoint = flags.Bool("amazonec2-insecure-endpoint")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -534,7 +550,7 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) getClient() *amz.EC2 {
 	auth := amz.GetAuth(d.AccessKey, d.SecretKey, d.SessionToken)
-	return amz.NewEC2(auth, d.Region)
+	return amz.NewEC2(auth, d.Region, d.Endpoint, d.InsecureEndpoint)
 }
 
 func (d *Driver) GetSSHKeyPath() string {
