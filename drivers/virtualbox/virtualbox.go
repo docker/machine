@@ -45,6 +45,7 @@ const (
 var (
 	ErrUnableToGenerateRandomIP = errors.New("unable to generate random IP")
 	ErrMustEnableVTX            = errors.New("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
+	ErrNetworkAddrCidr          = errors.New("host-only cidr must be specified with a host address, not a network address")
 )
 
 type Driver struct {
@@ -658,19 +659,17 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 		hostOnlyCIDR = defaultHostOnlyCIDR
 	}
 
-	ip, network, err := net.ParseCIDR(hostOnlyCIDR)
-
+	ip, network, err := parseAndValidateCIDR(hostOnlyCIDR)
 	if err != nil {
 		return err
 	}
-
-	nAddr := network.IP.To4()
 
 	dhcpAddr, err := getRandomIPinSubnet(network.IP)
 	if err != nil {
 		return err
 	}
 
+	nAddr := network.IP.To4()
 	lowerDHCPIP := net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100))
 	upperDHCPIP := net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254))
 
@@ -693,6 +692,20 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 		"--nicpromisc2", d.HostOnlyPromiscMode,
 		"--hostonlyadapter2", hostOnlyNetwork.Name,
 		"--cableconnected2", "on")
+}
+
+func parseAndValidateCIDR(hostOnlyCIDR string) (net.IP, *net.IPNet, error) {
+	ip, network, err := net.ParseCIDR(hostOnlyCIDR)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	networkAddress := network.IP.To4()
+	if ip.Equal(networkAddress) {
+		return nil, nil, ErrNetworkAddrCidr
+	}
+
+	return ip, network, nil
 }
 
 // createDiskImage makes a disk image at dest with the given size in MB. If r is

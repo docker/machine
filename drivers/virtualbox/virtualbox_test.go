@@ -152,6 +152,31 @@ func TestGetIPErrors(t *testing.T) {
 	}
 }
 
+func TestParseValidCIDR(t *testing.T) {
+	ip, network, err := parseAndValidateCIDR("192.168.100.1/24")
+
+	assert.Equal(t, "192.168.100.1", ip.String())
+	assert.Equal(t, "192.168.100.0", network.IP.String())
+	assert.Equal(t, "ffffff00", network.Mask.String())
+	assert.NoError(t, err)
+}
+
+func TestInvalidCIDR(t *testing.T) {
+	ip, network, err := parseAndValidateCIDR("192.168.100.1")
+
+	assert.EqualError(t, err, "invalid CIDR address: 192.168.100.1")
+	assert.Nil(t, ip)
+	assert.Nil(t, network)
+}
+
+func TestInvalidNetworkIpCIDR(t *testing.T) {
+	ip, network, err := parseAndValidateCIDR("192.168.100.0/24")
+
+	assert.Equal(t, ErrNetworkAddrCidr, err)
+	assert.Nil(t, ip)
+	assert.Nil(t, network)
+}
+
 func newTestDriver(name string) *Driver {
 	return NewDriver(name, "")
 }
