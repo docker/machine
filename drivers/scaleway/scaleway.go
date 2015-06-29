@@ -333,7 +333,7 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) getClient() *api.ScalewayClient {
-	return api.NewClient(d.UserId, d.Token, d.Organization)
+	return api.NewClient(d.Token, d.UserId, d.Organization)
 
 }
 
