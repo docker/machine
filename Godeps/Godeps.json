@@ -114,9 +114,18 @@
 			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
 		},
 		{
+			"ImportPath": "github.com/nilshell/xmlrpc",
+			"Rev": "41b9444050f7a0494a44cd5644f5048aa8261b17"
+		},
+		{
 			"ImportPath": "github.com/rackspace/gophercloud",
 			"Comment": "v1.0.0-558-ce0f487",
 			"Rev": "ce0f487f6747ab43c4e4404722df25349385bebd"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.2",
+			"Rev": "98a1428efc3d732f9e377b50c8e2113e070896cf"
 		},
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",
@@ -144,8 +153,16 @@
 			"Rev": "66a23eaabc61518f91769939ff541886fe1dceef"
 		},
 		{
+			"ImportPath": "github.com/xenserver/go-xenserver-client",
+			"Rev": "42dc9035c2e805b844614741d804f308bacb7490"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/ssh",
 			"Rev": "1fbbd62cfec66bd39d91e97749579579d4d3037e"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "933937213561306ee71d265fb8a2913f20a55123"
 		},
 		{
 			"ImportPath": "google.golang.org/api/compute/v1",
