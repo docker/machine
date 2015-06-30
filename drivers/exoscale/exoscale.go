@@ -24,7 +24,7 @@ type Driver struct {
 	InstanceProfile  string
 	DiskSize         int
 	Image            string
-	SecurityGroups   []string
+	SecurityGroup    string
 	AvailabilityZone string
 	MachineName      string
 	KeyPair          string
@@ -142,10 +142,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.InstanceProfile = flags.String("exoscale-instance-profile")
 	d.DiskSize = flags.Int("exoscale-disk-size")
 	d.Image = flags.String("exoscale-image")
-	d.SecurityGroups = flags.StringSlice("exoscale-security-group")
-	if len(d.SecurityGroups) == 0 {
-		d.SecurityGroups = []string{"docker-machine"}
+	securityGroups := flags.StringSlice("exoscale-security-group")
+	if len(securityGroups) == 0 {
+		securityGroups = []string{"docker-machine"}
 	}
+	d.SecurityGroup = strings.Join(securityGroups, ",")
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
@@ -287,8 +288,9 @@ func (d *Driver) Create() error {
 	log.Debugf("Profile %v = %s", d.InstanceProfile, profile)
 
 	// Security groups
-	sgs := make([]string, len(d.SecurityGroups))
-	for idx, group := range d.SecurityGroups {
+	securityGroups := strings.Split(d.SecurityGroup, ",")
+	sgs := make([]string, len(securityGroups))
+	for idx, group := range securityGroups {
 		sg, ok := topology.SecurityGroups[group]
 		if !ok {
 			log.Infof("Security group %v does not exist, create it",
