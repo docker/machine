@@ -28,6 +28,7 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarefusion"
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
+	_ "github.com/docker/machine/drivers/xenserver"
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
