@@ -7,6 +7,10 @@
 			"Comment": "weekly-56",
 			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
 		},
+                {
+                        "ImportPath": "github.com/CenturyLinkLabs/clcgo",
+                        "Rev": "8b702d20bfe3710be07422907796e97bd1a6acb9"
+                },
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-17-g515f3ec",
