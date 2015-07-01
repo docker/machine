@@ -8,6 +8,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/provision/firewallaction"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
@@ -133,6 +134,10 @@ func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.Pack
 		return err
 	}
 
+	return nil
+}
+
+func (provisioner *RedHatProvisioner) Firewall(action firewallaction.FirewallAction, port int) error {
 	return nil
 }
 

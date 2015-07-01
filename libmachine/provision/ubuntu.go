@@ -6,6 +6,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/provision/firewallaction"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
@@ -84,6 +85,27 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 	return nil
 }
 
+func (provisioner *UbuntuProvisioner) Firewall(action firewallaction.FirewallAction, port int) error {
+
+	var sshCmd string
+
+	switch action {
+	case firewallaction.Allow:
+		sshCmd = fmt.Sprintf("sudo ufw allow %d/tcp", port)
+	case firewallaction.Deny:
+		sshCmd = fmt.Sprintf("sudo ufw deny %d/tcp", port)
+	case firewallaction.Enable:
+		sshCmd = "sudo ufw enable"
+	case firewallaction.Disable:
+		sshCmd = "sudo ufw disable"
+	}
+
+	if _, err := provisioner.SSHCommand(sshCmd); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
 	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
 		log.Warnf("Error getting SSH command to check if the daemon is up: %s", err)
@@ -110,6 +132,16 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	for _, pkg := range provisioner.Packages {
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
 			return err
+		}
+	}
+
+	// @TODO: Like everwhere else, update this when ports are configurable.
+	if err := provisioner.Firewall(firewallaction.Allow, 2376); err != nil {
+		log.Warnf("Error allowing the Docker daemon TCP port: %s", err)
+	}
+	if swarmOptions.IsSwarm {
+		if err := provisioner.Firewall(firewallaction.Allow, 2375); err != nil {
+			log.Warnf("Error allowing the Swarm TCP port: %s", err)
 		}
 	}
 
