@@ -195,7 +195,7 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 	time.Sleep(2 * time.Second)
 
 	log.Debug("configuring swarm")
-	if (swarmOptions.Image == "swarm:latest") {
+	if swarmOptions.Image == "swarm:latest" {
 		swarmOptions.Image = "hypriot/rpi-swarm:latest"
 	}
 	log.Debug("swarmOptions.Image = %s", swarmOptions.Image)
