@@ -2,6 +2,7 @@ package provision
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
@@ -187,6 +188,9 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 		return err
 	}
 
+	time.Sleep(2 * time.Second)
+
+	swarmOptions.DockerImage = "hypriot/rpi-swarm:latest"
 	if err := configureSwarm(provisioner, swarmOptions); err != nil {
 		return err
 	}

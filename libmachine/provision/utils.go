@@ -206,7 +206,12 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 	parts := strings.Split(u.Host, ":")
 	port := parts[1]
 
-	if _, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarm.DockerImage)); err != nil {
+	swarmDockerImage := swarm.DockerImage
+	if swarmOptions.DockerImage != "" {
+		swarmDockerImage = swarmOptions.DockerImage
+	}
+
+	if _, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarmDockerImage)); err != nil {
 		return err
 	}
 
@@ -217,7 +222,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 		log.Debug("launching swarm master")
 		log.Debugf("master args: %s", masterArgs)
 		if _, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d -p %s:%s --restart=always --name swarm-agent-master -v %s:%s %s manage %s",
-			port, port, dockerDir, dockerDir, swarm.DockerImage, masterArgs)); err != nil {
+			port, port, dockerDir, dockerDir, swarmDockerImage, masterArgs)); err != nil {
 			return err
 		}
 	}
@@ -226,7 +231,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions) error {
 	log.Debug("launching swarm node")
 	log.Debugf("node args: %s", nodeArgs)
 	if _, err = p.SSHCommand(fmt.Sprintf("sudo docker run -d --restart=always --name swarm-agent -v %s:%s %s join %s",
-		dockerDir, dockerDir, swarm.DockerImage, nodeArgs)); err != nil {
+		dockerDir, dockerDir, swarmDockerImage, nodeArgs)); err != nil {
 		return err
 	}
 
