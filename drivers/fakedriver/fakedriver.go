@@ -21,6 +21,10 @@ func (d *FakeDriver) DeauthorizePort(ports []*drivers.Port) error {
 	return nil
 }
 
+func (d *FakeDriver) InstanceList() error {
+	return nil
+}
+
 func (d *FakeDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }

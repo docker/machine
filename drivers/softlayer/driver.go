@@ -305,6 +305,10 @@ func (d *Driver) GetIP() (string, error) {
 	}
 }
 
+func (d *Driver) InstanceList() error {
+	return fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) GetState() (state.State, error) {
 	s, err := d.getClient().VirtualGuest().PowerState(d.Id)
 	if err != nil {

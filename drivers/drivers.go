@@ -66,6 +66,8 @@ type Driver interface {
 	// Remove a host
 	Remove() error
 
+	InstanceList() error
+
 	// Restart a host. This may just call Stop(); Start() if the provider does not
 	// have any special restart behaviour.
 	Restart() error

@@ -252,6 +252,13 @@ func (h *Host) Upgrade() error {
 	return nil
 }
 
+func (h *Host) RemVMLs() error {
+	if err := h.Driver.InstanceList(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (h *Host) Remove(force bool) error {
 	if err := h.Driver.Remove(); err != nil {
 		if !force {

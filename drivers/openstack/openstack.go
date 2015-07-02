@@ -51,6 +51,15 @@ type Driver struct {
 	client           Client
 }
 
+type ListOpts struct {
+	Name   string
+	Status string
+}
+
+var (
+	gListOpts = ListOpts{}
+)
+
 func init() {
 	drivers.Register("openstack", &drivers.RegisteredDriver{
 		New:            NewDriver,
@@ -238,7 +247,26 @@ func (d *Driver) DriverName() string {
 	return "openstack"
 }
 
+func parseFilters(filters []string) (ListOpts, error) {
+	options := ListOpts{}
+	for _, f := range filters {
+		kv := strings.SplitN(f, "=", 2)
+		key, value := kv[0], kv[1]
+
+		switch key {
+		case "name":
+			options.Name = value
+		case "status":
+			options.Status = value
+		default:
+			return options, fmt.Errorf("Unsupported filter key '%s'", key)
+		}
+	}
+	return options, nil
+}
+
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	var err error
 	d.AuthUrl = flags.String("openstack-auth-url")
 	d.Insecure = flags.Bool("openstack-insecure")
 	d.DomainID = flags.String("openstack-domain-id")
@@ -265,6 +293,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+
+	gListOpts, err = parseFilters(flags.(*cli.Context).StringSlice("filter"))
+	if err != nil {
+		return err
+	}
 
 	return d.checkConfig()
 }
@@ -370,6 +403,17 @@ func (d *Driver) Create() error {
 		}
 	}
 	if err := d.lookForIpAddress(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Driver) InstanceList() error {
+	log.Info("Listing OpenStack instance...")
+	if err := d.initCompute(); err != nil {
+		return err
+	}
+	if err := d.client.ListInstance(d, gListOpts); err != nil {
 		return err
 	}
 	return nil

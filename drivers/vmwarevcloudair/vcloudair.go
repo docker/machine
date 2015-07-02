@@ -281,6 +281,10 @@ func (d *Driver) GetState() (state.State, error) {
 
 }
 
+func (d *Driver) InstanceList() error {
+	return fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) PreCreateCheck() error {
 	return nil
 }

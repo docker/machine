@@ -62,6 +62,10 @@ func (d ScpFakeDriver) PreCreateCheck() error {
 	return nil
 }
 
+func (d ScpFakeDriver) InstanceList() error {
+	return nil
+}
+
 func (d ScpFakeDriver) Create() error {
 	return nil
 }
