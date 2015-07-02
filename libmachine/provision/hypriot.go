@@ -145,7 +145,6 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "overlay"
 	}
-	provisioner.SwarmOptions.Image = "hypriot/rpi-swarm:latest"
 
 	log.Debug("setting hostname")
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {

@@ -19,5 +19,4 @@ type SwarmOptions struct {
 	TlsKey         string
 	TlsVerify      bool
 	ArbitraryFlags []string
-	DockerImage    string
 }
