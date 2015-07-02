@@ -2,6 +2,7 @@ package provision
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
@@ -144,7 +145,9 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "overlay"
 	}
+	provisioner.SwarmOptions.Image = "hypriot/rpi-swarm:latest"
 
+	log.Debug("setting hostname")
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
@@ -153,6 +156,7 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 		return err
 	}
 
+	log.Debug("setting Hypriot APT repo")
 	if err := provisioner.setHypriotAptRepo(); err != nil {
 		return err
 	}
@@ -173,6 +177,7 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 		}
 	}
 
+	log.Debug("waiting for docker daemon")
 	if err := utils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
 		return err
 	}
@@ -183,11 +188,19 @@ func (provisioner *HypriotProvisioner) Provision(swarmOptions swarm.SwarmOptions
 
 	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
 
+	log.Debug("configuring auth")
 	if err := ConfigureAuth(provisioner); err != nil {
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmOptions); err != nil {
+	time.Sleep(2 * time.Second)
+
+	log.Debug("configuring swarm")
+	log.Debug("swarmOptions.Image = %s", swarmOptions.Image)
+	if (swarmOptions.Image == "swarm") {
+		swarmOptions.Image = "hypriot/rpi-swarm:latest"
+	}
+	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
 		return err
 	}
 
