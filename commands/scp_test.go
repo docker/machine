@@ -42,6 +42,10 @@ func (d ScpFakeDriver) GetIP() (string, error) {
 	return "12.34.56.78", nil
 }
 
+func (d ScpFakeDriver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
+}
+
 func (d ScpFakeDriver) GetState() (state.State, error) {
 	return d.MockState, nil
 }

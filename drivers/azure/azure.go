@@ -263,6 +263,10 @@ func (d *Driver) GetIP() (string, error) {
 	return d.getHostname(), nil
 }
 
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
+}
+
 func (d *Driver) GetState() (state.State, error) {
 	if err := d.setUserSubscription(); err != nil {
 		return state.Error, err

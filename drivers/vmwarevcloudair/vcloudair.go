@@ -5,6 +5,7 @@
 package vmwarevcloudair
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -241,6 +242,10 @@ func (d *Driver) GetURL() (string, error) {
 
 func (d *Driver) GetIP() (string, error) {
 	return d.PublicIP, nil
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func (d *Driver) GetState() (state.State, error) {

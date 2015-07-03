@@ -302,6 +302,12 @@ var Commands = []cli.Command{
 		Usage:       "Get the IP address of a machine",
 		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdIp,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "private, p",
+				Usage: "Return an instance's private IP address.",
+			},
+		},
 	},
 	{
 		Name:        "kill",
@@ -410,6 +416,7 @@ func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- e
 		"kill":          host.Kill,
 		"upgrade":       host.Upgrade,
 		"ip":            host.PrintIP,
+		"privateIp":     host.PrintPrivateIP,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, host.Name)

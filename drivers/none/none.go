@@ -1,6 +1,7 @@
 package none
 
 import (
+	"errors"
 	"fmt"
 	neturl "net/url"
 
@@ -56,6 +57,10 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) GetIP() (string, error) {
 	return d.IPAddress, nil
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func (d *Driver) GetMachineName() string {

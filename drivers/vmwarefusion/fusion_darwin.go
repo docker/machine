@@ -6,6 +6,7 @@ package vmwarefusion
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -180,6 +181,10 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	return ip, nil
+}
+
+func (d *Driver) GetPrivateIP() (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func (d *Driver) GetState() (state.State, error) {

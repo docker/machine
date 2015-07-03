@@ -6,7 +6,18 @@ import (
 )
 
 func cmdIp(c *cli.Context) {
-	if err := runActionWithContext("ip", c); err != nil {
+	if len(c.Args()) == 0 {
+		cli.ShowCommandHelp(c, "ip")
+		log.Fatal("You must specify a machine name")
+	}
+
+	ctx := "ip"
+
+	if c.Bool("private") {
+		ctx = "privateIp"
+	}
+
+	if err := runActionWithContext(ctx, c); err != nil {
 		log.Fatal(err)
 	}
 }

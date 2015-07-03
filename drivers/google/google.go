@@ -13,23 +13,24 @@ import (
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
-	IPAddress      string
-	MachineName    string
-	SSHUser        string
-	SSHPort        int
-	Zone           string
-	MachineType    string
-	DiskType       string
-	Scopes         string
-	DiskSize       int
-	AuthTokenPath  string
-	storePath      string
-	Project        string
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
+	IPAddress        string
+	PrivateIPAddress string
+	MachineName      string
+	SSHUser          string
+	SSHPort          int
+	Zone             string
+	MachineType      string
+	DiskType         string
+	Scopes           string
+	DiskSize         int
+	AuthTokenPath    string
+	storePath        string
+	Project          string
+	CaCertPath       string
+	PrivateKeyPath   string
+	SwarmMaster      bool
+	SwarmHost        string
+	SwarmDiscovery   string
 }
 
 func init() {
@@ -211,6 +212,15 @@ func (d *Driver) GetIP() (string, error) {
 	return c.ip()
 }
 
+// returns the internal IP address of the GCE instance.
+func (d *Driver) GetPrivateIP() (string, error) {
+	c, err := newComputeUtil(d)
+	if err != nil {
+		return "", err
+	}
+	return c.privateIp()
+}
+
 // GetState returns a docker.hosts.state.State value representing the current state of the host.
 func (d *Driver) GetState() (state.State, error) {
 	c, err := newComputeUtil(d)
@@ -250,6 +260,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 	d.IPAddress, err = d.GetIP()
+	d.PrivateIPAddress, err = d.GetPrivateIP()
 	return err
 }
 
