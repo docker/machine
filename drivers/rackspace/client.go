@@ -53,6 +53,44 @@ func (c *Client) Authenticate(d *openstack.Driver) error {
 	return nil
 }
 
+func (c *Client) InitNetworkClient(d *openstack.Driver) error {
+	if c.Network != nil {
+		return nil
+	}
+
+	network, err := rackspace.NewNetworkV2(c.Provider, gophercloud.EndpointOpts{
+		Region: d.Region,
+	})
+	if err != nil {
+		return err
+	}
+	c.Network = network
+	return nil
+}
+
+func (c *Client) GetNetworkIDs(d *openstack.Driver) ([]string, error) {
+	networkIds := make([]string, len(d.NetworkNames))
+	for i, networkName := range d.NetworkNames {
+		id, err := c.GetNetworkID(d, networkName)
+		if err != nil {
+			return nil, err
+		}
+		networkIds[i] = id
+	}
+	return networkIds, nil
+}
+
+func (c *Client) GetNetworkID(d *openstack.Driver, networkName string) (string, error) {
+	switch networkName {
+	case "public", "PublicNet":
+		return "00000000-0000-0000-0000-000000000000", nil
+	case "private", "ServiceNet":
+		return "11111111-1111-1111-1111-111111111111", nil
+	default:
+		return c.GenericClient.GetNetworkID(d, networkName)
+	}
+}
+
 // StartInstance is unfortunately not supported on Rackspace at this time.
 func (c *Client) StartInstance(d *openstack.Driver) error {
 	return unsupportedOpErr("start")
