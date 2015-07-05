@@ -134,10 +134,11 @@ func Download(c *gophercloud.ServiceClient, containerName, objectName string, op
 		MoreHeaders: h,
 		OkCodes:     []int{200, 304},
 	})
-
-	res.Body = resp.Body
+	if resp != nil {
+		res.Header = resp.Header
+		res.Body = resp.Body
+	}
 	res.Err = err
-	res.Header = resp.Header
 
 	return res
 }
@@ -188,7 +189,7 @@ func (opts CreateOpts) ToObjectCreateParams() (map[string]string, string, error)
 }
 
 // Create is a function that creates a new object or replaces an existing object.
-func Create(c *gophercloud.ServiceClient, containerName, objectName string, content io.Reader, opts CreateOptsBuilder) CreateResult {
+func Create(c *gophercloud.ServiceClient, containerName, objectName string, content io.ReadSeeker, opts CreateOptsBuilder) CreateResult {
 	var res CreateResult
 
 	url := createURL(c, containerName, objectName)
@@ -214,7 +215,9 @@ func Create(c *gophercloud.ServiceClient, containerName, objectName string, cont
 	}
 
 	resp, err := c.Request("PUT", url, ropts)
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }
@@ -270,7 +273,9 @@ func Copy(c *gophercloud.ServiceClient, containerName, objectName string, opts C
 		MoreHeaders: h,
 		OkCodes:     []int{201},
 	})
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }
@@ -310,7 +315,9 @@ func Delete(c *gophercloud.ServiceClient, containerName, objectName string, opts
 	}
 
 	resp, err := c.Delete(url, nil)
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }
@@ -354,7 +361,9 @@ func Get(c *gophercloud.ServiceClient, containerName, objectName string, opts Ge
 	resp, err := c.Request("HEAD", url, gophercloud.RequestOpts{
 		OkCodes: []int{200, 204},
 	})
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }
@@ -410,7 +419,9 @@ func Update(c *gophercloud.ServiceClient, containerName, objectName string, opts
 	resp, err := c.Request("POST", url, gophercloud.RequestOpts{
 		MoreHeaders: h,
 	})
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }

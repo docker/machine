@@ -3,6 +3,7 @@ package objects
 import (
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/rackspace/gophercloud/pagination"
@@ -85,7 +86,7 @@ func TestCreateObject(t *testing.T) {
 	defer th.TeardownHTTP()
 	HandleCreateTextObjectSuccessfully(t)
 
-	content := bytes.NewBufferString("Did gyre and gimble in the wabe")
+	content := strings.NewReader("Did gyre and gimble in the wabe")
 	options := &CreateOpts{ContentType: "text/plain"}
 	res := Create(fake.ServiceClient(), "testContainer", "testObject", content, options)
 	th.AssertNoErr(t, res.Err)
@@ -96,7 +97,7 @@ func TestCreateObjectWithoutContentType(t *testing.T) {
 	defer th.TeardownHTTP()
 	HandleCreateTypelessObjectSuccessfully(t)
 
-	content := bytes.NewBufferString("The sky was the color of television, tuned to a dead channel.")
+	content := strings.NewReader("The sky was the color of television, tuned to a dead channel.")
 	res := Create(fake.ServiceClient(), "testContainer", "testObject", content, &CreateOpts{})
 	th.AssertNoErr(t, res.Err)
 }
