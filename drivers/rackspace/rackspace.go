@@ -2,6 +2,7 @@ package rackspace
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
@@ -60,6 +61,16 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
 			Value:  "general1-1",
 			EnvVar: "OS_FLAVOR_ID",
+		},
+		cli.StringFlag{
+			Name:  "rackspace-net-id",
+			Usage: "Rackspace comma separated network ids the machine will be connected on",
+			Value: "",
+		},
+		cli.StringFlag{
+			Name:  "rackspace-net-name",
+			Usage: "Rackspace comma separated network names the machine will be connected on (eg, PublicNet,ServiceNet,MyNet)",
+			Value: "",
 		},
 		cli.StringFlag{
 			Name:  "rackspace-ssh-user",
@@ -121,6 +132,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.EndpointType = flags.String("rackspace-endpoint-type")
 	d.ImageId = flags.String("rackspace-image-id")
 	d.FlavorId = flags.String("rackspace-flavor-id")
+	if flags.String("rackspace-net-id") != "" {
+		d.NetworkIds = strings.Split(flags.String("rackspace-net-id"), ",")
+	}
+	if flags.String("rackspace-net-name") != "" {
+		d.NetworkNames = strings.Split(flags.String("rackspace-net-name"), ",")
+	}
 	d.SSHUser = flags.String("rackspace-ssh-user")
 	d.SSHPort = flags.Int("rackspace-ssh-port")
 	d.SwarmMaster = flags.Bool("swarm-master")
