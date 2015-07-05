@@ -6,6 +6,7 @@ package vmwarefusion
 
 import (
 	"archive/tar"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -23,12 +24,14 @@ import (
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
+	cryptossh "golang.org/x/crypto/ssh"
 )
 
 const (
-	B2DUser     = "docker"
-	B2DPass     = "tcuser"
-	isoFilename = "boot2docker.iso"
+	B2DUser        = "docker"
+	B2DPass        = "tcuser"
+	isoFilename    = "boot2docker.iso"
+	isoConfigDrive = "configdrive.iso"
 )
 
 // Driver for VMware Fusion
@@ -40,6 +43,8 @@ type Driver struct {
 	CPU            int
 	ISO            string
 	Boot2DockerURL string
+	ConfigDriveISO string
+	ConfigDriveURL string
 	CaCertPath     string
 	PrivateKeyPath string
 	SwarmMaster    bool
@@ -47,6 +52,7 @@ type Driver struct {
 	SwarmDiscovery string
 	CPUS           int
 	SSHUser        string
+	SSHPassword    string
 	SSHPort        int
 
 	storePath string
@@ -68,6 +74,11 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "vmwarefusion-boot2docker-url",
 			Usage:  "Fusion URL for boot2docker image",
 		},
+		cli.StringFlag{
+			EnvVar: "FUSION_CONFIGDRIVE_URL",
+			Name:   "vmwarefusion-configdrive-url",
+			Usage:  "Fusion URL for cloud-init configdrive",
+		},
 		cli.IntFlag{
 			EnvVar: "FUSION_CPU_COUNT",
 			Name:   "vmwarefusion-cpu-count",
@@ -85,6 +96,18 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "vmwarefusion-disk-size",
 			Usage:  "Fusion size of disk for host VM (in MB)",
 			Value:  20000,
+		},
+		cli.StringFlag{
+			EnvVar: "FUSION_SSH_USER",
+			Name:   "vmwarefusion-ssh-user",
+			Usage:  "SSH user",
+			Value:  B2DUser,
+		},
+		cli.StringFlag{
+			EnvVar: "FUSION_SSH_PASSWORD",
+			Name:   "vmwarefusion-ssh-password",
+			Usage:  "SSH password",
+			Value:  B2DPass,
 		},
 	}
 }
@@ -122,10 +145,6 @@ func (d *Driver) GetSSHPort() (int, error) {
 }
 
 func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "docker"
-	}
-
 	return d.SSHUser
 }
 
@@ -138,11 +157,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("vmwarefusion-cpu-count")
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")
 	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
+	d.ConfigDriveURL = flags.String("vmwarefusion-configdrive-url")
 	d.ISO = path.Join(d.storePath, isoFilename)
+	d.ConfigDriveISO = path.Join(d.storePath, isoConfigDrive)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = "docker"
+	d.SSHUser = flags.String("vmwarefusion-ssh-user")
+	d.SSHPassword = flags.String("vmwarefusion-ssh-password")
 	d.SSHPort = 22
 
 	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
@@ -199,6 +221,13 @@ func (d *Driver) Create() error {
 	b2dutils := utils.NewB2dUtils("", "")
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
+	}
+
+	// download cloud-init config drive
+	if d.ConfigDriveURL != "" {
+		if err := b2dutils.DownloadISO(d.storePath, isoConfigDrive, d.ConfigDriveURL); err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Creating SSH key...")
@@ -262,6 +291,44 @@ func (d *Driver) Create() error {
 	// we got an IP, let's copy ssh keys over
 	d.IPAddress = ip
 
+	// Do not execute the rest of boot2docker specific configuration
+	// The uplaod of the public ssh key uses a ssh connection,
+	// this works without installed vmware client tools
+	if d.ConfigDriveURL != "" {
+		var keyfh *os.File
+		var keycontent []byte
+
+		log.Infof("Copy public SSH key to %s", d.MachineName)
+
+		// create .ssh folder in users home
+		if err := executeSSHCommand(fmt.Sprintf("mkdir -p /home/%s/.ssh", d.SSHUser), d); err != nil {
+			return err
+		}
+
+		// read generated public ssh key
+		if keyfh, err = os.Open(d.publicSSHKeyPath()); err != nil {
+			return err
+		}
+		defer keyfh.Close()
+
+		if keycontent, err = ioutil.ReadAll(keyfh); err != nil {
+			return err
+		}
+
+		// add public ssh key to authorized_keys
+		if err := executeSSHCommand(fmt.Sprintf("echo '%s' > /home/%s/.ssh/authorized_keys", string(keycontent), d.SSHUser), d); err != nil {
+			return err
+		}
+
+		// make it secure
+		if err := executeSSHCommand(fmt.Sprintf("chmod 600 /home/%s/.ssh/authorized_keys", d.SSHUser), d); err != nil {
+			return err
+		}
+
+		log.Debugf("Leaving create sequence early, configdrive found")
+		return nil
+	}
+
 	// Generate a tar keys bundle
 	if err := d.generateKeyBundle(); err != nil {
 		return err
@@ -302,6 +369,12 @@ func (d *Driver) Create() error {
 func (d *Driver) Start() error {
 	log.Infof("Starting %s...", d.MachineName)
 	vmrun("start", d.vmxPath(), "nogui")
+
+	// Do not execute the rest of boot2docker specific configuration, exit here
+	if d.ConfigDriveURL != "" {
+		log.Debugf("Leaving start sequence early, configdrive found")
+		return nil
+	}
 
 	log.Debugf("Mounting Shared Folders...")
 	var shareName, shareDir string // TODO configurable at some point
@@ -506,4 +579,46 @@ func (d *Driver) generateKeyBundle() error {
 
 	return nil
 
+}
+
+// execute command over SSH with user / password authentication
+func executeSSHCommand(command string, d *Driver) error {
+	log.Debugf("Execute executeSSHCommand: %s", command)
+
+	// Wait for TCP to be available
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)); err != nil {
+		log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
+		return err
+	}
+
+	config := &cryptossh.ClientConfig{
+		User: d.SSHUser,
+		Auth: []cryptossh.AuthMethod{
+			cryptossh.Password(d.SSHPassword),
+		},
+	}
+
+	client, err := cryptossh.Dial("tcp", fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort), config)
+	if err != nil {
+		log.Debugf("Failed to dial:", err)
+		return err
+	}
+
+	session, err := client.NewSession()
+	if err != nil {
+		log.Debugf("Failed to create session: " + err.Error())
+		return err
+	}
+	defer session.Close()
+
+	var b bytes.Buffer
+	session.Stdout = &b
+
+	if err := session.Run(command); err != nil {
+		log.Debugf("Failed to run: " + err.Error())
+		return err
+	}
+	log.Debugf("Stdout from executeSSHCommand: %s", b.String())
+
+	return nil
 }
