@@ -100,7 +100,7 @@ func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
 
 func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(
-		"sudo hostname %s && echo %q | sudo tee /var/lib/boot2docker/etc/hostname",
+		"sudo /usr/bin/sethostname %s && echo %q | sudo tee /var/lib/boot2docker/etc/hostname",
 		hostname,
 		hostname,
 	)); err != nil {
