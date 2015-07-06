@@ -20,6 +20,7 @@ type ComputeUtil struct {
 	project       string
 	diskTypeURL   string
 	address       string
+	preemptible   bool
 	service       *raw.Service
 	zoneURL       string
 	authTokenPath string
@@ -53,6 +54,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		project:       driver.Project,
 		diskTypeURL:   driver.DiskType,
 		address:       driver.Address,
+		preemptible:   driver.Preemptible,
 		service:       service,
 		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:     apiURL + driver.Project + "/global",
@@ -179,6 +181,9 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 				Email:  "default",
 				Scopes: strings.Split(d.Scopes, ","),
 			},
+		},
+		Scheduling: &raw.Scheduling{
+			Preemptible: c.preemptible,
 		},
 	}
 
