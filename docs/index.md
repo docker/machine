@@ -1530,7 +1530,7 @@ Options:
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB).
  - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB).
 
-The VMware Fusion driver uses the latest boot2docker image. 
+The VMware Fusion driver uses the latest boot2docker image.
 See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
 
 Environment variables and default values:
@@ -1539,8 +1539,8 @@ Environment variables and default values:
 |----------------------------------|--------------------------|--------------------------|
 | `--vmwarefusion-boot2docker-url` | `FUSION_BOOT2DOCKER_URL` | *Latest boot2docker url* |
 | `--vmwarefusion-cpu-count`       | `FUSION_CPU_COUNT`       | `1`                      |
-| `--vmwarefusion-disk-size`       | `FUSION_MEMORY_SIZE`     | `20000`                  |
-| `--vmwarefusion-memory-size`     | `FUSION_DISK_SIZE`       | `1024`                   |
+| `--vmwarefusion-disk-size`       | `FUSION_DISK_SIZE`       | `20000`                  |
+| `--vmwarefusion-memory-size`     | `FUSION_MEMORY_SIZE`     | `1024`                   |
 
 #### VMware vCloud Air
 Creates machines on [vCloud Air](http://vcloud.vmware.com) subscription service. You need an account within an existing subscription of vCloud Air VPC or Dedicated Cloud.
