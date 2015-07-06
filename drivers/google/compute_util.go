@@ -19,6 +19,7 @@ type ComputeUtil struct {
 	userName      string
 	project       string
 	diskTypeURL   string
+	address       string
 	service       *raw.Service
 	zoneURL       string
 	authTokenPath string
@@ -51,6 +52,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		userName:      driver.SSHUser,
 		project:       driver.Project,
 		diskTypeURL:   driver.DiskType,
+		address:       driver.Address,
 		service:       service,
 		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:     apiURL + driver.Project + "/global",
@@ -179,6 +181,11 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 			},
 		},
 	}
+
+	if c.address != "" {
+		instance.NetworkInterfaces[0].AccessConfigs[0].NatIP = c.address
+	}
+
 	disk, err := c.disk()
 	if disk == nil || err != nil {
 		instance.Disks[0].InitializeParams = &raw.AttachedDiskInitializeParams{
