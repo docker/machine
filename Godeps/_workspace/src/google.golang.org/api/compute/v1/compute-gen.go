@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 	"io"
 	"net/http"
@@ -33,6 +34,7 @@ var _ = url.Parse
 var _ = googleapi.Version
 var _ = errors.New
 var _ = strings.Replace
+var _ = context.Background
 
 const apiId = "compute:v1"
 const apiName = "compute"
@@ -41,6 +43,9 @@ const basePath = "https://www.googleapis.com/compute/v1/projects/"
 
 // OAuth2 scopes used by this API.
 const (
+	// View and manage your data across Google Cloud Platform services
+	CloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
+
 	// View and manage your Google Compute Engine resources
 	ComputeScope = "https://www.googleapis.com/auth/compute"
 
@@ -48,13 +53,13 @@ const (
 	ComputeReadonlyScope = "https://www.googleapis.com/auth/compute.readonly"
 
 	// Manage your data and permissions in Google Cloud Storage
-	DevstorageFull_controlScope = "https://www.googleapis.com/auth/devstorage.full_control"
+	DevstorageFullControlScope = "https://www.googleapis.com/auth/devstorage.full_control"
 
 	// View your data in Google Cloud Storage
-	DevstorageRead_onlyScope = "https://www.googleapis.com/auth/devstorage.read_only"
+	DevstorageReadOnlyScope = "https://www.googleapis.com/auth/devstorage.read_only"
 
 	// Manage your data in Google Cloud Storage
-	DevstorageRead_writeScope = "https://www.googleapis.com/auth/devstorage.read_write"
+	DevstorageReadWriteScope = "https://www.googleapis.com/auth/devstorage.read_write"
 )
 
 func New(client *http.Client) (*Service, error) {
@@ -86,15 +91,18 @@ func New(client *http.Client) (*Service, error) {
 	s.TargetHttpProxies = NewTargetHttpProxiesService(s)
 	s.TargetInstances = NewTargetInstancesService(s)
 	s.TargetPools = NewTargetPoolsService(s)
+	s.TargetVpnGateways = NewTargetVpnGatewaysService(s)
 	s.UrlMaps = NewUrlMapsService(s)
+	s.VpnTunnels = NewVpnTunnelsService(s)
 	s.ZoneOperations = NewZoneOperationsService(s)
 	s.Zones = NewZonesService(s)
 	return s, nil
 }
 
 type Service struct {
-	client   *http.Client
-	BasePath string // API endpoint base URL
+	client    *http.Client
+	BasePath  string // API endpoint base URL
+	UserAgent string // optional additional User-Agent fragment
 
 	Addresses *AddressesService
 
@@ -144,11 +152,22 @@ type Service struct {
 
 	TargetPools *TargetPoolsService
 
+	TargetVpnGateways *TargetVpnGatewaysService
+
 	UrlMaps *UrlMapsService
+
+	VpnTunnels *VpnTunnelsService
 
 	ZoneOperations *ZoneOperationsService
 
 	Zones *ZonesService
+}
+
+func (s *Service) userAgent() string {
+	if s.UserAgent == "" {
+		return googleapi.UserAgent
+	}
+	return googleapi.UserAgent + " " + s.UserAgent
 }
 
 func NewAddressesService(s *Service) *AddressesService {
@@ -367,12 +386,30 @@ type TargetPoolsService struct {
 	s *Service
 }
 
+func NewTargetVpnGatewaysService(s *Service) *TargetVpnGatewaysService {
+	rs := &TargetVpnGatewaysService{s: s}
+	return rs
+}
+
+type TargetVpnGatewaysService struct {
+	s *Service
+}
+
 func NewUrlMapsService(s *Service) *UrlMapsService {
 	rs := &UrlMapsService{s: s}
 	return rs
 }
 
 type UrlMapsService struct {
+	s *Service
+}
+
+func NewVpnTunnelsService(s *Service) *VpnTunnelsService {
+	rs := &VpnTunnelsService{s: s}
+	return rs
+}
+
+type VpnTunnelsService struct {
 	s *Service
 }
 
@@ -395,198 +432,293 @@ type ZonesService struct {
 }
 
 type AccessConfig struct {
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#accessConfig
+	// for access configs.
 	Kind string `json:"kind,omitempty"`
 
 	// Name: Name of this access configuration.
 	Name string `json:"name,omitempty"`
 
 	// NatIP: An external IP address associated with this instance. Specify
-	// an unused static IP address available to the project. If not
-	// specified, the external IP will be drawn from a shared ephemeral
-	// pool.
+	// an unused static external IP address available to the project or
+	// leave this field undefined to use an IP from a shared ephemeral IP
+	// address pool. If you specify a static external IP address, it must
+	// live in the same region as the zone of the instance.
 	NatIP string `json:"natIP,omitempty"`
 
-	// Type: Type of configuration. Must be set to "ONE_TO_ONE_NAT". This
-	// configures port-for-port NAT to the internet.
+	// Type: The type of configuration. The default and only option is
+	// ONE_TO_ONE_NAT.
+	//
+	// Possible values:
+	//   "ONE_TO_ONE_NAT" (default)
 	Type string `json:"type,omitempty"`
 }
 
 type Address struct {
-	// Address: The IP address represented by this resource.
+	// Address: The static external IP address represented by this resource.
 	Address string `json:"address,omitempty"`
 
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional textual description of the resource;
 	// provided by the client when the resource is created.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#address for
+	// addresses.
 	Kind string `json:"kind,omitempty"`
 
 	// Name: Name of the resource; provided by the client when the resource
 	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035.
+	// RFC1035. Specifically, the name must be 1-63 characters long and
+	// match the regular expression [a-z]([-a-z0-9]*[a-z0-9])? which means
+	// the first character must be a lowercase letter, and all following
+	// characters must be a dash, lowercase letter, or digit, except the
+	// last character, which cannot be a dash.
 	Name string `json:"name,omitempty"`
 
-	// Region: URL of the region where the regional address resides (output
-	// only). This field is not applicable to global addresses.
+	// Region: [Output Only] URL of the region where the regional address
+	// resides. This field is not applicable to global addresses.
 	Region string `json:"region,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// Status: The status of the address (output only).
+	// Status: [Output Only] The status of the address, which can be either
+	// IN_USE or RESERVED. An address that is RESERVED is currently reserved
+	// and available to use. An IN_USE address is currently being used by
+	// another resource and is not available.
+	//
+	// Possible values:
+	//   "IN_USE"
+	//   "RESERVED"
 	Status string `json:"status,omitempty"`
 
-	// Users: The resources that are using this address resource.
+	// Users: [Output Only] The URLs of the resources that are using this
+	// address.
 	Users []string `json:"users,omitempty"`
 }
 
 type AddressAggregatedList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: A map of scoped address lists.
+	// Items: [Output Only] A map of scoped address lists.
 	Items map[string]AddressesScopedList `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always
+	// compute#addressAggregatedList for aggregated lists of addresses.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type AddressList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The address resources.
+	// Items: [Output Only] A list of Address resources.
 	Items []*Address `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#addressList for
+	// lists of addresses.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type AddressesScopedList struct {
-	// Addresses: List of addresses contained in this scope.
+	// Addresses: [Output Only] List of addresses contained in this scope.
 	Addresses []*Address `json:"addresses,omitempty"`
 
-	// Warning: Informational warning which replaces the list of addresses
-	// when the list is empty.
+	// Warning: [Output Only] Informational warning which replaces the list
+	// of addresses when the list is empty.
 	Warning *AddressesScopedListWarning `json:"warning,omitempty"`
 }
 
 type AddressesScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*AddressesScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type AddressesScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
 type AttachedDisk struct {
-	// AutoDelete: Whether the disk will be auto-deleted when the instance
-	// is deleted (but not when the disk is detached from the instance).
+	// AutoDelete: Specifies whether the disk will be auto-deleted when the
+	// instance is deleted (but not when the disk is detached from the
+	// instance).
 	AutoDelete bool `json:"autoDelete,omitempty"`
 
-	// Boot: Indicates that this is a boot disk. VM will use the first
-	// partition of the disk for its root filesystem.
+	// Boot: Indicates that this is a boot disk. The virtual machine will
+	// use the first partition of the disk for its root filesystem.
 	Boot bool `json:"boot,omitempty"`
 
-	// DeviceName: Persistent disk only; must be unique within the instance
-	// when specified. This represents a unique device name that is
+	// DeviceName: Specifies a unique device name of your choice that is
 	// reflected into the /dev/ tree of a Linux operating system running
-	// within the instance. If not specified, a default will be chosen by
-	// the system.
+	// within the instance. This name can be used to reference the device
+	// for mounting, resizing, and so on, from within the instance.
+	//
+	// If not specified, the server chooses a default device name to apply
+	// to this disk, in the form persistent-disks-x, where x is a number
+	// assigned by Google Compute Engine. This field is only applicable for
+	// persistent disks.
 	DeviceName string `json:"deviceName,omitempty"`
 
-	// Index: A zero-based index to assign to this disk, where 0 is reserved
-	// for the boot disk. If not specified, the server will choose an
-	// appropriate value (output only).
+	// Index: Assigns a zero-based index to this disk, where 0 is reserved
+	// for the boot disk. For example, if you have many disks attached to an
+	// instance, each disk would have a unique index number. If not
+	// specified, the server will choose an appropriate value.
 	Index int64 `json:"index,omitempty"`
 
-	// InitializeParams: Initialization parameters.
+	// InitializeParams: [Input Only] Specifies the parameters for a new
+	// disk that will be created alongside the new instance. Use
+	// initialization parameters to create boot disks or local SSDs attached
+	// to the new instance.
+	//
+	// This property is mutually exclusive with the source property; you can
+	// only define one or the other, but not both.
 	InitializeParams *AttachedDiskInitializeParams `json:"initializeParams,omitempty"`
 
+	// Possible values:
+	//   "NVME"
+	//   "SCSI"
 	Interface string `json:"interface,omitempty"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#attachedDisk
+	// for attached disks.
 	Kind string `json:"kind,omitempty"`
 
-	// Licenses: Public visible licenses.
+	// Licenses: [Output Only] Any valid publicly visible licenses.
 	Licenses []string `json:"licenses,omitempty"`
 
-	// Mode: The mode in which to attach this disk, either "READ_WRITE" or
-	// "READ_ONLY".
+	// Mode: The mode in which to attach this disk, either READ_WRITE or
+	// READ_ONLY. If not specified, the default is to attach the disk in
+	// READ_WRITE mode.
+	//
+	// Possible values:
+	//   "READ_ONLY"
+	//   "READ_WRITE"
 	Mode string `json:"mode,omitempty"`
 
-	// Source: Persistent disk only; the URL of the persistent disk
-	// resource.
+	// Source: Specifies a valid partial or full URL to an existing
+	// Persistent Disk resource. This field is only applicable for
+	// persistent disks.
 	Source string `json:"source,omitempty"`
 
-	// Type: Type of the disk, either "SCRATCH" or "PERSISTENT". Note that
-	// persistent disks must be created before you can specify them here.
+	// Type: Specifies the type of the disk, either SCRATCH or PERSISTENT.
+	// If not specified, the default is PERSISTENT.
+	//
+	// Possible values:
+	//   "PERSISTENT"
+	//   "SCRATCH"
 	Type string `json:"type,omitempty"`
 }
 
 type AttachedDiskInitializeParams struct {
-	// DiskName: Name of the disk (when not provided defaults to the name of
-	// the instance).
+	// DiskName: Specifies the disk name. If not specified, the default is
+	// to use the name of the instance.
 	DiskName string `json:"diskName,omitempty"`
 
-	// DiskSizeGb: Size of the disk in base-2 GB.
+	// DiskSizeGb: Specifies the size of the disk in base-2 GB.
 	DiskSizeGb int64 `json:"diskSizeGb,omitempty,string"`
 
-	// DiskType: URL of the disk type resource describing which disk type to
-	// use to create the disk; provided by the client when the disk is
-	// created.
+	// DiskType: Specifies the disk type to use to create the instance. If
+	// not specified, the default is pd-standard, specified using the full
+	// URL. For
+	// example:
+	//
+	// https://www.googleapis.com/compute/v1/projects/project/zones
+	// /zone/diskTypes/pd-standard
+	//
+	// Other values include pd-ssd and local-ssd. If you define this field,
+	// you can provide either the full or partial URL. For example, the
+	// following are valid values:
+	// -
+	// https://www.googleapis.com/compute/v1/projects/project/zones/zone/disk
+	// Types/diskType
+	// - projects/project/zones/zone/diskTypes/diskType
+	// - zones/zone/diskTypes/diskType
 	DiskType string `json:"diskType,omitempty"`
 
-	// SourceImage: The source image used to create this disk.
+	// SourceImage: A source image used to create the disk. You can provide
+	// a private (custom) image, and Compute Engine will use the
+	// corresponding image from your project. For
+	// example:
+	//
+	// global/images/my-private-image
+	//
+	// Or you can provide an image from a publicly-available project. For
+	// example, to use a Debian image from the debian-cloud project, make
+	// sure to include the project in the
+	// URL:
+	//
+	// projects/debian-cloud/global/images/debian-7-wheezy-vYYYYMMDD
+	//
+	// where vYYYYMMDD is the image version. The fully-qualified URL will
+	// also work in both cases.
 	SourceImage string `json:"sourceImage,omitempty"`
 }
 
 type Backend struct {
 	// BalancingMode: The balancing mode of this backend, default is
 	// UTILIZATION.
+	//
+	// Possible values:
+	//   "RATE"
+	//   "UTILIZATION"
 	BalancingMode string `json:"balancingMode,omitempty"`
 
-	// CapacityScaler: The multiplier (a value between 0 and 1e6) of the max
-	// capacity (CPU or RPS, depending on 'balancingMode') the group should
-	// serve up to. 0 means the group is totally drained. Default value is
-	// 1. Valid range is [0, 1e6].
+	// CapacityScaler: The multiplier (a value between 0.0 and 1.0) of the
+	// max capacity (CPU or RPS, depending on 'balancingMode') the group
+	// should serve up to. 0 means the group is totally drained. Default
+	// value is 1. Valid range is [0.0, 1.0].
 	CapacityScaler float64 `json:"capacityScaler,omitempty"`
 
 	// Description: An optional textual description of the resource, which
@@ -660,6 +792,8 @@ type BackendService struct {
 	// resource views referenced by this service. Required.
 	PortName string `json:"portName,omitempty"`
 
+	// Possible values:
+	//   "HTTP"
 	Protocol string `json:"protocol,omitempty"`
 
 	// SelfLink: Server defined URL for the resource (output only).
@@ -682,7 +816,7 @@ type BackendServiceList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The BackendService resources.
+	// Items: A list of BackendService resources.
 	Items []*BackendService `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -709,248 +843,375 @@ type DeprecationStatus struct {
 	// deprecation state of this resource will be changed to OBSOLETE.
 	Obsolete string `json:"obsolete,omitempty"`
 
-	// Replacement: A URL of the suggested replacement for the deprecated
-	// resource. The deprecated resource and its replacement must be
-	// resources of the same kind.
+	// Replacement: The URL of the suggested replacement for a deprecated
+	// resource. The suggested replacement resource must be the same kind of
+	// resource as the deprecated resource.
 	Replacement string `json:"replacement,omitempty"`
 
-	// State: The deprecation state. Can be "DEPRECATED", "OBSOLETE", or
-	// "DELETED". Operations which create a new resource using a
-	// "DEPRECATED" resource will return successfully, but with a warning
-	// indicating the deprecated resource and recommending its replacement.
-	// New uses of "OBSOLETE" or "DELETED" resources will result in an
-	// error.
+	// State: The deprecation state of this resource. This can be
+	// DEPRECATED, OBSOLETE, or DELETED. Operations which create a new
+	// resource using a DEPRECATED resource will return successfully, but
+	// with a warning indicating the deprecated resource and recommending
+	// its replacement. Operations which use OBSOLETE or DELETED resources
+	// will be rejected and result in an error.
+	//
+	// Possible values:
+	//   "DELETED"
+	//   "DEPRECATED"
+	//   "OBSOLETE"
 	State string `json:"state,omitempty"`
 }
 
 type Disk struct {
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional textual description of the resource;
 	// provided by the client when the resource is created.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#disk for
+	// disks.
 	Kind string `json:"kind,omitempty"`
 
-	// Licenses: Public visible licenses.
+	// LastAttachTimestamp: [Output Only] Last attach timestamp in RFC3339
+	// text format.
+	LastAttachTimestamp string `json:"lastAttachTimestamp,omitempty"`
+
+	// LastDetachTimestamp: [Output Only] Last detach timestamp in RFC3339
+	// text format.
+	LastDetachTimestamp string `json:"lastDetachTimestamp,omitempty"`
+
+	// Licenses: Any applicable publicly visible licenses.
 	Licenses []string `json:"licenses,omitempty"`
 
 	// Name: Name of the resource; provided by the client when the resource
 	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035.
+	// RFC1035. Specifically, the name must be 1-63 characters long and
+	// match the regular expression [a-z]([-a-z0-9]*[a-z0-9])? which means
+	// the first character must be a lowercase letter, and all following
+	// characters must be a dash, lowercase letter, or digit, except the
+	// last character, which cannot be a dash.
 	Name string `json:"name,omitempty"`
 
 	// Options: Internal use only.
 	Options string `json:"options,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server-defined fully-qualified URL for this
+	// resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// SizeGb: Size of the persistent disk, specified in GB. This parameter
-	// is optional when creating a disk from a disk image or a snapshot,
-	// otherwise it is required.
+	// SizeGb: Size of the persistent disk, specified in GB. You can specify
+	// this field when creating a persistent disk using the sourceImage or
+	// sourceSnapshot parameter, or specify it alone to create an empty
+	// persistent disk.
+	//
+	// If you specify this field along with sourceImage or sourceSnapshot,
+	// the value of sizeGb must not be less than the size of the sourceImage
+	// or the size of the snapshot.
 	SizeGb int64 `json:"sizeGb,omitempty,string"`
 
-	// SourceImage: The source image used to create this disk.
+	// SourceImage: The source image used to create this disk. If the source
+	// image is deleted from the system, this field will not be set, even if
+	// an image with the same name has been re-created.
+	//
+	// When creating a disk, you can provide a private (custom) image using
+	// the following input, and Compute Engine will use the corresponding
+	// image from your project. For example:
+	//
+	// global/images/my-private-image
+	//
+	// Or you can provide an image from a publicly-available project. For
+	// example, to use a Debian image from the debian-cloud project, make
+	// sure to include the project in the
+	// URL:
+	//
+	// projects/debian-cloud/global/images/debian-7-wheezy-vYYYYMMDD
+	//
+	// where vYYYYMMDD is the image version. The fully-qualified URL will
+	// also work in both cases.
 	SourceImage string `json:"sourceImage,omitempty"`
 
-	// SourceImageId: The 'id' value of the image used to create this disk.
-	// This value may be used to determine whether the disk was created from
-	// the current or a previous instance of a given image.
+	// SourceImageId: The ID value of the image used to create this disk.
+	// This value identifies the exact image that was used to create this
+	// persistent disk. For example, if you created the persistent disk from
+	// an image that was later deleted and recreated under the same name,
+	// the source image ID would identify the exact version of the image
+	// that was used.
 	SourceImageId string `json:"sourceImageId,omitempty"`
 
-	// SourceSnapshot: The source snapshot used to create this disk.
+	// SourceSnapshot: The source snapshot used to create this disk. You can
+	// provide this as a partial or full URL to the resource. For example,
+	// the following are valid values:
+	// -
+	// https://www.googleapis.com/compute/v1/projects/project/global/snapshot
+	// s/snapshot
+	// - projects/project/global/snapshots/snapshot
+	// - global/snapshots/snapshot
 	SourceSnapshot string `json:"sourceSnapshot,omitempty"`
 
-	// SourceSnapshotId: The 'id' value of the snapshot used to create this
-	// disk. This value may be used to determine whether the disk was
-	// created from the current or a previous instance of a given disk
-	// snapshot.
+	// SourceSnapshotId: [Output Only] The unique ID of the snapshot used to
+	// create this disk. This value identifies the exact snapshot that was
+	// used to create this persistent disk. For example, if you created the
+	// persistent disk from a snapshot that was later deleted and recreated
+	// under the same name, the source snapshot ID would identify the exact
+	// version of the snapshot that was used.
 	SourceSnapshotId string `json:"sourceSnapshotId,omitempty"`
 
-	// Status: The status of disk creation (output only).
+	// Status: [Output Only] The status of disk creation. Applicable
+	// statuses includes: CREATING, FAILED, READY, RESTORING.
+	//
+	// Possible values:
+	//   "CREATING"
+	//   "FAILED"
+	//   "READY"
+	//   "RESTORING"
 	Status string `json:"status,omitempty"`
 
 	// Type: URL of the disk type resource describing which disk type to use
 	// to create the disk; provided by the client when the disk is created.
 	Type string `json:"type,omitempty"`
 
-	// Zone: URL of the zone where the disk resides (output only).
+	// Users: Links to the users of the disk (attached instances) in form:
+	// project/zones/zone/instances/instance
+	Users []string `json:"users,omitempty"`
+
+	// Zone: [Output Only] URL of the zone where the disk resides.
 	Zone string `json:"zone,omitempty"`
 }
 
 type DiskAggregatedList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: A map of scoped disk lists.
+	// Items: [Output Only] A map of scoped disk lists.
 	Items map[string]DisksScopedList `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always
+	// compute#diskAggregatedList for aggregated lists of persistent disks.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type DiskList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The persistent disk resources.
+	// Items: [Output Only] A list of persistent disks.
 	Items []*Disk `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#diskList for
+	// lists of disks.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
+type DiskMoveRequest struct {
+	// DestinationZone: The URL of the destination zone to move the disk to.
+	// This can be a full or partial URL. For example, the following are all
+	// valid URLs to a zone:
+	// - https://www.googleapis.com/compute/v1/projects/project/zones/zone
+	//
+	// - projects/project/zones/zone
+	// - zones/zone
+	DestinationZone string `json:"destinationZone,omitempty"`
+
+	// TargetDisk: The URL of the target disk to move. This can be a full or
+	// partial URL. For example, the following are all valid URLs to a disk:
+	//
+	// -
+	// https://www.googleapis.com/compute/v1/projects/project/zones/zone/disk
+	// s/disk
+	// - projects/project/zones/zone/disks/disk
+	// - zones/zone/disks/disk
+	TargetDisk string `json:"targetDisk,omitempty"`
+}
+
 type DiskType struct {
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
-	// DefaultDiskSizeGb: Server defined default disk size in gb (output
-	// only).
+	// DefaultDiskSizeGb: [Output Only] Server defined default disk size in
+	// GB.
 	DefaultDiskSizeGb int64 `json:"defaultDiskSizeGb,omitempty,string"`
 
-	// Deprecated: The deprecation status associated with this disk type.
+	// Deprecated: [Output Only] The deprecation status associated with this
+	// disk type.
 	Deprecated *DeprecationStatus `json:"deprecated,omitempty"`
 
-	// Description: An optional textual description of the resource.
+	// Description: [Output Only] An optional textual description of the
+	// resource.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#diskType for
+	// disk types.
 	Kind string `json:"kind,omitempty"`
 
-	// Name: Name of the resource.
+	// Name: [Output Only] Name of the resource.
 	Name string `json:"name,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// ValidDiskSize: An optional textual descroption of the valid disk
-	// size, e.g., "10GB-10TB".
+	// ValidDiskSize: [Output Only] An optional textual description of the
+	// valid disk size, such as "10GB-10TB".
 	ValidDiskSize string `json:"validDiskSize,omitempty"`
 
-	// Zone: Url of the zone where the disk type resides (output only).
+	// Zone: [Output Only] URL of the zone where the disk type resides.
 	Zone string `json:"zone,omitempty"`
 }
 
 type DiskTypeAggregatedList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: A map of scoped disk type lists.
+	// Items: [Output Only] A map of scoped disk type lists.
 	Items map[string]DiskTypesScopedList `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always
+	// compute#diskTypeAggregatedList.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type DiskTypeList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The disk type resources.
+	// Items: [Output Only] A list of Disk Type resources.
 	Items []*DiskType `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#diskTypeList for
+	// disk types.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type DiskTypesScopedList struct {
-	// DiskTypes: List of disk types contained in this scope.
+	// DiskTypes: [Output Only] List of disk types contained in this scope.
 	DiskTypes []*DiskType `json:"diskTypes,omitempty"`
 
-	// Warning: Informational warning which replaces the list of disk types
-	// when the list is empty.
+	// Warning: [Output Only] Informational warning which replaces the list
+	// of disk types when the list is empty.
 	Warning *DiskTypesScopedListWarning `json:"warning,omitempty"`
 }
 
 type DiskTypesScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*DiskTypesScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type DiskTypesScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
 type DisksScopedList struct {
-	// Disks: List of disks contained in this scope.
+	// Disks: [Output Only] List of disks contained in this scope.
 	Disks []*Disk `json:"disks,omitempty"`
 
-	// Warning: Informational warning which replaces the list of disks when
-	// the list is empty.
+	// Warning: [Output Only] Informational warning which replaces the list
+	// of disks when the list is empty.
 	Warning *DisksScopedListWarning `json:"warning,omitempty"`
 }
 
 type DisksScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*DisksScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type DisksScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
@@ -960,85 +1221,108 @@ type Firewall struct {
 	// connection.
 	Allowed []*FirewallAllowed `json:"allowed,omitempty"`
 
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional textual description of the resource;
 	// provided by the client when the resource is created.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Ony] Type of the resource. Always compute#firewall for
+	// firewall rules.
 	Kind string `json:"kind,omitempty"`
 
 	// Name: Name of the resource; provided by the client when the resource
 	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035.
+	// RFC1035. Specifically, the name must be 1-63 characters long and
+	// match the regular expression [a-z]([-a-z0-9]*[a-z0-9])? which means
+	// the first character must be a lowercase letter, and all following
+	// characters must be a dash, lowercase letter, or digit, except the
+	// last character, which cannot be a dash.
 	Name string `json:"name,omitempty"`
 
-	// Network: URL of the network to which this firewall is applied;
-	// provided by the client when the firewall is created.
+	// Network: URL of the network resource for this firewall rule. This
+	// field is required for creating an instance but optional when creating
+	// a firewall rule. If not specified when creating a firewall rule, the
+	// default network is used:
+	// global/networks/default
+	// If you choose to specify this property, you can specify the network
+	// as a full or partial URL. For example, the following are all valid
+	// URLs:
+	// -
+	// https://www.googleapis.com/compute/v1/projects/myproject/global/networ
+	// ks/my-network
+	// - projects/myproject/global/networks/my-network
+	// - global/networks/default
 	Network string `json:"network,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// SourceRanges: A list of IP address blocks expressed in CIDR format
-	// which this rule applies to. One or both of sourceRanges and
-	// sourceTags may be set; an inbound connection is allowed if either the
-	// range or the tag of the source matches.
+	// SourceRanges: The IP address blocks that this rule applies to,
+	// expressed in CIDR format. One or both of sourceRanges and sourceTags
+	// may be set.
+	//
+	// If both properties are set, an inbound connection is allowed if the
+	// range or the tag of the source matches the sourceRanges OR matches
+	// the sourceTags property; the connection does not need to match both
+	// properties.
 	SourceRanges []string `json:"sourceRanges,omitempty"`
 
 	// SourceTags: A list of instance tags which this rule applies to. One
-	// or both of sourceRanges and sourceTags may be set; an inbound
-	// connection is allowed if either the range or the tag of the source
-	// matches.
+	// or both of sourceRanges and sourceTags may be set.
+	//
+	// If both properties are set, an inbound connection is allowed if the
+	// range or the tag of the source matches the sourceRanges OR matches
+	// the sourceTags property; the connection does not need to match both
+	// properties.
 	SourceTags []string `json:"sourceTags,omitempty"`
 
 	// TargetTags: A list of instance tags indicating sets of instances
 	// located on network which may make network connections as specified in
-	// allowed. If no targetTags are specified, the firewall rule applies to
-	// all instances on the specified network.
+	// allowed[]. If no targetTags are specified, the firewall rule applies
+	// to all instances on the specified network.
 	TargetTags []string `json:"targetTags,omitempty"`
 }
 
 type FirewallAllowed struct {
-	// IPProtocol: Required; this is the IP protocol that is allowed for
-	// this rule. This can either be one of the following well known
-	// protocol strings ["tcp", "udp", "icmp", "esp", "ah", "sctp"], or the
-	// IP protocol number.
+	// IPProtocol: The IP protocol that is allowed for this rule. The
+	// protocol type is required when creating a firewall. This value can
+	// either be one of the following well known protocol strings (tcp, udp,
+	// icmp, esp, ah, sctp), or the IP protocol number.
 	IPProtocol string `json:"IPProtocol,omitempty"`
 
-	// Ports: An optional list of ports which are allowed. It is an error to
-	// specify this for any protocol that isn't UDP or TCP. Each entry must
-	// be either an integer or a range. If not specified, connections
-	// through any port are allowed.
+	// Ports: An optional list of ports which are allowed. This field is
+	// only applicable for UDP or TCP protocol. Each entry must be either an
+	// integer or a range. If not specified, connections through any port
+	// are allowed
 	//
-	// Example inputs include: ["22"],
-	// ["80","443"] and ["12345-12349"].
+	// Example inputs include: ["22"], ["80","443"], and ["12345-12349"].
 	Ports []string `json:"ports,omitempty"`
 }
 
 type FirewallList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The firewall resources.
+	// Items: [Output Only] A list of Firewall resources.
 	Items []*Firewall `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#firewallList for
+	// lists of firewalls.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
@@ -1053,6 +1337,13 @@ type ForwardingRule struct {
 
 	// IPProtocol: The IP protocol to which this rule applies, valid options
 	// are 'TCP', 'UDP', 'ESP', 'AH' or 'SCTP'.
+	//
+	// Possible values:
+	//   "AH"
+	//   "ESP"
+	//   "SCTP"
+	//   "TCP"
+	//   "UDP"
 	IPProtocol string `json:"IPProtocol,omitempty"`
 
 	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
@@ -1121,7 +1412,7 @@ type ForwardingRuleList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The ForwardingRule resources.
+	// Items: A list of ForwardingRule resources.
 	Items []*ForwardingRule `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -1145,21 +1436,38 @@ type ForwardingRulesScopedList struct {
 }
 
 type ForwardingRulesScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*ForwardingRulesScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type ForwardingRulesScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
@@ -1169,6 +1477,10 @@ type HealthCheckReference struct {
 
 type HealthStatus struct {
 	// HealthState: Health state of the instance.
+	//
+	// Possible values:
+	//   "HEALTHY"
+	//   "UNHEALTHY"
 	HealthState string `json:"healthState,omitempty"`
 
 	// Instance: URL of the instance resource.
@@ -1241,7 +1553,8 @@ type HttpHealthCheck struct {
 	SelfLink string `json:"selfLink,omitempty"`
 
 	// TimeoutSec: How long (in seconds) to wait before claiming failure.
-	// The default value is 5 seconds.
+	// The default value is 5 seconds. It is invalid for timeoutSec to have
+	// greater value than checkIntervalSec.
 	TimeoutSec int64 `json:"timeoutSec,omitempty"`
 
 	// UnhealthyThreshold: A so-far healthy VM will be marked unhealthy
@@ -1254,7 +1567,7 @@ type HttpHealthCheckList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The HttpHealthCheck resources.
+	// Items: A list of HttpHealthCheck resources.
 	Items []*HttpHealthCheck `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -1273,8 +1586,8 @@ type Image struct {
 	// Cloud Storage (in bytes).
 	ArchiveSizeBytes int64 `json:"archiveSizeBytes,omitempty,string"`
 
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Deprecated: The deprecation status associated with this image.
@@ -1284,56 +1597,79 @@ type Image struct {
 	// client when the resource is created.
 	Description string `json:"description,omitempty"`
 
-	// DiskSizeGb: Size of the image when restored onto a disk (in GiB).
+	// DiskSizeGb: Size of the image when restored onto a persistent disk
+	// (in GB).
 	DiskSizeGb int64 `json:"diskSizeGb,omitempty,string"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#image for
+	// images.
 	Kind string `json:"kind,omitempty"`
 
-	// Licenses: Public visible licenses.
+	// Licenses: Any applicable publicly visible licenses.
 	Licenses []string `json:"licenses,omitempty"`
 
 	// Name: Name of the resource; provided by the client when the resource
 	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035.
+	// RFC1035. Specifically, the name must be 1-63 characters long and
+	// match the regular expression [a-z]([-a-z0-9]*[a-z0-9])? which means
+	// the first character must be a lowercase letter, and all following
+	// characters must be a dash, lowercase letter, or digit, except the
+	// last character, which cannot be a dash.
 	Name string `json:"name,omitempty"`
 
-	// RawDisk: The raw disk image parameters.
+	// RawDisk: The parameters of the raw disk image.
 	RawDisk *ImageRawDisk `json:"rawDisk,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// SourceDisk: The source disk used to create this image.
+	// SourceDisk: URL of the The source disk used to create this image.
+	// This can be a full or valid partial URL. You must provide either this
+	// property or the rawDisk.source property but not both to create an
+	// image. For example, the following are valid values:
+	// -
+	// https://www.googleapis.com/compute/v1/projects/project/zones/zone/disk
+	// /disk
+	// - projects/project/zones/zone/disk/disk
+	// - zones/zone/disks/disk
 	SourceDisk string `json:"sourceDisk,omitempty"`
 
-	// SourceDiskId: The 'id' value of the disk used to create this image.
+	// SourceDiskId: The ID value of the disk used to create this image.
 	// This value may be used to determine whether the image was taken from
 	// the current or a previous instance of a given disk name.
 	SourceDiskId string `json:"sourceDiskId,omitempty"`
 
-	// SourceType: Must be "RAW"; provided by the client when the disk image
-	// is created.
+	// SourceType: The type of the image used to create this disk. The
+	// default and only value is RAW
+	//
+	// Possible values:
+	//   "RAW" (default)
 	SourceType string `json:"sourceType,omitempty"`
 
-	// Status: Status of the image (output only). It will be one of the
-	// following READY - after image has been successfully created and is
-	// ready for use FAILED - if creating the image fails for some reason
-	// PENDING - the image creation is in progress An image can be used to
-	// create other resources suck as instances only after the image has
-	// been successfully created and the status is set to READY.
+	// Status: [Output Only] The status of the image. An image can be used
+	// to create other resources, such as instances, only after the image
+	// has been successfully created and the status is set to READY.
+	// Possible values are FAILED, PENDING, or READY.
+	//
+	// Possible values:
+	//   "FAILED"
+	//   "PENDING"
+	//   "READY"
 	Status string `json:"status,omitempty"`
 }
 
 type ImageRawDisk struct {
 	// ContainerType: The format used to encode and transmit the block
-	// device. Should be TAR. This is just a container and transmission
-	// format and not a runtime format. Provided by the client when the disk
-	// image is created.
+	// device, which should be TAR. This is just a container and
+	// transmission format and not a runtime format. Provided by the client
+	// when the disk image is created.
+	//
+	// Possible values:
+	//   "TAR"
 	ContainerType string `json:"containerType,omitempty"`
 
 	// Sha1Checksum: An optional SHA1 checksum of the disk image before
@@ -1341,7 +1677,8 @@ type ImageRawDisk struct {
 	Sha1Checksum string `json:"sha1Checksum,omitempty"`
 
 	// Source: The full Google Cloud Storage URL where the disk image is
-	// stored; provided by the client when the disk image is created.
+	// stored. You must provide either this property or the sourceDisk
+	// property but not both.
 	Source string `json:"source,omitempty"`
 }
 
@@ -1350,7 +1687,7 @@ type ImageList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The disk image resources.
+	// Items: A list of Image resources.
 	Items []*Image `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -1365,15 +1702,17 @@ type ImageList struct {
 }
 
 type Instance struct {
-	// CanIpForward: Allows this instance to send packets with source IP
-	// addresses other than its own and receive packets with destination IP
-	// addresses other than its own. If this instance will be used as an IP
-	// gateway or it will be set as the next-hop in a Route resource, say
-	// true. If unsure, leave this set to false.
+	// CanIpForward: Allows this instance to send and receive packets with
+	// non-matching destination or source IPs. This is required if you plan
+	// to use this instance to forward routes. For more information, see
+	// Enabling IP Forwarding.
 	CanIpForward bool `json:"canIpForward,omitempty"`
 
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CpuPlatform: [Output Only] The CPU platform used by this instance.
+	CpuPlatform string `json:"cpuPlatform,omitempty"`
+
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional textual description of the resource;
@@ -1384,155 +1723,194 @@ type Instance struct {
 	// must be created before you can assign them.
 	Disks []*AttachedDisk `json:"disks,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#instance for
+	// instances.
 	Kind string `json:"kind,omitempty"`
 
-	// MachineType: URL of the machine type resource describing which
-	// machine type to use to host the instance; provided by the client when
-	// the instance is created.
+	// MachineType: Full or partial URL of the machine type resource to use
+	// for this instance. This is provided by the client when the instance
+	// is created. For example, the following is a valid partial
+	// url:
+	//
+	// zones/zone/machineTypes/machine-type
 	MachineType string `json:"machineType,omitempty"`
 
-	// Metadata: Metadata key/value pairs assigned to this instance.
-	// Consists of custom metadata or predefined keys; see Instance
-	// documentation for more information.
+	// Metadata: The metadata key/value pairs assigned to this instance.
+	// This includes custom metadata and predefined keys.
 	Metadata *Metadata `json:"metadata,omitempty"`
 
 	// Name: Name of the resource; provided by the client when the resource
 	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035.
+	// RFC1035. Specifically, the name must be 1-63 characters long and
+	// match the regular expression [a-z]([-a-z0-9]*[a-z0-9])? which means
+	// the first character must be a lowercase letter, and all following
+	// characters must be a dash, lowercase letter, or digit, except the
+	// last character, which cannot be a dash.
 	Name string `json:"name,omitempty"`
 
-	// NetworkInterfaces: Array of configurations for this interface. This
-	// specifies how this interface is configured to interact with other
-	// network services, such as connecting to the internet. Currently,
-	// ONE_TO_ONE_NAT is the only access config supported. If there are no
-	// accessConfigs specified, then this instance will have no external
-	// internet access.
+	// NetworkInterfaces: An array of configurations for this interface.
+	// This specifies how this interface is configured to interact with
+	// other network services, such as connecting to the internet.
 	NetworkInterfaces []*NetworkInterface `json:"networkInterfaces,omitempty"`
 
 	// Scheduling: Scheduling options for this instance.
 	Scheduling *Scheduling `json:"scheduling,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// ServiceAccounts: A list of service accounts each with specified
-	// scopes, for which access tokens are to be made available to the
-	// instance through metadata queries.
+	// ServiceAccounts: A list of service accounts, with their specified
+	// scopes, authorized for this instance. Service accounts generate
+	// access tokens that can be accessed through the metadata server and
+	// used to authenticate applications on the instance. See Authenticating
+	// from Google Compute Engine for more information.
 	ServiceAccounts []*ServiceAccount `json:"serviceAccounts,omitempty"`
 
-	// Status: Instance status. One of the following values: "PROVISIONING",
-	// "STAGING", "RUNNING", "STOPPING", "STOPPED", "TERMINATED" (output
-	// only).
+	// Status: [Output Only] The status of the instance. One of the
+	// following values: PROVISIONING, STAGING, RUNNING, STOPPING, and
+	// TERMINATED.
+	//
+	// Possible values:
+	//   "PROVISIONING"
+	//   "RUNNING"
+	//   "STAGING"
+	//   "STOPPED"
+	//   "STOPPING"
+	//   "SUSPENDED"
+	//   "SUSPENDING"
+	//   "TERMINATED"
 	Status string `json:"status,omitempty"`
 
-	// StatusMessage: An optional, human-readable explanation of the status
-	// (output only).
+	// StatusMessage: [Output Only] An optional, human-readable explanation
+	// of the status.
 	StatusMessage string `json:"statusMessage,omitempty"`
 
-	// Tags: A list of tags to be applied to this instance. Used to identify
-	// valid sources or targets for network firewalls. Provided by the
-	// client on instance creation. The tags can be later modified by the
-	// setTags method. Each tag within the list must comply with RFC1035.
+	// Tags: A list of tags to appy to this instance. Tags are used to
+	// identify valid sources or targets for network firewalls and are
+	// specified by the client during instance creation. The tags can be
+	// later modified by the setTags method. Each tag within the list must
+	// comply with RFC1035.
 	Tags *Tags `json:"tags,omitempty"`
 
-	// Zone: URL of the zone where the instance resides (output only).
+	// Zone: [Output Only] URL of the zone where the instance resides.
 	Zone string `json:"zone,omitempty"`
 }
 
 type InstanceAggregatedList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: A map of scoped instance lists.
+	// Items: [Output Only] A map of scoped instance lists.
 	Items map[string]InstancesScopedList `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always
+	// compute#instanceAggregatedList for aggregated lists of Instance
+	// resources.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type InstanceList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: A list of instance resources.
+	// Items: [Output Only] A list of Instance resources.
 	Items []*Instance `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#instanceList for
+	// lists of Instance resources.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
+type InstanceMoveRequest struct {
+	// DestinationZone: The URL of the destination zone to move the instance
+	// to. This can be a full or partial URL. For example, the following are
+	// all valid URLs to a zone:
+	// - https://www.googleapis.com/compute/v1/projects/project/zones/zone
+	//
+	// - projects/project/zones/zone
+	// - zones/zone
+	DestinationZone string `json:"destinationZone,omitempty"`
+
+	// TargetInstance: The URL of the target instance to move. This can be a
+	// full or partial URL. For example, the following are all valid URLs to
+	// an instance:
+	// -
+	// https://www.googleapis.com/compute/v1/projects/project/zones/zone/inst
+	// ances/instance
+	// - projects/project/zones/zone/instances/instance
+	// - zones/zone/instances/instance
+	TargetInstance string `json:"targetInstance,omitempty"`
+}
+
 type InstanceProperties struct {
-	// CanIpForward: Allows instances created based on this template to send
-	// packets with source IP addresses other than their own and receive
-	// packets with destination IP addresses other than their own. If these
-	// instances will be used as an IP gateway or it will be set as the
-	// next-hop in a Route resource, say true. If unsure, leave this set to
-	// false.
+	// CanIpForward: A boolean that specifies if instances created from this
+	// template can send packets with source IP addresses other than their
+	// own or receive packets with destination IP addresses other than their
+	// own. If you use these instances as an IP gateway or as the next-hop
+	// in a Route resource, specify true. Otherwise, specify false.
 	CanIpForward bool `json:"canIpForward,omitempty"`
 
-	// Description: An optional textual description for the instances
-	// created based on the instance template resource; provided by the
-	// client when the template is created.
+	// Description: An optional text description for the instances that are
+	// created from this instance template.
 	Description string `json:"description,omitempty"`
 
-	// Disks: Array of disks associated with instance created based on this
-	// template.
+	// Disks: An array of disks that are associated with the instances that
+	// are created from this template.
 	Disks []*AttachedDisk `json:"disks,omitempty"`
 
-	// MachineType: Name of the machine type resource describing which
-	// machine type to use to host the instances created based on this
-	// template; provided by the client when the instance template is
-	// created.
+	// MachineType: The machine type to use for instances that are created
+	// from this template.
 	MachineType string `json:"machineType,omitempty"`
 
-	// Metadata: Metadata key/value pairs assigned to instances created
-	// based on this template. Consists of custom metadata or predefined
-	// keys; see Instance documentation for more information.
+	// Metadata: The metadata key/value pairs to assign to instances that
+	// are created from this template. These pairs can consist of custom
+	// metadata or predefined keys. See Project and instance metadata for
+	// more information.
 	Metadata *Metadata `json:"metadata,omitempty"`
 
-	// NetworkInterfaces: Array of configurations for this interface. This
-	// specifies how this interface is configured to interact with other
-	// network services, such as connecting to the internet. Currently,
-	// ONE_TO_ONE_NAT is the only access config supported. If there are no
-	// accessConfigs specified, then this instances created based based on
-	// this template will have no external internet access.
+	// NetworkInterfaces: An array of network access configurations for this
+	// interface. This specifies how this interface is configured to
+	// interact with other network services, such as connecting to the
+	// internet. Currently, ONE_TO_ONE_NAT is the only supported access
+	// configuration. If you do not specify any access configurations, the
+	// instances that are created from this template will have no external
+	// internet access.
 	NetworkInterfaces []*NetworkInterface `json:"networkInterfaces,omitempty"`
 
-	// Scheduling: Scheduling options for the instances created based on
-	// this template.
+	// Scheduling: A list of scheduling options for the instances that are
+	// created from this template.
 	Scheduling *Scheduling `json:"scheduling,omitempty"`
 
-	// ServiceAccounts: A list of service accounts each with specified
-	// scopes, for which access tokens are to be made available to the
-	// instances created based on this template, through metadata queries.
+	// ServiceAccounts: A list of service accounts with specified scopes.
+	// Access tokens for these service accounts are available to the
+	// instances that are created from this template. Use metadata queries
+	// to obtain the access tokens for these instances.
 	ServiceAccounts []*ServiceAccount `json:"serviceAccounts,omitempty"`
 
-	// Tags: A list of tags to be applied to the instances created based on
-	// this template used to identify valid sources or targets for network
-	// firewalls. Provided by the client on instance creation. The tags can
-	// be later modified by the setTags method. Each tag within the list
-	// must comply with RFC1035.
+	// Tags: A list of tags to apply to the instances that are created from
+	// this template. The tags identify valid sources or targets for network
+	// firewalls. The setTags method can modify this list of tags. Each tag
+	// within the list must comply with RFC1035.
 	Tags *Tags `json:"tags,omitempty"`
 }
 
@@ -1541,78 +1919,97 @@ type InstanceReference struct {
 }
 
 type InstanceTemplate struct {
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] The creation timestamp for this
+	// instance template in RFC3339 text format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
-	// Description: An optional textual description of the instance template
-	// resource; provided by the client when the resource is created.
+	// Description: An optional text description for the instance template.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] A unique identifier for this instance template. The
+	// server defines this identifier.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] The resource type, which is always
+	// compute#instanceTemplate for instance templates.
 	Kind string `json:"kind,omitempty"`
 
-	// Name: Name of the instance template resource; provided by the client
-	// when the resource is created. The name must be 1-63 characters long,
-	// and comply with RFC1035
+	// Name: The name of the instance template. The name must be 1-63
+	// characters long, and comply with RFC1035.
 	Name string `json:"name,omitempty"`
 
-	// Properties: The instance properties portion of this instance template
+	// Properties: The instance properties for the instance template
 	// resource.
 	Properties *InstanceProperties `json:"properties,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] The URL for this instance template. The
+	// server defines this URL.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type InstanceTemplateList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] A unique identifier for this instance template. The
+	// server defines this identifier.
 	Id string `json:"id,omitempty"`
 
-	// Items: A list of instance template resources.
+	// Items: A list of InstanceTemplate resources.
 	Items []*InstanceTemplate `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] The resource type, which is always
+	// compute#instanceTemplatesListResponse for instance template lists.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token that is used to continue a
+	// truncated list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] The URL for this instance template list. The
+	// server defines this URL.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type InstancesScopedList struct {
-	// Instances: List of instances contained in this scope.
+	// Instances: [Output Only] List of instances contained in this scope.
 	Instances []*Instance `json:"instances,omitempty"`
 
-	// Warning: Informational warning which replaces the list of instances
-	// when the list is empty.
+	// Warning: [Output Only] Informational warning which replaces the list
+	// of instances when the list is empty.
 	Warning *InstancesScopedListWarning `json:"warning,omitempty"`
 }
 
 type InstancesScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*InstancesScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type InstancesScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
@@ -1621,63 +2018,69 @@ type License struct {
 	// running software that contains this license on an instance.
 	ChargesUseFee bool `json:"chargesUseFee,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#license for
+	// licenses.
 	Kind string `json:"kind,omitempty"`
 
-	// Name: Name of the resource; provided by the client when the resource
-	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035.
+	// Name: Name of the resource. The name must be 1-63 characters long,
+	// and comply with RCF1035.
 	Name string `json:"name,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type MachineType struct {
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
-	// Deprecated: The deprecation status associated with this machine type.
+	// Deprecated: [Output Only] The deprecation status associated with this
+	// machine type.
 	Deprecated *DeprecationStatus `json:"deprecated,omitempty"`
 
-	// Description: An optional textual description of the resource.
+	// Description: [Output Only] An optional textual description of the
+	// resource.
 	Description string `json:"description,omitempty"`
 
-	// GuestCpus: Count of CPUs exposed to the instance.
+	// GuestCpus: [Output Only] The tumber of CPUs exposed to the instance.
 	GuestCpus int64 `json:"guestCpus,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// ImageSpaceGb: Space allotted for the image, defined in GB.
+	// ImageSpaceGb: [Deprecated] This property is deprecated and will never
+	// be populated with any relevant values.
 	ImageSpaceGb int64 `json:"imageSpaceGb,omitempty"`
 
 	// Kind: Type of the resource.
 	Kind string `json:"kind,omitempty"`
 
-	// MaximumPersistentDisks: Maximum persistent disks allowed.
+	// MaximumPersistentDisks: [Output Only] Maximum persistent disks
+	// allowed.
 	MaximumPersistentDisks int64 `json:"maximumPersistentDisks,omitempty"`
 
-	// MaximumPersistentDisksSizeGb: Maximum total persistent disks size
-	// (GB) allowed.
+	// MaximumPersistentDisksSizeGb: [Output Only] Maximum total persistent
+	// disks size (GB) allowed.
 	MaximumPersistentDisksSizeGb int64 `json:"maximumPersistentDisksSizeGb,omitempty,string"`
 
-	// MemoryMb: Physical memory assigned to the instance, defined in MB.
+	// MemoryMb: [Output Only] The amount of physical memory available to
+	// the instance, defined in MB.
 	MemoryMb int64 `json:"memoryMb,omitempty"`
 
-	// Name: Name of the resource.
+	// Name: [Output Only] Name of the resource.
 	Name string `json:"name,omitempty"`
 
-	// ScratchDisks: List of extended scratch disks assigned to the
-	// instance.
+	// ScratchDisks: [Output Only] List of extended scratch disks assigned
+	// to the instance.
 	ScratchDisks []*MachineTypeScratchDisks `json:"scratchDisks,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// Zone: Url of the zone where the machine type resides (output only).
+	// Zone: [Output Only] The name of the zone where the machine type
+	// resides, such as us-central1-a.
 	Zone string `json:"zone,omitempty"`
 }
 
@@ -1687,82 +2090,107 @@ type MachineTypeScratchDisks struct {
 }
 
 type MachineTypeAggregatedList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: A map of scoped machine type lists.
+	// Items: [Output Only] A map of scoped machine type lists.
 	Items map[string]MachineTypesScopedList `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always
+	// compute#machineTypeAggregatedList for aggregated lists of machine
+	// types.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type MachineTypeList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The machine type resources.
+	// Items: [Output Only] A list of Machine Type resources.
 	Items []*MachineType `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#machineTypeList
+	// for lists of machine types.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type MachineTypesScopedList struct {
-	// MachineTypes: List of machine types contained in this scope.
+	// MachineTypes: [Output Only] List of machine types contained in this
+	// scope.
 	MachineTypes []*MachineType `json:"machineTypes,omitempty"`
 
-	// Warning: Informational warning which replaces the list of machine
-	// types when the list is empty.
+	// Warning: [Output Only] An informational warning that appears when the
+	// machine types list is empty.
 	Warning *MachineTypesScopedListWarning `json:"warning,omitempty"`
 }
 
 type MachineTypesScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*MachineTypesScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type MachineTypesScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
 type Metadata struct {
-	// Fingerprint: Fingerprint of this resource. A hash of the metadata's
-	// contents. This field is used for optimistic locking. An up-to-date
-	// metadata fingerprint must be provided in order to modify metadata.
+	// Fingerprint: Specifies a fingerprint for this request, which is
+	// essentially a hash of the metadata's contents and used for optimistic
+	// locking. The fingerprint is initially generated by Compute Engine and
+	// changes after every request to modify or update metadata. You must
+	// always provide an up-to-date fingerprint hash in order to update or
+	// change metadata.
 	Fingerprint string `json:"fingerprint,omitempty"`
 
 	// Items: Array of key/value pairs. The total size of all keys and
 	// values must be less than 512 KB.
 	Items []*MetadataItems `json:"items,omitempty"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#metadata for
+	// metadata.
 	Kind string `json:"kind,omitempty"`
 }
 
@@ -1782,271 +2210,328 @@ type MetadataItems struct {
 }
 
 type Network struct {
-	// IPv4Range: Required; The range of internal addresses that are legal
-	// on this network. This range is a CIDR specification, for example:
+	// IPv4Range: The range of internal addresses that are legal on this
+	// network. This range is a CIDR specification, for example:
 	// 192.168.0.0/16. Provided by the client when the network is created.
 	IPv4Range string `json:"IPv4Range,omitempty"`
 
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional textual description of the resource;
 	// provided by the client when the resource is created.
 	Description string `json:"description,omitempty"`
 
-	// GatewayIPv4: An optional address that is used for default routing to
-	// other networks. This must be within the range specified by IPv4Range,
-	// and is typically the first usable address in that range. If not
-	// specified, the default value is the first usable address in
-	// IPv4Range.
+	// GatewayIPv4: A gateway address for default routing to other networks.
+	// This value is read only and is selected by the Google Compute Engine,
+	// typically as the first usable address in the IPv4Range.
 	GatewayIPv4 string `json:"gatewayIPv4,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#network for
+	// networks.
 	Kind string `json:"kind,omitempty"`
 
 	// Name: Name of the resource; provided by the client when the resource
 	// is created. The name must be 1-63 characters long, and comply with
-	// RFC1035.
+	// RFC1035. Specifically, the name must be 1-63 characters long and
+	// match the regular expression [a-z]([-a-z0-9]*[a-z0-9])? which means
+	// the first character must be a lowercase letter, and all following
+	// characters must be a dash, lowercase letter, or digit, except the
+	// last character, which cannot be a dash.
 	Name string `json:"name,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type NetworkInterface struct {
-	// AccessConfigs: Array of configurations for this interface. This
-	// specifies how this interface is configured to interact with other
-	// network services, such as connecting to the internet. Currently,
-	// ONE_TO_ONE_NAT is the only access config supported. If there are no
-	// accessConfigs specified, then this instance will have no external
-	// internet access.
+	// AccessConfigs: An array of configurations for this interface.
+	// Currently, <codeONE_TO_ONE_NAT is the only access config supported.
+	// If there are no accessConfigs specified, then this instance will have
+	// no external internet access.
 	AccessConfigs []*AccessConfig `json:"accessConfigs,omitempty"`
 
-	// Name: Name of the network interface, determined by the server; for
-	// network devices, these are e.g. eth0, eth1, etc. (output only).
+	// Name: [Output Only] The name of the network interface, generated by
+	// the server. For network devices, these are eth0, eth1, etc.
 	Name string `json:"name,omitempty"`
 
-	// Network: URL of the network resource attached to this interface.
+	// Network: URL of the network resource for this instance. This is
+	// required for creating an instance but optional when creating a
+	// firewall rule. If not specified when creating a firewall rule, the
+	// default network is used:
+	//
+	// global/networks/default
+	//
+	// If you specify this property, you can specify the network as a full
+	// or partial URL. For example, the following are all valid URLs:
+	// -
+	// https://www.googleapis.com/compute/v1/projects/project/global/networks
+	// /network
+	// - projects/project/global/networks/network
+	// - global/networks/default
 	Network string `json:"network,omitempty"`
 
-	// NetworkIP: An optional IPV4 internal network address assigned to the
-	// instance for this network interface (output only).
+	// NetworkIP: [Output Only] An optional IPV4 internal network address
+	// assigned to the instance for this network interface.
 	NetworkIP string `json:"networkIP,omitempty"`
 }
 
 type NetworkList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The network resources.
+	// Items: [Output Only] A list of Network resources.
 	Items []*Network `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#networkList for
+	// lists of networks.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource .
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type Operation struct {
-	// ClientOperationId: An optional identifier specified by the client
-	// when the mutation was initiated. Must be unique for all operation
-	// resources in the project (output only).
+	// ClientOperationId: [Output Only] An optional identifier specified by
+	// the client when the mutation was initiated. Must be unique for all
+	// operation resources in the project.
 	ClientOperationId string `json:"clientOperationId,omitempty"`
 
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
-	// EndTime: The time that this operation was completed. This is in RFC
-	// 3339 format (output only).
+	// EndTime: [Output Only] The time that this operation was completed.
+	// This is in RFC3339 text format.
 	EndTime string `json:"endTime,omitempty"`
 
-	// Error: If errors occurred during processing of this operation, this
-	// field will be populated (output only).
+	// Error: [Output Only] If errors are generated during processing of the
+	// operation, this field will be populated.
 	Error *OperationError `json:"error,omitempty"`
 
-	// HttpErrorMessage: If operation fails, the HTTP error message
-	// returned, e.g. NOT FOUND. (output only).
+	// HttpErrorMessage: [Output Only] If the operation fails, this field
+	// contains the HTTP error message that was returned, such as NOT FOUND.
 	HttpErrorMessage string `json:"httpErrorMessage,omitempty"`
 
-	// HttpErrorStatusCode: If operation fails, the HTTP error status code
-	// returned, e.g. 404. (output only).
+	// HttpErrorStatusCode: [Output Only] If the operation fails, this field
+	// contains the HTTP error message that was returned, such as 404.
 	HttpErrorStatusCode int64 `json:"httpErrorStatusCode,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// InsertTime: The time that this operation was requested. This is in
-	// RFC 3339 format (output only).
+	// InsertTime: [Output Only] The time that this operation was requested.
+	// This is in RFC3339 text format.
 	InsertTime string `json:"insertTime,omitempty"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#Operation
+	// for Operation resources.
 	Kind string `json:"kind,omitempty"`
 
-	// Name: Name of the resource (output only).
+	// Name: [Output Only] Name of the resource.
 	Name string `json:"name,omitempty"`
 
-	// OperationType: Type of the operation. Examples include "insert",
-	// "update", and "delete" (output only).
+	// OperationType: [Output Only] Type of the operation, such as insert,
+	// update, and delete.
 	OperationType string `json:"operationType,omitempty"`
 
-	// Progress: An optional progress indicator that ranges from 0 to 100.
-	// There is no requirement that this be linear or support any
-	// granularity of operations. This should not be used to guess at when
-	// the operation will be complete. This number should be monotonically
-	// increasing as the operation progresses (output only).
+	// Progress: [Output Only] An optional progress indicator that ranges
+	// from 0 to 100. There is no requirement that this be linear or support
+	// any granularity of operations. This should not be used to guess at
+	// when the operation will be complete. This number should monotonically
+	// increase as the operation progresses.
 	Progress int64 `json:"progress,omitempty"`
 
-	// Region: URL of the region where the operation resides (output only).
+	// Region: [Output Only] URL of the region where the operation resides.
+	// Only applicable for regional resources.
 	Region string `json:"region,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// StartTime: The time that this operation was started by the server.
-	// This is in RFC 3339 format (output only).
+	// StartTime: [Output Only] The time that this operation was started by
+	// the server. This is in RFC3339 text format.
 	StartTime string `json:"startTime,omitempty"`
 
-	// Status: Status of the operation. Can be one of the following:
-	// "PENDING", "RUNNING", or "DONE" (output only).
+	// Status: [Output Only] Status of the operation. Can be one of the
+	// following: PENDING, RUNNING, or DONE.
+	//
+	// Possible values:
+	//   "DONE"
+	//   "PENDING"
+	//   "RUNNING"
 	Status string `json:"status,omitempty"`
 
-	// StatusMessage: An optional textual description of the current status
-	// of the operation (output only).
+	// StatusMessage: [Output Only] An optional textual description of the
+	// current status of the operation.
 	StatusMessage string `json:"statusMessage,omitempty"`
 
-	// TargetId: Unique target id which identifies a particular incarnation
-	// of the target (output only).
+	// TargetId: [Output Only] Unique target ID which identifies a
+	// particular incarnation of the target.
 	TargetId uint64 `json:"targetId,omitempty,string"`
 
-	// TargetLink: URL of the resource the operation is mutating (output
-	// only).
+	// TargetLink: [Output Only] URL of the resource the operation is
+	// mutating.
 	TargetLink string `json:"targetLink,omitempty"`
 
-	// User: User who requested the operation, for example
-	// "user@example.com" (output only).
+	// User: [Output Only] User who requested the operation, for example:
+	// user@example.com.
 	User string `json:"user,omitempty"`
 
-	// Warnings: If warning messages generated during processing of this
-	// operation, this field will be populated (output only).
+	// Warnings: [Output Only] If warning messages are generated during
+	// processing of the operation, this field will be populated.
 	Warnings []*OperationWarnings `json:"warnings,omitempty"`
 
-	// Zone: URL of the zone where the operation resides (output only).
+	// Zone: [Output Only] URL of the zone where the operation resides.
 	Zone string `json:"zone,omitempty"`
 }
 
 type OperationError struct {
-	// Errors: The array of errors encountered while processing this
-	// operation.
+	// Errors: [Output Only] The array of errors encountered while
+	// processing this operation.
 	Errors []*OperationErrorErrors `json:"errors,omitempty"`
 }
 
 type OperationErrorErrors struct {
-	// Code: The error type identifier for this error.
+	// Code: [Output Only] The error type identifier for this error.
 	Code string `json:"code,omitempty"`
 
-	// Location: Indicates the field in the request which caused the error.
-	// This property is optional.
+	// Location: [Output Only] Indicates the field in the request which
+	// caused the error. This property is optional.
 	Location string `json:"location,omitempty"`
 
-	// Message: An optional, human-readable error message.
+	// Message: [Output Only] An optional, human-readable error message.
 	Message string `json:"message,omitempty"`
 }
 
 type OperationWarnings struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*OperationWarningsData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type OperationWarningsData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
 type OperationAggregatedList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: A map of scoped operation lists.
+	// Items: [Output Only] A map of scoped operation lists.
 	Items map[string]OperationsScopedList `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always
+	// compute#operationAggregatedList for aggregated lists of operations.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type OperationList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The operation resources.
+	// Items: [Output Only] The operation resources.
 	Items []*Operation `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#operations for
+	// Operations resource.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncate.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
 type OperationsScopedList struct {
-	// Operations: List of operations contained in this scope.
+	// Operations: [Output Only] List of operations contained in this scope.
 	Operations []*Operation `json:"operations,omitempty"`
 
-	// Warning: Informational warning which replaces the list of operations
-	// when the list is empty.
+	// Warning: [Output Only] Informational warning which replaces the list
+	// of operations when the list is empty.
 	Warning *OperationsScopedListWarning `json:"warning,omitempty"`
 }
 
 type OperationsScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*OperationsScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type OperationsScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
@@ -2079,30 +2564,32 @@ type PathRule struct {
 
 type Project struct {
 	// CommonInstanceMetadata: Metadata key/value pairs available to all
-	// instances contained in this project.
+	// instances contained in this project. See Custom metadata for more
+	// information.
 	CommonInstanceMetadata *Metadata `json:"commonInstanceMetadata,omitempty"`
 
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional textual description of the resource.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#project for
+	// projects.
 	Kind string `json:"kind,omitempty"`
 
 	// Name: Name of the resource.
 	Name string `json:"name,omitempty"`
 
-	// Quotas: Quotas assigned to this project.
+	// Quotas: [Output Only] Quotas assigned to this project.
 	Quotas []*Quota `json:"quotas,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
 	// UsageExportLocation: The location in Cloud Storage and naming method
@@ -2111,67 +2598,98 @@ type Project struct {
 }
 
 type Quota struct {
-	// Limit: Quota limit for this metric.
+	// Limit: [Output Only] Quota limit for this metric.
 	Limit float64 `json:"limit,omitempty"`
 
-	// Metric: Name of the quota metric.
+	// Metric: [Output Only] Name of the quota metric.
+	//
+	// Possible values:
+	//   "BACKEND_SERVICES"
+	//   "CPUS"
+	//   "DISKS_TOTAL_GB"
+	//   "FIREWALLS"
+	//   "FORWARDING_RULES"
+	//   "HEALTH_CHECKS"
+	//   "IMAGES"
+	//   "INSTANCES"
+	//   "INSTANCE_TEMPLATES"
+	//   "IN_USE_ADDRESSES"
+	//   "LOCAL_SSD_TOTAL_GB"
+	//   "NETWORKS"
+	//   "ROUTES"
+	//   "SNAPSHOTS"
+	//   "SSD_TOTAL_GB"
+	//   "STATIC_ADDRESSES"
+	//   "TARGET_HTTP_PROXIES"
+	//   "TARGET_INSTANCES"
+	//   "TARGET_POOLS"
+	//   "TARGET_VPN_GATEWAYS"
+	//   "URL_MAPS"
+	//   "VPN_TUNNELS"
 	Metric string `json:"metric,omitempty"`
 
-	// Usage: Current usage of this metric.
+	// Usage: [Output Only] Current usage of this metric.
 	Usage float64 `json:"usage,omitempty"`
 }
 
 type Region struct {
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
-	// Deprecated: The deprecation status associated with this region.
+	// Deprecated: [Output Only] The deprecation status associated with this
+	// region.
 	Deprecated *DeprecationStatus `json:"deprecated,omitempty"`
 
-	// Description: Textual description of the resource.
+	// Description: [Output Only] Textual description of the resource.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server .
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always compute#region for
+	// regions.
 	Kind string `json:"kind,omitempty"`
 
-	// Name: Name of the resource.
+	// Name: [Output Only] Name of the resource.
 	Name string `json:"name,omitempty"`
 
-	// Quotas: Quotas assigned to this region.
+	// Quotas: [Output Only] Quotas assigned to this region.
 	Quotas []*Quota `json:"quotas,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// Status: Status of the region, "UP" or "DOWN".
+	// Status: [Output Only] Status of the region, either UP or DOWN.
+	//
+	// Possible values:
+	//   "DOWN"
+	//   "UP"
 	Status string `json:"status,omitempty"`
 
-	// Zones: A list of zones homed in this region, in the form of resource
-	// URLs.
+	// Zones: [Output Only] A list of zones available in this region, in the
+	// form of resource URLs.
 	Zones []string `json:"zones,omitempty"`
 }
 
 type RegionList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The region resources.
+	// Items: [Output Only] A list of Region resources.
 	Items []*Region `json:"items,omitempty"`
 
-	// Kind: Type of resource.
+	// Kind: [Output Only] Type of resource. Always compute#regionList for
+	// lists of regions.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
-	// SelfLink: Server defined URL for this resource (output only).
+	// SelfLink: [Output Only] Server defined URL for this resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
@@ -2225,8 +2743,13 @@ type Route struct {
 	// matching packets.
 	NextHopNetwork string `json:"nextHopNetwork,omitempty"`
 
+	// NextHopVpnTunnel: The URL to a VpnTunnel that should handle matching
+	// packets.
+	NextHopVpnTunnel string `json:"nextHopVpnTunnel,omitempty"`
+
 	// Priority: Breaks ties between Routes of equal specificity. Routes
 	// with smaller values win when tied with routes with larger values.
+	// Default value is 1000. A valid range is between 0 and 65535.
 	Priority int64 `json:"priority,omitempty"`
 
 	// SelfLink: Server defined URL for the resource (output only).
@@ -2241,21 +2764,38 @@ type Route struct {
 }
 
 type RouteWarnings struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*RouteWarningsData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type RouteWarningsData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
@@ -2264,7 +2804,7 @@ type RouteList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The route resources.
+	// Items: A list of Route resources.
 	Items []*Route `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -2279,25 +2819,33 @@ type RouteList struct {
 }
 
 type Scheduling struct {
-	// AutomaticRestart: Whether the Instance should be automatically
-	// restarted whenever it is terminated by Compute Engine (not terminated
-	// by user).
+	// AutomaticRestart: Specifies whether the instance should be
+	// automatically restarted if it is terminated by Compute Engine (not
+	// terminated by a user).
 	AutomaticRestart bool `json:"automaticRestart,omitempty"`
 
-	// OnHostMaintenance: How the instance should behave when the host
-	// machine undergoes maintenance that may temporarily impact instance
-	// performance.
+	// OnHostMaintenance: Defines the maintenance behavior for this
+	// instance. The default behavior is MIGRATE. For more information, see
+	// Setting maintenance behavior.
+	//
+	// Possible values:
+	//   "MIGRATE"
+	//   "TERMINATE"
 	OnHostMaintenance string `json:"onHostMaintenance,omitempty"`
+
+	// Preemptible: Whether the Instance is preemptible.
+	Preemptible bool `json:"preemptible,omitempty"`
 }
 
 type SerialPortOutput struct {
-	// Contents: The contents of the console output.
+	// Contents: [Output Only] The contents of the console output.
 	Contents string `json:"contents,omitempty"`
 
-	// Kind: Type of the resource.
+	// Kind: [Output Only] Type of the resource. Always
+	// compute#serialPortOutput for serial port output.
 	Kind string `json:"kind,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 }
 
@@ -2351,6 +2899,13 @@ type Snapshot struct {
 	SourceDiskId string `json:"sourceDiskId,omitempty"`
 
 	// Status: The status of the persistent disk snapshot (output only).
+	//
+	// Possible values:
+	//   "CREATING"
+	//   "DELETING"
+	//   "FAILED"
+	//   "READY"
+	//   "UPLOADING"
 	Status string `json:"status,omitempty"`
 
 	// StorageBytes: A size of the the storage used by the snapshot. As
@@ -2361,6 +2916,10 @@ type Snapshot struct {
 	// StorageBytesStatus: An indicator whether storageBytes is in a stable
 	// state, or it is being adjusted as a result of shared storage
 	// reallocation.
+	//
+	// Possible values:
+	//   "UPDATING"
+	//   "UP_TO_DATE"
 	StorageBytesStatus string `json:"storageBytesStatus,omitempty"`
 }
 
@@ -2369,7 +2928,7 @@ type SnapshotList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The persistent snapshot resources.
+	// Items: A list of Snapshot resources.
 	Items []*Snapshot `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -2384,9 +2943,14 @@ type SnapshotList struct {
 }
 
 type Tags struct {
-	// Fingerprint: Fingerprint of this resource. A hash of the tags stored
-	// in this object. This field is used optimistic locking. An up-to-date
-	// tags fingerprint must be provided in order to modify tags.
+	// Fingerprint: Specifies a fingerprint for this request, which is
+	// essentially a hash of the metadata's contents and used for optimistic
+	// locking. The fingerprint is initially generated by Compute Engine and
+	// changes after every request to modify or update metadata. You must
+	// always provide an up-to-date fingerprint hash in order to update or
+	// change metadata.
+	//
+	// To see the latest fingerprint, make get() request to the instance.
 	Fingerprint string `json:"fingerprint,omitempty"`
 
 	// Items: An array of tags. Each tag must be 1-63 characters long, and
@@ -2428,7 +2992,7 @@ type TargetHttpProxyList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The TargetHttpProxy resources.
+	// Items: A list of TargetHttpProxy resources.
 	Items []*TargetHttpProxy `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -2469,6 +3033,9 @@ type TargetInstance struct {
 
 	// NatPolicy: NAT option controlling how IPs are NAT'ed to the VM.
 	// Currently only NO_NAT (default value) is supported.
+	//
+	// Possible values:
+	//   "NO_NAT"
 	NatPolicy string `json:"natPolicy,omitempty"`
 
 	// SelfLink: Server defined URL for the resource (output only).
@@ -2503,7 +3070,7 @@ type TargetInstanceList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The TargetInstance resources.
+	// Items: A list of TargetInstance resources.
 	Items []*TargetInstance `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -2527,21 +3094,38 @@ type TargetInstancesScopedList struct {
 }
 
 type TargetInstancesScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*TargetInstancesScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type TargetInstancesScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
@@ -2556,12 +3140,11 @@ type TargetPool struct {
 	// in the primary pool is at or below 'failoverRatio', traffic arriving
 	// at the load-balanced IP will be directed to the backup pool.
 	//
-	// In case
-	// where 'failoverRatio' and 'backupPool' are not set, or all the VMs in
-	// the backup pool are unhealthy, the traffic will be directed back to
-	// the primary pool in the "force" mode, where traffic will be spread to
-	// the healthy VMs with the best effort, or to all VMs when no VM is
-	// healthy.
+	// In case where 'failoverRatio' and 'backupPool' are not set, or all
+	// the VMs in the backup pool are unhealthy, the traffic will be
+	// directed back to the primary pool in the "force" mode, where traffic
+	// will be spread to the healthy VMs with the best effort, or to all VMs
+	// when no VM is healthy.
 	BackupPool string `json:"backupPool,omitempty"`
 
 	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
@@ -2577,17 +3160,16 @@ type TargetPool struct {
 	// not as a backup pool to some other target pool). The value of the
 	// field must be in [0, 1].
 	//
-	// If set, 'backupPool' must also be set. They
-	// together define the fallback behavior of the primary target pool: if
-	// the ratio of the healthy VMs in the primary pool is at or below this
-	// number, traffic arriving at the load-balanced IP will be directed to
-	// the backup pool.
+	// If set, 'backupPool' must also be set. They together define the
+	// fallback behavior of the primary target pool: if the ratio of the
+	// healthy VMs in the primary pool is at or below this number, traffic
+	// arriving at the load-balanced IP will be directed to the backup
+	// pool.
 	//
-	// In case where 'failoverRatio' is not set or all the
-	// VMs in the backup pool are unhealthy, the traffic will be directed
-	// back to the primary pool in the "force" mode, where traffic will be
-	// spread to the healthy VMs with the best effort, or to all VMs when no
-	// VM is healthy.
+	// In case where 'failoverRatio' is not set or all the VMs in the backup
+	// pool are unhealthy, the traffic will be directed back to the primary
+	// pool in the "force" mode, where traffic will be spread to the healthy
+	// VMs with the best effort, or to all VMs when no VM is healthy.
 	FailoverRatio float64 `json:"failoverRatio,omitempty"`
 
 	// HealthChecks: A list of URLs to the HttpHealthCheck resource. A
@@ -2627,6 +3209,11 @@ type TargetPool struct {
 	// 'CLIENT_IP_PROTO': Connections from the same client IP with the same
 	// IP protocol will go to the same VM in the pool while that VM remains
 	// healthy.
+	//
+	// Possible values:
+	//   "CLIENT_IP"
+	//   "CLIENT_IP_PROTO"
+	//   "NONE"
 	SessionAffinity string `json:"sessionAffinity,omitempty"`
 }
 
@@ -2661,7 +3248,7 @@ type TargetPoolList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The TargetPool resources.
+	// Items: A list of TargetPool resources.
 	Items []*TargetPool `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -2705,26 +3292,182 @@ type TargetPoolsScopedList struct {
 }
 
 type TargetPoolsScopedListWarning struct {
-	// Code: The warning type identifier for this warning.
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
 	Code string `json:"code,omitempty"`
 
-	// Data: Metadata for this warning in 'key: value' format.
+	// Data: [Output Only] Metadata for this warning in key: value format.
 	Data []*TargetPoolsScopedListWarningData `json:"data,omitempty"`
 
-	// Message: Optional human-readable details for this warning.
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
 	Message string `json:"message,omitempty"`
 }
 
 type TargetPoolsScopedListWarningData struct {
-	// Key: A key for the warning data.
+	// Key: [Output Only] A key for the warning data.
 	Key string `json:"key,omitempty"`
 
-	// Value: A warning data value corresponding to the key.
+	// Value: [Output Only] A warning data value corresponding to the key.
 	Value string `json:"value,omitempty"`
 }
 
 type TargetReference struct {
 	Target string `json:"target,omitempty"`
+}
+
+type TargetVpnGateway struct {
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
+	CreationTimestamp string `json:"creationTimestamp,omitempty"`
+
+	// Description: An optional textual description of the resource.
+	// Provided by the client when the resource is created.
+	Description string `json:"description,omitempty"`
+
+	// ForwardingRules: [Output Only] A list of URLs to the ForwardingRule
+	// resources. ForwardingRules are created using
+	// compute.forwardingRules.insert and associated to a VPN gateway.
+	ForwardingRules []string `json:"forwardingRules,omitempty"`
+
+	// Id: [Output Only] Unique identifier for the resource. Defined by the
+	// server.
+	Id uint64 `json:"id,omitempty,string"`
+
+	// Kind: [Output Only] Type of resource. Always compute#targetVpnGateway
+	// for target VPN gateways.
+	Kind string `json:"kind,omitempty"`
+
+	// Name: Name of the resource. Provided by the client when the resource
+	// is created. The name must be 1-63 characters long and comply with
+	// RFC1035.
+	Name string `json:"name,omitempty"`
+
+	// Network: URL of the network to which this VPN gateway is attached.
+	// Provided by the client when the VPN gateway is created.
+	Network string `json:"network,omitempty"`
+
+	// Region: [Output Only] URL of the region where the target VPN gateway
+	// resides.
+	Region string `json:"region,omitempty"`
+
+	// SelfLink: [Output Only] Server-defined URL for the resource.
+	SelfLink string `json:"selfLink,omitempty"`
+
+	// Status: [Output Only] The status of the VPN gateway.
+	//
+	// Possible values:
+	//   "CREATING"
+	//   "DELETING"
+	//   "FAILED"
+	//   "READY"
+	Status string `json:"status,omitempty"`
+
+	// Tunnels: [Output Only] A list of URLs to VpnTunnel resources.
+	// VpnTunnels are created using compute.vpntunnels.insert and associated
+	// to a VPN gateway.
+	Tunnels []string `json:"tunnels,omitempty"`
+}
+
+type TargetVpnGatewayAggregatedList struct {
+	// Id: [Output Only] Unique identifier for the resource. Defined by the
+	// server.
+	Id string `json:"id,omitempty"`
+
+	// Items: A map of scoped target vpn gateway lists.
+	Items map[string]TargetVpnGatewaysScopedList `json:"items,omitempty"`
+
+	// Kind: [Output Only] Type of resource. Always compute#targetVpnGateway
+	// for target VPN gateways.
+	Kind string `json:"kind,omitempty"`
+
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
+	NextPageToken string `json:"nextPageToken,omitempty"`
+
+	// SelfLink: [Output Only] Server-defined URL for the resource.
+	SelfLink string `json:"selfLink,omitempty"`
+}
+
+type TargetVpnGatewayList struct {
+	// Id: [Output Only] Unique identifier for the resource. Defined by the
+	// server.
+	Id string `json:"id,omitempty"`
+
+	// Items: [Output Only] A list of TargetVpnGateway resources.
+	Items []*TargetVpnGateway `json:"items,omitempty"`
+
+	// Kind: [Output Only] Type of resource. Always compute#targetVpnGateway
+	// for target VPN gateways.
+	Kind string `json:"kind,omitempty"`
+
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
+	NextPageToken string `json:"nextPageToken,omitempty"`
+
+	// SelfLink: [Output Only] Server-defined URL for the resource.
+	SelfLink string `json:"selfLink,omitempty"`
+}
+
+type TargetVpnGatewaysScopedList struct {
+	// TargetVpnGateways: [Output Only] List of target vpn gateways
+	// contained in this scope.
+	TargetVpnGateways []*TargetVpnGateway `json:"targetVpnGateways,omitempty"`
+
+	// Warning: [Output Only] Informational warning which replaces the list
+	// of addresses when the list is empty.
+	Warning *TargetVpnGatewaysScopedListWarning `json:"warning,omitempty"`
+}
+
+type TargetVpnGatewaysScopedListWarning struct {
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
+	Code string `json:"code,omitempty"`
+
+	// Data: [Output Only] Metadata for this warning in key: value format.
+	Data []*TargetVpnGatewaysScopedListWarningData `json:"data,omitempty"`
+
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
+	Message string `json:"message,omitempty"`
+}
+
+type TargetVpnGatewaysScopedListWarningData struct {
+	// Key: [Output Only] A key for the warning data.
+	Key string `json:"key,omitempty"`
+
+	// Value: [Output Only] A warning data value corresponding to the key.
+	Value string `json:"value,omitempty"`
 }
 
 type TestFailure struct {
@@ -2787,7 +3530,7 @@ type UrlMapList struct {
 	// only).
 	Id string `json:"id,omitempty"`
 
-	// Items: The UrlMap resources.
+	// Items: A list of UrlMap resources.
 	Items []*UrlMap `json:"items,omitempty"`
 
 	// Kind: Type of resource.
@@ -2847,82 +3590,250 @@ type UrlMapsValidateResponse struct {
 type UsageExportLocation struct {
 	// BucketName: The name of an existing bucket in Cloud Storage where the
 	// usage report object is stored. The Google Service Account is granted
-	// write access to this bucket. This is simply the bucket name, with no
-	// "gs://" or "https://storage.googleapis.com/" in front of it.
+	// write access to this bucket. This is just the bucket name, with no
+	// gs:// or https://storage.googleapis.com/ in front of it.
 	BucketName string `json:"bucketName,omitempty"`
 
 	// ReportNamePrefix: An optional prefix for the name of the usage report
-	// object stored in bucket_name. If not supplied, defaults to "usage_".
-	// The report is stored as a CSV file named _gce_.csv. where  is the day
-	// of the usage according to Pacific Time. The prefix should conform to
-	// Cloud Storage object naming conventions.
+	// object stored in bucketName. If not supplied, defaults to usage. The
+	// report is stored as a CSV file named
+	// report_name_prefix_gce_YYYYMMDD.csv where YYYYMMDD is the day of the
+	// usage according to Pacific Time. If you supply a prefix, it should
+	// conform to Cloud Storage object naming conventions.
 	ReportNamePrefix string `json:"reportNamePrefix,omitempty"`
 }
 
-type Zone struct {
-	// CreationTimestamp: Creation timestamp in RFC3339 text format (output
-	// only).
+type VpnTunnel struct {
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
-	// Deprecated: The deprecation status associated with this zone.
-	Deprecated *DeprecationStatus `json:"deprecated,omitempty"`
-
-	// Description: Textual description of the resource.
+	// Description: An optional textual description of the resource.
+	// Provided by the client when the resource is created.
 	Description string `json:"description,omitempty"`
 
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// DetailedStatus: [Output Only] Detailed status message for the VPN
+	// tunnel.
+	DetailedStatus string `json:"detailedStatus,omitempty"`
+
+	// Id: [Output Only] Unique identifier for the resource. Defined by the
+	// server.
 	Id uint64 `json:"id,omitempty,string"`
 
-	// Kind: Type of the resource.
+	// IkeNetworks: IKE networks to use when establishing the VPN tunnel
+	// with peer VPN gateway. The value should be a CIDR formatted string,
+	// for example: 192.168.0.0/16. The ranges should be disjoint.
+	IkeNetworks []string `json:"ikeNetworks,omitempty"`
+
+	// IkeVersion: IKE protocol version to use when establishing the VPN
+	// tunnel with peer VPN gateway. Acceptable IKE versions are 1 or 2.
+	// Default version is 2.
+	IkeVersion int64 `json:"ikeVersion,omitempty"`
+
+	// Kind: [Output Only] Type of resource. Always compute#vpnTunnel for
+	// VPN tunnels.
 	Kind string `json:"kind,omitempty"`
 
-	// MaintenanceWindows: Scheduled maintenance windows for the zone. When
-	// the zone is in a maintenance window, all resources which reside in
-	// the zone will be unavailable.
-	MaintenanceWindows []*ZoneMaintenanceWindows `json:"maintenanceWindows,omitempty"`
-
-	// Name: Name of the resource.
+	// Name: Name of the resource. Provided by the client when the resource
+	// is created. The name must be 1-63 characters long and comply with
+	// RFC1035.
 	Name string `json:"name,omitempty"`
 
-	// Region: Full URL reference to the region which hosts the zone (output
-	// only).
+	// PeerIp: IP address of the peer VPN gateway.
+	PeerIp string `json:"peerIp,omitempty"`
+
+	// Region: [Output Only] URL of the region where the VPN tunnel resides.
 	Region string `json:"region,omitempty"`
 
-	// SelfLink: Server defined URL for the resource (output only).
+	// SelfLink: [Output Only] Server defined URL for the resource.
 	SelfLink string `json:"selfLink,omitempty"`
 
-	// Status: Status of the zone. "UP" or "DOWN".
+	// SharedSecret: Shared secret used to set the secure session between
+	// the GCE VPN gateway and the peer VPN gateway.
+	SharedSecret string `json:"sharedSecret,omitempty"`
+
+	// SharedSecretHash: Hash of the shared secret.
+	SharedSecretHash string `json:"sharedSecretHash,omitempty"`
+
+	// Status: [Output Only] The status of the VPN tunnel.
+	//
+	// Possible values:
+	//   "AUTHORIZATION_ERROR"
+	//   "DEPROVISIONING"
+	//   "ESTABLISHED"
+	//   "FAILED"
+	//   "FIRST_HANDSHAKE"
+	//   "NEGOTIATION_FAILURE"
+	//   "NETWORK_ERROR"
+	//   "NO_INCOMING_PACKETS"
+	//   "PROVISIONING"
+	//   "REJECTED"
+	//   "WAITING_FOR_FULL_CONFIG"
+	Status string `json:"status,omitempty"`
+
+	// TargetVpnGateway: URL of the VPN gateway to which this VPN tunnel is
+	// associated. Provided by the client when the VPN tunnel is created.
+	TargetVpnGateway string `json:"targetVpnGateway,omitempty"`
+}
+
+type VpnTunnelAggregatedList struct {
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
+	Id string `json:"id,omitempty"`
+
+	// Items: [Output Only] A map of scoped vpn tunnel lists.
+	Items map[string]VpnTunnelsScopedList `json:"items,omitempty"`
+
+	// Kind: [Output Only] Type of resource. Always compute#vpnTunnel for
+	// VPN tunnels.
+	Kind string `json:"kind,omitempty"`
+
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
+	NextPageToken string `json:"nextPageToken,omitempty"`
+
+	// SelfLink: [Output Only] Server defined URL for this resource.
+	SelfLink string `json:"selfLink,omitempty"`
+}
+
+type VpnTunnelList struct {
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
+	Id string `json:"id,omitempty"`
+
+	// Items: [Output Only] A list of VpnTunnel resources.
+	Items []*VpnTunnel `json:"items,omitempty"`
+
+	// Kind: [Output Only] Type of resource. Always compute#vpnTunnel for
+	// VPN tunnels.
+	Kind string `json:"kind,omitempty"`
+
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
+	NextPageToken string `json:"nextPageToken,omitempty"`
+
+	// SelfLink: [Output Only] Server-defined URL for the resource.
+	SelfLink string `json:"selfLink,omitempty"`
+}
+
+type VpnTunnelsScopedList struct {
+	// VpnTunnels: List of vpn tunnels contained in this scope.
+	VpnTunnels []*VpnTunnel `json:"vpnTunnels,omitempty"`
+
+	// Warning: Informational warning which replaces the list of addresses
+	// when the list is empty.
+	Warning *VpnTunnelsScopedListWarning `json:"warning,omitempty"`
+}
+
+type VpnTunnelsScopedListWarning struct {
+	// Code: [Output Only] The warning type identifier for this warning.
+	//
+	// Possible values:
+	//   "DEPRECATED_RESOURCE_USED"
+	//   "DISK_SIZE_LARGER_THAN_IMAGE_SIZE"
+	//   "INJECTED_KERNELS_DEPRECATED"
+	//   "NEXT_HOP_ADDRESS_NOT_ASSIGNED"
+	//   "NEXT_HOP_CANNOT_IP_FORWARD"
+	//   "NEXT_HOP_INSTANCE_NOT_FOUND"
+	//   "NEXT_HOP_INSTANCE_NOT_ON_NETWORK"
+	//   "NEXT_HOP_NOT_RUNNING"
+	//   "NOT_CRITICAL_ERROR"
+	//   "NO_RESULTS_ON_PAGE"
+	//   "REQUIRED_TOS_AGREEMENT"
+	//   "RESOURCE_NOT_DELETED"
+	//   "SINGLE_INSTANCE_PROPERTY_TEMPLATE"
+	//   "UNREACHABLE"
+	Code string `json:"code,omitempty"`
+
+	// Data: [Output Only] Metadata for this warning in key: value format.
+	Data []*VpnTunnelsScopedListWarningData `json:"data,omitempty"`
+
+	// Message: [Output Only] Optional human-readable details for this
+	// warning.
+	Message string `json:"message,omitempty"`
+}
+
+type VpnTunnelsScopedListWarningData struct {
+	// Key: [Output Only] A key for the warning data.
+	Key string `json:"key,omitempty"`
+
+	// Value: [Output Only] A warning data value corresponding to the key.
+	Value string `json:"value,omitempty"`
+}
+
+type Zone struct {
+	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
+	// format.
+	CreationTimestamp string `json:"creationTimestamp,omitempty"`
+
+	// Deprecated: [Output Only] The deprecation status associated with this
+	// zone.
+	Deprecated *DeprecationStatus `json:"deprecated,omitempty"`
+
+	// Description: [Output Only] Textual description of the resource.
+	Description string `json:"description,omitempty"`
+
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
+	Id uint64 `json:"id,omitempty,string"`
+
+	// Kind: [Output Only] Type of the resource. Always kind#zone for zones.
+	Kind string `json:"kind,omitempty"`
+
+	// MaintenanceWindows: [Output Only] Any scheduled maintenance windows
+	// for this zone. When the zone is in a maintenance window, all
+	// resources which reside in the zone will be unavailable. For more
+	// information, see Maintenance Windows
+	MaintenanceWindows []*ZoneMaintenanceWindows `json:"maintenanceWindows,omitempty"`
+
+	// Name: [Output Only] Name of the resource.
+	Name string `json:"name,omitempty"`
+
+	// Region: [Output Only] Full URL reference to the region which hosts
+	// the zone.
+	Region string `json:"region,omitempty"`
+
+	// SelfLink: [Output Only] Server defined URL for the resource.
+	SelfLink string `json:"selfLink,omitempty"`
+
+	// Status: [Output Only] Status of the zone, either UP or DOWN.
+	//
+	// Possible values:
+	//   "DOWN"
+	//   "UP"
 	Status string `json:"status,omitempty"`
 }
 
 type ZoneMaintenanceWindows struct {
-	// BeginTime: Begin time of the maintenance window, in RFC 3339 format.
+	// BeginTime: [Output Only] Starting time of the maintenance window, in
+	// RFC3339 format.
 	BeginTime string `json:"beginTime,omitempty"`
 
-	// Description: Textual description of the maintenance window.
+	// Description: [Output Only] Textual description of the maintenance
+	// window.
 	Description string `json:"description,omitempty"`
 
-	// EndTime: End time of the maintenance window, in RFC 3339 format.
+	// EndTime: [Output Only] Ending time of the maintenance window, in
+	// RFC3339 format.
 	EndTime string `json:"endTime,omitempty"`
 
-	// Name: Name of the maintenance window.
+	// Name: [Output Only] Name of the maintenance window.
 	Name string `json:"name,omitempty"`
 }
 
 type ZoneList struct {
-	// Id: Unique identifier for the resource; defined by the server (output
-	// only).
+	// Id: [Output Only] Unique identifier for the resource; defined by the
+	// server.
 	Id string `json:"id,omitempty"`
 
-	// Items: The zone resources.
+	// Items: [Output Only] A list of Zone resources.
 	Items []*Zone `json:"items,omitempty"`
 
 	// Kind: Type of resource.
 	Kind string `json:"kind,omitempty"`
 
-	// NextPageToken: A token used to continue a truncated list request
-	// (output only).
+	// NextPageToken: [Output Only] A token used to continue a truncated
+	// list request.
 	NextPageToken string `json:"nextPageToken,omitempty"`
 
 	// SelfLink: Server defined URL for this resource (output only).
@@ -2938,6 +3849,7 @@ type AddressesAggregatedListCall struct {
 }
 
 // AggregatedList: Retrieves the list of addresses grouped by scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/addresses/aggregatedList
 func (r *AddressesService) AggregatedList(project string) *AddressesAggregatedListCall {
 	c := &AddressesAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -2952,16 +3864,15 @@ func (c *AddressesAggregatedListCall) Filter(filter string) *AddressesAggregated
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *AddressesAggregatedListCall) MaxResults(maxResults int64) *AddressesAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *AddressesAggregatedListCall) PageToken(pageToken string) *AddressesAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -2997,7 +3908,7 @@ func (c *AddressesAggregatedListCall) Do() (*AddressAggregatedList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3020,13 +3931,13 @@ func (c *AddressesAggregatedListCall) Do() (*AddressAggregatedList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -3034,12 +3945,12 @@ func (c *AddressesAggregatedListCall) Do() (*AddressAggregatedList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -3051,6 +3962,7 @@ func (c *AddressesAggregatedListCall) Do() (*AddressAggregatedList, error) {
 	//     "$ref": "AddressAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -3069,6 +3981,7 @@ type AddressesDeleteCall struct {
 }
 
 // Delete: Deletes the specified address resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/addresses/delete
 func (r *AddressesService) Delete(project string, region string, address string) *AddressesDeleteCall {
 	c := &AddressesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3100,7 +4013,7 @@ func (c *AddressesDeleteCall) Do() (*Operation, error) {
 		"region":  c.region,
 		"address": c.address,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3132,14 +4045,14 @@ func (c *AddressesDeleteCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "region": {
-	//       "description": "Name of the region scoping this request.",
+	//       "description": "The name of the region for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -3151,6 +4064,7 @@ func (c *AddressesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -3168,6 +4082,7 @@ type AddressesGetCall struct {
 }
 
 // Get: Returns the specified address resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/addresses/get
 func (r *AddressesService) Get(project string, region string, address string) *AddressesGetCall {
 	c := &AddressesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3199,7 +4114,7 @@ func (c *AddressesGetCall) Do() (*Address, error) {
 		"region":  c.region,
 		"address": c.address,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3231,14 +4146,14 @@ func (c *AddressesGetCall) Do() (*Address, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "region": {
-	//       "description": "Name of the region scoping this request.",
+	//       "description": "The name of the region for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -3250,6 +4165,7 @@ func (c *AddressesGetCall) Do() (*Address, error) {
 	//     "$ref": "Address"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -3269,6 +4185,7 @@ type AddressesInsertCall struct {
 
 // Insert: Creates an address resource in the specified project using
 // the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/addresses/insert
 func (r *AddressesService) Insert(project string, region string, address *Address) *AddressesInsertCall {
 	c := &AddressesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3305,7 +4222,7 @@ func (c *AddressesInsertCall) Do() (*Operation, error) {
 		"region":  c.region,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3329,14 +4246,14 @@ func (c *AddressesInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "region": {
-	//       "description": "Name of the region scoping this request.",
+	//       "description": "The name of the region for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -3351,6 +4268,7 @@ func (c *AddressesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -3368,6 +4286,7 @@ type AddressesListCall struct {
 
 // List: Retrieves the list of address resources contained within the
 // specified region.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/addresses/list
 func (r *AddressesService) List(project string, region string) *AddressesListCall {
 	c := &AddressesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3383,16 +4302,15 @@ func (c *AddressesListCall) Filter(filter string) *AddressesListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *AddressesListCall) MaxResults(maxResults int64) *AddressesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *AddressesListCall) PageToken(pageToken string) *AddressesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -3429,7 +4347,7 @@ func (c *AddressesListCall) Do() (*AddressList, error) {
 		"project": c.project,
 		"region":  c.region,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3453,13 +4371,13 @@ func (c *AddressesListCall) Do() (*AddressList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -3467,19 +4385,19 @@ func (c *AddressesListCall) Do() (*AddressList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "region": {
-	//       "description": "Name of the region scoping this request.",
+	//       "description": "The name of the region for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -3491,6 +4409,7 @@ func (c *AddressesListCall) Do() (*AddressList, error) {
 	//     "$ref": "AddressList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -3508,6 +4427,7 @@ type BackendServicesDeleteCall struct {
 }
 
 // Delete: Deletes the specified BackendService resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/backendServices/delete
 func (r *BackendServicesService) Delete(project string, backendService string) *BackendServicesDeleteCall {
 	c := &BackendServicesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3537,7 +4457,7 @@ func (c *BackendServicesDeleteCall) Do() (*Operation, error) {
 		"project":        c.project,
 		"backendService": c.backendService,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3580,6 +4500,7 @@ func (c *BackendServicesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -3596,6 +4517,7 @@ type BackendServicesGetCall struct {
 }
 
 // Get: Returns the specified BackendService resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/backendServices/get
 func (r *BackendServicesService) Get(project string, backendService string) *BackendServicesGetCall {
 	c := &BackendServicesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3625,7 +4547,7 @@ func (c *BackendServicesGetCall) Do() (*BackendService, error) {
 		"project":        c.project,
 		"backendService": c.backendService,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3668,6 +4590,7 @@ func (c *BackendServicesGetCall) Do() (*BackendService, error) {
 	//     "$ref": "BackendService"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -3687,6 +4610,7 @@ type BackendServicesGetHealthCall struct {
 
 // GetHealth: Gets the most recent health check results for this
 // BackendService.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/backendServices/getHealth
 func (r *BackendServicesService) GetHealth(project string, backendService string, resourcegroupreference *ResourceGroupReference) *BackendServicesGetHealthCall {
 	c := &BackendServicesGetHealthCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3723,7 +4647,7 @@ func (c *BackendServicesGetHealthCall) Do() (*BackendServiceGroupHealth, error) 
 		"backendService": c.backendService,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3768,6 +4692,7 @@ func (c *BackendServicesGetHealthCall) Do() (*BackendServiceGroupHealth, error) 
 	//     "$ref": "BackendServiceGroupHealth"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -3786,6 +4711,7 @@ type BackendServicesInsertCall struct {
 
 // Insert: Creates a BackendService resource in the specified project
 // using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/backendServices/insert
 func (r *BackendServicesService) Insert(project string, backendservice *BackendService) *BackendServicesInsertCall {
 	c := &BackendServicesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3820,7 +4746,7 @@ func (c *BackendServicesInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3858,6 +4784,7 @@ func (c *BackendServicesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -3874,6 +4801,7 @@ type BackendServicesListCall struct {
 
 // List: Retrieves the list of BackendService resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/backendServices/list
 func (r *BackendServicesService) List(project string) *BackendServicesListCall {
 	c := &BackendServicesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -3888,16 +4816,15 @@ func (c *BackendServicesListCall) Filter(filter string) *BackendServicesListCall
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *BackendServicesListCall) MaxResults(maxResults int64) *BackendServicesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *BackendServicesListCall) PageToken(pageToken string) *BackendServicesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -3933,7 +4860,7 @@ func (c *BackendServicesListCall) Do() (*BackendServiceList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -3956,13 +4883,13 @@ func (c *BackendServicesListCall) Do() (*BackendServiceList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -3970,7 +4897,7 @@ func (c *BackendServicesListCall) Do() (*BackendServiceList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -3987,6 +4914,7 @@ func (c *BackendServicesListCall) Do() (*BackendServiceList, error) {
 	//     "$ref": "BackendServiceList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -4006,6 +4934,7 @@ type BackendServicesPatchCall struct {
 
 // Patch: Update the entire content of the BackendService resource. This
 // method supports patch semantics.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/backendServices/patch
 func (r *BackendServicesService) Patch(project string, backendService string, backendservice *BackendService) *BackendServicesPatchCall {
 	c := &BackendServicesPatchCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4042,7 +4971,7 @@ func (c *BackendServicesPatchCall) Do() (*Operation, error) {
 		"backendService": c.backendService,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4088,6 +5017,7 @@ func (c *BackendServicesPatchCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -4105,6 +5035,7 @@ type BackendServicesUpdateCall struct {
 }
 
 // Update: Update the entire content of the BackendService resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/backendServices/update
 func (r *BackendServicesService) Update(project string, backendService string, backendservice *BackendService) *BackendServicesUpdateCall {
 	c := &BackendServicesUpdateCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4141,7 +5072,7 @@ func (c *BackendServicesUpdateCall) Do() (*Operation, error) {
 		"backendService": c.backendService,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4187,6 +5118,7 @@ func (c *BackendServicesUpdateCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -4203,6 +5135,7 @@ type DiskTypesAggregatedListCall struct {
 
 // AggregatedList: Retrieves the list of disk type resources grouped by
 // scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/diskTypes/aggregatedList
 func (r *DiskTypesService) AggregatedList(project string) *DiskTypesAggregatedListCall {
 	c := &DiskTypesAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4217,16 +5150,15 @@ func (c *DiskTypesAggregatedListCall) Filter(filter string) *DiskTypesAggregated
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *DiskTypesAggregatedListCall) MaxResults(maxResults int64) *DiskTypesAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *DiskTypesAggregatedListCall) PageToken(pageToken string) *DiskTypesAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -4262,7 +5194,7 @@ func (c *DiskTypesAggregatedListCall) Do() (*DiskTypeAggregatedList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4285,13 +5217,13 @@ func (c *DiskTypesAggregatedListCall) Do() (*DiskTypeAggregatedList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -4299,12 +5231,12 @@ func (c *DiskTypesAggregatedListCall) Do() (*DiskTypeAggregatedList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -4316,6 +5248,7 @@ func (c *DiskTypesAggregatedListCall) Do() (*DiskTypeAggregatedList, error) {
 	//     "$ref": "DiskTypeAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -4334,6 +5267,7 @@ type DiskTypesGetCall struct {
 }
 
 // Get: Returns the specified disk type resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/diskTypes/get
 func (r *DiskTypesService) Get(project string, zone string, diskType string) *DiskTypesGetCall {
 	c := &DiskTypesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4365,7 +5299,7 @@ func (c *DiskTypesGetCall) Do() (*DiskType, error) {
 		"zone":     c.zone,
 		"diskType": c.diskType,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4397,14 +5331,14 @@ func (c *DiskTypesGetCall) Do() (*DiskType, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -4416,6 +5350,7 @@ func (c *DiskTypesGetCall) Do() (*DiskType, error) {
 	//     "$ref": "DiskType"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -4434,6 +5369,7 @@ type DiskTypesListCall struct {
 
 // List: Retrieves the list of disk type resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/diskTypes/list
 func (r *DiskTypesService) List(project string, zone string) *DiskTypesListCall {
 	c := &DiskTypesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4449,16 +5385,15 @@ func (c *DiskTypesListCall) Filter(filter string) *DiskTypesListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *DiskTypesListCall) MaxResults(maxResults int64) *DiskTypesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *DiskTypesListCall) PageToken(pageToken string) *DiskTypesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -4495,7 +5430,7 @@ func (c *DiskTypesListCall) Do() (*DiskTypeList, error) {
 		"project": c.project,
 		"zone":    c.zone,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4519,13 +5454,13 @@ func (c *DiskTypesListCall) Do() (*DiskTypeList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -4533,19 +5468,19 @@ func (c *DiskTypesListCall) Do() (*DiskTypeList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -4557,6 +5492,7 @@ func (c *DiskTypesListCall) Do() (*DiskTypeList, error) {
 	//     "$ref": "DiskTypeList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -4573,6 +5509,7 @@ type DisksAggregatedListCall struct {
 }
 
 // AggregatedList: Retrieves the list of disks grouped by scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/disks/aggregatedList
 func (r *DisksService) AggregatedList(project string) *DisksAggregatedListCall {
 	c := &DisksAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4587,16 +5524,15 @@ func (c *DisksAggregatedListCall) Filter(filter string) *DisksAggregatedListCall
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *DisksAggregatedListCall) MaxResults(maxResults int64) *DisksAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *DisksAggregatedListCall) PageToken(pageToken string) *DisksAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -4632,7 +5568,7 @@ func (c *DisksAggregatedListCall) Do() (*DiskAggregatedList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4655,13 +5591,13 @@ func (c *DisksAggregatedListCall) Do() (*DiskAggregatedList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -4669,12 +5605,12 @@ func (c *DisksAggregatedListCall) Do() (*DiskAggregatedList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -4686,6 +5622,7 @@ func (c *DisksAggregatedListCall) Do() (*DiskAggregatedList, error) {
 	//     "$ref": "DiskAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -4704,7 +5641,8 @@ type DisksCreateSnapshotCall struct {
 	opt_     map[string]interface{}
 }
 
-// CreateSnapshot:
+// CreateSnapshot: Creates a snapshot of this disk.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/disks/createSnapshot
 func (r *DisksService) CreateSnapshot(project string, zone string, disk string, snapshot *Snapshot) *DisksCreateSnapshotCall {
 	c := &DisksCreateSnapshotCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4743,7 +5681,7 @@ func (c *DisksCreateSnapshotCall) Do() (*Operation, error) {
 		"disk":    c.disk,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4758,6 +5696,7 @@ func (c *DisksCreateSnapshotCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
+	//   "description": "Creates a snapshot of this disk.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.disks.createSnapshot",
 	//   "parameterOrder": [
@@ -4767,21 +5706,21 @@ func (c *DisksCreateSnapshotCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "disk": {
-	//       "description": "Name of the persistent disk resource to snapshot.",
+	//       "description": "Name of the persistent disk to snapshot.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -4796,6 +5735,7 @@ func (c *DisksCreateSnapshotCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -4812,7 +5752,8 @@ type DisksDeleteCall struct {
 	opt_    map[string]interface{}
 }
 
-// Delete: Deletes the specified persistent disk resource.
+// Delete: Deletes the specified persistent disk.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/disks/delete
 func (r *DisksService) Delete(project string, zone string, disk string) *DisksDeleteCall {
 	c := &DisksDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4844,7 +5785,7 @@ func (c *DisksDeleteCall) Do() (*Operation, error) {
 		"zone":    c.zone,
 		"disk":    c.disk,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4859,7 +5800,7 @@ func (c *DisksDeleteCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Deletes the specified persistent disk resource.",
+	//   "description": "Deletes the specified persistent disk.",
 	//   "httpMethod": "DELETE",
 	//   "id": "compute.disks.delete",
 	//   "parameterOrder": [
@@ -4869,21 +5810,21 @@ func (c *DisksDeleteCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "disk": {
-	//       "description": "Name of the persistent disk resource to delete.",
+	//       "description": "Name of the persistent disk to delete.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -4895,6 +5836,7 @@ func (c *DisksDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -4911,7 +5853,8 @@ type DisksGetCall struct {
 	opt_    map[string]interface{}
 }
 
-// Get: Returns the specified persistent disk resource.
+// Get: Returns a specified persistent disk.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/disks/get
 func (r *DisksService) Get(project string, zone string, disk string) *DisksGetCall {
 	c := &DisksGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -4943,7 +5886,7 @@ func (c *DisksGetCall) Do() (*Disk, error) {
 		"zone":    c.zone,
 		"disk":    c.disk,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -4958,7 +5901,7 @@ func (c *DisksGetCall) Do() (*Disk, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Returns the specified persistent disk resource.",
+	//   "description": "Returns a specified persistent disk.",
 	//   "httpMethod": "GET",
 	//   "id": "compute.disks.get",
 	//   "parameterOrder": [
@@ -4968,21 +5911,21 @@ func (c *DisksGetCall) Do() (*Disk, error) {
 	//   ],
 	//   "parameters": {
 	//     "disk": {
-	//       "description": "Name of the persistent disk resource to return.",
+	//       "description": "Name of the persistent disk to return.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -4994,6 +5937,7 @@ func (c *DisksGetCall) Do() (*Disk, error) {
 	//     "$ref": "Disk"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -5011,8 +5955,9 @@ type DisksInsertCall struct {
 	opt_    map[string]interface{}
 }
 
-// Insert: Creates a persistent disk resource in the specified project
-// using the data included in the request.
+// Insert: Creates a persistent disk in the specified project using the
+// data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/disks/insert
 func (r *DisksService) Insert(project string, zone string, disk *Disk) *DisksInsertCall {
 	c := &DisksInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5059,7 +6004,7 @@ func (c *DisksInsertCall) Do() (*Operation, error) {
 		"zone":    c.zone,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5074,7 +6019,7 @@ func (c *DisksInsertCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates a persistent disk resource in the specified project using the data included in the request.",
+	//   "description": "Creates a persistent disk in the specified project using the data included in the request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.disks.insert",
 	//   "parameterOrder": [
@@ -5083,7 +6028,7 @@ func (c *DisksInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -5095,7 +6040,7 @@ func (c *DisksInsertCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -5110,6 +6055,7 @@ func (c *DisksInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -5125,8 +6071,9 @@ type DisksListCall struct {
 	opt_    map[string]interface{}
 }
 
-// List: Retrieves the list of persistent disk resources contained
-// within the specified zone.
+// List: Retrieves the list of persistent disks contained within the
+// specified zone.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/disks/list
 func (r *DisksService) List(project string, zone string) *DisksListCall {
 	c := &DisksListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5142,16 +6089,15 @@ func (c *DisksListCall) Filter(filter string) *DisksListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *DisksListCall) MaxResults(maxResults int64) *DisksListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *DisksListCall) PageToken(pageToken string) *DisksListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -5188,7 +6134,7 @@ func (c *DisksListCall) Do() (*DiskList, error) {
 		"project": c.project,
 		"zone":    c.zone,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5203,7 +6149,7 @@ func (c *DisksListCall) Do() (*DiskList, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Retrieves the list of persistent disk resources contained within the specified zone.",
+	//   "description": "Retrieves the list of persistent disks contained within the specified zone.",
 	//   "httpMethod": "GET",
 	//   "id": "compute.disks.list",
 	//   "parameterOrder": [
@@ -5212,13 +6158,13 @@ func (c *DisksListCall) Do() (*DiskList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -5226,19 +6172,19 @@ func (c *DisksListCall) Do() (*DiskList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -5250,6 +6196,7 @@ func (c *DisksListCall) Do() (*DiskList, error) {
 	//     "$ref": "DiskList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -5267,6 +6214,7 @@ type FirewallsDeleteCall struct {
 }
 
 // Delete: Deletes the specified firewall resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/firewalls/delete
 func (r *FirewallsService) Delete(project string, firewall string) *FirewallsDeleteCall {
 	c := &FirewallsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5296,7 +6244,7 @@ func (c *FirewallsDeleteCall) Do() (*Operation, error) {
 		"project":  c.project,
 		"firewall": c.firewall,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5327,7 +6275,7 @@ func (c *FirewallsDeleteCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -5339,6 +6287,7 @@ func (c *FirewallsDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -5355,6 +6304,7 @@ type FirewallsGetCall struct {
 }
 
 // Get: Returns the specified firewall resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/firewalls/get
 func (r *FirewallsService) Get(project string, firewall string) *FirewallsGetCall {
 	c := &FirewallsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5384,7 +6334,7 @@ func (c *FirewallsGetCall) Do() (*Firewall, error) {
 		"project":  c.project,
 		"firewall": c.firewall,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5415,7 +6365,7 @@ func (c *FirewallsGetCall) Do() (*Firewall, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -5427,6 +6377,7 @@ func (c *FirewallsGetCall) Do() (*Firewall, error) {
 	//     "$ref": "Firewall"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -5445,6 +6396,7 @@ type FirewallsInsertCall struct {
 
 // Insert: Creates a firewall resource in the specified project using
 // the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/firewalls/insert
 func (r *FirewallsService) Insert(project string, firewall *Firewall) *FirewallsInsertCall {
 	c := &FirewallsInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5479,7 +6431,7 @@ func (c *FirewallsInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5502,7 +6454,7 @@ func (c *FirewallsInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -5517,6 +6469,7 @@ func (c *FirewallsInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -5533,6 +6486,7 @@ type FirewallsListCall struct {
 
 // List: Retrieves the list of firewall resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/firewalls/list
 func (r *FirewallsService) List(project string) *FirewallsListCall {
 	c := &FirewallsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5547,16 +6501,15 @@ func (c *FirewallsListCall) Filter(filter string) *FirewallsListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *FirewallsListCall) MaxResults(maxResults int64) *FirewallsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *FirewallsListCall) PageToken(pageToken string) *FirewallsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -5592,7 +6545,7 @@ func (c *FirewallsListCall) Do() (*FirewallList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5615,13 +6568,13 @@ func (c *FirewallsListCall) Do() (*FirewallList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -5629,12 +6582,12 @@ func (c *FirewallsListCall) Do() (*FirewallList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -5646,6 +6599,7 @@ func (c *FirewallsListCall) Do() (*FirewallList, error) {
 	//     "$ref": "FirewallList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -5665,6 +6619,7 @@ type FirewallsPatchCall struct {
 
 // Patch: Updates the specified firewall resource with the data included
 // in the request. This method supports patch semantics.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/firewalls/patch
 func (r *FirewallsService) Patch(project string, firewall string, firewall2 *Firewall) *FirewallsPatchCall {
 	c := &FirewallsPatchCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5701,7 +6656,7 @@ func (c *FirewallsPatchCall) Do() (*Operation, error) {
 		"firewall": c.firewall,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5732,7 +6687,7 @@ func (c *FirewallsPatchCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -5747,6 +6702,7 @@ func (c *FirewallsPatchCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -5765,6 +6721,7 @@ type FirewallsUpdateCall struct {
 
 // Update: Updates the specified firewall resource with the data
 // included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/firewalls/update
 func (r *FirewallsService) Update(project string, firewall string, firewall2 *Firewall) *FirewallsUpdateCall {
 	c := &FirewallsUpdateCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5801,7 +6758,7 @@ func (c *FirewallsUpdateCall) Do() (*Operation, error) {
 		"firewall": c.firewall,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5832,7 +6789,7 @@ func (c *FirewallsUpdateCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -5847,6 +6804,7 @@ func (c *FirewallsUpdateCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -5863,6 +6821,7 @@ type ForwardingRulesAggregatedListCall struct {
 
 // AggregatedList: Retrieves the list of forwarding rules grouped by
 // scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/forwardingRules/aggregatedList
 func (r *ForwardingRulesService) AggregatedList(project string) *ForwardingRulesAggregatedListCall {
 	c := &ForwardingRulesAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -5877,16 +6836,15 @@ func (c *ForwardingRulesAggregatedListCall) Filter(filter string) *ForwardingRul
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *ForwardingRulesAggregatedListCall) MaxResults(maxResults int64) *ForwardingRulesAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *ForwardingRulesAggregatedListCall) PageToken(pageToken string) *ForwardingRulesAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -5922,7 +6880,7 @@ func (c *ForwardingRulesAggregatedListCall) Do() (*ForwardingRuleAggregatedList,
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -5945,13 +6903,13 @@ func (c *ForwardingRulesAggregatedListCall) Do() (*ForwardingRuleAggregatedList,
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -5959,7 +6917,7 @@ func (c *ForwardingRulesAggregatedListCall) Do() (*ForwardingRuleAggregatedList,
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -5976,6 +6934,7 @@ func (c *ForwardingRulesAggregatedListCall) Do() (*ForwardingRuleAggregatedList,
 	//     "$ref": "ForwardingRuleAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -5994,6 +6953,7 @@ type ForwardingRulesDeleteCall struct {
 }
 
 // Delete: Deletes the specified ForwardingRule resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/forwardingRules/delete
 func (r *ForwardingRulesService) Delete(project string, region string, forwardingRule string) *ForwardingRulesDeleteCall {
 	c := &ForwardingRulesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6025,7 +6985,7 @@ func (c *ForwardingRulesDeleteCall) Do() (*Operation, error) {
 		"region":         c.region,
 		"forwardingRule": c.forwardingRule,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6076,6 +7036,7 @@ func (c *ForwardingRulesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -6093,6 +7054,7 @@ type ForwardingRulesGetCall struct {
 }
 
 // Get: Returns the specified ForwardingRule resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/forwardingRules/get
 func (r *ForwardingRulesService) Get(project string, region string, forwardingRule string) *ForwardingRulesGetCall {
 	c := &ForwardingRulesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6124,7 +7086,7 @@ func (c *ForwardingRulesGetCall) Do() (*ForwardingRule, error) {
 		"region":         c.region,
 		"forwardingRule": c.forwardingRule,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6175,6 +7137,7 @@ func (c *ForwardingRulesGetCall) Do() (*ForwardingRule, error) {
 	//     "$ref": "ForwardingRule"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -6194,6 +7157,7 @@ type ForwardingRulesInsertCall struct {
 
 // Insert: Creates a ForwardingRule resource in the specified project
 // and region using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/forwardingRules/insert
 func (r *ForwardingRulesService) Insert(project string, region string, forwardingrule *ForwardingRule) *ForwardingRulesInsertCall {
 	c := &ForwardingRulesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6230,7 +7194,7 @@ func (c *ForwardingRulesInsertCall) Do() (*Operation, error) {
 		"region":  c.region,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6276,6 +7240,7 @@ func (c *ForwardingRulesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -6293,6 +7258,7 @@ type ForwardingRulesListCall struct {
 
 // List: Retrieves the list of ForwardingRule resources available to the
 // specified project and region.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/forwardingRules/list
 func (r *ForwardingRulesService) List(project string, region string) *ForwardingRulesListCall {
 	c := &ForwardingRulesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6308,16 +7274,15 @@ func (c *ForwardingRulesListCall) Filter(filter string) *ForwardingRulesListCall
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *ForwardingRulesListCall) MaxResults(maxResults int64) *ForwardingRulesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *ForwardingRulesListCall) PageToken(pageToken string) *ForwardingRulesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -6354,7 +7319,7 @@ func (c *ForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 		"project": c.project,
 		"region":  c.region,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6378,13 +7343,13 @@ func (c *ForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -6392,7 +7357,7 @@ func (c *ForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -6416,6 +7381,7 @@ func (c *ForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 	//     "$ref": "ForwardingRuleList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -6435,6 +7401,7 @@ type ForwardingRulesSetTargetCall struct {
 }
 
 // SetTarget: Changes target url for forwarding rule.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/forwardingRules/setTarget
 func (r *ForwardingRulesService) SetTarget(project string, region string, forwardingRule string, targetreference *TargetReference) *ForwardingRulesSetTargetCall {
 	c := &ForwardingRulesSetTargetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6473,7 +7440,7 @@ func (c *ForwardingRulesSetTargetCall) Do() (*Operation, error) {
 		"forwardingRule": c.forwardingRule,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6527,6 +7494,7 @@ func (c *ForwardingRulesSetTargetCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -6543,6 +7511,7 @@ type GlobalAddressesDeleteCall struct {
 }
 
 // Delete: Deletes the specified address resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalAddresses/delete
 func (r *GlobalAddressesService) Delete(project string, address string) *GlobalAddressesDeleteCall {
 	c := &GlobalAddressesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6572,7 +7541,7 @@ func (c *GlobalAddressesDeleteCall) Do() (*Operation, error) {
 		"project": c.project,
 		"address": c.address,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6603,7 +7572,7 @@ func (c *GlobalAddressesDeleteCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -6615,6 +7584,7 @@ func (c *GlobalAddressesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -6631,6 +7601,7 @@ type GlobalAddressesGetCall struct {
 }
 
 // Get: Returns the specified address resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalAddresses/get
 func (r *GlobalAddressesService) Get(project string, address string) *GlobalAddressesGetCall {
 	c := &GlobalAddressesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6660,7 +7631,7 @@ func (c *GlobalAddressesGetCall) Do() (*Address, error) {
 		"project": c.project,
 		"address": c.address,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6691,7 +7662,7 @@ func (c *GlobalAddressesGetCall) Do() (*Address, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -6703,6 +7674,7 @@ func (c *GlobalAddressesGetCall) Do() (*Address, error) {
 	//     "$ref": "Address"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -6721,6 +7693,7 @@ type GlobalAddressesInsertCall struct {
 
 // Insert: Creates an address resource in the specified project using
 // the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalAddresses/insert
 func (r *GlobalAddressesService) Insert(project string, address *Address) *GlobalAddressesInsertCall {
 	c := &GlobalAddressesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6755,7 +7728,7 @@ func (c *GlobalAddressesInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6778,7 +7751,7 @@ func (c *GlobalAddressesInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -6793,6 +7766,7 @@ func (c *GlobalAddressesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -6808,6 +7782,7 @@ type GlobalAddressesListCall struct {
 }
 
 // List: Retrieves the list of global address resources.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalAddresses/list
 func (r *GlobalAddressesService) List(project string) *GlobalAddressesListCall {
 	c := &GlobalAddressesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6822,16 +7797,15 @@ func (c *GlobalAddressesListCall) Filter(filter string) *GlobalAddressesListCall
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *GlobalAddressesListCall) MaxResults(maxResults int64) *GlobalAddressesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *GlobalAddressesListCall) PageToken(pageToken string) *GlobalAddressesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -6867,7 +7841,7 @@ func (c *GlobalAddressesListCall) Do() (*AddressList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -6890,13 +7864,13 @@ func (c *GlobalAddressesListCall) Do() (*AddressList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -6904,12 +7878,12 @@ func (c *GlobalAddressesListCall) Do() (*AddressList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -6921,6 +7895,7 @@ func (c *GlobalAddressesListCall) Do() (*AddressList, error) {
 	//     "$ref": "AddressList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -6938,6 +7913,7 @@ type GlobalForwardingRulesDeleteCall struct {
 }
 
 // Delete: Deletes the specified ForwardingRule resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalForwardingRules/delete
 func (r *GlobalForwardingRulesService) Delete(project string, forwardingRule string) *GlobalForwardingRulesDeleteCall {
 	c := &GlobalForwardingRulesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -6967,7 +7943,7 @@ func (c *GlobalForwardingRulesDeleteCall) Do() (*Operation, error) {
 		"project":        c.project,
 		"forwardingRule": c.forwardingRule,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7010,6 +7986,7 @@ func (c *GlobalForwardingRulesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -7026,6 +8003,7 @@ type GlobalForwardingRulesGetCall struct {
 }
 
 // Get: Returns the specified ForwardingRule resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalForwardingRules/get
 func (r *GlobalForwardingRulesService) Get(project string, forwardingRule string) *GlobalForwardingRulesGetCall {
 	c := &GlobalForwardingRulesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7055,7 +8033,7 @@ func (c *GlobalForwardingRulesGetCall) Do() (*ForwardingRule, error) {
 		"project":        c.project,
 		"forwardingRule": c.forwardingRule,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7098,6 +8076,7 @@ func (c *GlobalForwardingRulesGetCall) Do() (*ForwardingRule, error) {
 	//     "$ref": "ForwardingRule"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -7116,6 +8095,7 @@ type GlobalForwardingRulesInsertCall struct {
 
 // Insert: Creates a ForwardingRule resource in the specified project
 // and region using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalForwardingRules/insert
 func (r *GlobalForwardingRulesService) Insert(project string, forwardingrule *ForwardingRule) *GlobalForwardingRulesInsertCall {
 	c := &GlobalForwardingRulesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7150,7 +8130,7 @@ func (c *GlobalForwardingRulesInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7188,6 +8168,7 @@ func (c *GlobalForwardingRulesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -7204,6 +8185,7 @@ type GlobalForwardingRulesListCall struct {
 
 // List: Retrieves the list of ForwardingRule resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalForwardingRules/list
 func (r *GlobalForwardingRulesService) List(project string) *GlobalForwardingRulesListCall {
 	c := &GlobalForwardingRulesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7218,16 +8200,15 @@ func (c *GlobalForwardingRulesListCall) Filter(filter string) *GlobalForwardingR
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *GlobalForwardingRulesListCall) MaxResults(maxResults int64) *GlobalForwardingRulesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *GlobalForwardingRulesListCall) PageToken(pageToken string) *GlobalForwardingRulesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -7263,7 +8244,7 @@ func (c *GlobalForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7286,13 +8267,13 @@ func (c *GlobalForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -7300,7 +8281,7 @@ func (c *GlobalForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -7317,6 +8298,7 @@ func (c *GlobalForwardingRulesListCall) Do() (*ForwardingRuleList, error) {
 	//     "$ref": "ForwardingRuleList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -7335,6 +8317,7 @@ type GlobalForwardingRulesSetTargetCall struct {
 }
 
 // SetTarget: Changes target url for forwarding rule.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalForwardingRules/setTarget
 func (r *GlobalForwardingRulesService) SetTarget(project string, forwardingRule string, targetreference *TargetReference) *GlobalForwardingRulesSetTargetCall {
 	c := &GlobalForwardingRulesSetTargetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7371,7 +8354,7 @@ func (c *GlobalForwardingRulesSetTargetCall) Do() (*Operation, error) {
 		"forwardingRule": c.forwardingRule,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7417,6 +8400,7 @@ func (c *GlobalForwardingRulesSetTargetCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -7433,6 +8417,7 @@ type GlobalOperationsAggregatedListCall struct {
 
 // AggregatedList: Retrieves the list of all operations grouped by
 // scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalOperations/aggregatedList
 func (r *GlobalOperationsService) AggregatedList(project string) *GlobalOperationsAggregatedListCall {
 	c := &GlobalOperationsAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7447,16 +8432,15 @@ func (c *GlobalOperationsAggregatedListCall) Filter(filter string) *GlobalOperat
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *GlobalOperationsAggregatedListCall) MaxResults(maxResults int64) *GlobalOperationsAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *GlobalOperationsAggregatedListCall) PageToken(pageToken string) *GlobalOperationsAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -7492,7 +8476,7 @@ func (c *GlobalOperationsAggregatedListCall) Do() (*OperationAggregatedList, err
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7515,13 +8499,13 @@ func (c *GlobalOperationsAggregatedListCall) Do() (*OperationAggregatedList, err
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -7529,12 +8513,12 @@ func (c *GlobalOperationsAggregatedListCall) Do() (*OperationAggregatedList, err
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -7546,6 +8530,7 @@ func (c *GlobalOperationsAggregatedListCall) Do() (*OperationAggregatedList, err
 	//     "$ref": "OperationAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -7563,6 +8548,7 @@ type GlobalOperationsDeleteCall struct {
 }
 
 // Delete: Deletes the specified operation resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalOperations/delete
 func (r *GlobalOperationsService) Delete(project string, operation string) *GlobalOperationsDeleteCall {
 	c := &GlobalOperationsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7592,7 +8578,7 @@ func (c *GlobalOperationsDeleteCall) Do() error {
 		"project":   c.project,
 		"operation": c.operation,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return err
@@ -7619,7 +8605,7 @@ func (c *GlobalOperationsDeleteCall) Do() error {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -7628,6 +8614,7 @@ func (c *GlobalOperationsDeleteCall) Do() error {
 	//   },
 	//   "path": "{project}/global/operations/{operation}",
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -7644,6 +8631,7 @@ type GlobalOperationsGetCall struct {
 }
 
 // Get: Retrieves the specified operation resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalOperations/get
 func (r *GlobalOperationsService) Get(project string, operation string) *GlobalOperationsGetCall {
 	c := &GlobalOperationsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7673,7 +8661,7 @@ func (c *GlobalOperationsGetCall) Do() (*Operation, error) {
 		"project":   c.project,
 		"operation": c.operation,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7704,7 +8692,7 @@ func (c *GlobalOperationsGetCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -7716,6 +8704,7 @@ func (c *GlobalOperationsGetCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -7733,6 +8722,7 @@ type GlobalOperationsListCall struct {
 
 // List: Retrieves the list of operation resources contained within the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/globalOperations/list
 func (r *GlobalOperationsService) List(project string) *GlobalOperationsListCall {
 	c := &GlobalOperationsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7747,16 +8737,15 @@ func (c *GlobalOperationsListCall) Filter(filter string) *GlobalOperationsListCa
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *GlobalOperationsListCall) MaxResults(maxResults int64) *GlobalOperationsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *GlobalOperationsListCall) PageToken(pageToken string) *GlobalOperationsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -7792,7 +8781,7 @@ func (c *GlobalOperationsListCall) Do() (*OperationList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7815,13 +8804,13 @@ func (c *GlobalOperationsListCall) Do() (*OperationList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -7829,12 +8818,12 @@ func (c *GlobalOperationsListCall) Do() (*OperationList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -7846,6 +8835,7 @@ func (c *GlobalOperationsListCall) Do() (*OperationList, error) {
 	//     "$ref": "OperationList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -7863,6 +8853,7 @@ type HttpHealthChecksDeleteCall struct {
 }
 
 // Delete: Deletes the specified HttpHealthCheck resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/httpHealthChecks/delete
 func (r *HttpHealthChecksService) Delete(project string, httpHealthCheck string) *HttpHealthChecksDeleteCall {
 	c := &HttpHealthChecksDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7892,7 +8883,7 @@ func (c *HttpHealthChecksDeleteCall) Do() (*Operation, error) {
 		"project":         c.project,
 		"httpHealthCheck": c.httpHealthCheck,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -7935,6 +8926,7 @@ func (c *HttpHealthChecksDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -7951,6 +8943,7 @@ type HttpHealthChecksGetCall struct {
 }
 
 // Get: Returns the specified HttpHealthCheck resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/httpHealthChecks/get
 func (r *HttpHealthChecksService) Get(project string, httpHealthCheck string) *HttpHealthChecksGetCall {
 	c := &HttpHealthChecksGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -7980,7 +8973,7 @@ func (c *HttpHealthChecksGetCall) Do() (*HttpHealthCheck, error) {
 		"project":         c.project,
 		"httpHealthCheck": c.httpHealthCheck,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8023,6 +9016,7 @@ func (c *HttpHealthChecksGetCall) Do() (*HttpHealthCheck, error) {
 	//     "$ref": "HttpHealthCheck"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -8041,6 +9035,7 @@ type HttpHealthChecksInsertCall struct {
 
 // Insert: Creates a HttpHealthCheck resource in the specified project
 // using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/httpHealthChecks/insert
 func (r *HttpHealthChecksService) Insert(project string, httphealthcheck *HttpHealthCheck) *HttpHealthChecksInsertCall {
 	c := &HttpHealthChecksInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8075,7 +9070,7 @@ func (c *HttpHealthChecksInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8113,6 +9108,7 @@ func (c *HttpHealthChecksInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -8129,6 +9125,7 @@ type HttpHealthChecksListCall struct {
 
 // List: Retrieves the list of HttpHealthCheck resources available to
 // the specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/httpHealthChecks/list
 func (r *HttpHealthChecksService) List(project string) *HttpHealthChecksListCall {
 	c := &HttpHealthChecksListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8143,16 +9140,15 @@ func (c *HttpHealthChecksListCall) Filter(filter string) *HttpHealthChecksListCa
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *HttpHealthChecksListCall) MaxResults(maxResults int64) *HttpHealthChecksListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *HttpHealthChecksListCall) PageToken(pageToken string) *HttpHealthChecksListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -8188,7 +9184,7 @@ func (c *HttpHealthChecksListCall) Do() (*HttpHealthCheckList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8211,13 +9207,13 @@ func (c *HttpHealthChecksListCall) Do() (*HttpHealthCheckList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -8225,7 +9221,7 @@ func (c *HttpHealthChecksListCall) Do() (*HttpHealthCheckList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -8242,6 +9238,7 @@ func (c *HttpHealthChecksListCall) Do() (*HttpHealthCheckList, error) {
 	//     "$ref": "HttpHealthCheckList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -8262,6 +9259,7 @@ type HttpHealthChecksPatchCall struct {
 // Patch: Updates a HttpHealthCheck resource in the specified project
 // using the data included in the request. This method supports patch
 // semantics.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/httpHealthChecks/patch
 func (r *HttpHealthChecksService) Patch(project string, httpHealthCheck string, httphealthcheck *HttpHealthCheck) *HttpHealthChecksPatchCall {
 	c := &HttpHealthChecksPatchCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8298,7 +9296,7 @@ func (c *HttpHealthChecksPatchCall) Do() (*Operation, error) {
 		"httpHealthCheck": c.httpHealthCheck,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8344,6 +9342,7 @@ func (c *HttpHealthChecksPatchCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -8362,6 +9361,7 @@ type HttpHealthChecksUpdateCall struct {
 
 // Update: Updates a HttpHealthCheck resource in the specified project
 // using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/httpHealthChecks/update
 func (r *HttpHealthChecksService) Update(project string, httpHealthCheck string, httphealthcheck *HttpHealthCheck) *HttpHealthChecksUpdateCall {
 	c := &HttpHealthChecksUpdateCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8398,7 +9398,7 @@ func (c *HttpHealthChecksUpdateCall) Do() (*Operation, error) {
 		"httpHealthCheck": c.httpHealthCheck,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8444,6 +9444,7 @@ func (c *HttpHealthChecksUpdateCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -8460,6 +9461,7 @@ type ImagesDeleteCall struct {
 }
 
 // Delete: Deletes the specified image resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/images/delete
 func (r *ImagesService) Delete(project string, image string) *ImagesDeleteCall {
 	c := &ImagesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8489,7 +9491,7 @@ func (c *ImagesDeleteCall) Do() (*Operation, error) {
 		"project": c.project,
 		"image":   c.image,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8520,7 +9522,7 @@ func (c *ImagesDeleteCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -8532,6 +9534,7 @@ func (c *ImagesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -8548,8 +9551,11 @@ type ImagesDeprecateCall struct {
 	opt_              map[string]interface{}
 }
 
-// Deprecate: Sets the deprecation status of an image. If no message
-// body is given, clears the deprecation status instead.
+// Deprecate: Sets the deprecation status of an image.
+//
+// If an empty request body is given, clears the deprecation status
+// instead.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/images/deprecate
 func (r *ImagesService) Deprecate(project string, image string, deprecationstatus *DeprecationStatus) *ImagesDeprecateCall {
 	c := &ImagesDeprecateCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8586,7 +9592,7 @@ func (c *ImagesDeprecateCall) Do() (*Operation, error) {
 		"image":   c.image,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8601,7 +9607,7 @@ func (c *ImagesDeprecateCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the deprecation status of an image. If no message body is given, clears the deprecation status instead.",
+	//   "description": "Sets the deprecation status of an image.\n\nIf an empty request body is given, clears the deprecation status instead.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.images.deprecate",
 	//   "parameterOrder": [
@@ -8617,7 +9623,7 @@ func (c *ImagesDeprecateCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -8632,6 +9638,7 @@ func (c *ImagesDeprecateCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -8648,6 +9655,7 @@ type ImagesGetCall struct {
 }
 
 // Get: Returns the specified image resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/images/get
 func (r *ImagesService) Get(project string, image string) *ImagesGetCall {
 	c := &ImagesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8677,7 +9685,7 @@ func (c *ImagesGetCall) Do() (*Image, error) {
 		"project": c.project,
 		"image":   c.image,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8708,7 +9716,7 @@ func (c *ImagesGetCall) Do() (*Image, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -8720,6 +9728,7 @@ func (c *ImagesGetCall) Do() (*Image, error) {
 	//     "$ref": "Image"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -8738,6 +9747,7 @@ type ImagesInsertCall struct {
 
 // Insert: Creates an image resource in the specified project using the
 // data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/images/insert
 func (r *ImagesService) Insert(project string, image *Image) *ImagesInsertCall {
 	c := &ImagesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8772,7 +9782,7 @@ func (c *ImagesInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8795,7 +9805,7 @@ func (c *ImagesInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -8810,6 +9820,7 @@ func (c *ImagesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/devstorage.full_control",
 	//     "https://www.googleapis.com/auth/devstorage.read_only",
@@ -8829,6 +9840,7 @@ type ImagesListCall struct {
 
 // List: Retrieves the list of image resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/images/list
 func (r *ImagesService) List(project string) *ImagesListCall {
 	c := &ImagesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8843,16 +9855,15 @@ func (c *ImagesListCall) Filter(filter string) *ImagesListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *ImagesListCall) MaxResults(maxResults int64) *ImagesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *ImagesListCall) PageToken(pageToken string) *ImagesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -8888,7 +9899,7 @@ func (c *ImagesListCall) Do() (*ImageList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -8911,13 +9922,13 @@ func (c *ImagesListCall) Do() (*ImageList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -8925,12 +9936,12 @@ func (c *ImagesListCall) Do() (*ImageList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -8942,6 +9953,7 @@ func (c *ImagesListCall) Do() (*ImageList, error) {
 	//     "$ref": "ImageList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -8958,7 +9970,8 @@ type InstanceTemplatesDeleteCall struct {
 	opt_             map[string]interface{}
 }
 
-// Delete: Deletes the specified instance template resource.
+// Delete: Deletes the specified instance template.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instanceTemplates/delete
 func (r *InstanceTemplatesService) Delete(project string, instanceTemplate string) *InstanceTemplatesDeleteCall {
 	c := &InstanceTemplatesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -8988,7 +10001,7 @@ func (c *InstanceTemplatesDeleteCall) Do() (*Operation, error) {
 		"project":          c.project,
 		"instanceTemplate": c.instanceTemplate,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9003,7 +10016,7 @@ func (c *InstanceTemplatesDeleteCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Deletes the specified instance template resource.",
+	//   "description": "Deletes the specified instance template.",
 	//   "httpMethod": "DELETE",
 	//   "id": "compute.instanceTemplates.delete",
 	//   "parameterOrder": [
@@ -9012,14 +10025,14 @@ func (c *InstanceTemplatesDeleteCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "instanceTemplate": {
-	//       "description": "Name of the instance template resource to delete.",
+	//       "description": "The name of the instance template to delete.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "The project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -9031,6 +10044,7 @@ func (c *InstanceTemplatesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -9047,6 +10061,7 @@ type InstanceTemplatesGetCall struct {
 }
 
 // Get: Returns the specified instance template resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instanceTemplates/get
 func (r *InstanceTemplatesService) Get(project string, instanceTemplate string) *InstanceTemplatesGetCall {
 	c := &InstanceTemplatesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9076,7 +10091,7 @@ func (c *InstanceTemplatesGetCall) Do() (*InstanceTemplate, error) {
 		"project":          c.project,
 		"instanceTemplate": c.instanceTemplate,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9100,14 +10115,14 @@ func (c *InstanceTemplatesGetCall) Do() (*InstanceTemplate, error) {
 	//   ],
 	//   "parameters": {
 	//     "instanceTemplate": {
-	//       "description": "Name of the instance template resource to return.",
+	//       "description": "The name of the instance template.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "The project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -9119,6 +10134,7 @@ func (c *InstanceTemplatesGetCall) Do() (*InstanceTemplate, error) {
 	//     "$ref": "InstanceTemplate"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -9135,8 +10151,9 @@ type InstanceTemplatesInsertCall struct {
 	opt_             map[string]interface{}
 }
 
-// Insert: Creates an instance template resource in the specified
-// project using the data included in the request.
+// Insert: Creates an instance template in the specified project using
+// the data that is included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instanceTemplates/insert
 func (r *InstanceTemplatesService) Insert(project string, instancetemplate *InstanceTemplate) *InstanceTemplatesInsertCall {
 	c := &InstanceTemplatesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9171,7 +10188,7 @@ func (c *InstanceTemplatesInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9186,7 +10203,7 @@ func (c *InstanceTemplatesInsertCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates an instance template resource in the specified project using the data included in the request.",
+	//   "description": "Creates an instance template in the specified project using the data that is included in the request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceTemplates.insert",
 	//   "parameterOrder": [
@@ -9194,7 +10211,7 @@ func (c *InstanceTemplatesInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "The project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -9209,6 +10226,7 @@ func (c *InstanceTemplatesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -9223,8 +10241,9 @@ type InstanceTemplatesListCall struct {
 	opt_    map[string]interface{}
 }
 
-// List: Retrieves the list of instance template resources contained
-// within the specified project.
+// List: Retrieves a list of instance templates that are contained
+// within the specified project and zone.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instanceTemplates/list
 func (r *InstanceTemplatesService) List(project string) *InstanceTemplatesListCall {
 	c := &InstanceTemplatesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9239,16 +10258,15 @@ func (c *InstanceTemplatesListCall) Filter(filter string) *InstanceTemplatesList
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *InstanceTemplatesListCall) MaxResults(maxResults int64) *InstanceTemplatesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *InstanceTemplatesListCall) PageToken(pageToken string) *InstanceTemplatesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -9284,7 +10302,7 @@ func (c *InstanceTemplatesListCall) Do() (*InstanceTemplateList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9299,7 +10317,7 @@ func (c *InstanceTemplatesListCall) Do() (*InstanceTemplateList, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Retrieves the list of instance template resources contained within the specified project.",
+	//   "description": "Retrieves a list of instance templates that are contained within the specified project and zone.",
 	//   "httpMethod": "GET",
 	//   "id": "compute.instanceTemplates.list",
 	//   "parameterOrder": [
@@ -9307,13 +10325,13 @@ func (c *InstanceTemplatesListCall) Do() (*InstanceTemplateList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -9321,12 +10339,12 @@ func (c *InstanceTemplatesListCall) Do() (*InstanceTemplateList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "The project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -9338,6 +10356,7 @@ func (c *InstanceTemplatesListCall) Do() (*InstanceTemplateList, error) {
 	//     "$ref": "InstanceTemplateList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -9359,6 +10378,7 @@ type InstancesAddAccessConfigCall struct {
 
 // AddAccessConfig: Adds an access config to an instance's network
 // interface.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/addAccessConfig
 func (r *InstancesService) AddAccessConfig(project string, zone string, instance string, networkInterface string, accessconfig *AccessConfig) *InstancesAddAccessConfigCall {
 	c := &InstancesAddAccessConfigCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9399,7 +10419,7 @@ func (c *InstancesAddAccessConfigCall) Do() (*Operation, error) {
 		"instance": c.instance,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9425,27 +10445,27 @@ func (c *InstancesAddAccessConfigCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "instance": {
-	//       "description": "Instance name.",
+	//       "description": "The instance name for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "networkInterface": {
-	//       "description": "Network interface name.",
+	//       "description": "The name of the network interface to add to this instance.",
 	//       "location": "query",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Project name.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -9460,6 +10480,7 @@ func (c *InstancesAddAccessConfigCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -9475,6 +10496,7 @@ type InstancesAggregatedListCall struct {
 }
 
 // AggregatedList:
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/aggregatedList
 func (r *InstancesService) AggregatedList(project string) *InstancesAggregatedListCall {
 	c := &InstancesAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9489,16 +10511,15 @@ func (c *InstancesAggregatedListCall) Filter(filter string) *InstancesAggregated
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *InstancesAggregatedListCall) MaxResults(maxResults int64) *InstancesAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *InstancesAggregatedListCall) PageToken(pageToken string) *InstancesAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -9534,7 +10555,7 @@ func (c *InstancesAggregatedListCall) Do() (*InstanceAggregatedList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9556,13 +10577,13 @@ func (c *InstancesAggregatedListCall) Do() (*InstanceAggregatedList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -9570,12 +10591,12 @@ func (c *InstancesAggregatedListCall) Do() (*InstanceAggregatedList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -9587,6 +10608,7 @@ func (c *InstancesAggregatedListCall) Do() (*InstanceAggregatedList, error) {
 	//     "$ref": "InstanceAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -9605,7 +10627,8 @@ type InstancesAttachDiskCall struct {
 	opt_         map[string]interface{}
 }
 
-// AttachDisk: Attaches a disk resource to an instance.
+// AttachDisk: Attaches a Disk resource to an instance.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/attachDisk
 func (r *InstancesService) AttachDisk(project string, zone string, instance string, attacheddisk *AttachedDisk) *InstancesAttachDiskCall {
 	c := &InstancesAttachDiskCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9644,7 +10667,7 @@ func (c *InstancesAttachDiskCall) Do() (*Operation, error) {
 		"instance": c.instance,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9659,7 +10682,7 @@ func (c *InstancesAttachDiskCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Attaches a disk resource to an instance.",
+	//   "description": "Attaches a Disk resource to an instance.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instances.attachDisk",
 	//   "parameterOrder": [
@@ -9676,14 +10699,14 @@ func (c *InstancesAttachDiskCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Project name.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -9698,6 +10721,7 @@ func (c *InstancesAttachDiskCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -9714,7 +10738,9 @@ type InstancesDeleteCall struct {
 	opt_     map[string]interface{}
 }
 
-// Delete: Deletes the specified instance resource.
+// Delete: Deletes the specified Instance resource. For more
+// information, see Shutting down an instance.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/delete
 func (r *InstancesService) Delete(project string, zone string, instance string) *InstancesDeleteCall {
 	c := &InstancesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9746,7 +10772,7 @@ func (c *InstancesDeleteCall) Do() (*Operation, error) {
 		"zone":     c.zone,
 		"instance": c.instance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9761,7 +10787,7 @@ func (c *InstancesDeleteCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Deletes the specified instance resource.",
+	//   "description": "Deletes the specified Instance resource. For more information, see Shutting down an instance.",
 	//   "httpMethod": "DELETE",
 	//   "id": "compute.instances.delete",
 	//   "parameterOrder": [
@@ -9778,14 +10804,14 @@ func (c *InstancesDeleteCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -9797,6 +10823,7 @@ func (c *InstancesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -9817,6 +10844,7 @@ type InstancesDeleteAccessConfigCall struct {
 
 // DeleteAccessConfig: Deletes an access config from an instance's
 // network interface.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/deleteAccessConfig
 func (r *InstancesService) DeleteAccessConfig(project string, zone string, instance string, accessConfig string, networkInterface string) *InstancesDeleteAccessConfigCall {
 	c := &InstancesDeleteAccessConfigCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9852,7 +10880,7 @@ func (c *InstancesDeleteAccessConfigCall) Do() (*Operation, error) {
 		"zone":     c.zone,
 		"instance": c.instance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -9879,33 +10907,33 @@ func (c *InstancesDeleteAccessConfigCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "accessConfig": {
-	//       "description": "Access config name.",
+	//       "description": "The name of the access config to delete.",
 	//       "location": "query",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "instance": {
-	//       "description": "Instance name.",
+	//       "description": "The instance name for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "networkInterface": {
-	//       "description": "Network interface name.",
+	//       "description": "The name of the network interface.",
 	//       "location": "query",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Project name.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -9917,6 +10945,7 @@ func (c *InstancesDeleteAccessConfigCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -9935,6 +10964,7 @@ type InstancesDetachDiskCall struct {
 }
 
 // DetachDisk: Detaches a disk from an instance.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/detachDisk
 func (r *InstancesService) DetachDisk(project string, zone string, instance string, deviceName string) *InstancesDetachDiskCall {
 	c := &InstancesDetachDiskCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -9968,7 +10998,7 @@ func (c *InstancesDetachDiskCall) Do() (*Operation, error) {
 		"zone":     c.zone,
 		"instance": c.instance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10008,14 +11038,14 @@ func (c *InstancesDetachDiskCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Project name.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10027,6 +11057,7 @@ func (c *InstancesDetachDiskCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -10044,6 +11075,7 @@ type InstancesGetCall struct {
 }
 
 // Get: Returns the specified instance resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/get
 func (r *InstancesService) Get(project string, zone string, instance string) *InstancesGetCall {
 	c := &InstancesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10075,7 +11107,7 @@ func (c *InstancesGetCall) Do() (*Instance, error) {
 		"zone":     c.zone,
 		"instance": c.instance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10107,14 +11139,14 @@ func (c *InstancesGetCall) Do() (*Instance, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the The name of the zone for this request..",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10126,6 +11158,7 @@ func (c *InstancesGetCall) Do() (*Instance, error) {
 	//     "$ref": "Instance"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -10145,11 +11178,19 @@ type InstancesGetSerialPortOutputCall struct {
 
 // GetSerialPortOutput: Returns the specified instance's serial port
 // output.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/getSerialPortOutput
 func (r *InstancesService) GetSerialPortOutput(project string, zone string, instance string) *InstancesGetSerialPortOutputCall {
 	c := &InstancesGetSerialPortOutputCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
 	c.zone = zone
 	c.instance = instance
+	return c
+}
+
+// Port sets the optional parameter "port": Which COM port to retrieve
+// data from.
+func (c *InstancesGetSerialPortOutputCall) Port(port int64) *InstancesGetSerialPortOutputCall {
+	c.opt_["port"] = port
 	return c
 }
 
@@ -10165,6 +11206,9 @@ func (c *InstancesGetSerialPortOutputCall) Do() (*SerialPortOutput, error) {
 	var body io.Reader = nil
 	params := make(url.Values)
 	params.Set("alt", "json")
+	if v, ok := c.opt_["port"]; ok {
+		params.Set("port", fmt.Sprintf("%v", v))
+	}
 	if v, ok := c.opt_["fields"]; ok {
 		params.Set("fields", fmt.Sprintf("%v", v))
 	}
@@ -10176,7 +11220,7 @@ func (c *InstancesGetSerialPortOutputCall) Do() (*SerialPortOutput, error) {
 		"zone":     c.zone,
 		"instance": c.instance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10207,15 +11251,24 @@ func (c *InstancesGetSerialPortOutputCall) Do() (*SerialPortOutput, error) {
 	//       "required": true,
 	//       "type": "string"
 	//     },
+	//     "port": {
+	//       "default": "1",
+	//       "description": "Which COM port to retrieve data from.",
+	//       "format": "int32",
+	//       "location": "query",
+	//       "maximum": "4",
+	//       "minimum": "1",
+	//       "type": "integer"
+	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10227,6 +11280,7 @@ func (c *InstancesGetSerialPortOutputCall) Do() (*SerialPortOutput, error) {
 	//     "$ref": "SerialPortOutput"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -10246,6 +11300,7 @@ type InstancesInsertCall struct {
 
 // Insert: Creates an instance resource in the specified project using
 // the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/insert
 func (r *InstancesService) Insert(project string, zone string, instance *Instance) *InstancesInsertCall {
 	c := &InstancesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10282,7 +11337,7 @@ func (c *InstancesInsertCall) Do() (*Operation, error) {
 		"zone":    c.zone,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10306,14 +11361,14 @@ func (c *InstancesInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10328,6 +11383,7 @@ func (c *InstancesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -10345,6 +11401,7 @@ type InstancesListCall struct {
 
 // List: Retrieves the list of instance resources contained within the
 // specified zone.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/list
 func (r *InstancesService) List(project string, zone string) *InstancesListCall {
 	c := &InstancesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10360,16 +11417,15 @@ func (c *InstancesListCall) Filter(filter string) *InstancesListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *InstancesListCall) MaxResults(maxResults int64) *InstancesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *InstancesListCall) PageToken(pageToken string) *InstancesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -10406,7 +11462,7 @@ func (c *InstancesListCall) Do() (*InstanceList, error) {
 		"project": c.project,
 		"zone":    c.zone,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10430,13 +11486,13 @@ func (c *InstancesListCall) Do() (*InstanceList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -10444,19 +11500,19 @@ func (c *InstancesListCall) Do() (*InstanceList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10468,6 +11524,7 @@ func (c *InstancesListCall) Do() (*InstanceList, error) {
 	//     "$ref": "InstanceList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -10486,6 +11543,7 @@ type InstancesResetCall struct {
 }
 
 // Reset: Performs a hard reset on the instance.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/reset
 func (r *InstancesService) Reset(project string, zone string, instance string) *InstancesResetCall {
 	c := &InstancesResetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10517,7 +11575,7 @@ func (c *InstancesResetCall) Do() (*Operation, error) {
 		"zone":     c.zone,
 		"instance": c.instance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10549,14 +11607,14 @@ func (c *InstancesResetCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10568,6 +11626,7 @@ func (c *InstancesResetCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -10587,7 +11646,8 @@ type InstancesSetDiskAutoDeleteCall struct {
 }
 
 // SetDiskAutoDelete: Sets the auto-delete flag for a disk attached to
-// an instance
+// an instance.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/setDiskAutoDelete
 func (r *InstancesService) SetDiskAutoDelete(project string, zone string, instance string, autoDelete bool, deviceName string) *InstancesSetDiskAutoDeleteCall {
 	c := &InstancesSetDiskAutoDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10623,7 +11683,7 @@ func (c *InstancesSetDiskAutoDeleteCall) Do() (*Operation, error) {
 		"zone":     c.zone,
 		"instance": c.instance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10638,7 +11698,7 @@ func (c *InstancesSetDiskAutoDeleteCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the auto-delete flag for a disk attached to an instance",
+	//   "description": "Sets the auto-delete flag for a disk attached to an instance.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instances.setDiskAutoDelete",
 	//   "parameterOrder": [
@@ -10656,28 +11716,28 @@ func (c *InstancesSetDiskAutoDeleteCall) Do() (*Operation, error) {
 	//       "type": "boolean"
 	//     },
 	//     "deviceName": {
-	//       "description": "Disk device name to modify.",
+	//       "description": "The device name of the disk to modify.",
 	//       "location": "query",
 	//       "pattern": "\\w[\\w.-]{0,254}",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "instance": {
-	//       "description": "Instance name.",
+	//       "description": "The instance name.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Project name.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10689,6 +11749,7 @@ func (c *InstancesSetDiskAutoDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -10708,6 +11769,7 @@ type InstancesSetMetadataCall struct {
 
 // SetMetadata: Sets metadata for the specified instance to the data
 // included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/setMetadata
 func (r *InstancesService) SetMetadata(project string, zone string, instance string, metadata *Metadata) *InstancesSetMetadataCall {
 	c := &InstancesSetMetadataCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10746,7 +11808,7 @@ func (c *InstancesSetMetadataCall) Do() (*Operation, error) {
 		"instance": c.instance,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10778,14 +11840,14 @@ func (c *InstancesSetMetadataCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10800,6 +11862,7 @@ func (c *InstancesSetMetadataCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -10818,6 +11881,7 @@ type InstancesSetSchedulingCall struct {
 }
 
 // SetScheduling: Sets an instance's scheduling options.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/setScheduling
 func (r *InstancesService) SetScheduling(project string, zone string, instance string, scheduling *Scheduling) *InstancesSetSchedulingCall {
 	c := &InstancesSetSchedulingCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10856,7 +11920,7 @@ func (c *InstancesSetSchedulingCall) Do() (*Operation, error) {
 		"instance": c.instance,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10888,14 +11952,14 @@ func (c *InstancesSetSchedulingCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Project name.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -10910,6 +11974,7 @@ func (c *InstancesSetSchedulingCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -10929,6 +11994,7 @@ type InstancesSetTagsCall struct {
 
 // SetTags: Sets tags for the specified instance to the data included in
 // the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/setTags
 func (r *InstancesService) SetTags(project string, zone string, instance string, tags *Tags) *InstancesSetTagsCall {
 	c := &InstancesSetTagsCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -10967,7 +12033,7 @@ func (c *InstancesSetTagsCall) Do() (*Operation, error) {
 		"instance": c.instance,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -10999,14 +12065,14 @@ func (c *InstancesSetTagsCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -11021,6 +12087,217 @@ func (c *InstancesSetTagsCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.instances.start":
+
+type InstancesStartCall struct {
+	s        *Service
+	project  string
+	zone     string
+	instance string
+	opt_     map[string]interface{}
+}
+
+// Start: This method starts an instance that was stopped using the
+// using the instances().stop method. For more information, see Restart
+// an instance.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/start
+func (r *InstancesService) Start(project string, zone string, instance string) *InstancesStartCall {
+	c := &InstancesStartCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.zone = zone
+	c.instance = instance
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *InstancesStartCall) Fields(s ...googleapi.Field) *InstancesStartCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *InstancesStartCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/zones/{zone}/instances/{instance}/start")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project":  c.project,
+		"zone":     c.zone,
+		"instance": c.instance,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "This method starts an instance that was stopped using the using the instances().stop method. For more information, see Restart an instance.",
+	//   "httpMethod": "POST",
+	//   "id": "compute.instances.start",
+	//   "parameterOrder": [
+	//     "project",
+	//     "zone",
+	//     "instance"
+	//   ],
+	//   "parameters": {
+	//     "instance": {
+	//       "description": "Name of the instance resource to start.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "zone": {
+	//       "description": "The name of the zone for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/zones/{zone}/instances/{instance}/start",
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.instances.stop":
+
+type InstancesStopCall struct {
+	s        *Service
+	project  string
+	zone     string
+	instance string
+	opt_     map[string]interface{}
+}
+
+// Stop: This method stops a running instance, shutting it down cleanly,
+// and allows you to restart the instance at a later time. Stopped
+// instances do not incur per-minute, virtual machine usage charges
+// while they are stopped, but any resources that the virtual machine is
+// using, such as persistent disks and static IP addresses,will continue
+// to be charged until they are deleted. For more information, see
+// Stopping an instance.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/instances/stop
+func (r *InstancesService) Stop(project string, zone string, instance string) *InstancesStopCall {
+	c := &InstancesStopCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.zone = zone
+	c.instance = instance
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *InstancesStopCall) Fields(s ...googleapi.Field) *InstancesStopCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *InstancesStopCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/zones/{zone}/instances/{instance}/stop")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project":  c.project,
+		"zone":     c.zone,
+		"instance": c.instance,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "This method stops a running instance, shutting it down cleanly, and allows you to restart the instance at a later time. Stopped instances do not incur per-minute, virtual machine usage charges while they are stopped, but any resources that the virtual machine is using, such as persistent disks and static IP addresses,will continue to be charged until they are deleted. For more information, see Stopping an instance.",
+	//   "httpMethod": "POST",
+	//   "id": "compute.instances.stop",
+	//   "parameterOrder": [
+	//     "project",
+	//     "zone",
+	//     "instance"
+	//   ],
+	//   "parameters": {
+	//     "instance": {
+	//       "description": "Name of the instance resource to stop.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "zone": {
+	//       "description": "The name of the zone for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/zones/{zone}/instances/{instance}/stop",
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -11037,6 +12314,7 @@ type LicensesGetCall struct {
 }
 
 // Get: Returns the specified license resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/licenses/get
 func (r *LicensesService) Get(project string, license string) *LicensesGetCall {
 	c := &LicensesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11066,7 +12344,7 @@ func (c *LicensesGetCall) Do() (*License, error) {
 		"project": c.project,
 		"license": c.license,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11097,7 +12375,7 @@ func (c *LicensesGetCall) Do() (*License, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -11109,6 +12387,7 @@ func (c *LicensesGetCall) Do() (*License, error) {
 	//     "$ref": "License"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -11126,6 +12405,7 @@ type MachineTypesAggregatedListCall struct {
 
 // AggregatedList: Retrieves the list of machine type resources grouped
 // by scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/machineTypes/aggregatedList
 func (r *MachineTypesService) AggregatedList(project string) *MachineTypesAggregatedListCall {
 	c := &MachineTypesAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11140,16 +12420,15 @@ func (c *MachineTypesAggregatedListCall) Filter(filter string) *MachineTypesAggr
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *MachineTypesAggregatedListCall) MaxResults(maxResults int64) *MachineTypesAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *MachineTypesAggregatedListCall) PageToken(pageToken string) *MachineTypesAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -11185,7 +12464,7 @@ func (c *MachineTypesAggregatedListCall) Do() (*MachineTypeAggregatedList, error
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11208,13 +12487,13 @@ func (c *MachineTypesAggregatedListCall) Do() (*MachineTypeAggregatedList, error
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -11222,12 +12501,12 @@ func (c *MachineTypesAggregatedListCall) Do() (*MachineTypeAggregatedList, error
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -11239,6 +12518,7 @@ func (c *MachineTypesAggregatedListCall) Do() (*MachineTypeAggregatedList, error
 	//     "$ref": "MachineTypeAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -11257,6 +12537,7 @@ type MachineTypesGetCall struct {
 }
 
 // Get: Returns the specified machine type resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/machineTypes/get
 func (r *MachineTypesService) Get(project string, zone string, machineType string) *MachineTypesGetCall {
 	c := &MachineTypesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11288,7 +12569,7 @@ func (c *MachineTypesGetCall) Do() (*MachineType, error) {
 		"zone":        c.zone,
 		"machineType": c.machineType,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11320,14 +12601,14 @@ func (c *MachineTypesGetCall) Do() (*MachineType, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -11339,6 +12620,7 @@ func (c *MachineTypesGetCall) Do() (*MachineType, error) {
 	//     "$ref": "MachineType"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -11357,6 +12639,7 @@ type MachineTypesListCall struct {
 
 // List: Retrieves the list of machine type resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/machineTypes/list
 func (r *MachineTypesService) List(project string, zone string) *MachineTypesListCall {
 	c := &MachineTypesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11372,16 +12655,15 @@ func (c *MachineTypesListCall) Filter(filter string) *MachineTypesListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *MachineTypesListCall) MaxResults(maxResults int64) *MachineTypesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *MachineTypesListCall) PageToken(pageToken string) *MachineTypesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -11418,7 +12700,7 @@ func (c *MachineTypesListCall) Do() (*MachineTypeList, error) {
 		"project": c.project,
 		"zone":    c.zone,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11442,13 +12724,13 @@ func (c *MachineTypesListCall) Do() (*MachineTypeList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -11456,19 +12738,19 @@ func (c *MachineTypesListCall) Do() (*MachineTypeList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
 	//       "type": "string"
 	//     },
 	//     "zone": {
-	//       "description": "Name of the zone scoping this request.",
+	//       "description": "The name of the zone for this request.",
 	//       "location": "path",
 	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
 	//       "required": true,
@@ -11480,6 +12762,7 @@ func (c *MachineTypesListCall) Do() (*MachineTypeList, error) {
 	//     "$ref": "MachineTypeList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -11497,6 +12780,7 @@ type NetworksDeleteCall struct {
 }
 
 // Delete: Deletes the specified network resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/networks/delete
 func (r *NetworksService) Delete(project string, network string) *NetworksDeleteCall {
 	c := &NetworksDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11526,7 +12810,7 @@ func (c *NetworksDeleteCall) Do() (*Operation, error) {
 		"project": c.project,
 		"network": c.network,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11557,7 +12841,7 @@ func (c *NetworksDeleteCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -11569,6 +12853,7 @@ func (c *NetworksDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -11585,6 +12870,7 @@ type NetworksGetCall struct {
 }
 
 // Get: Returns the specified network resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/networks/get
 func (r *NetworksService) Get(project string, network string) *NetworksGetCall {
 	c := &NetworksGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11614,7 +12900,7 @@ func (c *NetworksGetCall) Do() (*Network, error) {
 		"project": c.project,
 		"network": c.network,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11645,7 +12931,7 @@ func (c *NetworksGetCall) Do() (*Network, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -11657,6 +12943,7 @@ func (c *NetworksGetCall) Do() (*Network, error) {
 	//     "$ref": "Network"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -11675,6 +12962,7 @@ type NetworksInsertCall struct {
 
 // Insert: Creates a network resource in the specified project using the
 // data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/networks/insert
 func (r *NetworksService) Insert(project string, network *Network) *NetworksInsertCall {
 	c := &NetworksInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11709,7 +12997,7 @@ func (c *NetworksInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11732,7 +13020,7 @@ func (c *NetworksInsertCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -11747,6 +13035,7 @@ func (c *NetworksInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -11763,6 +13052,7 @@ type NetworksListCall struct {
 
 // List: Retrieves the list of network resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/networks/list
 func (r *NetworksService) List(project string) *NetworksListCall {
 	c := &NetworksListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11777,16 +13067,15 @@ func (c *NetworksListCall) Filter(filter string) *NetworksListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *NetworksListCall) MaxResults(maxResults int64) *NetworksListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *NetworksListCall) PageToken(pageToken string) *NetworksListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -11822,7 +13111,7 @@ func (c *NetworksListCall) Do() (*NetworkList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11845,13 +13134,13 @@ func (c *NetworksListCall) Do() (*NetworkList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -11859,12 +13148,12 @@ func (c *NetworksListCall) Do() (*NetworkList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -11876,6 +13165,7 @@ func (c *NetworksListCall) Do() (*NetworkList, error) {
 	//     "$ref": "NetworkList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -11892,6 +13182,7 @@ type ProjectsGetCall struct {
 }
 
 // Get: Returns the specified project resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/projects/get
 func (r *ProjectsService) Get(project string) *ProjectsGetCall {
 	c := &ProjectsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -11919,7 +13210,7 @@ func (c *ProjectsGetCall) Do() (*Project, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -11942,7 +13233,7 @@ func (c *ProjectsGetCall) Do() (*Project, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project resource to retrieve.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -11954,8 +13245,188 @@ func (c *ProjectsGetCall) Do() (*Project, error) {
 	//     "$ref": "Project"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
+	//   ]
+	// }
+
+}
+
+// method id "compute.projects.moveDisk":
+
+type ProjectsMoveDiskCall struct {
+	s               *Service
+	project         string
+	diskmoverequest *DiskMoveRequest
+	opt_            map[string]interface{}
+}
+
+// MoveDisk: Moves a persistent disk from one zone to another.
+func (r *ProjectsService) MoveDisk(project string, diskmoverequest *DiskMoveRequest) *ProjectsMoveDiskCall {
+	c := &ProjectsMoveDiskCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.diskmoverequest = diskmoverequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsMoveDiskCall) Fields(s ...googleapi.Field) *ProjectsMoveDiskCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *ProjectsMoveDiskCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.diskmoverequest)
+	if err != nil {
+		return nil, err
+	}
+	ctype := "application/json"
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/moveDisk")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+	})
+	req.Header.Set("Content-Type", ctype)
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Moves a persistent disk from one zone to another.",
+	//   "httpMethod": "POST",
+	//   "id": "compute.projects.moveDisk",
+	//   "parameterOrder": [
+	//     "project"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/moveDisk",
+	//   "request": {
+	//     "$ref": "DiskMoveRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.projects.moveInstance":
+
+type ProjectsMoveInstanceCall struct {
+	s                   *Service
+	project             string
+	instancemoverequest *InstanceMoveRequest
+	opt_                map[string]interface{}
+}
+
+// MoveInstance: Moves an instance and its attached persistent disks
+// from one zone to another.
+func (r *ProjectsService) MoveInstance(project string, instancemoverequest *InstanceMoveRequest) *ProjectsMoveInstanceCall {
+	c := &ProjectsMoveInstanceCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.instancemoverequest = instancemoverequest
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *ProjectsMoveInstanceCall) Fields(s ...googleapi.Field) *ProjectsMoveInstanceCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *ProjectsMoveInstanceCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.instancemoverequest)
+	if err != nil {
+		return nil, err
+	}
+	ctype := "application/json"
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/moveInstance")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+	})
+	req.Header.Set("Content-Type", ctype)
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Moves an instance and its attached persistent disks from one zone to another.",
+	//   "httpMethod": "POST",
+	//   "id": "compute.projects.moveInstance",
+	//   "parameterOrder": [
+	//     "project"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/moveInstance",
+	//   "request": {
+	//     "$ref": "InstanceMoveRequest"
+	//   },
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
 
@@ -11972,6 +13443,7 @@ type ProjectsSetCommonInstanceMetadataCall struct {
 
 // SetCommonInstanceMetadata: Sets metadata common to all instances
 // within the specified project using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/projects/setCommonInstanceMetadata
 func (r *ProjectsService) SetCommonInstanceMetadata(project string, metadata *Metadata) *ProjectsSetCommonInstanceMetadataCall {
 	c := &ProjectsSetCommonInstanceMetadataCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12006,7 +13478,7 @@ func (c *ProjectsSetCommonInstanceMetadataCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12029,7 +13501,7 @@ func (c *ProjectsSetCommonInstanceMetadataCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -12044,6 +13516,7 @@ func (c *ProjectsSetCommonInstanceMetadataCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -12059,7 +13532,11 @@ type ProjectsSetUsageExportBucketCall struct {
 	opt_                map[string]interface{}
 }
 
-// SetUsageExportBucket: Sets usage export location
+// SetUsageExportBucket: Enables the usage export feature and sets the
+// usage export bucket where reports are stored. If you provide an empty
+// request body using this method, the usage export feature will be
+// disabled.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/projects/setUsageExportBucket
 func (r *ProjectsService) SetUsageExportBucket(project string, usageexportlocation *UsageExportLocation) *ProjectsSetUsageExportBucketCall {
 	c := &ProjectsSetUsageExportBucketCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12094,7 +13571,7 @@ func (c *ProjectsSetUsageExportBucketCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12109,7 +13586,7 @@ func (c *ProjectsSetUsageExportBucketCall) Do() (*Operation, error) {
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets usage export location",
+	//   "description": "Enables the usage export feature and sets the usage export bucket where reports are stored. If you provide an empty request body using this method, the usage export feature will be disabled.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.projects.setUsageExportBucket",
 	//   "parameterOrder": [
@@ -12117,7 +13594,7 @@ func (c *ProjectsSetUsageExportBucketCall) Do() (*Operation, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -12132,6 +13609,7 @@ func (c *ProjectsSetUsageExportBucketCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/devstorage.full_control",
 	//     "https://www.googleapis.com/auth/devstorage.read_only",
@@ -12152,6 +13630,7 @@ type RegionOperationsDeleteCall struct {
 }
 
 // Delete: Deletes the specified region-specific operation resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/regionOperations/delete
 func (r *RegionOperationsService) Delete(project string, region string, operation string) *RegionOperationsDeleteCall {
 	c := &RegionOperationsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12183,7 +13662,7 @@ func (c *RegionOperationsDeleteCall) Do() error {
 		"region":    c.region,
 		"operation": c.operation,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return err
@@ -12211,7 +13690,7 @@ func (c *RegionOperationsDeleteCall) Do() error {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -12227,6 +13706,7 @@ func (c *RegionOperationsDeleteCall) Do() error {
 	//   },
 	//   "path": "{project}/regions/{region}/operations/{operation}",
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -12244,6 +13724,7 @@ type RegionOperationsGetCall struct {
 }
 
 // Get: Retrieves the specified region-specific operation resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/regionOperations/get
 func (r *RegionOperationsService) Get(project string, region string, operation string) *RegionOperationsGetCall {
 	c := &RegionOperationsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12275,7 +13756,7 @@ func (c *RegionOperationsGetCall) Do() (*Operation, error) {
 		"region":    c.region,
 		"operation": c.operation,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12307,7 +13788,7 @@ func (c *RegionOperationsGetCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -12326,6 +13807,7 @@ func (c *RegionOperationsGetCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -12344,6 +13826,7 @@ type RegionOperationsListCall struct {
 
 // List: Retrieves the list of operation resources contained within the
 // specified region.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/regionOperations/list
 func (r *RegionOperationsService) List(project string, region string) *RegionOperationsListCall {
 	c := &RegionOperationsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12359,16 +13842,15 @@ func (c *RegionOperationsListCall) Filter(filter string) *RegionOperationsListCa
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *RegionOperationsListCall) MaxResults(maxResults int64) *RegionOperationsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *RegionOperationsListCall) PageToken(pageToken string) *RegionOperationsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -12405,7 +13887,7 @@ func (c *RegionOperationsListCall) Do() (*OperationList, error) {
 		"project": c.project,
 		"region":  c.region,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12429,13 +13911,13 @@ func (c *RegionOperationsListCall) Do() (*OperationList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -12443,12 +13925,12 @@ func (c *RegionOperationsListCall) Do() (*OperationList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -12467,6 +13949,7 @@ func (c *RegionOperationsListCall) Do() (*OperationList, error) {
 	//     "$ref": "OperationList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -12484,6 +13967,7 @@ type RegionsGetCall struct {
 }
 
 // Get: Returns the specified region resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/regions/get
 func (r *RegionsService) Get(project string, region string) *RegionsGetCall {
 	c := &RegionsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12513,7 +13997,7 @@ func (c *RegionsGetCall) Do() (*Region, error) {
 		"project": c.project,
 		"region":  c.region,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12537,7 +14021,7 @@ func (c *RegionsGetCall) Do() (*Region, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -12556,6 +14040,7 @@ func (c *RegionsGetCall) Do() (*Region, error) {
 	//     "$ref": "Region"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -12573,6 +14058,7 @@ type RegionsListCall struct {
 
 // List: Retrieves the list of region resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/regions/list
 func (r *RegionsService) List(project string) *RegionsListCall {
 	c := &RegionsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12587,16 +14073,15 @@ func (c *RegionsListCall) Filter(filter string) *RegionsListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *RegionsListCall) MaxResults(maxResults int64) *RegionsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *RegionsListCall) PageToken(pageToken string) *RegionsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -12632,7 +14117,7 @@ func (c *RegionsListCall) Do() (*RegionList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12655,13 +14140,13 @@ func (c *RegionsListCall) Do() (*RegionList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -12669,12 +14154,12 @@ func (c *RegionsListCall) Do() (*RegionList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -12686,6 +14171,7 @@ func (c *RegionsListCall) Do() (*RegionList, error) {
 	//     "$ref": "RegionList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -12703,6 +14189,7 @@ type RoutesDeleteCall struct {
 }
 
 // Delete: Deletes the specified route resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/routes/delete
 func (r *RoutesService) Delete(project string, route string) *RoutesDeleteCall {
 	c := &RoutesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12732,7 +14219,7 @@ func (c *RoutesDeleteCall) Do() (*Operation, error) {
 		"project": c.project,
 		"route":   c.route,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12775,6 +14262,7 @@ func (c *RoutesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -12791,6 +14279,7 @@ type RoutesGetCall struct {
 }
 
 // Get: Returns the specified route resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/routes/get
 func (r *RoutesService) Get(project string, route string) *RoutesGetCall {
 	c := &RoutesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12820,7 +14309,7 @@ func (c *RoutesGetCall) Do() (*Route, error) {
 		"project": c.project,
 		"route":   c.route,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12863,6 +14352,7 @@ func (c *RoutesGetCall) Do() (*Route, error) {
 	//     "$ref": "Route"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -12881,6 +14371,7 @@ type RoutesInsertCall struct {
 
 // Insert: Creates a route resource in the specified project using the
 // data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/routes/insert
 func (r *RoutesService) Insert(project string, route *Route) *RoutesInsertCall {
 	c := &RoutesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12915,7 +14406,7 @@ func (c *RoutesInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -12953,6 +14444,7 @@ func (c *RoutesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -12969,6 +14461,7 @@ type RoutesListCall struct {
 
 // List: Retrieves the list of route resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/routes/list
 func (r *RoutesService) List(project string) *RoutesListCall {
 	c := &RoutesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -12983,16 +14476,15 @@ func (c *RoutesListCall) Filter(filter string) *RoutesListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *RoutesListCall) MaxResults(maxResults int64) *RoutesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *RoutesListCall) PageToken(pageToken string) *RoutesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -13028,7 +14520,7 @@ func (c *RoutesListCall) Do() (*RouteList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13051,13 +14543,13 @@ func (c *RoutesListCall) Do() (*RouteList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -13065,7 +14557,7 @@ func (c *RoutesListCall) Do() (*RouteList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -13082,6 +14574,7 @@ func (c *RoutesListCall) Do() (*RouteList, error) {
 	//     "$ref": "RouteList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -13099,6 +14592,7 @@ type SnapshotsDeleteCall struct {
 }
 
 // Delete: Deletes the specified persistent disk snapshot resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/snapshots/delete
 func (r *SnapshotsService) Delete(project string, snapshot string) *SnapshotsDeleteCall {
 	c := &SnapshotsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13128,7 +14622,7 @@ func (c *SnapshotsDeleteCall) Do() (*Operation, error) {
 		"project":  c.project,
 		"snapshot": c.snapshot,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13171,6 +14665,7 @@ func (c *SnapshotsDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -13187,6 +14682,7 @@ type SnapshotsGetCall struct {
 }
 
 // Get: Returns the specified persistent disk snapshot resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/snapshots/get
 func (r *SnapshotsService) Get(project string, snapshot string) *SnapshotsGetCall {
 	c := &SnapshotsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13216,7 +14712,7 @@ func (c *SnapshotsGetCall) Do() (*Snapshot, error) {
 		"project":  c.project,
 		"snapshot": c.snapshot,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13259,6 +14755,7 @@ func (c *SnapshotsGetCall) Do() (*Snapshot, error) {
 	//     "$ref": "Snapshot"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -13276,6 +14773,7 @@ type SnapshotsListCall struct {
 
 // List: Retrieves the list of persistent disk snapshot resources
 // contained within the specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/snapshots/list
 func (r *SnapshotsService) List(project string) *SnapshotsListCall {
 	c := &SnapshotsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13290,16 +14788,15 @@ func (c *SnapshotsListCall) Filter(filter string) *SnapshotsListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *SnapshotsListCall) MaxResults(maxResults int64) *SnapshotsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *SnapshotsListCall) PageToken(pageToken string) *SnapshotsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -13335,7 +14832,7 @@ func (c *SnapshotsListCall) Do() (*SnapshotList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13358,13 +14855,13 @@ func (c *SnapshotsListCall) Do() (*SnapshotList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -13372,7 +14869,7 @@ func (c *SnapshotsListCall) Do() (*SnapshotList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -13389,6 +14886,7 @@ func (c *SnapshotsListCall) Do() (*SnapshotList, error) {
 	//     "$ref": "SnapshotList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -13406,6 +14904,7 @@ type TargetHttpProxiesDeleteCall struct {
 }
 
 // Delete: Deletes the specified TargetHttpProxy resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetHttpProxies/delete
 func (r *TargetHttpProxiesService) Delete(project string, targetHttpProxy string) *TargetHttpProxiesDeleteCall {
 	c := &TargetHttpProxiesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13435,7 +14934,7 @@ func (c *TargetHttpProxiesDeleteCall) Do() (*Operation, error) {
 		"project":         c.project,
 		"targetHttpProxy": c.targetHttpProxy,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13478,6 +14977,7 @@ func (c *TargetHttpProxiesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -13494,6 +14994,7 @@ type TargetHttpProxiesGetCall struct {
 }
 
 // Get: Returns the specified TargetHttpProxy resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetHttpProxies/get
 func (r *TargetHttpProxiesService) Get(project string, targetHttpProxy string) *TargetHttpProxiesGetCall {
 	c := &TargetHttpProxiesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13523,7 +15024,7 @@ func (c *TargetHttpProxiesGetCall) Do() (*TargetHttpProxy, error) {
 		"project":         c.project,
 		"targetHttpProxy": c.targetHttpProxy,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13566,6 +15067,7 @@ func (c *TargetHttpProxiesGetCall) Do() (*TargetHttpProxy, error) {
 	//     "$ref": "TargetHttpProxy"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -13584,6 +15086,7 @@ type TargetHttpProxiesInsertCall struct {
 
 // Insert: Creates a TargetHttpProxy resource in the specified project
 // using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetHttpProxies/insert
 func (r *TargetHttpProxiesService) Insert(project string, targethttpproxy *TargetHttpProxy) *TargetHttpProxiesInsertCall {
 	c := &TargetHttpProxiesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13618,7 +15121,7 @@ func (c *TargetHttpProxiesInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13656,6 +15159,7 @@ func (c *TargetHttpProxiesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -13672,6 +15176,7 @@ type TargetHttpProxiesListCall struct {
 
 // List: Retrieves the list of TargetHttpProxy resources available to
 // the specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetHttpProxies/list
 func (r *TargetHttpProxiesService) List(project string) *TargetHttpProxiesListCall {
 	c := &TargetHttpProxiesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13686,16 +15191,15 @@ func (c *TargetHttpProxiesListCall) Filter(filter string) *TargetHttpProxiesList
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *TargetHttpProxiesListCall) MaxResults(maxResults int64) *TargetHttpProxiesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *TargetHttpProxiesListCall) PageToken(pageToken string) *TargetHttpProxiesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -13731,7 +15235,7 @@ func (c *TargetHttpProxiesListCall) Do() (*TargetHttpProxyList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13754,13 +15258,13 @@ func (c *TargetHttpProxiesListCall) Do() (*TargetHttpProxyList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -13768,7 +15272,7 @@ func (c *TargetHttpProxiesListCall) Do() (*TargetHttpProxyList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -13785,6 +15289,7 @@ func (c *TargetHttpProxiesListCall) Do() (*TargetHttpProxyList, error) {
 	//     "$ref": "TargetHttpProxyList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -13803,6 +15308,7 @@ type TargetHttpProxiesSetUrlMapCall struct {
 }
 
 // SetUrlMap: Changes the URL map for TargetHttpProxy.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetHttpProxies/setUrlMap
 func (r *TargetHttpProxiesService) SetUrlMap(project string, targetHttpProxy string, urlmapreference *UrlMapReference) *TargetHttpProxiesSetUrlMapCall {
 	c := &TargetHttpProxiesSetUrlMapCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13839,7 +15345,7 @@ func (c *TargetHttpProxiesSetUrlMapCall) Do() (*Operation, error) {
 		"targetHttpProxy": c.targetHttpProxy,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13885,6 +15391,7 @@ func (c *TargetHttpProxiesSetUrlMapCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -13901,6 +15408,7 @@ type TargetInstancesAggregatedListCall struct {
 
 // AggregatedList: Retrieves the list of target instances grouped by
 // scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetInstances/aggregatedList
 func (r *TargetInstancesService) AggregatedList(project string) *TargetInstancesAggregatedListCall {
 	c := &TargetInstancesAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -13915,16 +15423,15 @@ func (c *TargetInstancesAggregatedListCall) Filter(filter string) *TargetInstanc
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *TargetInstancesAggregatedListCall) MaxResults(maxResults int64) *TargetInstancesAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *TargetInstancesAggregatedListCall) PageToken(pageToken string) *TargetInstancesAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -13960,7 +15467,7 @@ func (c *TargetInstancesAggregatedListCall) Do() (*TargetInstanceAggregatedList,
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -13983,13 +15490,13 @@ func (c *TargetInstancesAggregatedListCall) Do() (*TargetInstanceAggregatedList,
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -13997,7 +15504,7 @@ func (c *TargetInstancesAggregatedListCall) Do() (*TargetInstanceAggregatedList,
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -14014,6 +15521,7 @@ func (c *TargetInstancesAggregatedListCall) Do() (*TargetInstanceAggregatedList,
 	//     "$ref": "TargetInstanceAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -14032,6 +15540,7 @@ type TargetInstancesDeleteCall struct {
 }
 
 // Delete: Deletes the specified TargetInstance resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetInstances/delete
 func (r *TargetInstancesService) Delete(project string, zone string, targetInstance string) *TargetInstancesDeleteCall {
 	c := &TargetInstancesDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14063,7 +15572,7 @@ func (c *TargetInstancesDeleteCall) Do() (*Operation, error) {
 		"zone":           c.zone,
 		"targetInstance": c.targetInstance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14114,6 +15623,7 @@ func (c *TargetInstancesDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -14131,6 +15641,7 @@ type TargetInstancesGetCall struct {
 }
 
 // Get: Returns the specified TargetInstance resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetInstances/get
 func (r *TargetInstancesService) Get(project string, zone string, targetInstance string) *TargetInstancesGetCall {
 	c := &TargetInstancesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14162,7 +15673,7 @@ func (c *TargetInstancesGetCall) Do() (*TargetInstance, error) {
 		"zone":           c.zone,
 		"targetInstance": c.targetInstance,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14213,6 +15724,7 @@ func (c *TargetInstancesGetCall) Do() (*TargetInstance, error) {
 	//     "$ref": "TargetInstance"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -14232,6 +15744,7 @@ type TargetInstancesInsertCall struct {
 
 // Insert: Creates a TargetInstance resource in the specified project
 // and zone using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetInstances/insert
 func (r *TargetInstancesService) Insert(project string, zone string, targetinstance *TargetInstance) *TargetInstancesInsertCall {
 	c := &TargetInstancesInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14268,7 +15781,7 @@ func (c *TargetInstancesInsertCall) Do() (*Operation, error) {
 		"zone":    c.zone,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14314,6 +15827,7 @@ func (c *TargetInstancesInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -14331,6 +15845,7 @@ type TargetInstancesListCall struct {
 
 // List: Retrieves the list of TargetInstance resources available to the
 // specified project and zone.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetInstances/list
 func (r *TargetInstancesService) List(project string, zone string) *TargetInstancesListCall {
 	c := &TargetInstancesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14346,16 +15861,15 @@ func (c *TargetInstancesListCall) Filter(filter string) *TargetInstancesListCall
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *TargetInstancesListCall) MaxResults(maxResults int64) *TargetInstancesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *TargetInstancesListCall) PageToken(pageToken string) *TargetInstancesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -14392,7 +15906,7 @@ func (c *TargetInstancesListCall) Do() (*TargetInstanceList, error) {
 		"project": c.project,
 		"zone":    c.zone,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14416,13 +15930,13 @@ func (c *TargetInstancesListCall) Do() (*TargetInstanceList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -14430,7 +15944,7 @@ func (c *TargetInstancesListCall) Do() (*TargetInstanceList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -14454,6 +15968,7 @@ func (c *TargetInstancesListCall) Do() (*TargetInstanceList, error) {
 	//     "$ref": "TargetInstanceList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -14473,6 +15988,7 @@ type TargetPoolsAddHealthCheckCall struct {
 }
 
 // AddHealthCheck: Adds health check URL to targetPool.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/addHealthCheck
 func (r *TargetPoolsService) AddHealthCheck(project string, region string, targetPool string, targetpoolsaddhealthcheckrequest *TargetPoolsAddHealthCheckRequest) *TargetPoolsAddHealthCheckCall {
 	c := &TargetPoolsAddHealthCheckCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14511,7 +16027,7 @@ func (c *TargetPoolsAddHealthCheckCall) Do() (*Operation, error) {
 		"targetPool": c.targetPool,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14564,6 +16080,7 @@ func (c *TargetPoolsAddHealthCheckCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -14582,6 +16099,7 @@ type TargetPoolsAddInstanceCall struct {
 }
 
 // AddInstance: Adds instance url to targetPool.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/addInstance
 func (r *TargetPoolsService) AddInstance(project string, region string, targetPool string, targetpoolsaddinstancerequest *TargetPoolsAddInstanceRequest) *TargetPoolsAddInstanceCall {
 	c := &TargetPoolsAddInstanceCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14620,7 +16138,7 @@ func (c *TargetPoolsAddInstanceCall) Do() (*Operation, error) {
 		"targetPool": c.targetPool,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14673,6 +16191,7 @@ func (c *TargetPoolsAddInstanceCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -14688,6 +16207,7 @@ type TargetPoolsAggregatedListCall struct {
 }
 
 // AggregatedList: Retrieves the list of target pools grouped by scope.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/aggregatedList
 func (r *TargetPoolsService) AggregatedList(project string) *TargetPoolsAggregatedListCall {
 	c := &TargetPoolsAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14702,16 +16222,15 @@ func (c *TargetPoolsAggregatedListCall) Filter(filter string) *TargetPoolsAggreg
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *TargetPoolsAggregatedListCall) MaxResults(maxResults int64) *TargetPoolsAggregatedListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *TargetPoolsAggregatedListCall) PageToken(pageToken string) *TargetPoolsAggregatedListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -14747,7 +16266,7 @@ func (c *TargetPoolsAggregatedListCall) Do() (*TargetPoolAggregatedList, error) 
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14770,13 +16289,13 @@ func (c *TargetPoolsAggregatedListCall) Do() (*TargetPoolAggregatedList, error) 
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -14784,7 +16303,7 @@ func (c *TargetPoolsAggregatedListCall) Do() (*TargetPoolAggregatedList, error) 
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -14801,6 +16320,7 @@ func (c *TargetPoolsAggregatedListCall) Do() (*TargetPoolAggregatedList, error) 
 	//     "$ref": "TargetPoolAggregatedList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -14819,6 +16339,7 @@ type TargetPoolsDeleteCall struct {
 }
 
 // Delete: Deletes the specified TargetPool resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/delete
 func (r *TargetPoolsService) Delete(project string, region string, targetPool string) *TargetPoolsDeleteCall {
 	c := &TargetPoolsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14850,7 +16371,7 @@ func (c *TargetPoolsDeleteCall) Do() (*Operation, error) {
 		"region":     c.region,
 		"targetPool": c.targetPool,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -14901,6 +16422,7 @@ func (c *TargetPoolsDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -14918,6 +16440,7 @@ type TargetPoolsGetCall struct {
 }
 
 // Get: Returns the specified TargetPool resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/get
 func (r *TargetPoolsService) Get(project string, region string, targetPool string) *TargetPoolsGetCall {
 	c := &TargetPoolsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -14949,7 +16472,7 @@ func (c *TargetPoolsGetCall) Do() (*TargetPool, error) {
 		"region":     c.region,
 		"targetPool": c.targetPool,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15000,6 +16523,7 @@ func (c *TargetPoolsGetCall) Do() (*TargetPool, error) {
 	//     "$ref": "TargetPool"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -15020,6 +16544,7 @@ type TargetPoolsGetHealthCall struct {
 
 // GetHealth: Gets the most recent health check results for each IP for
 // the given instance that is referenced by given TargetPool.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/getHealth
 func (r *TargetPoolsService) GetHealth(project string, region string, targetPool string, instancereference *InstanceReference) *TargetPoolsGetHealthCall {
 	c := &TargetPoolsGetHealthCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15058,7 +16583,7 @@ func (c *TargetPoolsGetHealthCall) Do() (*TargetPoolInstanceHealth, error) {
 		"targetPool": c.targetPool,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15111,6 +16636,7 @@ func (c *TargetPoolsGetHealthCall) Do() (*TargetPoolInstanceHealth, error) {
 	//     "$ref": "TargetPoolInstanceHealth"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -15130,6 +16656,7 @@ type TargetPoolsInsertCall struct {
 
 // Insert: Creates a TargetPool resource in the specified project and
 // region using the data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/insert
 func (r *TargetPoolsService) Insert(project string, region string, targetpool *TargetPool) *TargetPoolsInsertCall {
 	c := &TargetPoolsInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15166,7 +16693,7 @@ func (c *TargetPoolsInsertCall) Do() (*Operation, error) {
 		"region":  c.region,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15212,6 +16739,7 @@ func (c *TargetPoolsInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -15229,6 +16757,7 @@ type TargetPoolsListCall struct {
 
 // List: Retrieves the list of TargetPool resources available to the
 // specified project and region.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/list
 func (r *TargetPoolsService) List(project string, region string) *TargetPoolsListCall {
 	c := &TargetPoolsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15244,16 +16773,15 @@ func (c *TargetPoolsListCall) Filter(filter string) *TargetPoolsListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *TargetPoolsListCall) MaxResults(maxResults int64) *TargetPoolsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *TargetPoolsListCall) PageToken(pageToken string) *TargetPoolsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -15290,7 +16818,7 @@ func (c *TargetPoolsListCall) Do() (*TargetPoolList, error) {
 		"project": c.project,
 		"region":  c.region,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15314,13 +16842,13 @@ func (c *TargetPoolsListCall) Do() (*TargetPoolList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -15328,7 +16856,7 @@ func (c *TargetPoolsListCall) Do() (*TargetPoolList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -15352,6 +16880,7 @@ func (c *TargetPoolsListCall) Do() (*TargetPoolList, error) {
 	//     "$ref": "TargetPoolList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -15371,6 +16900,7 @@ type TargetPoolsRemoveHealthCheckCall struct {
 }
 
 // RemoveHealthCheck: Removes health check URL from targetPool.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/removeHealthCheck
 func (r *TargetPoolsService) RemoveHealthCheck(project string, region string, targetPool string, targetpoolsremovehealthcheckrequest *TargetPoolsRemoveHealthCheckRequest) *TargetPoolsRemoveHealthCheckCall {
 	c := &TargetPoolsRemoveHealthCheckCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15409,7 +16939,7 @@ func (c *TargetPoolsRemoveHealthCheckCall) Do() (*Operation, error) {
 		"targetPool": c.targetPool,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15462,6 +16992,7 @@ func (c *TargetPoolsRemoveHealthCheckCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -15480,6 +17011,7 @@ type TargetPoolsRemoveInstanceCall struct {
 }
 
 // RemoveInstance: Removes instance URL from targetPool.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/removeInstance
 func (r *TargetPoolsService) RemoveInstance(project string, region string, targetPool string, targetpoolsremoveinstancerequest *TargetPoolsRemoveInstanceRequest) *TargetPoolsRemoveInstanceCall {
 	c := &TargetPoolsRemoveInstanceCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15518,7 +17050,7 @@ func (c *TargetPoolsRemoveInstanceCall) Do() (*Operation, error) {
 		"targetPool": c.targetPool,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15571,6 +17103,7 @@ func (c *TargetPoolsRemoveInstanceCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -15589,6 +17122,7 @@ type TargetPoolsSetBackupCall struct {
 }
 
 // SetBackup: Changes backup pool configurations.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/targetPools/setBackup
 func (r *TargetPoolsService) SetBackup(project string, region string, targetPool string, targetreference *TargetReference) *TargetPoolsSetBackupCall {
 	c := &TargetPoolsSetBackupCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15637,7 +17171,7 @@ func (c *TargetPoolsSetBackupCall) Do() (*Operation, error) {
 		"targetPool": c.targetPool,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15697,7 +17231,581 @@ func (c *TargetPoolsSetBackupCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.targetVpnGateways.aggregatedList":
+
+type TargetVpnGatewaysAggregatedListCall struct {
+	s       *Service
+	project string
+	opt_    map[string]interface{}
+}
+
+// AggregatedList: Retrieves the list of target VPN gateways grouped by
+// scope.
+func (r *TargetVpnGatewaysService) AggregatedList(project string) *TargetVpnGatewaysAggregatedListCall {
+	c := &TargetVpnGatewaysAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	return c
+}
+
+// Filter sets the optional parameter "filter": Filter expression for
+// filtering listed resources.
+func (c *TargetVpnGatewaysAggregatedListCall) Filter(filter string) *TargetVpnGatewaysAggregatedListCall {
+	c.opt_["filter"] = filter
+	return c
+}
+
+// MaxResults sets the optional parameter "maxResults": Maximum count of
+// results to be returned.
+func (c *TargetVpnGatewaysAggregatedListCall) MaxResults(maxResults int64) *TargetVpnGatewaysAggregatedListCall {
+	c.opt_["maxResults"] = maxResults
+	return c
+}
+
+// PageToken sets the optional parameter "pageToken": Tag returned by a
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
+func (c *TargetVpnGatewaysAggregatedListCall) PageToken(pageToken string) *TargetVpnGatewaysAggregatedListCall {
+	c.opt_["pageToken"] = pageToken
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *TargetVpnGatewaysAggregatedListCall) Fields(s ...googleapi.Field) *TargetVpnGatewaysAggregatedListCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *TargetVpnGatewaysAggregatedListCall) Do() (*TargetVpnGatewayAggregatedList, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["filter"]; ok {
+		params.Set("filter", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["maxResults"]; ok {
+		params.Set("maxResults", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["pageToken"]; ok {
+		params.Set("pageToken", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/aggregated/targetVpnGateways")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *TargetVpnGatewayAggregatedList
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Retrieves the list of target VPN gateways grouped by scope.",
+	//   "httpMethod": "GET",
+	//   "id": "compute.targetVpnGateways.aggregatedList",
+	//   "parameterOrder": [
+	//     "project"
+	//   ],
+	//   "parameters": {
+	//     "filter": {
+	//       "description": "Filter expression for filtering listed resources.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "maxResults": {
+	//       "default": "500",
+	//       "description": "Maximum count of results to be returned.",
+	//       "format": "uint32",
+	//       "location": "query",
+	//       "maximum": "500",
+	//       "minimum": "0",
+	//       "type": "integer"
+	//     },
+	//     "pageToken": {
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/aggregated/targetVpnGateways",
+	//   "response": {
+	//     "$ref": "TargetVpnGatewayAggregatedList"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute",
+	//     "https://www.googleapis.com/auth/compute.readonly"
+	//   ]
+	// }
+
+}
+
+// method id "compute.targetVpnGateways.delete":
+
+type TargetVpnGatewaysDeleteCall struct {
+	s                *Service
+	project          string
+	region           string
+	targetVpnGateway string
+	opt_             map[string]interface{}
+}
+
+// Delete: Deletes the specified TargetVpnGateway resource.
+func (r *TargetVpnGatewaysService) Delete(project string, region string, targetVpnGateway string) *TargetVpnGatewaysDeleteCall {
+	c := &TargetVpnGatewaysDeleteCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	c.targetVpnGateway = targetVpnGateway
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *TargetVpnGatewaysDeleteCall) Fields(s ...googleapi.Field) *TargetVpnGatewaysDeleteCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *TargetVpnGatewaysDeleteCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/targetVpnGateways/{targetVpnGateway}")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("DELETE", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project":          c.project,
+		"region":           c.region,
+		"targetVpnGateway": c.targetVpnGateway,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Deletes the specified TargetVpnGateway resource.",
+	//   "httpMethod": "DELETE",
+	//   "id": "compute.targetVpnGateways.delete",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region",
+	//     "targetVpnGateway"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "targetVpnGateway": {
+	//       "description": "Name of the TargetVpnGateway resource to delete.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/targetVpnGateways/{targetVpnGateway}",
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.targetVpnGateways.get":
+
+type TargetVpnGatewaysGetCall struct {
+	s                *Service
+	project          string
+	region           string
+	targetVpnGateway string
+	opt_             map[string]interface{}
+}
+
+// Get: Returns the specified TargetVpnGateway resource.
+func (r *TargetVpnGatewaysService) Get(project string, region string, targetVpnGateway string) *TargetVpnGatewaysGetCall {
+	c := &TargetVpnGatewaysGetCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	c.targetVpnGateway = targetVpnGateway
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *TargetVpnGatewaysGetCall) Fields(s ...googleapi.Field) *TargetVpnGatewaysGetCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *TargetVpnGatewaysGetCall) Do() (*TargetVpnGateway, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/targetVpnGateways/{targetVpnGateway}")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project":          c.project,
+		"region":           c.region,
+		"targetVpnGateway": c.targetVpnGateway,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *TargetVpnGateway
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Returns the specified TargetVpnGateway resource.",
+	//   "httpMethod": "GET",
+	//   "id": "compute.targetVpnGateways.get",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region",
+	//     "targetVpnGateway"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "targetVpnGateway": {
+	//       "description": "Name of the TargetVpnGateway resource to return.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/targetVpnGateways/{targetVpnGateway}",
+	//   "response": {
+	//     "$ref": "TargetVpnGateway"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute",
+	//     "https://www.googleapis.com/auth/compute.readonly"
+	//   ]
+	// }
+
+}
+
+// method id "compute.targetVpnGateways.insert":
+
+type TargetVpnGatewaysInsertCall struct {
+	s                *Service
+	project          string
+	region           string
+	targetvpngateway *TargetVpnGateway
+	opt_             map[string]interface{}
+}
+
+// Insert: Creates a TargetVpnGateway resource in the specified project
+// and region using the data included in the request.
+func (r *TargetVpnGatewaysService) Insert(project string, region string, targetvpngateway *TargetVpnGateway) *TargetVpnGatewaysInsertCall {
+	c := &TargetVpnGatewaysInsertCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	c.targetvpngateway = targetvpngateway
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *TargetVpnGatewaysInsertCall) Fields(s ...googleapi.Field) *TargetVpnGatewaysInsertCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *TargetVpnGatewaysInsertCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.targetvpngateway)
+	if err != nil {
+		return nil, err
+	}
+	ctype := "application/json"
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/targetVpnGateways")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+		"region":  c.region,
+	})
+	req.Header.Set("Content-Type", ctype)
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Creates a TargetVpnGateway resource in the specified project and region using the data included in the request.",
+	//   "httpMethod": "POST",
+	//   "id": "compute.targetVpnGateways.insert",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/targetVpnGateways",
+	//   "request": {
+	//     "$ref": "TargetVpnGateway"
+	//   },
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.targetVpnGateways.list":
+
+type TargetVpnGatewaysListCall struct {
+	s       *Service
+	project string
+	region  string
+	opt_    map[string]interface{}
+}
+
+// List: Retrieves the list of TargetVpnGateway resources available to
+// the specified project and region.
+func (r *TargetVpnGatewaysService) List(project string, region string) *TargetVpnGatewaysListCall {
+	c := &TargetVpnGatewaysListCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	return c
+}
+
+// Filter sets the optional parameter "filter": Filter expression for
+// filtering listed resources.
+func (c *TargetVpnGatewaysListCall) Filter(filter string) *TargetVpnGatewaysListCall {
+	c.opt_["filter"] = filter
+	return c
+}
+
+// MaxResults sets the optional parameter "maxResults": Maximum count of
+// results to be returned.
+func (c *TargetVpnGatewaysListCall) MaxResults(maxResults int64) *TargetVpnGatewaysListCall {
+	c.opt_["maxResults"] = maxResults
+	return c
+}
+
+// PageToken sets the optional parameter "pageToken": Tag returned by a
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
+func (c *TargetVpnGatewaysListCall) PageToken(pageToken string) *TargetVpnGatewaysListCall {
+	c.opt_["pageToken"] = pageToken
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *TargetVpnGatewaysListCall) Fields(s ...googleapi.Field) *TargetVpnGatewaysListCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *TargetVpnGatewaysListCall) Do() (*TargetVpnGatewayList, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["filter"]; ok {
+		params.Set("filter", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["maxResults"]; ok {
+		params.Set("maxResults", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["pageToken"]; ok {
+		params.Set("pageToken", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/targetVpnGateways")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+		"region":  c.region,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *TargetVpnGatewayList
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Retrieves the list of TargetVpnGateway resources available to the specified project and region.",
+	//   "httpMethod": "GET",
+	//   "id": "compute.targetVpnGateways.list",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region"
+	//   ],
+	//   "parameters": {
+	//     "filter": {
+	//       "description": "Filter expression for filtering listed resources.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "maxResults": {
+	//       "default": "500",
+	//       "description": "Maximum count of results to be returned.",
+	//       "format": "uint32",
+	//       "location": "query",
+	//       "maximum": "500",
+	//       "minimum": "0",
+	//       "type": "integer"
+	//     },
+	//     "pageToken": {
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/targetVpnGateways",
+	//   "response": {
+	//     "$ref": "TargetVpnGatewayList"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute",
+	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
 	// }
 
@@ -15713,6 +17821,7 @@ type UrlMapsDeleteCall struct {
 }
 
 // Delete: Deletes the specified UrlMap resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/urlMaps/delete
 func (r *UrlMapsService) Delete(project string, urlMap string) *UrlMapsDeleteCall {
 	c := &UrlMapsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15742,7 +17851,7 @@ func (c *UrlMapsDeleteCall) Do() (*Operation, error) {
 		"project": c.project,
 		"urlMap":  c.urlMap,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15785,6 +17894,7 @@ func (c *UrlMapsDeleteCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -15801,6 +17911,7 @@ type UrlMapsGetCall struct {
 }
 
 // Get: Returns the specified UrlMap resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/urlMaps/get
 func (r *UrlMapsService) Get(project string, urlMap string) *UrlMapsGetCall {
 	c := &UrlMapsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15830,7 +17941,7 @@ func (c *UrlMapsGetCall) Do() (*UrlMap, error) {
 		"project": c.project,
 		"urlMap":  c.urlMap,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15873,6 +17984,7 @@ func (c *UrlMapsGetCall) Do() (*UrlMap, error) {
 	//     "$ref": "UrlMap"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -15891,6 +18003,7 @@ type UrlMapsInsertCall struct {
 
 // Insert: Creates a UrlMap resource in the specified project using the
 // data included in the request.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/urlMaps/insert
 func (r *UrlMapsService) Insert(project string, urlmap *UrlMap) *UrlMapsInsertCall {
 	c := &UrlMapsInsertCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15925,7 +18038,7 @@ func (c *UrlMapsInsertCall) Do() (*Operation, error) {
 		"project": c.project,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -15963,6 +18076,7 @@ func (c *UrlMapsInsertCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -15979,6 +18093,7 @@ type UrlMapsListCall struct {
 
 // List: Retrieves the list of UrlMap resources available to the
 // specified project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/urlMaps/list
 func (r *UrlMapsService) List(project string) *UrlMapsListCall {
 	c := &UrlMapsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -15993,16 +18108,15 @@ func (c *UrlMapsListCall) Filter(filter string) *UrlMapsListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *UrlMapsListCall) MaxResults(maxResults int64) *UrlMapsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *UrlMapsListCall) PageToken(pageToken string) *UrlMapsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -16038,7 +18152,7 @@ func (c *UrlMapsListCall) Do() (*UrlMapList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16061,13 +18175,13 @@ func (c *UrlMapsListCall) Do() (*UrlMapList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -16075,7 +18189,7 @@ func (c *UrlMapsListCall) Do() (*UrlMapList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -16092,6 +18206,7 @@ func (c *UrlMapsListCall) Do() (*UrlMapList, error) {
 	//     "$ref": "UrlMapList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -16111,6 +18226,7 @@ type UrlMapsPatchCall struct {
 
 // Patch: Update the entire content of the UrlMap resource. This method
 // supports patch semantics.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/urlMaps/patch
 func (r *UrlMapsService) Patch(project string, urlMap string, urlmap *UrlMap) *UrlMapsPatchCall {
 	c := &UrlMapsPatchCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16147,7 +18263,7 @@ func (c *UrlMapsPatchCall) Do() (*Operation, error) {
 		"urlMap":  c.urlMap,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16193,6 +18309,7 @@ func (c *UrlMapsPatchCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -16210,6 +18327,7 @@ type UrlMapsUpdateCall struct {
 }
 
 // Update: Update the entire content of the UrlMap resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/urlMaps/update
 func (r *UrlMapsService) Update(project string, urlMap string, urlmap *UrlMap) *UrlMapsUpdateCall {
 	c := &UrlMapsUpdateCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16246,7 +18364,7 @@ func (c *UrlMapsUpdateCall) Do() (*Operation, error) {
 		"urlMap":  c.urlMap,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16292,6 +18410,7 @@ func (c *UrlMapsUpdateCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -16311,6 +18430,7 @@ type UrlMapsValidateCall struct {
 // Validate: Run static validation for the UrlMap. In particular, the
 // tests of the provided UrlMap will be run. Calling this method does
 // NOT create the UrlMap.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/urlMaps/validate
 func (r *UrlMapsService) Validate(project string, urlMap string, urlmapsvalidaterequest *UrlMapsValidateRequest) *UrlMapsValidateCall {
 	c := &UrlMapsValidateCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16347,7 +18467,7 @@ func (c *UrlMapsValidateCall) Do() (*UrlMapsValidateResponse, error) {
 		"urlMap":  c.urlMap,
 	})
 	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16393,7 +18513,580 @@ func (c *UrlMapsValidateCall) Do() (*UrlMapsValidateResponse, error) {
 	//     "$ref": "UrlMapsValidateResponse"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.vpnTunnels.aggregatedList":
+
+type VpnTunnelsAggregatedListCall struct {
+	s       *Service
+	project string
+	opt_    map[string]interface{}
+}
+
+// AggregatedList: Retrieves the list of VPN tunnels grouped by scope.
+func (r *VpnTunnelsService) AggregatedList(project string) *VpnTunnelsAggregatedListCall {
+	c := &VpnTunnelsAggregatedListCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	return c
+}
+
+// Filter sets the optional parameter "filter": Filter expression for
+// filtering listed resources.
+func (c *VpnTunnelsAggregatedListCall) Filter(filter string) *VpnTunnelsAggregatedListCall {
+	c.opt_["filter"] = filter
+	return c
+}
+
+// MaxResults sets the optional parameter "maxResults": Maximum count of
+// results to be returned.
+func (c *VpnTunnelsAggregatedListCall) MaxResults(maxResults int64) *VpnTunnelsAggregatedListCall {
+	c.opt_["maxResults"] = maxResults
+	return c
+}
+
+// PageToken sets the optional parameter "pageToken": Tag returned by a
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
+func (c *VpnTunnelsAggregatedListCall) PageToken(pageToken string) *VpnTunnelsAggregatedListCall {
+	c.opt_["pageToken"] = pageToken
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *VpnTunnelsAggregatedListCall) Fields(s ...googleapi.Field) *VpnTunnelsAggregatedListCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *VpnTunnelsAggregatedListCall) Do() (*VpnTunnelAggregatedList, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["filter"]; ok {
+		params.Set("filter", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["maxResults"]; ok {
+		params.Set("maxResults", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["pageToken"]; ok {
+		params.Set("pageToken", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/aggregated/vpnTunnels")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *VpnTunnelAggregatedList
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Retrieves the list of VPN tunnels grouped by scope.",
+	//   "httpMethod": "GET",
+	//   "id": "compute.vpnTunnels.aggregatedList",
+	//   "parameterOrder": [
+	//     "project"
+	//   ],
+	//   "parameters": {
+	//     "filter": {
+	//       "description": "Filter expression for filtering listed resources.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "maxResults": {
+	//       "default": "500",
+	//       "description": "Maximum count of results to be returned.",
+	//       "format": "uint32",
+	//       "location": "query",
+	//       "maximum": "500",
+	//       "minimum": "0",
+	//       "type": "integer"
+	//     },
+	//     "pageToken": {
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/aggregated/vpnTunnels",
+	//   "response": {
+	//     "$ref": "VpnTunnelAggregatedList"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute",
+	//     "https://www.googleapis.com/auth/compute.readonly"
+	//   ]
+	// }
+
+}
+
+// method id "compute.vpnTunnels.delete":
+
+type VpnTunnelsDeleteCall struct {
+	s         *Service
+	project   string
+	region    string
+	vpnTunnel string
+	opt_      map[string]interface{}
+}
+
+// Delete: Deletes the specified VpnTunnel resource.
+func (r *VpnTunnelsService) Delete(project string, region string, vpnTunnel string) *VpnTunnelsDeleteCall {
+	c := &VpnTunnelsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	c.vpnTunnel = vpnTunnel
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *VpnTunnelsDeleteCall) Fields(s ...googleapi.Field) *VpnTunnelsDeleteCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *VpnTunnelsDeleteCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/vpnTunnels/{vpnTunnel}")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("DELETE", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project":   c.project,
+		"region":    c.region,
+		"vpnTunnel": c.vpnTunnel,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Deletes the specified VpnTunnel resource.",
+	//   "httpMethod": "DELETE",
+	//   "id": "compute.vpnTunnels.delete",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region",
+	//     "vpnTunnel"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "vpnTunnel": {
+	//       "description": "Name of the VpnTunnel resource to delete.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/vpnTunnels/{vpnTunnel}",
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.vpnTunnels.get":
+
+type VpnTunnelsGetCall struct {
+	s         *Service
+	project   string
+	region    string
+	vpnTunnel string
+	opt_      map[string]interface{}
+}
+
+// Get: Returns the specified VpnTunnel resource.
+func (r *VpnTunnelsService) Get(project string, region string, vpnTunnel string) *VpnTunnelsGetCall {
+	c := &VpnTunnelsGetCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	c.vpnTunnel = vpnTunnel
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *VpnTunnelsGetCall) Fields(s ...googleapi.Field) *VpnTunnelsGetCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *VpnTunnelsGetCall) Do() (*VpnTunnel, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/vpnTunnels/{vpnTunnel}")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project":   c.project,
+		"region":    c.region,
+		"vpnTunnel": c.vpnTunnel,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *VpnTunnel
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Returns the specified VpnTunnel resource.",
+	//   "httpMethod": "GET",
+	//   "id": "compute.vpnTunnels.get",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region",
+	//     "vpnTunnel"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "vpnTunnel": {
+	//       "description": "Name of the VpnTunnel resource to return.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/vpnTunnels/{vpnTunnel}",
+	//   "response": {
+	//     "$ref": "VpnTunnel"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute",
+	//     "https://www.googleapis.com/auth/compute.readonly"
+	//   ]
+	// }
+
+}
+
+// method id "compute.vpnTunnels.insert":
+
+type VpnTunnelsInsertCall struct {
+	s         *Service
+	project   string
+	region    string
+	vpntunnel *VpnTunnel
+	opt_      map[string]interface{}
+}
+
+// Insert: Creates a VpnTunnel resource in the specified project and
+// region using the data included in the request.
+func (r *VpnTunnelsService) Insert(project string, region string, vpntunnel *VpnTunnel) *VpnTunnelsInsertCall {
+	c := &VpnTunnelsInsertCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	c.vpntunnel = vpntunnel
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *VpnTunnelsInsertCall) Fields(s ...googleapi.Field) *VpnTunnelsInsertCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *VpnTunnelsInsertCall) Do() (*Operation, error) {
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.vpntunnel)
+	if err != nil {
+		return nil, err
+	}
+	ctype := "application/json"
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/vpnTunnels")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+		"region":  c.region,
+	})
+	req.Header.Set("Content-Type", ctype)
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *Operation
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Creates a VpnTunnel resource in the specified project and region using the data included in the request.",
+	//   "httpMethod": "POST",
+	//   "id": "compute.vpnTunnels.insert",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region"
+	//   ],
+	//   "parameters": {
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/vpnTunnels",
+	//   "request": {
+	//     "$ref": "VpnTunnel"
+	//   },
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
+	//   ]
+	// }
+
+}
+
+// method id "compute.vpnTunnels.list":
+
+type VpnTunnelsListCall struct {
+	s       *Service
+	project string
+	region  string
+	opt_    map[string]interface{}
+}
+
+// List: Retrieves the list of VpnTunnel resources contained in the
+// specified project and region.
+func (r *VpnTunnelsService) List(project string, region string) *VpnTunnelsListCall {
+	c := &VpnTunnelsListCall{s: r.s, opt_: make(map[string]interface{})}
+	c.project = project
+	c.region = region
+	return c
+}
+
+// Filter sets the optional parameter "filter": Filter expression for
+// filtering listed resources.
+func (c *VpnTunnelsListCall) Filter(filter string) *VpnTunnelsListCall {
+	c.opt_["filter"] = filter
+	return c
+}
+
+// MaxResults sets the optional parameter "maxResults": Maximum count of
+// results to be returned.
+func (c *VpnTunnelsListCall) MaxResults(maxResults int64) *VpnTunnelsListCall {
+	c.opt_["maxResults"] = maxResults
+	return c
+}
+
+// PageToken sets the optional parameter "pageToken": Tag returned by a
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
+func (c *VpnTunnelsListCall) PageToken(pageToken string) *VpnTunnelsListCall {
+	c.opt_["pageToken"] = pageToken
+	return c
+}
+
+// Fields allows partial responses to be retrieved.
+// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *VpnTunnelsListCall) Fields(s ...googleapi.Field) *VpnTunnelsListCall {
+	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+func (c *VpnTunnelsListCall) Do() (*VpnTunnelList, error) {
+	var body io.Reader = nil
+	params := make(url.Values)
+	params.Set("alt", "json")
+	if v, ok := c.opt_["filter"]; ok {
+		params.Set("filter", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["maxResults"]; ok {
+		params.Set("maxResults", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["pageToken"]; ok {
+		params.Set("pageToken", fmt.Sprintf("%v", v))
+	}
+	if v, ok := c.opt_["fields"]; ok {
+		params.Set("fields", fmt.Sprintf("%v", v))
+	}
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/regions/{region}/vpnTunnels")
+	urls += "?" + params.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+		"region":  c.region,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	res, err := c.s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	var ret *VpnTunnelList
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Retrieves the list of VpnTunnel resources contained in the specified project and region.",
+	//   "httpMethod": "GET",
+	//   "id": "compute.vpnTunnels.list",
+	//   "parameterOrder": [
+	//     "project",
+	//     "region"
+	//   ],
+	//   "parameters": {
+	//     "filter": {
+	//       "description": "Filter expression for filtering listed resources.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "maxResults": {
+	//       "default": "500",
+	//       "description": "Maximum count of results to be returned.",
+	//       "format": "uint32",
+	//       "location": "query",
+	//       "maximum": "500",
+	//       "minimum": "0",
+	//       "type": "integer"
+	//     },
+	//     "pageToken": {
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "region": {
+	//       "description": "The name of the region for this request.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/regions/{region}/vpnTunnels",
+	//   "response": {
+	//     "$ref": "VpnTunnelList"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute",
+	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
 	// }
 
@@ -16410,6 +19103,7 @@ type ZoneOperationsDeleteCall struct {
 }
 
 // Delete: Deletes the specified zone-specific operation resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/zoneOperations/delete
 func (r *ZoneOperationsService) Delete(project string, zone string, operation string) *ZoneOperationsDeleteCall {
 	c := &ZoneOperationsDeleteCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16441,7 +19135,7 @@ func (c *ZoneOperationsDeleteCall) Do() error {
 		"zone":      c.zone,
 		"operation": c.operation,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return err
@@ -16469,7 +19163,7 @@ func (c *ZoneOperationsDeleteCall) Do() error {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -16485,6 +19179,7 @@ func (c *ZoneOperationsDeleteCall) Do() error {
 	//   },
 	//   "path": "{project}/zones/{zone}/operations/{operation}",
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
@@ -16502,6 +19197,7 @@ type ZoneOperationsGetCall struct {
 }
 
 // Get: Retrieves the specified zone-specific operation resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/zoneOperations/get
 func (r *ZoneOperationsService) Get(project string, zone string, operation string) *ZoneOperationsGetCall {
 	c := &ZoneOperationsGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16533,7 +19229,7 @@ func (c *ZoneOperationsGetCall) Do() (*Operation, error) {
 		"zone":      c.zone,
 		"operation": c.operation,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16565,7 +19261,7 @@ func (c *ZoneOperationsGetCall) Do() (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -16584,6 +19280,7 @@ func (c *ZoneOperationsGetCall) Do() (*Operation, error) {
 	//     "$ref": "Operation"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -16602,6 +19299,7 @@ type ZoneOperationsListCall struct {
 
 // List: Retrieves the list of operation resources contained within the
 // specified zone.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/zoneOperations/list
 func (r *ZoneOperationsService) List(project string, zone string) *ZoneOperationsListCall {
 	c := &ZoneOperationsListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16617,16 +19315,15 @@ func (c *ZoneOperationsListCall) Filter(filter string) *ZoneOperationsListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *ZoneOperationsListCall) MaxResults(maxResults int64) *ZoneOperationsListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *ZoneOperationsListCall) PageToken(pageToken string) *ZoneOperationsListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -16663,7 +19360,7 @@ func (c *ZoneOperationsListCall) Do() (*OperationList, error) {
 		"project": c.project,
 		"zone":    c.zone,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16687,13 +19384,13 @@ func (c *ZoneOperationsListCall) Do() (*OperationList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -16701,12 +19398,12 @@ func (c *ZoneOperationsListCall) Do() (*OperationList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -16725,6 +19422,7 @@ func (c *ZoneOperationsListCall) Do() (*OperationList, error) {
 	//     "$ref": "OperationList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -16742,6 +19440,7 @@ type ZonesGetCall struct {
 }
 
 // Get: Returns the specified zone resource.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/zones/get
 func (r *ZonesService) Get(project string, zone string) *ZonesGetCall {
 	c := &ZonesGetCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16771,7 +19470,7 @@ func (c *ZonesGetCall) Do() (*Zone, error) {
 		"project": c.project,
 		"zone":    c.zone,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16795,7 +19494,7 @@ func (c *ZonesGetCall) Do() (*Zone, error) {
 	//   ],
 	//   "parameters": {
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -16814,6 +19513,7 @@ func (c *ZonesGetCall) Do() (*Zone, error) {
 	//     "$ref": "Zone"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
@@ -16831,6 +19531,7 @@ type ZonesListCall struct {
 
 // List: Retrieves the list of zone resources available to the specified
 // project.
+// For details, see https://cloud.google.com/compute/docs/reference/latest/zones/list
 func (r *ZonesService) List(project string) *ZonesListCall {
 	c := &ZonesListCall{s: r.s, opt_: make(map[string]interface{})}
 	c.project = project
@@ -16845,16 +19546,15 @@ func (c *ZonesListCall) Filter(filter string) *ZonesListCall {
 }
 
 // MaxResults sets the optional parameter "maxResults": Maximum count of
-// results to be returned. Maximum value is 500 and default value is
-// 500.
+// results to be returned.
 func (c *ZonesListCall) MaxResults(maxResults int64) *ZonesListCall {
 	c.opt_["maxResults"] = maxResults
 	return c
 }
 
 // PageToken sets the optional parameter "pageToken": Tag returned by a
-// previous list request truncated by maxResults. Used to continue a
-// previous list request.
+// previous list request when that list was truncated to maxResults.
+// Used to continue a previous list request.
 func (c *ZonesListCall) PageToken(pageToken string) *ZonesListCall {
 	c.opt_["pageToken"] = pageToken
 	return c
@@ -16890,7 +19590,7 @@ func (c *ZonesListCall) Do() (*ZoneList, error) {
 	googleapi.Expand(req.URL, map[string]string{
 		"project": c.project,
 	})
-	req.Header.Set("User-Agent", "google-api-go-client/0.5")
+	req.Header.Set("User-Agent", c.s.userAgent())
 	res, err := c.s.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -16913,13 +19613,13 @@ func (c *ZonesListCall) Do() (*ZoneList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Filter expression for filtering listed resources.",
+	//       "description": "Filter expression for filtering listed resources.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "500",
-	//       "description": "Optional. Maximum count of results to be returned. Maximum value is 500 and default value is 500.",
+	//       "description": "Maximum count of results to be returned.",
 	//       "format": "uint32",
 	//       "location": "query",
 	//       "maximum": "500",
@@ -16927,12 +19627,12 @@ func (c *ZonesListCall) Do() (*ZoneList, error) {
 	//       "type": "integer"
 	//     },
 	//     "pageToken": {
-	//       "description": "Optional. Tag returned by a previous list request truncated by maxResults. Used to continue a previous list request.",
+	//       "description": "Tag returned by a previous list request when that list was truncated to maxResults. Used to continue a previous list request.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "project": {
-	//       "description": "Name of the project scoping this request.",
+	//       "description": "Project ID for this request.",
 	//       "location": "path",
 	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?))",
 	//       "required": true,
@@ -16944,6 +19644,7 @@ func (c *ZonesListCall) Do() (*ZoneList, error) {
 	//     "$ref": "ZoneList"
 	//   },
 	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
 	//   ]
