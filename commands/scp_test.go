@@ -38,6 +38,10 @@ func (d ScpFakeDriver) GetURL() (string, error) {
 	return "", nil
 }
 
+func (d ScpFakeDriver) GetMachineCreateReturnErr() (bool, error) {
+	return false, nil
+}
+
 func (d ScpFakeDriver) GetIP() (string, error) {
 	return "12.34.56.78", nil
 }

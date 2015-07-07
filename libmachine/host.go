@@ -110,6 +110,7 @@ func ValidateHostName(name string) bool {
 func (h *Host) Create(name string) error {
 	// create the instance
 	if err := h.Driver.Create(); err != nil {
+		h.SaveConfig()
 		return err
 	}
 

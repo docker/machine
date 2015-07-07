@@ -268,6 +268,10 @@ func (d *Driver) DriverName() string {
 	return driverName
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) checkPrereqs() error {
 	// check for existing keypair
 	key, err := d.getClient().GetKeyPair(d.MachineName)

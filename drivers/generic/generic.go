@@ -188,6 +188,10 @@ func (d *Driver) Remove() error {
 	return nil
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) Restart() error {
 	log.Debug("Restarting...")
 

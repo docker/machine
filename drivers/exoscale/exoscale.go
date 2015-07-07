@@ -166,6 +166,10 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) GetIP() (string, error) {
 	if d.IPAddress == "" {
 		return "", fmt.Errorf("IP address is not set")

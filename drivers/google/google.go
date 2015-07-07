@@ -240,6 +240,10 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 // Start creates a GCE instance and attaches it to the existing disk.
 func (d *Driver) Start() error {
 	c, err := newComputeUtil(d)

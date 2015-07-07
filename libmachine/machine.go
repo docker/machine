@@ -84,6 +84,10 @@ func (m *Machine) Remove(name string, force bool) error {
 	if err != nil {
 		return err
 	}
+	cmdErr, _ := host.Driver.GetMachineCreateReturnErr()
+	if cmdErr {
+		force = true
+	}
 	if err := host.Remove(force); err != nil {
 		if !force {
 			return err

@@ -339,6 +339,10 @@ func (d *Driver) Start() error {
 	return err
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) Stop() error {
 	command := []string{
 		"Stop-VM",
