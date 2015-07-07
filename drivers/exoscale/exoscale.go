@@ -84,10 +84,10 @@ func GetCreateFlags() []cli.Flag {
 			Value:  "ubuntu-14.04",
 			Usage:  "exoscale image template",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			EnvVar: "EXOSCALE_SECURITY_GROUP",
 			Name:   "exoscale-security-group",
-			Value:  "docker-machine",
+			Value:  &cli.StringSlice{},
 			Usage:  "exoscale security group",
 		},
 		cli.StringFlag{
@@ -142,7 +142,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.InstanceProfile = flags.String("exoscale-instance-profile")
 	d.DiskSize = flags.Int("exoscale-disk-size")
 	d.Image = flags.String("exoscale-image")
-	d.SecurityGroup = flags.String("exoscale-security-group")
+	securityGroups := flags.StringSlice("exoscale-security-group")
+	if len(securityGroups) == 0 {
+		securityGroups = []string{"docker-machine"}
+	}
+	d.SecurityGroup = strings.Join(securityGroups, ",")
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
@@ -208,6 +212,45 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group string) (string, error) {
+	rules := []egoscale.SecurityGroupRule{
+		{
+			SecurityGroupId: "",
+			Cidr:            "0.0.0.0/0",
+			Protocol:        "TCP",
+			Port:            22,
+		},
+		{
+			SecurityGroupId: "",
+			Cidr:            "0.0.0.0/0",
+			Protocol:        "TCP",
+			Port:            2376,
+		},
+		{
+			SecurityGroupId: "",
+			Cidr:            "0.0.0.0/0",
+			Protocol:        "TCP",
+			Port:            3376,
+		},
+		{
+			SecurityGroupId: "",
+			Cidr:            "0.0.0.0/0",
+			Protocol:        "ICMP",
+			IcmpType:        8,
+			IcmpCode:        0,
+		},
+	}
+	sgresp, err := client.CreateSecurityGroupWithRules(
+		group,
+		rules,
+		make([]egoscale.SecurityGroupRule, 0, 0))
+	if err != nil {
+		return "", err
+	}
+	sg := sgresp.Id
+	return sg, nil
+}
+
 func (d *Driver) Create() error {
 	log.Infof("Querying exoscale for the requested parameters...")
 	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
@@ -244,47 +287,22 @@ func (d *Driver) Create() error {
 	}
 	log.Debugf("Profile %v = %s", d.InstanceProfile, profile)
 
-	// Security group
-	sg, ok := topology.SecurityGroups[d.SecurityGroup]
-	if !ok {
-		log.Infof("Security group %v does not exist, create it",
-			d.SecurityGroup)
-		rules := []egoscale.SecurityGroupRule{
-			{
-				SecurityGroupId: "",
-				Cidr:            "0.0.0.0/0",
-				Protocol:        "TCP",
-				Port:            22,
-			},
-			{
-				SecurityGroupId: "",
-				Cidr:            "0.0.0.0/0",
-				Protocol:        "TCP",
-				Port:            2376,
-			},
-			{
-				SecurityGroupId: "",
-				Cidr:            "0.0.0.0/0",
-				Protocol:        "TCP",
-				Port:            3376,
-			},
-			{
-				SecurityGroupId: "",
-				Cidr:            "0.0.0.0/0",
-				Protocol:        "ICMP",
-				IcmpType:        8,
-				IcmpCode:        0,
-			},
+	// Security groups
+	securityGroups := strings.Split(d.SecurityGroup, ",")
+	sgs := make([]string, len(securityGroups))
+	for idx, group := range securityGroups {
+		sg, ok := topology.SecurityGroups[group]
+		if !ok {
+			log.Infof("Security group %v does not exist, create it",
+				group)
+			sg, err = d.createDefaultSecurityGroup(client, group)
+			if err != nil {
+				return err
+			}
 		}
-		sgresp, err := client.CreateSecurityGroupWithRules(d.SecurityGroup,
-			rules,
-			make([]egoscale.SecurityGroupRule, 0, 0))
-		if err != nil {
-			return err
-		}
-		sg = sgresp.Id
+		log.Debugf("Security group %v = %s", group, sg)
+		sgs[idx] = sg
 	}
-	log.Debugf("Security group %v = %s", d.SecurityGroup, sg)
 
 	log.Infof("Generate an SSH keypair...")
 	keypairName := fmt.Sprintf("docker-machine-%s", d.MachineName)
@@ -310,7 +328,7 @@ func (d *Driver) Create() error {
 	machineProfile := egoscale.MachineProfile{
 		Template:        tpl,
 		ServiceOffering: profile,
-		SecurityGroups:  []string{sg},
+		SecurityGroups:  sgs,
 		Userdata:        userdata,
 		Zone:            zone,
 		Keypair:         d.KeyPair,
