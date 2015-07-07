@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -225,6 +226,7 @@ func (d *Driver) Create() error {
 
 	// download cloud-init config drive
 	if d.ConfigDriveURL != "" {
+		log.Infof("Downloading %s from %s", isoConfigDrive, d.ConfigDriveURL)
 		if err := b2dutils.DownloadISO(d.storePath, isoConfigDrive, d.ConfigDriveURL); err != nil {
 			return err
 		}
@@ -280,6 +282,13 @@ func (d *Driver) Create() error {
 
 		if ip != "" {
 			log.Debugf("Got an ip: %s", ip)
+			conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, 22), time.Duration(2*time.Second))
+			if err != nil {
+				log.Debugf("SSH Daemon not responding yet: %s", err)
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			conn.Close()
 			break
 		}
 	}
@@ -298,7 +307,7 @@ func (d *Driver) Create() error {
 		var keyfh *os.File
 		var keycontent []byte
 
-		log.Infof("Copy public SSH key to %s", d.MachineName)
+		log.Infof("Copy public SSH key to %s [%s]", d.MachineName, d.IPAddress)
 
 		// create .ssh folder in users home
 		if err := executeSSHCommand(fmt.Sprintf("mkdir -p /home/%s/.ssh", d.SSHUser), d); err != nil {
@@ -584,12 +593,6 @@ func (d *Driver) generateKeyBundle() error {
 // execute command over SSH with user / password authentication
 func executeSSHCommand(command string, d *Driver) error {
 	log.Debugf("Execute executeSSHCommand: %s", command)
-
-	// Wait for TCP to be available
-	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)); err != nil {
-		log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
-		return err
-	}
 
 	config := &cryptossh.ClientConfig{
 		User: d.SSHUser,
