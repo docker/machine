@@ -388,9 +388,11 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	// check network to re-create if needed
-	if err := d.setupHostOnlyNetwork(d.MachineName); err != nil {
-		return err
+	if s == state.Stopped {
+		// check network to re-create if needed
+		if err := d.setupHostOnlyNetwork(d.MachineName); err != nil {
+			return fmt.Errorf("Error setting up host only network on machine start: %s", err)
+		}
 	}
 
 	switch s {
