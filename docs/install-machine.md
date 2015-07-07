@@ -11,16 +11,17 @@ weight=3
 
 ## Install Docker Machine
 
-Docker Machine is supported on Windows, OS X, and Linux and is installable as one
-standalone binary.  The links to the binaries for the various platforms and
-architectures are available at the
-[Github Release](https://github.com/docker/machine/releases/tag/v0.3.0) page.
+Docker Machine is supported on Windows, OS X, and Linux and is installable as
+one standalone binary.  The links to the binaries for the various platforms and
+architectures are available at the [Github
+Release](https://github.com/docker/machine/releases/tag/v0.3.0) page.
 
-### OSX and Linux
 
-To install on OSX or Linux, download the proper binary to somewhere in your
-`PATH` (e.g. `/usr/local/bin`) and make it executable.  For instance, to install on
-most OSX machines these commands should suffice:
+### OS X and Linux
+
+To install on OS X or Linux, download the proper binary to somewhere in your
+`PATH` (e.g. `/usr/local/bin`) and make it executable. For instance, to install on
+most OS X machines these commands should suffice:
 
 ```
 $ curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
@@ -47,13 +48,13 @@ $ chmod +x /usr/local/bin/docker
 ### Windows
 
 Currently, Docker recommends that you install and use Docker Machine on Windows
-with [msysgit](https://msysgit.github.io/).  This will provide you with some
+with [msysgit](https://msysgit.github.io/). This will provide you with some
 programs that Docker Machine relies on such as `ssh`, as well as a functioning
 shell.
 
 When you have installed msysgit, start up the terminal prompt and run the
-following commands.  Here it is assumed that you are on a 64-bit Windows
-installation.  If you are on a 32-bit installation, please substitute "i386" for
+following commands. Here it is assumed that you are on a 64-bit Windows
+installation. If you are on a 32-bit installation, please substitute "i386" for
 "x86_64" in the URLs mentioned.
 
 First, install the Docker client binary:
