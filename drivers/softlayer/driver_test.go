@@ -26,6 +26,13 @@ func (d DriverOptionsMock) String(key string) string {
 	return ""
 }
 
+func (d DriverOptionsMock) StringSlice(key string) []string {
+	if value, ok := d.Data[key]; ok {
+		return value.([]string)
+	}
+	return []string{}
+}
+
 func (d DriverOptionsMock) Int(key string) int {
 	if value, ok := d.Data[key]; ok {
 		return value.(int)

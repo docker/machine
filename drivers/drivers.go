@@ -164,6 +164,7 @@ func GetDriverNames() []string {
 
 type DriverOptions interface {
 	String(key string) string
+	StringSlice(key string) []string
 	Int(key string) int
 	Bool(key string) bool
 }
