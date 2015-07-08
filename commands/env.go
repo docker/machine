@@ -32,6 +32,10 @@ type ShellConfig struct {
 	NoProxyValue    string
 }
 
+type CmdEnvFlags interface {
+	Bool(name string) bool
+}
+
 func cmdEnv(c *cli.Context) {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
@@ -59,7 +63,7 @@ func cmdEnv(c *cli.Context) {
 
 	t := template.New("envConfig")
 
-	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell, c.Bool("no-proxy"), c.Bool("swarm"))
+	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell, c)
 
 	shellCfg := &ShellConfig{
 		DockerCertPath:  authOptions.CertDir,
@@ -145,7 +149,7 @@ func cmdEnv(c *cli.Context) {
 		shellCfg.Suffix = "\"\n"
 		shellCfg.Delimiter = " = \""
 	case "cmd":
-		shellCfg.Prefix = "set "
+		shellCfg.Prefix = "SET "
 		shellCfg.Suffix = "\n"
 		shellCfg.Delimiter = "="
 	default:
@@ -164,26 +168,29 @@ func cmdEnv(c *cli.Context) {
 	}
 }
 
-func generateUsageHint(appName, machineName, userShell string, noProxy bool, swarm bool) string {
-	flags := ""
-	if noProxy {
-		flags += "--no-proxy "
+func generateUsageHint(appName, machineName, userShell string, flags CmdEnvFlags) string {
+	args := machineName
+	if flags.Bool("swarm") {
+		args = "--swarm " + args
 	}
-	if swarm {
-		flags += "--swarm "
+	if flags.Bool("no-proxy") {
+		args = "--no-proxy " + args
 	}
 
 	cmd := ""
+	comment := "#"
+
 	switch userShell {
 	case "fish":
-		cmd = fmt.Sprintf("eval (%s env --shell=fish %s%s)", appName, flags, machineName)
+		cmd = fmt.Sprintf("eval (%s env --shell=fish %s)", appName, args)
 	case "powershell":
-		cmd = fmt.Sprintf("%s env --shell=powershell %s%s | Invoke-Expression", appName, flags, machineName)
+		cmd = fmt.Sprintf("%s env --shell=powershell %s | Invoke-Expression", appName, args)
 	case "cmd":
-		cmd = "copy and paste the above values into your command prompt"
+		cmd = fmt.Sprintf("\tFOR /f \"tokens=*\" %%i IN ('%s env --shell=cmd %s') DO %%i", appName, args)
+		comment = "REM"
 	default:
-		cmd = fmt.Sprintf("eval \"$(%s env %s%s)\"", appName, flags, machineName)
+		cmd = fmt.Sprintf("eval \"$(%s env %s)\"", appName, args)
 	}
 
-	return fmt.Sprintf("# Run this command to configure your shell: \n# %s\n", cmd)
+	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
 }
