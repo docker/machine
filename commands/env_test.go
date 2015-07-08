@@ -3,40 +3,49 @@ package commands
 import (
 	"testing"
 
+	"strings"
+
 	"github.com/stretchr/testify/assert"
 )
 
+type MockCmdEnvFlags struct {
+	flags string
+}
+
+func (f *MockCmdEnvFlags) Bool(name string) bool {
+	return strings.Contains(f.flags, name)
+}
+
 func TestHints(t *testing.T) {
 	var tests = []struct {
-		userShell string
-		noProxy   bool
-		swarm     bool
-		hints     string
+		userShell     string
+		flags         *MockCmdEnvFlags
+		expectedHints string
 	}{
-		{"", false, false, "# Run this command to configure your shell: \n# eval \"$(machine env default)\"\n"},
-		{"", true, false, "# Run this command to configure your shell: \n# eval \"$(machine env --no-proxy default)\"\n"},
-		{"", false, true, "# Run this command to configure your shell: \n# eval \"$(machine env --swarm default)\"\n"},
-		{"", true, true, "# Run this command to configure your shell: \n# eval \"$(machine env --no-proxy --swarm default)\"\n"},
+		{"", &MockCmdEnvFlags{}, "# Run this command to configure your shell: \n# eval \"$(machine env default)\"\n"},
+		{"", &MockCmdEnvFlags{"--no-proxy"}, "# Run this command to configure your shell: \n# eval \"$(machine env --no-proxy default)\"\n"},
+		{"", &MockCmdEnvFlags{"--swarm"}, "# Run this command to configure your shell: \n# eval \"$(machine env --swarm default)\"\n"},
+		{"", &MockCmdEnvFlags{"--no-proxy --swarm"}, "# Run this command to configure your shell: \n# eval \"$(machine env --no-proxy --swarm default)\"\n"},
 
-		{"fish", false, false, "# Run this command to configure your shell: \n# eval (machine env --shell=fish default)\n"},
-		{"fish", true, false, "# Run this command to configure your shell: \n# eval (machine env --shell=fish --no-proxy default)\n"},
-		{"fish", false, true, "# Run this command to configure your shell: \n# eval (machine env --shell=fish --swarm default)\n"},
-		{"fish", true, true, "# Run this command to configure your shell: \n# eval (machine env --shell=fish --no-proxy --swarm default)\n"},
+		{"fish", &MockCmdEnvFlags{}, "# Run this command to configure your shell: \n# eval (machine env --shell=fish default)\n"},
+		{"fish", &MockCmdEnvFlags{"--no-proxy"}, "# Run this command to configure your shell: \n# eval (machine env --shell=fish --no-proxy default)\n"},
+		{"fish", &MockCmdEnvFlags{"--swarm"}, "# Run this command to configure your shell: \n# eval (machine env --shell=fish --swarm default)\n"},
+		{"fish", &MockCmdEnvFlags{"--no-proxy --swarm"}, "# Run this command to configure your shell: \n# eval (machine env --shell=fish --no-proxy --swarm default)\n"},
 
-		{"powershell", false, false, "# Run this command to configure your shell: \n# machine env --shell=powershell default | Invoke-Expression\n"},
-		{"powershell", true, false, "# Run this command to configure your shell: \n# machine env --shell=powershell --no-proxy default | Invoke-Expression\n"},
-		{"powershell", false, true, "# Run this command to configure your shell: \n# machine env --shell=powershell --swarm default | Invoke-Expression\n"},
-		{"powershell", true, true, "# Run this command to configure your shell: \n# machine env --shell=powershell --no-proxy --swarm default | Invoke-Expression\n"},
+		{"powershell", &MockCmdEnvFlags{}, "# Run this command to configure your shell: \n# machine env --shell=powershell default | Invoke-Expression\n"},
+		{"powershell", &MockCmdEnvFlags{"--no-proxy"}, "# Run this command to configure your shell: \n# machine env --shell=powershell --no-proxy default | Invoke-Expression\n"},
+		{"powershell", &MockCmdEnvFlags{"--swarm"}, "# Run this command to configure your shell: \n# machine env --shell=powershell --swarm default | Invoke-Expression\n"},
+		{"powershell", &MockCmdEnvFlags{"--no-proxy --swarm"}, "# Run this command to configure your shell: \n# machine env --shell=powershell --no-proxy --swarm default | Invoke-Expression\n"},
 
-		{"cmd", false, false, "# Run this command to configure your shell: \n# copy and paste the above values into your command prompt\n"},
-		{"cmd", true, false, "# Run this command to configure your shell: \n# copy and paste the above values into your command prompt\n"},
-		{"cmd", false, true, "# Run this command to configure your shell: \n# copy and paste the above values into your command prompt\n"},
-		{"cmd", true, true, "# Run this command to configure your shell: \n# copy and paste the above values into your command prompt\n"},
+		{"cmd", &MockCmdEnvFlags{}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('machine env --shell=cmd default') DO %i\n"},
+		{"cmd", &MockCmdEnvFlags{"--no-proxy"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('machine env --shell=cmd --no-proxy default') DO %i\n"},
+		{"cmd", &MockCmdEnvFlags{"--swarm"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('machine env --shell=cmd --swarm default') DO %i\n"},
+		{"cmd", &MockCmdEnvFlags{"--no-proxy --swarm"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('machine env --shell=cmd --no-proxy --swarm default') DO %i\n"},
 	}
 
-	for _, expected := range tests {
-		hints := generateUsageHint("machine", "default", expected.userShell, expected.noProxy, expected.swarm)
+	for _, test := range tests {
+		hints := generateUsageHint("machine", "default", test.userShell, test.flags)
 
-		assert.Equal(t, expected.hints, hints)
+		assert.Equal(t, test.expectedHints, hints)
 	}
 }
