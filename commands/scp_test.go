@@ -157,10 +157,10 @@ func (s ScpFakeStore) Save(host *libmachine.Host) error {
 }
 
 func TestGetInfoForScpArg(t *testing.T) {
-	mcn, _ := libmachine.New(ScpFakeStore{})
+	provider, _ := libmachine.New(ScpFakeStore{})
 
 	expectedPath := "/tmp/foo"
-	host, path, opts, err := getInfoForScpArg("/tmp/foo", *mcn)
+	host, path, opts, err := getInfoForScpArg("/tmp/foo", *provider)
 	if err != nil {
 		t.Fatalf("Unexpected error in local getInfoForScpArg call: %s", err)
 	}
@@ -174,7 +174,7 @@ func TestGetInfoForScpArg(t *testing.T) {
 		t.Fatal("opts should be nil")
 	}
 
-	host, path, opts, err = getInfoForScpArg("myfunhost:/home/docker/foo", *mcn)
+	host, path, opts, err = getInfoForScpArg("myfunhost:/home/docker/foo", *provider)
 	if err != nil {
 		t.Fatal("Unexpected error in machine-based getInfoForScpArg call: %s", err)
 	}
@@ -194,7 +194,7 @@ func TestGetInfoForScpArg(t *testing.T) {
 		t.Fatalf("Expected path to be /home/docker/foo, got %s", path)
 	}
 
-	host, path, opts, err = getInfoForScpArg("foo:bar:widget", *mcn)
+	host, path, opts, err = getInfoForScpArg("foo:bar:widget", *provider)
 	if err != ErrMalformedInput {
 		t.Fatalf("Didn't get back an error when we were expecting it for malformed args")
 	}
@@ -224,7 +224,7 @@ func TestGenerateLocationArg(t *testing.T) {
 }
 
 func TestGetScpCmd(t *testing.T) {
-	mcn, _ := libmachine.New(ScpFakeStore{})
+	provider, _ := libmachine.New(ScpFakeStore{})
 
 	// TODO: This is a little "integration-ey".  Perhaps
 	// make an ScpDispatcher (name?) interface so that the reliant
@@ -239,7 +239,7 @@ func TestGetScpCmd(t *testing.T) {
 	)
 	expectedCmd := exec.Command("/usr/bin/scp", expectedArgs...)
 
-	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", append(baseSSHArgs, "-3"), *mcn)
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", append(baseSSHArgs, "-3"), *provider)
 	if err != nil {
 		t.Fatalf("Unexpected err getting scp command: %s", err)
 	}
