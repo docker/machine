@@ -67,6 +67,10 @@ $ chmod +x /usr/local/bin/docker-machine
 
 For Linux, just substitute "linux" for "darwin" in the binary name above.
 
+The `PATH` is a set of locations in the file system whereby the user can use certain applications, commands and programs without the need to specify the full path to that command or program.
+
+The location where you copy `docker-machine` does not affect its functionality, but it will make your life easier by typing less. A less practical option is to run docker-machine from the location where you saved it. If you are using OSX or Linux, make sure you give execute rights: `chmod +x docker-machine`
+
 Now you should be able to check the version with `docker-machine -v`:
 
 ```
