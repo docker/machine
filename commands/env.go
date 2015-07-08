@@ -190,28 +190,24 @@ func cmdEnv(c *cli.Context) {
 
 func generateUsageHint(appName, machineName, userShell string) string {
 	cmd := ""
-	switch userShell {
-	case "fish":
-		if machineName != "" {
-			cmd = fmt.Sprintf("eval (%s env %s)", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("eval (%s env)", appName)
-		}
-	case "powershell":
-		if machineName != "" {
-			cmd = fmt.Sprintf("%s env --shell=powershell %s | Invoke-Expression", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("%s env --shell=powershell | Invoke-Expression", appName)
-		}
-	case "cmd":
-		cmd = "copy and paste the above values into your command prompt"
-	default:
-		if machineName != "" {
-			cmd = fmt.Sprintf("eval \"$(%s env %s)\"", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("eval \"$(%s env)\"", appName)
-		}
+	comment := "#"
+	machineNameOrEmpty := ""
+
+	if machineName != "" {
+		machineNameOrEmpty = " " + machineName
 	}
 
-	return fmt.Sprintf("# Run this command to configure your shell: \n# %s\n", cmd)
+	switch userShell {
+	case "fish":
+		cmd = fmt.Sprintf("eval (%s env%s)", appName, machineNameOrEmpty)
+	case "powershell":
+		cmd = fmt.Sprintf("%s env --shell=powershell%s | Invoke-Expression", appName, machineNameOrEmpty)
+	case "cmd":
+		cmd = fmt.Sprintf("for /f \"tokens=*\" %%i in ('%s env --shell=cmd%s') do %%i", appName, machineNameOrEmpty)
+		comment = "rem"
+	default:
+		cmd = fmt.Sprintf("eval \"$(%s env%s)\"", appName, machineNameOrEmpty)
+	}
+
+	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
 }
