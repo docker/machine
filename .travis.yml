@@ -2,6 +2,9 @@ language: go
 sudo: false
 go:
 - 1.3
+addons:
+  apt_packages:
+  - libvirt-dev
 install:
 - export GOPATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH
 - export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
