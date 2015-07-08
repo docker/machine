@@ -169,7 +169,7 @@ func cmdEnv(c *cli.Context) {
 		shellCfg.Suffix = "\"\n"
 		shellCfg.Delimiter = " = \""
 	case "cmd":
-		shellCfg.Prefix = "set "
+		shellCfg.Prefix = "SET "
 		shellCfg.Suffix = "\n"
 		shellCfg.Delimiter = "="
 	default:
@@ -203,8 +203,8 @@ func generateUsageHint(appName, machineName, userShell string) string {
 	case "powershell":
 		cmd = fmt.Sprintf("%s env --shell=powershell%s | Invoke-Expression", appName, machineNameOrEmpty)
 	case "cmd":
-		cmd = fmt.Sprintf("for /f \"tokens=*\" %%i in ('%s env --shell=cmd%s') do %%i", appName, machineNameOrEmpty)
-		comment = "rem"
+		cmd = fmt.Sprintf("\tFOR /f \"tokens=*\" %%i IN ('%s env --shell=cmd%s') DO %%i", appName, machineNameOrEmpty)
+		comment = "REM"
 	default:
 		cmd = fmt.Sprintf("eval \"$(%s env%s)\"", appName, machineNameOrEmpty)
 	}
