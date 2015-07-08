@@ -9,51 +9,68 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/docker/machine/libmachine/log"
-
-	"github.com/docker/machine/drivers/vmwarevsphere/errors"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+
+	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/find"
+	"github.com/vmware/govmomi/guest"
+	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/vim25/mo"
+	"github.com/vmware/govmomi/vim25/soap"
+	"github.com/vmware/govmomi/vim25/types"
+	"golang.org/x/net/context"
 )
 
 const (
 	isoFilename = "boot2docker.iso"
-	B2DUser     = "docker"
-	B2DPass     = "tcuser"
+	// B2DUser is the guest User for tools login
+	B2DUser = "docker"
+	// B2DPass is the guest Pass for tools login
+	B2DPass = "tcuser"
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	CPU            int
 	Memory         int
 	DiskSize       int
-	Boot2DockerURL string
-	IP             string
-	Username       string
-	Password       string
-	Network        string
-	Datastore      string
-	Datacenter     string
-	Pool           string
-	HostIP         string
+	CPU            int
 	ISO            string
+	Boot2DockerURL string
+	CPUS           int
+
+	IP         string
+	Port       int
+	Username   string
+	Password   string
+	Network    string
+	Datastore  string
+	Datacenter string
+	Pool       string
+	HostSystem string
+
+	SSHPassword string
 }
 
 const (
+	defaultSSHUser  = B2DUser
+	defaultSSHPass  = B2DPass
 	defaultCpus     = 2
 	defaultMemory   = 2048
-	defaultDiskSize = 20000
+	defaultDiskSize = 20480
 )
 
 // GetCreateFlags registers the flags this driver adds to
-// "docker hosts create"
+// "docker-machine create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
@@ -83,6 +100,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "VSPHERE_VCENTER",
 			Name:   "vmwarevsphere-vcenter",
 			Usage:  "vSphere IP/hostname for vCenter",
+		},
+		mcnflag.IntFlag{
+			EnvVar: "VSPHERE_VCENTER_PORT",
+			Name:   "vmwarevsphere-vcenter-port",
+			Usage:  "vSphere Port for vCenter",
+			Value:  443,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_USERNAME",
@@ -115,19 +138,21 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "vSphere resource pool for docker VM",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "VSPHERE_COMPUTE_IP",
-			Name:   "vmwarevsphere-compute-ip",
-			Usage:  "vSphere compute host IP where the docker VM will be instantiated",
+			EnvVar: "VSPHERE_HOSTSYSTEM",
+			Name:   "vmwarevsphere-hostsystem",
+			Usage:  "vSphere compute resource where the docker VM will be instantiated (use <cluster>/* or <cluster>/<host> if using a cluster)",
 		},
 	}
 }
 
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
-		CPU:      defaultCpus,
-		Memory:   defaultMemory,
-		DiskSize: defaultDiskSize,
+		CPUS:        defaultCpus,
+		Memory:      defaultMemory,
+		DiskSize:    defaultDiskSize,
+		SSHPassword: defaultSSHPass,
 		BaseDriver: &drivers.BaseDriver{
+			SSHUser:     defaultSSHUser,
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
@@ -159,13 +184,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("vmwarevsphere-disk-size")
 	d.Boot2DockerURL = flags.String("vmwarevsphere-boot2docker-url")
 	d.IP = flags.String("vmwarevsphere-vcenter")
+	d.Port = flags.Int("vmwarevsphere-vcenter-port")
 	d.Username = flags.String("vmwarevsphere-username")
 	d.Password = flags.String("vmwarevsphere-password")
 	d.Network = flags.String("vmwarevsphere-network")
 	d.Datastore = flags.String("vmwarevsphere-datastore")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	d.Pool = flags.String("vmwarevsphere-pool")
-	d.HostIP = flags.String("vmwarevsphere-compute-ip")
+	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -176,7 +202,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) GetURL() (string, error) {
-	ip, _ := d.GetIP()
+
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
+	}
 	if ip == "" {
 		return "", nil
 	}
@@ -186,27 +216,60 @@ func (d *Driver) GetURL() (string, error) {
 func (d *Driver) GetIP() (string, error) {
 	status, err := d.GetState()
 	if status != state.Running {
-		return "", errors.NewInvalidStateError(d.MachineName)
+		return "", drivers.ErrHostIsNotRunning
 	}
-	vcConn := NewVcConn(d)
-	rawIP, err := vcConn.VMFetchIP()
+
+	// Create context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
 	if err != nil {
 		return "", err
 	}
+
+	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	if err != nil {
+		return "", err
+	}
+
+	rawIP, err := vm.WaitForIP(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	ip := strings.Trim(strings.Split(rawIP, "\n")[0], " ")
 	return ip, nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	vcConn := NewVcConn(d)
-	stdout, err := vcConn.VMInfo()
+
+	// Create context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
 	if err != nil {
 		return state.None, err
 	}
 
-	if strings.Contains(stdout, "poweredOn") {
+	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	if err != nil {
+		return state.None, err
+	}
+
+	var mvm mo.VirtualMachine
+
+	err = c.RetrieveOne(ctx, vm.Reference(), nil, &mvm)
+	if err != nil {
+		return state.None, nil
+	}
+
+	s := mvm.Summary
+
+	if strings.Contains(string(s.Runtime.PowerState), "poweredOn") {
 		return state.Running, nil
-	} else if strings.Contains(stdout, "poweredOff") {
+	} else if strings.Contains(string(s.Runtime.PowerState), "poweredOff") {
 		return state.Stopped, nil
 	}
 	return state.None, nil
@@ -214,15 +277,50 @@ func (d *Driver) GetState() (state.State, error) {
 
 // PreCreateCheck checks that the machine creation process can be started safely.
 func (d *Driver) PreCreateCheck() error {
-	if err := d.checkVsphereConfig(); err != nil {
+	log.Debug("Connecting to vSphere for pre-create checks...")
+	// Create context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
+	if err != nil {
 		return err
 	}
 
-	// Downloading boot2docker to cache should be done here to make sure
-	// that a download failure will not leave a machine half created.
-	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
-	if err := b2dutils.UpdateISOCache(d.Boot2DockerURL); err != nil {
+	// Create a new finder
+	f := find.NewFinder(c.Client, true)
+
+	dc, err := d.getDatacenter(f, ctx)
+	if err != nil {
 		return err
+	}
+
+	f.SetDatacenter(dc)
+
+	if _, err := d.getDatastore(f, ctx); err != nil {
+		return err
+	}
+
+	if _, err := d.getNetwork(f, ctx); err != nil {
+		return err
+	}
+
+	hs, err := d.getHostSystem(f, ctx)
+	if err != nil {
+		return err
+	}
+
+	// ResourcePool
+	if d.Pool != "" {
+		// Find specified Resource Pool
+		if _, err := f.ResourcePool(ctx, d.Pool); err != nil {
+			return err
+		}
+	} else {
+		// Pick default Resource Pool for Host System
+		if _, err := hs.ResourcePool(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -244,32 +342,140 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	vcConn := NewVcConn(d)
+	// Create context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
+	if err != nil {
+		return err
+	}
+	// Create a new finder
+	f := find.NewFinder(c.Client, true)
+
+	dc, err := d.getDatacenter(f, ctx)
+	if err != nil {
+		return err
+	}
+
+	f.SetDatacenter(dc)
+
+	dss, err := d.getDatastore(f, ctx)
+	if err != nil {
+		return err
+	}
+
+	net, err := d.getNetwork(f, ctx)
+	if err != nil {
+		return err
+	}
+
+	hs, err := d.getHostSystem(f, ctx)
+	if err != nil {
+		return err
+	}
+
+	var rp *object.ResourcePool
+	if d.Pool != "" {
+		// Find specified Resource Pool
+		rp, err = f.ResourcePool(ctx, d.Pool)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Pick default Resource Pool for Host System
+		rp, err = hs.ResourcePool(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	spec := types.VirtualMachineConfigSpec{
+		Name:     d.MachineName,
+		GuestId:  "otherLinux64Guest",
+		Files:    &types.VirtualMachineFileInfo{VmPathName: fmt.Sprintf("[%s]", dss.Name())},
+		NumCPUs:  d.CPU,
+		MemoryMB: int64(d.Memory),
+	}
+
+	scsi, err := object.SCSIControllerTypes().CreateSCSIController("pvscsi")
+	if err != nil {
+		return err
+	}
+
+	spec.DeviceChange = append(spec.DeviceChange, &types.VirtualDeviceConfigSpec{
+		Operation: types.VirtualDeviceConfigSpecOperationAdd,
+		Device:    scsi,
+	})
+
+	log.Infof("Creating VM...")
+	folders, err := dc.Folders(ctx)
+	task, err := folders.VmFolder.CreateVM(ctx, spec, rp, hs)
+	if err != nil {
+		return err
+	}
+
+	info, err := task.WaitForResult(ctx, nil)
+	if err != nil {
+		return err
+	}
+
 	log.Infof("Uploading Boot2docker ISO ...")
-	if err := vcConn.DatastoreMkdir(d.MachineName); err != nil {
+	dsurl, err := dss.URL(ctx, dc, fmt.Sprintf("%s/%s", d.MachineName, isoFilename))
+	if err != nil {
+		return err
+	}
+	p := soap.DefaultUpload
+	if err = c.Client.UploadFile(d.ISO, dsurl, &p); err != nil {
 		return err
 	}
 
-	if _, err := os.Stat(d.ISO); os.IsNotExist(err) {
-		log.Errorf("Unable to find boot2docker ISO at %s", d.ISO)
-		return errors.NewIncompleteVsphereConfigError(d.ISO)
-	}
+	// Retrieve the new VM
+	vm := object.NewVirtualMachine(c.Client, info.Result.(types.ManagedObjectReference))
 
-	if err := vcConn.DatastoreUpload(d.ISO, d.MachineName); err != nil {
+	devices, err := vm.Device(ctx)
+	if err != nil {
 		return err
 	}
 
-	isoPath := fmt.Sprintf("%s/%s", d.MachineName, isoFilename)
-	if err := vcConn.VMCreate(isoPath); err != nil {
+	var add []types.BaseVirtualDevice
+
+	controller, err := devices.FindDiskController("scsi")
+	if err != nil {
 		return err
 	}
 
-	log.Infof("Configuring the virtual machine %s... ", d.MachineName)
-	if err := vcConn.VMDiskCreate(); err != nil {
+	disk := devices.CreateDisk(controller, dss.Path(fmt.Sprintf("%s/%s.vmdk", d.MachineName, d.MachineName)))
+
+	// Convert MB to KB
+	disk.CapacityInKB = int64(d.DiskSize) * 1024
+
+	add = append(add, disk)
+	ide, err := devices.FindIDEController("")
+	if err != nil {
 		return err
 	}
 
-	if err := vcConn.VMAttachNetwork(); err != nil {
+	cdrom, err := devices.CreateCdrom(ide)
+	if err != nil {
+		return err
+	}
+
+	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename))))
+
+	backing, err := net.EthernetCardBackingInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	netdev, err := object.EthernetCardTypes().CreateEthernetCard("vmxnet3", backing)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Reconfiguring VM...")
+	add = append(add, netdev)
+	if vm.AddDevice(ctx, add...); err != nil {
 		return err
 	}
 
@@ -277,18 +483,57 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	log.Infof("Provisioning certs and ssh keys...")
 	// Generate a tar keys bundle
 	if err := d.generateKeyBundle(); err != nil {
 		return err
 	}
 
-	// Copy SSH keys bundle
-	if err := vcConn.GuestUpload(B2DUser, B2DPass, d.ResolveStorePath("userdata.tar"), "/home/docker/userdata.tar"); err != nil {
+	opman := guest.NewOperationsManager(c.Client, vm.Reference())
+
+	fileman, err := opman.FileManager(ctx)
+	if err != nil {
 		return err
 	}
 
-	// Expand tar file.
-	if err := vcConn.GuestStart(B2DUser, B2DPass, "/usr/bin/sudo", "/bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && /usr/bin/sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && /usr/bin/sudo chown -R docker:staff /home/docker"); err != nil {
+	src := d.ResolveStorePath("userdata.tar")
+	s, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	auth := AuthFlag{}
+	flag := FileAttrFlag{}
+	auth.auth.Username = B2DUser
+	auth.auth.Password = B2DPass
+	flag.SetPerms(0, 0, 660)
+	url, err := fileman.InitiateFileTransferToGuest(ctx, auth.Auth(), "/home/docker/userdata.tar", flag.Attr(), s.Size(), true)
+	if err != nil {
+		return err
+	}
+	u, err := c.Client.ParseURL(url)
+	if err != nil {
+		return err
+	}
+	if err = c.Client.UploadFile(src, u, nil); err != nil {
+		return err
+	}
+
+	procman, err := opman.ProcessManager(ctx)
+	if err != nil {
+		return err
+	}
+
+	var env []string
+	guestspec := types.GuestProgramSpec{
+		ProgramPath:      "/usr/bin/sudo",
+		Arguments:        "/bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && /usr/bin/sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && /usr/bin/sudo chown -R docker:staff /home/docker",
+		WorkingDirectory: "",
+		EnvVariables:     env,
+	}
+
+	_, err = procman.StartProgram(ctx, auth.Auth(), &guestspec)
+	if err != nil {
 		return err
 	}
 
@@ -307,27 +552,53 @@ func (d *Driver) Start() error {
 		return nil
 	case state.Stopped:
 		// TODO add transactional or error handling in the following steps
-		vcConn := NewVcConn(d)
-		err := vcConn.VMPowerOn()
-		if err != nil {
-			return err
-		}
-		// this step waits for the vm to start and fetch its ip address;
-		// this guarantees that the opem-vmtools has started working...
-		_, err = vcConn.VMFetchIP()
+		// Create context
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		c, err := d.vsphereLogin(ctx)
 		if err != nil {
 			return err
 		}
 
-		d.IPAddress, err = d.GetIP()
-		return err
+		vm, err := d.fetchVM(c, ctx, d.MachineName)
+		if err != nil {
+			return err
+		}
+		log.Infof("Powering on VM...")
+		task, err := vm.PowerOn(ctx)
+		if err != nil {
+			return err
+		}
+
+		_, err = task.WaitForResult(ctx, nil)
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Waiting for VMware Tools to come online...")
+		if d.IPAddress, err = d.GetIP(); err != nil {
+			return err
+		}
 	}
-	return errors.NewInvalidStateError(d.MachineName)
+	return nil
 }
 
 func (d *Driver) Stop() error {
-	vcConn := NewVcConn(d)
-	if err := vcConn.VMShutdown(); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
+	if err != nil {
+		return err
+	}
+
+	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	if err != nil {
+		return err
+	}
+	log.Infof("Powering off VM...")
+	if err := vm.ShutdownGuest(ctx); err != nil {
 		return err
 	}
 
@@ -346,8 +617,56 @@ func (d *Driver) Remove() error {
 			return fmt.Errorf("can't stop VM: %s", err)
 		}
 	}
-	vcConn := NewVcConn(d)
-	if err = vcConn.VMDestroy(); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Create a new finder
+	f := find.NewFinder(c.Client, true)
+
+	dc, err := d.getDatacenter(f, ctx)
+	if err != nil {
+		return err
+	}
+
+	f.SetDatacenter(dc)
+
+	dss, err := d.getDatastore(f, ctx)
+	if err != nil {
+		return err
+	}
+
+	// Remove B2D Iso from VM folder
+	m := object.NewFileManager(c.Client)
+	task, err := m.DeleteDatastoreFile(ctx, dss.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename)), dc)
+	if err != nil {
+		return err
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		if types.IsFileNotFound(err) {
+			// Ignore error
+			return nil
+		}
+	}
+
+	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	if err != nil {
+		return err
+	}
+
+	task, err = vm.Destroy(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = task.WaitForResult(ctx, nil)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -385,8 +704,26 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	vcConn := NewVcConn(d)
-	if err := vcConn.VMPowerOff(); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
+	if err != nil {
+		return err
+	}
+
+	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	if err != nil {
+		return err
+	}
+	log.Infof("Powering off VM forcibly...")
+	task, err := vm.PowerOff(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = task.WaitForResult(ctx, nil)
+	if err != nil {
 		return err
 	}
 
@@ -401,28 +738,6 @@ func (d *Driver) Upgrade() error {
 
 func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
-}
-
-func (d *Driver) checkVsphereConfig() error {
-	if d.IP == "" {
-		return errors.NewIncompleteVsphereConfigError("vSphere IP")
-	}
-	if d.Username == "" {
-		return errors.NewIncompleteVsphereConfigError("vSphere username")
-	}
-	if d.Password == "" {
-		return errors.NewIncompleteVsphereConfigError("vSphere password")
-	}
-	if d.Network == "" {
-		return errors.NewIncompleteVsphereConfigError("vSphere network")
-	}
-	if d.Datastore == "" {
-		return errors.NewIncompleteVsphereConfigError("vSphere datastore")
-	}
-	if d.Datacenter == "" {
-		return errors.NewIncompleteVsphereConfigError("vSphere datacenter")
-	}
-	return nil
 }
 
 // Make a boot2docker userdata.tar key bundle
@@ -480,19 +795,145 @@ func (d *Driver) generateKeyBundle() error {
 
 }
 
-func (d *Driver) UpgradeISO() error {
+func (d *Driver) vsphereLogin(ctx context.Context) (*govmomi.Client, error) {
 
-	vcConn := NewVcConn(d)
+	// Parse URL from string
+	u, err := url.Parse(fmt.Sprintf("https://%s:%d/sdk", d.IP, d.Port))
+	if err != nil {
+		return nil, err
+	}
+	// set username and password for the URL
+	u.User = url.UserPassword(d.Username, d.Password)
 
-	if _, err := os.Stat(d.ISO); os.IsNotExist(err) {
-		log.Errorf("Unable to find boot2docker ISO at %s", d.ISO)
-		return errors.NewIncompleteVsphereConfigError(d.ISO)
+	// Connect and log in to ESX or vCenter
+	c, err := govmomi.NewClient(ctx, u, true)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := vcConn.DatastoreUpload(d.ISO, d.MachineName); err != nil {
-		return err
+	return c, nil
+}
+
+func (d *Driver) fetchVM(c *govmomi.Client, ctx context.Context, vmname string) (*object.VirtualMachine, error) {
+
+	// Create a new finder
+	f := find.NewFinder(c.Client, true)
+
+	var vm *object.VirtualMachine
+	var err error
+
+	dc, err := d.getDatacenter(f, ctx)
+	if err != nil {
+		return vm, err
 	}
 
-	return nil
+	f.SetDatacenter(dc)
 
+	vm, err = f.VirtualMachine(ctx, vmname)
+	if err != nil {
+		return vm, err
+	}
+	return vm, nil
+}
+
+type AuthFlag struct {
+	auth types.NamePasswordAuthentication
+}
+
+func (f *AuthFlag) Auth() types.BaseGuestAuthentication {
+	return &f.auth
+}
+
+type FileAttrFlag struct {
+	types.GuestPosixFileAttributes
+}
+
+func (f *FileAttrFlag) SetPerms(owner, group, perms int) {
+	f.OwnerId = owner
+	f.GroupId = group
+	f.Permissions = int64(perms)
+}
+
+func (f *FileAttrFlag) Attr() types.BaseGuestFileAttributes {
+	return &f.GuestPosixFileAttributes
+}
+
+func (d *Driver) getDatacenter(f *find.Finder, ctx context.Context) (dc *object.Datacenter, err error) {
+
+	// Datacenter
+	if d.Datacenter != "" {
+		// Find specified Datacenter
+		dc, err = f.Datacenter(ctx, d.Datacenter)
+		if err != nil {
+			return dc, err
+		}
+	} else {
+		// Use default Datacenter
+		dc, err = f.DefaultDatacenter(ctx)
+		if err != nil {
+			return dc, err
+		}
+	}
+	log.Debug("Datacenter found: ", dc)
+	return dc, nil
+}
+
+func (d *Driver) getDatastore(f *find.Finder, ctx context.Context) (dss *object.Datastore, err error) {
+
+	// Datastore
+	if d.Datastore != "" {
+		// Find specified Datastore
+		dss, err = f.Datastore(ctx, d.Datastore)
+		if err != nil {
+			return dss, err
+		}
+	} else {
+		// Find default Datastore
+		dss, err = f.DefaultDatastore(ctx)
+		if err != nil {
+			return dss, err
+		}
+	}
+	log.Debug("Datastore found: ", dss)
+	return dss, err
+}
+
+func (d *Driver) getNetwork(f *find.Finder, ctx context.Context) (net object.NetworkReference, err error) {
+
+	// Network
+	if d.Network != "" {
+		// Find specified Network
+		net, err = f.Network(ctx, d.Network)
+		if err != nil {
+			return net, err
+		}
+	} else {
+		// Find default Network
+		net, err = f.DefaultNetwork(ctx)
+		if err != nil {
+			return net, err
+		}
+	}
+	log.Debug("Network found: ", net)
+	return net, nil
+
+}
+
+func (d *Driver) getHostSystem(f *find.Finder, ctx context.Context) (hs *object.HostSystem, err error) {
+	// HostSystem
+	if d.HostSystem != "" {
+		// Find specified HostSystem
+		hs, err = f.HostSystem(ctx, d.HostSystem)
+		if err != nil {
+			return hs, err
+		}
+	} else {
+		// Find default HostSystem
+		hs, err = f.DefaultHostSystem(ctx)
+		if err != nil {
+			return hs, err
+		}
+	}
+	log.Debug("HostSystem found: ", hs)
+	return hs, nil
 }
