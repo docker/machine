@@ -172,6 +172,7 @@ MountFlags=slave
 LimitNOFILE=1048576
 LimitNPROC=1048576
 LimitCORE=infinity
+Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
 
 [Install]
 WantedBy=multi-user.target

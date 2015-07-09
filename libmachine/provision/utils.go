@@ -164,7 +164,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if _, err = p.SSHCommand(fmt.Sprintf("printf \"%s\" | sudo tee %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("printf %%s \"%s\" | sudo tee %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
 		return err
 	}
 
