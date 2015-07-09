@@ -91,6 +91,8 @@ DOCKER_OPTS='
 {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}}
 {{ end }}
 '
+{{range .EngineOptions.Env}}export \"{{ printf "%q" . }}\"
+{{end}}
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {
