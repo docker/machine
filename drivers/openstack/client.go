@@ -29,6 +29,7 @@ type Client interface {
 
 	CreateInstance(d *Driver) (string, error)
 	GetInstanceState(d *Driver) (string, error)
+	ListInstance(d *Driver, opt ListOpts) error
 	StartInstance(d *Driver) error
 	StopInstance(d *Driver) error
 	RestartInstance(d *Driver) error
@@ -50,6 +51,36 @@ type GenericClient struct {
 	Provider *gophercloud.ProviderClient
 	Compute  *gophercloud.ServiceClient
 	Network  *gophercloud.ServiceClient
+}
+
+func (c *GenericClient) ListInstance(d *Driver, opt ListOpts) error {
+	log.WithFields(log.Fields{
+		"Username": d.Username,
+		"Region":   d.Region,
+	}).Debug("Set list option")
+	opts := servers.ListOpts{
+		Name:   opt.Name,
+		Status: opt.Status,
+	}
+
+	log.WithFields(log.Fields{
+		"Username": d.Username,
+		"Region":   d.Region,
+	}).Debug("Get instance list from remote cloud platform")
+
+	allPages, err := servers.List(c.Compute, opts).AllPages()
+	if err != nil {
+		return err
+	}
+
+	allInstances, err := servers.ExtractServers(allPages)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(allInstances); i++ {
+		fmt.Println(allInstances[i].Name, allInstances[i].ID, allInstances[i].Status, allInstances[i].Created)
+	}
+	return nil
 }
 
 func (c *GenericClient) CreateInstance(d *Driver) (string, error) {

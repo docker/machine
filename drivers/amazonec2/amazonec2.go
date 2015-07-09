@@ -541,6 +541,10 @@ func (d *Driver) GetSSHKeyPath() string {
 	return filepath.Join(d.storePath, "id_rsa")
 }
 
+func (d *Driver) InstanceList() error {
+	return fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) getInstance() (*amz.EC2Instance, error) {
 	instance, err := d.getClient().GetInstance(d.InstanceId)
 	if err != nil {

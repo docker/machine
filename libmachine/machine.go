@@ -91,3 +91,26 @@ func (m *Machine) Remove(name string, force bool) error {
 	}
 	return m.store.Remove(name, force)
 }
+
+func (m *Machine) RemVMLs(driverName string, driverConfig drivers.DriverOptions) error {
+	driver, err := drivers.NewDriver(driverName, "", "", "", "")
+	if err != nil {
+		return err
+	}
+	host := Host{
+		Name:        "",
+		DriverName:  driverName,
+		Driver:      driver,
+		StorePath:   "",
+		HostOptions: nil,
+	}
+	if driverConfig != nil {
+		if err := host.Driver.SetConfigFromFlags(driverConfig); err != nil {
+			return err
+		}
+	}
+	if err := host.RemVMLs(); err != nil {
+		return err
+	}
+	return nil
+}

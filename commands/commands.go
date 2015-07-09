@@ -338,6 +338,85 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "quiet, q",
+				Usage: "Enable quiet mode",
+			},
+			cli.StringSliceFlag{
+				Name:  "filter",
+				Usage: "Filter output based on conditions provided",
+				Value: &cli.StringSlice{},
+			},
+			cli.StringFlag{
+				Name: "driver, d",
+				Usage: fmt.Sprintf(
+					"Driver to create machine with. Available drivers: %s",
+					strings.Join(drivers.GetDriverNames(), ", "),
+				),
+				Value: "none",
+			},
+			cli.StringFlag{
+				EnvVar: "OS_AUTH_URL",
+				Name:   "openstack-auth-url",
+				Usage:  "OpenStack authentication URL",
+				Value:  "",
+			},
+			cli.BoolFlag{
+				Name:  "openstack-insecure",
+				Usage: "Disable TLS credential checking.",
+			},
+			cli.StringFlag{
+				EnvVar: "OS_USERNAME",
+				Name:   "openstack-username",
+				Usage:  "OpenStack username",
+				Value:  "",
+			},
+			cli.StringFlag{
+				EnvVar: "OS_PASSWORD",
+				Name:   "openstack-password",
+				Usage:  "OpenStack password",
+				Value:  "",
+			},
+			cli.StringFlag{
+				EnvVar: "OS_TENANT_NAME",
+				Name:   "openstack-tenant-name",
+				Usage:  "OpenStack tenant name",
+				Value:  "",
+			},
+			cli.StringFlag{
+				EnvVar: "OS_TENANT_ID",
+				Name:   "openstack-tenant-id",
+				Usage:  "OpenStack tenant id",
+				Value:  "",
+			},
+			cli.StringFlag{
+				EnvVar: "OS_REGION_NAME",
+				Name:   "openstack-region",
+				Usage:  "OpenStack region name",
+				Value:  "",
+			},
+			cli.StringFlag{
+				Name:  "openstack-flavor-id",
+				Usage: "OpenStack flavor id to use for the instance",
+				Value: "",
+			},
+			cli.StringFlag{
+				Name:  "openstack-image-id",
+				Usage: "OpenStack image id to use for the instance",
+				Value: "",
+			},
+			cli.StringFlag{
+				Name:  "openstack-net-id",
+				Usage: "OpenStack network id the machine will be connected on",
+				Value: "",
+			},
+		},
+		Name:   "rem-vm-ls",
+		Usage:  "List remote machines",
+		Action: cmdRemVMLs,
+	},
+	{
 		Name:        "restart",
 		Usage:       "Restart a machine",
 		Description: "Argument(s) are one or more machine names.",

@@ -469,6 +469,10 @@ func (d *Driver) Remove() error {
 	return vbm("unregistervm", "--delete", d.MachineName)
 }
 
+func (d *Driver) InstanceList() error {
+	return fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) Restart() error {
 	s, err := d.GetState()
 	if err != nil {

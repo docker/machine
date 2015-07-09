@@ -98,6 +98,10 @@ func (d *Driver) Remove() error {
 	return nil
 }
 
+func (d *Driver) InstanceList() error {
+	return fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) Restart() error {
 	return fmt.Errorf("hosts without a driver cannot be restarted")
 }
