@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/url"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +35,7 @@ var (
 )
 
 type Driver struct {
+	*drivers.BaseDriver
 	Id                  string
 	AccessKey           string
 	SecretKey           string
@@ -43,14 +43,10 @@ type Driver struct {
 	Region              string
 	AMI                 string
 	SSHKeyID            int
-	SSHUser             string
-	SSHPort             int
 	KeyName             string
 	InstanceId          string
 	InstanceType        string
-	IPAddress           string
 	PrivateIPAddress    string
-	MachineName         string
 	SecurityGroupId     string
 	SecurityGroupName   string
 	ReservationId       string
@@ -59,12 +55,6 @@ type Driver struct {
 	VpcId               string
 	SubnetId            string
 	Zone                string
-	CaCertPath          string
-	PrivateKeyPath      string
-	SwarmMaster         bool
-	SwarmHost           string
-	SwarmDiscovery      string
-	storePath           string
 	keyPath             string
 	RequestSpotInstance bool
 	SpotPrice           string
@@ -179,21 +169,11 @@ func GetCreateFlags() []cli.Flag {
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
 	id := generateId()
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
 	return &Driver{
-		Id:             id,
-		MachineName:    machineName,
-		storePath:      storePath,
-		CaCertPath:     caCert,
-		PrivateKeyPath: privateKey,
+		Id:         id,
+		BaseDriver: inner,
 	}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
@@ -258,10 +238,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
 }
 
 func (d *Driver) DriverName() string {
@@ -464,17 +440,10 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+// GetSSHHostname -
 func (d *Driver) GetSSHHostname() (string, error) {
 	// TODO: use @nathanleclaire retry func here (ehazlett)
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -535,10 +504,6 @@ func (d *Driver) Kill() error {
 func (d *Driver) getClient() *amz.EC2 {
 	auth := amz.GetAuth(d.AccessKey, d.SecretKey, d.SessionToken)
 	return amz.NewEC2(auth, d.Region)
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
 }
 
 func (d *Driver) getInstance() (*amz.EC2Instance, error) {

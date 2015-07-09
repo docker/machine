@@ -33,10 +33,7 @@ const (
 )
 
 type Driver struct {
-	IPAddress      string
-	MachineName    string
-	SSHUser        string
-	SSHPort        int
+	*drivers.BaseDriver
 	CPU            int
 	Memory         int
 	DiskSize       int
@@ -49,13 +46,7 @@ type Driver struct {
 	Datacenter     string
 	Pool           string
 	HostIP         string
-	storePath      string
 	ISO            string
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
 }
 
 func init() {
@@ -136,35 +127,12 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -306,7 +274,7 @@ func (d *Driver) Create() error {
 	}
 
 	// Copy SSH keys bundle
-	if err := vcConn.GuestUpload(B2DUser, B2DPass, path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar"); err != nil {
+	if err := vcConn.GuestUpload(B2DUser, B2DPass, d.ResolveStorePath("userdata.tar"), "/home/docker/userdata.tar"); err != nil {
 		return err
 	}
 
@@ -454,7 +422,7 @@ func (d *Driver) generateKeyBundle() error {
 
 	magicString := "boot2docker, this is vmware speaking"
 
-	tf, err := os.Create(path.Join(d.storePath, "userdata.tar"))
+	tf, err := os.Create(d.ResolveStorePath("userdata.tar"))
 	if err != nil {
 		return err
 	}

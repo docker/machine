@@ -18,22 +18,13 @@ import (
 )
 
 type Driver struct {
-	IPAddress      string
-	SSHUser        string
-	SSHPort        int
-	storePath      string
+	*drivers.BaseDriver
 	boot2DockerURL string
 	boot2DockerLoc string
 	vSwitch        string
-	MachineName    string
 	diskImage      string
 	diskSize       int
 	memSize        int
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
 }
 
 func init() {
@@ -87,35 +78,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -186,7 +154,7 @@ func (d *Driver) Create() error {
 		if d.boot2DockerURL != "" {
 			isoURL = d.boot2DockerURL
 			log.Infof("Downloading boot2docker.iso from %s...", isoURL)
-			if err := b2dutils.DownloadISO(d.storePath, "boot2docker.iso", isoURL); err != nil {
+			if err := b2dutils.DownloadISO(d.ResolveStorePath("."), "boot2docker.iso", isoURL); err != nil {
 				return err
 			}
 		} else {
@@ -217,14 +185,14 @@ func (d *Driver) Create() error {
 				}
 
 			}
-			isoDest := filepath.Join(d.storePath, "boot2docker.iso")
+			isoDest := d.ResolveStorePath("boot2docker.iso")
 			if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
 				return err
 
 			}
 		}
 	} else {
-		if err := utils.CopyFile(d.boot2DockerLoc, filepath.Join(d.storePath, "boot2docker.iso")); err != nil {
+		if err := utils.CopyFile(d.boot2DockerLoc, d.ResolveStorePath("boot2docker.iso")); err != nil {
 			return err
 		}
 	}
@@ -250,7 +218,7 @@ func (d *Driver) Create() error {
 	command := []string{
 		"New-VM",
 		"-Name", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", d.storePath),
+		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(".")),
 		"-MemoryStartupBytes", fmt.Sprintf("%dMB", d.memSize)}
 	_, err = execute(command)
 	if err != nil {
@@ -260,7 +228,7 @@ func (d *Driver) Create() error {
 	command = []string{
 		"Set-VMDvdDrive",
 		"-VMName", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", filepath.Join(d.storePath, "boot2docker.iso"))}
+		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath("boot2docker.iso"))}
 	_, err = execute(command)
 	if err != nil {
 		return err
@@ -444,8 +412,8 @@ func (d *Driver) generateDiskImage() error {
 	// Create a small fixed vhd, put the tar in,
 	// convert to dynamic, then resize
 
-	d.diskImage = filepath.Join(d.storePath, "disk.vhd")
-	fixed := filepath.Join(d.storePath, "fixed.vhd")
+	d.diskImage = d.ResolveStorePath("disk.vhd")
+	fixed := d.ResolveStorePath("fixed.vhd")
 	log.Infof("Creating VHD")
 	command := []string{
 		"New-VHD",
