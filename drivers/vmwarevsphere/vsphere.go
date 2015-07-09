@@ -206,6 +206,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) GetURL() (string, error) {
 	ip, _ := d.GetIP()
 	if ip == "" {

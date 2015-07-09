@@ -349,6 +349,10 @@ func (d *Driver) Restart() error {
 	return nil
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) Kill() error {
 	log.Infof("Forcibly halting %s...", d.MachineName)
 	vmrun("stop", d.vmxPath(), "hard nogui")

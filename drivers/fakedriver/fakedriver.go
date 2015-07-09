@@ -33,6 +33,10 @@ func (d *FakeDriver) GetMachineName() string {
 	return ""
 }
 
+func (d *FakeDriver) GetMachineCreateReturnErr() (bool, error) {
+	return false, nil
+}
+
 func (d *FakeDriver) GetIP() (string, error) {
 	return "1.2.3.4", nil
 }

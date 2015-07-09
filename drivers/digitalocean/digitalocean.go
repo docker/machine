@@ -135,6 +135,10 @@ func (d *Driver) DriverName() string {
 	return "digitalocean"
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AccessToken = flags.String("digitalocean-access-token")
 	d.Image = flags.String("digitalocean-image")

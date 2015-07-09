@@ -290,6 +290,10 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) GetMachineCreateReturnErr() (bool, error) {
+	return false, fmt.Errorf("Not implemented yet")
+}
+
 func (d *Driver) Start() error {
 	if err := d.setUserSubscription(); err != nil {
 		return err

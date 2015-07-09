@@ -38,6 +38,9 @@ type Driver interface {
 	// GetMachineName returns the name of the machine
 	GetMachineName() string
 
+	// GetMachineCreateReturnErr returns the return value of requesting to create server
+	GetMachineCreateReturnErr() (bool, error)
+
 	// GetSSHHostname returns hostname for use with ssh
 	GetSSHHostname() (string, error)
 
