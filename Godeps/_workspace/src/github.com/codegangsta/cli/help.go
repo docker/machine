@@ -19,7 +19,7 @@ AUTHOR:{{if .Author}}
   {{.Email}}{{end}}{{end}}
 
 COMMANDS:
-   {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
+   {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Description}}
    {{end}}{{if .Flags}}
 GLOBAL OPTIONS:
    {{range .Flags}}{{.}}
@@ -53,7 +53,7 @@ USAGE:
    {{.Name}} command{{if .Flags}} [command options]{{end}} [arguments...]
 
 COMMANDS:
-   {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
+   {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Description}}
    {{end}}{{if .Flags}}
 OPTIONS:
    {{range .Flags}}{{.}}
@@ -61,9 +61,9 @@ OPTIONS:
 `
 
 var helpCommand = Command{
-	Name:      "help",
-	ShortName: "h",
-	Usage:     "Shows a list of commands or help for one command",
+	Name:        "help",
+	ShortName:   "h",
+	Description: "Shows a list of commands or help for one command",
 	Action: func(c *Context) {
 		args := c.Args()
 		if args.Present() {
@@ -75,9 +75,9 @@ var helpCommand = Command{
 }
 
 var helpSubcommand = Command{
-	Name:      "help",
-	ShortName: "h",
-	Usage:     "Shows a list of commands or help for one command",
+	Name:        "help",
+	ShortName:   "h",
+	Description: "Shows a list of commands or help for one command",
 	Action: func(c *Context) {
 		args := c.Args()
 		if args.Present() {
