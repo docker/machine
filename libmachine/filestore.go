@@ -35,8 +35,7 @@ func (s Filestore) loadHost(name string) (*Host, error) {
 		return nil, err
 	}
 
-	h := FillNestedHost(host)
-	return h, nil
+	return host, nil
 }
 
 func (s Filestore) GetPath() string {

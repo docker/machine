@@ -3,7 +3,6 @@ package openstack
 import (
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 )
 
 type Driver struct {
+	*drivers.BaseDriver
 	AuthUrl          string
 	Insecure         bool
 	DomainID         string
@@ -27,7 +27,6 @@ type Driver struct {
 	Region           string
 	AvailabilityZone string
 	EndpointType     string
-	MachineName      string
 	MachineId        string
 	FlavorName       string
 	FlavorId         string
@@ -39,15 +38,6 @@ type Driver struct {
 	SecurityGroups   []string
 	FloatingIpPool   string
 	FloatingIpPoolId string
-	SSHUser          string
-	SSHPort          int
-	IPAddress        string
-	CaCertPath       string
-	PrivateKeyPath   string
-	storePath        string
-	SwarmMaster      bool
-	SwarmHost        string
-	SwarmDiscovery   string
 	client           Client
 }
 
@@ -189,49 +179,12 @@ func NewDriver(machineName string, storePath string, caCert string, privateKey s
 }
 
 func NewDerivedDriver(machineName string, storePath string, client Client, caCert string, privateKey string) (*Driver, error) {
-	return &Driver{
-		MachineName:    machineName,
-		storePath:      storePath,
-		client:         client,
-		CaCertPath:     caCert,
-		PrivateKeyPath: privateKey,
-	}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner, client: client}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
-}
-
-func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "root"
-	}
-
-	return d.SSHUser
 }
 
 func (d *Driver) DriverName() string {

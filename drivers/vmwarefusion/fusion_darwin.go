@@ -11,8 +11,6 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"path"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -37,26 +35,17 @@ const (
 
 // Driver for VMware Fusion
 type Driver struct {
-	MachineName    string
-	IPAddress      string
+	*drivers.BaseDriver
 	Memory         int
 	DiskSize       int
 	CPU            int
 	ISO            string
 	Boot2DockerURL string
+	CPUS           int
+
+	SSHPassword    string
 	ConfigDriveISO string
 	ConfigDriveURL string
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-	CPUS           int
-	SSHUser        string
-	SSHPassword    string
-	SSHPort        int
-
-	storePath string
 }
 
 func init() {
@@ -114,38 +103,19 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
 
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
+func (d *Driver) GetSSHUsername() string {
+	if d.SSHUser == "" {
+		d.SSHUser = "docker"
 	}
 
-	return d.SSHPort, nil
-}
-
-func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
@@ -159,8 +129,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")
 	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
 	d.ConfigDriveURL = flags.String("vmwarefusion-configdrive-url")
-	d.ISO = path.Join(d.storePath, isoFilename)
-	d.ConfigDriveISO = path.Join(d.storePath, isoConfigDrive)
+	d.ConfigDriveISO = d.ResolveStorePath(isoConfigDrive)
+	d.ISO = d.ResolveStorePath(isoFilename)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -227,7 +197,7 @@ func (d *Driver) Create() error {
 	// download cloud-init config drive
 	if d.ConfigDriveURL != "" {
 		log.Infof("Downloading %s from %s", isoConfigDrive, d.ConfigDriveURL)
-		if err := b2dutils.DownloadISO(d.storePath, isoConfigDrive, d.ConfigDriveURL); err != nil {
+		if err := b2dutils.DownloadISO(d.ResolveStorePath("."), isoConfigDrive, d.ConfigDriveURL); err != nil {
 			return err
 		}
 	}
@@ -238,7 +208,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Creating VM...")
-	if err := os.MkdirAll(d.storePath, 0755); err != nil {
+	if err := os.MkdirAll(d.ResolveStorePath("."), 0755); err != nil {
 		return err
 	}
 
@@ -255,7 +225,7 @@ func (d *Driver) Create() error {
 	vmxt.Execute(vmxfile, d)
 
 	// Generate vmdk file
-	diskImg := filepath.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.MachineName))
+	diskImg := d.ResolveStorePath(fmt.Sprintf("%s.vmdk", d.MachineName))
 	if _, err := os.Stat(diskImg); err != nil {
 		if !os.IsNotExist(err) {
 			return err
@@ -347,7 +317,7 @@ func (d *Driver) Create() error {
 	vmrun("-gu", B2DUser, "-gp", B2DPass, "directoryExistsInGuest", d.vmxPath(), "/var/lib/boot2docker")
 
 	// Copy SSH keys bundle
-	vmrun("-gu", B2DUser, "-gp", B2DPass, "CopyFileFromHostToGuest", d.vmxPath(), path.Join(d.storePath, "userdata.tar"), "/home/docker/userdata.tar")
+	vmrun("-gu", B2DUser, "-gp", B2DPass, "CopyFileFromHostToGuest", d.vmxPath(), d.ResolveStorePath("userdata.tar"), "/home/docker/userdata.tar")
 
 	// Expand tar file.
 	vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
@@ -442,11 +412,11 @@ func (d *Driver) Upgrade() error {
 }
 
 func (d *Driver) vmxPath() string {
-	return path.Join(d.storePath, fmt.Sprintf("%s.vmx", d.MachineName))
+	return d.ResolveStorePath(fmt.Sprintf("%s.vmx", d.MachineName))
 }
 
 func (d *Driver) vmdkPath() string {
-	return path.Join(d.storePath, fmt.Sprintf("%s.vmdk", d.MachineName))
+	return d.ResolveStorePath(fmt.Sprintf("%s.vmdk", d.MachineName))
 }
 
 func (d *Driver) getIPfromDHCPLease() (string, error) {
@@ -541,7 +511,7 @@ func (d *Driver) generateKeyBundle() error {
 
 	magicString := "boot2docker, this is vmware speaking"
 
-	tf, err := os.Create(path.Join(d.storePath, "userdata.tar"))
+	tf, err := os.Create(d.ResolveStorePath("userdata.tar"))
 	if err != nil {
 		return err
 	}
