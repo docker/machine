@@ -27,6 +27,7 @@ parent="smn_machine_ref"
 * [scp](scp.md)
 * [ssh](ssh.md)
 * [start](start.md)
+* [status](status.md)
 * [stop](stop.md)
 * [upgrade](upgrade.md)
 * [url](url.md)

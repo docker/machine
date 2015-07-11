@@ -380,6 +380,12 @@ var Commands = []cli.Command{
 		Action:      cmdStart,
 	},
 	{
+		Name:        "status",
+		Usage:       "Get the status of a machine",
+		Description: "Argument is a machine name.",
+		Action:      cmdStatus,
+	},
+	{
 		Name:        "stop",
 		Usage:       "Stop a machine",
 		Description: "Argument(s) are one or more machine names.",
