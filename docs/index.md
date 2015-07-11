@@ -548,23 +548,23 @@ The following is an example usage:
 $ docker-machine create -d virtualbox \
     --engine-label foo=bar \
     --engine-label spam=eggs \
-    --engine-storage-driver devicemapper \
+    --engine-storage-driver overlay \
     --engine-insecure-registry registry.myco.com \
     foobarmachine
 ```
 
 This will create a virtual machine running locally in Virtualbox which uses the
-`devicemapper` storage backend, has the key-value pairs `foo=bar` and
-`spam=eggs` as labels on the engine, and allows pushing / pulling from the
-insecure registry located at `registry.myco.com`. You can verify much of this
-by inspecting the output of `docker info`:
+`overlay` storage backend, has the key-value pairs `foo=bar` and `spam=eggs` as
+labels on the engine, and allows pushing / pulling from the insecure registry
+located at `registry.myco.com`. You can verify much of this by inspecting the
+output of `docker info`:
 
 ```
 $ eval $(docker-machine env foobarmachine)
 $ docker version
 Containers: 0
 Images: 0
-Storage Driver: devicemapper
+Storage Driver: overlay
 ...
 Name: foobarmachine
 ...
@@ -1007,7 +1007,8 @@ $ cat foo.txt
 A file created remotely!
 ```
 
-Files are copied recursively by default (`scp`'s `-r` flag).
+Just like how `scp` has a `-r` flag for copying files recursively,
+`docker-machine` has a `-r` flag for this feature.
 
 In the case of transferring files from machine to machine, they go through the
 local host's filesystem first (using `scp`'s `-3` flag).
@@ -1037,11 +1038,14 @@ dev    *        virtualbox   Stopped
 
 #### upgrade
 
-Upgrade a machine to the latest version of Docker. If the machine uses Ubuntu
-as the underlying operating system, it will upgrade the package `lxc-docker`
-(our recommended install method). If the machine uses boot2docker, this command
-will download the latest boot2docker ISO and replace the machine's existing ISO
-with the latest.
+Upgrade a machine to the latest version of Docker. How this upgrade happens
+depends on the underlying distribution used on the created instance.
+
+For example, if the machine uses Ubuntu as the underlying operating system, it
+will run a command similar to `sudo apt-get upgrade lxc-docker`, because Machine
+expects Ubuntu machines it manages to use this package. As another example, if
+the machine uses boot2docker for its OS, this command will download the latest
+boot2docker ISO and replace the machine's existing ISO with the latest.
 
 ```
 $ docker-machine upgrade dev
@@ -1174,7 +1178,7 @@ Options:
  - `--exoscale-instance-profile`: Instance profile.
  - `--exoscale-disk-size`: Disk size for the host in GB.
  - `--exoscale-image`: exoscale disk size. (10, 50, 100, 200, 400)
- - `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
+ - `--exoscale-security-group`: Security group. Non-existent groups will be created. Can be repeated.
  - `--exoscale-availability-zone`: exoscale availability zone.
 
 If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule. Moreover, if you want to use Swarm, also add TCP port 3376.
@@ -1530,7 +1534,7 @@ Options:
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB).
  - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB).
 
-The VMware Fusion driver uses the latest boot2docker image. 
+The VMware Fusion driver uses the latest boot2docker image.
 See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
 
 Environment variables and default values:
@@ -1539,8 +1543,8 @@ Environment variables and default values:
 |----------------------------------|--------------------------|--------------------------|
 | `--vmwarefusion-boot2docker-url` | `FUSION_BOOT2DOCKER_URL` | *Latest boot2docker url* |
 | `--vmwarefusion-cpu-count`       | `FUSION_CPU_COUNT`       | `1`                      |
-| `--vmwarefusion-disk-size`       | `FUSION_MEMORY_SIZE`     | `20000`                  |
-| `--vmwarefusion-memory-size`     | `FUSION_DISK_SIZE`       | `1024`                   |
+| `--vmwarefusion-disk-size`       | `FUSION_DISK_SIZE`       | `20000`                  |
+| `--vmwarefusion-memory-size`     | `FUSION_MEMORY_SIZE`     | `1024`                   |
 
 #### VMware vCloud Air
 Creates machines on [vCloud Air](http://vcloud.vmware.com) subscription service. You need an account within an existing subscription of vCloud Air VPC or Dedicated Cloud.
