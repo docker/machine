@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"text/tabwriter"
 
@@ -17,6 +18,7 @@ type FilterOptions struct {
 	SwarmName  []string
 	DriverName []string
 	State      []string
+	Name       []string
 }
 
 func cmdLs(c *cli.Context) {
@@ -100,6 +102,8 @@ func parseFilters(filters []string) (FilterOptions, error) {
 			options.DriverName = append(options.DriverName, value)
 		case "state":
 			options.State = append(options.State, value)
+		case "name":
+			options.Name = append(options.Name, value)
 		default:
 			return options, fmt.Errorf("Unsupported filter key '%s'", key)
 		}
@@ -110,7 +114,8 @@ func parseFilters(filters []string) (FilterOptions, error) {
 func filterHosts(hosts []*libmachine.Host, filters FilterOptions) []*libmachine.Host {
 	if len(filters.SwarmName) == 0 &&
 		len(filters.DriverName) == 0 &&
-		len(filters.State) == 0 {
+		len(filters.State) == 0 &&
+		len(filters.Name) == 0 {
 		return hosts
 	}
 
@@ -140,8 +145,9 @@ func filterHost(host *libmachine.Host, filters FilterOptions, swarmMasters map[s
 	swarmMatches := matchesSwarmName(host, filters.SwarmName, swarmMasters)
 	driverMatches := matchesDriverName(host, filters.DriverName)
 	stateMatches := matchesState(host, filters.State)
+	nameMatches := matchesName(host, filters.Name)
 
-	return swarmMatches && driverMatches && stateMatches
+	return swarmMatches && driverMatches && stateMatches && nameMatches
 }
 
 func matchesSwarmName(host *libmachine.Host, swarmNames []string, swarmMasters map[string]string) bool {
@@ -180,6 +186,22 @@ func matchesState(host *libmachine.Host, states []string) bool {
 			log.Warn(err)
 		}
 		if n == s.String() {
+			return true
+		}
+	}
+	return false
+}
+
+func matchesName(host *libmachine.Host, names []string) bool {
+	if len(names) == 0 {
+		return true
+	}
+	for _, n := range names {
+		r, err := regexp.Compile(n)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if r.MatchString(host.Driver.GetMachineName()) {
 			return true
 		}
 	}
