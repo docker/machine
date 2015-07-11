@@ -27,21 +27,22 @@ Options:
   {{range .Flags}}{{.}}
   {{end}}{{end}}
 Commands:
-  {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
+  {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Description}}
   {{end}}
 Run '{{.Name}} COMMAND --help' for more information on a command.
 `
 
-var CommandHelpTemplate = `Usage: docker-machine {{.Name}}{{if .Flags}} [OPTIONS]{{end}} [arg...]
-
-{{.Usage}}{{if .Description}}
-
+var CommandHelpTemplate = `Usage: docker-machine {{.Name}} {{if .Flags}}[OPTIONS] {{end}}{{if .Usage}}{{.Usage}}{{end}}
+{{if .Description}}
 Description:
-   {{.Description}}{{end}}{{if .Flags}}
-
+   {{.Description}}
+{{end}}
+{{if .Flags}}
 Options:
-   {{range .Flags}}
-   {{.}}{{end}}{{ end }}
+  {{range .Flags}}
+	{{.}}
+	{{end}}
+{{end}}
 `
 
 func main() {
