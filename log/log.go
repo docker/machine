@@ -36,11 +36,10 @@ type Logger interface {
 }
 
 var (
-	l = TerminalLogger{}
+	l        = TerminalLogger{}
+	debugSet = isDebug()
 )
 
-// TODO: I think this is superflous and can be replaced by one check for if
-// debug is on that sets a variable in this module.
 func isDebug() bool {
 	debugEnv := os.Getenv("DEBUG")
 	if debugEnv != "" {
