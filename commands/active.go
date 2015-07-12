@@ -22,12 +22,12 @@ func cmdActive(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	host, err := mcn.GetActive()
+	host, err := provider.GetActive()
 	if err != nil {
 		log.Fatalf("Error getting active host: %s", err)
 	}

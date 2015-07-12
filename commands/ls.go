@@ -25,8 +25,8 @@ func cmdLs(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mcn := getDefaultMcn(c)
-	hostList, err := mcn.List()
+	provider := getDefaultProvider(c)
+	hostList, err := provider.List()
 	if err != nil {
 		log.Fatal(err)
 	}
