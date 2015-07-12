@@ -43,7 +43,7 @@ func TestCmdEnvBash(t *testing.T) {
 		t.Fatal(sErr)
 	}
 
-	mcn, err := libmachine.New(store)
+	provider, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,12 +59,12 @@ func TestCmdEnvBash(t *testing.T) {
 		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions, flags)
+	host, err := provider.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err = mcn.Get("test-a")
+	host, err = provider.Get("test-a")
 	if err != nil {
 		t.Fatalf("error loading host: %v", err)
 	}
@@ -142,7 +142,7 @@ func TestCmdEnvFish(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mcn, err := libmachine.New(store)
+	provider, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,12 +158,12 @@ func TestCmdEnvFish(t *testing.T) {
 		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions, flags)
+	host, err := provider.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err = mcn.Get("test-a")
+	host, err = provider.Get("test-a")
 	if err != nil {
 		t.Fatalf("error loading host: %v", err)
 	}
@@ -241,7 +241,7 @@ func TestCmdEnvPowerShell(t *testing.T) {
 		t.Fatal(sErr)
 	}
 
-	mcn, err := libmachine.New(store)
+	provider, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,12 +257,12 @@ func TestCmdEnvPowerShell(t *testing.T) {
 		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions, flags)
+	host, err := provider.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	host, err = mcn.Get("test-a")
+	host, err = provider.Get("test-a")
 	if err != nil {
 		t.Fatalf("error loading host: %v", err)
 	}
