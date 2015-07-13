@@ -450,6 +450,10 @@ func (d *Driver) getIP(inst *ecs.InstanceAttributesType) string {
 		if inst.InnerIpAddress.IpAddress != nil && len(inst.InnerIpAddress.IpAddress) > 0 {
 			return inst.InnerIpAddress.IpAddress[0]
 		}
+
+		if inst.VpcAttributes.PrivateIpAddress.IpAddress != nil && len(inst.VpcAttributes.PrivateIpAddress.IpAddress) > 0 {
+			return inst.VpcAttributes.PrivateIpAddress.IpAddress[0]
+		}
 	}
 	if inst.PublicIpAddress.IpAddress != nil && len(inst.PublicIpAddress.IpAddress) > 0 {
 		return inst.PublicIpAddress.IpAddress[0]
