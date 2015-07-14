@@ -104,3 +104,9 @@ load ${BASE_TEST_DIR}/helpers.bash
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
 }
+
+@test "$DRIVER: status" {
+  run machine status $NAME
+  [ "$status" -eq 0 ]
+  [[ ${output} == *"Running"* ]]
+}
