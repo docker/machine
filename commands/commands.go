@@ -15,6 +15,7 @@ import (
 	"github.com/docker/machine/drivers"
 	_ "github.com/docker/machine/drivers/amazonec2"
 	_ "github.com/docker/machine/drivers/azure"
+	_ "github.com/docker/machine/drivers/centurylinkcloud"
 	_ "github.com/docker/machine/drivers/digitalocean"
 	_ "github.com/docker/machine/drivers/exoscale"
 	_ "github.com/docker/machine/drivers/generic"
