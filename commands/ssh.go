@@ -29,12 +29,12 @@ func cmdSsh(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	host, err := mcn.Get(name)
+	host, err := provider.Get(name)
 	if err != nil {
 		log.Fatal(err)
 	}
