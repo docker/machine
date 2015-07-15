@@ -19,6 +19,7 @@ identifier="smn_machine_drivers"
 * [Generic](generic.md)
 * [Microsoft Hyper-V](hyper-v.md)
 * [OpenStack](openstack.md)
+* [Parallels](parallels.md)
 * [Rackspace](rackspace.md)
 * [IBM Softlayer](soft-layer.md)
 * [Oracle VirtualBox](virtualbox.md)
