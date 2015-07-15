@@ -166,9 +166,9 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "Set this flag to enable CloudWatch monitoring",
 		},
 		cli.StringFlag{
-			Name:  "amazonec2-default-user",
-			Usage: "Set the name of the default user for the AMI",
-			Value: "",
+			Name:   "amazonec2-default-user",
+			Usage:  "Set the name of the default user for the AMI",
+			Value:  "",
 			EnvVar: "AWS_DEFAULT_USER",
 		},
 	}
@@ -229,7 +229,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if d.SubnetId == "" && d.VpcId == "" {
 		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
 	}
-	
+
 	if d.isSwarmMaster() {
 		u, err := url.Parse(d.SwarmHost)
 		if err != nil {

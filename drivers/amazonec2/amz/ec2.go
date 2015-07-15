@@ -96,8 +96,8 @@ type (
 				Primary          bool   `xml:"primary"`
 			} `xml:"privateIpAddressesSet>item"`
 		} `xml:"networkInterfaceSet>item"`
-		EbsOptimized bool `xml:"ebsOptimized"`
-		UserData string `xml:"userData"`
+		EbsOptimized bool   `xml:"ebsOptimized"`
+		UserData     string `xml:"userData"`
 	}
 
 	RunInstancesResponse struct {
@@ -220,9 +220,9 @@ func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCou
 
 	if defaultUser != "" {
 		userData := "#cloud-config\n" +
-	                "  system_info:\n" +
-	                "    default_user:\n" +
-	                "      name: " + defaultUser + "\n"
+			"  system_info:\n" +
+			"    default_user:\n" +
+			"      name: " + defaultUser + "\n"
 		v.Set("UserData", base64.StdEncoding.EncodeToString([]byte(userData)))
 	}
 
@@ -284,9 +284,9 @@ func (e *EC2) RequestSpotInstances(amiId string, instanceType string, zone strin
 
 	if defaultUser != "" {
 		userData := "#cloud-config\n" +
-	                "  system_info:\n" +
-	                "    default_user:\n" +
-	                "      name: " + defaultUser + "\n"
+			"  system_info:\n" +
+			"    default_user:\n" +
+			"      name: " + defaultUser + "\n"
 		v.Set("UserData", base64.StdEncoding.EncodeToString([]byte(userData)))
 	}
 
