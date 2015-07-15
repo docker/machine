@@ -168,6 +168,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "amazonec2-default-user",
 			Usage: "Set the name of the default user for the AMI",
+			Value: "",
 			EnvVar: "AWS_DEFAULT_USER",
 		},
 	}
