@@ -40,10 +40,10 @@ func cmdInspect(c *cli.Context) {
 			log.Fatal(err)
 		}
 
-		if err := tmpl.Execute(os.Stderr, obj); err != nil {
+		if err := tmpl.Execute(os.Stdout, obj); err != nil {
 			log.Fatal(err)
 		}
-		os.Stderr.Write([]byte{'\n'})
+		os.Stdout.Write([]byte{'\n'})
 	} else {
 		prettyJSON, err := json.MarshalIndent(getHost(c), "", "    ")
 		if err != nil {
