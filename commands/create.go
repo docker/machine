@@ -54,7 +54,7 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func cmdCreate(c *cli.Context) {
 		},
 	}
 
-	_, err = mcn.Create(name, driver, hostOptions, c)
+	_, err = provider.Create(name, driver, hostOptions, c)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
 		log.Fatal("You will want to check the provider to make sure the machine and associated resources were properly removed.")

@@ -25,13 +25,13 @@ func cmdRm(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, host := range c.Args() {
-		if err := mcn.Remove(host, force); err != nil {
+		if err := provider.Remove(host, force); err != nil {
 			log.Errorf("Error removing machine %s: %s", host, err)
 			isError = true
 		} else {

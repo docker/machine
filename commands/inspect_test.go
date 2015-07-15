@@ -73,7 +73,7 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 		t.Fatal(sErr)
 	}
 
-	mcn, err := libmachine.New(store)
+	provider, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 	}
 
 	flags := getTestDriverFlags()
-	_, err = mcn.Create("test-a", "none", hostOptions, flags)
+	_, err = provider.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}

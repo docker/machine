@@ -26,7 +26,7 @@ var (
 	}
 )
 
-func getInfoForScpArg(hostAndPath string, mcn libmachine.Machine) (*libmachine.Host, string, []string, error) {
+func getInfoForScpArg(hostAndPath string, provider libmachine.Provider) (*libmachine.Host, string, []string, error) {
 	// TODO: What to do about colon in filepath?
 	splitInfo := strings.Split(hostAndPath, ":")
 
@@ -38,7 +38,7 @@ func getInfoForScpArg(hostAndPath string, mcn libmachine.Machine) (*libmachine.H
 	// Remote path.  e.g. "machinename:/usr/bin/cmatrix"
 	if len(splitInfo) == 2 {
 		path := splitInfo[1]
-		host, err := mcn.Get(splitInfo[0])
+		host, err := provider.Get(splitInfo[0])
 		if err != nil {
 			return nil, "", nil, fmt.Errorf("Error loading host: %s", err)
 		}
@@ -64,18 +64,18 @@ func generateLocationArg(host *libmachine.Host, path string) (string, error) {
 	return locationPrefix + path, nil
 }
 
-func getScpCmd(src, dest string, sshArgs []string, mcn libmachine.Machine) (*exec.Cmd, error) {
+func getScpCmd(src, dest string, sshArgs []string, provider libmachine.Provider) (*exec.Cmd, error) {
 	cmdPath, err := exec.LookPath("scp")
 	if err != nil {
 		return nil, errors.New("Error: You must have a copy of the scp binary locally to use the scp feature.")
 	}
 
-	srcHost, srcPath, srcOpts, err := getInfoForScpArg(src, mcn)
+	srcHost, srcPath, srcOpts, err := getInfoForScpArg(src, provider)
 	if err != nil {
 		return nil, err
 	}
 
-	destHost, destPath, destOpts, err := getInfoForScpArg(dest, mcn)
+	destHost, destPath, destOpts, err := getInfoForScpArg(dest, provider)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +129,8 @@ func cmdScp(c *cli.Context) {
 	src := args[0]
 	dest := args[1]
 
-	mcn := getDefaultMcn(c)
-	cmd, err := getScpCmd(src, dest, sshArgs, *mcn)
+	provider := getDefaultProvider(c)
+	cmd, err := getScpCmd(src, dest, sshArgs, *provider)
 
 	if err != nil {
 		log.Fatal(err)
