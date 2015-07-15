@@ -60,6 +60,7 @@ type Driver struct {
 	SpotPrice           string
 	PrivateIPOnly       bool
 	Monitoring          bool
+	DefaultUser         string
 }
 
 func init() {
@@ -164,6 +165,11 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "amazonec2-monitoring",
 			Usage: "Set this flag to enable CloudWatch monitoring",
 		},
+		cli.StringFlag{
+			Name:  "amazonec2-default-user",
+			Usage: "Set the name of the default user for the AMI",
+			EnvVar: "AWS_DEFAULT_USER",
+		},
 	}
 }
 
@@ -209,6 +215,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
+	d.DefaultUser = flags.String("amazonec2-default-user")
 
 	if d.AccessKey == "" {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
@@ -221,7 +228,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if d.SubnetId == "" && d.VpcId == "" {
 		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
 	}
-
+	
 	if d.isSwarmMaster() {
 		u, err := url.Parse(d.SwarmHost)
 		if err != nil {
@@ -335,7 +342,7 @@ func (d *Driver) Create() error {
 	log.Debugf("launching instance in subnet %s", d.SubnetId)
 	var instance amz.EC2Instance
 	if d.RequestSpotInstance {
-		spotInstanceRequestId, err := d.getClient().RequestSpotInstances(d.AMI, d.InstanceType, d.Zone, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.SpotPrice, d.Monitoring)
+		spotInstanceRequestId, err := d.getClient().RequestSpotInstances(d.AMI, d.InstanceType, d.Zone, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.SpotPrice, d.Monitoring, d.DefaultUser)
 		if err != nil {
 			return fmt.Errorf("Error request spot instance: %s", err)
 		}
@@ -356,7 +363,7 @@ func (d *Driver) Create() error {
 			return fmt.Errorf("Error get instance: %s", err)
 		}
 	} else {
-		inst, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.PrivateIPOnly, d.Monitoring)
+		inst, err := d.getClient().RunInstance(d.AMI, d.InstanceType, d.Zone, 1, 1, d.SecurityGroupId, d.KeyName, d.SubnetId, bdm, d.IamInstanceProfile, d.PrivateIPOnly, d.Monitoring, d.DefaultUser)
 		if err != nil {
 			return fmt.Errorf("Error launching instance: %s", err)
 		}
