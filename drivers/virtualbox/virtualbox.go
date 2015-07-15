@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -19,6 +20,7 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
@@ -288,35 +290,46 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	// let VBoxService do nice magic automounting (when it's used)
-	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
-		return err
+	var shareDir string
+
+	homePath := homedir.Get()
+
+	switch runtime.GOOS {
+	case "windows":
+		shareDir = homePath
+		mountDir, err := translateWindowsMount(homePath)
+		if err != nil {
+			return err
+		}
+		shareDir = mountDir
+	case "darwin":
+		shareDir = homePath
+	case "linux":
+		shareDir = homePath
 	}
+
+	shareName := shareDir
+
+	log.Debugf("creating share: path=%s", shareDir)
+
+	// let VBoxService do nice magic automounting (when it's used)
 	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountDir", "/"); err != nil {
 		return err
 	}
-
-	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "windows":
-		shareName = "c/Users"
-		shareDir = "c:\\Users"
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-		// TODO "linux"
+	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
+		return err
 	}
 
 	if shareDir != "" {
 		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
 			return err
 		} else if !os.IsNotExist(err) {
-			if shareName == "" {
+			if shareName != "" {
 				// parts of the VBox internal code are buggy with share names that start with "/"
 				shareName = strings.TrimLeft(shareDir, "/")
-				// TODO do some basic Windows -> MSYS path conversion
-				// ie, s!^([a-z]+):[/\\]+!\1/!; s!\\!/!g
 			}
+
+			log.Debugf("adding shared folder: name=%q dir=%q", shareName, shareDir)
 
 			// woo, shareDir exists!  let's carry on!
 			if err := vbm("sharedfolder", "add", d.MachineName, "--name", shareName, "--hostpath", shareDir, "--automount"); err != nil {
@@ -336,13 +349,47 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	// use ssh to set keys
+	sshClient, err := d.getLocalSSHClient()
+	if err != nil {
+		return err
+	}
+
+	// add pub key for user
+	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
+		return err
+	}
+
+	if out, err := sshClient.Output(fmt.Sprintf(
+		"mkdir -p /home/%s/.ssh",
+		d.GetSSHUsername(),
+	)); err != nil {
+		log.Error(out)
+		return err
+	}
+
+	if out, err := sshClient.Output(fmt.Sprintf(
+		"printf '%%s' '%s' | tee /home/%s/.ssh/authorized_keys",
+		string(pubKey),
+		d.GetSSHUsername(),
+	)); err != nil {
+		log.Error(out)
+		return err
+	}
+
+	ip, err := d.GetIP()
+	if err != nil {
+		return err
+	}
+	d.IPAddress = ip
 	return nil
 }
 
 func (d *Driver) hostOnlyIpAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {
-		log.Debug("ERROR getting IP: %s", err)
+		log.Debugf("ERROR getting IP: %s", err)
 		return false
 	}
 	if ip != "" {
@@ -385,8 +432,8 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	// Wait for SSH over NAT to be available before returning to user
-	if err := drivers.WaitForSSH(d); err != nil {
+	addr, err := d.GetSSHHostname()
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", addr, d.SSHPort)); err != nil {
 		return err
 	}
 
@@ -394,8 +441,6 @@ func (d *Driver) Start() error {
 	if err := utils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
 		return err
 	}
-
-	d.IPAddress, err = d.GetIP()
 
 	return err
 }
@@ -502,8 +547,14 @@ func (d *Driver) GetIP() (string, error) {
 		return "", drivers.ErrHostIsNotRunning
 	}
 
-	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show dev eth1")
+	sshClient, err := d.getLocalSSHClient()
 	if err != nil {
+		return "", err
+	}
+
+	output, err := sshClient.Output("ip addr show dev eth1")
+	if err != nil {
+		log.Debug(output)
 		return "", err
 	}
 
@@ -533,7 +584,7 @@ func (d *Driver) diskPath() string {
 func (d *Driver) generateDiskImage(size int) error {
 	log.Debugf("Creating %d MB hard disk image...", size)
 
-	magicString := "boot2docker, please format-me"
+	magicString := "data"
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -543,36 +594,13 @@ func (d *Driver) generateDiskImage(size int) error {
 	if err := tw.WriteHeader(file); err != nil {
 		return err
 	}
+
 	if _, err := tw.Write([]byte(magicString)); err != nil {
 		return err
 	}
-	// .ssh/key.pub => authorized_keys
-	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
-	if err != nil {
-		return err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
-	}
-	if err := tw.Close(); err != nil {
-		return err
-	}
+
 	raw := bytes.NewReader(buf.Bytes())
+
 	return createDiskImage(d.diskPath(), size, raw)
 }
 
@@ -754,4 +782,36 @@ func getRandomIPinSubnet(baseIP net.IP) (net.IP, error) {
 	}
 
 	return dhcpAddr, nil
+}
+
+func (d *Driver) getLocalSSHClient() (ssh.Client, error) {
+	sshAuth := &ssh.Auth{
+		Passwords: []string{"docker"},
+		Keys:      []string{d.GetSSHKeyPath()},
+	}
+	sshClient, err := ssh.NewNativeClient(d.GetSSHUsername(), "127.0.0.1", d.SSHPort, sshAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	return sshClient, nil
+}
+
+func translateWindowsMount(p string) (string, error) {
+	re := regexp.MustCompile(`(?P<drive>.+):\\(?P<path>.*)`)
+	m := re.FindStringSubmatch(p)
+
+	var drive, fullPath string
+
+	if len(m) < 3 {
+		return "", fmt.Errorf("unable to parse home directory")
+	}
+
+	drive = m[1]
+	fullPath = m[2]
+
+	nPath := strings.Replace(fullPath, "\\", "/", -1)
+
+	tPath := path.Join("/", strings.ToLower(drive), nPath)
+	return tPath, nil
 }
