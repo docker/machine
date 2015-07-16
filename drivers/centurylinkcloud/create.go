@@ -54,6 +54,11 @@ func getCreateFlags() []cli.Flag {
 			Usage:  "CenturyLink Cloud Memory GB",
 			Value:  2,
 		},
+		cli.BoolFlag{
+			EnvVar: "CENTURYLINKCLOUD_PRIVATE_ADDRESS_ONLY",
+			Name:   "centurylinkcloud-private-address-only",
+			Usage:  "CenturyLink Cloud Use Private Networking Only",
+		},
 	}
 }
 
@@ -77,8 +82,10 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := d.addPublicIPAddress(c, &s); err != nil {
-		return err
+	if !d.PrivateAddressOnly {
+		if err := d.addPublicIPAddress(c, &s); err != nil {
+			return err
+		}
 	}
 
 	if err = d.generateAndWriteSSHKey(c, s); err != nil {
@@ -155,7 +162,7 @@ func (d Driver) addPublicIPAddress(c *clcgo.Client, s *clcgo.Server) error {
 	if err := c.GetEntity(s); err != nil {
 		return err
 	}
-	ip := publicIPFromServer(*s)
+	ip := d.ipAddressFromServer(*s)
 	if ip == "" {
 		return errors.New("could not find an IP Address for the server")
 	}

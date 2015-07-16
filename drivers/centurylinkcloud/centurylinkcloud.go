@@ -15,19 +15,20 @@ import (
 const statusWaitSeconds = 10
 
 type Driver struct {
-	MachineName    string
-	CaCertPath     string
-	PrivateKeyPath string
-	storePath      string
-	BearerToken    string
-	AccountAlias   string
-	ServerID       string
-	Username       string
-	Password       string
-	GroupID        string
-	SourceServerID string
-	CPU            int
-	MemoryGB       int
+	MachineName        string
+	CaCertPath         string
+	PrivateKeyPath     string
+	storePath          string
+	BearerToken        string
+	AccountAlias       string
+	ServerID           string
+	Username           string
+	Password           string
+	GroupID            string
+	SourceServerID     string
+	CPU                int
+	MemoryGB           int
+	PrivateAddressOnly bool
 }
 
 func init() {
@@ -80,6 +81,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SourceServerID = flags.String("centurylinkcloud-source-server-id")
 	d.CPU = flags.Int("centurylinkcloud-cpu")
 	d.MemoryGB = flags.Int("centurylinkcloud-memory-gb")
+	d.PrivateAddressOnly = flags.Bool("centurylinkcloud-private-address-only")
 
 	if d.Username == "" {
 		return fmt.Errorf("centurylinkcloud driver requires the --centurylinkcloud-username option")
@@ -106,7 +108,7 @@ func (d *Driver) GetIP() (string, error) {
 		return "", err
 	}
 
-	address := publicIPFromServer(s)
+	address := d.ipAddressFromServer(s)
 	if address != "" {
 		return address, nil
 	}
@@ -274,6 +276,25 @@ func (d *Driver) doOperation(t clcgo.OperationType) error {
 	return nil
 }
 
+func (d *Driver) ipAddressFromServer(s clcgo.Server) string {
+	addresses := s.Details.IPAddresses
+
+	if d.PrivateAddressOnly {
+		if len(addresses) == 0 {
+			return ""
+		}
+		return addresses[0].Internal
+	}
+
+	for _, a := range addresses {
+		if a.Public != "" {
+			return a.Public
+		}
+	}
+
+	return ""
+}
+
 func logAndReturnError(err error) error {
 	if rerr, ok := err.(clcgo.RequestError); ok {
 		for f, ms := range rerr.Errors {
@@ -286,15 +307,4 @@ func logAndReturnError(err error) error {
 	}
 
 	return err
-}
-
-func publicIPFromServer(s clcgo.Server) string {
-	addresses := s.Details.IPAddresses
-	for _, a := range addresses {
-		if a.Public != "" {
-			return a.Public
-		}
-	}
-
-	return ""
 }
