@@ -197,7 +197,7 @@ func (d Driver) generateAndWriteSSHKey(c *clcgo.Client, s clcgo.Server) error {
 	}
 
 	log.Info("Adding public key to authorized_keys")
-	cmd := fmt.Sprintf(`echo "%s" >> ~/.ssh/authorized_keys`, string(key))
+	cmd := fmt.Sprintf(`mkdir -p ~/.ssh && echo "%s" >> ~/.ssh/authorized_keys`, string(key))
 	if _, err = sshClient.Output(cmd); err != nil {
 		return err
 	}
