@@ -91,8 +91,9 @@ func (d *Driver) Create() error {
 func (d *Driver) createServer(c *clcgo.Client) (clcgo.Server, error) {
 	log.Infof("Creating server...")
 
-	name := d.MachineName[:6]
-	if name != d.MachineName {
+	name := d.MachineName
+	if len(name) > 6 {
+		name = name[:6]
 		log.Warnf(
 			"%s. Your server name has been truncated to: %s",
 			serverRequirementsWarning, name,
