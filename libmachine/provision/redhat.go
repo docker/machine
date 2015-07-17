@@ -277,9 +277,15 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	}, nil
 }
 
-func (provisioner *RedHatProvisioner) ConfigurePackageList() error {
+func generateYumRepoList(provisioner Provisioner) (*bytes.Buffer, error) {
 	packageListInfo := &PackageListInfo{}
-	switch provisioner.OsReleaseId {
+
+	releaseInfo, err := provisioner.GetOsReleaseInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	switch releaseInfo.Id {
 	case "rhel", "centos":
 		// rhel and centos both use the "centos" repo
 		packageListInfo.OsRelease = "centos"
@@ -288,20 +294,31 @@ func (provisioner *RedHatProvisioner) ConfigurePackageList() error {
 		packageListInfo.OsRelease = "fedora"
 		packageListInfo.OsReleaseVersion = "22"
 	default:
-		return ErrUnknownYumOsRelease
+		return nil, ErrUnknownYumOsRelease
 	}
 
 	t, err := template.New("packageList").Parse(packageListTemplate)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var buf bytes.Buffer
 
 	if err := t.Execute(&buf, packageListInfo); err != nil {
+		return nil, err
+	}
+
+	return &buf, nil
+}
+
+func (provisioner *RedHatProvisioner) ConfigurePackageList() error {
+	buf, err := generateYumRepoList(provisioner)
+	if err != nil {
 		return err
 	}
 
+	// we cannot use %q here as it combines the newlines in the formatting
+	// on transport causing yum to not use the repo
 	packageCmd := fmt.Sprintf("echo \"%s\" | sudo tee /etc/yum.repos.d/docker.repo", buf.String())
 	if _, err := provisioner.SSHCommand(packageCmd); err != nil {
 		return err
