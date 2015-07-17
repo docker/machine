@@ -33,6 +33,17 @@ type Host struct {
 	Driver      drivers.Driver
 	StorePath   string
 	HostOptions *HostOptions
+
+	// deprecated options; these are left to assist in config migrations
+	SwarmHost      string
+	SwarmMaster    bool
+	SwarmDiscovery string
+	CaCertPath     string
+	PrivateKeyPath string
+	ServerCertPath string
+	ServerKeyPath  string
+	ClientCertPath string
+	ClientKeyPath  string
 }
 
 type HostOptions struct {
@@ -282,7 +293,9 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	authOptions := hostMetadata.HostOptions.AuthOptions
+	meta := FillNestedHostMetadata(&hostMetadata)
+
+	authOptions := meta.HostOptions.AuthOptions
 
 	driver, err := drivers.NewDriver(hostMetadata.DriverName, h.Name, h.StorePath, authOptions.CaCertPath, authOptions.PrivateKeyPath)
 	if err != nil {
