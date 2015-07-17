@@ -172,6 +172,10 @@ func (provisioner *Boot2DockerProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
 
+func (provisioner *Boot2DockerProvisioner) GetOsReleaseInfo() (*OsRelease, error) {
+	return provisioner.OsReleaseInfo, nil
+}
+
 func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
