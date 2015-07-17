@@ -1,8 +1,9 @@
 #!/usr/bin/env bats
 
-load helpers
+load ${BASE_TEST_DIR}/helpers.bash
 
-export DRIVER=hypriot
+force_env DRIVER hypriot
+
 export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
 [ -z "$HYPRIOT_IP_ADDRESS" ] && export HYPRIOT_IP_ADDRESS="192.168.1.233"
@@ -209,4 +210,3 @@ export MACHINE_STORAGE_PATH=/tmp/machine-bats-test-$DRIVER
   run rm -rf $MACHINE_STORAGE_PATH
   [ "$status" -eq 0 ]
 }
-
