@@ -10,9 +10,9 @@ import (
 	"github.com/docker/machine/libmachine/swarm"
 )
 
-func TestFillNestedHost(t *testing.T) {
+func TestMigrateHostV0ToV1(t *testing.T) {
 	os.Setenv("MACHINE_STORAGE_PATH", "/tmp/migration")
-	originalHost := &Host{
+	originalHost := &HostV0{
 		HostOptions:    nil,
 		SwarmDiscovery: "token://foobar",
 		SwarmHost:      "1.2.3.4:2376",
@@ -42,13 +42,10 @@ func TestFillNestedHost(t *testing.T) {
 	}
 
 	expectedHost := &Host{
-		SwarmHost:      "1.2.3.4:2376",
-		SwarmDiscovery: "token://foobar",
-		SwarmMaster:    true,
-		HostOptions:    hostOptions,
+		HostOptions: hostOptions,
 	}
 
-	host := FillNestedHost(originalHost)
+	host := MigrateHostV0ToHostV1(originalHost)
 
 	if !reflect.DeepEqual(host, expectedHost) {
 		t.Logf("\n%+v\n%+v", host, expectedHost)
@@ -57,8 +54,8 @@ func TestFillNestedHost(t *testing.T) {
 	}
 }
 
-func TestFillNestedHostMetadata(t *testing.T) {
-	metadata := &HostMetadata{
+func TestMigrateHostMetadataV0ToV1(t *testing.T) {
+	metadata := &HostMetadataV0{
 		HostOptions: HostOptions{
 			EngineOptions: nil,
 			AuthOptions:   nil,
@@ -78,12 +75,9 @@ func TestFillNestedHostMetadata(t *testing.T) {
 			EngineOptions: &engine.EngineOptions{},
 			AuthOptions:   expectedAuthOptions,
 		},
-		StorePath:      "/tmp/store",
-		CaCertPath:     "/tmp/store/certs/ca.pem",
-		ServerCertPath: "/tmp/store/certs/server.pem",
 	}
 
-	m := FillNestedHostMetadata(metadata)
+	m := MigrateHostMetadataV0ToHostMetadataV1(metadata)
 
 	if !reflect.DeepEqual(m, expectedMetadata) {
 		t.Logf("\n%+v\n%+v", m, expectedMetadata)
@@ -95,7 +89,7 @@ func TestFillNestedHostMetadata(t *testing.T) {
 // due to a schema migration from "flat" to a "nested" structure.
 func TestGetCertInfoFromHost(t *testing.T) {
 	os.Setenv("MACHINE_STORAGE_PATH", "/tmp/migration")
-	host := &Host{
+	host := &HostV0{
 		CaCertPath:     "",
 		PrivateKeyPath: "",
 		ClientCertPath: "",

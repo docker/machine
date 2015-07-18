@@ -19,6 +19,7 @@ import (
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
+	"github.com/docker/machine/version"
 )
 
 var (
@@ -28,22 +29,12 @@ var (
 )
 
 type Host struct {
-	Name        string `json:"-"`
-	DriverName  string
-	Driver      drivers.Driver
-	StorePath   string
-	HostOptions *HostOptions
-
-	// deprecated options; these are left to assist in config migrations
-	SwarmHost      string
-	SwarmMaster    bool
-	SwarmDiscovery string
-	CaCertPath     string
-	PrivateKeyPath string
-	ServerCertPath string
-	ServerKeyPath  string
-	ClientCertPath string
-	ClientKeyPath  string
+	ConfigVersion int
+	Driver        drivers.Driver
+	DriverName    string
+	HostOptions   *HostOptions
+	Name          string `json:"-"`
+	StorePath     string
 }
 
 type HostOptions struct {
@@ -56,14 +47,9 @@ type HostOptions struct {
 }
 
 type HostMetadata struct {
-	DriverName     string
-	HostOptions    HostOptions
-	StorePath      string
-	CaCertPath     string
-	PrivateKeyPath string
-	ServerCertPath string
-	ServerKeyPath  string
-	ClientCertPath string
+	ConfigVersion int
+	DriverName    string
+	HostOptions   HostOptions
 }
 
 type HostListItem struct {
@@ -75,6 +61,14 @@ type HostListItem struct {
 	SwarmOptions swarm.SwarmOptions
 }
 
+type ErrSavingConfig struct {
+	wrappedErr error
+}
+
+func (e ErrSavingConfig) Error() string {
+	return fmt.Sprintf("Error saving config: %s", e.wrappedErr)
+}
+
 func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
 	authOptions := hostOptions.AuthOptions
 	storePath := filepath.Join(utils.GetMachineDir(), name)
@@ -83,11 +77,12 @@ func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
 		return nil, err
 	}
 	return &Host{
-		Name:        name,
-		DriverName:  driverName,
-		Driver:      driver,
-		StorePath:   storePath,
-		HostOptions: hostOptions,
+		Name:          name,
+		ConfigVersion: version.ConfigVersion,
+		DriverName:    driverName,
+		Driver:        driver,
+		StorePath:     storePath,
+		HostOptions:   hostOptions,
 	}, nil
 }
 
@@ -100,6 +95,7 @@ func LoadHost(name string, StorePath string) (*Host, error) {
 	if err := host.LoadConfig(); err != nil {
 		return nil, err
 	}
+
 	return host, nil
 }
 
@@ -287,26 +283,28 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	// First pass: find the driver name and load the driver
-	var hostMetadata HostMetadata
-	if err := json.Unmarshal(data, &hostMetadata); err != nil {
-		return err
-	}
+	// Remember the machine name and store path so we don't have to pass it
+	// through each struct in the migration.
+	name := h.Name
+	storePath := h.StorePath
 
-	meta := FillNestedHostMetadata(&hostMetadata)
+	// If we end up performing a migration, we should save afterwards so we don't have to do it again on subsequent invocations.
+	migrationPerformed := h.ConfigVersion != version.ConfigVersion
 
-	authOptions := meta.HostOptions.AuthOptions
-
-	driver, err := drivers.NewDriver(hostMetadata.DriverName, h.Name, h.StorePath, authOptions.CaCertPath, authOptions.PrivateKeyPath)
+	migratedHost, err := MigrateHost(h, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error getting migrated host: %s", err)
 	}
 
-	h.Driver = driver
+	*h = *migratedHost
 
-	// Second pass: unmarshal driver config into correct driver
-	if err := json.Unmarshal(data, &h); err != nil {
-		return err
+	h.Name = name
+	h.StorePath = storePath
+
+	if migrationPerformed {
+		if err := h.SaveConfig(); err != nil {
+			return fmt.Errorf("Error saving config after migration was performed: %s", err)
+		}
 	}
 
 	return nil
