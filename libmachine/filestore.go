@@ -19,7 +19,11 @@ type Filestore struct {
 }
 
 func NewFilestore(rootPath string, caCert string, privateKey string) *Filestore {
-	return &Filestore{path: rootPath, caCertPath: caCert, privateKeyPath: privateKey}
+	return &Filestore{
+		path:           rootPath,
+		caCertPath:     caCert,
+		privateKeyPath: privateKey,
+	}
 }
 
 func (s Filestore) loadHost(name string) (*Host, error) {
@@ -30,13 +34,15 @@ func (s Filestore) loadHost(name string) (*Host, error) {
 		}
 	}
 
-	host := &Host{Name: name, StorePath: hostPath}
+	host := &Host{
+		Name:      name,
+		StorePath: hostPath,
+	}
 	if err := host.LoadConfig(); err != nil {
 		return nil, err
 	}
 
-	h := FillNestedHost(host)
-	return h, nil
+	return host, nil
 }
 
 func (s Filestore) GetPath() string {
@@ -85,7 +91,7 @@ func (s Filestore) List() ([]*Host, error) {
 
 	for _, file := range dir {
 		// don't load hidden dirs; used for configs
-		if file.IsDir() && strings.Index(file.Name(), ".") != 0 {
+		if file.IsDir() && !strings.HasPrefix(file.Name(), ".") {
 			host, err := s.Get(file.Name())
 			if err != nil {
 				log.Errorf("error loading host %q: %s", file.Name(), err)
