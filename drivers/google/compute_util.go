@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -86,6 +87,31 @@ func (c *ComputeUtil) deleteDisk() error {
 	}
 	log.Infof("Waiting for disk to delete.")
 	return c.waitForRegionalOp(op.Name)
+}
+
+// staticAddress returns the external static IP address.
+func (c *ComputeUtil) staticAddress() (string, error) {
+	// is the address a name?
+	isName, err := regexp.MatchString("[a-z]([-a-z0-9]*[a-z0-9])?", c.address)
+	if err != nil {
+		return "", err
+	}
+
+	if (!isName) {
+		return c.address, nil
+	}
+
+	// resolve the address by name
+	externalAddress, err := c.service.Addresses.Get(c.project, c.region(), c.address).Do()
+	if err != nil {
+		return "", err
+	}
+
+	return externalAddress.Address, nil
+}
+
+func (c *ComputeUtil) region() (string) {
+	return c.zone[:len(c.zone)-2]
 }
 
 func (c *ComputeUtil) firewallRule() (*raw.Firewall, error) {
@@ -188,7 +214,12 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	}
 
 	if c.address != "" {
-		instance.NetworkInterfaces[0].AccessConfigs[0].NatIP = c.address
+		staticAddress, err := c.staticAddress()
+		if err != nil {
+			return err
+		}
+
+		instance.NetworkInterfaces[0].AccessConfigs[0].NatIP = staticAddress
 	}
 
 	disk, err := c.disk()
