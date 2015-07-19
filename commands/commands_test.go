@@ -97,7 +97,7 @@ func getDefaultTestHost() (*libmachine.Host, error) {
 	}
 
 	flags := getTestDriverFlags()
-	if err := host.Driver.SetConfigFromFlags(flags); err != nil {
+	if err := host.SetDriverConfigFromFlags(flags); err != nil {
 		return nil, err
 	}
 
@@ -122,6 +122,11 @@ func (d DriverOptionsMock) Int(key string) int {
 
 func (d DriverOptionsMock) Bool(key string) bool {
 	return d.Data[key].(bool)
+}
+
+func (d DriverOptionsMock) IsSet(key string) bool {
+	_, ok := d.Data[key]
+	return ok
 }
 
 func TestRunActionForeachMachine(t *testing.T) {

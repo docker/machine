@@ -290,6 +290,7 @@ func (h *Host) LoadConfig() error {
 	}
 
 	h.Driver = driver
+	h.DriverName = driver.DriverName()
 
 	// Second pass: unmarshal driver config into correct driver
 	if err := json.Unmarshal(data, &h); err != nil {
@@ -330,6 +331,27 @@ func (h *Host) SaveConfig() error {
 	if err := ioutil.WriteFile(filepath.Join(h.StorePath, "config.json"), data, 0600); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (h *Host) SetDriverConfigFromFlags(driverConfig drivers.DriverOptions) error {
+	if driverConfig != nil {
+		return h.Driver.SetConfigFromFlags(driverConfig)
+	}
+	return nil
+}
+
+func (h *Host) Prepare() error {
+	if err := h.Driver.PreCreateCheck(); err != nil {
+		return err
+	}
+
+	hostPath := filepath.Join(utils.GetMachineDir(), h.Name)
+
+	if err := os.MkdirAll(hostPath, 0700); err != nil {
+		return err
+	}
+
 	return nil
 }
 

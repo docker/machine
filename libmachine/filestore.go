@@ -2,7 +2,6 @@ package libmachine
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -110,26 +109,4 @@ func (s Filestore) Exists(name string) (bool, error) {
 
 func (s Filestore) Get(name string) (*Host, error) {
 	return s.loadHost(name)
-}
-
-func (s Filestore) GetActive() (*Host, error) {
-	hosts, err := s.List()
-	if err != nil {
-		return nil, err
-	}
-
-	dockerHost := os.Getenv("DOCKER_HOST")
-	hostListItems := GetHostListItems(hosts)
-
-	for _, item := range hostListItems {
-		if dockerHost == item.URL {
-			host, err := s.Get(item.Name)
-			if err != nil {
-				return nil, err
-			}
-			return host, nil
-		}
-	}
-
-	return nil, errors.New("Active host not found")
 }

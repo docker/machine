@@ -34,12 +34,13 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	provider, err := libmachine.New(store)
+	flags := getTestDriverFlags()
+
+	provider, err := libmachine.New(store, flags, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	flags := getTestDriverFlags()
 	hostOptions := &libmachine.HostOptions{
 		EngineOptions: &engine.EngineOptions{},
 		SwarmOptions: &swarm.SwarmOptions{
@@ -51,7 +52,7 @@ func TestCmdConfig(t *testing.T) {
 		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := provider.Create("test-a", "none", hostOptions, flags)
+	host, err := provider.Create("test-a", "none", hostOptions)
 	if err != nil {
 		t.Fatal(err)
 	}

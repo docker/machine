@@ -167,6 +167,11 @@ type DriverOptions interface {
 	StringSlice(key string) []string
 	Int(key string) int
 	Bool(key string) bool
+	IsSet(key string) bool
+}
+
+type OptionsSpecifier interface {
+	SpecifyFlags(driver string, driverOptions DriverOptions) (DriverOptions, error)
 }
 
 func MachineInState(d Driver, desiredState state.State) func() bool {

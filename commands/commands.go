@@ -2,11 +2,13 @@ package commands
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -56,6 +58,19 @@ type machineConfig struct {
 	SwarmOptions   swarm.SwarmOptions
 }
 
+type globallyExtendedDeviceOptions struct {
+	options drivers.DriverOptions
+	driver  string
+}
+
+type globalFlagSpecifier struct {
+	context *cli.Context
+}
+
+func newGlobalFlagSpecifier(context *cli.Context) *globalFlagSpecifier {
+	return &globalFlagSpecifier{context}
+}
+
 func sortHostListItemsByName(items []libmachine.HostListItem) {
 	m := make(map[string]libmachine.HostListItem, len(items))
 	s := make([]string, len(items))
@@ -88,8 +103,8 @@ func confirmInput(msg string) bool {
 	return false
 }
 
-func newProvider(store libmachine.Store) (*libmachine.Provider, error) {
-	return libmachine.New(store)
+func newProvider(store libmachine.Store, config drivers.DriverOptions, specifier *globalFlagSpecifier) (*libmachine.Provider, error) {
+	return libmachine.New(store, config, specifier)
 }
 
 func getMachineDir(rootPath string) string {
@@ -508,7 +523,7 @@ func loadMachine(name string, c *cli.Context) (*libmachine.Host, error) {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	provider, err := newProvider(defaultStore, c, newGlobalFlagSpecifier(c))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -533,7 +548,7 @@ func getHost(c *cli.Context) *libmachine.Host {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	provider, err := newProvider(defaultStore, c, newGlobalFlagSpecifier(c))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -556,7 +571,7 @@ func getDefaultProvider(c *cli.Context) *libmachine.Provider {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	provider, err := newProvider(defaultStore, c, newGlobalFlagSpecifier(c))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -576,7 +591,7 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	provider, err := newProvider(defaultStore, c, newGlobalFlagSpecifier(c))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -669,4 +684,91 @@ func detectShell() (string, error) {
 	}
 
 	return shell, nil
+}
+
+var (
+	globalDriverFlagSets = make(map[string]*flag.FlagSet)
+)
+
+func (g *globallyExtendedDeviceOptions) String(key string) string {
+	if !g.options.IsSet(key) {
+		if set, ok := globalDriverFlagSets[g.driver]; ok {
+			if lookup := set.Lookup(key); lookup != nil {
+				return lookup.Value.String()
+			}
+		}
+	}
+	return g.options.String(key)
+}
+
+func (g *globallyExtendedDeviceOptions) StringSlice(key string) []string {
+	if !g.options.IsSet(key) {
+		if set, ok := globalDriverFlagSets[g.driver]; ok {
+			if lookup := set.Lookup(key); lookup != nil {
+				return (lookup.Value.(*cli.StringSlice)).Value()
+			}
+		}
+	}
+	return g.options.StringSlice(key)
+}
+
+func (g *globallyExtendedDeviceOptions) Int(key string) int {
+	if !g.options.IsSet(key) {
+		if set, ok := globalDriverFlagSets[g.driver]; ok {
+			if lookup := set.Lookup(key); lookup != nil {
+				if val, err := strconv.Atoi(lookup.Value.String()); err == nil {
+					return val
+				}
+			}
+		}
+	}
+	return g.options.Int(key)
+}
+
+func (g *globallyExtendedDeviceOptions) Bool(key string) bool {
+	if !g.options.IsSet(key) {
+		if set, ok := globalDriverFlagSets[g.driver]; ok {
+			if lookup := set.Lookup(key); lookup != nil {
+				if val, err := strconv.ParseBool(lookup.Value.String()); err == nil {
+					return val
+				}
+			}
+		}
+	}
+	return g.options.Bool(key)
+}
+
+func (g *globallyExtendedDeviceOptions) IsSet(key string) bool {
+	if g.options.IsSet(key) {
+		return true
+	} else if set, ok := globalDriverFlagSets[g.driver]; ok {
+		if lookup := set.Lookup(key); lookup != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *globalFlagSpecifier) SpecifyFlags(driver string, options drivers.DriverOptions) (drivers.DriverOptions, error) {
+	if options == nil {
+		return nil, errors.New("Error: Expected base DriverOptions but none was supplied.")
+	}
+
+	if globalDriverFlagSets[driver] == nil {
+		set := flag.NewFlagSet(g.context.App.Name, flag.ContinueOnError)
+		globalDriverFlagSets[driver] = set
+		flags, err := drivers.GetCreateFlagsForDriver(driver)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, f := range flags {
+			f.Apply(set)
+		}
+
+		set.Parse([]string{})
+	}
+
+	return &globallyExtendedDeviceOptions{options, driver}, nil
 }
