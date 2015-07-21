@@ -290,24 +290,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	var shareDir string
-
-	homePath := homedir.Get()
-
-	switch runtime.GOOS {
-	case "windows":
-		shareDir = homePath
-		mountDir, err := translateWindowsMount(homePath)
-		if err != nil {
-			return err
-		}
-		shareDir = mountDir
-	case "darwin":
-		shareDir = homePath
-	case "linux":
-		shareDir = homePath
-	}
-
+	shareDir := homedir.Get()
 	shareName := shareDir
 
 	log.Debugf("creating share: path=%s", shareDir)
@@ -321,12 +304,21 @@ func (d *Driver) Create() error {
 	}
 
 	if shareDir != "" {
+		log.Debugf("setting up shareDir")
 		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
+			log.Debugf("setting up share failed: %s", err)
 			return err
 		} else if !os.IsNotExist(err) {
-			if shareName != "" {
-				// parts of the VBox internal code are buggy with share names that start with "/"
-				shareName = strings.TrimLeft(shareDir, "/")
+			// parts of the VBox internal code are buggy with share names that start with "/"
+			shareName = strings.TrimLeft(shareDir, "/")
+
+			// translate to msys git path
+			if runtime.GOOS == "windows" {
+				mountName, err := translateWindowsMount(shareDir)
+				if err != nil {
+					return err
+				}
+				shareName = mountName
 			}
 
 			log.Debugf("adding shared folder: name=%q dir=%q", shareName, shareDir)

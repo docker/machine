@@ -11,7 +11,7 @@ import (
 
 func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		respText := `[{"tag_name": "0.1"}]`
+		respText := `[{"tag_name": "0.2", "prerelease": true, "tag_name": "0.1", "prerelease": false}]`
 		w.Write([]byte(respText))
 	}))
 	defer ts.Close()

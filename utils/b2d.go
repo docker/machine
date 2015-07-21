@@ -80,7 +80,8 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 	defer rsp.Body.Close()
 
 	var t []struct {
-		TagName string `json:"tag_name"`
+		TagName    string `json:"tag_name"`
+		PreRelease bool   `json:"prerelease"`
 	}
 	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
 		return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
@@ -89,8 +90,15 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 		return "", fmt.Errorf("no releases found")
 	}
 
-	tag := t[0].TagName
-	isoUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseUrl, tag)
+	// find the latest "released" release (i.e. not pre-release)
+	isoUrl := ""
+	for _, r := range t {
+		if !r.PreRelease {
+			tag := r.TagName
+			isoUrl = fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseUrl, tag)
+			break
+		}
+	}
 	return isoUrl, nil
 }
 
