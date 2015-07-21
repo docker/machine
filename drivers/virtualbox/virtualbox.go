@@ -1,16 +1,12 @@
 package virtualbox
 
 import (
-	"archive/tar"
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -205,9 +201,10 @@ func (d *Driver) Create() error {
 		}
 
 		log.Debugf("Creating disk image...")
-		if err := d.generateDiskImage(d.DiskSize); err != nil {
+		if err := vbm("createhd", "--size", fmt.Sprintf("%d", d.DiskSize), "--format", "VMDK", "--filename", d.diskPath()); err != nil {
 			return err
 		}
+
 	}
 
 	if err := vbm("createvm",
@@ -572,30 +569,6 @@ func (d *Driver) diskPath() string {
 	return d.ResolveStorePath("disk.vmdk")
 }
 
-// Make a boot2docker VM disk image.
-func (d *Driver) generateDiskImage(size int) error {
-	log.Debugf("Creating %d MB hard disk image...", size)
-
-	magicString := "data"
-
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-
-	// magicString first so the automount script knows to format the disk
-	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-
-	if _, err := tw.Write([]byte(magicString)); err != nil {
-		return err
-	}
-
-	raw := bytes.NewReader(buf.Bytes())
-
-	return createDiskImage(d.diskPath(), size, raw)
-}
-
 func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 	hostOnlyCIDR := d.HostOnlyCIDR
 
@@ -643,69 +616,6 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 		return err
 	}
 
-	return nil
-}
-
-// createDiskImage makes a disk image at dest with the given size in MB. If r is
-// not nil, it will be read as a raw disk image to convert from.
-func createDiskImage(dest string, size int, r io.Reader) error {
-	// Convert a raw image from stdin to the dest VMDK image.
-	sizeBytes := int64(size) << 20 // usually won't fit in 32-bit int (max 2GB)
-	// FIXME: why isn't this just using the vbm*() functions?
-	cmd := exec.Command(vboxManageCmd, "convertfromraw", "stdin", dest,
-		fmt.Sprintf("%d", sizeBytes), "--format", "VMDK")
-
-	if os.Getenv("DEBUG") != "" {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	n, err := io.Copy(stdin, r)
-	if err != nil {
-		return err
-	}
-
-	// The total number of bytes written to stdin must match sizeBytes, or
-	// VBoxManage.exe on Windows will fail. Fill remaining with zeros.
-	if left := sizeBytes - n; left > 0 {
-		if err := zeroFill(stdin, left); err != nil {
-			return err
-		}
-	}
-
-	// cmd won't exit until the stdin is closed.
-	if err := stdin.Close(); err != nil {
-		return err
-	}
-
-	return cmd.Wait()
-}
-
-// zeroFill writes n zero bytes into w.
-func zeroFill(w io.Writer, n int64) error {
-	const blocksize = 32 << 10
-	zeros := make([]byte, blocksize)
-	var k int
-	var err error
-	for n > 0 {
-		if n > blocksize {
-			k, err = w.Write(zeros)
-		} else {
-			k, err = w.Write(zeros[:n])
-		}
-		if err != nil {
-			return err
-		}
-		n -= int64(k)
-	}
 	return nil
 }
 
@@ -790,7 +700,7 @@ func (d *Driver) getLocalSSHClient() (ssh.Client, error) {
 }
 
 func translateWindowsMount(p string) (string, error) {
-	re := regexp.MustCompile(`(?P<drive>.+):\\(?P<path>.*)`)
+	re := regexp.MustCompile(`(?P<drive>[^:]+):\\(?P<path>.*)`)
 	m := re.FindStringSubmatch(p)
 
 	var drive, fullPath string
