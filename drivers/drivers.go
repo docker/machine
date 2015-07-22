@@ -160,8 +160,9 @@ func PrintFlagsForDriver(name string) error {
 		if name == driverName {
 			driver := drivers[driverName]
 			flags := driver.GetCreateFlags()
-			for range flags {
-                                fmt.Println(flags)
+			stringFlag, ok := flags[0].(cli.StringFlag)
+			if ok {
+                                fmt.Println(stringFlag.Name)
                         }
                 }
         }
