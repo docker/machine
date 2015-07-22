@@ -20,7 +20,7 @@ them, then configures the `docker` client to talk to them. A "machine" is the
 combination of a Docker host and a configured client.
 
 Once you create one or more Docker hosts, Docker Machine supplies a number of commands for
-managing them. Using these commands you can 
+managing them. Using these commands you can
 
  - start, inspect, stop, and restart a host
  - upgrade the Docker client and daemon
@@ -28,7 +28,7 @@ managing them. Using these commands you can
 
 ## Understand Docker Machine basic concepts
 
-Docker Machine allows you to provision Docker on virtual machines that reside either on your local system or on a cloud provider. Docker Machine creates a host on a VM and you use the Docker Engine client as needed to build images and create containers on the host. 
+Docker Machine allows you to provision Docker on virtual machines that reside either on your local system or on a cloud provider. Docker Machine creates a host on a VM and you use the Docker Engine client as needed to build images and create containers on the host.
 
 To create a virtual machine, you supply Docker Machine with the name of the driver you want use. The driver represents the virtual environment. For example, on a local Linux, Mac, or Windows system the driver is typically Oracle Virtual Box. For cloud providers, Docker Machine supports drivers such as AWS, Microsoft Azure, Digital Ocean and many more. The Docker Machine reference includes a complete [list of the supported drivers](/drivers).
 
