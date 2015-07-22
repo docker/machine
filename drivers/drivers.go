@@ -152,6 +152,22 @@ func GetCreateFlagsForDriver(name string) ([]cli.Flag, error) {
 	return nil, fmt.Errorf("Driver %s not found", name)
 }
 
+// Returns a \n separated list of flags for a driver. Useful for consumption
+// by another app.
+func PrintFlagsForDriver(name string) error {
+
+	for driverName := range drivers {
+		if name == driverName {
+			driver := drivers[driverName]
+			flags := driver.GetCreateFlags()
+			for range flags {
+                                fmt.Println(flags)
+                        }
+                }
+        }
+        return fmt.Errorf("Driver %s not found", name)
+}
+
 // GetDriverNames returns a slice of all registered driver names
 func GetDriverNames() []string {
 	names := make([]string, 0, len(drivers))

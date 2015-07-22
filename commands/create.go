@@ -21,6 +21,7 @@ func cmdCreate(c *cli.Context) {
 	)
 	driver := c.String("driver")
 	name := c.Args().First()
+	opts := c.Args()[1]
 
 	// TODO: Not really a fan of "none" as the default driver...
 	if driver != "none" {
@@ -29,6 +30,13 @@ func cmdCreate(c *cli.Context) {
 			log.Fatal(err)
 		}
 	}
+
+	if opts == "print-flags" {
+                err = drivers.PrintFlagsForDriver(driver)
+                if err != nil {
+                        log.Fatal(err)
+                }
+        }
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")

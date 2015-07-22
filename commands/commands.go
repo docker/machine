@@ -235,6 +235,11 @@ var sharedCreateFlags = []cli.Flag{
 		Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
 		Value: "",
 	},
+	cli.StringFlag{
+                Name: "print-flags, p",
+                Usage: "Raw output of the flags available for a driver",
+                Value: "",
+        },
 }
 
 var Commands = []cli.Command{
