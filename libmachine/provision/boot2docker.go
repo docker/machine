@@ -140,6 +140,9 @@ DOCKER_STORAGE={{.EngineOptions.StorageDriver}}
 DOCKER_TLS=auto
 SERVERKEY={{.AuthOptions.ServerKeyRemotePath}}
 SERVERCERT={{.AuthOptions.ServerCertRemotePath}}
+
+{{range .EngineOptions.Env}}export \"{{ printf "%q" . }}\"
+{{end}}
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {

@@ -70,6 +70,7 @@ func cmdCreate(c *cli.Context) {
 		},
 		EngineOptions: &engine.EngineOptions{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),
+			Env:              c.StringSlice("engine-env"),
 			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
 			Labels:           c.StringSlice("engine-label"),
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
