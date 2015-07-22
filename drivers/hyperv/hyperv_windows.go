@@ -17,6 +17,10 @@ import (
 	"github.com/docker/machine/utils"
 )
 
+const (
+	isoFilename = "boot2docker-hyperv.iso"
+)
+
 type Driver struct {
 	*drivers.BaseDriver
 	boot2DockerURL string
@@ -148,7 +152,7 @@ func (d *Driver) Create() error {
 
 	var isoURL string
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := utils.NewB2dUtils("", "", isoFilename)
 
 	if d.boot2DockerLoc == "" {
 		if d.boot2DockerURL != "" {

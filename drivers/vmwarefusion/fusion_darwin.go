@@ -25,7 +25,7 @@ import (
 const (
 	B2DUser     = "docker"
 	B2DPass     = "docker"
-	isoFilename = "boot2docker.iso"
+	isoFilename = "boot2docker-vmware.iso"
 )
 
 // Driver for VMware Fusion
@@ -160,7 +160,7 @@ func (d *Driver) PreCreateCheck() error {
 
 func (d *Driver) Create() error {
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := utils.NewB2dUtils("", "", isoFilename)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
