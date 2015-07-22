@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	isoFilename         = "boot2docker.iso"
+	isoFilename         = "boot2docker-virtualbox.iso"
 	defaultHostOnlyCIDR = "192.168.99.1/24"
 )
 
@@ -153,7 +153,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := utils.NewB2dUtils("", "", isoFilename)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func (d *Driver) Create() error {
 		"--port", "0",
 		"--device", "0",
 		"--type", "dvddrive",
-		"--medium", d.ResolveStorePath("boot2docker.iso")); err != nil {
+		"--medium", d.ResolveStorePath(isoFilename)); err != nil {
 		return err
 	}
 
