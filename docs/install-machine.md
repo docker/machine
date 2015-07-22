@@ -14,7 +14,7 @@ weight=3
 Docker Machine is supported on Windows, OS X, and Linux and is installable as
 one standalone binary.  The links to the binaries for the various platforms and
 architectures are available at the [Github
-Release](https://github.com/docker/machine/releases/tag/v0.3.0) page.
+Release](https://github.com/docker/machine/releases/tag/v0.3.1) page.
 
 
 ### OS X and Linux
@@ -24,7 +24,7 @@ To install on OS X or Linux, download the proper binary to somewhere in your
 most OS X machines these commands should suffice:
 
 ```
-$ curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
+$ curl -L https://github.com/docker/machine/releases/download/v0.3.1/docker-machine_darwin-amd64 > /usr/local/bin/docker-machine
 $ chmod +x /usr/local/bin/docker-machine
 ```
 
@@ -34,7 +34,7 @@ Now you should be able to check the version with `docker-machine -v`:
 
 ```
 $ docker-machine -v
-machine version 0.3.0
+machine version 0.3.1
 ```
 
 In order to run Docker commands on your machines without having to use SSH, make
@@ -66,12 +66,12 @@ $ curl -L https://get.docker.com/builds/Windows/x86_64/docker-latest.exe > /bin/
 Next, install the Docker Machine binary:
 
 ```
-$ curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_windows-amd64.exe > /bin/docker-machine
+$ curl -L https://github.com/docker/machine/releases/download/v0.3.1/docker-machine_windows-amd64.exe > /bin/docker-machine
 ```
 
 Now running `docker-machine` should work.
 
 ```
 $ docker-machine -v
-machine version 0.3.0
+machine version 0.3.1
 ```
