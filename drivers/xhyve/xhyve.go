@@ -379,7 +379,7 @@ func (d *Driver) createUUIDFile() error {
 func (d *Driver) getIPfromDHCPLease() (string, error) {
 	var dhcpfh *os.File
 	var dhcpcontent []byte
-	// var macaddr string
+	var macaddr string
 	var err error
 	var lastipmatch string
 	var currentip string
@@ -413,7 +413,9 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 
 		if matches := leasemac.FindStringSubmatch(line); matches != nil {
 			currentip = lastipmatch
-			macaddr = matches
+			macaddr = matches[1]
+			log.Debug(macaddr)
+                        continue
 		}
 	}
 
