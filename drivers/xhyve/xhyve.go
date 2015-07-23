@@ -413,6 +413,7 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 
 		if matches := leasemac.FindStringSubmatch(line); matches != nil {
 			currentip = lastipmatch
+			macaddr = matches
 		}
 	}
 
@@ -420,7 +421,7 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", leasemac)
 	}
 
-	if leasemac == "" {
+	if macaddr == "" {
                 return "", fmt.Errorf("couldn't find MAC address in DHCP leases file %s", dhcpfile)
         }
 
