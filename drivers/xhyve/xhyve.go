@@ -35,7 +35,6 @@ type Driver struct {
 	ISO            string
 	TmpISO         string
 	UUID           string
-	MACAddress     string
 	SSHUser        string
 	SSHPort        int
 	Boot2DockerURL string
@@ -235,14 +234,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Get MAC address from UUID...")
-	d.MACAddress = uuid2mac(d.UUID)
-	log.Debugf(d.MACAddress) // TODO
-
-	log.Debugf("Create MAC address file...")
-	if err := d.createMACAddressFile(); err != nil {
-		return err
-	}
+	// TODO Maybe get MAC address here from host asignment
 
 	var ip string
 	var err error
@@ -280,7 +272,7 @@ func (d *Driver) Start() error {
 		"-s 0:0,hostbridge -s 31,lpc",
 		"-l com1,stdio",
 		"-s 2:0,virtio-net",
-		fmt.Sprintf("-s 2:1,virtio-tap,tap1,mac=%s", d.MACAddress),
+		fmt.Sprintf("-s 2:1,virtio-tap,tap1"),
 		fmt.Sprintf("-s 3,ahci-cd,%d", path.Join(d.storePath, isoFilename)),
 		fmt.Sprintf("-s 4,virtio-blk,%d", path.Join(d.storePath, d.MachineName+".img")),
 		fmt.Sprintf("-U %s", d.UUID),
@@ -367,10 +359,6 @@ func (d *Driver) uuidPath() string {
 	return path.Join(d.storePath, "uuid")
 }
 
-func (d *Driver) macaddressPath() string {
-	return path.Join(d.storePath, "macaddress")
-}
-
 func (d *Driver) createUUIDFile() error {
 	var uuidfile *os.File
 	var err error
@@ -388,38 +376,10 @@ func (d *Driver) createUUIDFile() error {
 	return nil
 }
 
-func (d *Driver) createMACAddressFile() error {
-	var macaddressfile *os.File
-	var err error
-
-	if macaddressfile, err = os.Create(d.macaddressPath()); err != nil {
-		return err
-	}
-
-	macaddress, err := io.WriteString(macaddressfile, d.MACAddress)
-	if err != nil {
-		log.Debug(macaddress, err) // TODO
-	}
-
-	macaddressfile.Close()
-	return nil
-}
-
-func (d *Driver) getUUIDfromMacaddress() string {
-	file, err := ioutil.ReadFile(d.macaddressPath())
-	if err != nil {
-		log.Errorln(err)
-	}
-
-	mac := string(file)
-
-	return mac
-}
-
 func (d *Driver) getIPfromDHCPLease() (string, error) {
 	var dhcpfh *os.File
 	var dhcpcontent []byte
-	var macaddr string
+	// var macaddr string
 	var err error
 	var lastipmatch string
 	var currentip string
@@ -427,14 +387,6 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 	// DHCP lease table for NAT vmnet interface
 	var dhcpfile = "/var/db/dhcpd_leases"
 
-	macaddr = d.getUUIDfromMacaddress()
-	log.Debugf(macaddr) // TODO
-
-	if macaddr == "" {
-		return "", fmt.Errorf("couldn't find MAC address in macaddress file %s", d.macaddressPath())
-	}
-
-	log.Debugf("MAC address in file: %s", macaddr)
 	if dhcpfh, err = os.Open(dhcpfile); err != nil {
 		return "", err
 	}
@@ -465,8 +417,12 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 	}
 
 	if currentip == "" {
-		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", macaddr)
+		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", leasemac)
 	}
+
+	if leasemac == "" {
+                return "", fmt.Errorf("couldn't find MAC address in DHCP leases file %s", dhcpfile)
+        }
 
 	log.Debugf("IP found in DHCP lease table: %s", currentip)
 	return currentip, nil

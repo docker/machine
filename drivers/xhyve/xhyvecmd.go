@@ -38,7 +38,7 @@ func setXhyveCmd() string { // TODO
 
 func xhyve(args ...string) (string, error) { // TODO
 	var Password string
-	cmd := exec.Command("sudo", "-S", "xhyve")
+	cmd := exec.Command("sudo", "-S", XhyveCmd)
 	cmd.Stdin = strings.NewReader(Password)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout

@@ -16,7 +16,7 @@ var (
 	//	ErrMachineNotExist  = errors.New("machine does not exist")
 	ErrDdNotFound       = errors.New("xhyve not found")
 	ErrUuidgenNotFound  = errors.New("uuidgen not found")
-	ErrUuid2macNotFound = errors.New("uuid2mac not found")
+	//	ErrUuid2macNotFound = errors.New("uuid2mac not found")
 	ErrHdiutilNotFound  = errors.New("hdiutil not found")
 )
 
@@ -59,21 +59,6 @@ func uuidgen() string {
 	out := stdout.String()
 	out = strings.Replace(out, "\n", "", -1)
 	return out
-}
-
-func uuid2mac(uuid string) string { // TODO deprecated
-	cmd := exec.Command("sudo", "uuid2mac", uuid)
-
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	log.Debugf("executing: %v %v %v", cmd, uuid, stdout.String())
-
-	err := cmd.Run()
-	if err != nil {
-		log.Error(err)
-	}
-
-	return stdout.String()
 }
 
 func hdiutil(args ...string) error {
