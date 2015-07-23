@@ -3,6 +3,7 @@ package openstack
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -230,7 +231,12 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	port := os.Getenv("DOCKER_PORT")
+	if port == "" {
+		return fmt.Sprintf("tcp://%s:2376", ip), nil
+	} else {
+		return fmt.Sprintf("tcp://%s:%s", ip, port), nil
+	}
 }
 
 func (d *Driver) GetIP() (string, error) {
