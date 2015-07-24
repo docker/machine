@@ -408,14 +408,14 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) setupSharedDirs() error {
 	shareDir := homedir.Get()
-	shareName := shareDir
+	shareName := "Home"
 
 	if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
 		return err
 	} else if !os.IsNotExist(err) {
 		// add shared folder, create mountpoint and mount it.
 		vmrun("-gu", B2DUser, "-gp", B2DPass, "addSharedFolder", d.vmxPath(), shareName, shareDir)
-		vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:"+shareName+" "+shareDir)
+		vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
 	}
 
 	return nil
