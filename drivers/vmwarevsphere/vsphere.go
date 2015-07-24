@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	isoFilename      = "boot2docker.iso"
+	isoFilename      = "boot2docker-vmware.iso"
 	B2DISOName       = isoFilename
 	DefaultCPUNumber = 2
 	B2DUser          = "docker"
@@ -225,7 +225,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := utils.NewB2dUtils("", "", isoFilename)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}

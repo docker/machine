@@ -5,17 +5,16 @@
 package vmwarefusion
 
 import (
-	"archive/tar"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
-	"runtime"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
@@ -25,8 +24,8 @@ import (
 
 const (
 	B2DUser     = "docker"
-	B2DPass     = "tcuser"
-	isoFilename = "boot2docker.iso"
+	B2DPass     = "docker"
+	isoFilename = "boot2docker-vmware.iso"
 )
 
 // Driver for VMware Fusion
@@ -161,7 +160,7 @@ func (d *Driver) PreCreateCheck() error {
 
 func (d *Driver) Create() error {
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := utils.NewB2dUtils("", "", isoFilename)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
@@ -207,7 +206,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Waiting for VM to come online...")
 	for i := 1; i <= 60; i++ {
-		ip, err = d.getIPfromDHCPLease()
+		ip, err = d.GetIP()
 		if err != nil {
 			log.Debugf("Not there yet %d/%d, error: %s", i, 60, err)
 			time.Sleep(2 * time.Second)
@@ -227,40 +226,42 @@ func (d *Driver) Create() error {
 	// we got an IP, let's copy ssh keys over
 	d.IPAddress = ip
 
-	// Generate a tar keys bundle
-	if err := d.generateKeyBundle(); err != nil {
+	// use ssh to set keys
+	sshClient, err := d.getLocalSSHClient()
+	if err != nil {
 		return err
 	}
 
-	// Test if /var/lib/boot2docker exists
-	vmrun("-gu", B2DUser, "-gp", B2DPass, "directoryExistsInGuest", d.vmxPath(), "/var/lib/boot2docker")
+	// add pub key for user
+	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
+		return err
+	}
 
-	// Copy SSH keys bundle
-	vmrun("-gu", B2DUser, "-gp", B2DPass, "CopyFileFromHostToGuest", d.vmxPath(), d.ResolveStorePath("userdata.tar"), "/home/docker/userdata.tar")
+	if out, err := sshClient.Output(fmt.Sprintf(
+		"mkdir -p /home/%s/.ssh",
+		d.GetSSHUsername(),
+	)); err != nil {
+		log.Error(out)
+		return err
+	}
 
-	// Expand tar file.
-	vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo /bin/mv /home/docker/userdata.tar /var/lib/boot2docker/userdata.tar && sudo tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/ > /var/log/userdata.log 2>&1 && sudo chown -R docker:staff /home/docker")
+	if out, err := sshClient.Output(fmt.Sprintf(
+		"printf '%%s' '%s' | tee /home/%s/.ssh/authorized_keys",
+		string(pubKey),
+		d.GetSSHUsername(),
+	)); err != nil {
+		log.Error(out)
+		return err
+	}
 
 	// Enable Shared Folders
 	vmrun("-gu", B2DUser, "-gp", B2DPass, "enableSharedFolders", d.vmxPath())
 
-	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-		// TODO "linux" and "windows"
+	if err := d.setupSharedDirs(); err != nil {
+		return err
 	}
 
-	if shareDir != "" {
-		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
-			return err
-		} else if !os.IsNotExist(err) {
-			// add shared folder, create mountpoint and mount it.
-			vmrun("-gu", B2DUser, "-gp", B2DPass, "addSharedFolder", d.vmxPath(), shareName, shareDir)
-			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
-		}
-	}
 	return nil
 }
 
@@ -269,21 +270,8 @@ func (d *Driver) Start() error {
 	vmrun("start", d.vmxPath(), "nogui")
 
 	log.Debugf("Mounting Shared Folders...")
-	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-		// TODO "linux" and "windows"
-	}
-
-	if shareDir != "" {
-		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
-			return err
-		} else if !os.IsNotExist(err) {
-			// create mountpoint and mount shared folder
-			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
-		}
+	if err := d.setupSharedDirs(); err != nil {
+		return err
 	}
 
 	return nil
@@ -418,57 +406,35 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-// Make a boot2docker userdata.tar key bundle
-func (d *Driver) generateKeyBundle() error {
-	log.Debugf("Creating Tar key bundle...")
+func (d *Driver) setupSharedDirs() error {
+	shareDir := homedir.Get()
+	shareName := "Home"
 
-	magicString := "boot2docker, this is vmware speaking"
-
-	tf, err := os.Create(d.ResolveStorePath("userdata.tar"))
-	if err != nil {
+	if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
 		return err
-	}
-	defer tf.Close()
-	var fileWriter = tf
-
-	tw := tar.NewWriter(fileWriter)
-	defer tw.Close()
-
-	// magicString first so we can figure out who originally wrote the tar.
-	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(magicString)); err != nil {
-		return err
-	}
-	// .ssh/key.pub => authorized_keys
-	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
-	if err != nil {
-		return err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
-	}
-	if err := tw.Close(); err != nil {
-		return err
+	} else if !os.IsNotExist(err) {
+		// add shared folder, create mountpoint and mount it.
+		vmrun("-gu", B2DUser, "-gp", B2DPass, "addSharedFolder", d.vmxPath(), shareName, shareDir)
+		vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir -p "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
 	}
 
 	return nil
+}
 
+func (d *Driver) getLocalSSHClient() (ssh.Client, error) {
+	ip, err := d.GetIP()
+	if err != nil {
+		return nil, err
+	}
+
+	sshAuth := &ssh.Auth{
+		Passwords: []string{"docker"},
+		Keys:      []string{d.GetSSHKeyPath()},
+	}
+	sshClient, err := ssh.NewNativeClient(d.GetSSHUsername(), ip, d.SSHPort, sshAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	return sshClient, nil
 }
