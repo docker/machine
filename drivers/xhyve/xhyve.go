@@ -188,7 +188,7 @@ func (d *Driver) PreCreateCheck() error {
 	reVersion := regexp.MustCompile(`^(\d+\.)?$`)
 	ver, err := vboxVersionDetect()
 	majorVersion := reVersion.FindString(ver)
-	if majorVersion != "5" && err != nil {
+	if majorVersion != "5" || majorVersion != "" && err != nil {
 		return fmt.Errorf("Virtual Box version 4 or lower will cause a kernel panic if xhyve tries to run." +
 				"You are running version: " +
 				ver +
