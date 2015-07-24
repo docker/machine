@@ -1,16 +1,13 @@
 package virtualbox
 
 import (
-	"archive/tar"
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
-	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -19,6 +16,7 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
@@ -27,7 +25,7 @@ import (
 )
 
 const (
-	isoFilename         = "boot2docker.iso"
+	isoFilename         = "boot2docker-virtualbox.iso"
 	defaultHostOnlyCIDR = "192.168.99.1/24"
 )
 
@@ -155,7 +153,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := utils.NewB2dUtils("", "", isoFilename)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
@@ -203,9 +201,10 @@ func (d *Driver) Create() error {
 		}
 
 		log.Debugf("Creating disk image...")
-		if err := d.generateDiskImage(d.DiskSize); err != nil {
+		if err := vbm("createhd", "--size", fmt.Sprintf("%d", d.DiskSize), "--format", "VMDK", "--filename", d.diskPath()); err != nil {
 			return err
 		}
+
 	}
 
 	if err := vbm("createvm",
@@ -275,7 +274,7 @@ func (d *Driver) Create() error {
 		"--port", "0",
 		"--device", "0",
 		"--type", "dvddrive",
-		"--medium", d.ResolveStorePath("boot2docker.iso")); err != nil {
+		"--medium", d.ResolveStorePath(isoFilename)); err != nil {
 		return err
 	}
 
@@ -288,35 +287,38 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	shareDir := homedir.Get()
+	shareName := shareDir
+
+	log.Debugf("creating share: path=%s", shareDir)
+
 	// let VBoxService do nice magic automounting (when it's used)
-	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
-		return err
-	}
 	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountDir", "/"); err != nil {
 		return err
 	}
-
-	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "windows":
-		shareName = "c/Users"
-		shareDir = "c:\\Users"
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-		// TODO "linux"
+	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
+		return err
 	}
 
 	if shareDir != "" {
+		log.Debugf("setting up shareDir")
 		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
+			log.Debugf("setting up share failed: %s", err)
 			return err
 		} else if !os.IsNotExist(err) {
-			if shareName == "" {
-				// parts of the VBox internal code are buggy with share names that start with "/"
-				shareName = strings.TrimLeft(shareDir, "/")
-				// TODO do some basic Windows -> MSYS path conversion
-				// ie, s!^([a-z]+):[/\\]+!\1/!; s!\\!/!g
+			// parts of the VBox internal code are buggy with share names that start with "/"
+			shareName = strings.TrimLeft(shareDir, "/")
+
+			// translate to msys git path
+			if runtime.GOOS == "windows" {
+				mountName, err := translateWindowsMount(shareDir)
+				if err != nil {
+					return err
+				}
+				shareName = mountName
 			}
+
+			log.Debugf("adding shared folder: name=%q dir=%q", shareName, shareDir)
 
 			// woo, shareDir exists!  let's carry on!
 			if err := vbm("sharedfolder", "add", d.MachineName, "--name", shareName, "--hostpath", shareDir, "--automount"); err != nil {
@@ -336,13 +338,47 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	// use ssh to set keys
+	sshClient, err := d.getLocalSSHClient()
+	if err != nil {
+		return err
+	}
+
+	// add pub key for user
+	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
+		return err
+	}
+
+	if out, err := sshClient.Output(fmt.Sprintf(
+		"mkdir -p /home/%s/.ssh",
+		d.GetSSHUsername(),
+	)); err != nil {
+		log.Error(out)
+		return err
+	}
+
+	if out, err := sshClient.Output(fmt.Sprintf(
+		"printf '%%s' '%s' | tee /home/%s/.ssh/authorized_keys",
+		string(pubKey),
+		d.GetSSHUsername(),
+	)); err != nil {
+		log.Error(out)
+		return err
+	}
+
+	ip, err := d.GetIP()
+	if err != nil {
+		return err
+	}
+	d.IPAddress = ip
 	return nil
 }
 
 func (d *Driver) hostOnlyIpAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {
-		log.Debug("ERROR getting IP: %s", err)
+		log.Debugf("ERROR getting IP: %s", err)
 		return false
 	}
 	if ip != "" {
@@ -385,8 +421,8 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	// Wait for SSH over NAT to be available before returning to user
-	if err := drivers.WaitForSSH(d); err != nil {
+	addr, err := d.GetSSHHostname()
+	if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", addr, d.SSHPort)); err != nil {
 		return err
 	}
 
@@ -394,8 +430,6 @@ func (d *Driver) Start() error {
 	if err := utils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
 		return err
 	}
-
-	d.IPAddress, err = d.GetIP()
 
 	return err
 }
@@ -502,8 +536,14 @@ func (d *Driver) GetIP() (string, error) {
 		return "", drivers.ErrHostIsNotRunning
 	}
 
-	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show dev eth1")
+	sshClient, err := d.getLocalSSHClient()
 	if err != nil {
+		return "", err
+	}
+
+	output, err := sshClient.Output("ip addr show dev eth1")
+	if err != nil {
+		log.Debug(output)
 		return "", err
 	}
 
@@ -527,53 +567,6 @@ func (d *Driver) publicSSHKeyPath() string {
 
 func (d *Driver) diskPath() string {
 	return d.ResolveStorePath("disk.vmdk")
-}
-
-// Make a boot2docker VM disk image.
-func (d *Driver) generateDiskImage(size int) error {
-	log.Debugf("Creating %d MB hard disk image...", size)
-
-	magicString := "boot2docker, please format-me"
-
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-
-	// magicString first so the automount script knows to format the disk
-	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(magicString)); err != nil {
-		return err
-	}
-	// .ssh/key.pub => authorized_keys
-	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
-	if err != nil {
-		return err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return err
-	}
-	if err := tw.Close(); err != nil {
-		return err
-	}
-	raw := bytes.NewReader(buf.Bytes())
-	return createDiskImage(d.diskPath(), size, raw)
 }
 
 func (d *Driver) setupHostOnlyNetwork(machineName string) error {
@@ -623,69 +616,6 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 		return err
 	}
 
-	return nil
-}
-
-// createDiskImage makes a disk image at dest with the given size in MB. If r is
-// not nil, it will be read as a raw disk image to convert from.
-func createDiskImage(dest string, size int, r io.Reader) error {
-	// Convert a raw image from stdin to the dest VMDK image.
-	sizeBytes := int64(size) << 20 // usually won't fit in 32-bit int (max 2GB)
-	// FIXME: why isn't this just using the vbm*() functions?
-	cmd := exec.Command(vboxManageCmd, "convertfromraw", "stdin", dest,
-		fmt.Sprintf("%d", sizeBytes), "--format", "VMDK")
-
-	if os.Getenv("DEBUG") != "" {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	n, err := io.Copy(stdin, r)
-	if err != nil {
-		return err
-	}
-
-	// The total number of bytes written to stdin must match sizeBytes, or
-	// VBoxManage.exe on Windows will fail. Fill remaining with zeros.
-	if left := sizeBytes - n; left > 0 {
-		if err := zeroFill(stdin, left); err != nil {
-			return err
-		}
-	}
-
-	// cmd won't exit until the stdin is closed.
-	if err := stdin.Close(); err != nil {
-		return err
-	}
-
-	return cmd.Wait()
-}
-
-// zeroFill writes n zero bytes into w.
-func zeroFill(w io.Writer, n int64) error {
-	const blocksize = 32 << 10
-	zeros := make([]byte, blocksize)
-	var k int
-	var err error
-	for n > 0 {
-		if n > blocksize {
-			k, err = w.Write(zeros)
-		} else {
-			k, err = w.Write(zeros[:n])
-		}
-		if err != nil {
-			return err
-		}
-		n -= int64(k)
-	}
 	return nil
 }
 
@@ -754,4 +684,36 @@ func getRandomIPinSubnet(baseIP net.IP) (net.IP, error) {
 	}
 
 	return dhcpAddr, nil
+}
+
+func (d *Driver) getLocalSSHClient() (ssh.Client, error) {
+	sshAuth := &ssh.Auth{
+		Passwords: []string{"docker"},
+		Keys:      []string{d.GetSSHKeyPath()},
+	}
+	sshClient, err := ssh.NewNativeClient(d.GetSSHUsername(), "127.0.0.1", d.SSHPort, sshAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	return sshClient, nil
+}
+
+func translateWindowsMount(p string) (string, error) {
+	re := regexp.MustCompile(`(?P<drive>[^:]+):\\(?P<path>.*)`)
+	m := re.FindStringSubmatch(p)
+
+	var drive, fullPath string
+
+	if len(m) < 3 {
+		return "", fmt.Errorf("unable to parse home directory")
+	}
+
+	drive = m[1]
+	fullPath = m[2]
+
+	nPath := strings.Replace(fullPath, "\\", "/", -1)
+
+	tPath := path.Join("/", strings.ToLower(drive), nPath)
+	return tPath, nil
 }

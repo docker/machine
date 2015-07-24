@@ -47,6 +47,11 @@
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/homedir",
+			"Comment": "v1.7.0",
+			"Rev": "0baf60984522744eed290348f33f396c046b2f3a"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",
 			"Comment": "v1.5.0",
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"

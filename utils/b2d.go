@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -45,11 +45,10 @@ type B2dUtils struct {
 	githubBaseUrl    string
 }
 
-func NewB2dUtils(githubApiBaseUrl, githubBaseUrl string) *B2dUtils {
+func NewB2dUtils(githubApiBaseUrl, githubBaseUrl, isoFilename string) *B2dUtils {
 	defaultBaseApiUrl := "https://api.github.com"
 	defaultBaseUrl := "https://github.com"
 	imgCachePath := GetMachineCacheDir()
-	isoFilename := "boot2docker.iso"
 
 	if githubApiBaseUrl == "" {
 		githubApiBaseUrl = defaultBaseApiUrl
@@ -71,27 +70,41 @@ func NewB2dUtils(githubApiBaseUrl, githubBaseUrl string) *B2dUtils {
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
-	client := getClient()
-	apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
-	rsp, err := client.Get(apiUrl)
-	if err != nil {
-		return "", err
-	}
-	defer rsp.Body.Close()
+	//client := getClient()
+	//apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
+	//rsp, err := client.Get(apiUrl)
+	//if err != nil {
+	//	return "", err
+	//}
+	//defer rsp.Body.Close()
 
-	var t []struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
-		return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
-	}
-	if len(t) == 0 {
-		return "", fmt.Errorf("no releases found")
-	}
+	//var t []struct {
+	//	TagName    string `json:"tag_name"`
+	//	PreRelease bool   `json:"prerelease"`
+	//}
+	//if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
+	//	return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
+	//}
+	//if len(t) == 0 {
+	//	return "", fmt.Errorf("no releases found")
+	//}
 
-	tag := t[0].TagName
-	isoUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseUrl, tag)
-	return isoUrl, nil
+	//// find the latest "released" release (i.e. not pre-release)
+	//isoUrl := ""
+	//for _, r := range t {
+	//	if !r.PreRelease {
+	//		tag := r.TagName
+	//		isoUrl = fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseUrl, tag)
+	//		break
+	//	}
+	//}
+	//return isoUrl, nil
+
+	// TODO: once we decide on the final versioning and location we will
+	// enable the above "check for latest"
+	u := fmt.Sprintf("https://s3.amazonaws.com/docker-mcn/public/b2d-next/%s", b.isoFilename)
+	return u, nil
+
 }
 
 func removeFileIfExists(name string) error {
