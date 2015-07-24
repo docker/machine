@@ -63,7 +63,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 		isoFilename = "boot2docker-virtualbox.iso"
 	case "vmwarefusion", "vmwarevsphere":
 		isoFilename = "boot2docker-vmware.iso"
-	case "hyperv":
+	case "hyper-v":
 		isoFilename = "boot2docker-hyperv.iso"
 	default:
 		return ErrUnknownDriver
