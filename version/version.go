@@ -6,8 +6,8 @@ var (
 	// therefore migration, introduced to the config file format.
 	ConfigVersion = 1
 
-	// Version should be updated by hand at each release
-	Version = "0.4.0-dev"
+	// VERSION should be updated by hand at each release
+	Version = "0.4.0"
 
 	// GitCommit will be overwritten automatically by the build system
 	GitCommit = "HEAD"
