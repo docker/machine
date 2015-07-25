@@ -14,6 +14,7 @@ import (
 
 type ScpFakeDriver struct {
 	MockState state.State
+	SSHPass string
 }
 
 type ScpFakeStore struct{}
@@ -108,6 +109,27 @@ func (d ScpFakeDriver) GetSSHCommand(args ...string) (*exec.Cmd, error) {
 
 func (d ScpFakeDriver) GetSSHUsername() string {
 	return "root"
+}
+
+func (d ScpFakeDriver) GetSSHPassword() string {
+	return ""
+}
+
+func (d ScpFakeDriver) SSHSudo(command string) string {
+	sudo := "sudo"
+	// If there is a password given pipe it to sudo to avoid no tty error
+	if d.SSHPass != "" {
+		sudo = fmt.Sprintf(
+			"echo %q | sudo -SE",
+			d.SSHPass,
+		)
+	}
+	command = fmt.Sprintf(
+		"%s %s",
+		sudo,
+		command,
+	)
+	return command
 }
 
 func (d ScpFakeDriver) GetSSHKeyPath() string {

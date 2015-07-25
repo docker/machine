@@ -1,8 +1,8 @@
 package drivers
 
 import (
-	"path/filepath"
 	"fmt"
+	"path/filepath"
 )
 
 // BaseDriver - Embed this struct into drivers to provide the common set
@@ -98,6 +98,6 @@ func (d *BaseDriver) SSHSudo(command string) string {
 		"%s %s",
 		sudo,
 		command,
-	);
+	)
 	return command
 }
