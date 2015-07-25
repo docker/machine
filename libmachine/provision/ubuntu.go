@@ -37,7 +37,8 @@ type UbuntuProvisioner struct {
 }
 
 func (provisioner *UbuntuProvisioner) Service(name string, action pkgaction.ServiceAction) error {
-	command := fmt.Sprintf("sudo service %s %s", name, action.String())
+	sudo_service := provisioner.Driver.SSHSudo("service %s %s")
+	command := fmt.Sprintf(sudo_service, name, action.String())
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
@@ -70,12 +71,15 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 
 	if updateMetadata {
 		// issue apt-get update for metadata
-		if _, err := provisioner.SSHCommand("sudo -E apt-get update"); err != nil {
+		apt_update := provisioner.Driver.SSHSudo("apt-get update")
+		if _, err := provisioner.SSHCommand(apt_update); err != nil {
 			return err
 		}
 	}
 
-	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
+	apt_action := provisioner.Driver.SSHSudo("apt-get %s -y %s")
+	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive && %s", apt_action)
+	command = fmt.Sprintf(command, packageAction, name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
@@ -85,7 +89,8 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 }
 
 func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
-	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
+	docker_version_command := provisioner.Driver.SSHSudo("docker version")
+	if _, err := provisioner.SSHCommand(docker_version_command); err != nil {
 		log.Warnf("Error getting SSH command to check if the daemon is up: %s", err)
 		return false
 	}

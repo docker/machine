@@ -34,6 +34,7 @@ func TestCmdInspectFormat(t *testing.T) {
 		IPAddress      string
 		MachineName    string
 		PrivateKeyPath string
+		SSHPass        string
 		SSHPort        int
 		SSHUser        string
 		SwarmDiscovery string
