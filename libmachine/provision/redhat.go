@@ -85,10 +85,10 @@ func (provisioner *RedHatProvisioner) SSHCommand(args string) (string, error) {
 }
 
 func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
-	// we have to have SetHostname here as well to use the RedHat provisioner
-	// SSHCommand to add the tty allocation
+	command := "sh -c 'hostname %s && echo %q | tee /etc/hostname'"
+	command = provisioner.Driver.SSHSudo(command)
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(
-		"sudo hostname %s && echo %q | sudo tee /etc/hostname",
+		command,
 		hostname,
 		hostname,
 	)); err != nil {
@@ -96,8 +96,17 @@ func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
 	}
 
 	// ubuntu/debian use 127.0.1.1 for non "localhost" loopback hostnames: https://www.debian.org/doc/manuals/debian-reference/ch05.en.html#_the_hostname_resolution
+	if_then := "sh -c \"sed -i 's/^127.0.1.1.*/127.0.1.1 %s/g' /etc/hosts\""
+	if_else := "sh -c \"echo '127.0.1.1 %s' | tee -a /etc/hosts\""
+	if_then = provisioner.Driver.SSHSudo(if_then)
+	if_else = provisioner.Driver.SSHSudo(if_else)
+	command = fmt.Sprintf(
+		"if grep -xq 127.0.1.1.* /etc/hosts; then %s; else %s; fi",
+		if_then,
+		if_else,
+	)
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(
-		"if grep -xq 127.0.1.1.* /etc/hosts; then sudo sed -i 's/^127.0.1.1.*/127.0.1.1 %s/g' /etc/hosts; else echo '127.0.1.1 %s' | sudo tee -a /etc/hosts; fi",
+		command,
 		hostname,
 		hostname,
 	)); err != nil {
