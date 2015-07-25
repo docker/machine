@@ -45,6 +45,11 @@ func GetCreateFlags() []cli.Flag {
 			Value: "root",
 		},
 		cli.StringFlag{
+			Name:  "generic-ssh-pass",
+			Usage: "SSH password for user, used for sudo",
+			Value: "",
+		},
+		cli.StringFlag{
 			Name:  "generic-ssh-key",
 			Usage: "SSH private key path",
 			Value: filepath.Join(utils.GetHomeDir(), ".ssh", "id_rsa"),
@@ -77,6 +82,7 @@ func (d *Driver) GetSSHUsername() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IPAddress = flags.String("generic-ip-address")
 	d.SSHUser = flags.String("generic-ssh-user")
+	d.SSHPass = flags.String("generic-ssh-pass")
 	d.SSHKey = flags.String("generic-ssh-key")
 	d.SSHPort = flags.Int("generic-ssh-port")
 
