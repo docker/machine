@@ -79,7 +79,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions 
 
 	// First things first, get the swarm image.
 	pull_command := "docker pull %s"
-	pull_command = p.Driver.SSHSudo(pull_command)
+	pull_command = p.GetDriver().SSHSudo(pull_command)
 	if _, err := p.SSHCommand(fmt.Sprintf(
 		pull_command,
 		swarmOptions.Image,
@@ -101,7 +101,7 @@ manage \
 -H {{.SwarmOptions.Host}} \
 --strategy {{.SwarmOptions.Strategy}} {{range .SwarmOptions.ArbitraryFlags}} --{{.}}{{end}} {{.SwarmOptions.Discovery}}
 `
-	swarmMasterCmdTemplate = p.Driver.SSHSudo(swarmMasterCmdTemplate)
+	swarmMasterCmdTemplate = p.GetDriver().SSHSudo(swarmMasterCmdTemplate)
 
 	swarmWorkerCmdTemplate := `docker run -d \
 --restart=always \
@@ -109,7 +109,7 @@ manage \
 {{.SwarmImage}} \
 join --advertise {{.Ip}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
 `
-	swarmWorkerCmdTemplate = p.Driver.SSHSudo(swarmWorkerCmdTemplate)
+	swarmWorkerCmdTemplate = p.GetDriver().SSHSudo(swarmWorkerCmdTemplate)
 
 	if swarmOptions.Master {
 		log.Debug("Launching swarm master")

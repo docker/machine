@@ -32,7 +32,7 @@ func installDockerGeneric(p Provisioner, baseURL string) error {
 
 func makeDockerOptionsDir(p Provisioner) error {
 	dockerDir := p.GetDockerOptionsDir()
-	mkdir_command := p.Driver.SHHSudo("mkdir -p %s")
+	mkdir_command := p.GetDriver().SSHSudo("mkdir -p %s")
 	if _, err := p.SSHCommand(fmt.Sprintf(mkdir_command, dockerDir)); err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func ConfigureAuth(p Provisioner) error {
 
 	// printf will choke if we don't pass a format string because of the
 	// dashes, so that's the reason for the '%%s'
-	certTransferCmdFmt := p.Driver.SHHSudo("sh -c \"printf '%%s' '%s' | tee %s\"")
+	certTransferCmdFmt := p.GetDriver().SSHSudo("sh -c \"printf '%%s' '%s' | tee %s\"")
 
 	// These ones are for Jessie and Mike <3 <3 <3
 	if _, err := p.SSHCommand(fmt.Sprintf(certTransferCmdFmt, string(caCert), authOptions.CaCertRemotePath)); err != nil {
@@ -165,7 +165,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	print_and_tee := p.Driver.SHHSudo("sh -c 'printf %%s \"%s\" | sudo tee %s'")
+	print_and_tee := p.GetDriver().SSHSudo("sh -c 'printf %%s \"%s\" | sudo tee %s'")
 	if _, err = p.SSHCommand(fmt.Sprintf(print_and_tee, dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
 		return err
 	}
