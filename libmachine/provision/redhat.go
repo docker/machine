@@ -85,10 +85,10 @@ func (provisioner *RedHatProvisioner) SSHCommand(args string) (string, error) {
 }
 
 func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
-	// we have to have SetHostname here as well to use the RedHat provisioner
-	// SSHCommand to add the tty allocation
+	command := "sh -c 'hostname %s && echo %q | tee /etc/hostname'"
+	command = provisioner.Driver.SSHSudo(command)
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(
-		"sudo hostname %s && echo %q | sudo tee /etc/hostname",
+		command,
 		hostname,
 		hostname,
 	)); err != nil {
@@ -96,8 +96,17 @@ func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
 	}
 
 	// ubuntu/debian use 127.0.1.1 for non "localhost" loopback hostnames: https://www.debian.org/doc/manuals/debian-reference/ch05.en.html#_the_hostname_resolution
+	if_then := "sh -c \"sed -i 's/^127.0.1.1.*/127.0.1.1 %s/g' /etc/hosts\""
+	if_else := "sh -c \"echo '127.0.1.1 %s' | tee -a /etc/hosts\""
+	if_then = provisioner.Driver.SSHSudo(if_then)
+	if_else = provisioner.Driver.SSHSudo(if_else)
+	command = fmt.Sprintf(
+		"if grep -xq 127.0.1.1.* /etc/hosts; then %s; else %s; fi",
+		if_then,
+		if_else,
+	)
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(
-		"if grep -xq 127.0.1.1.* /etc/hosts; then sudo sed -i 's/^127.0.1.1.*/127.0.1.1 %s/g' /etc/hosts; else echo '127.0.1.1 %s' | sudo tee -a /etc/hosts; fi",
+		command,
 		hostname,
 		hostname,
 	)); err != nil {
@@ -118,12 +127,14 @@ func (provisioner *RedHatProvisioner) Service(name string, action pkgaction.Serv
 	// be sure exactly when it changes from the provisioner so
 	// we call a reload on every restart to be safe
 	if reloadDaemon {
-		if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
+		reload_command := provisioner.Driver.SSHSudo("systemctl daemon-reload")
+		if _, err := provisioner.SSHCommand(reload_command); err != nil {
 			return err
 		}
 	}
 
-	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
+	systemctl_command := provisioner.Driver.SSHSudo("systemctl %s %s")
+	command := fmt.Sprintf(systemctl_command, action.String(), name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
@@ -144,7 +155,8 @@ func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.Pack
 		packageAction = "upgrade"
 	}
 
-	command := fmt.Sprintf("sudo -E yum %s -y %s", packageAction, name)
+	yum_command := provisioner.Driver.SSHSudo("yum %s -y %s")
+	command := fmt.Sprintf(yum_command, packageAction, name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
@@ -176,7 +188,8 @@ func (provisioner *RedHatProvisioner) installOfficialDocker() error {
 		return err
 	}
 
-	if _, err := provisioner.SSHCommand("sudo yum install -y docker-engine"); err != nil {
+	engine_install_command := provisioner.Driver.SSHSudo("yum install -y docker-engine")
+	if _, err := provisioner.SSHCommand(engine_install_command); err != nil {
 		return err
 	}
 
@@ -184,7 +197,8 @@ func (provisioner *RedHatProvisioner) installOfficialDocker() error {
 }
 
 func (provisioner *RedHatProvisioner) dockerDaemonResponding() bool {
-	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
+	docker_version_command := provisioner.Driver.SSHSudo("docker version")
+	if _, err := provisioner.SSHCommand(docker_version_command); err != nil {
 		log.Warn("Error getting SSH command to check if the daemon is up: %s", err)
 		return false
 	}
@@ -215,7 +229,8 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	// update OS -- this is needed for libdevicemapper and the docker install
-	if _, err := provisioner.SSHCommand("sudo yum -y update"); err != nil {
+	yum_update_command := provisioner.Driver.SSHSudo("yum -y update")
+	if _, err := provisioner.SSHCommand(yum_update_command); err != nil {
 		return err
 	}
 
@@ -319,7 +334,8 @@ func (provisioner *RedHatProvisioner) ConfigurePackageList() error {
 
 	// we cannot use %q here as it combines the newlines in the formatting
 	// on transport causing yum to not use the repo
-	packageCmd := fmt.Sprintf("echo \"%s\" | sudo tee /etc/yum.repos.d/docker.repo", buf.String())
+	packageCmd := provisioner.Driver.SSHSudo("sh -c 'echo %q | sudo tee /etc/yum.repos.d/docker.repo'")
+	packageCmd = fmt.Sprintf(packageCmd, buf.String())
 	if _, err := provisioner.SSHCommand(packageCmd); err != nil {
 		return err
 	}
