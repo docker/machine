@@ -90,7 +90,7 @@ func (d *BaseDriver) SSHSudo(command string) string {
 	// If there is a password given pipe it to sudo to avoid no tty error
 	if d.SSHPass != "" {
 		sudo = fmt.Sprintf(
-			"echo %q | sudo -S",
+			"echo %q | sudo -SE",
 			d.SSHPass,
 		)
 	}

@@ -159,7 +159,9 @@ func (d *Driver) Remove() error {
 func (d *Driver) Restart() error {
 	log.Debug("Restarting...")
 
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now"); err != nil {
+	command := "shutdown -r now"
+	command = d.SSHSudo(command)
+	if _, err := drivers.RunSSHCommandFromDriver(d, command); err != nil {
 		return err
 	}
 
@@ -169,7 +171,9 @@ func (d *Driver) Restart() error {
 func (d *Driver) Kill() error {
 	log.Debug("Killing...")
 
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now"); err != nil {
+	command := "shutdown -P now"
+	command = d.SSHSudo(command)
+	if _, err := drivers.RunSSHCommandFromDriver(d, command); err != nil {
 		return err
 	}
 
