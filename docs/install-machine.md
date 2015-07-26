@@ -14,7 +14,7 @@ weight=3
 Docker Machine is supported on Windows, OS X, and Linux and is installable as
 one standalone binary.  The links to the binaries for the various platforms and
 architectures are available at the [Github
-Release](https://github.com/docker/machine/releases/tag/v0.3.1) page.
+Release](https://github.com/docker/machine/releases/) page.
 
 
 ### OS X and Linux
