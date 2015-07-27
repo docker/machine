@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
@@ -58,6 +59,7 @@ type HostMetadata struct {
 type HostListItem struct {
 	Name         string
 	Active       bool
+	SwarmActive  bool
 	DriverName   string
 	State        state.State
 	URL          string
@@ -363,9 +365,16 @@ func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
 
 	dockerHost := os.Getenv("DOCKER_HOST")
 
+	normalActive := dockerHost == url && currentState != state.Stopped
+
+	// TODO: HUGE HORRIBLE HACK!!!! DO NOT HARDCODE DOCKER PORT 2376 OR SWARM PORT 3376
+	replacedSwarmPort := strings.Replace(url, ":2376", ":3376", -1)
+	swarmActive := dockerHost == replacedSwarmPort && currentState != state.Stopped
+
 	hostListItemsChan <- HostListItem{
 		Name:         host.Name,
-		Active:       dockerHost == url && currentState != state.Stopped,
+		Active:       normalActive,
+		SwarmActive:  swarmActive,
 		DriverName:   host.Driver.DriverName(),
 		State:        currentState,
 		URL:          url,

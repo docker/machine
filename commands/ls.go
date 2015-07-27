@@ -64,24 +64,33 @@ func cmdLs(c *cli.Context) {
 	sortHostListItemsByName(items)
 
 	for _, item := range items {
-		activeString := ""
-		if item.Active {
-			activeString = "*"
-		}
-
-		swarmInfo := ""
-
-		if item.SwarmOptions.Discovery != "" {
-			swarmInfo = swarmMasters[item.SwarmOptions.Discovery]
-			if item.SwarmOptions.Master {
-				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
-			}
-		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo)
+		printItemToTabWriter(item, swarmInfo, swarmMasters, w)
 	}
 
 	w.Flush()
+}
+
+func printItemToTabWriter(item libmachine.HostListItem, swarmInfo map[string]string, swarmMasters map[string]string, w *tabwriter.Writer) {
+	activeString := ""
+	swarmName := ""
+
+	if item.Active {
+		activeString = "*"
+	}
+
+	if item.SwarmActive {
+		activeString = "* (swarm)"
+	}
+
+	if item.SwarmOptions.Discovery != "" {
+		swarmName = swarmMasters[item.SwarmOptions.Discovery]
+		if item.SwarmOptions.Master {
+			swarmName = fmt.Sprintf("%s (master)", swarmName)
+		}
+	}
+
+	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+		item.Name, activeString, item.DriverName, item.State, item.URL, swarmName)
 }
 
 func parseFilters(filters []string) (FilterOptions, error) {
