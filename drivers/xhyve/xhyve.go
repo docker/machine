@@ -36,7 +36,6 @@ type Driver struct {
 	ISO            string
 	TmpISO         string
 	UUID           string
-	MACAddress     string
 	SSHUser        string
 	SSHPort        int
 	Boot2DockerURL string
@@ -187,6 +186,15 @@ func (d *Driver) GetState() (state.State, error) { // TODO
 }
 
 func (d *Driver) PreCreateCheck() error {
+	reVersion := regexp.MustCompile(`^(\d+\.)?$`)
+	ver, err := vboxVersionDetect()
+	majorVersion := reVersion.FindString(ver)
+	if majorVersion != "5" || majorVersion != "" && err != nil {
+		return fmt.Errorf("Virtual Box version 4 or lower will cause a kernel panic if xhyve tries to run." +
+			"You are running version: " +
+			ver +
+			" Please upgrade to version 5 at https://www.virtualbox.org/wiki/Downloads")
+	}
 	return nil
 }
 
@@ -212,13 +220,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	//	log.Debugf("Creating Blank disk image...")
-	//	if err := d.generateBlankDiskImage(d.DiskSize); err != nil { // TODO
-	//		return err
-	//	}
-
 	log.Debugf("Writing boot2docker VM disk image...")
-	if err := d.writeDiskImage(d.DiskSize); err != nil {
+	if err := d.writeDiskImage(); err != nil {
+		return err
+	}
+
+	log.Debugf("Creating Blank disk image...")
+	if err := d.generateBlankDiskImage(d.DiskSize); err != nil { // TODO
 		return err
 	}
 
@@ -231,20 +239,12 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Debugf("Get MAC address from UUID...")
-	d.MACAddress = strings.Replace(uuid2mac(d.UUID), "\n", "", -1)
-
-	log.Debugf(d.MACAddress) // TODO
-
-	log.Debugf("Create MAC address file...")
-	if err := d.createMACAddressFile(); err != nil {
-		return err
-	}
-
 	log.Debugf("Running xhyve VM...")
 	if err := d.Start(); err != nil {
 		return err
 	}
+
+	// TODO Maybe get MAC address here from host asignment
 
 	var ip string
 	var err error
@@ -275,32 +275,25 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	//	var Password string
-	//	var iso = path.Join(d.storePath, isoFilename)
-	//	var img = path.Join(d.storePath, d.MachineName + ".img")
+	var Password string
 	log.Infof("Creating %s xhyve VM...", d.MachineName)
-	//	cmd := exec.Command("sudo", "xhyve", // TODO
-	//		fmt.Sprintf("-m %dM", d.Memory),
-	//		"-s 0:0,hostbridge -s 31,lpc",
-	//		"-l com1,stdio",
-	//		"-s 2:0,virtio-net",
-	//		fmt.Sprintf("-s 2:1,virtio-tap,tap1,mac=%s", d.MACAddress),
-	//		fmt.Sprintf("-s 3,ahci-cd,%s", iso),
-	//		fmt.Sprintf("-s 4,virtio-blk,%s", img),
-	//		fmt.Sprintf("-U %s", d.UUID),
-	//		fmt.Sprintf("-f kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base", path.Join(d.storePath, "vmlinuz64"), path.Join(d.storePath, "initrd.img")),
-	//	)
-	//	cmd := exec.Command(fmt.Sprintf("sudo /usr/local/bin/xhyve -m %dM -s 0:0,hostbridge -s 31,lpc -l com1,stdio -s 2:0,virtio-net -s 2:1,virtio-tap,tap1,mac=%s -s 3,ahci-cd,%s -s 4,virtio-blk,%s -U %s -f kexec,vmlinuz64,initrd.img,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base", d.Memory, d.MACAddress, iso, img, d.UUID))
-	cmd := exec.Command(fmt.Sprintf("sudo /usr/local/bin/xhyve -h"))
-	//	cmd.Stdin = strings.NewReader(Password)
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	//	log.Debugf("executing: %v", cmd)
-	//	log.Debugf(stdout.String())
-
+	cmd := exec.Command("sudo", "xhyve", // TODO
+		fmt.Sprintf("-m %dM", d.Memory),
+		"-s 0:0,hostbridge -s 31,lpc",
+		"-l com1,stdio",
+		"-s 2:0,virtio-net",
+		fmt.Sprintf("-s 2:1,virtio-tap,tap1"),
+		fmt.Sprintf("-s 3,ahci-cd,%d", path.Join(d.storePath, isoFilename)),
+		fmt.Sprintf("-s 4,virtio-blk,%d", path.Join(d.storePath, d.MachineName+".img")),
+		fmt.Sprintf("-U %s", d.UUID),
+		fmt.Sprintf("-f kexec,%s,%s,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base", path.Join(d.storePath, "vmlinuz64"), path.Join(d.storePath, "initrd.img")),
+	)
+	//	cmd := exec.Command("sudo xhyve -m 4G -c 4 -s 0:0,hostbridge -s 31,lpc -l com1,stdio -s 2:0,virtio-net -s 3,ahci-cd,'/Users/zchee/.docker/machine/machines/xhyve-test/boot2docker.iso' -s 4,virtio-blk,'/Users/zchee/.docker/machine/machines/xhyve-test/xhyve-test.img' -U D2B9B60C-2465-4AF7-BCB6-522D795B043E -f 'kexec,vmlinuz64,initrd.img,loglevel=3 user=docker console=ttyS0 console=tty0 noembed nomodeset norestore waitusb=10:LABEL=boot2docker-data base'")
+	cmd.Stdin = strings.NewReader(Password)
+	log.Debug(cmd)
 	err := cmd.Run()
 	if err != nil {
-		log.Error(err)
+		log.Error(err, cmd.Stdout)
 	}
 
 	return nil
@@ -376,10 +369,6 @@ func (d *Driver) uuidPath() string {
 	return path.Join(d.storePath, "uuid")
 }
 
-func (d *Driver) macaddressPath() string {
-	return path.Join(d.storePath, "macaddress")
-}
-
 func (d *Driver) createUUIDFile() error {
 	var uuidfile *os.File
 	var err error
@@ -397,34 +386,6 @@ func (d *Driver) createUUIDFile() error {
 	return nil
 }
 
-func (d *Driver) createMACAddressFile() error {
-	var macaddressfile *os.File
-	var err error
-
-	if macaddressfile, err = os.Create(d.macaddressPath()); err != nil {
-		return err
-	}
-
-	macaddress, err := io.WriteString(macaddressfile, d.MACAddress)
-	if err != nil {
-		log.Debug(macaddress, err) // TODO
-	}
-
-	macaddressfile.Close()
-	return nil
-}
-
-func (d *Driver) getUUIDfromMacaddress() string {
-	file, err := ioutil.ReadFile(d.macaddressPath())
-	if err != nil {
-		log.Errorln(err)
-	}
-
-	mac := string(file)
-
-	return mac
-}
-
 func (d *Driver) getIPfromDHCPLease() (string, error) {
 	var dhcpfh *os.File
 	var dhcpcontent []byte
@@ -436,14 +397,6 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 	// DHCP lease table for NAT vmnet interface
 	var dhcpfile = "/var/db/dhcpd_leases"
 
-	macaddr = d.getUUIDfromMacaddress()
-	log.Debugf(macaddr) // TODO
-
-	if macaddr == "" {
-		return "", fmt.Errorf("couldn't find MAC address in macaddress file %s", d.macaddressPath())
-	}
-
-	log.Debugf("MAC address in file: %s", macaddr)
 	if dhcpfh, err = os.Open(dhcpfile); err != nil {
 		return "", err
 	}
@@ -470,11 +423,18 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 
 		if matches := leasemac.FindStringSubmatch(line); matches != nil {
 			currentip = lastipmatch
+			macaddr = matches[1]
+			log.Debug(macaddr)
+			continue
 		}
 	}
 
 	if currentip == "" {
-		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", macaddr)
+		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", leasemac)
+	}
+
+	if macaddr == "" {
+		return "", fmt.Errorf("couldn't find MAC address in DHCP leases file %s", dhcpfile)
 	}
 
 	log.Debugf("IP found in DHCP lease table: %s", currentip)
@@ -501,21 +461,19 @@ func (d *Driver) extractKernelImages() error {
 		return err
 	}
 
-	hdiutil("unmount", "/Volumes/Boot2Docker-v1.7")
-
 	return nil
 }
 
 func (d *Driver) generateBlankDiskImage(count int) error {
 	cmd := dd
-	output := d.imgPath()
+	output := d.ISO
 	cmd("/dev/zero", output, "1m", count)
 
 	return nil
 }
 
 // Make a boot2docker VM disk image.
-func (d *Driver) writeDiskImage(size int) error { // TODO
+func (d *Driver) writeDiskImage() error { // TODO
 	log.Debugf("Creating hard disk image...")
 
 	magicString := "boot2docker, this is xhyve speaking"
@@ -557,75 +515,11 @@ func (d *Driver) writeDiskImage(size int) error { // TODO
 	if err := tw.Close(); err != nil {
 		return err
 	}
-	raw := bytes.NewReader(buf.Bytes())
-	return createDiskImage(d.imgPath(), size, raw)
-	//
-	//	if err := ioutil.WriteFile(d.imgPath(), raw, 0644); err != nil {
-	//		return err
-	//	}
-	//
-	//	return nil
-}
+	raw := buf.Bytes()
 
-// createDiskImage makes a disk image at dest with the given size in MB. If r is
-// not nil, it will be read as a raw disk image to convert from.
-func createDiskImage(dest string, size int, r io.Reader) error {
-	// Convert a raw image from stdin to the dest VMDK image.
-	sizeBytes := int64(size) << 20 // usually won't fit in 32-bit int (max 2GB)
-	// FIXME: why isn't this just using the vbm*() functions?
-	cmd := exec.Command("VBoxManage", "convertfromraw", "stdin", dest,
-		fmt.Sprintf("%d", sizeBytes), "--format", "RAW")
-
-	if os.Getenv("DEBUG") != "" {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-	if err := cmd.Start(); err != nil {
+	if err := ioutil.WriteFile(d.imgPath(), raw, 0644); err != nil {
 		return err
 	}
 
-	n, err := io.Copy(stdin, r)
-	if err != nil {
-		return err
-	}
-
-	// The total number of bytes written to stdin must match sizeBytes, or
-	// VBoxManage.exe on Windows will fail. Fill remaining with zeros.
-	if left := sizeBytes - n; left > 0 {
-		if err := zeroFill(stdin, left); err != nil {
-			return err
-		}
-	}
-
-	// cmd won't exit until the stdin is closed.
-	if err := stdin.Close(); err != nil {
-		return err
-	}
-
-	return cmd.Wait()
-}
-
-// zeroFill writes n zero bytes into w.
-func zeroFill(w io.Writer, n int64) error {
-	const blocksize = 32 << 10
-	zeros := make([]byte, blocksize)
-	var k int
-	var err error
-	for n > 0 {
-		if n > blocksize {
-			k, err = w.Write(zeros)
-		} else {
-			k, err = w.Write(zeros[:n])
-		}
-		if err != nil {
-			return err
-		}
-		n -= int64(k)
-	}
 	return nil
 }
