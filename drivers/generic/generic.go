@@ -35,22 +35,22 @@ func init() {
 func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  "generic-ip-address",
+			Name:  "ip-address",
 			Usage: "IP Address of machine",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "generic-ssh-user",
+			Name:  "ssh-user",
 			Usage: "SSH user",
 			Value: "root",
 		},
 		cli.StringFlag{
-			Name:  "generic-ssh-key",
+			Name:  "ssh-key",
 			Usage: "SSH private key path",
 			Value: filepath.Join(utils.GetHomeDir(), ".ssh", "id_rsa"),
 		},
 		cli.IntFlag{
-			Name:  "generic-ssh-port",
+			Name:  "ssh-port",
 			Usage: "SSH port",
 			Value: 22,
 		},
@@ -75,10 +75,10 @@ func (d *Driver) GetSSHUsername() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.IPAddress = flags.String("generic-ip-address")
-	d.SSHUser = flags.String("generic-ssh-user")
-	d.SSHKey = flags.String("generic-ssh-key")
-	d.SSHPort = flags.Int("generic-ssh-port")
+	d.IPAddress = flags.String("ip-address")
+	d.SSHUser = flags.String("ssh-user")
+	d.SSHKey = flags.String("ssh-key")
+	d.SSHPort = flags.Int("ssh-port")
 
 	if d.IPAddress == "" {
 		return fmt.Errorf("generic driver requires the --generic-ip-address option")

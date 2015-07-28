@@ -63,12 +63,12 @@ func getTestStorePath() (string, error) {
 func getDefaultTestDriverFlags() *DriverOptionsMock {
 	return &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"name":                   "test",
-			"url":                    "unix:///var/run/docker.sock",
-			"softlayer-api-key":      "12345",
-			"softlayer-user":         "abcdefg",
-			"softlayer-api-endpoint": "https://api.softlayer.com/rest/v3",
-			"softlayer-image":        "MY_TEST_IMAGE",
+			"name":         "test",
+			"url":          "unix:///var/run/docker.sock",
+			"api-key":      "12345",
+			"user":         "abcdefg",
+			"api-endpoint": "https://api.softlayer.com/rest/v3",
+			"image":        "MY_TEST_IMAGE",
 		},
 	}
 }

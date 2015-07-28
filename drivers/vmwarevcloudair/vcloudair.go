@@ -50,48 +50,48 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_USERNAME",
-			Name:   "vmwarevcloudair-username",
+			Name:   "username",
 			Usage:  "vCloud Air username",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_PASSWORD",
-			Name:   "vmwarevcloudair-password",
+			Name:   "password",
 			Usage:  "vCloud Air password",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_COMPUTEID",
-			Name:   "vmwarevcloudair-computeid",
+			Name:   "computeid",
 			Usage:  "vCloud Air Compute ID (if using Dedicated Cloud)",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_VDCID",
-			Name:   "vmwarevcloudair-vdcid",
+			Name:   "vdcid",
 			Usage:  "vCloud Air VDC ID",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_ORGVDCNETWORK",
-			Name:   "vmwarevcloudair-orgvdcnetwork",
+			Name:   "orgvdcnetwork",
 			Usage:  "vCloud Air Org VDC Network (Default is <vdcid>-default-routed)",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_EDGEGATEWAY",
-			Name:   "vmwarevcloudair-edgegateway",
+			Name:   "edgegateway",
 			Usage:  "vCloud Air Org Edge Gateway (Default is <vdcid>)",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_PUBLICIP",
-			Name:   "vmwarevcloudair-publicip",
+			Name:   "publicip",
 			Usage:  "vCloud Air Org Public IP to use",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_CATALOG",
-			Name:   "vmwarevcloudair-catalog",
+			Name:   "catalog",
 			Usage:  "vCloud Air Catalog (default is Public Catalog)",
 			Value:  "Public Catalog",
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_CATALOGITEM",
-			Name:   "vmwarevcloudair-catalogitem",
+			Name:   "catalogitem",
 			Usage:  "vCloud Air Catalog Item (default is Ubuntu Precise)",
 			Value:  "Ubuntu Server 12.04 LTS (amd64 20150127)",
 		},
@@ -99,31 +99,31 @@ func GetCreateFlags() []cli.Flag {
 		// BoolTFlag is true by default.
 		cli.BoolTFlag{
 			EnvVar: "VCLOUDAIR_PROVISION",
-			Name:   "vmwarevcloudair-provision",
+			Name:   "provision",
 			Usage:  "vCloud Air Install Docker binaries (default is true)",
 		},
 
 		cli.IntFlag{
 			EnvVar: "VCLOUDAIR_CPU_COUNT",
-			Name:   "vmwarevcloudair-cpu-count",
+			Name:   "cpu-count",
 			Usage:  "vCloud Air VM Cpu Count (default 1)",
 			Value:  1,
 		},
 		cli.IntFlag{
 			EnvVar: "VCLOUDAIR_MEMORY_SIZE",
-			Name:   "vmwarevcloudair-memory-size",
+			Name:   "memory-size",
 			Usage:  "vCloud Air VM Memory Size in MB (default 2048)",
 			Value:  2048,
 		},
 		cli.IntFlag{
 			EnvVar: "VCLOUDAIR_SSH_PORT",
-			Name:   "vmwarevcloudair-ssh-port",
+			Name:   "ssh-port",
 			Usage:  "vCloud Air SSH port",
 			Value:  22,
 		},
 		cli.IntFlag{
 			EnvVar: "VCLOUDAIR_DOCKER_PORT",
-			Name:   "vmwarevcloudair-docker-port",
+			Name:   "docker-port",
 			Usage:  "vCloud Air Docker port",
 			Value:  2376,
 		},
@@ -141,15 +141,15 @@ func (d *Driver) GetSSHHostname() (string, error) {
 
 // Driver interface implementation
 func (d *Driver) DriverName() string {
-	return "vmwarevcloudair"
+	return ""
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
-	d.UserName = flags.String("vmwarevcloudair-username")
-	d.UserPassword = flags.String("vmwarevcloudair-password")
-	d.VDCID = flags.String("vmwarevcloudair-vdcid")
-	d.PublicIP = flags.String("vmwarevcloudair-publicip")
+	d.UserName = flags.String("username")
+	d.UserPassword = flags.String("password")
+	d.VDCID = flags.String("vdcid")
+	d.PublicIP = flags.String("publicip")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -160,35 +160,35 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	// If ComputeID is not set we're using a VPC, hence setting ComputeID = VDCID
-	if flags.String("vmwarevcloudair-computeid") == "" {
-		d.ComputeID = flags.String("vmwarevcloudair-vdcid")
+	if flags.String("computeid") == "" {
+		d.ComputeID = flags.String("vdcid")
 	} else {
-		d.ComputeID = flags.String("vmwarevcloudair-computeid")
+		d.ComputeID = flags.String("computeid")
 	}
 
 	// If the Org VDC Network is empty, set it to the default routed network.
-	if flags.String("vmwarevcloudair-orgvdcnetwork") == "" {
-		d.OrgVDCNet = flags.String("vmwarevcloudair-vdcid") + "-default-routed"
+	if flags.String("orgvdcnetwork") == "" {
+		d.OrgVDCNet = flags.String("vdcid") + "-default-routed"
 	} else {
-		d.OrgVDCNet = flags.String("vmwarevcloudair-orgvdcnetwork")
+		d.OrgVDCNet = flags.String("orgvdcnetwork")
 	}
 
 	// If the Edge Gateway is empty, just set it to the default edge gateway.
-	if flags.String("vmwarevcloudair-edgegateway") == "" {
-		d.EdgeGateway = flags.String("vmwarevcloudair-vdcid")
+	if flags.String("edgegateway") == "" {
+		d.EdgeGateway = flags.String("-vdcid")
 	} else {
-		d.EdgeGateway = flags.String("vmwarevcloudair-edgegateway")
+		d.EdgeGateway = flags.String("edgegateway")
 	}
 
-	d.Catalog = flags.String("vmwarevcloudair-catalog")
-	d.CatalogItem = flags.String("vmwarevcloudair-catalogitem")
+	d.Catalog = flags.String("catalog")
+	d.CatalogItem = flags.String("catalogitem")
 
-	d.DockerPort = flags.Int("vmwarevcloudair-docker-port")
+	d.DockerPort = flags.Int("docker-port")
 	d.SSHUser = "root"
-	d.SSHPort = flags.Int("vmwarevcloudair-ssh-port")
-	d.Provision = flags.Bool("vmwarevcloudair-provision")
-	d.CPUCount = flags.Int("vmwarevcloudair-cpu-count")
-	d.MemorySize = flags.Int("vmwarevcloudair-memory-size")
+	d.SSHPort = flags.Int("ssh-port")
+	d.Provision = flags.Bool("provision")
+	d.CPUCount = flags.Int("cpu-count")
+	d.MemorySize = flags.Int("memory-size")
 
 	return nil
 }

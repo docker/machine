@@ -41,40 +41,40 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_ACCESS_TOKEN",
-			Name:   "digitalocean-access-token",
+			Name:   "access-token",
 			Usage:  "Digital Ocean access token",
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_IMAGE",
-			Name:   "digitalocean-image",
+			Name:   "image",
 			Usage:  "Digital Ocean Image",
 			Value:  "ubuntu-14-04-x64",
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_REGION",
-			Name:   "digitalocean-region",
+			Name:   "region",
 			Usage:  "Digital Ocean region",
 			Value:  "nyc3",
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_SIZE",
-			Name:   "digitalocean-size",
+			Name:   "size",
 			Usage:  "Digital Ocean size",
 			Value:  "512mb",
 		},
 		cli.BoolFlag{
 			EnvVar: "DIGITALOCEAN_IPV6",
-			Name:   "digitalocean-ipv6",
+			Name:   "ipv6",
 			Usage:  "enable ipv6 for droplet",
 		},
 		cli.BoolFlag{
 			EnvVar: "DIGITALOCEAN_PRIVATE_NETWORKING",
-			Name:   "digitalocean-private-networking",
+			Name:   "private-networking",
 			Usage:  "enable private networking for droplet",
 		},
 		cli.BoolFlag{
 			EnvVar: "DIGITALOCEAN_BACKUPS",
-			Name:   "digitalocean-backups",
+			Name:   "backups",
 			Usage:  "enable backups for droplet",
 		},
 	}
@@ -94,13 +94,13 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.AccessToken = flags.String("digitalocean-access-token")
-	d.Image = flags.String("digitalocean-image")
-	d.Region = flags.String("digitalocean-region")
-	d.Size = flags.String("digitalocean-size")
-	d.IPv6 = flags.Bool("digitalocean-ipv6")
-	d.PrivateNetworking = flags.Bool("digitalocean-private-networking")
-	d.Backups = flags.Bool("digitalocean-backups")
+	d.AccessToken = flags.String("access-token")
+	d.Image = flags.String("image")
+	d.Region = flags.String("region")
+	d.Size = flags.String("size")
+	d.IPv6 = flags.Bool("ipv6")
+	d.PrivateNetworking = flags.Bool("private-networking")
+	d.Backups = flags.Bool("backups")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")

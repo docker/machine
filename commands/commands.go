@@ -159,14 +159,6 @@ func setupCertificates(caCertPath, caKeyPath, clientCertPath, clientKeyPath stri
 
 var sharedCreateFlags = []cli.Flag{
 	cli.StringFlag{
-		Name: "driver, d",
-		Usage: fmt.Sprintf(
-			"Driver to create machine with. Available drivers: %s",
-			strings.Join(drivers.GetDriverNames(), ", "),
-		),
-		Value: "none",
-	},
-	cli.StringFlag{
 		Name:   "engine-install-url",
 		Usage:  "Custom URL to use for engine installation",
 		Value:  "https://get.docker.com",
@@ -259,15 +251,6 @@ var Commands = []cli.Command{
 				Usage: "Display the Swarm config instead of the Docker daemon",
 			},
 		},
-	},
-	{
-		Flags: append(
-			drivers.GetCreateFlags(),
-			sharedCreateFlags...,
-		),
-		Name:   "create",
-		Usage:  "Create a machine",
-		Action: cmdCreate,
 	},
 	{
 		Name:        "env",

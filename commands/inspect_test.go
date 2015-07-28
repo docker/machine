@@ -106,7 +106,7 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 	set := flag.NewFlagSet("inspect", 0)
 	set.String("format", "", "")
 	set.Parse(args)
-	c := cli.NewContext(nil, set, set)
+	c := cli.NewContext(nil, set, nil)
 	cmdInspect(c)
 
 	w.Close()

@@ -29,50 +29,50 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			EnvVar: "OS_USERNAME",
-			Name:   "rackspace-username",
+			Name:   "username",
 			Usage:  "Rackspace account username",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_API_KEY",
-			Name:   "rackspace-api-key",
+			Name:   "api-key",
 			Usage:  "Rackspace API key",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_REGION_NAME",
-			Name:   "rackspace-region",
+			Name:   "region",
 			Usage:  "Rackspace region name",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_ENDPOINT_TYPE",
-			Name:   "rackspace-endpoint-type",
+			Name:   "endpoint-type",
 			Usage:  "Rackspace endpoint type (adminURL, internalURL or the default publicURL)",
 			Value:  "publicURL",
 		},
 		cli.StringFlag{
-			Name:  "rackspace-image-id",
+			Name:  "image-id",
 			Usage: "Rackspace image ID. Default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)",
 		},
 		cli.StringFlag{
-			Name:   "rackspace-flavor-id",
+			Name:   "flavor-id",
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
 			Value:  "general1-1",
 			EnvVar: "OS_FLAVOR_ID",
 		},
 		cli.StringFlag{
-			Name:  "rackspace-ssh-user",
+			Name:  "ssh-user",
 			Usage: "SSH user for the newly booted machine. Set to root by default",
 			Value: "root",
 		},
 		cli.IntFlag{
-			Name:  "rackspace-ssh-port",
+			Name:  "ssh-port",
 			Usage: "SSH port for the newly booted machine. Set to 22 by default",
 			Value: 22,
 		},
 		cli.StringFlag{
-			Name:  "rackspace-docker-install",
+			Name:  "docker-install",
 			Usage: "Set if docker have to be installed on the machine",
 			Value: "true",
 		},
@@ -115,14 +115,14 @@ func missingEnvOrOption(setting, envVar, opt string) error {
 
 // SetConfigFromFlags assigns and verifies the command-line arguments presented to the driver.
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Username = flags.String("rackspace-username")
-	d.APIKey = flags.String("rackspace-api-key")
-	d.Region = flags.String("rackspace-region")
-	d.EndpointType = flags.String("rackspace-endpoint-type")
-	d.ImageId = flags.String("rackspace-image-id")
-	d.FlavorId = flags.String("rackspace-flavor-id")
-	d.SSHUser = flags.String("rackspace-ssh-user")
-	d.SSHPort = flags.Int("rackspace-ssh-port")
+	d.Username = flags.String("username")
+	d.APIKey = flags.String("api-key")
+	d.Region = flags.String("region")
+	d.EndpointType = flags.String("endpoint-type")
+	d.ImageId = flags.String("image-id")
+	d.FlavorId = flags.String("flavor-id")
+	d.SSHUser = flags.String("ssh-user")
+	d.SSHPort = flags.Int("ssh-port")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")

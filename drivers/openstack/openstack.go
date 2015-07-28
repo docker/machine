@@ -52,115 +52,115 @@ func GetCreateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			EnvVar: "OS_AUTH_URL",
-			Name:   "openstack-auth-url",
+			Name:   "auth-url",
 			Usage:  "OpenStack authentication URL",
 			Value:  "",
 		},
 		cli.BoolFlag{
-			Name:  "openstack-insecure",
+			Name:  "insecure",
 			Usage: "Disable TLS credential checking.",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_DOMAIN_ID",
-			Name:   "openstack-domain-id",
+			Name:   "domain-id",
 			Usage:  "OpenStack domain ID (identity v3 only)",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_DOMAIN_NAME",
-			Name:   "openstack-domain-name",
+			Name:   "domain-name",
 			Usage:  "OpenStack domain name (identity v3 only)",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_USERNAME",
-			Name:   "openstack-username",
+			Name:   "username",
 			Usage:  "OpenStack username",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_PASSWORD",
-			Name:   "openstack-password",
+			Name:   "password",
 			Usage:  "OpenStack password",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_TENANT_NAME",
-			Name:   "openstack-tenant-name",
+			Name:   "tenant-name",
 			Usage:  "OpenStack tenant name",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_TENANT_ID",
-			Name:   "openstack-tenant-id",
+			Name:   "tenant-id",
 			Usage:  "OpenStack tenant id",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_REGION_NAME",
-			Name:   "openstack-region",
+			Name:   "region",
 			Usage:  "OpenStack region name",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_AVAILABILITY_ZONE",
-			Name:   "openstack-availability-zone",
+			Name:   "availability-zone",
 			Usage:  "OpenStack availability zone",
 			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "OS_ENDPOINT_TYPE",
-			Name:   "openstack-endpoint-type",
+			Name:   "endpoint-type",
 			Usage:  "OpenStack endpoint type (adminURL, internalURL or publicURL)",
 			Value:  "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-flavor-id",
+			Name:  "flavor-id",
 			Usage: "OpenStack flavor id to use for the instance",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-flavor-name",
+			Name:  "flavor-name",
 			Usage: "OpenStack flavor name to use for the instance",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-image-id",
+			Name:  "image-id",
 			Usage: "OpenStack image id to use for the instance",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-image-name",
+			Name:  "image-name",
 			Usage: "OpenStack image name to use for the instance",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-net-id",
+			Name:  "net-id",
 			Usage: "OpenStack network id the machine will be connected on",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-net-name",
+			Name:  "net-name",
 			Usage: "OpenStack network name the machine will be connected on",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-sec-groups",
+			Name:  "sec-groups",
 			Usage: "OpenStack comma separated security groups for the machine",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-floatingip-pool",
+			Name:  "floatingip-pool",
 			Usage: "OpenStack floating IP pool to get an IP from to assign to the instance",
 			Value: "",
 		},
 		cli.StringFlag{
-			Name:  "openstack-ssh-user",
+			Name:  "ssh-user",
 			Usage: "OpenStack SSH user",
 			Value: "root",
 		},
 		cli.IntFlag{
-			Name:  "openstack-ssh-port",
+			Name:  "ssh-port",
 			Usage: "OpenStack SSH port",
 			Value: 22,
 		},
@@ -192,29 +192,29 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.AuthUrl = flags.String("openstack-auth-url")
-	d.Insecure = flags.Bool("openstack-insecure")
-	d.DomainID = flags.String("openstack-domain-id")
-	d.DomainName = flags.String("openstack-domain-name")
-	d.Username = flags.String("openstack-username")
-	d.Password = flags.String("openstack-password")
-	d.TenantName = flags.String("openstack-tenant-name")
-	d.TenantId = flags.String("openstack-tenant-id")
-	d.Region = flags.String("openstack-region")
-	d.AvailabilityZone = flags.String("openstack-availability-zone")
-	d.EndpointType = flags.String("openstack-endpoint-type")
-	d.FlavorId = flags.String("openstack-flavor-id")
-	d.FlavorName = flags.String("openstack-flavor-name")
-	d.ImageId = flags.String("openstack-image-id")
-	d.ImageName = flags.String("openstack-image-name")
-	d.NetworkId = flags.String("openstack-net-id")
-	d.NetworkName = flags.String("openstack-net-name")
-	if flags.String("openstack-sec-groups") != "" {
-		d.SecurityGroups = strings.Split(flags.String("openstack-sec-groups"), ",")
+	d.AuthUrl = flags.String("auth-url")
+	d.Insecure = flags.Bool("insecure")
+	d.DomainID = flags.String("domain-id")
+	d.DomainName = flags.String("domain-name")
+	d.Username = flags.String("username")
+	d.Password = flags.String("password")
+	d.TenantName = flags.String("tenant-name")
+	d.TenantId = flags.String("tenant-id")
+	d.Region = flags.String("region")
+	d.AvailabilityZone = flags.String("availability-zone")
+	d.EndpointType = flags.String("endpoint-type")
+	d.FlavorId = flags.String("flavor-id")
+	d.FlavorName = flags.String("flavor-name")
+	d.ImageId = flags.String("image-id")
+	d.ImageName = flags.String("image-name")
+	d.NetworkId = flags.String("net-id")
+	d.NetworkName = flags.String("net-name")
+	if flags.String("sec-groups") != "" {
+		d.SecurityGroups = strings.Split(flags.String("sec-groups"), ",")
 	}
-	d.FloatingIpPool = flags.String("openstack-floatingip-pool")
-	d.SSHUser = flags.String("openstack-ssh-user")
-	d.SSHPort = flags.Int("openstack-ssh-port")
+	d.FloatingIpPool = flags.String("floatingip-pool")
+	d.SSHUser = flags.String("ssh-user")
+	d.SSHPort = flags.Int("ssh-port")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
