@@ -30,6 +30,10 @@ type Driver struct {
 	DockerPort              int
 }
 
+const (
+	defaultImage = "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_10-amd64-server-20150723-en-us-30GB"
+)
+
 func init() {
 	drivers.Register("azure", &drivers.RegisteredDriver{
 		New:            NewDriver,
@@ -49,7 +53,7 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			EnvVar: "AZURE_IMAGE",
 			Name:   "azure-image",
-			Usage:  "Azure image name. Default is Ubuntu 14.04 LTS x64",
+			Usage:  "Azure image name. Default is Ubuntu 14.10 x64",
 		},
 		cli.StringFlag{
 			EnvVar: "AZURE_LOCATION",
@@ -145,7 +149,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	if image == "" {
-		d.Image = "b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB"
+		d.Image = defaultImage
 	} else {
 		d.Image = image
 	}
