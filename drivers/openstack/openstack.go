@@ -27,6 +27,7 @@ type Driver struct {
 	Region           string
 	AvailabilityZone string
 	EndpointType     string
+	TlsCACert        string
 	MachineId        string
 	FlavorName       string
 	FlavorId         string
@@ -112,6 +113,12 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "OS_ENDPOINT_TYPE",
 			Name:   "openstack-endpoint-type",
 			Usage:  "OpenStack endpoint type (adminURL, internalURL or publicURL)",
+			Value:  "",
+		},
+		cli.StringFlag{
+			EnvVar: "OS_TLS_CA_CERT",
+			Name:   "openstack-tls-ca-cert",
+			Usage:  "OpenStack tls CA certificate",
 			Value:  "",
 		},
 		cli.StringFlag{
@@ -202,6 +209,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.TenantId = flags.String("openstack-tenant-id")
 	d.Region = flags.String("openstack-region")
 	d.AvailabilityZone = flags.String("openstack-availability-zone")
+	d.TlsCACert = flags.String("openstack-tls-ca-cert")
 	d.EndpointType = flags.String("openstack-endpoint-type")
 	d.FlavorId = flags.String("openstack-flavor-id")
 	d.FlavorName = flags.String("openstack-flavor-name")
