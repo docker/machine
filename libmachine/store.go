@@ -3,8 +3,6 @@ package libmachine
 type Store interface {
 	// Exists returns whether a machine exists or not
 	Exists(name string) (bool, error)
-	// GetActive returns the active host
-	GetActive() (*Host, error)
 	// GetPath returns the path to the store
 	GetPath() string
 	// GetCACertPath returns the CA certificate

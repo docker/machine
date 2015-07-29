@@ -73,7 +73,9 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 		t.Fatal(sErr)
 	}
 
-	provider, err := libmachine.New(store)
+	flags := getTestDriverFlags()
+
+	provider, err := libmachine.New(store, flags, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,8 +91,7 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 		AuthOptions: &auth.AuthOptions{},
 	}
 
-	flags := getTestDriverFlags()
-	_, err = provider.Create("test-a", "none", hostOptions, flags)
+	_, err = provider.Create("test-a", "none", hostOptions)
 	if err != nil {
 		t.Fatal(err)
 	}

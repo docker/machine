@@ -29,6 +29,11 @@ func (d DriverOptionsMock) Bool(key string) bool {
 	return d.Data[key].(bool)
 }
 
+func (d DriverOptionsMock) IsSet(key string) bool {
+	_, ok := d.Data[key]
+	return ok
+}
+
 func TestStoreSave(t *testing.T) {
 	defer cleanup()
 
@@ -167,7 +172,7 @@ func TestStoreLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := host.Driver.SetConfigFromFlags(flags); err != nil {
+	if err := host.SetDriverConfigFromFlags(flags); err != nil {
 		t.Fatal(err)
 	}
 
@@ -186,49 +191,5 @@ func TestStoreLoad(t *testing.T) {
 
 	if actualURL != expectedURL {
 		t.Fatalf("GetURL is not %q, got %q", expectedURL, actualURL)
-	}
-}
-
-func TestStoreGetSetActive(t *testing.T) {
-	defer cleanup()
-
-	store, err := getTestStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// No host set
-	host, err := store.GetActive()
-	if err == nil {
-		t.Fatal("Expected an error because there is no active host set")
-	}
-
-	if host != nil {
-		t.Fatalf("GetActive: Active host should not exist")
-	}
-
-	host, err = getDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Set normal host
-	if err := store.Save(host); err != nil {
-		t.Fatal(err)
-	}
-
-	url, err := host.GetURL()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	os.Setenv("DOCKER_HOST", url)
-
-	host, err = store.GetActive()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if host.Name != host.Name {
-		t.Fatalf("Active host is not 'test', got %s", host.Name)
 	}
 }
