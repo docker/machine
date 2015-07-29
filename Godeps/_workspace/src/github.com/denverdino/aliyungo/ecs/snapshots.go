@@ -13,6 +13,8 @@ type DescribeSnapshotsArgs struct {
 	Pagination
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&snapshottype
 type SnapshotType struct {
 	SnapshotId     string
 	SnapshotName   string
@@ -34,6 +36,8 @@ type DescribeSnapshotsResponse struct {
 }
 
 // DescribeSnapshots describe snapshots
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/snapshot&describesnapshots
 func (client *Client) DescribeSnapshots(args *DescribeSnapshotsArgs) (snapshots []SnapshotType, pagination *PaginationResult, err error) {
 	args.validate()
 	response := DescribeSnapshotsResponse{}
@@ -56,6 +60,8 @@ type DeleteSnapshotResponse struct {
 }
 
 // DeleteSnapshot deletes snapshot
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/snapshot&deletesnapshot
 func (client *Client) DeleteSnapshot(snapshotId string) error {
 	args := DeleteSnapshotArgs{SnapshotId: snapshotId}
 	response := DeleteSnapshotResponse{}
@@ -76,6 +82,8 @@ type CreateSnapshotResponse struct {
 }
 
 // CreateSnapshot creates a new snapshot
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/snapshot&createsnapshot
 func (client *Client) CreateSnapshot(args *CreateSnapshotArgs) (snapshotId string, err error) {
 
 	response := CreateSnapshotResponse{}

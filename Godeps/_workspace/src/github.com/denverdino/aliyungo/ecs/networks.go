@@ -18,6 +18,8 @@ type AllocatePublicIpAddressResponse struct {
 }
 
 // AllocatePublicIpAddress allocates Public Ip Address
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&allocatepublicipaddress
 func (client *Client) AllocatePublicIpAddress(instanceId string) (ipAddress string, err error) {
 	args := AllocatePublicIpAddressArgs{
 		InstanceId: instanceId,
@@ -41,6 +43,8 @@ type ModifyInstanceNetworkSpecResponse struct {
 }
 
 // ModifyInstanceNetworkSpec modifies instance network spec
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&modifyinstancenetworkspec
 func (client *Client) ModifyInstanceNetworkSpec(args *ModifyInstanceNetworkSpec) error {
 
 	response := ModifyInstanceNetworkSpecResponse{}
@@ -61,6 +65,8 @@ type AllocateEipAddressResponse struct {
 }
 
 // AllocateEipAddress allocates Eip Address
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&allocateeipaddress
 func (client *Client) AllocateEipAddress(args *AllocateEipAddressArgs) (EipAddress string, AllocationId string, err error) {
 	if args.Bandwidth == 0 {
 		args.Bandwidth = 5
@@ -83,6 +89,8 @@ type AssociateEipAddressResponse struct {
 }
 
 // AssociateEipAddress associates EIP address to VM instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&associateeipaddress
 func (client *Client) AssociateEipAddress(allocationId string, instanceId string) error {
 	args := AssociateEipAddressArgs{
 		AllocationId: allocationId,
@@ -110,6 +118,8 @@ type DescribeEipAddressesArgs struct {
 	Pagination
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&eipaddresssettype
 type EipAddressSetType struct {
 	RegionId           Region
 	IpAddress          string
@@ -131,6 +141,8 @@ type DescribeEipAddressesResponse struct {
 }
 
 // DescribeInstanceStatus describes instance status
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&describeeipaddresses
 func (client *Client) DescribeEipAddresses(args *DescribeEipAddressesArgs) (eipAddresses []EipAddressSetType, pagination *PaginationResult, err error) {
 	args.validate()
 	response := DescribeEipAddressesResponse{}
@@ -154,6 +166,8 @@ type ModifyEipAddressAttributeResponse struct {
 }
 
 // ModifyEipAddressAttribute Modifies EIP attribute
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&modifyeipaddressattribute
 func (client *Client) ModifyEipAddressAttribute(allocationId string, bandwidth int) error {
 	args := ModifyEipAddressAttributeArgs{
 		AllocationId: allocationId,
@@ -173,6 +187,8 @@ type UnallocateEipAddressResponse struct {
 }
 
 // UnassociateEipAddress unallocates Eip Address from instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&unassociateeipaddress
 func (client *Client) UnassociateEipAddress(allocationId string, instanceId string) error {
 	args := UnallocateEipAddressArgs{
 		AllocationId: allocationId,
@@ -191,6 +207,8 @@ type ReleaseEipAddressResponse struct {
 }
 
 // ReleaseEipAddress releases Eip address
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/network&releaseeipaddress
 func (client *Client) ReleaseEipAddress(allocationId string) error {
 	args := ReleaseEipAddressArgs{
 		AllocationId: allocationId,

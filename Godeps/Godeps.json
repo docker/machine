@@ -23,11 +23,11 @@
 		},
 		{
 			"ImportPath": "github.com/denverdino/aliyungo/ecs",
-			"Rev": "d21aae5ca784ff7c3083fb2c16b30af1f73378ee"
+			"Rev": "e2b7abdcda558f9d769dabaf66abc1ea588c412e"
 		},
 		{
 			"ImportPath": "github.com/denverdino/aliyungo/util",
-			"Rev": "d21aae5ca784ff7c3083fb2c16b30af1f73378ee"
+			"Rev": "e2b7abdcda558f9d769dabaf66abc1ea588c412e"
 		},
 		{
 			"ImportPath": "github.com/digitalocean/godo",
@@ -53,11 +53,6 @@
 			"ImportPath": "github.com/docker/docker/pkg/fileutils",
 			"Comment": "v1.5.0",
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/homedir",
-			"Comment": "v1.7.0",
-			"Rev": "0baf60984522744eed290348f33f396c046b2f3a"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",

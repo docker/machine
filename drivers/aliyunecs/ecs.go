@@ -14,7 +14,7 @@ import (
 	"github.com/docker/machine/utils"
 	"io"
 	"io/ioutil"
-
+	"net"
 	"net/url"
 	"path/filepath"
 	"strconv"
@@ -68,6 +68,7 @@ type Driver struct {
 	keyPath                 string
 	PrivateIPOnly           bool
 	InternetMaxBandwidthOut int
+	RouteCIDR               string
 	client                  *ecs.Client
 }
 
@@ -154,6 +155,11 @@ func GetCreateFlags() []cli.Flag {
 			Value:  1,
 			EnvVar: "ECS_INTERNET_MAX_BANDWIDTH",
 		},
+		cli.StringFlag{
+			Name:   "aliyunecs-route-cidr",
+			Usage:  "Destination CIDR for route entry",
+			EnvVar: "ECS_ROUTE_CIDR",
+		},
 	}
 }
 
@@ -236,6 +242,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("aliyunecs-private-address-only")
 	d.InternetMaxBandwidthOut = flags.Int("aliyunecs-internet-max-bandwidth")
+	d.RouteCIDR = flags.String("aliyunecs-route-cidr")
+
+	if d.RouteCIDR != "" {
+		_, _, err := net.ParseCIDR(d.RouteCIDR)
+		if err != nil {
+			return fmt.Errorf("Invalid CIDR value for --aliyunecs-route-cidr")
+		}
+	}
 
 	//TODO support PayByTraffic
 	if d.InternetMaxBandwidthOut < 0 || d.InternetMaxBandwidthOut > 100 {
@@ -286,7 +300,6 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) checkPrereqs() error {
-	// TODO
 	return nil
 }
 
@@ -383,6 +396,10 @@ func (d *Driver) Create() error {
 			if err != nil {
 				return fmt.Errorf("Failed to wait EIP %s: %v", allocationId, err)
 			}
+			err = d.addRouteEntry()
+			if err != nil {
+				return fmt.Errorf("Failed to add route entry: %v", err)
+			}
 		}
 	}
 
@@ -421,6 +438,91 @@ func (d *Driver) Create() error {
 		d.PrivateIPAddress,
 	)
 
+	return nil
+}
+
+func (d *Driver) removeRouteEntry(vpcId string, regionId ecs.Region, instanceId string) error {
+
+	client := d.getClient()
+
+	describeArgs := ecs.DescribeVpcsArgs{
+		VpcId:    vpcId,
+		RegionId: regionId,
+	}
+
+	vpcs, _, err := client.DescribeVpcs(&describeArgs)
+	if err != nil {
+		return fmt.Errorf("Failed to describe VPC %s in region %s: %v", d.VpcId, d.Region, err)
+	}
+	vrouterId := vpcs[0].VRouterId
+
+	describeRouteTablesArgs := ecs.DescribeRouteTablesArgs{
+		VRouterId: vrouterId,
+	}
+
+	routeTables, _, err := client.DescribeRouteTables(&describeRouteTablesArgs)
+	if err != nil {
+		return fmt.Errorf("Failed to describe route tables: %v", err)
+	}
+
+	routeEntries := routeTables[0].RouteEntrys.RouteEntry
+
+	// Fine route entry associated with instance
+	for _, routeEntry := range routeEntries {
+		log.Infof("Route Entry %++v\n", routeEntry)
+
+		if routeEntry.InstanceId == instanceId {
+			deleteArgs := ecs.DeleteRouteEntryArgs{
+				RouteTableId:         routeEntry.RouteTableId,
+				DestinationCidrBlock: routeEntry.DestinationCidrBlock,
+				NextHopId:            routeEntry.InstanceId,
+			}
+			err := client.DeleteRouteEntry(&deleteArgs)
+			if err != nil {
+				return fmt.Errorf("Failed to delete route entry: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (d *Driver) addRouteEntry() error {
+
+	if d.RouteCIDR != "" {
+		client := d.getClient()
+
+		describeArgs := ecs.DescribeVpcsArgs{
+			VpcId:    d.VpcId,
+			RegionId: d.Region,
+		}
+		vpcs, _, err := client.DescribeVpcs(&describeArgs)
+		if err != nil {
+			return fmt.Errorf("Failed to describe VPC %s in region %s: %v", d.VpcId, d.Region, err)
+		}
+		vrouterId := vpcs[0].VRouterId
+		describeVRoutersArgs := ecs.DescribeVRoutersArgs{
+			VRouterId: vrouterId,
+			RegionId:  d.Region,
+		}
+		vrouters, _, err := client.DescribeVRouters(&describeVRoutersArgs)
+		if err != nil {
+			return fmt.Errorf("Failed to describe VRouters: %v", err)
+		}
+		routeTableId := vrouters[0].RouteTableIds.RouteTableId[0]
+		createArgs := ecs.CreateRouteEntryArgs{
+			RouteTableId:         routeTableId,
+			DestinationCidrBlock: d.RouteCIDR,
+			NextHopType:          ecs.NextHopIntance,
+			NextHopId:            d.InstanceId,
+			ClientToken:          client.GenerateClientToken(),
+		}
+
+		err = client.CreateRouteEntry(&createArgs)
+		if err != nil {
+			return fmt.Errorf("Failed to create route entry: %v", err)
+		}
+	}
 	return nil
 }
 
@@ -484,7 +586,6 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
-	// TODO: use @nathanleclaire retry func here (ehazlett)
 	return d.GetIP()
 }
 
@@ -567,6 +668,14 @@ func (d *Driver) Remove() error {
 			if err != nil {
 				log.Errorf("Failed to release EIP address: %v", err)
 			}
+		}
+		log.Infof("instance: %++v\n", instance)
+		log.Infof("instance.VpcAttributes: %++v\n", instance.VpcAttributes)
+
+		vpcId := instance.VpcAttributes.VpcId
+		if vpcId != "" {
+			// Remove route entry firstly
+			d.removeRouteEntry(vpcId, instance.RegionId, instance.InstanceId)
 		}
 	}
 

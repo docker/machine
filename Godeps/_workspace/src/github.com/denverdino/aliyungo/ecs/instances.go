@@ -38,6 +38,8 @@ type DescribeInstanceStatusArgs struct {
 	Pagination
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&instancestatusitemtype
 type InstanceStatusItemType struct {
 	InstanceId string
 	Status     InstanceStatus
@@ -52,6 +54,8 @@ type DescribeInstanceStatusResponse struct {
 }
 
 // DescribeInstanceStatus describes instance status
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&describeinstancestatus
 func (client *Client) DescribeInstanceStatus(args *DescribeInstanceStatusArgs) (instanceStatuses []InstanceStatusItemType, pagination *PaginationResult, err error) {
 	args.validate()
 	response := DescribeInstanceStatusResponse{}
@@ -75,6 +79,8 @@ type StopInstanceResponse struct {
 }
 
 // StopInstance stops instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&stopinstance
 func (client *Client) StopInstance(instanceId string, forceStop bool) error {
 	args := StopInstanceArgs{
 		InstanceId: instanceId,
@@ -94,6 +100,8 @@ type StartInstanceResponse struct {
 }
 
 // StartInstance starts instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&startinstance
 func (client *Client) StartInstance(instanceId string) error {
 	args := StartInstanceArgs{InstanceId: instanceId}
 	response := StartInstanceResponse{}
@@ -111,6 +119,8 @@ type RebootInstanceResponse struct {
 }
 
 // RebootInstance reboot instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&rebootinstance
 func (client *Client) RebootInstance(instanceId string, forceStop bool) error {
 	request := RebootInstanceArgs{
 		InstanceId: instanceId,
@@ -125,17 +135,25 @@ type DescribeInstanceAttributeArgs struct {
 	InstanceId string
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&operationlockstype
 type OperationLocksType struct {
 	LockReason []LockReason //enum for financial, security
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&securitygroupidsettype
 type SecurityGroupIdSetType struct {
 	SecurityGroupId string
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&ipaddresssettype
 type IpAddressSetType struct {
 	IpAddress []string
 }
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&vpcattributestype
 type VpcAttributesType struct {
 	VpcId            string
 	VSwitchId        string
@@ -143,6 +161,8 @@ type VpcAttributesType struct {
 	NatIpAddress     string
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&eipaddressassociatetype
 type EipAddressAssociateType struct {
 	AllocationId       string
 	IpAddress          string
@@ -150,6 +170,8 @@ type EipAddressAssociateType struct {
 	InternetChargeType InternetChargeType
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&instanceattributestype
 type InstanceAttributesType struct {
 	InstanceId       string
 	InstanceName     string
@@ -182,6 +204,8 @@ type DescribeInstanceAttributeResponse struct {
 }
 
 // DescribeInstanceAttribute describes instance attribute
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&describeinstanceattribute
 func (client *Client) DescribeInstanceAttribute(instanceId string) (instance *InstanceAttributesType, err error) {
 	args := DescribeInstanceAttributeArgs{InstanceId: instanceId}
 
@@ -222,6 +246,30 @@ func (client *Client) WaitForInstance(instanceId string, status InstanceStatus, 
 	return nil
 }
 
+type DescribeInstanceVncUrlArgs struct {
+	RegionId   Region
+	InstanceId string
+}
+
+type DescribeInstanceVncUrlResponse struct {
+	CommonResponse
+	VncUrl string
+}
+
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&describeinstancevncurl
+func (client *Client) DescribeInstanceVncUrl(args *DescribeInstanceVncUrlArgs) (string, error) {
+	response := DescribeInstanceVncUrlResponse{}
+
+	err := client.Invoke("DescribeInstanceVncUrl", args, &response)
+
+	if err == nil {
+		return response.VncUrl, nil
+	}
+
+	return "", err
+}
+
 type DescribeInstancesArgs struct {
 	RegionId            Region
 	VpcId               string
@@ -245,6 +293,8 @@ type DescribeInstancesResponse struct {
 }
 
 // DescribeInstances describes instances
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&describeinstances
 func (client *Client) DescribeInstances(args *DescribeInstancesArgs) (instances []InstanceAttributesType, pagination *PaginationResult, err error) {
 	args.validate()
 	response := DescribeInstancesResponse{}
@@ -267,6 +317,8 @@ type DeleteInstanceResponse struct {
 }
 
 // DeleteInstance deletes instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&deleteinstance
 func (client *Client) DeleteInstance(instanceId string) error {
 	args := DeleteInstanceArgs{InstanceId: instanceId}
 	response := DeleteInstanceResponse{}
@@ -316,6 +368,8 @@ type CreateInstanceResponse struct {
 }
 
 // CreateInstance creates instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/instance&createinstance
 func (client *Client) CreateInstance(args *CreateInstanceArgs) (instanceId string, err error) {
 	response := CreateInstanceResponse{}
 	err = client.Invoke("CreateInstance", args, &response)

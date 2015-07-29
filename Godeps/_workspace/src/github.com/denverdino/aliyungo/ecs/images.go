@@ -36,6 +36,8 @@ type DescribeImagesResponse struct {
 	}
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&diskdevicemapping
 type DiskDeviceMapping struct {
 	SnapshotId string
 	//Why Size Field is string-type.
@@ -52,6 +54,8 @@ const (
 	ImageStatusCreateFailed = ImageStatus("CreateFailed")
 )
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&imagetype
 type ImageType struct {
 	ImageId            string
 	ImageVersion       string
@@ -72,6 +76,8 @@ type ImageType struct {
 }
 
 // DescribeImages describes images
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/image&describeimages
 func (client *Client) DescribeImages(args *DescribeImagesArgs) (images []ImageType, pagination *PaginationResult, err error) {
 
 	args.validate()
@@ -100,6 +106,8 @@ type CreateImageResponse struct {
 }
 
 // CreateImage creates a new image
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/image&createimage
 func (client *Client) CreateImage(args *CreateImageArgs) (imageId string, err error) {
 	response := &CreateImageResponse{}
 	err = client.Invoke("CreateImage", args, &response)
@@ -119,6 +127,8 @@ type DeleteImageResponse struct {
 }
 
 // DeleteImage deletes Image
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/image&deleteimage
 func (client *Client) DeleteImage(regionId Region, imageId string) error {
 	args := DeleteImageArgs{
 		RegionId: regionId,

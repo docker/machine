@@ -20,6 +20,8 @@ type CreateVSwitchResponse struct {
 }
 
 // CreateVSwitch creates Virtual Switch
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/vswitch&createvswitch
 func (client *Client) CreateVSwitch(args *CreateVSwitchArgs) (vswitchId string, err error) {
 	response := CreateVSwitchResponse{}
 	err = client.Invoke("CreateVSwitch", args, &response)
@@ -38,6 +40,8 @@ type DeleteVSwitchResponse struct {
 }
 
 // DeleteVSwitch deletes Virtual Switch
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/vswitch&deletevswitch
 func (client *Client) DeleteVSwitch(VSwitchId string) error {
 	args := DeleteVSwitchArgs{
 		VSwitchId: VSwitchId,
@@ -61,6 +65,8 @@ const (
 	VSwitchStatusAvailable = VSwitchStatus("Available")
 )
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&vswitchsettype
 type VSwitchSetType struct {
 	VSwitchId               string
 	VpcId                   string
@@ -82,6 +88,8 @@ type DescribeVSwitchesResponse struct {
 }
 
 // DescribeVSwitches describes Virtual Switches
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/vswitch&describevswitches
 func (client *Client) DescribeVSwitches(args *DescribeVSwitchesArgs) (vswitches []VSwitchSetType, pagination *PaginationResult, err error) {
 	args.validate()
 	response := DescribeVSwitchesResponse{}
@@ -106,6 +114,8 @@ type ModifyVSwitchAttributeResponse struct {
 }
 
 // ModifyVSwitchAttribute modifies attribute of Virtual Private Cloud
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/vswitch&modifyvswitchattribute
 func (client *Client) ModifyVSwitchAttribute(args *ModifyVSwitchAttributeArgs) error {
 	response := ModifyVSwitchAttributeResponse{}
 	return client.Invoke("ModifyVSwitchAttribute", args, &response)

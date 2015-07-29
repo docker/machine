@@ -11,6 +11,8 @@ type DescribeInstanceMonitorDataArgs struct {
 	Period     int //Default 60s
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&instancemonitordatatype
 type InstanceMonitorDataType struct {
 	InstanceId        string
 	CPU               int
@@ -35,6 +37,8 @@ type DescribeInstanceMonitorDataResponse struct {
 }
 
 // DescribeInstanceMonitorData describes instance monitoring data
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/monitor&describeinstancemonitordata
 func (client *Client) DescribeInstanceMonitorData(args *DescribeInstanceMonitorDataArgs) (monitorData []InstanceMonitorDataType, err error) {
 	if args.Period == 0 {
 		args.Period = 60
@@ -54,6 +58,8 @@ type DescribeEipMonitorDataArgs struct {
 	Period       int //Default 60s
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&eipmonitordatatype
 type EipMonitorDataType struct {
 	EipRX        int
 	EipTX        int
@@ -71,6 +77,8 @@ type DescribeEipMonitorDataResponse struct {
 }
 
 // DescribeEipMonitorData describes EIP monitoring data
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/monitor&describeeipmonitordata
 func (client *Client) DescribeEipMonitorData(args *DescribeEipMonitorDataArgs) (monitorData []EipMonitorDataType, err error) {
 	if args.Period == 0 {
 		args.Period = 60
@@ -90,6 +98,8 @@ type DescribeDiskMonitorDataArgs struct {
 	Period    int //Default 60s
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&diskmonitordatatype
 type DiskMonitorDataType struct {
 	DiskId    string
 	IOPSRead  int
@@ -110,6 +120,8 @@ type DescribeDiskMonitorDataResponse struct {
 }
 
 // DescribeDiskMonitorData describes disk monitoring data
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/monitor&describediskmonitordata
 func (client *Client) DescribeDiskMonitorData(args *DescribeDiskMonitorDataArgs) (monitorData []DiskMonitorDataType, totalCount int, err error) {
 	if args.Period == 0 {
 		args.Period = 60

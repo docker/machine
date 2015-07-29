@@ -7,7 +7,7 @@ import (
 )
 
 func TestISO8601Time(t *testing.T) {
-	now := ISO6801Time(time.Now().UTC())
+	now := NewISO6801Time(time.Now().UTC())
 
 	data, err := json.Marshal(now)
 	if err != nil {
@@ -26,7 +26,7 @@ func TestISO8601Time(t *testing.T) {
 	}
 
 	if now != now2 {
-		t.Fatalf("Time %s does not equal expected %s", now2, now)
+		t.Errorf("Time %s does not equal expected %s", now2, now)
 	}
 
 	if now.String() != now2.String() {

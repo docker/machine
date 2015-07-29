@@ -54,6 +54,8 @@ type DescribeDisksArgs struct {
 	Pagination
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&diskitemtype
 type DiskItemType struct {
 	DiskId             string
 	RegionId           Region
@@ -90,6 +92,8 @@ type DescribeDisksResponse struct {
 }
 
 // DescribeDisks describes Disks
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&describedisks
 func (client *Client) DescribeDisks(args *DescribeDisksArgs) (disks []DiskItemType, pagination *PaginationResult, err error) {
 	response := DescribeDisksResponse{}
 
@@ -118,6 +122,8 @@ type CreateDisksResponse struct {
 }
 
 // CreateDisk creates a new disk
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&createdisk
 func (client *Client) CreateDisk(args *CreateDiskArgs) (diskId string, err error) {
 	response := CreateDisksResponse{}
 	err = client.Invoke("CreateDisk", args, &response)
@@ -136,6 +142,8 @@ type DeleteDiskResponse struct {
 }
 
 // DeleteDisk deletes disk
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&deletedisk
 func (client *Client) DeleteDisk(diskId string) error {
 	args := DeleteDiskArgs{
 		DiskId: diskId,
@@ -154,6 +162,8 @@ type ReInitDiskResponse struct {
 }
 
 // ReInitDisk reinitizes disk
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&reinitdisk
 func (client *Client) ReInitDisk(diskId string) error {
 	args := ReInitDiskArgs{
 		DiskId: diskId,
@@ -175,6 +185,8 @@ type AttachDiskResponse struct {
 }
 
 // AttachDisk attaches disk to instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&attachdisk
 func (client *Client) AttachDisk(args *AttachDiskArgs) error {
 	response := AttachDiskResponse{}
 	err := client.Invoke("AttachDisk", args, &response)
@@ -191,6 +203,8 @@ type DetachDiskResponse struct {
 }
 
 // DetachDisk detaches disk from instance
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&detachdisk
 func (client *Client) DetachDisk(instanceId string, diskId string) error {
 	args := DetachDiskArgs{
 		InstanceId: instanceId,
@@ -211,6 +225,8 @@ type ResetDiskResponse struct {
 }
 
 // ResetDisk resets disk to original status
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&resetdisk
 func (client *Client) ResetDisk(diskId string, snapshotId string) error {
 	args := ResetDiskArgs{
 		SnapshotId: snapshotId,
@@ -235,6 +251,8 @@ type ModifyDiskAttributeResponse struct {
 }
 
 // ModifyDiskAttribute modifies disk attribute
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/disk&modifydiskattribute
 func (client *Client) ModifyDiskAttribute(args *ModifyDiskAttributeArgs) error {
 	response := ModifyDiskAttributeResponse{}
 	err := client.Invoke("ModifyDiskAttribute", &args, &response)

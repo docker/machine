@@ -10,6 +10,8 @@ type DescribeVRoutersArgs struct {
 	Pagination
 }
 
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/datatype&vroutersettype
 type VRouterSetType struct {
 	VRouterId     string
 	RegionId      Region
@@ -31,6 +33,8 @@ type DescribeVRoutersResponse struct {
 }
 
 // DescribeVRouters describes Virtual Routers
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/vrouter&describevrouters
 func (client *Client) DescribeVRouters(args *DescribeVRoutersArgs) (vrouters []VRouterSetType, pagination *PaginationResult, err error) {
 	args.validate()
 	response := DescribeVRoutersResponse{}
@@ -55,6 +59,8 @@ type ModifyVRouterAttributeResponse struct {
 }
 
 // ModifyVRouterAttribute modifies attribute of Virtual Router
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/vrouter&modifyvrouterattribute
 func (client *Client) ModifyVRouterAttribute(args *ModifyVRouterAttributeArgs) error {
 	response := ModifyVRouterAttributeResponse{}
 	return client.Invoke("ModifyVRouterAttribute", args, &response)

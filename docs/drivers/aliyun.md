@@ -19,6 +19,7 @@ Options:
  - `--aliyunecs-internet-max-bandwidth`: Maxium bandwidth for Internet access (in Mbps), default 1
  - `--aliyunecs-private-address-only`: Use the private IP address only
  - `--aliyunecs-region`: The region to use when launching the instance. Default: `cn-hangzhou`
+ - `--aliyunecs-route-cidr`: The CIDR to use configure the route entry for the instance in VPC. Sample: 192.168.200.0/24
  - `--aliyunecs-secret-key`: **required** Your secret access key for the Aliyun ECS API.
  - `--aliyunecs-security-group`: Aliyun security group name. Default: `docker-machine`
  - `--aliyunecs-ssh-password`: SSH password for created virtual machine. Default is random generated.
@@ -36,6 +37,7 @@ Environment variables and default values:
 | `--aliyunecs-internet-max-bandwidth`| `ECS_INTERNET_MAX_BANDWIDTH`| `1`              |
 | `--aliyunecs-private-address-only`  | -                           | `false`          |
 | `--aliyunecs-region`                | `ECS_REGION`                | `cn-hangzhou`    |
+| `--aliyunecs-route-cidr`            | `ECS_ROUTE_CIDR`            | -                |
 | **`--aliyunecs-secret-key`**        | `ECS_ACCESS_KEY_SECRET`     | -                |
 | `--aliyunecs-security-group`        | `ECS_SECURITY_GROUP`        | -                |
 | `--aliyunecs-ssh-password`          | `ECS_SSH_PASSWORD`          | -                |

@@ -10,7 +10,7 @@ func TestSnapshot(t *testing.T) {
 
 	instance, err := client.DescribeInstanceAttribute(TestInstanceId)
 	if err != nil {
-		t.Errorf("Failed to DescribeInstanceAttribute for instance %s: %v", TestInstanceId, err)
+		t.Fatalf("Failed to DescribeInstanceAttribute for instance %s: %v", TestInstanceId, err)
 	}
 
 	args := DescribeSnapshotsArgs{}
@@ -34,7 +34,7 @@ func TestSnapshotCreationAndDeletion(t *testing.T) {
 
 	instance, err := client.DescribeInstanceAttribute(TestInstanceId)
 	if err != nil {
-		t.Errorf("Failed to DescribeInstanceAttribute for instance %s: %v", TestInstanceId, err)
+		t.Fatalf("Failed to DescribeInstanceAttribute for instance %s: %v", TestInstanceId, err)
 	}
 
 	//Describe disk monitor data
