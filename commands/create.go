@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 
 	"github.com/docker/machine/log"
 
@@ -33,6 +34,10 @@ func cmdCreate(c *cli.Context) {
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
 		log.Fatal("You must specify a machine name")
+	}
+
+	if err := validateSwarmDiscovery(c.String("swarm-discovery")); err != nil {
+		log.Fatalf("Error parsing swarm discovery: %s", err)
 	}
 
 	certInfo := getCertPathInfo(c)
@@ -117,4 +122,21 @@ func trimDriverFlags(driver string, cmds []cli.Command) ([]cli.Command, error) {
 	}
 
 	return filteredCmds, nil
+}
+
+func validateSwarmDiscovery(discovery string) error {
+	if discovery == "" {
+		return nil
+	}
+
+	matched, err := regexp.MatchString(`[^:]*://.*`, discovery)
+	if err != nil {
+		return err
+	}
+
+	if matched {
+		return nil
+	}
+
+	return fmt.Errorf("Swarm Discovery URL was in the wrong format: %s", discovery)
 }
