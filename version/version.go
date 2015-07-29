@@ -1,9 +1,14 @@
 package version
 
 var (
-	// VERSION should be updated by hand at each release
-	VERSION = "0.4.0-dev"
+	// ConfigVersion dictates which version of the config.json format is
+	// used. It needs to be bumped if there is a breaking change, and
+	// therefore migration, introduced to the config file format.
+	ConfigVersion = 1
 
-	// GITCOMMIT will be overwritten automatically by the build system
-	GITCOMMIT = "HEAD"
+	// Version should be updated by hand at each release
+	Version = "0.4.0-dev"
+
+	// GitCommit will be overwritten automatically by the build system
+	GitCommit = "HEAD"
 )
