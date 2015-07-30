@@ -126,6 +126,10 @@ func (s Filestore) GetActive() (*Host, error) {
 	}
 
 	dockerHost := os.Getenv("DOCKER_HOST")
+	if dockerHost == "" {
+		return nil, errors.New("DOCKER_HOST not set")
+	}
+
 	hostListItems := GetHostListItems(hosts)
 
 	for _, item := range hostListItems {
