@@ -7,6 +7,8 @@ import (
 
 	_ "github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/utils"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type DriverOptionsMock struct {
@@ -193,42 +195,25 @@ func TestStoreGetSetActive(t *testing.T) {
 	defer cleanup()
 
 	store, err := getTestStore()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	// No host set
 	host, err := store.GetActive()
-	if err == nil {
-		t.Fatal("Expected an error because there is no active host set")
-	}
-
-	if host != nil {
-		t.Fatalf("GetActive: Active host should not exist")
-	}
+	assert.Error(t, err, "Expected an error because there is no active host set")
+	assert.Nil(t, host, "GetActive: Active host should not exist")
 
 	host, err = getDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	// Set normal host
-	if err := store.Save(host); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, store.Save(host))
 
 	url, err := host.GetURL()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	os.Setenv("DOCKER_HOST", url)
 
 	host, err = store.GetActive()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if host.Name != host.Name {
-		t.Fatalf("Active host is not 'test', got %s", host.Name)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, hostTestName, host.Name)
 }
