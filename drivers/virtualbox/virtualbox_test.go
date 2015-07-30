@@ -29,39 +29,3 @@ func TestGetRandomIPinSubnet(t *testing.T) {
 		t.Fatalf("expected third octet of %d; received %d", testIP[2], newIP[2])
 	}
 }
-
-func TestTranslateWindowsMount(t *testing.T) {
-	p1 := `C:\Users\foo`
-	r, err := translateWindowsMount(p1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if r != `/c/Users/foo` {
-		t.Fatalf("expected to match /c/Users/foo")
-	}
-}
-
-func TestTranslateWindowsMountCustomDrive(t *testing.T) {
-	p1 := `D:\Users\foo`
-	r, err := translateWindowsMount(p1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if r != `/d/Users/foo` {
-		t.Fatalf("expected to match /d/Users/foo")
-	}
-}
-
-func TestTranslateWindowsMountLongPath(t *testing.T) {
-	p1 := `c:\path\to\users\foo`
-	r, err := translateWindowsMount(p1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if r != `/c/path/to/users/foo` {
-		t.Fatalf("expected to match /c/path/to/users/foo")
-	}
-}

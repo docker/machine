@@ -1,8 +1,12 @@
 package hyperv
 
 import (
+	"archive/tar"
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/codegangsta/cli"
@@ -11,10 +15,6 @@ import (
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
-)
-
-const (
-	isoFilename = "boot2docker-hyperv.iso"
 )
 
 type Driver struct {
@@ -146,9 +146,55 @@ func (d *Driver) Create() error {
 
 	d.setMachineNameIfNotSet()
 
-	b2dutils := utils.NewB2dUtils("", "", isoFilename)
-	if err := b2dutils.CopyIsoToMachineDir(d.boot2DockerURL, d.MachineName); err != nil {
-		return err
+	var isoURL string
+
+	b2dutils := utils.NewB2dUtils("", "")
+
+	if d.boot2DockerLoc == "" {
+		if d.boot2DockerURL != "" {
+			isoURL = d.boot2DockerURL
+			log.Infof("Downloading boot2docker.iso from %s...", isoURL)
+			if err := b2dutils.DownloadISO(d.ResolveStorePath("."), "boot2docker.iso", isoURL); err != nil {
+				return err
+			}
+		} else {
+			// todo: check latest release URL, download if it's new
+			// until then always use "latest"
+			isoURL, err = b2dutils.GetLatestBoot2DockerReleaseURL()
+			if err != nil {
+				log.Warnf("Unable to check for the latest release: %s", err)
+
+			}
+			// todo: use real constant for .docker
+			rootPath := filepath.Join(utils.GetDockerDir())
+			imgPath := filepath.Join(rootPath, "images")
+			commonIsoPath := filepath.Join(imgPath, "boot2docker.iso")
+			if _, err := os.Stat(commonIsoPath); os.IsNotExist(err) {
+				log.Infof("Downloading boot2docker.iso to %s...", commonIsoPath)
+				// just in case boot2docker.iso has been manually deleted
+				if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+					if err := os.Mkdir(imgPath, 0700); err != nil {
+						return err
+
+					}
+
+				}
+				if err := b2dutils.DownloadISO(imgPath, "boot2docker.iso", isoURL); err != nil {
+					return err
+
+				}
+
+			}
+			isoDest := d.ResolveStorePath("boot2docker.iso")
+			if err := utils.CopyFile(commonIsoPath, isoDest); err != nil {
+				return err
+
+			}
+		}
+	} else {
+		if err := utils.CopyFile(d.boot2DockerLoc, d.ResolveStorePath("boot2docker.iso")); err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Creating SSH key...")
@@ -164,7 +210,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := d.generateDiskImage(); err != nil {
+	err = d.generateDiskImage()
+	if err != nil {
 		return err
 	}
 
@@ -181,8 +228,9 @@ func (d *Driver) Create() error {
 	command = []string{
 		"Set-VMDvdDrive",
 		"-VMName", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(isoFilename))}
-	if _, err = execute(command); err != nil {
+		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath("boot2docker.iso"))}
+	_, err = execute(command)
+	if err != nil {
 		return err
 	}
 
@@ -190,7 +238,8 @@ func (d *Driver) Create() error {
 		"Add-VMHardDiskDrive",
 		"-VMName", d.MachineName,
 		"-Path", fmt.Sprintf("'%s'", d.diskImage)}
-	if _, err = execute(command); err != nil {
+	_, err = execute(command)
+	if err != nil {
 		return err
 	}
 
@@ -198,41 +247,13 @@ func (d *Driver) Create() error {
 		"Connect-VMNetworkAdapter",
 		"-VMName", d.MachineName,
 		"-SwitchName", fmt.Sprintf("'%s'", virtualSwitch)}
-	if _, err = execute(command); err != nil {
+	_, err = execute(command)
+	if err != nil {
 		return err
 	}
 
 	log.Infof("Starting  VM...")
 	if err := d.Start(); err != nil {
-		return err
-	}
-
-	// use ssh to set keys
-	sshClient, err := d.getLocalSSHClient()
-	if err != nil {
-		return err
-	}
-
-	// add pub key for user
-	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
-	if err != nil {
-		return err
-	}
-
-	if out, err := sshClient.Output(fmt.Sprintf(
-		"mkdir -p /home/%s/.ssh",
-		d.GetSSHUsername(),
-	)); err != nil {
-		log.Error(out)
-		return err
-	}
-
-	if out, err := sshClient.Output(fmt.Sprintf(
-		"printf '%%s' '%s' | tee /home/%s/.ssh/authorized_keys",
-		string(pubKey),
-		d.GetSSHUsername(),
-	)); err != nil {
-		log.Error(out)
 		return err
 	}
 
@@ -273,7 +294,8 @@ func (d *Driver) Start() error {
 	command := []string{
 		"Start-VM",
 		"-Name", d.MachineName}
-	if _, err := execute(command); err != nil {
+	_, err := execute(command)
+	if err != nil {
 		return err
 	}
 
@@ -281,18 +303,16 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	if _, err := d.GetIP(); err != nil {
-		return err
-	}
-
-	return nil
+	d.IPAddress, err = d.GetIP()
+	return err
 }
 
 func (d *Driver) Stop() error {
 	command := []string{
 		"Stop-VM",
 		"-Name", d.MachineName}
-	if _, err := execute(command); err != nil {
+	_, err := execute(command)
+	if err != nil {
 		return err
 	}
 	for {
@@ -324,11 +344,8 @@ func (d *Driver) Remove() error {
 		"Remove-VM",
 		"-Name", d.MachineName,
 		"-Force"}
-	if _, err = execute(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = execute(command)
+	return err
 }
 
 func (d *Driver) Restart() error {
@@ -345,7 +362,8 @@ func (d *Driver) Kill() error {
 		"Stop-VM",
 		"-Name", d.MachineName,
 		"-TurnOff"}
-	if _, err := execute(command); err != nil {
+	_, err := execute(command)
+	if err != nil {
 		return err
 	}
 	for {
@@ -391,35 +409,101 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 func (d *Driver) generateDiskImage() error {
+	// Create a small fixed vhd, put the tar in,
+	// convert to dynamic, then resize
+
 	d.diskImage = d.ResolveStorePath("disk.vhd")
+	fixed := d.ResolveStorePath("fixed.vhd")
 	log.Infof("Creating VHD")
 	command := []string{
 		"New-VHD",
-		"-Path", fmt.Sprintf("'%s'", d.diskImage),
-		"-SizeBytes", fmt.Sprintf("%dMB", d.diskSize),
-	}
-
-	if _, err := execute(command); err != nil {
+		"-Path", fmt.Sprintf("'%s'", fixed),
+		"-SizeBytes", "10MB",
+		"-Fixed"}
+	_, err := execute(command)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	tarBuf, err := d.generateTar()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(fixed, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	file.Seek(0, os.SEEK_SET)
+	_, err = file.Write(tarBuf.Bytes())
+	if err != nil {
+		return err
+	}
+	file.Close()
+
+	command = []string{
+		"Convert-VHD",
+		"-Path", fmt.Sprintf("'%s'", fixed),
+		"-DestinationPath", fmt.Sprintf("'%s'", d.diskImage),
+		"-VHDType", "Dynamic"}
+	_, err = execute(command)
+	if err != nil {
+		return err
+	}
+	command = []string{
+		"Resize-VHD",
+		"-Path", fmt.Sprintf("'%s'", d.diskImage),
+		"-SizeBytes", fmt.Sprintf("%dMB", d.diskSize)}
+	_, err = execute(command)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
-func (d *Driver) getLocalSSHClient() (ssh.Client, error) {
-	ip, err := d.GetIP()
+// Make a boot2docker VM disk image.
+// See https://github.com/boot2docker/boot2docker/blob/master/rootfs/rootfs/etc/rc.d/automount
+func (d *Driver) generateTar() (*bytes.Buffer, error) {
+	magicString := "boot2docker, please format-me"
+
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+
+	// magicString first so the automount script knows to format the disk
+	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+	if _, err := tw.Write([]byte(magicString)); err != nil {
+		return nil, err
+	}
+	// .ssh/key.pub => authorized_keys
+	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return nil, err
 	}
-
-	sshAuth := &ssh.Auth{
-		Passwords: []string{"docker"},
-		Keys:      []string{d.GetSSHKeyPath()},
-	}
-	sshClient, err := ssh.NewNativeClient(d.GetSSHUsername(), ip, d.SSHPort, sshAuth)
-	if err != nil {
+	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
 		return nil, err
 	}
-
-	return sshClient, nil
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+	if err := tw.Close(); err != nil {
+		return nil, err
+	}
+	return buf, nil
 }
