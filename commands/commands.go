@@ -240,6 +240,10 @@ var sharedCreateFlags = []cli.Flag{
 		Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
 		Value: "",
 	},
+	cli.BoolFlag{
+		Name:  "force",
+		Usage: "Create this machine even if one already exists with the same name. Use with caution!",
+	},
 }
 
 var Commands = []cli.Command{
