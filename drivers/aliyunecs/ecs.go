@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	//"time"
+	"time"
 	//"os"
 )
 
@@ -353,91 +353,108 @@ func (d *Driver) Create() error {
 	instanceId, err := d.getClient().CreateInstance(&args)
 
 	if err != nil {
-		return fmt.Errorf("Error create instance: %s", err)
+		err = fmt.Errorf("Error create instance: %s", err)
+		log.Error(err)
+		return err
 	}
 
 	d.InstanceId = instanceId
 
 	// Wait for creation successfully
-	err = d.getClient().WaitForInstance(instanceId, ecs.Stopped, 120)
+	err = d.getClient().WaitForInstance(instanceId, ecs.Stopped, 300)
 
 	if err != nil {
-		return fmt.Errorf("Error wait instance to Stopped: %s", err)
+		err = fmt.Errorf("Error wait instance to Stopped: %s", err)
+		log.Error(err)
 	}
 
 	// Assign public IP if not private IP only
-	if !d.PrivateIPOnly {
+	if err == nil && !d.PrivateIPOnly {
 		if d.VSwitchId == "" {
 			// Allocate public IP address for classic network
-			_, err := d.getClient().AllocatePublicIpAddress(instanceId)
+			_, err = d.getClient().AllocatePublicIpAddress(instanceId)
 			if err != nil {
-				return fmt.Errorf("Error allocate public IP address for instance %s: %v", instanceId, err)
+				err = fmt.Errorf("Error allocate public IP address for instance %s: %v", instanceId, err)
 			}
 		} else {
-			// Create EIP for virtual private cloud
-			eipArgs := ecs.AllocateEipAddressArgs{
-				RegionId:    d.Region,
-				Bandwidth:   d.InternetMaxBandwidthOut,
-				ClientToken: d.getClient().GenerateClientToken(),
-			}
-			_, allocationId, err := d.getClient().AllocateEipAddress(&eipArgs)
-			if err != nil {
-				return fmt.Errorf("Failed to allocate EIP address: %v", err)
-			}
-			err = d.getClient().WaitForEip(d.Region, allocationId, ecs.EipStatusAvailable, 60)
-			if err != nil {
-				return fmt.Errorf("Failed to wait EIP %s: %v", allocationId, err)
-			}
-			err = d.getClient().AssociateEipAddress(allocationId, instanceId)
-			if err != nil {
-				return fmt.Errorf("Failed to associate EIP address: %v", err)
-			}
-			err = d.getClient().WaitForEip(d.Region, allocationId, ecs.EipStatusInUse, 60)
-			if err != nil {
-				return fmt.Errorf("Failed to wait EIP %s: %v", allocationId, err)
-			}
-			err = d.addRouteEntry()
-			if err != nil {
-				return fmt.Errorf("Failed to add route entry: %v", err)
-			}
+			err = d.configNetwork(instanceId)
 		}
 	}
 
-	// Start instance
-	err = d.getClient().StartInstance(instanceId)
+	if err == nil {
+		// Start instance
+		err = d.getClient().StartInstance(instanceId)
+		if err == nil {
+			// Wait for running
+			err = d.getClient().WaitForInstance(instanceId, ecs.Running, 300)
+			if err == nil {
+				instance, err := d.getInstance()
+
+				if err == nil {
+					if len(instance.InnerIpAddress.IpAddress) > 0 {
+						d.PrivateIPAddress = instance.InnerIpAddress.IpAddress[0]
+					}
+
+					d.IPAddress = d.getIP(instance)
+
+					ssh.SetDefaultClient(ssh.Native)
+
+					d.uploadKeyPair()
+
+					log.Debugf("created instance ID %s, IP address %s, Private IP address %s",
+						d.InstanceId,
+						d.IPAddress,
+						d.PrivateIPAddress,
+					)
+				}
+			} else {
+				err = fmt.Errorf("Failed to wait instance to running state: %s", err)
+			}
+		} else {
+			err = fmt.Errorf("Failed to start instance %s: %v", instanceId, err)
+		}
+	}
+
 	if err != nil {
-		return fmt.Errorf("Error start instance %s: %v", instanceId, err)
+		log.Warn(err)
+		d.Remove()
 	}
 
-	// Wait for running
-	err = d.getClient().WaitForInstance(instanceId, ecs.Running, 300)
+	return err
+}
 
+func (d *Driver) configNetwork(instanceId string) error {
+	err := d.addRouteEntry()
 	if err != nil {
-		return fmt.Errorf("Error wait instance to Running: %s", err)
+		return fmt.Errorf("Failed to add route entry: %v", err)
 	}
 
-	instance, err := d.getInstance()
-
+	// Create EIP for virtual private cloud
+	eipArgs := ecs.AllocateEipAddressArgs{
+		RegionId:    d.Region,
+		Bandwidth:   d.InternetMaxBandwidthOut,
+		ClientToken: d.getClient().GenerateClientToken(),
+	}
+	_, allocationId, err := d.getClient().AllocateEipAddress(&eipArgs)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to allocate EIP address: %v", err)
 	}
-
-	if len(instance.InnerIpAddress.IpAddress) > 0 {
-		d.PrivateIPAddress = instance.InnerIpAddress.IpAddress[0]
+	err = d.getClient().WaitForEip(d.Region, allocationId, ecs.EipStatusAvailable, 60)
+	if err != nil {
+		err2 := d.getClient().ReleaseEipAddress(allocationId)
+		if err2 != nil {
+			log.Warnf("Failed to release EIP address: %v", err2)
+		}
+		return fmt.Errorf("Failed to wait EIP %s: %v", allocationId, err)
 	}
-
-	d.IPAddress = d.getIP(instance)
-
-	ssh.SetDefaultClient(ssh.Native)
-
-	d.uploadKeyPair()
-
-	log.Debugf("created instance ID %s, IP address %s, Private IP address %s",
-		d.InstanceId,
-		d.IPAddress,
-		d.PrivateIPAddress,
-	)
-
+	err = d.getClient().AssociateEipAddress(allocationId, instanceId)
+	if err != nil {
+		return fmt.Errorf("Failed to associate EIP address: %v", err)
+	}
+	err = d.getClient().WaitForEip(d.Region, allocationId, ecs.EipStatusInUse, 60)
+	if err != nil {
+		return fmt.Errorf("Failed to wait EIP %s: %v", allocationId, err)
+	}
 	return nil
 }
 
@@ -469,7 +486,7 @@ func (d *Driver) removeRouteEntry(vpcId string, regionId ecs.Region, instanceId 
 
 	// Fine route entry associated with instance
 	for _, routeEntry := range routeEntries {
-		log.Infof("Route Entry %++v\n", routeEntry)
+		log.Debugf("Route Entry %++v\n", routeEntry)
 
 		if routeEntry.InstanceId == instanceId {
 			deleteArgs := ecs.DeleteRouteEntryArgs{
@@ -486,6 +503,8 @@ func (d *Driver) removeRouteEntry(vpcId string, regionId ecs.Region, instanceId 
 
 	return nil
 }
+
+const _MAX_RETRY = 20
 
 func (d *Driver) addRouteEntry() error {
 
@@ -518,8 +537,24 @@ func (d *Driver) addRouteEntry() error {
 			ClientToken:          client.GenerateClientToken(),
 		}
 
-		err = client.CreateRouteEntry(&createArgs)
-		if err != nil {
+		count := 0
+
+		for {
+			err = client.CreateRouteEntry(&createArgs)
+			if err == nil {
+				break
+			}
+
+			ecsErr, _ := err.(*ecs.Error)
+			//Retry for IncorretRouteEntryStatus or Internal Error
+			if ecsErr != nil && (ecsErr.StatusCode == 500 || (ecsErr.StatusCode == 400 && ecsErr.Code == "IncorrectRouteEntryStatus")) {
+				count++
+				if count <= _MAX_RETRY {
+					time.Sleep(5 * time.Second)
+					continue
+				}
+
+			}
 			return fmt.Errorf("Failed to create route entry: %v", err)
 		}
 	}
@@ -669,8 +704,8 @@ func (d *Driver) Remove() error {
 				log.Errorf("Failed to release EIP address: %v", err)
 			}
 		}
-		log.Infof("instance: %++v\n", instance)
-		log.Infof("instance.VpcAttributes: %++v\n", instance.VpcAttributes)
+		log.Debugf("instance: %++v\n", instance)
+		log.Debugf("instance.VpcAttributes: %++v\n", instance.VpcAttributes)
 
 		vpcId := instance.VpcAttributes.VpcId
 		if vpcId != "" {
