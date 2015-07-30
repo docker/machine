@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
 )
 
@@ -29,7 +30,16 @@ func (provider *Provider) Create(name string, driverName string, hostOptions *Ho
 		return nil, err
 	}
 	if exists {
-		return nil, fmt.Errorf("Machine %s already exists", name)
+		if driverConfig.Bool("force") {
+			log.Warnf("Machine %s already exists -- removing!", name)
+			if err = provider.Remove(name, false); err != nil {
+				log.Errorf("Error removing machine %s: %s", name, err)
+				return nil, err
+			}
+			log.Infof("Successfully removed %s", name)
+		} else {
+			return nil, fmt.Errorf("Machine %s already exists", name)
+		}
 	}
 
 	hostPath := filepath.Join(utils.GetMachineDir(), name)
