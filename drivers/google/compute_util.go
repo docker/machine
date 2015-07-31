@@ -177,6 +177,8 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		}
 	}
 
+	tags := append(d.Tags, firewallTargetTag)
+
 	instance := &raw.Instance{
 		Name:        c.instanceName,
 		Description: "docker host vm",
@@ -198,9 +200,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 			},
 		},
 		Tags: &raw.Tags{
-			Items: []string{
-				firewallTargetTag,
-			},
+			Items: tags,
 		},
 		ServiceAccounts: []*raw.ServiceAccount{
 			{
