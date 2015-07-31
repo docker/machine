@@ -33,6 +33,7 @@ Options:
  - `--amazonec2-spot-price`: Spot instance bid price (in dollars). Require the `--amazonec2-request-spot-instance` flag.
  - `--amazonec2-private-address-only`: Use the private IP address only.
  - `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
+ - `--amazonec2-user-data`: Base64-encoded EC2 user data string to send.
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 
@@ -71,4 +72,5 @@ Environment variables and default values:
 | `--amazonec2-spot-price`            | -                       | `0.50`           |
 | `--amazonec2-private-address-only`  | -                       | `false`          |
 | `--amazonec2-monitoring`            | -                       | `false`          |
+| `--amazonec2-user-data`             | `AWS_USER_DATA`         | -                |
 
