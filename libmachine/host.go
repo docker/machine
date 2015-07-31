@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
@@ -26,6 +27,7 @@ var (
 	validHostNameChars                = `[a-zA-Z0-9\-\.]`
 	validHostNamePattern              = regexp.MustCompile(`^` + validHostNameChars + `+$`)
 	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
+	stateTimeoutDuration              = time.Second * 3
 )
 
 type Host struct {
@@ -357,7 +359,7 @@ func WaitForSSH(h *Host) error {
 	return drivers.WaitForSSH(h.Driver)
 }
 
-func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
+func attemptGetHostState(host Host, stateQueryChan chan<- HostListItem) {
 	currentState, err := host.Driver.GetState()
 	if err != nil {
 		log.Errorf("error getting state for host %s: %s", host.Name, err)
@@ -374,13 +376,36 @@ func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
 
 	dockerHost := os.Getenv("DOCKER_HOST")
 
-	hostListItemsChan <- HostListItem{
+	stateQueryChan <- HostListItem{
 		Name:         host.Name,
 		Active:       dockerHost == url && currentState != state.Stopped,
 		DriverName:   host.Driver.DriverName(),
 		State:        currentState,
 		URL:          url,
 		SwarmOptions: *host.HostOptions.SwarmOptions,
+	}
+}
+
+func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
+	// This channel is used to communicate the properties we are querying
+	// about the host in the case of a successful read.
+	stateQueryChan := make(chan HostListItem)
+
+	go attemptGetHostState(host, stateQueryChan)
+
+	select {
+	// If we get back useful information, great.  Forward it straight to
+	// the original parent channel.
+	case hli := <-stateQueryChan:
+		hostListItemsChan <- hli
+
+	// Otherwise, give up after a predetermined duration.
+	case <-time.After(stateTimeoutDuration):
+		hostListItemsChan <- HostListItem{
+			Name:       host.Name,
+			DriverName: host.Driver.DriverName(),
+			State:      state.Timeout,
+		}
 	}
 }
 
