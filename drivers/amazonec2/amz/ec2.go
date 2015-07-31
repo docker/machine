@@ -97,6 +97,7 @@ type (
 			} `xml:"privateIpAddressesSet>item"`
 		} `xml:"networkInterfaceSet>item"`
 		EbsOptimized bool `xml:"ebsOptimized"`
+		UserData     string `xml:"userData"`
 	}
 
 	RunInstancesResponse struct {
@@ -177,7 +178,7 @@ func (e *EC2) awsApiCall(v url.Values) (*http.Response, error) {
 	return resp, nil
 }
 
-func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCount int, maxCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping, role string, privateIPOnly bool, monitoring bool) (EC2Instance, error) {
+func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCount int, maxCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping, role string, privateIPOnly bool, monitoring bool, userData string) (EC2Instance, error) {
 	instance := Instance{}
 	v := url.Values{}
 	v.Set("Action", "RunInstances")
@@ -216,6 +217,10 @@ func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCou
 		}
 		v.Set("BlockDeviceMapping.0.Ebs.DeleteOnTermination", strconv.Itoa(deleteOnTerm))
 	}
+	
+	if userData != "" {
+		v.Set("UserData", userData)
+	}
 
 	resp, err := e.awsApiCall(v)
 
@@ -238,7 +243,7 @@ func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCou
 	return instance.info, nil
 }
 
-func (e *EC2) RequestSpotInstances(amiId string, instanceType string, zone string, instanceCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping, role string, spotPrice string, monitoring bool) (string, error) {
+func (e *EC2) RequestSpotInstances(amiId string, instanceType string, zone string, instanceCount int, securityGroup string, keyName string, subnetId string, bdm *BlockDeviceMapping, role string, spotPrice string, monitoring bool, userData string) (string, error) {
 	v := url.Values{}
 	v.Set("Action", "RequestSpotInstances")
 	v.Set("LaunchSpecification.ImageId", amiId)
@@ -271,6 +276,10 @@ func (e *EC2) RequestSpotInstances(amiId string, instanceType string, zone strin
 			deleteOnTerm = 1
 		}
 		v.Set("LaunchSpecification.BlockDeviceMapping.0.Ebs.DeleteOnTermination", strconv.Itoa(deleteOnTerm))
+	}
+	
+	if userData != "" {
+		v.Set("UserData", userData)
 	}
 
 	resp, err := e.awsApiCall(v)
