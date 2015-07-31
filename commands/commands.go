@@ -28,6 +28,7 @@ import (
 	_ "github.com/docker/machine/drivers/vmwarefusion"
 	_ "github.com/docker/machine/drivers/vmwarevcloudair"
 	_ "github.com/docker/machine/drivers/vmwarevsphere"
+	_ "github.com/docker/machine/drivers/xhyve"
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
@@ -88,7 +89,7 @@ func confirmInput(msg string) bool {
 	return false
 }
 
-func newProvider(store libmachine.Store) (*libmachine.Provider, error) {
+func newMcn(store libmachine.Store) (*libmachine.Machine, error) {
 	return libmachine.New(store)
 }
 
@@ -519,12 +520,12 @@ func loadMachine(name string, c *cli.Context) (*libmachine.Host, error) {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	mcn, err := newMcn(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	host, err := provider.Get(name)
+	host, err := mcn.Get(name)
 	if err != nil {
 		return nil, err
 	}
@@ -544,19 +545,19 @@ func getHost(c *cli.Context) *libmachine.Host {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	mcn, err := newMcn(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	host, err := provider.Get(name)
+	host, err := mcn.Get(name)
 	if err != nil {
 		log.Fatalf("unable to load host: %v", err)
 	}
 	return host
 }
 
-func getDefaultProvider(c *cli.Context) *libmachine.Provider {
+func getDefaultMcn(c *cli.Context) *libmachine.Machine {
 	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
@@ -567,12 +568,12 @@ func getDefaultProvider(c *cli.Context) *libmachine.Provider {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	mcn, err := newMcn(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return provider
+	return mcn
 }
 
 func getMachineConfig(c *cli.Context) (*machineConfig, error) {
@@ -587,12 +588,12 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		log.Fatal(err)
 	}
 
-	provider, err := newProvider(defaultStore)
+	mcn, err := newMcn(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	m, err := provider.Get(name)
+	m, err := mcn.Get(name)
 	if err != nil {
 		return nil, err
 	}
