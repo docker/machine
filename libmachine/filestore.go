@@ -127,7 +127,7 @@ func (s Filestore) GetActive() (*Host, error) {
 
 	dockerHost := os.Getenv("DOCKER_HOST")
 	if dockerHost == "" {
-		return nil, errors.New("DOCKER_HOST not set")
+		return nil, errors.New("No active host found: DOCKER_HOST not set")
 	}
 
 	hostListItems := GetHostListItems(hosts)
