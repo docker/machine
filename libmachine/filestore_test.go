@@ -229,6 +229,6 @@ func TestStoreGetSetActive(t *testing.T) {
 		t.Fatal(err)
 	}
 	if host.Name != hostTestName {
-		t.Fatalf("Active host is not 'test', got %s", host.Name)
+		t.Fatalf("Active host is not '%s', got %s", hostTestName, host.Name)
 	}
 }
