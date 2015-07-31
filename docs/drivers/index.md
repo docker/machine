@@ -25,3 +25,4 @@ identifier="smn_machine_drivers"
 * [VMware vCloud Air](vm-cloud.md)
 * [VMware Fusion](vm-fusion.md)
 * [VMware vSphere](vsphere.md)
+* [Vultr](vultr.md)
