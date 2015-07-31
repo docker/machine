@@ -71,7 +71,7 @@ type Driver interface {
 	Restart() error
 
 	// SetConfigFromFlags configures the driver with the object that was returned
-	// by RegisterCreateFlags
+	// by GetCreateFlags
 	SetConfigFromFlags(flags DriverOptions) error
 
 	// Start a host
@@ -85,7 +85,7 @@ type Driver interface {
 // It has two attributes:
 // - New: a function that returns a new driver given a path to store host
 //   configuration in
-// - RegisterCreateFlags: a function that takes the FlagSet for
+// - GetCreateFlags: a function that takes the FlagSet for
 //   "docker hosts create" and returns an object to pass to SetConfigFromFlags
 type RegisteredDriver struct {
 	New            func(machineName string, storePath string, caCert string, privateKey string) (Driver, error)
@@ -150,6 +150,23 @@ func GetCreateFlagsForDriver(name string) ([]cli.Flag, error) {
 	}
 
 	return nil, fmt.Errorf("Driver %s not found", name)
+}
+
+// Returns a \n separated list of flags for a driver. Useful for consumption
+// by another app.
+func PrintFlagsForDriver(name string) error {
+
+	for driverName := range drivers {
+		if name == driverName {
+			driver := drivers[driverName]
+			flags := driver.GetCreateFlags()
+			stringFlag, ok := flags[0].(cli.StringFlag)
+			if ok {
+                                fmt.Println(stringFlag.Name)
+                        }
+                }
+        }
+        return fmt.Errorf("Driver %s not found", name)
 }
 
 // GetDriverNames returns a slice of all registered driver names
