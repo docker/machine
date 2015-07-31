@@ -26,6 +26,7 @@ Options:
  - `--google-disk-type`: The disk type of instance.
  - `--google-address`: Instance's static external IP (name or IP).
  - `--google-preemptible`: Instance preemptibility.
+ - `--google-tags`: Instance tags (comma-separated).
 
 The GCE driver will use the `ubuntu-1404-trusty-v20150316` instance type unless otherwise specified.
 
@@ -43,3 +44,4 @@ Environment variables and default values:
 | `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-standard`                        |
 | `--google-address`        | `GOOGLE_ADDRESS`      | -                                    |
 | `--google-preemptible`    | `GOOGLE_PREEMPTIBLE`  | -                                    |
+| `--google-tags`           | `GOOGLE_TAGS`         | -                                    |
