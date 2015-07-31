@@ -36,13 +36,13 @@ func (t TerminalLogger) errf(fmtString string, args ...interface{}) {
 }
 
 func (t TerminalLogger) Debug(args ...interface{}) {
-	if isDebug() {
+	if debugSet {
 		t.log(args...)
 	}
 }
 
 func (t TerminalLogger) Debugf(fmtString string, args ...interface{}) {
-	if isDebug() {
+	if debugSet {
 		t.logf(fmtString, args...)
 	}
 }
