@@ -96,7 +96,7 @@ type (
 				Primary          bool   `xml:"primary"`
 			} `xml:"privateIpAddressesSet>item"`
 		} `xml:"networkInterfaceSet>item"`
-		EbsOptimized bool `xml:"ebsOptimized"`
+		EbsOptimized bool   `xml:"ebsOptimized"`
 		UserData     string `xml:"userData"`
 	}
 
@@ -217,7 +217,7 @@ func (e *EC2) RunInstance(amiId string, instanceType string, zone string, minCou
 		}
 		v.Set("BlockDeviceMapping.0.Ebs.DeleteOnTermination", strconv.Itoa(deleteOnTerm))
 	}
-	
+
 	if userData != "" {
 		v.Set("UserData", userData)
 	}
@@ -277,7 +277,7 @@ func (e *EC2) RequestSpotInstances(amiId string, instanceType string, zone strin
 		}
 		v.Set("LaunchSpecification.BlockDeviceMapping.0.Ebs.DeleteOnTermination", strconv.Itoa(deleteOnTerm))
 	}
-	
+
 	if userData != "" {
 		v.Set("UserData", userData)
 	}
