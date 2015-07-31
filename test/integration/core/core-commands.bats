@@ -78,7 +78,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 }
 
 @test "$DRIVER: machine should show running after start" {
-  run machine ls
+  run machine ls --filter driver=$DRIVER
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
 }
@@ -89,7 +89,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 }
 
 @test "$DRIVER: machine should show stopped after kill" {
-  run machine ls
+  run machine ls --filter driver=$DRIVER
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Stopped"*  ]]
 }
@@ -100,7 +100,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 }
 
 @test "$DRIVER: machine should show running after restart" {
-  run machine ls
+  run machine ls --filter driver=$DRIVER
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
 }
