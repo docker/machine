@@ -190,6 +190,10 @@ func cmdEnv(c *cli.Context) {
 
 func generateUsageHint(appName, machineName, userShell string) string {
 	cmd := ""
+	if strings.Contains(appName, " ") {
+		// putting quotes around the command works on windows, sh and bash
+		appName = strings.Join([]string{"\"", appName, "\""}, "")
+	}
 	switch userShell {
 	case "fish":
 		if machineName != "" {
