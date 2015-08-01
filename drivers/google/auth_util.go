@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"code.google.com/p/goauth2/oauth"
+	oauth "golang.org/x/oauth2" // This should use the specific /x/oauth2/google api set eventually
+	"golang.org/x/oauth2/google"
 	"github.com/docker/machine/log"
 	raw "google.golang.org/api/compute/v1"
 )
@@ -34,9 +35,8 @@ func newOauthClient(storePath, authTokenPath string) *http.Client {
 	config := &oauth.Config{
 		ClientId:     ClientId,
 		ClientSecret: ClientSecret,
-		Scope:        raw.ComputeScope,
-		AuthURL:      AuthURL,
-		TokenURL:     TokenURL,
+		Scopes:       []string{raw.ComputeScope},
+		Endpoint:     google.Endpoint,
 	}
 
 	token := token(storePath, authTokenPath, config)
