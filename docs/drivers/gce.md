@@ -24,6 +24,8 @@ Options:
  - `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
  - `--google-disk-size`: The disk size of instance.
  - `--google-disk-type`: The disk type of instance.
+ - `--google-address`: Instance's static external IP (name or IP).
+ - `--google-preemptible`: Instance preemptibility.
 
 The GCE driver will use the `ubuntu-1404-trusty-v20150316` instance type unless otherwise specified.
 
@@ -39,3 +41,5 @@ Environment variables and default values:
 | `--google-scopes`         | `GOOGLE_SCOPES`       | `devstorage.read_only,logging.write` |
 | `--google-disk-size`      | `GOOGLE_DISK_SIZE`    | `10`                                 |
 | `--google-disk-type`      | `GOOGLE_DISK_TYPE`    | `pd-standard`                        |
+| `--google-address`        | `GOOGLE_ADDRESS`      | -                                    |
+| `--google-preemptible`    | `GOOGLE_PREEMPTIBLE`  | -                                    |
