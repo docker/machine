@@ -19,7 +19,6 @@ import (
 const (
 	versionsUrl  = "http://releases.rancher.com/os/versions.yml"
 	isoUrl       = "https://github.com/rancherio/os/releases/download/%s/machine-rancheros.iso"
-	isoFilename  = "rancheros.iso"
 	hostnameTmpl = `sudo mkdir -p /var/lib/rancher/conf/cloud-config.d/  
 sudo tee /var/lib/rancher/conf/cloud-config.d/machine-hostname.yml << EOF
 #cloud-config
@@ -176,7 +175,7 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 
 	log.Infof("Upgrading machine %s...", machineName)
 
-	b2dutils := utils.NewB2dUtils("", "", isoFilename)
+	b2dutils := utils.NewB2dUtils("", "")
 
 	url, err := provisioner.getLatestISOURL()
 	if err != nil {
