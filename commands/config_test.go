@@ -34,7 +34,7 @@ func TestCmdConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mcn, err := libmachine.New(store)
+	provider, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestCmdConfig(t *testing.T) {
 		AuthOptions: &auth.AuthOptions{},
 	}
 
-	host, err := mcn.Create("test-a", "none", hostOptions, flags)
+	host, err := provider.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}

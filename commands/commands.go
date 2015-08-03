@@ -88,7 +88,7 @@ func confirmInput(msg string) bool {
 	return false
 }
 
-func newMcn(store libmachine.Store) (*libmachine.Machine, error) {
+func newProvider(store libmachine.Store) (*libmachine.Provider, error) {
 	return libmachine.New(store)
 }
 
@@ -195,6 +195,11 @@ var sharedCreateFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "engine-storage-driver",
 		Usage: "Specify a storage driver to use with the engine",
+	},
+	cli.StringSliceFlag{
+		Name:  "engine-env",
+		Usage: "Specify environment variables to set in the engine",
+		Value: &cli.StringSlice{},
 	},
 	cli.BoolFlag{
 		Name:  "swarm",
@@ -380,6 +385,12 @@ var Commands = []cli.Command{
 		Action:      cmdStart,
 	},
 	{
+		Name:        "status",
+		Usage:       "Get the status of a machine",
+		Description: "Argument is a machine name.",
+		Action:      cmdStatus,
+	},
+	{
 		Name:        "stop",
 		Usage:       "Stop a machine",
 		Description: "Argument(s) are one or more machine names.",
@@ -508,12 +519,12 @@ func loadMachine(name string, c *cli.Context) (*libmachine.Host, error) {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	host, err := mcn.Get(name)
+	host, err := provider.Get(name)
 	if err != nil {
 		return nil, err
 	}
@@ -533,19 +544,19 @@ func getHost(c *cli.Context) *libmachine.Host {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	host, err := mcn.Get(name)
+	host, err := provider.Get(name)
 	if err != nil {
 		log.Fatalf("unable to load host: %v", err)
 	}
 	return host
 }
 
-func getDefaultMcn(c *cli.Context) *libmachine.Machine {
+func getDefaultProvider(c *cli.Context) *libmachine.Provider {
 	certInfo := getCertPathInfo(c)
 	defaultStore, err := getDefaultStore(
 		c.GlobalString("storage-path"),
@@ -556,12 +567,12 @@ func getDefaultMcn(c *cli.Context) *libmachine.Machine {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return mcn
+	return provider
 }
 
 func getMachineConfig(c *cli.Context) (*machineConfig, error) {
@@ -576,12 +587,12 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	m, err := mcn.Get(name)
+	m, err := provider.Get(name)
 	if err != nil {
 		return nil, err
 	}

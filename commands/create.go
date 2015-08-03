@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 
 	"github.com/docker/machine/log"
 
@@ -35,6 +36,10 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You must specify a machine name")
 	}
 
+	if err := validateSwarmDiscovery(c.String("swarm-discovery")); err != nil {
+		log.Fatalf("Error parsing swarm discovery: %s", err)
+	}
+
 	certInfo := getCertPathInfo(c)
 
 	if err := setupCertificates(
@@ -54,7 +59,7 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mcn, err := newMcn(defaultStore)
+	provider, err := newProvider(defaultStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,6 +75,7 @@ func cmdCreate(c *cli.Context) {
 		},
 		EngineOptions: &engine.EngineOptions{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),
+			Env:              c.StringSlice("engine-env"),
 			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
 			Labels:           c.StringSlice("engine-label"),
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
@@ -89,7 +95,7 @@ func cmdCreate(c *cli.Context) {
 		},
 	}
 
-	_, err = mcn.Create(name, driver, hostOptions, c)
+	_, err = provider.Create(name, driver, hostOptions, c)
 	if err != nil {
 		log.Errorf("Error creating machine: %s", err)
 		log.Fatal("You will want to check the provider to make sure the machine and associated resources were properly removed.")
@@ -116,4 +122,21 @@ func trimDriverFlags(driver string, cmds []cli.Command) ([]cli.Command, error) {
 	}
 
 	return filteredCmds, nil
+}
+
+func validateSwarmDiscovery(discovery string) error {
+	if discovery == "" {
+		return nil
+	}
+
+	matched, err := regexp.MatchString(`[^:]*://.*`, discovery)
+	if err != nil {
+		return err
+	}
+
+	if matched {
+		return nil
+	}
+
+	return fmt.Errorf("Swarm Discovery URL was in the wrong format: %s", discovery)
 }

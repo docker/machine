@@ -21,13 +21,3 @@ load ${BASE_TEST_DIR}/helpers.bash
   storage_driver_info=$(docker $(machine config $NAME) info | grep "Storage Driver")
   [[ $storage_driver_info =~ "devicemapper" ]]
 }
-
-@test "$DRIVER: rm after supported engine option create" {
-  run machine rm $NAME
-  [ $status -eq 0 ]
-}
-
-@test "$DRIVER: machine should not exist" {
-  run machine inspect $NAME
-  [ "$status" -eq 1  ]
-}

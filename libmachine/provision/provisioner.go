@@ -56,6 +56,9 @@ type Provisioner interface {
 	// Set the OS Release info depending on how it's represented
 	// internally
 	SetOsReleaseInfo(info *OsRelease)
+
+	// Get the OS Release info for the current provisioner
+	GetOsReleaseInfo() (*OsRelease, error)
 }
 
 // Detection

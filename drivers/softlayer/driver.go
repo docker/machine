@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"time"
 
@@ -20,20 +19,11 @@ const (
 )
 
 type Driver struct {
-	storePath      string
-	IPAddress      string
-	deviceConfig   *deviceConfig
-	Id             int
-	Client         *Client
-	SSHUser        string
-	SSHPort        int
-	MachineName    string
-	CaCertPath     string
-	PrivateKeyPath string
-	SSHKeyID       int
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
+	*drivers.BaseDriver
+	deviceConfig *deviceConfig
+	Id           int
+	Client       *Client
+	SSHKeyID     int
 }
 
 type deviceConfig struct {
@@ -59,43 +49,12 @@ func init() {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
-}
-
-func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "root"
-	}
-
-	return d.SSHUser
 }
 
 func GetCreateFlags() []cli.Flag {

@@ -8,11 +8,24 @@ import (
 
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/engine"
 )
 
+func engineOptions() engine.EngineOptions {
+	return engine.EngineOptions{
+		StorageDriver: "aufs",
+	}
+}
+
 func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
+	g := GenericProvisioner{
+		Driver:        &fakedriver.FakeDriver{},
+		EngineOptions: engineOptions(),
+	}
 	p := &Boot2DockerProvisioner{
-		Driver: &fakedriver.FakeDriver{},
+		DebianProvisioner{
+			g,
+		},
 	}
 	dockerPort := 1234
 	p.AuthOptions = auth.AuthOptions{
@@ -20,37 +33,38 @@ func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 		ServerKeyRemotePath:  "/test/server-key",
 		ServerCertRemotePath: "/test/server-cert",
 	}
-	engineConfigPath := "/var/lib/boot2docker/profile"
 
 	dockerCfg, err := p.GenerateDockerOptions(dockerPort)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if dockerCfg.EngineOptionsPath != engineConfigPath {
-		t.Fatalf("expected engine path %s; received %s", engineConfigPath, dockerCfg.EngineOptionsPath)
-	}
-
 	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("-H tcp://0.0.0.0:%d", dockerPort)) == -1 {
 		t.Fatalf("-H docker port invalid; expected %d", dockerPort)
 	}
 
-	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("CACERT=%s", p.AuthOptions.CaCertRemotePath)) == -1 {
-		t.Fatalf("CACERT option invalid; expected %s", p.AuthOptions.CaCertRemotePath)
+	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("--tlscacert %s", p.AuthOptions.CaCertRemotePath)) == -1 {
+		t.Fatalf("--tlscacert option invalid; expected %s", p.AuthOptions.CaCertRemotePath)
 	}
 
-	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("SERVERKEY=%s", p.AuthOptions.ServerKeyRemotePath)) == -1 {
-		t.Fatalf("SERVERKEY option invalid; expected %s", p.AuthOptions.ServerKeyRemotePath)
+	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("--tlscert %s", p.AuthOptions.ServerCertRemotePath)) == -1 {
+		t.Fatalf("--tlscert option invalid; expected %s", p.AuthOptions.ServerCertRemotePath)
 	}
 
-	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("SERVERCERT=%s", p.AuthOptions.ServerCertRemotePath)) == -1 {
-		t.Fatalf("SERVERCERT option invalid; expected %s", p.AuthOptions.ServerCertRemotePath)
+	if strings.Index(dockerCfg.EngineOptions, fmt.Sprintf("--tlskey %s", p.AuthOptions.ServerKeyRemotePath)) == -1 {
+		t.Fatalf("--tlskey option invalid; expected %s", p.AuthOptions.ServerKeyRemotePath)
 	}
 }
 
 func TestMachinePortBoot2Docker(t *testing.T) {
+	g := GenericProvisioner{
+		Driver:        &fakedriver.FakeDriver{},
+		EngineOptions: engineOptions(),
+	}
 	p := &Boot2DockerProvisioner{
-		Driver: &fakedriver.FakeDriver{},
+		DebianProvisioner{
+			g,
+		},
 	}
 	dockerPort := 2376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
@@ -81,8 +95,14 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 }
 
 func TestMachineCustomPortBoot2Docker(t *testing.T) {
+	g := GenericProvisioner{
+		Driver:        &fakedriver.FakeDriver{},
+		EngineOptions: engineOptions(),
+	}
 	p := &Boot2DockerProvisioner{
-		Driver: &fakedriver.FakeDriver{},
+		DebianProvisioner{
+			g,
+		},
 	}
 	dockerPort := 3376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)

@@ -29,7 +29,21 @@ func TestCmdInspectFormat(t *testing.T) {
 	assert.Equal(t, "\"none\"", actual)
 
 	actual, _ = runInspectCommand(t, []string{"--format", "{{prettyjson .Driver}}", "test-a"})
-	assert.Equal(t, "{\n    \"IPAddress\": \"\",\n    \"URL\": \"unix:///var/run/docker.sock\"\n}", actual)
+	type ExpectedDriver struct {
+		CaCertPath     string
+		IPAddress      string
+		MachineName    string
+		PrivateKeyPath string
+		SSHPort        int
+		SSHUser        string
+		SwarmDiscovery string
+		SwarmHost      string
+		SwarmMaster    bool
+		URL            string
+	}
+	expected, err := json.MarshalIndent(&ExpectedDriver{MachineName: "test-a", URL: "unix:///var/run/docker.sock"}, "", "    ")
+	assert.NoError(t, err)
+	assert.Equal(t, string(expected), actual)
 }
 
 func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
@@ -59,7 +73,7 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 		t.Fatal(sErr)
 	}
 
-	mcn, err := libmachine.New(store)
+	provider, err := libmachine.New(store)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +90,7 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 	}
 
 	flags := getTestDriverFlags()
-	_, err = mcn.Create("test-a", "none", hostOptions, flags)
+	_, err = provider.Create("test-a", "none", hostOptions, flags)
 	if err != nil {
 		t.Fatal(err)
 	}
