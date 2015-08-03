@@ -17,6 +17,7 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	AuthUrl          string
+	ActiveTimeout    int
 	Insecure         bool
 	DomainID         string
 	DomainName       string
@@ -164,6 +165,11 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "OpenStack SSH port",
 			Value: 22,
 		},
+		cli.IntFlag{
+			Name:  "openstack-active-timeout",
+			Usage: "OpenStack active timeout",
+			Value: 200,
+		},
 	}
 }
 
@@ -193,6 +199,7 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AuthUrl = flags.String("openstack-auth-url")
+	d.ActiveTimeout = flags.Int("openstack-active-timeout")
 	d.Insecure = flags.Bool("openstack-insecure")
 	d.DomainID = flags.String("openstack-domain-id")
 	d.DomainName = flags.String("openstack-domain-name")

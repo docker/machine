@@ -36,6 +36,7 @@ Options:
    there is no IP address already allocated a new IP will be allocated and assigned to the machine.
  - `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
+ - `--openstack-active-timeout`: The timeout in seconds until the OpenStack instance must be active.
 
 Environment variables and default values:
 
@@ -62,3 +63,4 @@ Environment variables and default values:
 | `--openstack-floatingip-pool`    | -                      | -       |
 | `--openstack-ssh-user`           | -                      | `root`  |
 | `--openstack-ssh-port`           | -                      | `22`    |
+| `--openstack-active-timeout`     | -                      | `200`   |
