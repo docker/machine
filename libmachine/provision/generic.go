@@ -68,6 +68,10 @@ func (provisioner *GenericProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
 
+func (provisioner *GenericProvisioner) GetOsReleaseInfo() (*OsRelease, error) {
+	return provisioner.OsReleaseInfo, nil
+}
+
 func (provisioner *GenericProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
 	var (
 		engineCfg bytes.Buffer
@@ -91,6 +95,8 @@ DOCKER_OPTS='
 {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}}
 {{ end }}
 '
+{{range .EngineOptions.Env}}export \"{{ printf "%q" . }}\"
+{{end}}
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {

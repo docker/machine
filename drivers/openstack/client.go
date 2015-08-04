@@ -437,7 +437,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		return err
 	}
 
-	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%s", version.VERSION))
+	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%s", version.Version))
 
 	if d.Insecure {
 		// Configure custom TLS settings.

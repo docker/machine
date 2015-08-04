@@ -101,7 +101,7 @@ manage \
 --restart=always \
 --name swarm-agent \
 {{.SwarmImage}} \
-join --addr {{.Ip}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
+join --advertise {{.Ip}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
 `
 
 	if swarmOptions.Master {

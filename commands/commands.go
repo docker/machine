@@ -196,6 +196,11 @@ var sharedCreateFlags = []cli.Flag{
 		Name:  "engine-storage-driver",
 		Usage: "Specify a storage driver to use with the engine",
 	},
+	cli.StringSliceFlag{
+		Name:  "engine-env",
+		Usage: "Specify environment variables to set in the engine",
+		Value: &cli.StringSlice{},
+	},
 	cli.BoolFlag{
 		Name:  "swarm",
 		Usage: "Configure Machine with Swarm",
@@ -378,6 +383,12 @@ var Commands = []cli.Command{
 		Usage:       "Start a machine",
 		Description: "Argument(s) are one or more machine names.",
 		Action:      cmdStart,
+	},
+	{
+		Name:        "status",
+		Usage:       "Get the status of a machine",
+		Description: "Argument is a machine name.",
+		Action:      cmdStatus,
 	},
 	{
 		Name:        "stop",

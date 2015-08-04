@@ -2,10 +2,15 @@ package drivers
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/utils"
+)
+
+const (
+	ErrExitCode255 = "255"
 )
 
 func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
@@ -28,6 +33,10 @@ func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 
 }
 
+func isErr255Exit(err error) bool {
+	return strings.Contains(err.Error(), ErrExitCode255)
+}
+
 func RunSSHCommandFromDriver(d Driver, command string) (string, error) {
 	client, err := GetSSHClientFromDriver(d)
 	if err != nil {
@@ -38,6 +47,12 @@ func RunSSHCommandFromDriver(d Driver, command string) (string, error) {
 
 	output, err := client.Output(command)
 	log.Debugf("SSH cmd err, output: %v: %s", err, output)
+	if err != nil && !isErr255Exit(err) {
+		log.Error("SSH cmd error!")
+		log.Errorf("command: %s", command)
+		log.Errorf("err    : %v", err)
+		log.Fatalf("output : %s", output)
+	}
 
 	return output, err
 }
