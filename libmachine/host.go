@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
@@ -19,20 +20,23 @@ import (
 	"github.com/docker/machine/ssh"
 	"github.com/docker/machine/state"
 	"github.com/docker/machine/utils"
+	"github.com/docker/machine/version"
 )
 
 var (
 	validHostNameChars                = `[a-zA-Z0-9\-\.]`
 	validHostNamePattern              = regexp.MustCompile(`^` + validHostNameChars + `+$`)
 	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
+	stateTimeoutDuration              = time.Second * 3
 )
 
 type Host struct {
-	Name        string `json:"-"`
-	DriverName  string
-	Driver      drivers.Driver
-	StorePath   string
-	HostOptions *HostOptions
+	ConfigVersion int
+	Driver        drivers.Driver
+	DriverName    string
+	HostOptions   *HostOptions
+	Name          string `json:"-"`
+	StorePath     string
 }
 
 type HostOptions struct {
@@ -45,14 +49,9 @@ type HostOptions struct {
 }
 
 type HostMetadata struct {
-	DriverName     string
-	HostOptions    HostOptions
-	StorePath      string
-	CaCertPath     string
-	PrivateKeyPath string
-	ServerCertPath string
-	ServerKeyPath  string
-	ClientCertPath string
+	ConfigVersion int
+	DriverName    string
+	HostOptions   HostOptions
 }
 
 type HostListItem struct {
@@ -64,6 +63,14 @@ type HostListItem struct {
 	SwarmOptions swarm.SwarmOptions
 }
 
+type ErrSavingConfig struct {
+	wrappedErr error
+}
+
+func (e ErrSavingConfig) Error() string {
+	return fmt.Sprintf("Error saving config: %s", e.wrappedErr)
+}
+
 func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
 	authOptions := hostOptions.AuthOptions
 	storePath := filepath.Join(utils.GetMachineDir(), name)
@@ -72,11 +79,12 @@ func NewHost(name, driverName string, hostOptions *HostOptions) (*Host, error) {
 		return nil, err
 	}
 	return &Host{
-		Name:        name,
-		DriverName:  driverName,
-		Driver:      driver,
-		StorePath:   storePath,
-		HostOptions: hostOptions,
+		Name:          name,
+		ConfigVersion: version.ConfigVersion,
+		DriverName:    driverName,
+		Driver:        driver,
+		StorePath:     storePath,
+		HostOptions:   hostOptions,
 	}, nil
 }
 
@@ -89,6 +97,7 @@ func LoadHost(name string, StorePath string) (*Host, error) {
 	if err := host.LoadConfig(); err != nil {
 		return nil, err
 	}
+
 	return host, nil
 }
 
@@ -276,24 +285,28 @@ func (h *Host) LoadConfig() error {
 		return err
 	}
 
-	// First pass: find the driver name and load the driver
-	var hostMetadata HostMetadata
-	if err := json.Unmarshal(data, &hostMetadata); err != nil {
-		return err
-	}
+	// Remember the machine name and store path so we don't have to pass it
+	// through each struct in the migration.
+	name := h.Name
+	storePath := h.StorePath
 
-	authOptions := hostMetadata.HostOptions.AuthOptions
+	// If we end up performing a migration, we should save afterwards so we don't have to do it again on subsequent invocations.
+	migrationPerformed := h.ConfigVersion != version.ConfigVersion
 
-	driver, err := drivers.NewDriver(hostMetadata.DriverName, h.Name, h.StorePath, authOptions.CaCertPath, authOptions.PrivateKeyPath)
+	migratedHost, err := MigrateHost(h, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error getting migrated host: %s", err)
 	}
 
-	h.Driver = driver
+	*h = *migratedHost
 
-	// Second pass: unmarshal driver config into correct driver
-	if err := json.Unmarshal(data, &h); err != nil {
-		return err
+	h.Name = name
+	h.StorePath = storePath
+
+	if migrationPerformed {
+		if err := h.SaveConfig(); err != nil {
+			return fmt.Errorf("Error saving config after migration was performed: %s", err)
+		}
 	}
 
 	return nil
@@ -346,7 +359,7 @@ func WaitForSSH(h *Host) error {
 	return drivers.WaitForSSH(h.Driver)
 }
 
-func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
+func attemptGetHostState(host Host, stateQueryChan chan<- HostListItem) {
 	currentState, err := host.Driver.GetState()
 	if err != nil {
 		log.Errorf("error getting state for host %s: %s", host.Name, err)
@@ -363,13 +376,36 @@ func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
 
 	dockerHost := os.Getenv("DOCKER_HOST")
 
-	hostListItemsChan <- HostListItem{
+	stateQueryChan <- HostListItem{
 		Name:         host.Name,
 		Active:       dockerHost == url && currentState != state.Stopped,
 		DriverName:   host.Driver.DriverName(),
 		State:        currentState,
 		URL:          url,
 		SwarmOptions: *host.HostOptions.SwarmOptions,
+	}
+}
+
+func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
+	// This channel is used to communicate the properties we are querying
+	// about the host in the case of a successful read.
+	stateQueryChan := make(chan HostListItem)
+
+	go attemptGetHostState(host, stateQueryChan)
+
+	select {
+	// If we get back useful information, great.  Forward it straight to
+	// the original parent channel.
+	case hli := <-stateQueryChan:
+		hostListItemsChan <- hli
+
+	// Otherwise, give up after a predetermined duration.
+	case <-time.After(stateTimeoutDuration):
+		hostListItemsChan <- HostListItem{
+			Name:       host.Name,
+			DriverName: host.Driver.DriverName(),
+			State:      state.Timeout,
+		}
 	}
 }
 

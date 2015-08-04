@@ -60,6 +60,7 @@ Options:
    --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
    --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
    --engine-storage-driver "aufs"                                                                       Specify a storage driver to use with the engine
+   --engine-env                                                                                         Specify environment variables to set in the engine
    --swarm                                                                                              Configure Machine with Swarm
    --swarm-master                                                                                       Configure Machine to be a Swarm master
    --swarm-discovery                                                                                    Discovery service to use with Swarm
@@ -144,6 +145,17 @@ $ docker-machine create -d virtualbox \
     --engine-opt dns=8.8.8.8 \
     --engine-opt log-driver=syslog \
     gdns
+```
+
+Additionally, Docker Machine supports a flag, `--engine-env`, which can be used to
+specify arbitrary environment variables to be set within the engine with the syntax `--engine-env name=value`. For example, to specify that the engine should use `example.com` as the proxy server, you could run the following create command:
+
+```
+$ docker-machine create -d virtualbox \
+    --engine-env HTTP_PROXY=http://example.com:8080 \
+    --engine-env HTTPS_PROXY=https://example.com:8080 \
+    --engine-env NO_PROXY=example2.com \
+    proxbox
 ```
 
 ## Specifying Docker Swarm options for the created machine
