@@ -17,6 +17,10 @@ func (d DriverOptionsMock) String(key string) string {
 	return d.Data[key].(string)
 }
 
+func (d DriverOptionsMock) StringSlice(key string) []string {
+	return d.Data[key].([]string)
+}
+
 func (d DriverOptionsMock) Int(key string) int {
 	return d.Data[key].(int)
 }
@@ -224,7 +228,7 @@ func TestStoreGetSetActive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if host.Name != host.Name {
-		t.Fatalf("Active host is not 'test', got %s", host.Name)
+	if host.Name != hostTestName {
+		t.Fatalf("Active host is not '%s', got %s", hostTestName, host.Name)
 	}
 }

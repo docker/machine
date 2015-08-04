@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -19,6 +20,8 @@ type ComputeUtil struct {
 	userName      string
 	project       string
 	diskTypeURL   string
+	address       string
+	preemptible   bool
 	service       *raw.Service
 	zoneURL       string
 	authTokenPath string
@@ -40,7 +43,7 @@ const (
 
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
-	service, err := newGCEService(driver.storePath, driver.AuthTokenPath)
+	service, err := newGCEService(driver.ResolveStorePath("."), driver.AuthTokenPath)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +54,8 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		userName:      driver.SSHUser,
 		project:       driver.Project,
 		diskTypeURL:   driver.DiskType,
+		address:       driver.Address,
+		preemptible:   driver.Preemptible,
 		service:       service,
 		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:     apiURL + driver.Project + "/global",
@@ -82,6 +87,31 @@ func (c *ComputeUtil) deleteDisk() error {
 	}
 	log.Infof("Waiting for disk to delete.")
 	return c.waitForRegionalOp(op.Name)
+}
+
+// staticAddress returns the external static IP address.
+func (c *ComputeUtil) staticAddress() (string, error) {
+	// is the address a name?
+	isName, err := regexp.MatchString("[a-z]([-a-z0-9]*[a-z0-9])?", c.address)
+	if err != nil {
+		return "", err
+	}
+
+	if (!isName) {
+		return c.address, nil
+	}
+
+	// resolve the address by name
+	externalAddress, err := c.service.Addresses.Get(c.project, c.region(), c.address).Do()
+	if err != nil {
+		return "", err
+	}
+
+	return externalAddress.Address, nil
+}
+
+func (c *ComputeUtil) region() (string) {
+	return c.zone[:len(c.zone)-2]
 }
 
 func (c *ComputeUtil) firewallRule() (*raw.Firewall, error) {
@@ -178,7 +208,20 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 				Scopes: strings.Split(d.Scopes, ","),
 			},
 		},
+		Scheduling: &raw.Scheduling{
+			Preemptible: c.preemptible,
+		},
 	}
+
+	if c.address != "" {
+		staticAddress, err := c.staticAddress()
+		if err != nil {
+			return err
+		}
+
+		instance.NetworkInterfaces[0].AccessConfigs[0].NatIP = staticAddress
+	}
+
 	disk, err := c.disk()
 	if disk == nil || err != nil {
 		instance.Disks[0].InitializeParams = &raw.AttachedDiskInitializeParams{

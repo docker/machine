@@ -9,22 +9,22 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-type Machine struct {
+type Provider struct {
 	store Store
 }
 
-func New(store Store) (*Machine, error) {
-	return &Machine{
+func New(store Store) (*Provider, error) {
+	return &Provider{
 		store: store,
 	}, nil
 }
 
-func (m *Machine) Create(name string, driverName string, hostOptions *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
+func (provider *Provider) Create(name string, driverName string, hostOptions *HostOptions, driverConfig drivers.DriverOptions) (*Host, error) {
 	validName := ValidateHostName(name)
 	if !validName {
 		return nil, ErrInvalidHostname
 	}
-	exists, err := m.store.Exists(name)
+	exists, err := provider.store.Exists(name)
 	if err != nil {
 		return nil, err
 	}
@@ -63,24 +63,24 @@ func (m *Machine) Create(name string, driverName string, hostOptions *HostOption
 	return host, nil
 }
 
-func (m *Machine) Exists(name string) (bool, error) {
-	return m.store.Exists(name)
+func (provider *Provider) Exists(name string) (bool, error) {
+	return provider.store.Exists(name)
 }
 
-func (m *Machine) GetActive() (*Host, error) {
-	return m.store.GetActive()
+func (provider *Provider) GetActive() (*Host, error) {
+	return provider.store.GetActive()
 }
 
-func (m *Machine) List() ([]*Host, error) {
-	return m.store.List()
+func (provider *Provider) List() ([]*Host, error) {
+	return provider.store.List()
 }
 
-func (m *Machine) Get(name string) (*Host, error) {
-	return m.store.Get(name)
+func (provider *Provider) Get(name string) (*Host, error) {
+	return provider.store.Get(name)
 }
 
-func (m *Machine) Remove(name string, force bool) error {
-	host, err := m.store.Get(name)
+func (provider *Provider) Remove(name string, force bool) error {
+	host, err := provider.store.Get(name)
 	if err != nil {
 		return err
 	}
@@ -89,5 +89,5 @@ func (m *Machine) Remove(name string, force bool) error {
 			return err
 		}
 	}
-	return m.store.Remove(name, force)
+	return provider.store.Remove(name, force)
 }

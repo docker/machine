@@ -2,6 +2,7 @@ package provision
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"text/template"
 
@@ -15,12 +16,30 @@ import (
 	"github.com/docker/machine/utils"
 )
 
-const (
-	// TODO: eventually the RPM install process will be integrated
-	// into the get.docker.com install script; for now
-	// we install via vendored RPMs
-	dockerRHELRPMPath = "https://test.docker.com/rpm/1.7.0-rc1/centos-7/RPMS/x86_64/docker-engine-1.7.0-0.1.rc1.el7.centos.x86_64.rpm"
+var (
+	ErrUnknownYumOsRelease = errors.New("unknown OS for Yum repository")
+
+	packageListTemplate = `[docker]
+name=Docker Stable Repository
+baseurl=https://yum.dockerproject.org/repo/main/{{.OsRelease}}/{{.OsReleaseVersion}}
+priority=1
+enabled=1
+gpgkey=https://yum.dockerproject.org/gpg
+`
+	engineConfigTemplate = `[Service]
+ExecStart=/usr/bin/docker -d -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+MountFlags=slave
+LimitNOFILE=1048576
+LimitNPROC=1048576
+LimitCORE=infinity
+Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
+`
 )
+
+type PackageListInfo struct {
+	OsRelease        string
+	OsReleaseVersion string
+}
 
 func init() {
 	Register("RedHat", &RegisteredProvisioner{
@@ -39,13 +58,11 @@ func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 			},
 			Driver: d,
 		},
-		DockerRPMPath: dockerRHELRPMPath,
 	}
 }
 
 type RedHatProvisioner struct {
 	GenericProvisioner
-	DockerRPMPath string
 }
 
 func (provisioner *RedHatProvisioner) SSHCommand(args string) (string, error) {
@@ -155,7 +172,11 @@ func installDocker(provisioner *RedHatProvisioner) error {
 func (provisioner *RedHatProvisioner) installOfficialDocker() error {
 	log.Debug("installing docker")
 
-	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo yum install -y --nogpgcheck  %s", provisioner.DockerRPMPath)); err != nil {
+	if err := provisioner.ConfigurePackageList(); err != nil {
+		return err
+	}
+
+	if _, err := provisioner.SSHCommand("sudo yum install -y docker-engine"); err != nil {
 		return err
 	}
 
@@ -230,24 +251,12 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 		configPath = provisioner.DaemonOptionsFile
 	)
 
-	// remove existing
-	//if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo rm %s", configPath)); err != nil {
-	//	return nil, err
-	//}
-
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
 	// systemd / redhat will not load options if they are on newlines
 	// instead, it just continues with a different set of options; yeah...
-	engineConfigTmpl := `[Service]
-ExecStart=/usr/bin/docker -d -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
-MountFlags=slave
-LimitNOFILE=1048576
-LimitNPROC=1048576
-LimitCORE=infinity
-`
-	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
+	t, err := template.New("engineConfig").Parse(engineConfigTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -266,4 +275,54 @@ LimitCORE=infinity
 		EngineOptions:     engineCfg.String(),
 		EngineOptionsPath: daemonOptsDir,
 	}, nil
+}
+
+func generateYumRepoList(provisioner Provisioner) (*bytes.Buffer, error) {
+	packageListInfo := &PackageListInfo{}
+
+	releaseInfo, err := provisioner.GetOsReleaseInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	switch releaseInfo.Id {
+	case "rhel", "centos":
+		// rhel and centos both use the "centos" repo
+		packageListInfo.OsRelease = "centos"
+		packageListInfo.OsReleaseVersion = "7"
+	case "fedora":
+		packageListInfo.OsRelease = "fedora"
+		packageListInfo.OsReleaseVersion = "22"
+	default:
+		return nil, ErrUnknownYumOsRelease
+	}
+
+	t, err := template.New("packageList").Parse(packageListTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+
+	if err := t.Execute(&buf, packageListInfo); err != nil {
+		return nil, err
+	}
+
+	return &buf, nil
+}
+
+func (provisioner *RedHatProvisioner) ConfigurePackageList() error {
+	buf, err := generateYumRepoList(provisioner)
+	if err != nil {
+		return err
+	}
+
+	// we cannot use %q here as it combines the newlines in the formatting
+	// on transport causing yum to not use the repo
+	packageCmd := fmt.Sprintf("echo \"%s\" | sudo tee /etc/yum.repos.d/docker.repo", buf.String())
+	if _, err := provisioner.SSHCommand(packageCmd); err != nil {
+		return err
+	}
+
+	return nil
 }

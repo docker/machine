@@ -7,7 +7,6 @@ package vmwarevcloudair
 import (
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"strings"
 
 	"github.com/vmware/govcloudair"
@@ -21,30 +20,21 @@ import (
 )
 
 type Driver struct {
-	IPAddress      string
-	UserName       string
-	UserPassword   string
-	ComputeID      string
-	VDCID          string
-	OrgVDCNet      string
-	EdgeGateway    string
-	PublicIP       string
-	Catalog        string
-	CatalogItem    string
-	MachineName    string
-	SSHUser        string
-	SSHPort        int
-	DockerPort     int
-	Provision      bool
-	CPUCount       int
-	MemorySize     int
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
-	VAppID         string
-	storePath      string
+	*drivers.BaseDriver
+	UserName     string
+	UserPassword string
+	ComputeID    string
+	VDCID        string
+	OrgVDCNet    string
+	EdgeGateway  string
+	PublicIP     string
+	Catalog      string
+	CatalogItem  string
+	DockerPort   int
+	Provision    bool
+	CPUCount     int
+	MemorySize   int
+	VAppID       string
 }
 
 func init() {
@@ -141,44 +131,12 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	driver := &Driver{MachineName: machineName, storePath: storePath, CaCertPath: caCert, PrivateKeyPath: privateKey}
-	return driver, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
-}
-
-func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "root"
-	}
-
-	return d.SSHUser
 }
 
 // Driver interface implementation

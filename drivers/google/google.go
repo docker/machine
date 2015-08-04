@@ -2,7 +2,6 @@ package google
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
@@ -13,23 +12,16 @@ import (
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
-	IPAddress      string
-	MachineName    string
-	SSHUser        string
-	SSHPort        int
-	Zone           string
-	MachineType    string
-	DiskType       string
-	Scopes         string
-	DiskSize       int
-	AuthTokenPath  string
-	storePath      string
-	Project        string
-	CaCertPath     string
-	PrivateKeyPath string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
+	*drivers.BaseDriver
+	Zone          string
+	MachineType   string
+	DiskType      string
+	Address       string
+	Preemptible   bool
+	Scopes        string
+	DiskSize      int
+	AuthTokenPath string
+	Project       string
 }
 
 func init() {
@@ -89,45 +81,27 @@ func GetCreateFlags() []cli.Flag {
 			Value:  "pd-standard",
 			EnvVar: "GOOGLE_DISK_TYPE",
 		},
+		cli.StringFlag{
+			Name:   "google-address",
+			Usage:  "GCE Instance External IP",
+			EnvVar: "GOOGLE_ADDRESS",
+		},
+		cli.BoolFlag{
+			Name:   "google-preemptible",
+			Usage:  "GCE Instance Preemptibility",
+			EnvVar: "GOOGLE_PREEMPTIBLE",
+		},
 	}
 }
 
 // NewDriver creates a Driver with the specified storePath.
 func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	return &Driver{
-		MachineName:    machineName,
-		storePath:      storePath,
-		CaCertPath:     caCert,
-		PrivateKeyPath: privateKey,
-	}, nil
-}
-
-func (d *Driver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
-}
-
-func (d *Driver) GetMachineName() string {
-	return d.MachineName
+	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
+	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHKeyPath() string {
-	return filepath.Join(d.storePath, "id_rsa")
-}
-
-func (d *Driver) GetSSHPort() (int, error) {
-	if d.SSHPort == 0 {
-		d.SSHPort = 22
-	}
-
-	return d.SSHPort, nil
 }
 
 func (d *Driver) GetSSHUsername() string {
@@ -149,6 +123,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.MachineType = flags.String("google-machine-type")
 	d.DiskSize = flags.Int("google-disk-size")
 	d.DiskType = flags.String("google-disk-type")
+	d.Address = flags.String("google-address")
+	d.Preemptible = flags.Bool("google-preemptible")
 	d.AuthTokenPath = flags.String("google-auth-token")
 	d.Project = flags.String("google-project")
 	d.Scopes = flags.String("google-scopes")

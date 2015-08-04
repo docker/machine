@@ -83,7 +83,7 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 		TagName string `json:"tag_name"`
 	}
 	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
-		return "", err
+		return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
 	}
 	if len(t) == 0 {
 		return "", fmt.Errorf("no releases found")

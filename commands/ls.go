@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -25,8 +26,8 @@ func cmdLs(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mcn := getDefaultMcn(c)
-	hostList, err := mcn.List()
+	provider := getDefaultProvider(c)
+	hostList, err := provider.List()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,6 +88,9 @@ func parseFilters(filters []string) (FilterOptions, error) {
 	options := FilterOptions{}
 	for _, f := range filters {
 		kv := strings.SplitN(f, "=", 2)
+		if len(kv) != 2 {
+			return options, errors.New("Unsupported filter syntax.")
+		}
 		key, value := kv[0], kv[1]
 
 		switch key {

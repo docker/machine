@@ -12,6 +12,7 @@ const (
 	Stopping
 	Starting
 	Error
+	Timeout
 )
 
 var states = []string{
@@ -23,6 +24,7 @@ var states = []string{
 	"Stopping",
 	"Starting",
 	"Error",
+	"Timeout",
 }
 
 // Given a State type, returns its string representation
