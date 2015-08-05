@@ -110,7 +110,7 @@ $ docker-machine ip dev
 192.168.99.100
 ```
 
-For instance, you can try running a webserver ([nginx](https://nginx.org)) in a
+For instance, you can try running a webserver ([nginx](https://www.nginx.com/) in a
 container with the following command:
 
 ```
