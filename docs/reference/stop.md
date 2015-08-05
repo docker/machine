@@ -4,6 +4,7 @@ title = "stop"
 description = "Gracefully stop a machine"
 keywords = ["machine, stop, subcommand"]
 [menu.main]
+identifier="machine.stop"
 parent="smn_machine_subcmds"
 +++
 <![end-metadata]-->

@@ -4,6 +4,7 @@ title = "create"
 description = "Create a machine."
 keywords = ["machine, create, subcommand"]
 [menu.main]
+identifier="machine.create"
 parent="smn_machine_subcmds"
 +++
 <![end-metadata]-->
@@ -74,8 +75,8 @@ As part of the process of creation, Docker Machine installs Docker and
 configures it with some sensible defaults. For instance, it allows connection
 from the outside world over TCP with TLS-based encryption and defaults to AUFS
 as the [storage
-driver](https://docs.docker.com/reference/commandline/cli/#daemon-storage-driver-option)
-when available.
+driver](https://docs.docker.com/reference/commandline/daemon/#daemon-storage-driver-option) when
+available.
 
 There are several cases where the user might want to set options for the created
 Docker engine (also known as the Docker _daemon_) themselves. For example, they
