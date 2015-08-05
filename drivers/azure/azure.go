@@ -28,6 +28,7 @@ type Driver struct {
 	UserPassword            string
 	Image                   string
 	DockerPort              int
+	DockerSwarmMasterPort   int
 }
 
 func init() {
@@ -45,6 +46,11 @@ func GetCreateFlags() []cli.Flag {
 			Name:  "azure-docker-port",
 			Usage: "Azure Docker port",
 			Value: 2376,
+		},
+		cli.IntFlag{
+			Name:  "azure-docker-swarm-master-port",
+			Usage: "Azure Docker Swarm master port",
+			Value: 3376,
 		},
 		cli.StringFlag{
 			EnvVar: "AZURE_IMAGE",
@@ -160,6 +166,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = username
 	d.UserPassword = flags.String("azure-password")
 	d.DockerPort = flags.Int("azure-docker-port")
+	d.DockerSwarmMasterPort = flags.Int("azure-docker-swarm-master-port")
 	d.SSHPort = flags.Int("azure-ssh-port")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
@@ -209,7 +216,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debug("Authorizing ports...")
-	if err := d.addDockerEndpoint(vmConfig); err != nil {
+	if err := d.addDockerEndpoints(vmConfig); err != nil {
 		return err
 	}
 
@@ -372,7 +379,7 @@ func (d *Driver) setUserSubscription() error {
 	return azure.ImportPublishSettings(d.SubscriptionID, d.SubscriptionCert)
 }
 
-func (d *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
+func (d *Driver) addDockerEndpoints(vmConfig *vmClient.Role) error {
 	configSets := vmConfig.ConfigurationSets.ConfigurationSet
 	if len(configSets) == 0 {
 		return errors.New("no configuration set")
@@ -386,6 +393,15 @@ func (d *Driver) addDockerEndpoint(vmConfig *vmClient.Role) error {
 			Protocol:  "tcp",
 			Port:      d.DockerPort,
 			LocalPort: d.DockerPort}
+		if d.SwarmMaster == true {
+			swarm_ep := vmClient.InputEndpoint{
+				Name:      "docker swarm",
+				Protocol:  "tcp",
+				Port:      d.DockerSwarmMasterPort,
+				LocalPort: d.DockerSwarmMasterPort}
+			configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, swarm_ep)
+			log.Debugf("added Docker swarm master endpoint (port %d) to configuration", d.DockerSwarmMasterPort)
+		}
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
 		log.Debugf("added Docker endpoint (port %d) to configuration", d.DockerPort)
 	}
