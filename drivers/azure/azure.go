@@ -392,13 +392,15 @@ func (d *Driver) addDockerEndpoints(vmConfig *vmClient.Role) error {
 			Name:      "docker",
 			Protocol:  "tcp",
 			Port:      d.DockerPort,
-			LocalPort: d.DockerPort}
-		if d.SwarmMaster == true {
+			LocalPort: d.DockerPort,
+		}
+		if d.SwarmMaster {
 			swarm_ep := vmClient.InputEndpoint{
 				Name:      "docker swarm",
 				Protocol:  "tcp",
 				Port:      d.DockerSwarmMasterPort,
-				LocalPort: d.DockerSwarmMasterPort}
+				LocalPort: d.DockerSwarmMasterPort,
+			}
 			configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, swarm_ep)
 			log.Debugf("added Docker swarm master endpoint (port %d) to configuration", d.DockerSwarmMasterPort)
 		}
