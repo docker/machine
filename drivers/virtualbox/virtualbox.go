@@ -37,12 +37,13 @@ var (
 
 type Driver struct {
 	*drivers.BaseDriver
-	CPU                 int
-	Memory              int
-	DiskSize            int
-	Boot2DockerURL      string
-	Boot2DockerImportVM string
-	HostOnlyCIDR        string
+	CPU                   int
+	Memory                int
+	DiskSize              int
+	Boot2DockerURL        string
+	Boot2DockerImportVM   string
+	DockerMachineImportVM string
+	HostOnlyCIDR          string
 }
 
 func init() {
@@ -82,6 +83,11 @@ func GetCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "virtualbox-import-boot2docker-vm",
+			Usage: "The name of a Boot2Docker VM to import",
+			Value: "",
+		},
+		cli.StringFlag{
+			Name:  "virtualbox-import-docker-machine-vm",
 			Usage: "The name of a Boot2Docker VM to import",
 			Value: "",
 		},
@@ -136,6 +142,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
 	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
+	d.DockerMachineImportVM = flags.String("virtualbox-import-docker-machine-vm")
 	d.HostOnlyCIDR = flags.String("virtualbox-hostonly-cidr")
 
 	return nil
@@ -163,38 +170,23 @@ func (d *Driver) Create() error {
 	log.Infof("Creating VirtualBox VM...")
 
 	// import b2d VM if requested
-	if d.Boot2DockerImportVM != "" {
-		name := d.Boot2DockerImportVM
-
-		// make sure vm is stopped
-		_ = vbm("controlvm", name, "poweroff")
-
-		diskInfo, err := getVMDiskInfo(name)
-		if err != nil {
-			return err
+	if d.Boot2DockerImportVM != "" || d.DockerMachineImportVM != "" {
+		var (
+			importVMKeypath, importVMName string
+		)
+		if d.Boot2DockerImportVM != "" && d.DockerMachineImportVM != "" {
+			return errors.New("Cannot specify to clone a docker-machine VM and a boot2docker VM simultaneously")
 		}
-
-		if _, err := os.Stat(diskInfo.Path); err != nil {
-			return err
+		if d.Boot2DockerImportVM != "" {
+			importVMKeypath = filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
+			importVMName = d.Boot2DockerImportVM
 		}
-
-		if err := vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
-			return err
+		if d.DockerMachineImportVM != "" {
+			importVMKeypath = filepath.Join(utils.GetMachineDir(), d.DockerMachineImportVM, "id_rsa")
+			importVMName = d.DockerMachineImportVM
 		}
-
-		log.Debugf("Importing VM settings...")
-		vmInfo, err := getVMInfo(name)
-		if err != nil {
-			return err
-		}
-
-		d.CPU = vmInfo.CPUs
-		d.Memory = vmInfo.Memory
-
-		log.Debugf("Importing SSH key...")
-		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
-		if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
-			return err
+		if err := d.cloneVM(importVMKeypath, importVMName); err != nil {
+			return fmt.Errorf("Error attempting to clone VM: %s", err)
 		}
 	} else {
 		log.Infof("Creating SSH key...")
@@ -333,6 +325,40 @@ func (d *Driver) Create() error {
 	log.Infof("Starting VirtualBox VM...")
 
 	if err := d.Start(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) cloneVM(keyPath, name string) error {
+	// make sure vm is stopped
+	_ = vbm("controlvm", name, "poweroff")
+
+	diskInfo, err := getVMDiskInfo(name)
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(diskInfo.Path); err != nil {
+		return err
+	}
+
+	if err := vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
+		return err
+	}
+
+	log.Debugf("Importing VM settings...")
+	vmInfo, err := getVMInfo(name)
+	if err != nil {
+		return err
+	}
+
+	d.CPU = vmInfo.CPUs
+	d.Memory = vmInfo.Memory
+
+	log.Debugf("Importing SSH key...")
+	if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
