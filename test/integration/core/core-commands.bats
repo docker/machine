@@ -41,7 +41,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 }
 
 @test "$DRIVER: docker commands with the socket should work" {
-  run machine ssh $NAME -- docker version
+  run machine ssh $NAME -- sudo docker version
 }
 
 @test "$DRIVER: stop" {
