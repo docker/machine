@@ -125,15 +125,10 @@ func (s Filestore) GetActive() (*Host, error) {
 		return nil, err
 	}
 
-	dockerHost := os.Getenv("DOCKER_HOST")
-	if dockerHost == "" {
-		return nil, errors.New("No active host found: DOCKER_HOST not set")
-	}
-
 	hostListItems := GetHostListItems(hosts)
 
 	for _, item := range hostListItems {
-		if dockerHost == item.URL {
+		if item.Active {
 			host, err := s.Get(item.Name)
 			if err != nil {
 				return nil, err
