@@ -314,3 +314,100 @@ func TestCmdEnvPowerShell(t *testing.T) {
 		}
 	}
 }
+
+func TestCmdEnvChild(t *testing.T) {
+	stdout := os.Stdout
+	shell := os.Getenv("SHELL")
+	r, w, _ := os.Pipe()
+
+	os.Stdout = w
+	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
+	os.Setenv("SHELL", "")
+
+	defer func() {
+		os.Setenv("MACHINE_STORAGE_PATH", "")
+		os.Setenv("SHELL", shell)
+		os.Stdout = stdout
+	}()
+
+	if err := clearHosts(); err != nil {
+		t.Fatal(err)
+	}
+
+	flags := getTestDriverFlags()
+
+	store, sErr := getTestStore()
+	if sErr != nil {
+		t.Fatal(sErr)
+	}
+
+	provider, err := libmachine.New(store)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hostOptions := &libmachine.HostOptions{
+		EngineOptions: &engine.EngineOptions{},
+		SwarmOptions: &swarm.SwarmOptions{
+			Master:    false,
+			Discovery: "",
+			Address:   "",
+			Host:      "",
+		},
+		AuthOptions: &auth.AuthOptions{},
+	}
+
+	host, err := provider.Create("test-a", "none", hostOptions, flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host, err = provider.Get("test-a")
+	if err != nil {
+		t.Fatalf("error loading host: %v", err)
+	}
+
+	outStr := make(chan string)
+
+	go func() {
+		var testOutput bytes.Buffer
+		io.Copy(&testOutput, r)
+		outStr <- testOutput.String()
+	}()
+
+	set := flag.NewFlagSet("config", 0)
+	set.Parse([]string{"test-a", "/usr/bin/env"})
+	set.String("shell", "powershell", "")
+	c := cli.NewContext(nil, set, set)
+	c.App = &cli.App{
+		Name: "docker-machine-test",
+	}
+	cmdEnvChild(c)
+
+	w.Close()
+
+	out := <-outStr
+
+	// parse the output into a map of envvar:value for easier testing below
+	envvars := make(map[string]string)
+	for _, e := range strings.Split(strings.TrimSpace(out), "\n") {
+		kv := strings.SplitN(e, "=", 2)
+		key, value := kv[0], kv[1]
+		envvars[key] = value
+	}
+
+	testMachineDir := filepath.Join(store.GetPath(), "machines", host.Name)
+
+	expected := map[string]string{
+		"DOCKER_TLS_VERIFY":   "1",
+		"DOCKER_CERT_PATH":    testMachineDir,
+		"DOCKER_HOST":         "unix:///var/run/docker.sock",
+		"DOCKER_MACHINE_NAME": "test-a",
+	}
+
+	for k, v := range expected {
+		if v != envvars[k] {
+			t.Fatalf("Expected %s == <%s>, but was <%s>", k, envvars[k], v)
+		}
+	}
+}

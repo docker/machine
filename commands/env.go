@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"text/template"
 
@@ -33,66 +34,7 @@ type ShellConfig struct {
 	MachineName     string
 }
 
-func cmdEnv(c *cli.Context) {
-	if len(c.Args()) != 1 && !c.Bool("unset") {
-		log.Fatal(improperEnvArgsError)
-	}
-	userShell := c.String("shell")
-	if userShell == "" {
-		shell, err := detectShell()
-		if err != nil {
-			log.Fatal(err)
-		}
-		userShell = shell
-	}
-
-	t := template.New("envConfig")
-
-	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell)
-
-	shellCfg := ShellConfig{
-		DockerCertPath:  "",
-		DockerHost:      "",
-		DockerTLSVerify: "",
-		MachineName:     "",
-	}
-
-	// unset vars
-	if c.Bool("unset") {
-		switch userShell {
-		case "fish":
-			shellCfg.Prefix = "set -e "
-			shellCfg.Delimiter = ""
-			shellCfg.Suffix = ";\n"
-		case "powershell":
-			shellCfg.Prefix = "Remove-Item Env:\\\\"
-			shellCfg.Delimiter = ""
-			shellCfg.Suffix = "\n"
-		case "cmd":
-			// since there is no way to unset vars in cmd just reset to empty
-			shellCfg.DockerCertPath = ""
-			shellCfg.DockerHost = ""
-			shellCfg.DockerTLSVerify = ""
-			shellCfg.Prefix = "set "
-			shellCfg.Delimiter = "="
-			shellCfg.Suffix = "\n"
-		default:
-			shellCfg.Prefix = "unset "
-			shellCfg.Delimiter = " "
-			shellCfg.Suffix = "\n"
-		}
-
-		tmpl, err := t.Parse(envTmpl)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
-
+func NewShellConfig(c *cli.Context) *ShellConfig {
 	cfg, err := getMachineConfig(c)
 	if err != nil {
 		log.Fatal(err)
@@ -151,13 +93,45 @@ func cmdEnv(c *cli.Context) {
 		}
 	}
 
-	shellCfg = ShellConfig{
+	return &ShellConfig{
 		DockerCertPath:  cfg.machineDir,
 		DockerHost:      dockerHost,
 		DockerTLSVerify: "1",
-		UsageHint:       usageHint,
 		MachineName:     cfg.machineName,
 	}
+}
+
+func cmdEnv(c *cli.Context) {
+	if len(c.Args()) < 1 && !c.Bool("unset") {
+		log.Fatal(improperEnvArgsError)
+	} else if len(c.Args()) > 1 {
+		cmdEnvChild(c)
+	} else {
+		cmdEnvShell(c)
+	}
+	return
+}
+
+func cmdEnvShell(c *cli.Context) {
+	userShell := c.String("shell")
+	if userShell == "" {
+		shell, err := detectShell()
+		if err != nil {
+			log.Fatal(err)
+		}
+		userShell = shell
+	}
+
+	t := template.New("envConfig")
+
+	// unset vars
+	if c.Bool("unset") {
+		cmdEnvUnset(c, t, userShell)
+		return
+	}
+
+	shellCfg := NewShellConfig(c)
+	shellCfg.UsageHint = generateUsageHint(c.App.Name, c.Args().First(), userShell)
 
 	switch userShell {
 	case "fish":
@@ -214,4 +188,67 @@ func generateUsageHint(appName, machineName, userShell string) string {
 	}
 
 	return fmt.Sprintf("# Run this command to configure your shell: \n# %s\n", cmd)
+}
+
+func cmdEnvUnset(c *cli.Context, t *template.Template, userShell string) {
+	shellCfg := ShellConfig{
+		DockerCertPath:  "",
+		DockerHost:      "",
+		DockerTLSVerify: "",
+		MachineName:     "",
+	}
+
+	switch userShell {
+	case "fish":
+		shellCfg.Prefix = "set -e "
+		shellCfg.Delimiter = ""
+		shellCfg.Suffix = ";\n"
+	case "powershell":
+		shellCfg.Prefix = "Remove-Item Env:\\\\"
+		shellCfg.Delimiter = ""
+		shellCfg.Suffix = "\n"
+	case "cmd":
+		// since there is no way to unset vars in cmd just reset to empty
+		shellCfg.DockerCertPath = ""
+		shellCfg.DockerHost = ""
+		shellCfg.DockerTLSVerify = ""
+		shellCfg.Prefix = "set "
+		shellCfg.Delimiter = "="
+		shellCfg.Suffix = "\n"
+	default:
+		shellCfg.Prefix = "unset "
+		shellCfg.Delimiter = " "
+		shellCfg.Suffix = "\n"
+	}
+
+	tmpl, err := t.Parse(envTmpl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
+		log.Fatal(err)
+	}
+	return
+}
+
+func cmdEnvChild(c *cli.Context) {
+	commands := c.Args().Tail()
+	shellCfg := NewShellConfig(c)
+
+	env := append([]string{
+		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", shellCfg.DockerTLSVerify),
+		fmt.Sprintf("DOCKER_HOST=%s", shellCfg.DockerHost),
+		fmt.Sprintf("DOCKER_CERT_PATH=%s", shellCfg.DockerCertPath),
+		fmt.Sprintf("DOCKER_MACHINE_NAME=%s", shellCfg.MachineName),
+	}, os.Environ()...)
+
+	cmd := exec.Command(commands[0], commands[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = env
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
