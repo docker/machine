@@ -3,6 +3,7 @@ package openstack
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -40,6 +41,7 @@ type Driver struct {
 	FloatingIpPool   string
 	FloatingIpPoolId string
 	IpVersion        int
+	UserDataFile     string
 	client           Client
 }
 
@@ -182,6 +184,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "OpenStack active timeout",
 			Value: defaultActiveTimeout,
 		},
+		cli.StringFlag{
+			EnvVar: "OS_USER_DATA_FILE",
+			Name:   "openstack-user-data",
+			Usage:  "OpenStack user data file (cloud-init)",
+			Value:  "",
+		},
 	}
 }
 
@@ -236,6 +244,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IpVersion = flags.Int("openstack-ip-version")
 	d.SSHUser = flags.String("openstack-ssh-user")
 	d.SSHPort = flags.Int("openstack-ssh-port")
+	d.UserDataFile = flags.String("openstack-user-data")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -320,6 +329,15 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) PreCreateCheck() error {
+	if d.UserDataFile != "" {
+		fileInfo, err := os.Stat(d.UserDataFile)
+		if err != nil {
+			return err
+		}
+		if fileInfo.IsDir() {
+			return fmt.Errorf("%s is a directory. It should be a regular file.", d.UserDataFile)
+		}
+	}
 	return nil
 }
 
