@@ -1,7 +1,7 @@
 Changelog
 ==========
 
-# 0.4.0 (2014-08-11)
+# 0.4.0 (2015-08-11)
 
 ## Updates
 - HTTP Proxy support for Docker Engine
@@ -15,7 +15,7 @@ Changelog
   - Static IP support
 
 ## Fixes
-- Swarm Discovery Flag is verifed
+- Swarm Discovery Flag is verified
 - Timeout added to `ls` command to prevent hangups
 - SSH command failure now reports information about error
 - Configuration migration updates
