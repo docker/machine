@@ -3,7 +3,7 @@
 load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: create with arbitrary engine option" {
-  run machine create -d $DRIVER \
+  run machine create -d $DRIVER $DRIVER_OPTS \
     --engine-opt log-driver=none \
     $NAME
   [ $status -eq 0 ]

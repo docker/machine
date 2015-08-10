@@ -5,7 +5,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 # Basic smoke test for SSH backends
 
 @test "$DRIVER: create SSH test box" {
-  run machine create -d $DRIVER $NAME
+  run machine create -d $DRIVER $DRIVER_OPTS $NAME
   [[ "$status" -eq 0  ]]
 }
 

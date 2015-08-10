@@ -4,13 +4,13 @@ load ${BASE_TEST_DIR}/helpers.bash
 export TOKEN=$(curl -sS -X POST "https://discovery-stage.hub.docker.com/v1/clusters")
 
 @test "create swarm master" {
-    run machine create -d $DRIVER --swarm --swarm-master --swarm-discovery "token://$TOKEN" --swarm-strategy binpack --swarm-opt heartbeat=5s queenbee
+    run machine create -d $DRIVER $DRIVER_OPTS --swarm --swarm-master --swarm-discovery "token://$TOKEN" --swarm-strategy binpack --swarm-opt heartbeat=5s queenbee
     echo ${output}
     [[ "$status" -eq 0 ]]
 }
 
 @test "create swarm node" {
-    run machine create -d $DRIVER --swarm --swarm-discovery "token://$TOKEN" workerbee
+    run machine create -d $DRIVER $DRIVER_OPTS --swarm --swarm-discovery "token://$TOKEN" workerbee
     [[ "$status" -eq 0 ]]
 }
 

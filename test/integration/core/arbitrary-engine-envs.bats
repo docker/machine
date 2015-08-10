@@ -5,7 +5,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: create with arbitrary engine envs" {
 
-run machine create -d $DRIVER \
+run machine create -d $DRIVER $DRIVER_OPTS \
   --engine-env=TEST=VALUE \
   $NAME
   [ $status -eq 0  ]
