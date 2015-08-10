@@ -279,6 +279,37 @@ func (h *Host) GetURL() (string, error) {
 	return h.Driver.GetURL()
 }
 
+// IsActive provides a single method for determining if a host is active based
+// on both the url and if the host is stopped.
+func (h *Host) IsActive() (bool, error) {
+	currentState, err := h.Driver.GetState()
+
+	if err != nil {
+		log.Errorf("error getting state for host %s: %s", h.Name, err)
+		return false, err
+	}
+
+	url, err := h.GetURL()
+
+	if err != nil {
+		if err == drivers.ErrHostIsNotRunning {
+			url = ""
+		} else {
+			log.Errorf("error getting URL for host %s: %s", h.Name, err)
+			return false, err
+		}
+	}
+
+	dockerHost := os.Getenv("DOCKER_HOST")
+
+	notStopped := currentState != state.Stopped
+	correctURL := url == dockerHost
+
+	isActive := notStopped && correctURL
+
+	return isActive, nil
+}
+
 func (h *Host) LoadConfig() error {
 	data, err := ioutil.ReadFile(filepath.Join(h.StorePath, "config.json"))
 	if err != nil {
@@ -374,11 +405,15 @@ func attemptGetHostState(host Host, stateQueryChan chan<- HostListItem) {
 		}
 	}
 
-	dockerHost := os.Getenv("DOCKER_HOST")
+	isActive, err := host.IsActive()
+	if err != nil {
+		log.Errorf("error determining if host is active for host %s: %s",
+			host.Name, err)
+	}
 
 	stateQueryChan <- HostListItem{
 		Name:         host.Name,
-		Active:       dockerHost == url && currentState != state.Stopped,
+		Active:       isActive,
 		DriverName:   host.Driver.DriverName(),
 		State:        currentState,
 		URL:          url,
