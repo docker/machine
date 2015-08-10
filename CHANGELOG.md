@@ -1,6 +1,25 @@
 Changelog
 ==========
 
+# 0.4.0 (2015-08-11)
+
+## Updates
+- HTTP Proxy support for Docker Engine
+- RedHat distros now use Docker Yum repositories
+- Ability to set environment variables in the Docker Engine
+- Internal libmachine updates for stability
+
+## Drivers
+- Google:
+  - Preemptiple instances
+  - Static IP support
+
+## Fixes
+- Swarm Discovery Flag is verified
+- Timeout added to `ls` command to prevent hangups
+- SSH command failure now reports information about error
+- Configuration migration updates
+
 # 0.3.0 (2015-06-18)
 
 ## Features
