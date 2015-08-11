@@ -8,6 +8,7 @@ import (
 type FakeDriver struct {
 	*drivers.BaseDriver
 	MockState state.State
+	MockName  string
 }
 
 func (d *FakeDriver) DriverName() string {
@@ -23,7 +24,7 @@ func (d *FakeDriver) GetURL() (string, error) {
 }
 
 func (d *FakeDriver) GetMachineName() string {
-	return ""
+	return d.MockName
 }
 
 func (d *FakeDriver) GetIP() (string, error) {
