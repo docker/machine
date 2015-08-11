@@ -45,6 +45,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "Digital Ocean access token",
 		},
 		cli.StringFlag{
+			EnvVar: "DIGITALOCEAN_SSH_USER",
+			Name:   "digitalocean-ssh-user",
+			Usage:  "Digital Ocean SSH username",
+			Value:  "root",
+		},
+		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_IMAGE",
 			Name:   "digitalocean-image",
 			Usage:  "Digital Ocean Image",
@@ -104,7 +110,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = "root"
+	d.SSHUser = flags.String("digitalocean-ssh-user")
 	d.SSHPort = 22
 
 	if d.AccessToken == "" {
