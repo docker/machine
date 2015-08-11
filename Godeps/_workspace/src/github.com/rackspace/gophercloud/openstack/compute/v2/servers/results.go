@@ -2,6 +2,9 @@ package servers
 
 import (
 	"reflect"
+	"fmt"
+	"path"
+	"net/url"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/rackspace/gophercloud"
@@ -72,6 +75,28 @@ type ActionResult struct {
 // RescueResult represents the result of a server rescue operation
 type RescueResult struct {
 	ActionResult
+}
+
+// CreateImageResult represents the result of an image creation operation
+type CreateImageResult struct {
+	gophercloud.Result
+}
+
+// ExtractImageID gets the ID of the newly created server image from the header
+func (res CreateImageResult) ExtractImageID() (string, error) {
+	if res.Err != nil {
+		return "", res.Err
+	}
+	// Get the image id from the header
+	u, err := url.ParseRequestURI(res.Header.Get("Location"))
+	if err != nil {
+		return "", fmt.Errorf("Failed to parse the image id: %s", err.Error())
+	}
+	imageId := path.Base(u.Path)
+	if imageId == "." || imageId == "/" {
+		return "", fmt.Errorf("Failed to parse the ID of newly created image: %s", u)
+	}
+	return imageId, nil
 }
 
 // Extract interprets any RescueResult as an AdminPass, if possible.

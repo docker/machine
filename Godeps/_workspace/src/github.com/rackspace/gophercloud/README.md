@@ -25,7 +25,7 @@ export GOPATH=$HOME/go
 ```
 
 To protect yourself against changes in your dependencies, we highly recommend choosing a
-[dependency management solution](https://code.google.com/p/go-wiki/wiki/PackageManagementTools) for
+[dependency management solution](https://github.com/golang/go/wiki/PackageManagementTools) for
 your projects, such as [godep](https://github.com/tools/godep). Once this is set up, you can install
 Gophercloud as a dependency like so:
 
