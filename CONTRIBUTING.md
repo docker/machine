@@ -42,6 +42,15 @@ run:
 
 If you have any questions we're in #docker-machine on Freenode.
 
+## Remote Build
+
+You can use Machine to build Machine:
+
+    $ GOOS=darwin GOARCH=amd64 make remote
+
+The difference is this works even if you don't have local docker daemon, but
+instead a docker host that you [set up using Machine](https://github.com/docker/machine).
+
 ## Unit Tests
 
 To run the unit tests for the whole project, using the following script:
