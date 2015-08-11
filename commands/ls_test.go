@@ -30,14 +30,19 @@ func TestParseFiltersState(t *testing.T) {
 	assert.Equal(t, actual, FilterOptions{State: []string{"Running"}})
 }
 
+func TestParseFiltersName(t *testing.T) {
+	actual, _ := parseFilters([]string{"name=dev"})
+	assert.Equal(t, actual, FilterOptions{Name: []string{"dev"}})
+}
+
 func TestParseFiltersAll(t *testing.T) {
-	actual, _ := parseFilters([]string{"swarm=foo", "driver=bar", "state=Stopped"})
-	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}})
+	actual, _ := parseFilters([]string{"swarm=foo", "driver=bar", "state=Stopped", "name=dev"})
+	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}, Name: []string{"dev"}})
 }
 
 func TestParseFiltersDuplicates(t *testing.T) {
-	actual, _ := parseFilters([]string{"swarm=foo", "driver=bar", "swarm=baz", "driver=qux", "state=Running", "state=Starting"})
-	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo", "baz"}, DriverName: []string{"bar", "qux"}, State: []string{"Running", "Starting"}})
+	actual, _ := parseFilters([]string{"swarm=foo", "driver=bar", "name=mark", "swarm=baz", "driver=qux", "state=Running", "state=Starting", "name=time"})
+	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo", "baz"}, DriverName: []string{"bar", "qux"}, State: []string{"Running", "Starting"}, Name: []string{"mark", "time"}})
 }
 
 func TestParseFiltersValueWithEqual(t *testing.T) {
@@ -166,6 +171,44 @@ func TestFilterHostsByState(t *testing.T) {
 		}
 	hosts := []*libmachine.Host{node1, node2, node3}
 	expected := []*libmachine.Host{node1, node2}
+
+	assert.EqualValues(t, filterHosts(hosts, opts), expected)
+}
+
+func TestFilterHostsByName(t *testing.T) {
+	opts := FilterOptions{
+		Name: []string{"fire", "ice", "earth", "a.?r"},
+	}
+	node1 :=
+		&libmachine.Host{
+			Name:        "fire",
+			DriverName:  "fakedriver",
+			HostOptions: &libmachine.HostOptions{},
+			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "fire"},
+		}
+	node2 :=
+		&libmachine.Host{
+			Name:        "ice",
+			DriverName:  "adriver",
+			HostOptions: &libmachine.HostOptions{},
+			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "ice"},
+		}
+	node3 :=
+		&libmachine.Host{
+			Name:        "air",
+			DriverName:  "nodriver",
+			HostOptions: &libmachine.HostOptions{},
+			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "air"},
+		}
+	node4 :=
+		&libmachine.Host{
+			Name:        "water",
+			DriverName:  "falsedriver",
+			HostOptions: &libmachine.HostOptions{},
+			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "water"},
+		}
+	hosts := []*libmachine.Host{node1, node2, node3, node4}
+	expected := []*libmachine.Host{node1, node2, node3}
 
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
