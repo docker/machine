@@ -59,6 +59,7 @@ type Driver struct {
 	RequestSpotInstance bool
 	SpotPrice           string
 	PrivateIPOnly       bool
+	UsePrivateIP        bool
 	Monitoring          bool
 }
 
@@ -161,6 +162,10 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "Only use a private IP address",
 		},
 		cli.BoolFlag{
+			Name:  "amazonec2-use-private-address",
+			Usage: "Force the usage of private IP address",
+		},
+		cli.BoolFlag{
 			Name:  "amazonec2-monitoring",
 			Usage: "Set this flag to enable CloudWatch monitoring",
 		},
@@ -208,6 +213,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
+	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 
 	if d.AccessKey == "" {
@@ -412,6 +418,10 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	if d.PrivateIPOnly {
+		return inst.PrivateIpAddress, nil
+	}
+
+	if d.UsePrivateIP {
 		return inst.PrivateIpAddress, nil
 	}
 
