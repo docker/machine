@@ -6,8 +6,10 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
@@ -58,12 +60,13 @@ func ConfigureAuth(p Provisioner) error {
 		err error
 	)
 
-	machineName := p.GetDriver().GetMachineName()
+	driver := p.GetDriver()
+	machineName := driver.GetMachineName()
 	authOptions := p.GetAuthOptions()
 	org := machineName
 	bits := 2048
 
-	ip, err := p.GetDriver().GetIP()
+	ip, err := driver.GetIP()
 	if err != nil {
 		return err
 	}
@@ -143,7 +146,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	dockerUrl, err := p.GetDriver().GetURL()
+	dockerUrl, err := driver.GetURL()
 	if err != nil {
 		return err
 	}
@@ -176,9 +179,49 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	// TODO: Do not hardcode daemon port, ask the driver
-	if err := mcnutils.WaitForDocker(ip, dockerPort); err != nil {
+	if err := waitForDocker(p, dockerPort); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func matchNetstatOut(reDaemonListening, netstatOut string) bool {
+	// TODO: I would really prefer this be a Scanner directly on
+	// the STDOUT of the executed command than to do all the string
+	// manipulation hokey-pokey.
+	//
+	// TODO: Unit test this matching.
+	for _, line := range strings.Split(netstatOut, "\n") {
+		match, err := regexp.MatchString(reDaemonListening, line)
+		if err != nil {
+			log.Warnf("Regex warning: %s", err)
+		}
+		if match && line != "" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func checkDaemonUp(p Provisioner, dockerPort int) func() bool {
+	reDaemonListening := fmt.Sprintf(":%d.*LISTEN", dockerPort)
+	return func() bool {
+		// HACK: Check netstat's output to see if anyone's listening on the Docker API port.
+		netstatOut, err := p.SSHCommand("netstat -a")
+		if err != nil {
+			log.Warnf("Error running SSH command: %s", err)
+			return false
+		}
+
+		return matchNetstatOut(reDaemonListening, netstatOut)
+	}
+}
+
+func waitForDocker(p Provisioner, dockerPort int) error {
+	if err := mcnutils.WaitForSpecific(checkDaemonUp(p, dockerPort), 5, 3*time.Second); err != nil {
+		return NewErrDaemonAvailable(err)
 	}
 
 	return nil

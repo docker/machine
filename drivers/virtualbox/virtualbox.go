@@ -136,7 +136,7 @@ func GetCreateFlags() []cli.Flag {
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
-	return "localhost", nil
+	return "127.0.0.1", nil
 }
 
 func (d *Driver) GetSSHUsername() string {
