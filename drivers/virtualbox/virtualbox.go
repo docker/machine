@@ -43,6 +43,7 @@ type Driver struct {
 	Boot2DockerURL      string
 	Boot2DockerImportVM string
 	HostOnlyCIDR        string
+	NoShare             bool
 }
 
 func init() {
@@ -91,6 +92,10 @@ func GetCreateFlags() []cli.Flag {
 			Value:  defaultHostOnlyCIDR,
 			EnvVar: "VIRTUALBOX_HOSTONLY_CIDR",
 		},
+		cli.BoolFlag{
+			Name:  "virtualbox-no-share",
+			Usage: "Disable the mount of your home directory",
+		},
 	}
 }
 
@@ -137,6 +142,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = "docker"
 	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
 	d.HostOnlyCIDR = flags.String("virtualbox-hostonly-cidr")
+	d.NoShare = flags.Bool("virtualbox-no-share")
 
 	return nil
 }
@@ -307,7 +313,8 @@ func (d *Driver) Create() error {
 		// TODO "linux"
 	}
 
-	if shareDir != "" {
+	if shareDir != "" && !d.NoShare {
+		log.Debugf("setting up shareDir")
 		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
 			return err
 		} else if !os.IsNotExist(err) {
