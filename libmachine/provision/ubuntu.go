@@ -52,13 +52,11 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 	updateMetadata := true
 
 	switch action {
-	case pkgaction.Install:
+	case pkgaction.Install, pkgaction.Upgrade:
 		packageAction = "install"
 	case pkgaction.Remove:
 		packageAction = "remove"
 		updateMetadata = false
-	case pkgaction.Upgrade:
-		packageAction = "upgrade"
 	}
 
 	switch name {
