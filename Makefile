@@ -1,6 +1,6 @@
-.PHONY: all test validate-dco validate-gofmt validate build
+.PHONY: test validate-dco validate-gofmt
 
-all: validate test build
+default: build
 
 test:
 	script/test
@@ -11,8 +11,11 @@ validate-dco:
 validate-gofmt:
 	script/validate-gofmt
 
-validate: validate-dco validate-gofmt
+validate: validate-dco validate-gofmt test
 
-build:
+build: clean
 	script/build
 
+clean:
+	rm -f docker-machine_*
+	rm -rf Godeps/_workspace/pkg
