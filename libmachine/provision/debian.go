@@ -59,23 +59,43 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 	updateMetadata := true
 
 	switch action {
-	case pkgaction.Install:
+	case pkgaction.Install, pkgaction.Upgrade:
 		packageAction = "install"
 	case pkgaction.Remove:
 		packageAction = "remove"
 		updateMetadata = false
-	case pkgaction.Upgrade:
-		packageAction = "upgrade"
 	}
 
 	switch name {
 	case "docker":
-		name = "lxc-docker"
+		name = "docker-engine"
 	}
 
 	if updateMetadata {
 		if _, err := provisioner.SSHCommand("sudo apt-get update"); err != nil {
 			return err
+		}
+	}
+
+	// handle the new docker-engine package; we can probably remove this
+	// after we have a few versions
+	if action == pkgaction.Upgrade && name == "docker-engine" {
+		// run the force remove on the existing lxc-docker package
+		// and remove the existing apt source list
+		// also re-run the get.docker.com script to properly setup
+		// the system again
+
+		commands := []string{
+			"rm /etc/apt/sources.list.d/docker.list || true",
+			"apt-get remove -y lxc-docker || true",
+			"curl -sSL https://get.docker.com | sh",
+		}
+
+		for _, cmd := range commands {
+			command := fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive %s", cmd)
+			if _, err := provisioner.SSHCommand(command); err != nil {
+				return err
+			}
 		}
 	}
 
