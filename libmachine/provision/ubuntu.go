@@ -47,35 +47,54 @@ func (provisioner *UbuntuProvisioner) Service(name string, action pkgaction.Serv
 }
 
 func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.PackageAction) error {
-	var (
-		packageAction  string
-		updateMetadata = true
-	)
+	var packageAction string
+
+	updateMetadata := true
 
 	switch action {
-	case pkgaction.Install:
+	case pkgaction.Install, pkgaction.Upgrade:
 		packageAction = "install"
 	case pkgaction.Remove:
 		packageAction = "remove"
 		updateMetadata = false
-	case pkgaction.Upgrade:
-		packageAction = "upgrade"
 	}
 
-	// TODO: This should probably have a const
 	switch name {
 	case "docker":
-		name = "lxc-docker"
+		name = "docker-engine"
 	}
 
 	if updateMetadata {
-		// issue apt-get update for metadata
-		if _, err := provisioner.SSHCommand("sudo -E apt-get update"); err != nil {
+		if _, err := provisioner.SSHCommand("sudo apt-get update"); err != nil {
 			return err
 		}
 	}
 
+	// handle the new docker-engine package; we can probably remove this
+	// after we have a few versions
+	if action == pkgaction.Upgrade && name == "docker-engine" {
+		// run the force remove on the existing lxc-docker package
+		// and remove the existing apt source list
+		// also re-run the get.docker.com script to properly setup
+		// the system again
+
+		commands := []string{
+			"rm /etc/apt/sources.list.d/docker.list || true",
+			"apt-get remove -y lxc-docker || true",
+			"curl -sSL https://get.docker.com | sh",
+		}
+
+		for _, cmd := range commands {
+			command := fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive %s", cmd)
+			if _, err := provisioner.SSHCommand(command); err != nil {
+				return err
+			}
+		}
+	}
+
 	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
+
+	log.Debugf("package: action=%s name=%s", action.String(), name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
