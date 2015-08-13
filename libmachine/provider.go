@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/utils"
@@ -67,8 +68,8 @@ func (provider *Provider) Exists(name string) (bool, error) {
 	return provider.store.Exists(name)
 }
 
-func (provider *Provider) GetActive() (*Host, error) {
-	return provider.store.GetActive()
+func (provider *Provider) GetActive(timeout time.Duration) (*Host, error) {
+	return provider.store.GetActive(timeout)
 }
 
 func (provider *Provider) List() ([]*Host, error) {

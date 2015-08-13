@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine"
@@ -61,7 +62,8 @@ func cmdLs(c *cli.Context) {
 		}
 	}
 
-	items := libmachine.GetHostListItems(hostList)
+	timeout := time.Duration(c.Int("timeout")) * time.Second
+	items := libmachine.GetHostListItems(hostList, timeout)
 
 	sortHostListItemsByName(items)
 

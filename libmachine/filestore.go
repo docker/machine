@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
@@ -119,13 +120,13 @@ func (s Filestore) Get(name string) (*Host, error) {
 	return s.loadHost(name)
 }
 
-func (s Filestore) GetActive() (*Host, error) {
+func (s Filestore) GetActive(timeout time.Duration) (*Host, error) {
 	hosts, err := s.List()
 	if err != nil {
 		return nil, err
 	}
 
-	hostListItems := GetHostListItems(hosts)
+	hostListItems := GetHostListItems(hosts, timeout)
 
 	for _, item := range hostListItems {
 		if item.Active {
