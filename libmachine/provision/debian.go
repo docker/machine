@@ -92,7 +92,7 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 		}
 
 		for _, cmd := range commands {
-			command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E %s", cmd)
+			command := fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive %s", cmd)
 			if _, err := provisioner.SSHCommand(command); err != nil {
 				return err
 			}
