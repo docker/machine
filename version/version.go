@@ -7,7 +7,7 @@ var (
 	ConfigVersion = 1
 
 	// VERSION should be updated by hand at each release
-	Version = "0.4.0"
+	Version = "0.4.1"
 
 	// GitCommit will be overwritten automatically by the build system
 	GitCommit = "HEAD"
