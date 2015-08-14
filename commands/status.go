@@ -10,7 +10,7 @@ func cmdStatus(c *cli.Context) {
 	host := getHost(c)
 	currentState, err := host.Driver.GetState()
 	if err != nil {
-		log.Errorf("error getting state for host %s: %s", host.Name, err)
+		log.Fatal(err)
 	}
 	log.Info(currentState)
 }
