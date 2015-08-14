@@ -73,7 +73,15 @@ func NewB2dUtils(githubApiBaseUrl, githubBaseUrl string) *B2dUtils {
 func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
 	client := getClient()
 	apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
-	rsp, err := client.Get(apiUrl)
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return "", fmt.Errorf("Error parsing a GitHub API URL: %s", err)
+	}
+	token := os.Getenv("MACHINE_GITHUB_API_TOKEN")
+	if token != "" {
+		req.Header.Set("Authorization", "token "+token)
+	}
+	rsp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
