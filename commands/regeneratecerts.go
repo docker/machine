@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/log"
 )
 
 func cmdRegenerateCerts(c *cli.Context) {

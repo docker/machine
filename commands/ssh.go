@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/state"
 
 	"github.com/codegangsta/cli"
 )
@@ -18,22 +18,8 @@ func cmdSsh(c *cli.Context) {
 		log.Fatal("Error: Please specify a machine name.")
 	}
 
-	certInfo := getCertPathInfo(c)
-	defaultStore, err := getDefaultStore(
-		c.GlobalString("storage-path"),
-		certInfo.CaCertPath,
-		certInfo.CaKeyPath,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	provider, err := newProvider(defaultStore)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	host, err := provider.Get(name)
+	store := getStore(c)
+	host, err := store.Load(name)
 	if err != nil {
 		log.Fatal(err)
 	}

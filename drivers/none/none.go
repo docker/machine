@@ -5,8 +5,8 @@ import (
 	neturl "net/url"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/state"
 )
 
 // Driver is the driver used when no driver is selected. It is used to
@@ -19,7 +19,6 @@ type Driver struct {
 
 func init() {
 	drivers.Register("none", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -34,9 +33,13 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{inner, ""}, nil
+func NewDriver(hostName, storePath string) *Driver {
+	return &Driver{
+		BaseDriver: &drivers.BaseDriver{
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) Create() error {

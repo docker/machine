@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/openstack"
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
 )
 
 // Driver is a machine driver for Rackspace. It's a specialization of the generic OpenStack one.
@@ -16,9 +16,16 @@ type Driver struct {
 	APIKey string
 }
 
+const (
+	defaultEndpointType  = "publicURL"
+	defaultFlavorId      = "general1-1"
+	defaultSSHUser       = "root"
+	defaultSSHPort       = 22
+	defaultDockerInstall = "true"
+)
+
 func init() {
 	drivers.Register("rackspace", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -49,7 +56,7 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "OS_ENDPOINT_TYPE",
 			Name:   "rackspace-endpoint-type",
 			Usage:  "Rackspace endpoint type (adminURL, internalURL or the default publicURL)",
-			Value:  "publicURL",
+			Value:  defaultEndpointType,
 		},
 		cli.StringFlag{
 			Name:  "rackspace-image-id",
@@ -58,45 +65,38 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "rackspace-flavor-id",
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
-			Value:  "general1-1",
+			Value:  defaultFlavorId,
 			EnvVar: "OS_FLAVOR_ID",
 		},
 		cli.StringFlag{
 			Name:  "rackspace-ssh-user",
 			Usage: "SSH user for the newly booted machine. Set to root by default",
-			Value: "root",
+			Value: defaultSSHUser,
 		},
 		cli.IntFlag{
 			Name:  "rackspace-ssh-port",
 			Usage: "SSH port for the newly booted machine. Set to 22 by default",
-			Value: 22,
+			Value: defaultSSHPort,
 		},
 		cli.StringFlag{
 			Name:  "rackspace-docker-install",
 			Usage: "Set if docker have to be installed on the machine",
-			Value: "true",
+			Value: defaultDockerInstall,
 		},
 	}
 }
 
 // NewDriver instantiates a Rackspace driver.
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+func NewDriver(machineName, storePath string) drivers.Driver {
 	log.WithFields(log.Fields{
 		"machineName": machineName,
-		"storePath":   storePath,
-		"caCert":      caCert,
-		"privateKey":  privateKey,
 	}).Debug("Instantiating Rackspace driver.")
 
-	client := &Client{}
-	inner, err := openstack.NewDerivedDriver(machineName, storePath, client, caCert, privateKey)
-	if err != nil {
-		return nil, err
-	}
+	inner := openstack.NewDerivedDriver(machineName, storePath)
 
-	driver := &Driver{Driver: inner}
-	client.driver = driver
-	return driver, nil
+	return &Driver{
+		Driver: inner,
+	}
 }
 
 // DriverName is the user-visible name of this driver.

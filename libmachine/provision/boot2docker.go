@@ -6,15 +6,16 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/docker/machine/drivers"
+	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
+	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
 )
 
 func init() {
@@ -56,7 +57,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 		return err
 	}
 
-	if err := utils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Stopped)); err != nil {
+	if err := mcnutils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Stopped)); err != nil {
 		return err
 	}
 
@@ -64,7 +65,10 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 
 	log.Infof("Upgrading machine %s...", machineName)
 
-	b2dutils := utils.NewB2dUtils("", "")
+	// TODO: Ideally, we should not read from mcndirs directory at all.
+	// The driver should be able to communicate how and where to place the
+	// relevant files.
+	b2dutils := mcnutils.NewB2dUtils("", "", mcndirs.GetBaseDir())
 
 	// Usually we call this implicitly, but call it here explicitly to get
 	// the latest boot2docker ISO.
@@ -83,7 +87,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 		return err
 	}
 
-	return utils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Running))
+	return mcnutils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Running))
 }
 
 func (provisioner *Boot2DockerProvisioner) Package(name string, action pkgaction.PackageAction) error {
@@ -197,7 +201,7 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 
 	// b2d hosts need to wait for the daemon to be up
 	// before continuing with provisioning
-	if err := utils.WaitForDocker(ip, 2376); err != nil {
+	if err := mcnutils.WaitForDocker(ip, 2376); err != nil {
 		return err
 	}
 

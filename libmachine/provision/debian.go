@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/utils"
 )
 
 func init() {
@@ -154,7 +154,7 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	log.Debug("waiting for docker daemon")
-	if err := utils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
+	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
 		return err
 	}
 

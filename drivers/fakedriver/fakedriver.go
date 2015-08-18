@@ -1,8 +1,8 @@
 package fakedriver
 
 import (
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/state"
 )
 
 type FakeDriver struct {

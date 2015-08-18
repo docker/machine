@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/log"
 )
 
 func cmdRm(c *cli.Context) {
@@ -15,27 +15,14 @@ func cmdRm(c *cli.Context) {
 
 	isError := false
 
-	certInfo := getCertPathInfo(c)
-	defaultStore, err := getDefaultStore(
-		c.GlobalString("storage-path"),
-		certInfo.CaCertPath,
-		certInfo.CaKeyPath,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	store := getStore(c)
 
-	provider, err := newProvider(defaultStore)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, host := range c.Args() {
-		if err := provider.Remove(host, force); err != nil {
-			log.Errorf("Error removing machine %s: %s", host, err)
+	for _, hostName := range c.Args() {
+		if err := store.Remove(hostName, force); err != nil {
+			log.Errorf("Error removing machine %s: %s", hostName, err)
 			isError = true
 		} else {
-			log.Infof("Successfully removed %s", host)
+			log.Infof("Successfully removed %s", hostName)
 		}
 	}
 	if isError {
