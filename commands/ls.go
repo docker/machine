@@ -66,7 +66,7 @@ func cmdLs(c *cli.Context) {
 	sortHostListItemsByName(items)
 
 	for _, item := range items {
-		activeString := ""
+		activeString := "-"
 		if item.Active {
 			activeString = "*"
 		}
