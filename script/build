@@ -1,24 +1,20 @@
 #!/bin/bash
 set -e
 
-if [ -z "$1" ]; then
-    OS_PLATFORM_ARG=(-os="darwin linux windows")
-else
-    OS_PLATFORM_ARG=($1)
+BUILD_IMAGE_NAME="docker-machine-build"
+GOOS=${GOOS:-"darwin linux windows"}
+GOARCH=${GOARCH:-"386 amd64 arm"}
+
+# Build image for compilation if not detected
+if [[ $(docker images -q ${BUILD_IMAGE_NAME} | wc -l) -ne 1 ]]; then
+    docker build -t ${BUILD_IMAGE_NAME} .
 fi
 
-if [ -z "$2" ]; then
-    OS_ARCH_ARG=(-arch="386 amd64 arm")
-else
-    OS_ARCH_ARG=($2)
-fi
-
-# Build Docker image unless we opt out of it
-if [[ -z "$SKIP_BUILD" ]]; then
-    docker build -t docker-machine .
-fi
-
-# Get rid of existing binaries
-rm -f docker-machine*
-rm -rf Godeps/_workspace/pkg
-docker run --rm -v `pwd`:/go/src/github.com/docker/machine docker-machine gox "${OS_PLATFORM_ARG[@]}" "${OS_ARCH_ARG[@]}" -output="docker-machine_{{.OS}}-{{.Arch}}" -ldflags="-w -X github.com/docker/machine/version.GitCommit `git rev-parse --short HEAD`"
+docker run --rm \
+    -v `pwd`:/go/src/github.com/docker/machine \
+    ${BUILD_IMAGE_NAME} \
+    gox \
+    -os "$GOOS" \
+    -arch "$GOARCH" \
+    -output="docker-machine_{{.OS}}-{{.Arch}}" \
+    -ldflags="-w -X github.com/docker/machine/version.GitCommit `git rev-parse --short HEAD`"

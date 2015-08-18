@@ -10,17 +10,20 @@ Machine is a part of the [Docker](https://www.docker.com) project, and follows
 the same rules and principles. If you're already familiar with the way
 Docker does things, you'll feel right at home.
 
-Otherwise, go read
-[Docker's contributions guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md).
+Otherwise, please read [Docker's contributions
+guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md).
+
+# Building
 
 The requirements to build Machine are:
 
 1. A running instance of Docker
 2. The `bash` shell
+3. [Make](https://www.gnu.org/software/make/)
 
 To build, run:
 
-    $ script/build
+    $ make
 
 From the Machine repository's root.  Machine will run the build inside of a
 Docker container and the compiled binaries will appear in the project directory
@@ -28,21 +31,14 @@ on the host.
 
 By default, Machine will run a build which cross-compiles binaries for a variety
 of architectures and operating systems.  If you know that you are only compiling
-for a particular architecture and/or operating system, you can speed up
-compilation by overriding the default argument that the build script passes
-to [gox](https://github.com/mitchellh/gox).  This is very useful if you want
-to iterate quickly on a new feature, bug fix, etc.
+for a particular architecture and/or operating system, you can speed up the
+compile by setting the standard `GOOS` and/or `GOARCH` environment variables to
+deviate from the defaults.
 
 For instance, if you only want to compile for use on OS X with the x86_64 arch,
 run:
 
-    $ script/build -osarch="darwin/amd64"
-
-If you don't need to run the `docker build` to generate the image on each
-compile, i.e. if you have built the image already, you can skip the image build
-using the `SKIP_BUILD` environment variable, for instance:
-
-    $ SKIP_BUILD=1 script/build -osarch="darwin/amd64"
+    $ GOOS=darwin GOARCH=amd64 make
 
 If you have any questions we're in #docker-machine on Freenode.
 
