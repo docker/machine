@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
 )

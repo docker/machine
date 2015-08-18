@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
@@ -26,9 +26,17 @@ type Driver struct {
 	Tags          []string
 }
 
+const (
+	defaultZone        = "us-central1-a"
+	defaultUser        = "docker-user"
+	defaultMachineType = "f1-micro"
+	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write"
+	defaultDiskType    = "pd-standard"
+	defaultDiskSize    = 10
+)
+
 func init() {
 	drivers.Register("google", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -40,19 +48,19 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "google-zone",
 			Usage:  "GCE Zone",
-			Value:  "us-central1-a",
+			Value:  defaultZone,
 			EnvVar: "GOOGLE_ZONE",
 		},
 		cli.StringFlag{
 			Name:   "google-machine-type",
 			Usage:  "GCE Machine Type",
-			Value:  "f1-micro",
+			Value:  defaultMachineType,
 			EnvVar: "GOOGLE_MACHINE_TYPE",
 		},
 		cli.StringFlag{
 			Name:   "google-username",
 			Usage:  "GCE User Name",
-			Value:  "docker-user",
+			Value:  defaultUser,
 			EnvVar: "GOOGLE_USERNAME",
 		},
 		cli.StringFlag{
@@ -68,19 +76,19 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "google-scopes",
 			Usage:  "GCE Scopes (comma-separated if multiple scopes)",
-			Value:  "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write",
+			Value:  defaultScopes,
 			EnvVar: "GOOGLE_SCOPES",
 		},
 		cli.IntFlag{
 			Name:   "google-disk-size",
 			Usage:  "GCE Instance Disk Size (in GB)",
-			Value:  10,
+			Value:  defaultDiskSize,
 			EnvVar: "GOOGLE_DISK_SIZE",
 		},
 		cli.StringFlag{
 			Name:   "google-disk-type",
 			Usage:  "GCE Instance Disk type",
-			Value:  "pd-standard",
+			Value:  defaultDiskType,
 			EnvVar: "GOOGLE_DISK_TYPE",
 		},
 		cli.StringFlag{
@@ -102,9 +110,19 @@ func GetCreateFlags() []cli.Flag {
 }
 
 // NewDriver creates a Driver with the specified storePath.
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner}, nil
+func NewDriver(machineName string, storePath string) *Driver {
+	return &Driver{
+		Zone:        defaultZone,
+		DiskType:    defaultDiskType,
+		DiskSize:    defaultDiskSize,
+		MachineType: defaultMachineType,
+		Scopes:      defaultScopes,
+		BaseDriver: &drivers.BaseDriver{
+			SSHUser:     defaultUser,
+			MachineName: machineName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 // GetSSHHostname returns hostname for use with ssh

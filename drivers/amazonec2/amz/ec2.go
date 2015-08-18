@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	awsauth "github.com/smartystreets/go-aws-auth"
 )
 
@@ -151,7 +151,7 @@ func NewEC2(auth Auth, region string) *EC2 {
 func (e *EC2) awsApiCall(v url.Values) (*http.Response, error) {
 	v.Set("Version", "2014-06-15")
 	log.Debug("Making AWS API call with values:")
-	utils.DumpVal(v)
+	mcnutils.DumpVal(v)
 	client := &http.Client{}
 	finalEndpoint := fmt.Sprintf("%s?%s", e.Endpoint, v.Encode())
 	req, err := http.NewRequest("GET", finalEndpoint, nil)

@@ -1,14 +1,31 @@
 package commands
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/docker/machine/drivers/fakedriver"
-	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/state"
 	"github.com/stretchr/testify/assert"
 )
+
+var (
+	hostTestStorePath string
+	stdout            *os.File
+)
+
+func init() {
+	stdout = os.Stdout
+}
+
+func cleanup() {
+	os.Stdout = stdout
+	os.RemoveAll(hostTestStorePath)
+}
 
 func TestParseFiltersErrorsGivenInvalidFilter(t *testing.T) {
 	_, err := parseFilters([]string{"foo=bar"})
@@ -52,11 +69,11 @@ func TestParseFiltersValueWithEqual(t *testing.T) {
 
 func TestFilterHostsReturnsSameGivenNoFilters(t *testing.T) {
 	opts := FilterOptions{}
-	hosts := []*libmachine.Host{
+	hosts := []*host.Host{
 		{
 			Name:        "testhost",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		},
 	}
 	actual := filterHosts(hosts, opts)
@@ -67,7 +84,7 @@ func TestFilterHostsReturnsEmptyGivenEmptyHosts(t *testing.T) {
 	opts := FilterOptions{
 		SwarmName: []string{"foo"},
 	}
-	hosts := []*libmachine.Host{}
+	hosts := []*host.Host{}
 	assert.Empty(t, filterHosts(hosts, opts))
 }
 
@@ -75,11 +92,11 @@ func TestFilterHostsReturnsEmptyGivenNonMatchingFilters(t *testing.T) {
 	opts := FilterOptions{
 		SwarmName: []string{"foo"},
 	}
-	hosts := []*libmachine.Host{
+	hosts := []*host.Host{
 		{
 			Name:        "testhost",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		},
 	}
 	assert.Empty(t, filterHosts(hosts, opts))
@@ -90,28 +107,28 @@ func TestFilterHostsBySwarmName(t *testing.T) {
 		SwarmName: []string{"master"},
 	}
 	master :=
-		&libmachine.Host{
+		&host.Host{
 			Name: "master",
-			HostOptions: &libmachine.HostOptions{
+			HostOptions: &host.HostOptions{
 				SwarmOptions: &swarm.SwarmOptions{Master: true, Discovery: "foo"},
 			},
 		}
 	node1 :=
-		&libmachine.Host{
+		&host.Host{
 			Name: "node1",
-			HostOptions: &libmachine.HostOptions{
+			HostOptions: &host.HostOptions{
 				SwarmOptions: &swarm.SwarmOptions{Master: false, Discovery: "foo"},
 			},
 		}
 	othermaster :=
-		&libmachine.Host{
+		&host.Host{
 			Name: "othermaster",
-			HostOptions: &libmachine.HostOptions{
+			HostOptions: &host.HostOptions{
 				SwarmOptions: &swarm.SwarmOptions{Master: true, Discovery: "bar"},
 			},
 		}
-	hosts := []*libmachine.Host{master, node1, othermaster}
-	expected := []*libmachine.Host{master, node1}
+	hosts := []*host.Host{master, node1, othermaster}
+	expected := []*host.Host{master, node1}
 
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
@@ -121,25 +138,25 @@ func TestFilterHostsByDriverName(t *testing.T) {
 		DriverName: []string{"fakedriver"},
 	}
 	node1 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		}
 	node2 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		}
 	node3 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		}
-	hosts := []*libmachine.Host{node1, node2, node3}
-	expected := []*libmachine.Host{node1, node3}
+	hosts := []*host.Host{node1, node2, node3}
+	expected := []*host.Host{node1, node3}
 
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
@@ -149,28 +166,28 @@ func TestFilterHostsByState(t *testing.T) {
 		State: []string{"Paused", "Saved", "Stopped"},
 	}
 	node1 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Paused},
 		}
 	node2 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Stopped},
 		}
 	node3 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Running},
 		}
-	hosts := []*libmachine.Host{node1, node2, node3}
-	expected := []*libmachine.Host{node1, node2}
+	hosts := []*host.Host{node1, node2, node3}
+	expected := []*host.Host{node1, node2}
 
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
@@ -180,35 +197,35 @@ func TestFilterHostsByName(t *testing.T) {
 		Name: []string{"fire", "ice", "earth", "a.?r"},
 	}
 	node1 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "fire",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "fire"},
 		}
 	node2 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "ice",
 			DriverName:  "adriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "ice"},
 		}
 	node3 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "air",
 			DriverName:  "nodriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "air"},
 		}
 	node4 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "water",
 			DriverName:  "falsedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "water"},
 		}
-	hosts := []*libmachine.Host{node1, node2, node3, node4}
-	expected := []*libmachine.Host{node1, node2, node3}
+	hosts := []*host.Host{node1, node2, node3, node4}
+	expected := []*host.Host{node1, node2, node3}
 
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
@@ -219,25 +236,25 @@ func TestFilterHostsMultiFlags(t *testing.T) {
 		DriverName: []string{"fakedriver", "virtualbox"},
 	}
 	node1 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		}
 	node2 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		}
 	node3 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node3",
 			DriverName:  "softlayer",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 		}
-	hosts := []*libmachine.Host{node1, node2, node3}
-	expected := []*libmachine.Host{node1, node2}
+	hosts := []*host.Host{node1, node2, node3}
+	expected := []*host.Host{node1, node2}
 
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
@@ -248,28 +265,114 @@ func TestFilterHostsDifferentFlagsProduceAND(t *testing.T) {
 		State:      []string{"Running"},
 	}
 	node1 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Paused},
 		}
 	node2 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Stopped},
 		}
 	node3 :=
-		&libmachine.Host{
+		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
-			HostOptions: &libmachine.HostOptions{},
+			HostOptions: &host.HostOptions{},
 			Driver:      &fakedriver.FakeDriver{MockState: state.Running},
 		}
-	hosts := []*libmachine.Host{node1, node2, node3}
-	expected := []*libmachine.Host{}
+	hosts := []*host.Host{node1, node2, node3}
+	expected := []*host.Host{}
 
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
+}
+func captureStdout() (chan string, *os.File) {
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	out := make(chan string)
+
+	go func() {
+		var testOutput bytes.Buffer
+		io.Copy(&testOutput, r)
+		out <- testOutput.String()
+	}()
+
+	return out, w
+}
+
+func TestGetHostListItems(t *testing.T) {
+	defer cleanup()
+
+	hostListItemsChan := make(chan HostListItem)
+
+	hosts := []*host.Host{
+		{
+			Name:       "foo",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Running,
+			},
+			HostOptions: &host.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+		{
+			Name:       "bar",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Stopped,
+			},
+			HostOptions: &host.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+		{
+			Name:       "baz",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Running,
+			},
+			HostOptions: &host.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+	}
+
+	expected := map[string]state.State{
+		"foo": state.Running,
+		"bar": state.Stopped,
+		"baz": state.Running,
+	}
+
+	items := []HostListItem{}
+	for _, host := range hosts {
+		go getHostState(host, hostListItemsChan)
+	}
+
+	for i := 0; i < len(hosts); i++ {
+		items = append(items, <-hostListItemsChan)
+	}
+
+	for _, item := range items {
+		if expected[item.Name] != item.State {
+			t.Fatal("Expected state did not match for item", item)
+		}
+	}
 }

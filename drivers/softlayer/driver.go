@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 const (
@@ -41,16 +41,42 @@ type deviceConfig struct {
 	PrivateVLAN   int
 }
 
+const (
+	defaultMemory        = 1024
+	defaultDiskSize      = 0
+	defaultRegion        = "dal01"
+	defaultCpus          = 1
+	defaultImage         = "UBUNTU_LATEST"
+	defaultPublicVLANIP  = 0
+	defaultPrivateVLANIP = 0
+)
+
 func init() {
 	drivers.Register("softlayer", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner}, nil
+func NewDriver(hostName, storePath string) drivers.Driver {
+	return &Driver{
+		Client: &Client{
+			Endpoint: ApiEndpoint,
+		},
+		deviceConfig: &deviceConfig{
+			HourlyBilling: true,
+			DiskSize:      defaultDiskSize,
+			Image:         defaultImage,
+			Memory:        defaultMemory,
+			Cpu:           defaultCpus,
+			Region:        defaultRegion,
+			PrivateVLAN:   defaultPrivateVLANIP,
+			PublicVLAN:    defaultPublicVLANIP,
+		},
+		BaseDriver: &drivers.BaseDriver{
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
@@ -67,49 +93,45 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "SOFTLAYER_MEMORY",
 			Name:   "softlayer-memory",
 			Usage:  "Memory in MB for machine",
-			Value:  1024,
+			Value:  defaultMemory,
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_DISK_SIZE",
 			Name:   "softlayer-disk-size",
 			Usage:  "Disk size for machine, a value of 0 uses the default size on softlayer",
-			Value:  0,
+			Value:  defaultDiskSize,
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_USER",
 			Name:   "softlayer-user",
 			Usage:  "softlayer user account name",
-			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_API_KEY",
 			Name:   "softlayer-api-key",
 			Usage:  "softlayer user API key",
-			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_REGION",
 			Name:   "softlayer-region",
 			Usage:  "softlayer region for machine",
-			Value:  "dal01",
+			Value:  defaultRegion,
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_CPU",
 			Name:   "softlayer-cpu",
 			Usage:  "number of CPU's for the machine",
-			Value:  1,
+			Value:  defaultCpus,
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_HOSTNAME",
 			Name:   "softlayer-hostname",
 			Usage:  "hostname for the machine - defaults to machine name",
-			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_DOMAIN",
 			Name:   "softlayer-domain",
 			Usage:  "domain name for machine",
-			Value:  "",
 		},
 		cli.StringFlag{
 			EnvVar: "SOFTLAYER_API_ENDPOINT",
@@ -136,19 +158,17 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "SOFTLAYER_IMAGE",
 			Name:   "softlayer-image",
 			Usage:  "OS image for machine",
-			Value:  "UBUNTU_LATEST",
+			Value:  defaultImage,
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_PUBLIC_VLAN_ID",
 			Name:   "softlayer-public-vlan-id",
 			Usage:  "",
-			Value:  0,
 		},
 		cli.IntFlag{
 			EnvVar: "SOFTLAYER_PRIVATE_VLAN_ID",
 			Name:   "softlayer-private-vlan-id",
 			Usage:  "",
-			Value:  0,
 		},
 	}
 }
