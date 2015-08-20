@@ -29,6 +29,8 @@ import (
 const (
 	isoFilename         = "boot2docker.iso"
 	defaultHostOnlyCIDR = "192.168.99.1/24"
+	defaultNictype      = "82540EM"
+	defaultNicpromisc   = "deny"
 )
 
 var (
@@ -43,6 +45,8 @@ type Driver struct {
 	Boot2DockerURL      string
 	Boot2DockerImportVM string
 	HostOnlyCIDR        string
+	HostOnlyNicType     string
+	HostOnlyPromiscMode string
 	NoShare             bool
 }
 
@@ -91,6 +95,18 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "Specify the Host Only CIDR",
 			Value:  defaultHostOnlyCIDR,
 			EnvVar: "VIRTUALBOX_HOSTONLY_CIDR",
+		},
+		cli.StringFlag{
+			Name:   "virtualbox-hostonly-nictype",
+			Usage:  "Specify the Host Only Network Adapter Type",
+			Value:  defaultNictype,
+			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_TYPE",
+		},
+		cli.StringFlag{
+			Name:   "virtualbox-hostonly-nicpromisc",
+			Usage:  "Specify the Host Only Network Adapter Promiscuous Mode",
+			Value:  defaultNicpromisc,
+			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_PROMISC",
 		},
 		cli.BoolFlag{
 			Name:  "virtualbox-no-share",
@@ -142,6 +158,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = "docker"
 	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
 	d.HostOnlyCIDR = flags.String("virtualbox-hostonly-cidr")
+	d.HostOnlyNicType = flags.String("virtualbox-hostonly-nictype")
+	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
 	d.NoShare = flags.Bool("virtualbox-no-share")
 
 	return nil
@@ -624,7 +642,8 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 
 	if err := vbm("modifyvm", machineName,
 		"--nic2", "hostonly",
-		"--nictype2", "82540EM",
+		"--nictype2", d.HostOnlyNicType,
+		"--nicpromisc2", d.HostOnlyPromiscMode,
 		"--hostonlyadapter2", hostOnlyNetwork.Name,
 		"--cableconnected2", "on"); err != nil {
 		return err
