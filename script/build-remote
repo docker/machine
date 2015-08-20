@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+
+BUILD_IMAGE_NAME="docker-machine-build"
+GOOS=${GOOS:-"darwin linux windows"}
+GOARCH=${GOARCH:-"386 amd64 arm"}
+
+docker build -t ${BUILD_IMAGE_NAME} .
+
+BUILD_CONTAINER=$(docker run -d \
+    ${BUILD_IMAGE_NAME} \
+    gox \
+    -os "$GOOS" \
+    -arch "$GOARCH" \
+    -output="docker-machine_{{.OS}}-{{.Arch}}" \
+    -ldflags="-w -X github.com/docker/machine/version.GitCommit `git rev-parse --short HEAD`")
+cleanup_container() {
+    docker rm -v ${BUILD_CONTAINER}
+}
+trap cleanup_container EXIT
+
+docker logs -f ${BUILD_CONTAINER} &
+BUILD_STATUS=$(docker wait ${BUILD_CONTAINER})
+if [[ ${BUILD_STATUS} != 0 ]]; then exit ${BUILD_STATUS}; fi
+
+BUILT_IMAGE=$(docker commit ${BUILD_CONTAINER})
+cleanup_image() {
+    cleanup_container
+    docker rmi ${BUILT_IMAGE}
+}
+trap cleanup_image EXIT
+
+echo "Copying built binaries:"
+for f in $(docker run --rm ${BUILT_IMAGE} sh -c 'echo docker-machine_*'); do
+    echo "  "${f}
+    docker cp ${BUILD_CONTAINER}:/go/src/github.com/docker/machine/${f} ./
+done
+echo Done
