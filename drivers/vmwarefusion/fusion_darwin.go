@@ -112,6 +112,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
 	// specs.
+	if d.CPU < 1 {
+		d.CPU = int(runtime.NumCPU())
+	}
 	if d.CPU > 16 {
 		d.CPU = 16
 	}
