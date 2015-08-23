@@ -1,4 +1,4 @@
-FROM golang:1.4.2-cross
+FROM golang:1.5
 
 # TODO: Vendor these `go get` commands using Godep.
 RUN go get github.com/mitchellh/gox
