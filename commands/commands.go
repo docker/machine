@@ -357,10 +357,11 @@ var Commands = []cli.Command{
 		Action:      cmdRm,
 	},
 	{
-		Name:        "ssh",
-		Usage:       "Log into or run a command on a machine with SSH.",
-		Description: "Arguments are [machine-name] [command]",
-		Action:      cmdSsh,
+		Name:            "ssh",
+		Usage:           "Log into or run a command on a machine with SSH.",
+		Description:     "Arguments are [machine-name] [command]",
+		Action:          cmdSsh,
+		SkipFlagParsing: true,
 	},
 	{
 		Name:        "scp",
