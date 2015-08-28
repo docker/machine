@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/machine",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.5",
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/goauth2/oauth",
