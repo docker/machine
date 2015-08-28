@@ -770,7 +770,7 @@ func getRandomIPinSubnet(baseIP net.IP) (net.IP, error) {
 	for i := 0; i < 5; i++ {
 		n := rand.Intn(25)
 		if byte(n) != nAddr[3] {
-			dhcpAddr = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(1))
+			dhcpAddr = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(n))
 			break
 		}
 	}
