@@ -27,9 +27,6 @@ func getTLSConfig(caCert, cert, key []byte, allowInsecure bool) (*tls.Config, er
 		return &tlsConfig, err
 	}
 	tlsConfig.Certificates = []tls.Certificate{keypair}
-	if allowInsecure {
-		tlsConfig.InsecureSkipVerify = true
-	}
 
 	return &tlsConfig, nil
 }
