@@ -5,7 +5,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 export SECOND_MACHINE="$NAME-2"
 
 @test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
+  run machine create -d $DRIVER $DRIVER_OPTS $NAME
   [[ ${status} -eq 0 ]]
 }
 
@@ -25,7 +25,7 @@ export SECOND_MACHINE="$NAME-2"
 }
 
 @test "$DRIVER: create machine to test transferring files from machine to machine" {
-  run machine create -d $DRIVER $SECOND_MACHINE
+  run machine create -d $DRIVER $DRIVER_OPTS $SECOND_MACHINE
   [[ ${status} -eq 0 ]]
 }
 

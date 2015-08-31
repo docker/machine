@@ -3,7 +3,7 @@
 load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
+  run machine create -d $DRIVER $DRIVER_OPTS $NAME
 }
 
 @test "$DRIVER: regenerate the certs" {
