@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"sync"
 )
 
 type StandardLogger struct {
@@ -12,27 +13,36 @@ type StandardLogger struct {
 	fieldOut  string
 	OutWriter io.Writer
 	ErrWriter io.Writer
+	mu        *sync.Mutex
 }
 
 func (t StandardLogger) log(args ...interface{}) {
+	defer t.mu.Unlock()
+	t.mu.Lock()
 	fmt.Fprint(t.OutWriter, args...)
 	fmt.Fprint(t.OutWriter, t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
 func (t StandardLogger) logf(fmtString string, args ...interface{}) {
+	defer t.mu.Unlock()
+	t.mu.Lock()
 	fmt.Fprintf(t.OutWriter, fmtString, args...)
 	fmt.Fprint(t.OutWriter, "\n")
 	t.fieldOut = ""
 }
 
 func (t StandardLogger) err(args ...interface{}) {
+	defer t.mu.Unlock()
+	t.mu.Lock()
 	fmt.Fprint(t.ErrWriter, args...)
 	fmt.Fprint(t.ErrWriter, t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
 func (t StandardLogger) errf(fmtString string, args ...interface{}) {
+	defer t.mu.Unlock()
+	t.mu.Lock()
 	fmt.Fprintf(t.ErrWriter, fmtString, args...)
 	fmt.Fprint(t.ErrWriter, t.fieldOut, "\n")
 	t.fieldOut = ""
@@ -59,7 +69,6 @@ func (t StandardLogger) Errorf(fmtString string, args ...interface{}) {
 }
 
 func (t StandardLogger) Errorln(args ...interface{}) {
-
 	t.err(args...)
 }
 
@@ -94,10 +103,12 @@ func (t StandardLogger) Printf(fmtString string, args ...interface{}) {
 }
 
 func (t StandardLogger) Warn(args ...interface{}) {
+	fmt.Print("WARNING >>> ")
 	t.log(args...)
 }
 
 func (t StandardLogger) Warnf(fmtString string, args ...interface{}) {
+	fmt.Print("WARNING >>> ")
 	t.logf(fmtString, args...)
 }
 

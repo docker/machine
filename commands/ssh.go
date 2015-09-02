@@ -1,10 +1,8 @@
 package commands
 
 import (
-	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/state"
-
-	"github.com/codegangsta/cli"
 )
 
 func cmdSsh(c *cli.Context) {
@@ -12,30 +10,30 @@ func cmdSsh(c *cli.Context) {
 	name := args.First()
 
 	if name == "" {
-		log.Fatal("Error: Please specify a machine name.")
+		fatal("Error: Please specify a machine name.")
 	}
 
 	store := getStore(c)
-	host, err := store.Load(name)
+	host, err := loadHost(store, name)
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	currentState, err := host.Driver.GetState()
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	if currentState != state.Running {
-		log.Fatalf("Error: Cannot run SSH command: Host %q is not running", host.Name)
+		fatalf("Error: Cannot run SSH command: Host %q is not running", host.Name)
 	}
 
 	client, err := host.CreateSSHClient()
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	if err := client.Shell(c.Args().Tail()...); err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 }

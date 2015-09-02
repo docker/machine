@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
-	"github.com/codegangsta/cli"
 	"github.com/digitalocean/godo"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 )
@@ -34,56 +34,50 @@ const (
 	defaultSize   = "512mb"
 )
 
-func init() {
-	drivers.Register("digitalocean", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
 // GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_ACCESS_TOKEN",
 			Name:   "digitalocean-access-token",
 			Usage:  "Digital Ocean access token",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_SSH_USER",
 			Name:   "digitalocean-ssh-user",
 			Usage:  "Digital Ocean SSH username",
 			Value:  "root",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_IMAGE",
 			Name:   "digitalocean-image",
 			Usage:  "Digital Ocean Image",
 			Value:  defaultImage,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_REGION",
 			Name:   "digitalocean-region",
 			Usage:  "Digital Ocean region",
 			Value:  defaultRegion,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_SIZE",
 			Name:   "digitalocean-size",
 			Usage:  "Digital Ocean size",
 			Value:  defaultSize,
 		},
-		cli.BoolFlag{
+		mcnflag.BoolFlag{
 			EnvVar: "DIGITALOCEAN_IPV6",
 			Name:   "digitalocean-ipv6",
 			Usage:  "enable ipv6 for droplet",
 		},
-		cli.BoolFlag{
+		mcnflag.BoolFlag{
 			EnvVar: "DIGITALOCEAN_PRIVATE_NETWORKING",
 			Name:   "digitalocean-private-networking",
 			Usage:  "enable private networking for droplet",
 		},
-		cli.BoolFlag{
+		mcnflag.BoolFlag{
 			EnvVar: "DIGITALOCEAN_BACKUPS",
 			Name:   "digitalocean-backups",
 			Usage:  "enable backups for droplet",

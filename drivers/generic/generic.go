@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/state"
 )
@@ -29,31 +29,25 @@ var (
 	defaultSSHKey = filepath.Join(mcnutils.GetHomeDir(), ".ssh", "id_rsa")
 )
 
-func init() {
-	drivers.Register("generic", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
 // GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			Name:  "generic-ip-address",
 			Usage: "IP Address of machine",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "generic-ssh-user",
 			Usage: "SSH user",
 			Value: defaultSSHUser,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "generic-ssh-key",
 			Usage: "SSH private key path",
 			Value: defaultSSHKey,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			Name:  "generic-ssh-port",
 			Usage: "SSH port",
 			Value: defaultSSHPort,

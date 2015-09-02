@@ -17,9 +17,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
@@ -56,51 +56,47 @@ const (
 	defaultMemory   = 1024
 )
 
-func init() {
-	drivers.Register("vmwarefusion", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
 // GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			EnvVar: "FUSION_BOOT2DOCKER_URL",
 			Name:   "vmwarefusion-boot2docker-url",
 			Usage:  "Fusion URL for boot2docker image",
+			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "FUSION_CONFIGDRIVE_URL",
 			Name:   "vmwarefusion-configdrive-url",
 			Usage:  "Fusion URL for cloud-init configdrive",
+			Value:  "",
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			EnvVar: "FUSION_CPU_COUNT",
 			Name:   "vmwarefusion-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  defaultCpus,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			EnvVar: "FUSION_MEMORY_SIZE",
 			Name:   "vmwarefusion-memory-size",
 			Usage:  "Fusion size of memory for host VM (in MB)",
 			Value:  defaultMemory,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			EnvVar: "FUSION_DISK_SIZE",
 			Name:   "vmwarefusion-disk-size",
 			Usage:  "Fusion size of disk for host VM (in MB)",
 			Value:  defaultDiskSize,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "FUSION_SSH_USER",
 			Name:   "vmwarefusion-ssh-user",
 			Usage:  "SSH user",
 			Value:  defaultSSHUser,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "FUSION_SSH_PASSWORD",
 			Name:   "vmwarefusion-ssh-password",
 			Usage:  "SSH password",

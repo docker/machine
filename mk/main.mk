@@ -3,7 +3,7 @@ GO_LDFLAGS := -X `go list ./version`.GitCommit=`git rev-parse --short HEAD`
 GO_GCFLAGS :=
 
 # Full package list
-PKGS := $(shell go list -tags "$(BUILDTAGS)" ./... | grep -v "/vendor/" | grep -v "/Godeps/")
+PKGS := $(shell go list -tags "$(BUILDTAGS)" ./commands/... ./libmachine/... ./drivers/... | grep -v "/vendor/" | grep -v "/Godeps/")
 
 # Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
 export GO15VENDOREXPERIMENT = 1
@@ -11,9 +11,6 @@ export GO15VENDOREXPERIMENT = 1
 # Resolving binary dependencies for specific targets
 GOLINT_BIN := $(GOPATH)/bin/golint
 GOLINT := $(shell [ -x $(GOLINT_BIN) ] && echo $(GOLINT_BIN) || echo '')
-
-GOX_BIN := $(GOPATH)/bin/gox
-GOX := $(shell [ -x $(GOX_BIN) ] && echo $(GOX_BIN) || echo '')
 
 # Honor debug
 ifeq ($(DEBUG),true)
@@ -32,7 +29,7 @@ endif
 
 # Honor verbose
 VERBOSE_GO := 
-GO := @go
+GO := go
 ifeq ($(VERBOSE),true)
 	VERBOSE_GO := -v
 	GO := go
@@ -63,5 +60,7 @@ cross: build-x
 clean: coverage-clean build-clean
 test: dco fmt vet test-short
 validate: dco fmt vet lint test-short test-long
+install:
+	cp ./bin/docker-machine* /usr/local/bin/
 
 .PHONY: .all_build .all_coverage .all_release .all_test .all_validate test build validate clean

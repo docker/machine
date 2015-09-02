@@ -2,12 +2,24 @@ package host
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 
-	"github.com/docker/machine/drivers/driverfactory"
+	"github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/version"
 )
+
+type RawDataDriver struct {
+	*none.Driver
+	data []byte // passed directly back when invoking json.Marshal on this type
+}
+
+func (r *RawDataDriver) MarshalJSON() ([]byte, error) {
+	// now marshal it back up
+	return r.data, nil
+}
 
 func getMigratedHostMetadata(data []byte) (*HostMetadata, error) {
 	// HostMetadata is for a "first pass" so we can then load the driver
@@ -28,35 +40,38 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 	var (
 		migrationPerformed = false
 		hostV1             *HostV1
+		hostV2             *HostV2
 	)
 
 	migratedHostMetadata, err := getMigratedHostMetadata(data)
 	if err != nil {
-		return &Host{}, false, err
+		return nil, false, err
 	}
 
 	globalStorePath := filepath.Dir(filepath.Dir(migratedHostMetadata.HostOptions.AuthOptions.StorePath))
 
-	driver, err := driverfactory.NewDriver(migratedHostMetadata.DriverName, h.Name, globalStorePath)
-	if err != nil {
-		return &Host{}, false, err
+	driver := none.NewDriver(h.Name, globalStorePath)
+
+	if migratedHostMetadata.ConfigVersion > version.ConfigVersion {
+		return nil, false, errors.New("Config version is from the future, please upgrade your Docker Machine client.")
 	}
 
 	if migratedHostMetadata.ConfigVersion == version.ConfigVersion {
 		h.Driver = driver
 		if err := json.Unmarshal(data, &h); err != nil {
-			return &Host{}, migrationPerformed, fmt.Errorf("Error unmarshalling most recent host version: %s", err)
+			return nil, migrationPerformed, fmt.Errorf("Error unmarshalling most recent host version: %s", err)
 		}
 	} else {
 		migrationPerformed = true
 		for h.ConfigVersion = migratedHostMetadata.ConfigVersion; h.ConfigVersion < version.ConfigVersion; h.ConfigVersion++ {
+			log.Debug("Migrating to config v%d", h.ConfigVersion)
 			switch h.ConfigVersion {
 			case 0:
 				hostV0 := &HostV0{
 					Driver: driver,
 				}
 				if err := json.Unmarshal(data, &hostV0); err != nil {
-					return &Host{}, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 0: %s", err)
+					return nil, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 0: %s", err)
 				}
 				hostV1 = MigrateHostV0ToHostV1(hostV0)
 			case 1:
@@ -65,13 +80,27 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 						Driver: driver,
 					}
 					if err := json.Unmarshal(data, &hostV1); err != nil {
-						return &Host{}, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 1: %s", err)
+						return nil, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 1: %s", err)
 					}
 				}
-				h = MigrateHostV1ToHostV2(hostV1)
+				hostV2 = MigrateHostV1ToHostV2(hostV1)
+			case 2:
+				if hostV2 == nil {
+					hostV2 = &HostV2{
+						Driver: driver,
+					}
+					if err := json.Unmarshal(data, &hostV2); err != nil {
+						return nil, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 2: %s", err)
+					}
+				}
+				h = MigrateHostV2ToHostV3(hostV2, data, globalStorePath)
+				h.Driver = RawDataDriver{driver, nil}
+			case 3:
+				// Everything for migration to plugin model is
+				// already set up in previous block, so no need
+				// to do anything here.
 			}
 		}
-
 	}
 
 	return h, migrationPerformed, nil

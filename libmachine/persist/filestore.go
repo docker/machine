@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -33,6 +34,15 @@ func (s Filestore) saveToFile(data []byte, file string) error {
 }
 
 func (s Filestore) Save(host *host.Host) error {
+	// TODO: Does this belong here?
+	if rpcClientDriver, ok := host.Driver.(*rpcdriver.RpcClientDriver); ok {
+		data, err := rpcClientDriver.GetConfigRaw()
+		if err != nil {
+			return fmt.Errorf("Error getting raw config for driver: %s", err)
+		}
+		host.RawDriver = data
+	}
+
 	data, err := json.MarshalIndent(host, "", "    ")
 	if err != nil {
 		return err
@@ -48,18 +58,7 @@ func (s Filestore) Save(host *host.Host) error {
 	return s.saveToFile(data, filepath.Join(hostPath, "config.json"))
 }
 
-func (s Filestore) Remove(name string, force bool) error {
-	h, err := s.Load(name)
-	if err != nil {
-		return err
-	}
-
-	if err := h.Driver.Remove(); err != nil {
-		if !force {
-			return err
-		}
-	}
-
+func (s Filestore) Remove(name string) error {
 	hostPath := filepath.Join(s.getMachinesDir(), name)
 	return os.RemoveAll(hostPath)
 }
@@ -82,6 +81,7 @@ func (s Filestore) List() ([]*host.Host, error) {
 			hosts = append(hosts, host)
 		}
 	}
+
 	return hosts, nil
 }
 

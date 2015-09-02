@@ -10,7 +10,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/codegangsta/cli"
+	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -45,13 +45,13 @@ func cmdLs(c *cli.Context) {
 	quiet := c.Bool("quiet")
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	store := getStore(c)
-	hostList, err := store.List()
+	hostList, err := listHosts(store)
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	hostList = filterHosts(hostList, filters)
@@ -219,7 +219,7 @@ func matchesName(host *host.Host, names []string) bool {
 	for _, n := range names {
 		r, err := regexp.Compile(n)
 		if err != nil {
-			log.Fatal(err)
+			fatal(err)
 		}
 		if r.MatchString(host.Driver.GetMachineName()) {
 			return true
@@ -229,7 +229,7 @@ func matchesName(host *host.Host, names []string) bool {
 }
 
 func getActiveHost(store persist.Store) (*host.Host, error) {
-	hosts, err := store.List()
+	hosts, err := listHosts(store)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +238,7 @@ func getActiveHost(store persist.Store) (*host.Host, error) {
 
 	for _, item := range hostListItems {
 		if item.Active {
-			h, err := store.Load(item.Name)
+			h, err := loadHost(store, item.Name)
 			if err != nil {
 				return nil, err
 			}
@@ -250,21 +250,38 @@ func getActiveHost(store persist.Store) (*host.Host, error) {
 }
 
 func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
-	currentState, err := h.Driver.GetState()
-	if err != nil {
-		log.Errorf("error getting state for host %s: %s", h.Name, err)
-	}
+	stateCh := make(chan state.State)
+	urlCh := make(chan string)
 
-	url, err := h.GetURL()
-	if err != nil {
-		if err == drivers.ErrHostIsNotRunning {
-			url = ""
-		} else {
-			log.Errorf("error getting URL for host %s: %s", h.Name, err)
+	go func() {
+		currentState, err := h.Driver.GetState()
+		if err != nil {
+			log.Errorf("error getting state for host %s: %s", h.Name, err)
 		}
-	}
 
-	active, err := isActive(h)
+		stateCh <- currentState
+	}()
+
+	go func() {
+		url, err := h.GetURL()
+		if err != nil {
+			if err.Error() == drivers.ErrHostIsNotRunning.Error() {
+				url = ""
+			} else {
+				log.Errorf("error getting URL for host %s: %s", h.Name, err)
+			}
+		}
+
+		urlCh <- url
+	}()
+
+	currentState := <-stateCh
+	url := <-urlCh
+
+	close(stateCh)
+	close(urlCh)
+
+	active, err := isActive(h, currentState, url)
 	if err != nil {
 		log.Errorf("error determining if host is active for host %s: %s",
 			h.Name, err)
@@ -321,25 +338,7 @@ func getHostListItems(hostList []*host.Host) []HostListItem {
 
 // IsActive provides a single function for determining if a host is active
 // based on both the url and if the host is stopped.
-func isActive(h *host.Host) (bool, error) {
-	currentState, err := h.Driver.GetState()
-
-	if err != nil {
-		log.Errorf("error getting state for host %s: %s", h.Name, err)
-		return false, err
-	}
-
-	url, err := h.GetURL()
-
-	if err != nil {
-		if err == drivers.ErrHostIsNotRunning {
-			url = ""
-		} else {
-			log.Errorf("error getting URL for host %s: %s", h.Name, err)
-			return false, err
-		}
-	}
-
+func isActive(h *host.Host, currentState state.State, url string) (bool, error) {
 	dockerHost := os.Getenv("DOCKER_HOST")
 
 	running := currentState == state.Running

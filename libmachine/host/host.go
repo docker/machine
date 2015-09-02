@@ -9,7 +9,6 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
@@ -31,6 +30,7 @@ type Host struct {
 	DriverName    string
 	HostOptions   *HostOptions
 	Name          string
+	RawDriver     []byte
 }
 
 type HostOptions struct {
@@ -127,7 +127,7 @@ func (h *Host) Upgrade() error {
 	}
 
 	if machineState != state.Running {
-		log.Fatal(errMachineMustBeRunningForUpgrade)
+		return errMachineMustBeRunningForUpgrade
 	}
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)
