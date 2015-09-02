@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
@@ -107,10 +108,10 @@ func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
 	return nil
 }
 
-func (provisioner *RedHatProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+func (provisioner *RedHatProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	reloadDaemon := false
 	switch action {
-	case pkgaction.Start, pkgaction.Restart:
+	case serviceaction.Start, serviceaction.Restart:
 		reloadDaemon = true
 	}
 
@@ -158,11 +159,11 @@ func installDocker(provisioner *RedHatProvisioner) error {
 		return err
 	}
 
-	if err := provisioner.Service("docker", pkgaction.Restart); err != nil {
+	if err := provisioner.Service("docker", serviceaction.Restart); err != nil {
 		return err
 	}
 
-	if err := provisioner.Service("docker", pkgaction.Enable); err != nil {
+	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
 		return err
 	}
 

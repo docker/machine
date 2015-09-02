@@ -9,6 +9,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
@@ -44,7 +45,7 @@ type CoreOSProvisioner struct {
 	GenericProvisioner
 }
 
-func (provisioner *CoreOSProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+func (provisioner *CoreOSProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	// daemon-reload to catch config updates; systemd -- ugh
 	if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
 		return err

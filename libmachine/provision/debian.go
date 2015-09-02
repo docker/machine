@@ -9,6 +9,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
@@ -38,7 +39,7 @@ type DebianProvisioner struct {
 	GenericProvisioner
 }
 
-func (provisioner *DebianProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+func (provisioner *DebianProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	// daemon-reload to catch config updates; systemd -- ugh
 	if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
 		return err
@@ -171,7 +172,7 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 
 	// enable in systemd
 	log.Debug("enabling docker in systemd")
-	if err := provisioner.Service("docker", pkgaction.Enable); err != nil {
+	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
 		return err
 	}
 

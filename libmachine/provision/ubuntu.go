@@ -7,6 +7,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
@@ -36,7 +37,7 @@ type UbuntuProvisioner struct {
 	GenericProvisioner
 }
 
-func (provisioner *UbuntuProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+func (provisioner *UbuntuProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	command := fmt.Sprintf("sudo service %s %s", name, action.String())
 
 	if _, err := provisioner.SSHCommand(command); err != nil {

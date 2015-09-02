@@ -7,6 +7,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
 )
@@ -45,7 +46,7 @@ type Provisioner interface {
 	Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error
 
 	// Perform action on a named service e.g. stop
-	Service(name string, action pkgaction.ServiceAction) error
+	Service(name string, action serviceaction.ServiceAction) error
 
 	// Get the driver which is contained in the provisioner.
 	GetDriver() drivers.Driver
