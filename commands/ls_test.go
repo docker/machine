@@ -170,21 +170,21 @@ func TestFilterHostsByState(t *testing.T) {
 			Name:        "node1",
 			DriverName:  "fakedriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Paused},
+			Driver:      &fakedriver.Driver{MockState: state.Paused},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Stopped},
+			Driver:      &fakedriver.Driver{MockState: state.Stopped},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Running},
+			Driver:      &fakedriver.Driver{MockState: state.Running},
 		}
 	hosts := []*host.Host{node1, node2, node3}
 	expected := []*host.Host{node1, node2}
@@ -201,28 +201,28 @@ func TestFilterHostsByName(t *testing.T) {
 			Name:        "fire",
 			DriverName:  "fakedriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "fire"},
+			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "fire"},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "ice",
 			DriverName:  "adriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "ice"},
+			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "ice"},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "air",
 			DriverName:  "nodriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "air"},
+			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "air"},
 		}
 	node4 :=
 		&host.Host{
 			Name:        "water",
 			DriverName:  "falsedriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Paused, MockName: "water"},
+			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "water"},
 		}
 	hosts := []*host.Host{node1, node2, node3, node4}
 	expected := []*host.Host{node1, node2, node3}
@@ -269,21 +269,21 @@ func TestFilterHostsDifferentFlagsProduceAND(t *testing.T) {
 			Name:        "node1",
 			DriverName:  "fakedriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Paused},
+			Driver:      &fakedriver.Driver{MockState: state.Paused},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Stopped},
+			Driver:      &fakedriver.Driver{MockState: state.Stopped},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
 			HostOptions: &host.HostOptions{},
-			Driver:      &fakedriver.FakeDriver{MockState: state.Running},
+			Driver:      &fakedriver.Driver{MockState: state.Running},
 		}
 	hosts := []*host.Host{node1, node2, node3}
 	expected := []*host.Host{}
@@ -314,7 +314,7 @@ func TestGetHostListItems(t *testing.T) {
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 			},
 			HostOptions: &host.HostOptions{
@@ -328,7 +328,7 @@ func TestGetHostListItems(t *testing.T) {
 		{
 			Name:       "bar",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
 			HostOptions: &host.HostOptions{
@@ -342,7 +342,7 @@ func TestGetHostListItems(t *testing.T) {
 		{
 			Name:       "baz",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 			},
 			HostOptions: &host.HostOptions{
@@ -396,7 +396,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 				MockURL:   "tcp://120.0.0.1:2376",
 			},
@@ -411,7 +411,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		{
 			Name:       "bar",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
 			HostOptions: &host.HostOptions{
@@ -425,7 +425,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		{
 			Name:       "baz",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Saved,
 			},
 			HostOptions: &host.HostOptions{

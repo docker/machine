@@ -13,11 +13,11 @@ DOCKER_CONTAINER_NAME := "docker-machine-build-container"
 build:
 test: build
 %:
-		@docker build -t $(DOCKER_IMAGE_NAME) .
+		docker build -t $(DOCKER_IMAGE_NAME) .
 
-		@test -z '$(shell docker ps -a | grep $(DOCKER_CONTAINER_NAME))' || docker rm -f $(DOCKER_CONTAINER_NAME)
+		test -z '$(shell docker ps -a | grep $(DOCKER_CONTAINER_NAME))' || docker rm -f $(DOCKER_CONTAINER_NAME)
 
-		@docker run --name $(DOCKER_CONTAINER_NAME) \
+		docker run --name $(DOCKER_CONTAINER_NAME) \
 		    -e DEBUG \
 		    -e STATIC \
 		    -e VERBOSE \
@@ -30,7 +30,7 @@ test: build
 		    $(DOCKER_IMAGE_NAME) \
 		    make $@
 
-		@test ! -d bin || rm -Rf bin
-		@test -z "$(findstring build,$(patsubst cross,build,$@))" || docker cp $(DOCKER_CONTAINER_NAME):/go/src/github.com/docker/machine/bin bin
+		test ! -d bin || rm -Rf bin
+		test -z "$(findstring build,$(patsubst cross,build,$@))" || docker cp $(DOCKER_CONTAINER_NAME):/go/src/github.com/docker/machine/bin bin
 
 endif

@@ -7,8 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/codegangsta/cli"
-	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/cli"
 )
 
 const (
@@ -34,21 +33,21 @@ type ShellConfig struct {
 
 func cmdEnv(c *cli.Context) {
 	if len(c.Args()) != 1 && !c.Bool("unset") {
-		log.Fatal(improperEnvArgsError)
+		fatal(improperEnvArgsError)
 	}
 
 	h := getFirstArgHost(c)
 
 	dockerHost, authOptions, err := runConnectionBoilerplate(h, c)
 	if err != nil {
-		log.Fatalf("Error running connection boilerplate: %s", err)
+		fatalf("Error running connection boilerplate: %s", err)
 	}
 
 	userShell := c.String("shell")
 	if userShell == "" {
 		shell, err := detectShell()
 		if err != nil {
-			log.Fatal(err)
+			fatal(err)
 		}
 		userShell = shell
 	}
@@ -68,7 +67,7 @@ func cmdEnv(c *cli.Context) {
 	if c.Bool("no-proxy") {
 		ip, err := h.Driver.GetIP()
 		if err != nil {
-			log.Fatalf("Error getting host IP: %s", err)
+			fatalf("Error getting host IP: %s", err)
 		}
 
 		// first check for an existing lower case no_proxy var
@@ -122,11 +121,11 @@ func cmdEnv(c *cli.Context) {
 
 		tmpl, err := t.Parse(envTmpl)
 		if err != nil {
-			log.Fatal(err)
+			fatal(err)
 		}
 
 		if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
-			log.Fatal(err)
+			fatal(err)
 		}
 		return
 	}
@@ -152,11 +151,11 @@ func cmdEnv(c *cli.Context) {
 
 	tmpl, err := t.Parse(envTmpl)
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 }
 

@@ -1,7 +1,9 @@
 # Project name, used to name the binaries
 PKG_NAME := docker-machine
-GH_USER ?= docker
-GH_REPO ?= machine
+# Github infos
+GITHUB_INFO := $(shell git config --get remote.origin.url | sed -e 's/.*:\(.*\).git/\1/')
+GH_USER ?= $(shell echo $(GITHUB_INFO) | cut -d \/ -f 1)
+GH_REPO ?= $(shell echo $(GITHUB_INFO) | cut -d \/ -f 2)
 
 # If true, disable optimizations and does NOT strip the binary
 DEBUG ?=

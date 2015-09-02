@@ -2,86 +2,91 @@ package fakedriver
 
 import (
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 )
 
-type FakeDriver struct {
+type Driver struct {
 	*drivers.BaseDriver
 	MockState state.State
 	MockURL   string
 	MockName  string
 }
 
-func (d *FakeDriver) DriverName() string {
-	return "fakedriver"
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{}
 }
 
-func (d *FakeDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+func (d *Driver) DriverName() string {
+	return "Driver"
+}
+
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
-func (d *FakeDriver) GetURL() (string, error) {
+func (d *Driver) GetURL() (string, error) {
 	return d.MockURL, nil
 }
 
-func (d *FakeDriver) GetMachineName() string {
+func (d *Driver) GetMachineName() string {
 	return d.MockName
 }
 
-func (d *FakeDriver) GetIP() (string, error) {
+func (d *Driver) GetIP() (string, error) {
 	return "1.2.3.4", nil
 }
 
-func (d *FakeDriver) GetSSHHostname() (string, error) {
+func (d *Driver) GetSSHHostname() (string, error) {
 	return "", nil
 }
 
-func (d *FakeDriver) GetSSHKeyPath() string {
+func (d *Driver) GetSSHKeyPath() string {
 	return ""
 }
 
-func (d *FakeDriver) GetSSHPort() (int, error) {
+func (d *Driver) GetSSHPort() (int, error) {
 	return 0, nil
 }
 
-func (d *FakeDriver) GetSSHUsername() string {
+func (d *Driver) GetSSHUsername() string {
 	return ""
 }
 
-func (d *FakeDriver) GetState() (state.State, error) {
+func (d *Driver) GetState() (state.State, error) {
 	return d.MockState, nil
 }
 
-func (d *FakeDriver) PreCreateCheck() error {
+func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
-func (d *FakeDriver) Create() error {
+func (d *Driver) Create() error {
 	return nil
 }
 
-func (d *FakeDriver) Remove() error {
+func (d *Driver) Remove() error {
 	return nil
 }
 
-func (d *FakeDriver) Start() error {
+func (d *Driver) Start() error {
 	d.MockState = state.Running
 	return nil
 }
 
-func (d *FakeDriver) Stop() error {
+func (d *Driver) Stop() error {
 	d.MockState = state.Stopped
 	return nil
 }
 
-func (d *FakeDriver) Restart() error {
+func (d *Driver) Restart() error {
 	return nil
 }
 
-func (d *FakeDriver) Kill() error {
+func (d *Driver) Kill() error {
 	return nil
 }
 
-func (d *FakeDriver) Upgrade() error {
+func (d *Driver) Upgrade() error {
 	return nil
 }

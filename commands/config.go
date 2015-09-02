@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/host"
@@ -15,14 +15,14 @@ import (
 
 func cmdConfig(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		log.Fatal(ErrExpectedOneMachine)
+		fatal(ErrExpectedOneMachine)
 	}
 
 	h := getFirstArgHost(c)
 
 	dockerHost, authOptions, err := runConnectionBoilerplate(h, c)
 	if err != nil {
-		log.Fatalf("Error running connection boilerplate: %s", err)
+		fatalf("Error running connection boilerplate: %s", err)
 	}
 
 	log.Debug(dockerHost)

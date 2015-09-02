@@ -92,7 +92,7 @@ func tokenFromWeb(config *oauth.Config) *oauth.Token {
 	}
 	_, err := t.Exchange(code)
 	if err != nil {
-		log.Fatalf("Token exchange error: %v", err)
+		log.Warnf("Token exchange error: %v", err)
 	}
 	return t.Token
 }

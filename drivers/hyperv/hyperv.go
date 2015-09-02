@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
@@ -31,12 +31,6 @@ const (
 	defaultMemory   = 1024
 )
 
-func init() {
-	drivers.Register("hyper-v", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
 		DiskSize: defaultDiskSize,
@@ -50,26 +44,26 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 
 // GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			Name:  "hyper-v-boot2docker-url",
 			Usage: "Hyper-V URL of the boot2docker image. Defaults to the latest available version.",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "hyper-v-boot2docker-location",
 			Usage: "Hyper-V local boot2docker iso. Overrides URL.",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "hyper-v-virtual-switch",
 			Usage: "Hyper-V virtual switch name. Defaults to first found.",
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			Name:  "hyper-v-disk-size",
 			Usage: "Hyper-V disk size for host in MB.",
 			Value: defaultDiskSize,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			Name:  "hyper-v-memory",
 			Usage: "Hyper-V memory size for host in MB.",
 			Value: defaultMemory,

@@ -19,7 +19,7 @@ type Store interface {
 	Load(name string) (*host.Host, error)
 
 	// Remove removes a machine from the store
-	Remove(name string, force bool) error
+	Remove(name string) error
 
 	// Save persists a machine in the store
 	Save(host *host.Host) error
