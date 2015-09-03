@@ -10,14 +10,26 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/machine/log"
 )
 
+var vmfusionapp string
+
+usr, _ := user.Current()
+usr_vmfusionapp := filepath.Join(usr.HomeDir, "Applications/VMware Fusion.app")
+if _, err := os.Stat(usr_vmfusionapp); err == nil {
+	vmfusionapp = usr_vmfusionapp
+} else {
+	vmfusionapp = "/Applications/VMware Fusion.app"
+}
+
 var (
-	vmrunbin    = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
-	vdiskmanbin = "/Applications/VMware Fusion.app/Contents/Library/vmware-vdiskmanager"
+	vmrunbin    = filepath.Join(vmfusionapp, "Contents/Library/vmrun")
+	vdiskmanbin = filepath.Join(vmfusionapp, "Contents/Library/vmware-vdiskmanager")
 )
 
 var (
