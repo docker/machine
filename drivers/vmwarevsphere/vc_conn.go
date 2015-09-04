@@ -215,6 +215,7 @@ func (conn VcConn) VMDiskCreate() error {
 }
 
 func (conn VcConn) VMAttachNetwork() error {
+	/*
 	args := []string{"vm.network.add"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--dc=%s", conn.driver.Datacenter))
@@ -226,6 +227,8 @@ func (conn VcConn) VMAttachNetwork() error {
 		return nil
 	}
 	return errors.NewVMError("add network", conn.driver.MachineName, stderr)
+	*/
+	return nil
 }
 
 func (conn VcConn) VMFetchIP() (string, error) {
