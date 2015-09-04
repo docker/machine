@@ -391,6 +391,7 @@ const (
 	errorUnknownFlavorName       string = "Unable to find flavor named %s"
 	errorUnknownImageName        string = "Unable to find image named %s"
 	errorUnknownNetworkName      string = "Unable to find network named %s"
+	errorUnknownTenantName       string = "Unable to find tenant named %s"
 )
 
 func (d *Driver) checkConfig() error {
@@ -516,6 +517,27 @@ func (d *Driver) resolveIds() error {
 		}).Debug("Found floating IP pool id using its name")
 	}
 
+	if d.TenantName != "" {
+		if err := d.initIdentity(); err != nil {
+			return err
+		}
+		tenantId, err := d.client.GetTenantId(d)
+
+		if err != nil {
+			return err
+		}
+
+		if tenantId == "" {
+			return fmt.Errorf(errorUnknownTenantName, d.TenantName)
+		}
+
+		d.TenantId = tenantId
+		log.WithFields(log.Fields{
+			"Name": d.TenantName,
+			"ID":   d.TenantId,
+		}).Debug("Found tenant id using its name")
+	}
+
 	return nil
 }
 
@@ -524,6 +546,16 @@ func (d *Driver) initCompute() error {
 		return err
 	}
 	if err := d.client.InitComputeClient(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Driver) initIdentity() error {
+	if err := d.client.Authenticate(d); err != nil {
+		return err
+	}
+	if err := d.client.InitIdentityClient(d); err != nil {
 		return err
 	}
 	return nil
