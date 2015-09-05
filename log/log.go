@@ -42,11 +42,11 @@ var (
 // TODO: I think this is superflous and can be replaced by one check for if
 // debug is on that sets a variable in this module.
 func isDebug() bool {
-	debugEnv := os.Getenv("DEBUG")
+	debugEnv := os.Getenv("MACHINE_DEBUG")
 	if debugEnv != "" {
 		showDebug, err := strconv.ParseBool(debugEnv)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error parsing boolean value from DEBUG: %s", err)
+			fmt.Fprintln(os.Stderr, "Error parsing boolean value from MACHINE_DEBUG: %s", err)
 			os.Exit(1)
 		}
 		return showDebug
