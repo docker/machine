@@ -92,10 +92,6 @@ func newProvider(store libmachine.Store) (*libmachine.Provider, error) {
 	return libmachine.New(store)
 }
 
-func getMachineDir(rootPath string) string {
-	return filepath.Join(rootPath, "machines")
-}
-
 func getDefaultStore(rootPath, caCertPath, privateKeyPath string) (libmachine.Store, error) {
 	return libmachine.NewFilestore(
 		rootPath,
@@ -462,7 +458,7 @@ func runActionForeachMachine(actionName string, machines []*libmachine.Host) {
 		serialChan := make(chan error)
 		go machineCommand(actionName, machine, serialChan)
 		if err := <-serialChan; err != nil {
-			log.Errorln(err)
+			log.Error(err)
 		}
 		close(serialChan)
 	}
@@ -472,7 +468,7 @@ func runActionForeachMachine(actionName string, machines []*libmachine.Host) {
 	// rate limit us.
 	for i := 0; i < numConcurrentActions; i++ {
 		if err := <-errorChan; err != nil {
-			log.Errorln(err)
+			log.Error(err)
 		}
 	}
 
