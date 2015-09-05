@@ -55,20 +55,12 @@ func (t TerminalLogger) Errorf(fmtString string, args ...interface{}) {
 	t.errf(fmtString, args...)
 }
 
-func (t TerminalLogger) Errorln(args ...interface{}) {
-	t.err(args...)
-}
-
 func (t TerminalLogger) Info(args ...interface{}) {
 	t.log(args...)
 }
 
 func (t TerminalLogger) Infof(fmtString string, args ...interface{}) {
 	t.logf(fmtString, args...)
-}
-
-func (t TerminalLogger) Infoln(args ...interface{}) {
-	t.log(args...)
 }
 
 func (t TerminalLogger) Fatal(args ...interface{}) {
