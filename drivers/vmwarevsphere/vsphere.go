@@ -260,9 +260,11 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+/*
 	if err := vcConn.VMAttachNetwork(); err != nil {
 		return err
 	}
+*/
 
 	if err := d.Start(); err != nil {
 		return err
