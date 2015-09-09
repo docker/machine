@@ -400,12 +400,14 @@ func (d *Driver) checkVsphereConfig() error {
 	if d.IP == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere IP")
 	}
+	/*
 	if d.Username == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere username")
 	}
 	if d.Password == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere password")
 	}
+	*/
 	if d.Network == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere network")
 	}
