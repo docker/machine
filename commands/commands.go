@@ -31,6 +31,7 @@ import (
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/extension"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
@@ -43,17 +44,18 @@ var (
 )
 
 type machineConfig struct {
-	machineName    string
-	machineDir     string
-	machineUrl     string
-	clientKeyPath  string
-	serverCertPath string
-	clientCertPath string
-	caCertPath     string
-	caKeyPath      string
-	serverKeyPath  string
-	AuthOptions    auth.AuthOptions
-	SwarmOptions   swarm.SwarmOptions
+	machineName      string
+	machineDir       string
+	machineUrl       string
+	clientKeyPath    string
+	serverCertPath   string
+	clientCertPath   string
+	caCertPath       string
+	caKeyPath        string
+	serverKeyPath    string
+	AuthOptions      auth.AuthOptions
+	SwarmOptions     swarm.SwarmOptions
+	ExtensionOptions extension.ExtensionOptions
 }
 
 func sortHostListItemsByName(items []libmachine.HostListItem) {
@@ -234,6 +236,11 @@ var sharedCreateFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "swarm-addr",
 		Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
+		Value: "",
+	},
+	cli.StringFlag{
+		Name:  "extension",
+		Usage: "specify local path or network resource for the YAML or JSON extension file",
 		Value: "",
 	},
 }
@@ -609,17 +616,18 @@ func getMachineConfig(c *cli.Context) (*machineConfig, error) {
 		}
 	}
 	return &machineConfig{
-		machineName:    name,
-		machineDir:     machineDir,
-		machineUrl:     machineUrl,
-		clientKeyPath:  clientKey,
-		clientCertPath: clientCert,
-		serverCertPath: serverCert,
-		caKeyPath:      caKey,
-		caCertPath:     caCert,
-		serverKeyPath:  serverKey,
-		AuthOptions:    *m.HostOptions.AuthOptions,
-		SwarmOptions:   *m.HostOptions.SwarmOptions,
+		machineName:      name,
+		machineDir:       machineDir,
+		machineUrl:       machineUrl,
+		clientKeyPath:    clientKey,
+		clientCertPath:   clientCert,
+		serverCertPath:   serverCert,
+		caKeyPath:        caKey,
+		caCertPath:       caCert,
+		serverKeyPath:    serverKey,
+		AuthOptions:      *m.HostOptions.AuthOptions,
+		SwarmOptions:     *m.HostOptions.SwarmOptions,
+		ExtensionOptions: *m.HostOptions.ExtensionOptions,
 	}, nil
 }
 
