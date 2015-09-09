@@ -260,9 +260,11 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+/*
 	if err := vcConn.VMAttachNetwork(); err != nil {
 		return err
 	}
+*/
 
 	if err := d.Start(); err != nil {
 		return err
@@ -398,12 +400,14 @@ func (d *Driver) checkVsphereConfig() error {
 	if d.IP == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere IP")
 	}
+	/*
 	if d.Username == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere username")
 	}
 	if d.Password == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere password")
 	}
+	*/
 	if d.Network == "" {
 		return errors.NewIncompleteVsphereConfigError("vSphere network")
 	}
