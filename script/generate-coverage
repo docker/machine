@@ -1,55 +1,60 @@
 #!/bin/bash
-
 set -e
 
-COVERAGE_DIR=/tmp/coverage
+# Generate coverage for code in ., unless explicitly pointed to something else via the second argument
+DIR=${2:-.}
 
-generate_coverage_for_dir () {
-    echo
-    echo "Generating coverage report for $1..."
-    cd "$1" >/dev/null
-    PKG_COVERAGE_DIR=${COVERAGE_DIR}/"$1"
-    PKG_PROFILE=${PKG_COVERAGE_DIR}/profile.txt
-    mkdir -p ${PKG_COVERAGE_DIR}
-    go test -covermode=set -coverprofile=${PKG_PROFILE}
-    go tool cover -html=${PKG_PROFILE} -o ${PKG_COVERAGE_DIR}/index.html
-    cd - >/dev/null
-    echo "Done generating coverage for $1."
-    for f in $(ls "$1"); do
-        REL_PATH="$1/$f"
-        for exclude in ${EXCLUDED_DIRS}; do
-            if [[ "$REL_PATH" == "$exclude" ]]; then
-                continue 2
-            fi
-        done
-        # If file is directory and not Godeps
-        # (don't worry about generating 3rd party code coverage)
-        if [[ -d "$REL_PATH" ]]; then
-            # invoke recursively
-            generate_coverage_for_dir ${REL_PATH}
-        fi
-    done
-    echo
+# Output dir is a temp dir (OSX/Linux compatible), unless explicitly specified through env COVERAGE_DIR
+OUTPUT=${COVERAGE_DIR:-$(mktemp -d 2>/dev/null || mktemp -d -t machine-coverage)}
+
+# Ensure destination exists
+mkdir -p "${OUTPUT}"
+
+# Final cover file, mode
+PROFILE=${OUTPUT}/cover.out
+MODE=set
+
+# Generate coverage
+cover() {
+  cd "$DIR"
+
+  for PKG in $(go list -tags "${BUILDTAGS}" ./... | grep -v "/vendor/" | grep -v "/Godeps/"); do
+    go test -tags "${BUILDTAGS}" -covermode=${MODE} -coverprofile="${OUTPUT}/$(echo ${PKG} | tr "/" "-").cover" "${PKG}"
+  done
+
+  echo "mode: ${MODE}" > "${PROFILE}"
+  grep -h -v "^mode:" "${OUTPUT}"/*.cover >> "${PROFILE}"
+  go tool cover -html="${PROFILE}"
+
+  cd -
 }
 
-if [[ "$IN_CONTAINER" == "yes" ]]; then
-    cd /go/src/github.com/docker
-    DIR="machine"
-else
-    DIR="."
-fi
+# Send the results to coveralls
+report() {
+  go get github.com/mattn/goveralls
+  goveralls -service travis-ci -coverprofile="${PROFILE}"
+}
 
-# Script will bomb out on some dirs if there are no buildable source files,
-# we shouldn't be checking these anyway so skip over them.
-EXCLUDED_DIRS="${DIR}/Godeps ${DIR}/test ${DIR}/docs ${DIR}/script ${DIR}/experimental"
+# Useful only if building remote/headless
+serve(){
+  @cd "${DIR}"
+  python -m SimpleHTTPServer 8000
+  @cd -
+}
 
-generate_coverage_for_dir ${DIR}
-echo "Done checking and generating coverage!"
-
-if [[ "$SERVE" == "yes" ]]; then
-    cd ${COVERAGE_DIR}/machine
-    echo "*****************************************"
-    echo "* Serving coverage file on port 8000... *"
-    echo "*****************************************"
-    python -m SimpleHTTPServer 8000
-fi
+case "$1" in
+  # If in the legacy container, serve as well
+  serve)
+    cover
+    serve
+    ;;
+  # Travis does report
+  report)
+    cover
+    report
+    ;;
+  # Default is to just cover, no report
+  *)
+    cover
+    ;;
+esac
