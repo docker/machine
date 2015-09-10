@@ -101,7 +101,13 @@ func cmdCreate(c *cli.Context) {
 		log.Fatal("You will want to check the provider to make sure the machine and associated resources were properly removed.")
 	}
 
-	info := fmt.Sprintf("%s env %s", c.App.Name, name)
+	swarmCmd := ""
+	if c.Bool("swarm") {
+		// leading space required
+		swarmCmd = " --swarm"
+	}
+
+	info := fmt.Sprintf("%s env %s%s", c.App.Name, name, swarmCmd)
 	log.Infof("To see how to connect Docker to this machine, run: %s", info)
 }
 
