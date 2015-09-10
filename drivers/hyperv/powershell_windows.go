@@ -24,6 +24,7 @@ func init() {
 }
 
 func execute(args []string) (string, error) {
+	args = append([]string{"-NoProfile"}, args...)
 	cmd := exec.Command(powershell, args...)
 	log.Debugf("[executing ==>] : %v %v", powershell, strings.Join(args, " "))
 	var stdout bytes.Buffer
