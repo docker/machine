@@ -47,7 +47,7 @@ Options:
 func main() {
 	for _, f := range os.Args {
 		if f == "-D" || f == "--debug" || f == "-debug" {
-			os.Setenv("DEBUG", "1")
+			os.Setenv("MACHINE_DEBUG", "1")
 		}
 	}
 
