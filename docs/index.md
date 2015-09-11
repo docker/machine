@@ -26,6 +26,11 @@ managing them. Using these commands you can
  - upgrade the Docker client and daemon
  - configure a Docker client to talk to your host
 
+## Install
+You can install Docker Machine by installing the [Docker Toolbox](https://www.docker.com/toolbox
+) or to get the binary only, visit the [GitHub Releases](https://github.com/docker/machine/releases)
+for the latest release.
+
 ## Understand Docker Machine basic concepts
 
 Docker Machine allows you to provision Docker on virtual machines that reside either on your local system or on a cloud provider. Docker Machine creates a host on a VM and you use the Docker Engine client as needed to build images and create containers on the host.
