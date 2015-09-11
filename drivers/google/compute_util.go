@@ -97,7 +97,7 @@ func (c *ComputeUtil) staticAddress() (string, error) {
 		return "", err
 	}
 
-	if (!isName) {
+	if !isName {
 		return c.address, nil
 	}
 
@@ -110,7 +110,7 @@ func (c *ComputeUtil) staticAddress() (string, error) {
 	return externalAddress.Address, nil
 }
 
-func (c *ComputeUtil) region() (string) {
+func (c *ComputeUtil) region() string {
 	return c.zone[:len(c.zone)-2]
 }
 
