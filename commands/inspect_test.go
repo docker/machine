@@ -52,8 +52,6 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 	shell := os.Getenv("SHELL")
 	r, w, _ := os.Pipe()
 
-	os.Stdout = w
-	os.Stderr = w
 	os.Setenv("MACHINE_STORAGE_PATH", TestStoreDir)
 	os.Setenv("SHELL", "/bin/bash")
 
@@ -95,6 +93,8 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 		t.Fatal(err)
 	}
 
+	os.Stdout = w
+	os.Stderr = w
 	outStr := make(chan string)
 
 	go func() {

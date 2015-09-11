@@ -36,7 +36,8 @@ type Logger interface {
 }
 
 var (
-	l = TerminalLogger{}
+	l       = TerminalLogger{}
+	Spinner = TerminalSpinner()
 )
 
 // TODO: I think this is superflous and can be replaced by one check for if

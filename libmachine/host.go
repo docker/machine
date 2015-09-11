@@ -107,6 +107,8 @@ func ValidateHostName(name string) bool {
 
 func (h *Host) Create(name string) error {
 	// create the instance
+	log.Spinner.Start("Creating the host")
+	defer log.Spinner.Stop()
 	if err := h.Driver.Create(); err != nil {
 		return err
 	}
@@ -118,6 +120,7 @@ func (h *Host) Create(name string) error {
 
 	// TODO: Not really a fan of just checking "none" here.
 	if h.Driver.DriverName() != "none" {
+		log.Spinner.Start("Waiting for the host to come up")
 		if err := utils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
 			return err
 		}
@@ -126,6 +129,7 @@ func (h *Host) Create(name string) error {
 			return err
 		}
 
+		log.Spinner.Start("Provisioning the host")
 		provisioner, err := provision.DetectProvisioner(h.Driver)
 		if err != nil {
 			return err
