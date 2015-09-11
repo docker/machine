@@ -244,14 +244,14 @@ var sharedCreateFlags = []cli.Flag{
 
 var Commands = []cli.Command{
 	{
-		Name:   "active",
-		Usage:  "Print which machine is active",
-		Action: cmdActive,
+		Name:        "active",
+		Description: "Print the active machine.",
+		Action:      cmdActive,
 	},
 	{
 		Name:        "config",
-		Usage:       "Print the connection config for machine",
-		Description: "Argument is a machine name.",
+		Usage:       "<machine-name>",
+		Description: "Print the specified machine's connection configuration.",
 		Action:      cmdConfig,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -265,14 +265,15 @@ var Commands = []cli.Command{
 			drivers.GetCreateFlags(),
 			sharedCreateFlags...,
 		),
-		Name:   "create",
-		Usage:  "Create a machine",
-		Action: cmdCreate,
+		Name:        "create",
+		Usage:       "<machine-name>",
+		Description: "Create a machine with the specified name.",
+		Action:      cmdCreate,
 	},
 	{
 		Name:        "env",
-		Usage:       "Display the commands to set up the environment for the Docker client",
-		Description: "Argument is a machine name.",
+		Usage:       "<machine-name>",
+		Description: "Display the commands to setup up the environment for the Docker client.",
 		Action:      cmdEnv,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -291,8 +292,8 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:        "inspect",
-		Usage:       "Inspect information about a machine",
-		Description: "Argument is a machine name.",
+		Usage:       "<machine-name>",
+		Description: "Inspect information about a machine..",
 		Action:      cmdInspect,
 		Flags: []cli.Flag{
 			cli.StringFlag{
@@ -304,14 +305,14 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:        "ip",
-		Usage:       "Get the IP address of a machine",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Get the ip(s) of one or more machines.",
 		Action:      cmdIp,
 	},
 	{
 		Name:        "kill",
-		Usage:       "Kill a machine",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Kill one or more machines.",
 		Action:      cmdKill,
 	},
 	{
@@ -326,14 +327,14 @@ var Commands = []cli.Command{
 				Value: &cli.StringSlice{},
 			},
 		},
-		Name:   "ls",
-		Usage:  "List machines",
-		Action: cmdLs,
+		Name:        "ls",
+		Description: "List machines.",
+		Action:      cmdLs,
 	},
 	{
 		Name:        "regenerate-certs",
-		Usage:       "Regenerate TLS Certificates for a machine",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Regenerate TLS Certificates for a machine.",
 		Action:      cmdRegenerateCerts,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -344,8 +345,8 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:        "restart",
-		Usage:       "Restart a machine",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Restart one or more machines.",
 		Action:      cmdRestart,
 	},
 	{
@@ -356,20 +357,20 @@ var Commands = []cli.Command{
 			},
 		},
 		Name:        "rm",
-		Usage:       "Remove a machine",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Remove one or more machines.",
 		Action:      cmdRm,
 	},
 	{
 		Name:        "ssh",
-		Usage:       "Log into or run a command on a machine with SSH.",
-		Description: "Arguments are [machine-name] [command]",
+		Usage:       "<machine-name> [command]",
+		Description: "Establish a secure connection to the machine, optionally supply a command to run on the target.",
 		Action:      cmdSsh,
 	},
 	{
 		Name:        "scp",
-		Usage:       "Copy files between machines",
-		Description: "Arguments are [machine:][path] [machine:][path].",
+		Usage:       "[machine:][path] [machine:][path]",
+		Description: "Copy files securely from host to the target machine, or vice-versa.",
 		Action:      cmdScp,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -380,8 +381,8 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:        "start",
-		Usage:       "Start a machine",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Start one or more machines.",
 		Action:      cmdStart,
 	},
 	{
@@ -392,20 +393,20 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:        "stop",
-		Usage:       "Stop a machine",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Stop one or more machines.",
 		Action:      cmdStop,
 	},
 	{
 		Name:        "upgrade",
-		Usage:       "Upgrade a machine to the latest version of Docker",
-		Description: "Argument(s) are one or more machine names.",
+		Usage:       "<machine-name> [machine-names...]",
+		Description: "Upgrade one or more machines to the latest version of Docker.",
 		Action:      cmdUpgrade,
 	},
 	{
 		Name:        "url",
-		Usage:       "Get the URL of a machine",
-		Description: "Argument is a machine name.",
+		Usage:       "<machine-name>",
+		Description: "Get the url of a machine.",
 		Action:      cmdUrl,
 	},
 }
