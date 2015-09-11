@@ -1,15 +1,13 @@
 language: go
-sudo: false
 go:
-- 1.4.2
 - 1.5
 install:
-- export GOPATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH
-- export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
-- go get -t -v ./...
-- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 script:
-- script/validate-dco
-- script/validate-gofmt
-- go test -v -short ./...
-- script/generate-coverage report
+- make dco
+- make fmt
+# - make lint
+# - make vet
+- make test-short
+- make test-long
+- make coverage-send
