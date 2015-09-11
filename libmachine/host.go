@@ -27,7 +27,6 @@ var (
 	validHostNameChars                = `[a-zA-Z0-9\-\.]`
 	validHostNamePattern              = regexp.MustCompile(`^` + validHostNameChars + `+$`)
 	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
-	stateTimeoutDuration              = time.Second * 3
 )
 
 type Host struct {
@@ -421,7 +420,7 @@ func attemptGetHostState(host Host, stateQueryChan chan<- HostListItem) {
 	}
 }
 
-func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
+func getHostState(host Host, hostListItemsChan chan<- HostListItem, stateTimeoutDuration time.Duration) {
 	// This channel is used to communicate the properties we are querying
 	// about the host in the case of a successful read.
 	stateQueryChan := make(chan HostListItem)
@@ -444,12 +443,12 @@ func getHostState(host Host, hostListItemsChan chan<- HostListItem) {
 	}
 }
 
-func GetHostListItems(hostList []*Host) []HostListItem {
+func GetHostListItems(hostList []*Host, stateTimeoutDuration time.Duration) []HostListItem {
 	hostListItems := []HostListItem{}
 	hostListItemsChan := make(chan HostListItem)
 
 	for _, host := range hostList {
-		go getHostState(*host, hostListItemsChan)
+		go getHostState(*host, hostListItemsChan, stateTimeoutDuration)
 	}
 
 	for range hostList {

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	_ "github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/utils"
@@ -198,7 +199,9 @@ func TestStoreGetSetActive(t *testing.T) {
 	}
 
 	// No host set
-	host, err := store.GetActive()
+	timeout := time.Duration(3) * time.Second
+
+	host, err := store.GetActive(timeout)
 	if err == nil {
 		t.Fatal("Expected an error because there is no active host set")
 	}
@@ -224,7 +227,7 @@ func TestStoreGetSetActive(t *testing.T) {
 
 	os.Setenv("DOCKER_HOST", url)
 
-	host, err = store.GetActive()
+	host, err = store.GetActive(timeout)
 	if err != nil {
 		t.Fatal(err)
 	}

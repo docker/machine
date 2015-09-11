@@ -1,10 +1,14 @@
 package libmachine
 
+import (
+	"time"
+)
+
 type Store interface {
 	// Exists returns whether a machine exists or not
 	Exists(name string) (bool, error)
 	// GetActive returns the active host
-	GetActive() (*Host, error)
+	GetActive(timeout time.Duration) (*Host, error)
 	// GetPath returns the path to the store
 	GetPath() string
 	// GetCACertPath returns the CA certificate

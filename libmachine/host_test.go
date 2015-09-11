@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/docker/machine/drivers/fakedriver"
 	_ "github.com/docker/machine/drivers/none"
@@ -298,9 +299,11 @@ func TestGetHostListItems(t *testing.T) {
 		"baz": state.Running,
 	}
 
+	timeout := time.Duration(3) * time.Second
+
 	items := []HostListItem{}
 	for _, host := range hosts {
-		go getHostState(host, hostListItemsChan)
+		go getHostState(host, hostListItemsChan, timeout)
 	}
 
 	for i := 0; i < len(hosts); i++ {

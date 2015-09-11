@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/log"
@@ -27,7 +28,9 @@ func cmdActive(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	host, err := provider.GetActive()
+	timeout := time.Duration(c.Int("timeout")) * time.Second
+
+	host, err := provider.GetActive(timeout)
 	if err != nil {
 		log.Fatalf("Error getting active host: %s", err)
 	}

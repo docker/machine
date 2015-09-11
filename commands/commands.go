@@ -40,6 +40,7 @@ var (
 	ErrUnknownShell       = errors.New("Error: Unknown shell")
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments.")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument.")
+	DefaultTimeout        = 3
 )
 
 type machineConfig struct {
@@ -247,6 +248,13 @@ var Commands = []cli.Command{
 		Name:   "active",
 		Usage:  "Print which machine is active",
 		Action: cmdActive,
+		Flags: []cli.Flag{
+			cli.IntFlag{
+				Name:  "timeout",
+				Usage: "Timeout for reporting machines state (seconds)",
+				Value: DefaultTimeout,
+			},
+		},
 	},
 	{
 		Name:        "config",
@@ -324,6 +332,11 @@ var Commands = []cli.Command{
 				Name:  "filter",
 				Usage: "Filter output based on conditions provided",
 				Value: &cli.StringSlice{},
+			},
+			cli.IntFlag{
+				Name:  "timeout",
+				Usage: "Timeout for reporting machines state (seconds)",
+				Value: DefaultTimeout,
 			},
 		},
 		Name:   "ls",

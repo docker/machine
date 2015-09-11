@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine"
@@ -118,7 +119,7 @@ func (s ScpFakeStore) Exists(name string) (bool, error) {
 	return true, nil
 }
 
-func (s ScpFakeStore) GetActive() (*libmachine.Host, error) {
+func (s ScpFakeStore) GetActive(timeout time.Duration) (*libmachine.Host, error) {
 	return nil, nil
 }
 
