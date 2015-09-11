@@ -12,4 +12,4 @@ script:
 - script/validate-dco
 - script/validate-gofmt
 - go test -v -short ./...
-- script/generate-coverage
+- script/generate-coverage report
