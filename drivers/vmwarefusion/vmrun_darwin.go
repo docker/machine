@@ -8,16 +8,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/docker/machine/log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
-
-	"github.com/docker/machine/log"
 )
 
 var (
-	vmrunbin    = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
-	vdiskmanbin = "/Applications/VMware Fusion.app/Contents/Library/vmware-vdiskmanager"
+	vmrunbin    = setVmwareCmd("vmrun")
+	vdiskmanbin = setVmwareCmd("vmware-vdiskmanager")
 )
 
 var (
@@ -25,6 +25,14 @@ var (
 	ErrMachineNotExist = errors.New("machine does not exist")
 	ErrVMRUNNotFound   = errors.New("VMRUN not found")
 )
+
+// detect the vmrun and vmware-vdiskmanager cmds' path if needed
+func setVmwareCmd(cmd string) string {
+	if path, err := exec.LookPath(cmd); err == nil {
+		return path
+	}
+	return filepath.Join("/Applications/VMware Fusion.app/Contents/Library/", cmd)
+}
 
 func vmrun(args ...string) (string, string, error) {
 	cmd := exec.Command(vmrunbin, args...)
