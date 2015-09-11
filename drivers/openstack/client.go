@@ -151,7 +151,7 @@ func (c *GenericClient) WaitForInstanceStatus(d *Driver, status string) error {
 		}
 
 		return false, nil
-	}, 50, 4*time.Second)
+	}, (d.ActiveTimeout / 4), 4*time.Second)
 }
 
 func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
