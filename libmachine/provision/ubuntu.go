@@ -113,6 +113,24 @@ func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
+func (provisioner *UbuntuProvisioner) modifyFirewallRules(action pkgaction.FirewallRuleAction) error {
+
+	var firewallRule string
+
+	switch action {
+	case pkgaction.Allow:
+		firewallRule = "allow"
+	case pkgaction.Disable:
+		firewallRule = "disable"
+	}
+	// TODO: Right now this is hard-coded everywhere (all drivers), so, when they have a query function,
+	// use that instead to get the port (and maybe more).
+	if _, err := provisioner.SSHCommand(fmt.Sprintf("sudo ufw %s 2376/tcp", firewallRule)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
@@ -145,6 +163,10 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
+
+	if err := provisioner.modifyFirewallRules(pkgaction.Allow); err != nil {
+		return err
+	}
 
 	if err := ConfigureAuth(provisioner); err != nil {
 		return err
