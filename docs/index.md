@@ -19,17 +19,19 @@ inside your own data center. It automatically creates hosts, installs Docker on
 them, then configures the `docker` client to talk to them. A "machine" is the
 combination of a Docker host and a configured client.
 
-Once you create one or more Docker hosts, Docker Machine supplies a number of commands for
-managing them. Using these commands you can
+Once you create one or more Docker hosts, Docker Machine supplies a number of
+commands for managing them. Using these commands you can
 
  - start, inspect, stop, and restart a host
  - upgrade the Docker client and daemon
  - configure a Docker client to talk to your host
 
-## Install
-You can install Docker Machine by installing the [Docker Toolbox](https://www.docker.com/toolbox
-) or to get the binary only, visit the [GitHub Releases](https://github.com/docker/machine/releases)
-for the latest release.
+### Looking for the installation docs?
+
+For Windows or Mac, you can obtain Docker Machine by installing the [Docker
+Toolbox](https://www.docker.com/toolbox ). To read instructions for installing
+Machine on Linux or for installing Machine alone without Docker Toolbox, see the
+[Machine installation instructions](install-machine.md).
 
 ## Understand Docker Machine basic concepts
 
