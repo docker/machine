@@ -6,6 +6,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/provision/firewallaction"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
@@ -26,6 +27,9 @@ type Provisioner interface {
 
 	// Run a package action e.g. install
 	Package(name string, action pkgaction.PackageAction) error
+
+	// Run a firewall action (e.g. allow, deny)
+	Firewall(action firewallaction.FirewallAction, port int) error
 
 	// Get Hostname
 	Hostname() (string, error)
