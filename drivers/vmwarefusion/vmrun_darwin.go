@@ -16,8 +16,10 @@ import (
 )
 
 var (
-	vmrunbin    = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
-	vdiskmanbin = "/Applications/VMware Fusion.app/Contents/Library/vmware-vdiskmanager"
+	out, err = exec.Command("mdfind", "kMDItemContentType == \"com.apple.application-bundle\" && kMDItemFSName = \"VMware Fusion.app\"").Output()
+	fusionpath  = strings.TrimSpace(string(out))
+	vmrunbin    = fusionpath + "/Contents/Library/vmrun"
+	vdiskmanbin = fusionpath + "/Contents/Library/vmware-vdiskmanager"
 )
 
 var (
