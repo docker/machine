@@ -45,6 +45,11 @@ sata0.present = "TRUE"
 sata0:1.present = "TRUE"
 sata0:1.fileName = "{{.ISO}}"
 sata0:1.deviceType = "cdrom-image"
+{{ if .ConfigDriveURL }}
+sata0:2.present = "TRUE"
+sata0:2.fileName = "{{.ConfigDriveISO}}"
+sata0:2.deviceType = "cdrom-image"
+{{ end }}
 vmci0.present = "TRUE"
 mem.hotadd = "TRUE"
 memsize = "{{.Memory}}"

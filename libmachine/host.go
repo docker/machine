@@ -452,7 +452,7 @@ func GetHostListItems(hostList []*Host) []HostListItem {
 		go getHostState(*host, hostListItemsChan)
 	}
 
-	for _ = range hostList {
+	for range hostList {
 		hostListItems = append(hostListItems, <-hostListItemsChan)
 	}
 
