@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -160,6 +161,9 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP
 	if err := addHostonlyDHCP(hostOnlyNet.Name, dhcp); err != nil {
 		return nil, err
 	}
+
+	//sleep for a few seconds to allow virtualbox's network adapter creation to catch up
+	time.Sleep(5 * time.Second)
 
 	return hostOnlyNet, nil
 }
