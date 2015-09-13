@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	validHostNameChars                = `[a-zA-Z0-9\-\.]`
-	validHostNamePattern              = regexp.MustCompile(`^` + validHostNameChars + `+$`)
+	validHostNameChars                = `^[a-zA-Z0-9][a-zA-Z0-9\-\.]*$`
+	validHostNamePattern              = regexp.MustCompile(validHostNameChars)
 	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
 	stateTimeoutDuration              = time.Second * 3
 )
