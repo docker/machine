@@ -18,6 +18,7 @@ type Driver struct {
 	DiskType      string
 	Address       string
 	Preemptible   bool
+	UseInternalIp bool
 	Scopes        string
 	DiskSize      int
 	AuthTokenPath string
@@ -91,6 +92,11 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "GCE Instance Preemptibility",
 			EnvVar: "GOOGLE_PREEMPTIBLE",
 		},
+		cli.BoolFlag{
+			Name:   "google-use-internal-ip",
+			Usage:  "Use internal GCE Instance IP rather than public one",
+			EnvVar: "GOOGLE_USE_INTERNAL_IP",
+		},
 	}
 }
 
@@ -125,6 +131,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskType = flags.String("google-disk-type")
 	d.Address = flags.String("google-address")
 	d.Preemptible = flags.Bool("google-preemptible")
+	d.UseInternalIp = flags.Bool("google-use-internal-ip")
 	d.AuthTokenPath = flags.String("google-auth-token")
 	d.Project = flags.String("google-project")
 	d.Scopes = flags.String("google-scopes")
@@ -165,7 +172,22 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	return c.createInstance(d)
+	// create instance
+	if err := c.createInstance(d); err != nil {
+		return err
+	}
+
+	if !c.UseInternalIp {
+		return nil
+	}
+
+	ip, err := c.ip()
+
+	// remember the internal IP
+	if err != nil {
+		d.IPAddress = ip
+	}
+	return err
 }
 
 // GetURL returns the URL of the remote docker daemon.
@@ -180,11 +202,15 @@ func (d *Driver) GetURL() (string, error) {
 
 // GetIP returns the IP address of the GCE instance.
 func (d *Driver) GetIP() (string, error) {
-	c, err := newComputeUtil(d)
-	if err != nil {
-		return "", err
+	if d.IPAddress == "" {
+		c, err := newComputeUtil(d)
+		if err != nil {
+			return "", err
+		}
+		return c.ip()
+	} else {
+		return d.IPAddress, nil
 	}
-	return c.ip()
 }
 
 // GetState returns a docker.hosts.state.State value representing the current state of the host.
