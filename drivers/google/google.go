@@ -172,7 +172,22 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	return c.createInstance(d)
+	// create instance
+	if err := c.createInstance(d); err != nil {
+		return err
+	}
+
+	if !c.UseInternalIp {
+		return nil
+	}
+
+	ip, err := c.ip()
+
+	// remember the internal IP
+	if err != nil {
+		d.IPAddress = ip
+	}
+	return err
 }
 
 // GetURL returns the URL of the remote docker daemon.
