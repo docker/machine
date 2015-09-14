@@ -18,6 +18,7 @@ type Driver struct {
 	DiskType      string
 	Address       string
 	Preemptible   bool
+	UseInternalIp bool
 	Scopes        string
 	DiskSize      int
 	AuthTokenPath string
@@ -91,6 +92,11 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "GCE Instance Preemptibility",
 			EnvVar: "GOOGLE_PREEMPTIBLE",
 		},
+		cli.BoolFlag{
+			Name:   "google-use-internal-ip",
+			Usage:  "Use internal GCE Instance IP rather than public one",
+			EnvVar: "GOOGLE_USE_INTERNAL_IP",
+		},
 	}
 }
 
@@ -125,6 +131,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskType = flags.String("google-disk-type")
 	d.Address = flags.String("google-address")
 	d.Preemptible = flags.Bool("google-preemptible")
+	d.UseInternalIp = flags.Bool("google-use-internal-ip")
 	d.AuthTokenPath = flags.String("google-auth-token")
 	d.Project = flags.String("google-project")
 	d.Scopes = flags.String("google-scopes")
