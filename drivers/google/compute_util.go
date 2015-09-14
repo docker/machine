@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/ssh"
 	raw "google.golang.org/api/compute/v1"
