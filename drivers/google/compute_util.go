@@ -22,6 +22,7 @@ type ComputeUtil struct {
 	diskTypeURL   string
 	address       string
 	preemptible   bool
+	UseInternalIp bool
 	service       *raw.Service
 	zoneURL       string
 	authTokenPath string
@@ -56,6 +57,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		diskTypeURL:   driver.DiskType,
 		address:       driver.Address,
 		preemptible:   driver.Preemptible,
+		UseInternalIp: driver.UseInternalIp,
 		service:       service,
 		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:     apiURL + driver.Project + "/global",
@@ -344,7 +346,11 @@ func (c *ComputeUtil) ip() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		c.ipAddress = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
+		if c.UseInternalIp {
+			c.ipAddress = instance.NetworkInterfaces[0].NetworkIP
+		} else {
+			c.ipAddress = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
+		}
 	}
 	return c.ipAddress, nil
 }
