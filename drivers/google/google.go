@@ -202,11 +202,15 @@ func (d *Driver) GetURL() (string, error) {
 
 // GetIP returns the IP address of the GCE instance.
 func (d *Driver) GetIP() (string, error) {
-	c, err := newComputeUtil(d)
-	if err != nil {
-		return "", err
+	if d.IPAddress == "" {
+		c, err := newComputeUtil(d)
+		if err != nil {
+			return "", err
+		}
+		return c.ip()
+	} else {
+		return d.IPAddress, nil
 	}
-	return c.ip()
 }
 
 // GetState returns a docker.hosts.state.State value representing the current state of the host.
