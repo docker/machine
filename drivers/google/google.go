@@ -2,6 +2,7 @@ package google
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers"
@@ -226,30 +227,52 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-// Start creates a GCE instance and attaches it to the existing disk.
+// Start starts an existing GCE instance or create an instance with an existing disk.
 func (d *Driver) Start() error {
 	c, err := newComputeUtil(d)
 	if err != nil {
 		return err
 	}
-	if err = c.createInstance(d); err != nil {
-		return err
+
+	instance, err := c.instance()
+	if err != nil {
+		if !strings.Contains(err.Error(), "notFound") {
+			return err
+		}
 	}
+
+	if instance == nil {
+		if err = c.createInstance(d); err != nil {
+			return err
+		}
+	} else {
+		if err := c.startInstance(); err != nil {
+			return err
+		}
+	}
+
 	d.IPAddress, err = d.GetIP()
 	return err
 }
 
-// Stop deletes the GCE instance, but keeps the disk.
+// Stop stops an existing GCE instance.
 func (d *Driver) Stop() error {
 	c, err := newComputeUtil(d)
 	if err != nil {
 		return err
 	}
-	if err = c.deleteInstance(); err != nil {
+
+	if err := c.stopInstance(); err != nil {
 		return err
 	}
+
 	d.IPAddress = ""
 	return nil
+}
+
+// Kill stops an existing GCE instance.
+func (d *Driver) Kill() error {
+	return d.Stop()
 }
 
 // Remove deletes the GCE instance and the disk.
@@ -270,20 +293,6 @@ func (d *Driver) Remove() error {
 	return c.deleteDisk()
 }
 
-// Restart deletes and recreates the GCE instance, keeping the disk.
 func (d *Driver) Restart() error {
-	c, err := newComputeUtil(d)
-	if err != nil {
-		return err
-	}
-	if err := c.deleteInstance(); err != nil {
-		return err
-	}
-
-	return c.createInstance(d)
-}
-
-// Kill deletes the GCE instance, but keeps the disk.
-func (d *Driver) Kill() error {
-	return d.Stop()
+	return nil
 }
