@@ -52,7 +52,7 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 
 	osr, err := NewOsRelease(ubuntuTrusty)
 	if err != nil {
-		t.Fatal("Unexpected error parsing os release: %s", err)
+		t.Fatalf("Unexpected error parsing os release: %s", err)
 	}
 
 	expectedOsr := OsRelease{
@@ -74,7 +74,7 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 
 	osr, err = NewOsRelease(gentoo)
 	if err != nil {
-		t.Fatal("Unexpected error parsing os release: %s", err)
+		t.Fatalf("Unexpected error parsing os release: %s", err)
 	}
 
 	expectedOsr = OsRelease{
@@ -96,7 +96,7 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 
 	osr, err = NewOsRelease(noPrettyName)
 	if err != nil {
-		t.Fatal("Unexpected error parsing os release: %s", err)
+		t.Fatalf("Unexpected error parsing os release: %s", err)
 	}
 
 	expectedOsr = OsRelease{
@@ -118,7 +118,7 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 
 	osr, err = NewOsRelease(centos)
 	if err != nil {
-		t.Fatal("Unexpected error parsing os release: %s", err)
+		t.Fatalf("Unexpected error parsing os release: %s", err)
 	}
 
 	expectedOsr = OsRelease{
@@ -172,8 +172,8 @@ func TestParseLine(t *testing.T) {
 	}
 	key, val, err = parseLine(blank)
 	if key != "" || val != "" {
-		t.Fatal("Expected empty response on parseLine, got key: %s val: %s", key, val)
+		t.Fatalf("Expected empty response on parseLine, got key: %s val: %s", key, val)
 	} else if err != nil {
-		t.Fatal("Expected nil err response on parseLine, got %s", err)
+		t.Fatalf("Expected nil err response on parseLine, got %s", err)
 	}
 }
