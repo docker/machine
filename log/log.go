@@ -46,7 +46,7 @@ func isDebug() bool {
 	if debugEnv != "" {
 		showDebug, err := strconv.ParseBool(debugEnv)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error parsing boolean value from MACHINE_DEBUG: %s", err)
+			fmt.Fprintf(os.Stderr, "Error parsing boolean value from MACHINE_DEBUG: %s\n", err)
 			os.Exit(1)
 		}
 		return showDebug

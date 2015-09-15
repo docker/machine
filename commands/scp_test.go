@@ -176,7 +176,7 @@ func TestGetInfoForScpArg(t *testing.T) {
 
 	host, path, opts, err = getInfoForScpArg("myfunhost:/home/docker/foo", *provider)
 	if err != nil {
-		t.Fatal("Unexpected error in machine-based getInfoForScpArg call: %s", err)
+		t.Fatalf("Unexpected error in machine-based getInfoForScpArg call: %s", err)
 	}
 	expectedOpts := []string{
 		"-i",
@@ -188,7 +188,7 @@ func TestGetInfoForScpArg(t *testing.T) {
 		}
 	}
 	if host.Name != "myfunhost" {
-		t.Fatal("Expected host.Name to be myfunhost, got %s", host.Name)
+		t.Fatalf("Expected host.Name to be myfunhost, got %s", host.Name)
 	}
 	if path != "/home/docker/foo" {
 		t.Fatalf("Expected path to be /home/docker/foo, got %s", path)
