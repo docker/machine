@@ -284,7 +284,32 @@ func (c *ComputeUtil) deleteInstance() error {
 	if err != nil {
 		return err
 	}
+
 	log.Infof("Waiting for instance to delete.")
+	return c.waitForRegionalOp(op.Name)
+}
+
+// stopInstance stops the instance.
+func (c *ComputeUtil) stopInstance() error {
+	log.Infof("Stopping instance.")
+	op, err := c.service.Instances.Stop(c.project, c.zone, c.instanceName).Do()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Waiting for instance to stop.")
+	return c.waitForRegionalOp(op.Name)
+}
+
+// startInstance starts the instance.
+func (c *ComputeUtil) startInstance() error {
+	log.Infof("Starting instance.")
+	op, err := c.service.Instances.Start(c.project, c.zone, c.instanceName).Do()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Waiting for instance to start.")
 	return c.waitForRegionalOp(op.Name)
 }
 
