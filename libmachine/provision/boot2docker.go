@@ -70,11 +70,11 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 	// TODO: Ideally, we should not read from mcndirs directory at all.
 	// The driver should be able to communicate how and where to place the
 	// relevant files.
-	b2dutils := mcnutils.NewB2dUtils("", "", mcndirs.GetBaseDir())
+	b2dutils := mcnutils.NewB2dUtils(mcndirs.GetBaseDir())
 
 	// Usually we call this implicitly, but call it here explicitly to get
 	// the latest boot2docker ISO.
-	if err := b2dutils.DownloadLatestBoot2Docker(); err != nil {
+	if err := b2dutils.DownloadLatestBoot2Docker(""); err != nil {
 		return err
 	}
 
