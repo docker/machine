@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/codegangsta/cli"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ .UsageHint }}`
+	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
 )
 
 var (
@@ -27,6 +28,8 @@ type ShellConfig struct {
 	DockerTLSVerify string
 	UsageHint       string
 	MachineName     string
+	NoProxyVar      string
+	NoProxyValue    string
 }
 
 func cmdEnv(c *cli.Context) {
@@ -54,11 +57,42 @@ func cmdEnv(c *cli.Context) {
 
 	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell)
 
-	shellCfg := ShellConfig{
-		DockerCertPath:  "",
-		DockerHost:      "",
-		DockerTLSVerify: "",
-		MachineName:     "",
+	shellCfg := &ShellConfig{
+		DockerCertPath:  authOptions.CertDir,
+		DockerHost:      dockerHost,
+		DockerTLSVerify: "1",
+		UsageHint:       usageHint,
+		MachineName:     h.Name,
+	}
+
+	if c.Bool("no-proxy") {
+		ip, err := h.Driver.GetIP()
+		if err != nil {
+			log.Fatalf("Error getting host IP: %s", err)
+		}
+
+		// first check for an existing lower case no_proxy var
+		noProxyVar := "no_proxy"
+		noProxyValue := os.Getenv("no_proxy")
+
+		// otherwise default to allcaps HTTP_PROXY
+		if noProxyValue == "" {
+			noProxyVar = "NO_PROXY"
+			noProxyValue = os.Getenv("NO_PROXY")
+		}
+
+		// add the docker host to the no_proxy list idempotently
+		switch {
+		case noProxyValue == "":
+			noProxyValue = ip
+		case strings.Contains(noProxyValue, ip):
+			//ip already in no_proxy list, nothing to do
+		default:
+			noProxyValue = fmt.Sprintf("%s,%s", noProxyValue, ip)
+		}
+
+		shellCfg.NoProxyVar = noProxyVar
+		shellCfg.NoProxyValue = noProxyValue
 	}
 
 	// unset vars
@@ -95,14 +129,6 @@ func cmdEnv(c *cli.Context) {
 			log.Fatal(err)
 		}
 		return
-	}
-
-	shellCfg = ShellConfig{
-		DockerCertPath:  authOptions.CertDir,
-		DockerHost:      dockerHost,
-		DockerTLSVerify: "1",
-		UsageHint:       usageHint,
-		MachineName:     h.Name,
 	}
 
 	switch userShell {
