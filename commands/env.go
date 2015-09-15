@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ .UsageHint }}`
+	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
 )
 
 var (
@@ -31,6 +31,8 @@ type ShellConfig struct {
 	DockerTLSVerify string
 	UsageHint       string
 	MachineName     string
+	NoProxyVar      string
+	NoProxyValue    string
 }
 
 func cmdEnv(c *cli.Context) {
@@ -55,6 +57,8 @@ func cmdEnv(c *cli.Context) {
 		DockerHost:      "",
 		DockerTLSVerify: "",
 		MachineName:     "",
+		NoProxyVar:      "",
+		NoProxyValue:    "",
 	}
 
 	// unset vars
@@ -103,6 +107,14 @@ func cmdEnv(c *cli.Context) {
 	}
 
 	dockerHost := cfg.machineUrl
+	u, err := url.Parse(cfg.machineUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//extract the ip from the docker host
+	mParts := strings.Split(u.Host, ":")
+	machineIp := mParts[0]
+
 	if c.Bool("swarm") {
 		if !cfg.SwarmOptions.Master {
 			log.Fatalf("%s is not a swarm master", cfg.machineName)
@@ -114,20 +126,29 @@ func cmdEnv(c *cli.Context) {
 		parts := strings.Split(u.Host, ":")
 		swarmPort := parts[1]
 
-		// get IP of machine to replace in case swarm host is 0.0.0.0
-		mUrl, err := url.Parse(cfg.machineUrl)
-		if err != nil {
-			log.Fatal(err)
-		}
-		mParts := strings.Split(mUrl.Host, ":")
-		machineIp := mParts[0]
-
 		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
 	}
 
-	u, err := url.Parse(cfg.machineUrl)
-	if err != nil {
-		log.Fatal(err)
+	noProxyVar := ""
+	noProxyValue := ""
+	if c.Bool("no-proxy") {
+		//first check for an existing lower case no_proxy var
+		noProxyVar = "no_proxy"
+		noProxyValue = os.Getenv("no_proxy")
+		//otherwise default to allcaps HTTP_PROXY
+		if noProxyValue == "" {
+			noProxyVar = "NO_PROXY"
+			noProxyValue = os.Getenv("NO_PROXY")
+		}
+		//add the docker host to the no_proxy list idempotently
+		switch {
+		case noProxyValue == "":
+			noProxyValue = machineIp
+		case strings.Contains(noProxyValue, machineIp):
+			//ip already in no_proxy list, nothing to do
+		default:
+			noProxyValue = fmt.Sprintf("%s,%s", noProxyValue, machineIp)
+		}
 	}
 
 	if u.Scheme != "unix" {
@@ -157,6 +178,8 @@ func cmdEnv(c *cli.Context) {
 		DockerTLSVerify: "1",
 		UsageHint:       usageHint,
 		MachineName:     cfg.machineName,
+		NoProxyVar:      noProxyVar,
+		NoProxyValue:    noProxyValue,
 	}
 
 	switch userShell {
