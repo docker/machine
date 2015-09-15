@@ -447,7 +447,6 @@ func (d *Driver) GetState() (state.State, error) {
 	default:
 		return state.Error, nil
 	}
-	return state.None, nil
 }
 
 // GetSSHHostname -
