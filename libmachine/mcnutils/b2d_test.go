@@ -16,15 +16,15 @@ func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	b := NewB2dUtils(ts.URL, ts.URL, "/tmp/isos")
-	isoUrl, err := b.GetLatestBoot2DockerReleaseURL()
+	b := NewB2dUtils("/tmp/isos")
+	isoUrl, err := b.GetLatestBoot2DockerReleaseURL(ts.URL + "/repos/org/repo/releases")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/0.1/boot2docker.iso", ts.URL)
+	expectedUrl := fmt.Sprintf("%s/org/repo/releases/download/0.1/boot2docker.iso", ts.URL)
 	if isoUrl != expectedUrl {
-		t.Fatalf("expected url %s; received %s", isoUrl, expectedUrl)
+		t.Fatalf("expected url %s; received %s", expectedUrl, isoUrl)
 	}
 }
 
@@ -42,7 +42,7 @@ func TestDownloadIso(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b := NewB2dUtils(ts.URL, ts.URL, "/tmp/artifacts")
+	b := NewB2dUtils("/tmp/artifacts")
 	if err := b.DownloadISO(tmpDir, filename, ts.URL); err != nil {
 		t.Fatal(err)
 	}
@@ -59,8 +59,8 @@ func TestDownloadIso(t *testing.T) {
 
 func TestGetReleasesRequestNoToken(t *testing.T) {
 	GithubApiToken = ""
-	b2d := NewB2dUtils("", "", "/tmp/store")
-	req, err := b2d.getReleasesRequest()
+	b2d := NewB2dUtils("/tmp/store")
+	req, err := b2d.getReleasesRequest("http://some.github.api")
 	if err != nil {
 		t.Fatal("Expected err to be nil, got ", err)
 	}
@@ -73,9 +73,9 @@ func TestGetReleasesRequestNoToken(t *testing.T) {
 func TestGetReleasesRequest(t *testing.T) {
 	expectedToken := "CATBUG"
 	GithubApiToken = expectedToken
-	b2d := NewB2dUtils("", "", "/tmp/store")
+	b2d := NewB2dUtils("/tmp/store")
 
-	req, err := b2d.getReleasesRequest()
+	req, err := b2d.getReleasesRequest("http://some.github.api")
 	if err != nil {
 		t.Fatal("Expected err to be nil, got ", err)
 	}
