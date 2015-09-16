@@ -342,7 +342,8 @@ func (d *Driver) Create() error {
 		} else if !os.IsNotExist(err) {
 			// add shared folder, create mountpoint and mount it.
 			vmrun("-gu", B2DUser, "-gp", B2DPass, "addSharedFolder", d.vmxPath(), shareName, shareDir)
-			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
+			command := "[ ! -d " + shareDir + " ]&& sudo mkdir " + shareDir + "; [ -f /usr/local/bin/vmhgfs-fuse ]&& sudo /usr/local/bin/vmhgfs-fuse -o allow_other .host:/" + shareName + " " + shareDir + " || sudo mount -t vmhgfs .host:/" + shareName + " " + shareDir
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", command)
 		}
 	}
 	return nil
@@ -372,7 +373,8 @@ func (d *Driver) Start() error {
 			return err
 		} else if !os.IsNotExist(err) {
 			// create mountpoint and mount shared folder
-			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", "sudo mkdir "+shareDir+" && sudo mount -t vmhgfs .host:/"+shareName+" "+shareDir)
+			command := "[ ! -d " + shareDir + " ]&& sudo mkdir " + shareDir + "; [ -f /usr/local/bin/vmhgfs-fuse ]&& sudo /usr/local/bin/vmhgfs-fuse -o allow_other .host:/" + shareName + " " + shareDir + " || sudo mount -t vmhgfs .host:/" + shareName + " " + shareDir
+			vmrun("-gu", B2DUser, "-gp", B2DPass, "runScriptInGuest", d.vmxPath(), "/bin/sh", command)
 		}
 	}
 
