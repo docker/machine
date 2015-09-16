@@ -9,9 +9,6 @@ import (
 	"github.com/docker/machine/drivers/fakedriver"
 	_ "github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/libmachine/auth"
-	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/state"
 )
 
@@ -72,36 +69,6 @@ func getTestDriverFlags() *DriverOptionsMock {
 		},
 	}
 	return flags
-}
-
-func getDefaultTestHost() (*libmachine.Host, error) {
-	engineOptions := &engine.EngineOptions{}
-	swarmOptions := &swarm.SwarmOptions{
-		Master:    false,
-		Host:      "",
-		Discovery: "",
-		Address:   "",
-	}
-	authOptions := &auth.AuthOptions{
-		CaCertPath:     hostTestCaCert,
-		PrivateKeyPath: hostTestPrivateKey,
-	}
-	hostOptions := &libmachine.HostOptions{
-		EngineOptions: engineOptions,
-		SwarmOptions:  swarmOptions,
-		AuthOptions:   authOptions,
-	}
-	host, err := libmachine.NewHost(hostTestName, hostTestDriverName, hostOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	flags := getTestDriverFlags()
-	if err := host.Driver.SetConfigFromFlags(flags); err != nil {
-		return nil, err
-	}
-
-	return host, nil
 }
 
 type DriverOptionsMock struct {
