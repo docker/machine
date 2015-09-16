@@ -43,7 +43,7 @@ func cmdConfig(c *cli.Context) {
 		mParts := strings.Split(mUrl.Host, ":")
 		machineIp := mParts[0]
 
-		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+		dockerHost = fmt.Sprintf("tcp://%s:%s\n", machineIp, swarmPort)
 	}
 
 	log.Debug(dockerHost)
@@ -74,6 +74,6 @@ func cmdConfig(c *cli.Context) {
 		}
 	}
 
-	fmt.Printf("--tlsverify --tlscacert=%q --tlscert=%q --tlskey=%q -H=%s",
+	fmt.Printf("--tlsverify --tlscacert=%q --tlscert=%q --tlskey=%q -H=%s\n",
 		cfg.caCertPath, cfg.clientCertPath, cfg.clientKeyPath, dockerHost)
 }

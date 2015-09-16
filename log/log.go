@@ -7,7 +7,7 @@ import (
 )
 
 // Why the interface?  We may only want to print to STDOUT and STDERR for now,
-// but it won't neccessarily be that way forever.  This interface is intended
+// but it won't necessarily be that way forever.  This interface is intended
 // to provide a "framework" for a variety of different logging types in the
 // future (log to file, log to logstash, etc.) There could be a driver model
 // similar to what is done with OS or machine providers.
@@ -17,11 +17,9 @@ type Logger interface {
 
 	Error(...interface{})
 	Errorf(string, ...interface{})
-	Errorln(...interface{})
 
 	Info(...interface{})
 	Infof(string, ...interface{})
-	Infoln(...interface{})
 
 	Fatal(...interface{})
 	Fatalf(string, ...interface{})
@@ -72,20 +70,12 @@ func Errorf(fmtString string, args ...interface{}) {
 	l.Errorf(fmtString, args...)
 }
 
-func Errorln(args ...interface{}) {
-	l.Errorln(args...)
-}
-
 func Info(args ...interface{}) {
 	l.Info(args...)
 }
 
 func Infof(fmtString string, args ...interface{}) {
 	l.Infof(fmtString, args...)
-}
-
-func Infoln(args ...interface{}) {
-	l.Infoln(args...)
 }
 
 func Fatal(args ...interface{}) {
