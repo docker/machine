@@ -1,6 +1,7 @@
 package amz
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
@@ -16,9 +17,10 @@ import (
 
 type (
 	EC2 struct {
-		Endpoint string
-		Auth     Auth
-		Region   string
+		Endpoint         string
+		Auth             Auth
+		Region           string
+		InsecureEndpoint bool
 	}
 
 	Instance struct {
@@ -139,12 +141,15 @@ func getDecodedResponse(r http.Response, into interface{}) error {
 	return nil
 }
 
-func NewEC2(auth Auth, region string) *EC2 {
-	endpoint := fmt.Sprintf("https://ec2.%s.amazonaws.com", region)
+func NewEC2(auth Auth, region string, endpoint string, insecureEndpoint bool) *EC2 {
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("https://ec2.%s.amazonaws.com", region)
+	}
 	return &EC2{
-		Endpoint: endpoint,
-		Auth:     auth,
-		Region:   region,
+		Endpoint:         endpoint,
+		Auth:             auth,
+		Region:           region,
+		InsecureEndpoint: insecureEndpoint,
 	}
 }
 
@@ -152,7 +157,10 @@ func (e *EC2) awsApiCall(v url.Values) (*http.Response, error) {
 	v.Set("Version", "2014-06-15")
 	log.Debug("Making AWS API call with values:")
 	utils.DumpVal(v)
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: e.InsecureEndpoint},
+	}
+	client := &http.Client{Transport: tr}
 	finalEndpoint := fmt.Sprintf("%s?%s", e.Endpoint, v.Encode())
 	req, err := http.NewRequest("GET", finalEndpoint, nil)
 	if err != nil {

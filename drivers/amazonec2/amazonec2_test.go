@@ -87,6 +87,8 @@ func getDefaultTestDriverFlags() *DriverOptionsMock {
 			"amazonec2-private-address-only":  false,
 			"amazonec2-use-private-address":   false,
 			"amazonec2-monitoring":            false,
+			"amazonec2-endpoint":              "",
+			"amazonec2-insecure-endpoint":     false,
 		},
 	}
 }
