@@ -23,6 +23,11 @@ var funcMap = template.FuncMap{
 }
 
 func cmdInspect(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		cli.ShowCommandHelp(c, "inspect")
+		log.Fatal("You must specify a machine name")
+	}
+
 	tmplString := c.String("format")
 	if tmplString != "" {
 		var tmpl *template.Template
