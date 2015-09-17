@@ -45,7 +45,7 @@ func (provisioner *DebianProvisioner) Service(name string, action serviceaction.
 		return err
 	}
 
-	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
+	command := fmt.Sprintf("sudo systemctl -f %s %s", action.String(), name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
