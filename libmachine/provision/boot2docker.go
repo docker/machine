@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/state"
@@ -36,7 +37,7 @@ type Boot2DockerProvisioner struct {
 	SwarmOptions  swarm.SwarmOptions
 }
 
-func (provisioner *Boot2DockerProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+func (provisioner *Boot2DockerProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	var (
 		err error
 	)

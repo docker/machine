@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/docker/machine/libmachine/auth"
-	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/log"
 	"github.com/docker/machine/utils"
 )
@@ -105,7 +105,7 @@ func ConfigureAuth(p Provisioner) error {
 		return fmt.Errorf("error generating server cert: %s", err)
 	}
 
-	if err := p.Service("docker", pkgaction.Stop); err != nil {
+	if err := p.Service("docker", serviceaction.Stop); err != nil {
 		return err
 	}
 
@@ -168,7 +168,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if err := p.Service("docker", pkgaction.Start); err != nil {
+	if err := p.Service("docker", serviceaction.Start); err != nil {
 		return err
 	}
 
