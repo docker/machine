@@ -92,7 +92,7 @@ func ConfigureAuth(p Provisioner) error {
 	// TODO: Switch to passing just authOptions to this func
 	// instead of all these individual fields
 	err = utils.GenerateCert(
-		[]string{ip},
+		[]string{ip,"localhost"},
 		authOptions.ServerCertPath,
 		authOptions.ServerKeyPath,
 		authOptions.CaCertPath,
