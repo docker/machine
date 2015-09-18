@@ -21,6 +21,18 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[0]} =~ "machine config"  ]]
 }
 
+@test "cli: show create help" {
+  run machine create -h
+  [ "$status" -eq 0  ]
+  [[ ${lines[0]} =~ "machine create"  ]]
+}
+
+@test "cli: show env help" {
+  run machine env -h
+  [ "$status" -eq 0  ]
+  [[ ${lines[0]} =~ "machine env"  ]]
+}
+
 @test "cli: show inspect help" {
   run machine inspect -h
   [ "$status" -eq 0  ]
@@ -45,6 +57,12 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[0]} =~ "machine ls"  ]]
 }
 
+@test "cli: show regenerate-certs help" {
+  run machine regenerate-certs -h
+  [ "$status" -eq 0  ]
+  [[ ${lines[0]} =~ "machine regenerate-certs"  ]]
+}
+
 @test "cli: show restart help" {
   run machine restart -h
   [ "$status" -eq 0  ]
@@ -57,10 +75,10 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[0]} =~ "machine rm"  ]]
 }
 
-@test "cli: show env help" {
-  run machine env -h
+@test "cli: show scp help" {
+  run machine scp -h
   [ "$status" -eq 0  ]
-  [[ ${lines[0]} =~ "machine env"  ]]
+  [[ ${lines[0]} =~ "machine scp"  ]]
 }
 
 @test "cli: show ssh help" {
@@ -73,6 +91,12 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine start -h
   [ "$status" -eq 0  ]
   [[ ${lines[0]} =~ "machine start"  ]]
+}
+
+@test "cli: show status help" {
+  run machine status -h
+  [ "$status" -eq 0  ]
+  [[ ${lines[0]} =~ "machine status"  ]]
 }
 
 @test "cli: show stop help" {
