@@ -127,8 +127,11 @@ func getHostOnlyNetwork(hostIP net.IP, netmask net.IPMask) (*hostOnlyNetwork, er
 		return nil, err
 	}
 	for _, n := range nets {
+		//handle known issue where vbox throws us a bad netmask
+		//if the value returned is "0f000000" it's the newly
+		//created adpater and should be the right one
 		if hostIP.Equal(n.IPv4.IP) &&
-			netmask.String() == n.IPv4.Mask.String() {
+			(netmask.String() == n.IPv4.Mask.String() || n.IPv4.Mask.String() == "0f000000") {
 			return n, nil
 		}
 	}
