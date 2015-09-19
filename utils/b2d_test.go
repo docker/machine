@@ -24,7 +24,7 @@ func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
 
 	expectedUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/0.1/boot2docker.iso", ts.URL)
 	if isoUrl != expectedUrl {
-		t.Fatalf("expected url %s; received %s", isoUrl)
+		t.Fatalf("expected url %s; received %s", isoUrl, expectedUrl)
 	}
 }
 

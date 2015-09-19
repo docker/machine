@@ -7,7 +7,7 @@ script:
 - make dco
 - make fmt
 # - make lint
-# - make vet
+- make vet
 - make test-short
 - make test-long
 - make coverage-send
