@@ -4,6 +4,6 @@ import "testing"
 
 func TestActionValue(t *testing.T) {
 	if Restart.String() != "restart" {
-		t.Fatal("Expected %q but got %q", "install", Restart.String())
+		t.Fatalf("Expected %s but got %s", "install", Restart.String())
 	}
 }

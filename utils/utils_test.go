@@ -119,7 +119,7 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	if string(data) != testStr {
-		t.Fatalf("expected data \"%s\"; received \"%\"", testStr, string(data))
+		t.Fatalf("expected data \"%s\"; received \"%s\"", testStr, string(data))
 	}
 }
 

@@ -35,5 +35,5 @@ endif
 default: build
 clean: coverage-clean build-clean
 build: build-simple
-test: dco fmt test-short
+test: dco fmt vet test-short
 validate: dco fmt vet lint test-short test-long
