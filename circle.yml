@@ -9,6 +9,7 @@ machine:
 
   post:
     - gvm install go1.5 -B --name=stable
+    - gvm use stable && go get github.com/mitchellh/gox
 
   environment:
   # Convenient shortcuts to "common" locations
