@@ -6,8 +6,8 @@ import (
 	"strconv"
 )
 
-// Why the interface?  We may only want to print to STDOUT and STDERR for now,
-// but it won't necessarily be that way forever.  This interface is intended
+// Logger exists because while we only want to print to STDOUT and STDERR for now,
+// it won't necessarily be that way forever.  This interface is intended
 // to provide a "framework" for a variety of different logging types in the
 // future (log to file, log to logstash, etc.) There could be a driver model
 // similar to what is done with OS or machine providers.

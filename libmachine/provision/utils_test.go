@@ -53,7 +53,7 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 		Driver: &fakedriver.FakeDriver{},
 	}
 	dockerPort := 2376
-	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
+	bindURL := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
 	p.AuthOptions = auth.AuthOptions{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
@@ -75,8 +75,8 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 	url := u[1]
 	url = strings.Replace(url, "'", "", -1)
 	url = strings.Replace(url, "\\\"", "", -1)
-	if url != bindUrl {
-		t.Errorf("expected url %s; received %s", bindUrl, url)
+	if url != bindURL {
+		t.Errorf("expected url %s; received %s", bindURL, url)
 	}
 }
 
@@ -85,7 +85,7 @@ func TestMachineCustomPortBoot2Docker(t *testing.T) {
 		Driver: &fakedriver.FakeDriver{},
 	}
 	dockerPort := 3376
-	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
+	bindURL := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
 	p.AuthOptions = auth.AuthOptions{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
@@ -108,7 +108,7 @@ func TestMachineCustomPortBoot2Docker(t *testing.T) {
 	url := u[1]
 	url = strings.Replace(url, "'", "", -1)
 	url = strings.Replace(url, "\\\"", "", -1)
-	if url != bindUrl {
-		t.Errorf("expected url %s; received %s", bindUrl, url)
+	if url != bindURL {
+		t.Errorf("expected url %s; received %s", bindURL, url)
 	}
 }

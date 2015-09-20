@@ -63,9 +63,9 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 		IdLike:       "debian",
 		PrettyName:   "Ubuntu 14.04 LTS",
 		VersionId:    "14.04",
-		HomeUrl:      "http://www.ubuntu.com/",
-		SupportUrl:   "http://help.ubuntu.com/",
-		BugReportUrl: "http://bugs.launchpad.net/ubuntu/",
+		HomeURL:      "http://www.ubuntu.com/",
+		SupportURL:   "http://help.ubuntu.com/",
+		BugReportURL: "http://bugs.launchpad.net/ubuntu/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
@@ -85,9 +85,9 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 		IdLike:       "",
 		PrettyName:   "Gentoo/Linux",
 		VersionId:    "",
-		HomeUrl:      "http://www.gentoo.org/",
-		SupportUrl:   "http://www.gentoo.org/main/en/support.xml",
-		BugReportUrl: "https://bugs.gentoo.org/",
+		HomeURL:      "http://www.gentoo.org/",
+		SupportURL:   "http://www.gentoo.org/main/en/support.xml",
+		BugReportURL: "https://bugs.gentoo.org/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
@@ -107,9 +107,9 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 		IdLike:       "debian",
 		PrettyName:   "",
 		VersionId:    "14.04",
-		HomeUrl:      "http://www.ubuntu.com/",
-		SupportUrl:   "http://help.ubuntu.com/",
-		BugReportUrl: "http://bugs.launchpad.net/ubuntu/",
+		HomeURL:      "http://www.ubuntu.com/",
+		SupportURL:   "http://help.ubuntu.com/",
+		BugReportURL: "http://bugs.launchpad.net/ubuntu/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
@@ -129,8 +129,8 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 		PrettyName:   "CentOS Linux 7 (Core)",
 		AnsiColor:    "0;31",
 		VersionId:    "7",
-		HomeUrl:      "https://www.centos.org/",
-		BugReportUrl: "https://bugs.centos.org/",
+		HomeURL:      "https://www.centos.org/",
+		BugReportURL: "https://bugs.centos.org/",
 	}
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {

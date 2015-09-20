@@ -13,6 +13,8 @@ import (
 	"github.com/skarademir/naturalsort"
 
 	"github.com/docker/machine/drivers"
+
+	// Import drivers
 	_ "github.com/docker/machine/drivers/amazonec2"
 	_ "github.com/docker/machine/drivers/azure"
 	_ "github.com/docker/machine/drivers/digitalocean"
