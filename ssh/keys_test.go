@@ -11,7 +11,7 @@ func TestNewKeyPair(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if privPem := pem.EncodeToMemory(&pem.Block{"RSA PRIVATE KEY", nil, pair.PrivateKey}); len(privPem) == 0 {
+	if privPem := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Headers: nil, Bytes: pair.PrivateKey}); len(privPem) == 0 {
 		t.Fatal("No PEM returned")
 	}
 
