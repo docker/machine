@@ -17,14 +17,14 @@ func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
 	defer ts.Close()
 
 	b := NewB2dUtils(ts.URL, ts.URL)
-	isoUrl, err := b.GetLatestBoot2DockerReleaseURL()
+	isoURL, err := b.GetLatestBoot2DockerReleaseURL()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/0.1/boot2docker.iso", ts.URL)
-	if isoUrl != expectedUrl {
-		t.Fatalf("expected url %s; received %s", isoUrl, expectedUrl)
+	expectedURL := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/0.1/boot2docker.iso", ts.URL)
+	if isoURL != expectedURL {
+		t.Fatalf("expected url %s; received %s", isoURL, expectedURL)
 	}
 }
 
