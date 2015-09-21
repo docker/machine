@@ -7,7 +7,7 @@ set -e
 
 function build_machine() {
     cd ${MACHINE_ROOT}
-    ./script/build
+    make build-x
     cd -
 }
 
@@ -27,7 +27,7 @@ function cleanup_machines() {
 }
 
 function machine() {
-    "$MACHINE_ROOT"/"$MACHINE_BIN_NAME" "$@"
+    "$MACHINE_ROOT"/bin/"$MACHINE_BIN_NAME" "$@"
 }
 
 function run_bats() {
@@ -68,7 +68,7 @@ EXIT_STATUS=0
 export BATS_FILE="$1"
 
 # build machine binary if needed
-if [ ! -e "$MACHINE_ROOT"/"$MACHINE_BIN_NAME" ]; then
+if [ ! -e "$MACHINE_ROOT"/bin/"$MACHINE_BIN_NAME" ]; then
     build_machine
 fi
 
