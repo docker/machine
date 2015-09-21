@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/docker/docker/pkg/term"
 	"github.com/docker/machine/log"
@@ -256,9 +257,7 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 		BinaryPath: sshBinaryPath,
 	}
 
-	// Base args take care of settings some options for us, e.g. don't use
-	// the authorized hosts file.
-	args := baseSSHArgs
+	args := append(baseSSHArgs, fmt.Sprintf("%s@%s", user, host))
 
 	// Specify which private keys to use to authorize the SSH request.
 	for _, privateKeyPath := range auth.Keys {
@@ -268,16 +267,15 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 	// Set which port to use for SSH.
 	args = append(args, "-p", fmt.Sprintf("%d", port))
 
-	// Set the user and hostname, e.g. ubuntu@12.34.56.78
-	args = append(args, fmt.Sprintf("%s@%s", user, host))
-
 	client.BaseArgs = args
 
 	return client, nil
 }
 
 func (client ExternalClient) Output(command string) (string, error) {
-	args := append(client.BaseArgs, command)
+	// TODO: Ugh, gross hack.  Replace with all instances using variadic
+	// syntax
+	args := append(client.BaseArgs, strings.Split(command, " ")...)
 
 	cmd := exec.Command(client.BinaryPath, args...)
 	log.Debug(cmd)
