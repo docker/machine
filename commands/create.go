@@ -12,6 +12,7 @@ import (
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/extension"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/utils"
 )
@@ -92,6 +93,9 @@ func cmdCreate(c *cli.Context) {
 			Host:           c.String("swarm-host"),
 			Strategy:       c.String("swarm-strategy"),
 			ArbitraryFlags: c.StringSlice("swarm-opt"),
+		},
+		ExtensionOptions: &extension.ExtensionOptions{
+			File: c.String("extension"),
 		},
 	}
 

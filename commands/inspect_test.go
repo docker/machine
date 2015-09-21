@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/extension"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/stretchr/testify/assert"
 )
@@ -86,7 +87,8 @@ func runInspectCommand(t *testing.T, args []string) (string, *libmachine.Host) {
 			Address:   "",
 			Host:      "",
 		},
-		AuthOptions: &auth.AuthOptions{},
+		AuthOptions:      &auth.AuthOptions{},
+		ExtensionOptions: &extension.ExtensionOptions{},
 	}
 
 	flags := getTestDriverFlags()

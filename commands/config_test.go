@@ -14,6 +14,7 @@ import (
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/extension"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -48,7 +49,8 @@ func TestCmdConfig(t *testing.T) {
 			Address:   "",
 			Host:      "",
 		},
-		AuthOptions: &auth.AuthOptions{},
+		AuthOptions:      &auth.AuthOptions{},
+		ExtensionOptions: &extension.ExtensionOptions{},
 	}
 
 	host, err := provider.Create("test-a", "none", hostOptions, flags)

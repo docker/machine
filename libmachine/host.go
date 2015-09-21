@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/extension"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
@@ -41,12 +42,13 @@ type Host struct {
 }
 
 type HostOptions struct {
-	Driver        string
-	Memory        int
-	Disk          int
-	EngineOptions *engine.EngineOptions
-	SwarmOptions  *swarm.SwarmOptions
-	AuthOptions   *auth.AuthOptions
+	Driver           string
+	Memory           int
+	Disk             int
+	EngineOptions    *engine.EngineOptions
+	SwarmOptions     *swarm.SwarmOptions
+	AuthOptions      *auth.AuthOptions
+	ExtensionOptions *extension.ExtensionOptions
 }
 
 type HostMetadata struct {
@@ -107,6 +109,12 @@ func ValidateHostName(name string) bool {
 }
 
 func (h *Host) Create(name string) error {
+	if h.HostOptions.ExtensionOptions != nil && h.HostOptions.ExtensionOptions.File != "" {
+		if err := extension.ParseExtensionFile(*h.HostOptions.ExtensionOptions); err != nil {
+			return err
+		}
+	}
+
 	// create the instance
 	if err := h.Driver.Create(); err != nil {
 		return err
@@ -135,6 +143,13 @@ func (h *Host) Create(name string) error {
 		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 			return err
 		}
+
+		if h.HostOptions.ExtensionOptions.File != "" {
+			if err := extension.ExtensionInstall(provisioner); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil
