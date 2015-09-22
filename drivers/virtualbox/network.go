@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+const (
+	buggyNetmask = "0f000000"
+)
+
 var (
 	reHostonlyInterfaceCreated = regexp.MustCompile(`Interface '(.+)' was successfully created`)
 )
@@ -121,28 +125,30 @@ func listHostOnlyNetworks() (map[string]*hostOnlyNetwork, error) {
 	return m, nil
 }
 
-func getHostOnlyNetwork(hostIP net.IP, netmask net.IPMask) (*hostOnlyNetwork, error) {
+func getHostOnlyNetwork(nets map[string]*hostOnlyNetwork, hostIP net.IP, netmask net.IPMask) (*hostOnlyNetwork, error) {
+	for _, n := range nets {
+		// Second part of this conditional handles a race where
+		// VirtualBox returns us the incorrect netmask value for the
+		// newly created interface.
+		if hostIP.Equal(n.IPv4.IP) &&
+			(netmask.String() == n.IPv4.Mask.String() || n.IPv4.Mask.String() == buggyNetmask) {
+			return n, nil
+		}
+	}
+	return nil, errors.New("Valid host only network not found")
+}
+
+func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP, dhcpUpperIP net.IP, dhcpLowerIP net.IP) (*hostOnlyNetwork, error) {
 	nets, err := listHostOnlyNetworks()
 	if err != nil {
 		return nil, err
 	}
-	for _, n := range nets {
-		//handle known issue where vbox throws us a bad netmask
-		//if the value returned is "0f000000" it's the newly
-		//created adpater and should be the right one
-		if hostIP.Equal(n.IPv4.IP) &&
-			(netmask.String() == n.IPv4.Mask.String() || n.IPv4.Mask.String() == "0f000000") {
-			return n, nil
-		}
-	}
-	return nil, nil
-}
 
-func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP, dhcpUpperIP net.IP, dhcpLowerIP net.IP) (*hostOnlyNetwork, error) {
-	hostOnlyNet, err := getHostOnlyNetwork(hostIP, netmask)
-	if err != nil || hostOnlyNet != nil {
+	hostOnlyNet, err := getHostOnlyNetwork(nets, hostIP, netmask)
+	if err != nil {
 		return hostOnlyNet, err
 	}
+
 	// No existing host-only interface found. Create a new one.
 	hostOnlyNet, err = createHostonlyNet()
 	if err != nil {
