@@ -11,9 +11,6 @@ type EngineOptions struct {
 	LogLevel         string
 	StorageDriver    string
 	SelinuxEnabled   bool
-	TlsCaCert        string
-	TlsCert          string
-	TlsKey           string
 	TlsVerify        bool
 	RegistryMirror   []string
 	InstallURL       string

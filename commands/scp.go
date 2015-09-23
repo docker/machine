@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/persist"
 )
 
 var (
@@ -26,7 +27,7 @@ var (
 	}
 )
 
-func getInfoForScpArg(hostAndPath string, provider libmachine.Provider) (*libmachine.Host, string, []string, error) {
+func getInfoForScpArg(hostAndPath string, store persist.Store) (*host.Host, string, []string, error) {
 	// TODO: What to do about colon in filepath?
 	splitInfo := strings.Split(hostAndPath, ":")
 
@@ -38,7 +39,7 @@ func getInfoForScpArg(hostAndPath string, provider libmachine.Provider) (*libmac
 	// Remote path.  e.g. "machinename:/usr/bin/cmatrix"
 	if len(splitInfo) == 2 {
 		path := splitInfo[1]
-		host, err := provider.Get(splitInfo[0])
+		host, err := store.Load(splitInfo[0])
 		if err != nil {
 			return nil, "", nil, fmt.Errorf("Error loading host: %s", err)
 		}
@@ -52,7 +53,7 @@ func getInfoForScpArg(hostAndPath string, provider libmachine.Provider) (*libmac
 	return nil, "", nil, ErrMalformedInput
 }
 
-func generateLocationArg(host *libmachine.Host, path string) (string, error) {
+func generateLocationArg(host *host.Host, path string) (string, error) {
 	locationPrefix := ""
 	if host != nil {
 		ip, err := host.Driver.GetIP()
@@ -64,18 +65,18 @@ func generateLocationArg(host *libmachine.Host, path string) (string, error) {
 	return locationPrefix + path, nil
 }
 
-func getScpCmd(src, dest string, sshArgs []string, provider libmachine.Provider) (*exec.Cmd, error) {
+func getScpCmd(src, dest string, sshArgs []string, store persist.Store) (*exec.Cmd, error) {
 	cmdPath, err := exec.LookPath("scp")
 	if err != nil {
 		return nil, errors.New("Error: You must have a copy of the scp binary locally to use the scp feature.")
 	}
 
-	srcHost, srcPath, srcOpts, err := getInfoForScpArg(src, provider)
+	srcHost, srcPath, srcOpts, err := getInfoForScpArg(src, store)
 	if err != nil {
 		return nil, err
 	}
 
-	destHost, destPath, destOpts, err := getInfoForScpArg(dest, provider)
+	destHost, destPath, destOpts, err := getInfoForScpArg(dest, store)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +130,8 @@ func cmdScp(c *cli.Context) {
 	src := args[0]
 	dest := args[1]
 
-	provider := getDefaultProvider(c)
-	cmd, err := getScpCmd(src, dest, sshArgs, *provider)
+	store := getStore(c)
+	cmd, err := getScpCmd(src, dest, sshArgs, store)
 
 	if err != nil {
 		log.Fatal(err)

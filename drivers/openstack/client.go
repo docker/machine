@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/utils"
-	"github.com/docker/machine/version"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/version"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/extensions/keypairs"
@@ -136,7 +136,7 @@ func (c *GenericClient) DeleteInstance(d *Driver) error {
 }
 
 func (c *GenericClient) WaitForInstanceStatus(d *Driver, status string) error {
-	return utils.WaitForSpecificOrError(func() (bool, error) {
+	return mcnutils.WaitForSpecificOrError(func() (bool, error) {
 		current, err := servers.Get(c.Compute, d.MachineId).Extract()
 		if err != nil {
 			return true, err
@@ -437,7 +437,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		return err
 	}
 
-	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%s", version.Version))
+	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%d", version.ApiVersion))
 
 	if d.Insecure {
 		// Configure custom TLS settings.

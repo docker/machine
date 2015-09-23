@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/ssh"
 	raw "google.golang.org/api/compute/v1"
 )
 

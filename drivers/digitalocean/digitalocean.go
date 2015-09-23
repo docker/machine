@@ -8,10 +8,10 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/codegangsta/cli"
 	"github.com/digitalocean/godo"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 type Driver struct {
@@ -28,9 +28,14 @@ type Driver struct {
 	PrivateNetworking bool
 }
 
+const (
+	defaultImage  = "ubuntu-14-04-x64"
+	defaultRegion = "nyc3"
+	defaultSize   = "512mb"
+)
+
 func init() {
 	drivers.Register("digitalocean", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -54,19 +59,19 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "DIGITALOCEAN_IMAGE",
 			Name:   "digitalocean-image",
 			Usage:  "Digital Ocean Image",
-			Value:  "ubuntu-14-04-x64",
+			Value:  defaultImage,
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_REGION",
 			Name:   "digitalocean-region",
 			Usage:  "Digital Ocean region",
-			Value:  "nyc3",
+			Value:  defaultRegion,
 		},
 		cli.StringFlag{
 			EnvVar: "DIGITALOCEAN_SIZE",
 			Name:   "digitalocean-size",
 			Usage:  "Digital Ocean size",
-			Value:  "512mb",
+			Value:  defaultSize,
 		},
 		cli.BoolFlag{
 			EnvVar: "DIGITALOCEAN_IPV6",
@@ -86,9 +91,16 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner}, nil
+func NewDriver(hostName, storePath string) *Driver {
+	return &Driver{
+		Image:  defaultImage,
+		Size:   defaultSize,
+		Region: defaultRegion,
+		BaseDriver: &drivers.BaseDriver{
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {

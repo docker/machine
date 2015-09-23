@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/log"
 )
 
 type VcConn struct {

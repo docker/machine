@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/log"
 )
 
 var (
@@ -68,15 +68,17 @@ func vbmOut(args ...string) (string, error) {
 
 func vbmOutErr(args ...string) (string, string, error) {
 	cmd := exec.Command(vboxManageCmd, args...)
-	log.Debugf("executing: %v %v", vboxManageCmd, strings.Join(args, " "))
+	log.Debugf("COMMAND: %v %v", vboxManageCmd, strings.Join(args, " "))
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	stderrStr := stderr.String()
-	log.Debugf("STDOUT: %v", stdout.String())
-	log.Debugf("STDERR: %v", stderrStr)
+	if len(args) > 0 {
+		log.Debugf("STDOUT:\n{\n%v}", stdout.String())
+		log.Debugf("STDERR:\n{\n%v}", stderrStr)
+	}
 	if err != nil {
 		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
 			err = ErrVBMNotFound

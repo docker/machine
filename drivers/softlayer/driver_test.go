@@ -80,10 +80,7 @@ func getTestDriver() (*Driver, error) {
 	}
 	defer cleanup()
 
-	d, err := NewDriver(machineTestName, storePath, machineTestCaCert, machineTestPrivateKey)
-	if err != nil {
-		return nil, err
-	}
+	d := NewDriver(machineTestName, storePath)
 	d.SetConfigFromFlags(getDefaultTestDriverFlags())
 	drv := d.(*Driver)
 	return drv, nil

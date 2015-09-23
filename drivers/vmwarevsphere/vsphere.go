@@ -9,27 +9,25 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/log"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/vmwarevsphere/errors"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 const (
-	isoFilename      = "boot2docker.iso"
-	B2DISOName       = isoFilename
-	DefaultCPUNumber = 2
-	B2DUser          = "docker"
-	B2DPass          = "tcuser"
+	isoFilename = "boot2docker.iso"
+	B2DISOName  = isoFilename
+	B2DUser     = "docker"
+	B2DPass     = "tcuser"
 )
 
 type Driver struct {
@@ -49,9 +47,14 @@ type Driver struct {
 	ISO            string
 }
 
+const (
+	defaultCpus     = 2
+	defaultMemory   = 2048
+	defaultDiskSize = 20000
+)
+
 func init() {
 	drivers.Register("vmwarevsphere", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -64,19 +67,19 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VSPHERE_CPU_COUNT",
 			Name:   "vmwarevsphere-cpu-count",
 			Usage:  "vSphere CPU number for docker VM",
-			Value:  2,
+			Value:  defaultCpus,
 		},
 		cli.IntFlag{
 			EnvVar: "VSPHERE_MEMORY_SIZE",
 			Name:   "vmwarevsphere-memory-size",
 			Usage:  "vSphere size of memory for docker VM (in MB)",
-			Value:  2048,
+			Value:  defaultMemory,
 		},
 		cli.IntFlag{
 			EnvVar: "VSPHERE_DISK_SIZE",
 			Name:   "vmwarevsphere-disk-size",
 			Usage:  "vSphere size of disk for docker VM (in MB)",
-			Value:  20000,
+			Value:  defaultDiskSize,
 		},
 		cli.StringFlag{
 			EnvVar: "VSPHERE_BOOT2DOCKER_URL",
@@ -126,9 +129,16 @@ func GetCreateFlags() []cli.Flag {
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner}, nil
+func NewDriver(hostName, storePath string) drivers.Driver {
+	return &Driver{
+		CPU:      defaultCpus,
+		Memory:   defaultMemory,
+		DiskSize: defaultDiskSize,
+		BaseDriver: &drivers.BaseDriver{
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
@@ -166,10 +176,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 
-	imgPath := utils.GetMachineCacheDir()
-	commonIsoPath := filepath.Join(imgPath, isoFilename)
-
-	d.ISO = path.Join(commonIsoPath)
+	d.ISO = filepath.Join(d.StorePath, isoFilename)
 
 	return nil
 }
@@ -225,7 +232,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := mcnutils.NewB2dUtils("", "", d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
