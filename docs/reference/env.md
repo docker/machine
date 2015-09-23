@@ -77,19 +77,27 @@ set DOCKER_MACHINE_NAME=dev
 # Run this command to configure your shell: copy and paste the above values into your command prompt
 ```
 
-## Proxy exclusion
-The env command supports a `--no-proxy` flag that will also add the `DOCKER_HOST` to the `NO_PROXY`/`no_proxy`  environment variable (which ever is already defined).
+## Excluding the created machine from proxies
+
+The env command supports a `--no-proxy` flag which will ensure that the created
+machine's IP address is added to the [`NO_PROXY`/`no_proxy` environment
+variable](https://wiki.archlinux.org/index.php/Proxy_settings).
+
+This is useful when using `docker-machine` with a local VM provider (e.g.
+`virtualbox` or `vmwarefusion`) in network environments where a HTTP proxy is
+required for internet access.
 
 ```
-docker-machine env dev --no-proxy
-set -x DOCKER_TLS_VERIFY "1";
-set -x DOCKER_HOST "tcp://172.16.77.135:2376";
-set -x DOCKER_CERT_PATH "/Users/fabus/.docker/machine/machines/dev";
-set -x DOCKER_MACHINE_NAME "dev";
-set -x NO_PROXY "172.16.77.135";
+$ docker-machine env --no-proxy default
+export DOCKER_TLS_VERIFY="1"
+export DOCKER_HOST="tcp://192.168.99.104:2376"
+export DOCKER_CERT_PATH="/Users/databus23/.docker/machine/certs"
+export DOCKER_MACHINE_NAME="default"
+export NO_PROXY="192.168.99.104"
 # Run this command to configure your shell:
-# eval (docker-machine env dev)
+# eval "$(docker-machine env default)"
 ```
 
-This is useful when using docker-machine with a local VM provider (e.g. virtualbox or vmware fusion/workstation) in network environments where a http proxy is needed for internet access.
-
+You may also want to visit the [documentation on setting `HTTP_PROXY` for the
+created daemon using the `--engine-env` flag for `docker-machine
+create`](https://docs.docker.com/machine/reference/create/#specifying-configuration-options-for-the-created-docker-engine).
