@@ -3,13 +3,13 @@ package commands
 import (
 	"fmt"
 
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/log"
 
 	"github.com/codegangsta/cli"
 )
 
 func cmdUrl(c *cli.Context) {
-	url, err := getHost(c).GetURL()
+	url, err := getFirstArgHost(c).GetURL()
 	if err != nil {
 		log.Fatal(err)
 	}

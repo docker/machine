@@ -1,112 +1,27 @@
 package commands
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
+	"strings"
 	"testing"
 
 	"github.com/docker/machine/drivers/fakedriver"
-	_ "github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/hosttest"
+	"github.com/docker/machine/libmachine/persisttest"
+	"github.com/docker/machine/libmachine/state"
+	"github.com/stretchr/testify/assert"
 )
-
-const (
-	hostTestName       = "test-host"
-	hostTestDriverName = "none"
-	hostTestCaCert     = "test-cert"
-	hostTestPrivateKey = "test-key"
-)
-
-var (
-	hostTestStorePath string
-	TestStoreDir      string
-)
-
-func init() {
-	tmpDir, err := ioutil.TempDir("", "machine-test-")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	TestStoreDir = tmpDir
-}
-
-func clearHosts() error {
-	return os.RemoveAll(TestStoreDir)
-}
-
-func getTestStore() (libmachine.Store, error) {
-	tmpDir, err := ioutil.TempDir("", "machine-test-")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	hostTestStorePath = tmpDir
-
-	os.Setenv("MACHINE_STORAGE_PATH", tmpDir)
-
-	return libmachine.NewFilestore(tmpDir, hostTestCaCert, hostTestPrivateKey), nil
-}
-
-func cleanup() {
-	os.RemoveAll(hostTestStorePath)
-}
-
-func getTestDriverFlags() *DriverOptionsMock {
-	name := hostTestName
-	flags := &DriverOptionsMock{
-		Data: map[string]interface{}{
-			"name":            name,
-			"url":             "unix:///var/run/docker.sock",
-			"swarm":           false,
-			"swarm-host":      "",
-			"swarm-master":    false,
-			"swarm-discovery": "",
-		},
-	}
-	return flags
-}
-
-type DriverOptionsMock struct {
-	Data map[string]interface{}
-}
-
-func (d DriverOptionsMock) String(key string) string {
-	return d.Data[key].(string)
-}
-
-func (d DriverOptionsMock) StringSlice(key string) []string {
-	return d.Data[key].([]string)
-}
-
-func (d DriverOptionsMock) Int(key string) int {
-	return d.Data[key].(int)
-}
-
-func (d DriverOptionsMock) Bool(key string) bool {
-	return d.Data[key].(bool)
-}
 
 func TestRunActionForeachMachine(t *testing.T) {
-	storePath, err := ioutil.TempDir("", ".docker")
-	if err != nil {
-		t.Fatal("Error creating tmp dir:", err)
-	}
-
 	// Assume a bunch of machines in randomly started or
 	// stopped states.
-	machines := []*libmachine.Host{
+	machines := []*host.Host{
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
 			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
-			StorePath: storePath,
 		},
 		{
 			Name:       "bar",
@@ -114,7 +29,6 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &fakedriver.FakeDriver{
 				MockState: state.Stopped,
 			},
-			StorePath: storePath,
 		},
 		{
 			Name: "baz",
@@ -126,7 +40,6 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &fakedriver.FakeDriver{
 				MockState: state.Stopped,
 			},
-			StorePath: storePath,
 		},
 		{
 			Name:       "spam",
@@ -134,7 +47,6 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
-			StorePath: storePath,
 		},
 		{
 			Name:       "eggs",
@@ -142,7 +54,6 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &fakedriver.FakeDriver{
 				MockState: state.Stopped,
 			},
-			StorePath: storePath,
 		},
 		{
 			Name:       "ham",
@@ -150,7 +61,6 @@ func TestRunActionForeachMachine(t *testing.T) {
 			Driver: &fakedriver.FakeDriver{
 				MockState: state.Running,
 			},
-			StorePath: storePath,
 		},
 	}
 
@@ -190,4 +100,30 @@ func TestRunActionForeachMachine(t *testing.T) {
 			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
 		}
 	}
+}
+
+func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
+	defer persisttest.Cleanup()
+	host, _ := hosttest.GetDefaultTestHost()
+
+	out, w := captureStdout()
+
+	assert.Nil(t, printIP(host)())
+	w.Close()
+
+	assert.Equal(t, "", strings.TrimSpace(<-out))
+}
+
+func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
+	defer cleanup()
+	host, _ := hosttest.GetDefaultTestHost()
+	host.Driver = &fakedriver.FakeDriver{}
+
+	out, w := captureStdout()
+
+	assert.Nil(t, printIP(host)())
+
+	w.Close()
+
+	assert.Equal(t, "1.2.3.4", strings.TrimSpace(<-out))
 }

@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/state"
 )
 
 type Driver struct {
@@ -20,12 +20,17 @@ type Driver struct {
 }
 
 const (
+	defaultSSHUser = "root"
+	defaultSSHPort = 22
 	defaultTimeout = 1 * time.Second
+)
+
+var (
+	defaultSSHKey = filepath.Join(mcnutils.GetHomeDir(), ".ssh", "id_rsa")
 )
 
 func init() {
 	drivers.Register("generic", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -37,29 +42,35 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "generic-ip-address",
 			Usage: "IP Address of machine",
-			Value: "",
 		},
 		cli.StringFlag{
 			Name:  "generic-ssh-user",
 			Usage: "SSH user",
-			Value: "root",
+			Value: defaultSSHUser,
 		},
 		cli.StringFlag{
 			Name:  "generic-ssh-key",
 			Usage: "SSH private key path",
-			Value: filepath.Join(utils.GetHomeDir(), ".ssh", "id_rsa"),
+			Value: defaultSSHKey,
 		},
 		cli.IntFlag{
 			Name:  "generic-ssh-port",
 			Usage: "SSH port",
-			Value: 22,
+			Value: defaultSSHPort,
 		},
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner}, nil
+func NewDriver(hostName, storePath string) drivers.Driver {
+	return &Driver{
+		SSHKey: defaultSSHKey,
+		BaseDriver: &drivers.BaseDriver{
+			SSHUser:     defaultSSHUser,
+			SSHPort:     defaultSSHPort,
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) DriverName() string {
@@ -98,7 +109,7 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) Create() error {
 	log.Infof("Importing SSH key...")
 
-	if err := utils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
+	if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
 		return fmt.Errorf("unable to copy ssh key: %s", err)
 	}
 

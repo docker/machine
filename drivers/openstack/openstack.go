@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 type Driver struct {
@@ -42,9 +42,14 @@ type Driver struct {
 	client           Client
 }
 
+const (
+	defaultSSHUser       = "root"
+	defaultSSHPort       = 22
+	defaultActiveTimeout = 200
+)
+
 func init() {
 	drivers.Register("openstack", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -158,35 +163,36 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "openstack-ssh-user",
 			Usage: "OpenStack SSH user",
-			Value: "root",
+			Value: defaultSSHUser,
 		},
 		cli.IntFlag{
 			Name:  "openstack-ssh-port",
 			Usage: "OpenStack SSH port",
-			Value: 22,
+			Value: defaultSSHPort,
 		},
 		cli.IntFlag{
 			Name:  "openstack-active-timeout",
 			Usage: "OpenStack active timeout",
-			Value: 200,
+			Value: defaultActiveTimeout,
 		},
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	log.WithFields(log.Fields{
-		"machineName": machineName,
-		"storePath":   storePath,
-		"caCert":      caCert,
-		"privateKey":  privateKey,
-	}).Debug("Instantiating OpenStack driver...")
-
-	return NewDerivedDriver(machineName, storePath, &GenericClient{}, caCert, privateKey)
+func NewDriver(hostName, storePath string) drivers.Driver {
+	return NewDerivedDriver(hostName, storePath)
 }
 
-func NewDerivedDriver(machineName string, storePath string, client Client, caCert string, privateKey string) (*Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner, client: client}, nil
+func NewDerivedDriver(hostName, storePath string) *Driver {
+	return &Driver{
+		client:        &GenericClient{},
+		ActiveTimeout: defaultActiveTimeout,
+		BaseDriver: &drivers.BaseDriver{
+			SSHUser:     defaultSSHUser,
+			SSHPort:     defaultSSHPort,
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
@@ -310,7 +316,7 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, utils.GenerateRandomID())
+	d.KeyPairName = fmt.Sprintf("%s-%s", d.MachineName, mcnutils.GenerateRandomID())
 
 	if err := d.resolveIds(); err != nil {
 		return err

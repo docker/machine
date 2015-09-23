@@ -10,9 +10,10 @@ import (
 	"strings"
 
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/utils"
 )
 
 type DockerOptions struct {
@@ -67,36 +68,35 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	// copy certs to client dir for docker client
-	machineDir := filepath.Join(utils.GetMachineDir(), machineName)
+	log.Info("Copying certs to the local machine directory...")
 
-	if err := utils.CopyFile(authOptions.CaCertPath, filepath.Join(machineDir, "ca.pem")); err != nil {
+	if err := mcnutils.CopyFile(authOptions.CaCertPath, filepath.Join(authOptions.StorePath, "ca.pem")); err != nil {
 		log.Fatalf("Error copying ca.pem to machine dir: %s", err)
 	}
 
-	if err := utils.CopyFile(authOptions.ClientCertPath, filepath.Join(machineDir, "cert.pem")); err != nil {
+	if err := mcnutils.CopyFile(authOptions.ClientCertPath, filepath.Join(authOptions.StorePath, "cert.pem")); err != nil {
 		log.Fatalf("Error copying cert.pem to machine dir: %s", err)
 	}
 
-	if err := utils.CopyFile(authOptions.ClientKeyPath, filepath.Join(machineDir, "key.pem")); err != nil {
+	if err := mcnutils.CopyFile(authOptions.ClientKeyPath, filepath.Join(authOptions.StorePath, "key.pem")); err != nil {
 		log.Fatalf("Error copying key.pem to machine dir: %s", err)
 	}
 
 	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s",
 		authOptions.ServerCertPath,
 		authOptions.CaCertPath,
-		authOptions.PrivateKeyPath,
+		authOptions.CaPrivateKeyPath,
 		org,
 	)
 
 	// TODO: Switch to passing just authOptions to this func
 	// instead of all these individual fields
-	err = utils.GenerateCert(
+	err = cert.GenerateCert(
 		[]string{ip},
 		authOptions.ServerCertPath,
 		authOptions.ServerKeyPath,
 		authOptions.CaCertPath,
-		authOptions.PrivateKeyPath,
+		authOptions.CaPrivateKeyPath,
 		org,
 		bits,
 	)
@@ -123,6 +123,8 @@ func ConfigureAuth(p Provisioner) error {
 	if err != nil {
 		return err
 	}
+
+	log.Info("Copying certs to the remote machine...")
 
 	// printf will choke if we don't pass a format string because of the
 	// dashes, so that's the reason for the '%%s'
@@ -164,6 +166,8 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
+	log.Info("Setting Docker configuration on the remote daemon...")
+
 	if _, err = p.SSHCommand(fmt.Sprintf("printf %%s \"%s\" | sudo tee %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
 		return err
 	}
@@ -173,7 +177,7 @@ func ConfigureAuth(p Provisioner) error {
 	}
 
 	// TODO: Do not hardcode daemon port, ask the driver
-	if err := utils.WaitForDocker(ip, dockerPort); err != nil {
+	if err := mcnutils.WaitForDocker(ip, dockerPort); err != nil {
 		return err
 	}
 

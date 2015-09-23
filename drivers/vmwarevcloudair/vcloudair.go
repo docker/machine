@@ -12,11 +12,11 @@ import (
 	"github.com/vmware/govcloudair"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 type Driver struct {
@@ -37,9 +37,17 @@ type Driver struct {
 	VAppID       string
 }
 
+const (
+	defaultCatalog     = "Public Catalog"
+	defaultCatalogItem = "Ubuntu Server 12.04 LTS (amd64 20150127)"
+	defaultCpus        = 1
+	defaultMemory      = 2048
+	defaultSSHPort     = 22
+	defaultDockerPort  = 2376
+)
+
 func init() {
 	drivers.Register("vmwarevcloudair", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
 }
@@ -87,13 +95,13 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VCLOUDAIR_CATALOG",
 			Name:   "vmwarevcloudair-catalog",
 			Usage:  "vCloud Air Catalog (default is Public Catalog)",
-			Value:  "Public Catalog",
+			Value:  defaultCatalog,
 		},
 		cli.StringFlag{
 			EnvVar: "VCLOUDAIR_CATALOGITEM",
 			Name:   "vmwarevcloudair-catalogitem",
 			Usage:  "vCloud Air Catalog Item (default is Ubuntu Precise)",
-			Value:  "Ubuntu Server 12.04 LTS (amd64 20150127)",
+			Value:  defaultCatalogItem,
 		},
 
 		// BoolTFlag is true by default.
@@ -107,32 +115,42 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VCLOUDAIR_CPU_COUNT",
 			Name:   "vmwarevcloudair-cpu-count",
 			Usage:  "vCloud Air VM Cpu Count (default 1)",
-			Value:  1,
+			Value:  defaultCpus,
 		},
 		cli.IntFlag{
 			EnvVar: "VCLOUDAIR_MEMORY_SIZE",
 			Name:   "vmwarevcloudair-memory-size",
 			Usage:  "vCloud Air VM Memory Size in MB (default 2048)",
-			Value:  2048,
+			Value:  defaultMemory,
 		},
 		cli.IntFlag{
 			EnvVar: "VCLOUDAIR_SSH_PORT",
 			Name:   "vmwarevcloudair-ssh-port",
 			Usage:  "vCloud Air SSH port",
-			Value:  22,
+			Value:  defaultSSHPort,
 		},
 		cli.IntFlag{
 			EnvVar: "VCLOUDAIR_DOCKER_PORT",
 			Name:   "vmwarevcloudair-docker-port",
 			Usage:  "vCloud Air Docker port",
-			Value:  2376,
+			Value:  defaultDockerPort,
 		},
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner}, nil
+func NewDriver(hostName, storePath string) drivers.Driver {
+	return &Driver{
+		Catalog:     defaultCatalog,
+		CatalogItem: defaultCatalogItem,
+		CPUCount:    defaultCpus,
+		MemorySize:  defaultMemory,
+		DockerPort:  defaultDockerPort,
+		BaseDriver: &drivers.BaseDriver{
+			SSHPort:     defaultSSHPort,
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
@@ -645,7 +663,7 @@ func (d *Driver) Kill() error {
 // Helpers
 
 func generateVMName() string {
-	randomID := utils.TruncateID(utils.GenerateRandomID())
+	randomID := mcnutils.TruncateID(mcnutils.GenerateRandomID())
 	return fmt.Sprintf("docker-host-%s", randomID)
 }
 

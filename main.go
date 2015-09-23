@@ -1,15 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/codegangsta/cli"
 
 	"github.com/docker/machine/commands"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/version"
 )
 
@@ -44,13 +46,28 @@ Options:
    {{.}}{{end}}{{ end }}
 `
 
-func main() {
+func setDebugOutputLevel() {
+	// TODO: I'm not really a fan of this method and really would rather
+	// use -v / --verbose TBQH
 	for _, f := range os.Args {
 		if f == "-D" || f == "--debug" || f == "-debug" {
-			os.Setenv("MACHINE_DEBUG", "1")
+			log.IsDebug = true
 		}
 	}
 
+	debugEnv := os.Getenv("MACHINE_DEBUG")
+	if debugEnv != "" {
+		showDebug, err := strconv.ParseBool(debugEnv)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing boolean value from MACHINE_DEBUG: %s\n", err)
+			os.Exit(1)
+		}
+		log.IsDebug = showDebug
+	}
+}
+
+func main() {
+	setDebugOutputLevel()
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
 	app := cli.NewApp()
@@ -58,7 +75,6 @@ func main() {
 	app.Author = "Docker Machine Contributors"
 	app.Email = "https://github.com/docker/machine"
 	app.Before = func(c *cli.Context) error {
-		os.Setenv("MACHINE_STORAGE_PATH", c.GlobalString("storage-path"))
 		if c.GlobalBool("native-ssh") {
 			ssh.SetDefaultClient(ssh.Native)
 		}
@@ -77,7 +93,7 @@ func main() {
 		cli.StringFlag{
 			EnvVar: "MACHINE_STORAGE_PATH",
 			Name:   "s, storage-path",
-			Value:  utils.GetBaseDir(),
+			Value:  mcndirs.GetBaseDir(),
 			Usage:  "Configures storage path",
 		},
 		cli.StringFlag{

@@ -19,18 +19,24 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 const (
-	isoFilename         = "boot2docker.iso"
-	defaultHostOnlyCIDR = "192.168.99.1/24"
-	defaultNictype      = "82540EM"
-	defaultNicpromisc   = "deny"
+	isoFilename                = "boot2docker.iso"
+	defaultCPU                 = 1
+	defaultMemory              = 1024
+	defaultBoot2DockerURL      = ""
+	defaultBoot2DockerImportVM = ""
+	defaultHostOnlyCIDR        = "192.168.99.1/24"
+	defaultHostOnlyNictype     = "82540EM"
+	defaultHostOnlyPromiscMode = "deny"
+	defaultNoShare             = false
+	defaultDiskSize            = 20000
 )
 
 var (
@@ -52,9 +58,23 @@ type Driver struct {
 
 func init() {
 	drivers.Register("virtualbox", &drivers.RegisteredDriver{
-		New:            NewDriver,
 		GetCreateFlags: GetCreateFlags,
 	})
+}
+
+func NewDriver(hostName, storePath string) *Driver {
+	return &Driver{
+		BaseDriver: &drivers.BaseDriver{
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+		Memory:              defaultMemory,
+		CPU:                 defaultCPU,
+		DiskSize:            defaultDiskSize,
+		HostOnlyCIDR:        defaultHostOnlyCIDR,
+		HostOnlyNicType:     defaultHostOnlyNictype,
+		HostOnlyPromiscMode: defaultHostOnlyPromiscMode,
+	}
 }
 
 // RegisterCreateFlags registers the flags this driver adds to
@@ -65,30 +85,30 @@ func GetCreateFlags() []cli.Flag {
 			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
 			Name:   "virtualbox-memory",
 			Usage:  "Size of memory for host in MB",
-			Value:  1024,
+			Value:  defaultMemory,
 		},
 		cli.IntFlag{
 			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
-			Value:  1,
+			Value:  defaultCPU,
 		},
 		cli.IntFlag{
 			EnvVar: "VIRTUALBOX_DISK_SIZE",
 			Name:   "virtualbox-disk-size",
 			Usage:  "Size of disk for host in MB",
-			Value:  20000,
+			Value:  defaultDiskSize,
 		},
 		cli.StringFlag{
 			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
 			Name:   "virtualbox-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
-			Value:  "",
+			Value:  defaultBoot2DockerURL,
 		},
 		cli.StringFlag{
 			Name:  "virtualbox-import-boot2docker-vm",
 			Usage: "The name of a Boot2Docker VM to import",
-			Value: "",
+			Value: defaultBoot2DockerImportVM,
 		},
 		cli.StringFlag{
 			Name:   "virtualbox-hostonly-cidr",
@@ -99,13 +119,13 @@ func GetCreateFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   "virtualbox-hostonly-nictype",
 			Usage:  "Specify the Host Only Network Adapter Type",
-			Value:  defaultNictype,
+			Value:  defaultHostOnlyNictype,
 			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_TYPE",
 		},
 		cli.StringFlag{
 			Name:   "virtualbox-hostonly-nicpromisc",
 			Usage:  "Specify the Host Only Network Adapter Promiscuous Mode",
-			Value:  defaultNicpromisc,
+			Value:  defaultHostOnlyPromiscMode,
 			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_PROMISC",
 		},
 		cli.BoolFlag{
@@ -113,11 +133,6 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "Disable the mount of your home directory",
 		},
 	}
-}
-
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
-	return &Driver{BaseDriver: inner}, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
@@ -179,7 +194,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	b2dutils := utils.NewB2dUtils("", "")
+	b2dutils := mcnutils.NewB2dUtils("", "", d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
@@ -216,8 +231,8 @@ func (d *Driver) Create() error {
 		d.Memory = vmInfo.Memory
 
 		log.Debugf("Importing SSH key...")
-		keyPath := filepath.Join(utils.GetHomeDir(), ".ssh", "id_boot2docker")
-		if err := utils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
+		keyPath := filepath.Join(mcnutils.GetHomeDir(), ".ssh", "id_boot2docker")
+		if err := mcnutils.CopyFile(keyPath, d.GetSSHKeyPath()); err != nil {
 			return err
 		}
 	} else {
@@ -416,7 +431,7 @@ func (d *Driver) Start() error {
 	}
 
 	// Bail if we don't get an IP from DHCP after a given number of seconds.
-	if err := utils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
+	if err := mcnutils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
 		return err
 	}
 
@@ -508,12 +523,6 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Stopped, nil
 	}
 	return state.None, nil
-}
-
-func (d *Driver) setMachineNameIfNotSet() {
-	if d.MachineName == "" {
-		d.MachineName = fmt.Sprintf("docker-machine-unknown")
-	}
 }
 
 func (d *Driver) GetIP() (string, error) {
