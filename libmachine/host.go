@@ -344,12 +344,21 @@ func (h *Host) LoadConfig() error {
 	return nil
 }
 
-func (h *Host) ConfigureAuth() error {
+func (h *Host) getProvisioner() (provision.Provisioner, error) {
 	if err := h.LoadConfig(); err != nil {
-		return err
+		return nil, fmt.Errorf("Error loading host config: %s", err)
 	}
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting provisioner: %s", err)
+	}
+
+	return provisioner, nil
+}
+
+func (h *Host) ConfigureAuth() error {
+	provisioner, err := h.getProvisioner()
 	if err != nil {
 		return err
 	}
@@ -360,6 +369,21 @@ func (h *Host) ConfigureAuth() error {
 	//
 	// Call provision to re-provision the certs properly.
 	if err := provisioner.Provision(swarm.SwarmOptions{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Host) Provision() error {
+	provisioner, err := h.getProvisioner()
+	if err != nil {
+		return err
+	}
+
+	log.Info("Running Docker Machine provisioning on host %s...", h.Name)
+
+	if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 		return err
 	}
 

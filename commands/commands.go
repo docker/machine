@@ -327,6 +327,12 @@ var Commands = []cli.Command{
 		Action: cmdLs,
 	},
 	{
+		Name:        "provision",
+		Usage:       "Run standard Machine provisioning on one or more hosts",
+		Description: "Argument(s) are one or more machine names.",
+		Action:      cmdProvision,
+	},
+	{
 		Name:        "regenerate-certs",
 		Usage:       "Regenerate TLS Certificates for a machine",
 		Description: "Argument(s) are one or more machine names.",
@@ -410,8 +416,10 @@ var Commands = []cli.Command{
 // machineCommand maps the command name to the corresponding machine command.
 // We run commands concurrently and communicate back an error if there was one.
 func machineCommand(actionName string, host *libmachine.Host, errorChan chan<- error) {
+	// TODO: These actions should have their own type.
 	commands := map[string](func() error){
 		"configureAuth": host.ConfigureAuth,
+		"provision":     host.Provision,
 		"start":         host.Start,
 		"stop":          host.Stop,
 		"restart":       host.Restart,
