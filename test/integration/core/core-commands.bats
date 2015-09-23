@@ -23,7 +23,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 }
 
 @test "$DRIVER: has status 'started' appearing in ls" {
-  run machine ls --filter state=Running
+  run machine ls -q --filter state=Running
   echo ${output}
   [ "$status" -eq 0  ]
   [[ ${lines[0]} == "$NAME" ]]
@@ -32,7 +32,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 @test "$DRIVER: create with same name again fails" {
   run machine create -d $DRIVER $NAME
   echo ${output}
-  [ "$status" -eq 0  ]
+  [ "$status" -eq 1  ]
   [[ ${lines[0]} == "Error creating machine: Machine $NAME already exists" ]]
 }
 
