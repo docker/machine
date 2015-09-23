@@ -135,7 +135,7 @@ func cmdEnv(c *cli.Context) {
 		//first check for an existing lower case no_proxy var
 		noProxyVar = "no_proxy"
 		noProxyValue = os.Getenv("no_proxy")
-		//otherwise default to allcaps HTTP_PROXY
+		//otherwise default to allcaps NO_PROXY
 		if noProxyValue == "" {
 			noProxyVar = "NO_PROXY"
 			noProxyValue = os.Getenv("NO_PROXY")
