@@ -283,6 +283,10 @@ var Commands = []cli.Command{
 				Name:  "unset, u",
 				Usage: "Unset variables instead of setting them",
 			},
+			cli.BoolFlag{
+				Name:  "no-proxy",
+				Usage: "Add docker endpoint to NO_PROXY environment variable",
+			},
 		},
 	},
 	{
