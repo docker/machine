@@ -76,3 +76,20 @@ set DOCKER_CERT_PATH=C:\Users\captain\.docker\machine\machines\dev
 set DOCKER_MACHINE_NAME=dev
 # Run this command to configure your shell: copy and paste the above values into your command prompt
 ```
+
+## Proxy exclusion
+The env command supports a `--no-proxy` flag that will also add the `DOCKER_HOST` to the `NO_PROXY`/`no_proxy`  environment variable (which ever is already defined).
+
+```
+docker-machine env dev --no-proxy
+set -x DOCKER_TLS_VERIFY "1";
+set -x DOCKER_HOST "tcp://172.16.77.135:2376";
+set -x DOCKER_CERT_PATH "/Users/fabus/.docker/machine/machines/dev";
+set -x DOCKER_MACHINE_NAME "dev";
+set -x NO_PROXY "172.16.77.135";
+# Run this command to configure your shell:
+# eval (docker-machine env dev)
+```
+
+This is useful when using docker-machine with a local VM provider (e.g. virtualbox or vmware fusion/workstation) in network environments where a http proxy is needed for internet access.
+
