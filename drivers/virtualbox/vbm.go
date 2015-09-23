@@ -80,7 +80,7 @@ func vbmOutErr(args ...string) (string, string, error) {
 		log.Debugf("STDERR:\n{\n%v}", stderrStr)
 	}
 	if err != nil {
-		if ee, ok := err.(*exec.Error); ok && ee == exec.ErrNotFound {
+		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
 			err = ErrVBMNotFound
 		}
 	} else {
