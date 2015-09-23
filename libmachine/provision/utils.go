@@ -82,17 +82,20 @@ func ConfigureAuth(p Provisioner) error {
 		log.Fatalf("Error copying key.pem to machine dir: %s", err)
 	}
 
-	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s",
+	// The Host IP is always added to the certificate's SANs list
+	certSANs := append(authOptions.ServerCertSANs, ip)
+	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s san=%s",
 		authOptions.ServerCertPath,
 		authOptions.CaCertPath,
 		authOptions.PrivateKeyPath,
 		org,
+		certSANs,
 	)
 
 	// TODO: Switch to passing just authOptions to this func
 	// instead of all these individual fields
 	err = utils.GenerateCert(
-		[]string{ip},
+		certSANs,
 		authOptions.ServerCertPath,
 		authOptions.ServerKeyPath,
 		authOptions.CaCertPath,
