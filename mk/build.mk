@@ -6,7 +6,7 @@ build-simple: $(PREFIX)/bin/$(PKG_NAME)
 
 # XXX building with -a fails in debug (with -N -l) ????
 $(PREFIX)/bin/$(PKG_NAME): $(shell find . -type f -name '*.go')
-	go build -o $@ $(VERBOSE_GO) -tags "$(BUILDTAGS)" -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ./main.go
+	@go build -o $@ $(VERBOSE_GO) -tags "$(BUILDTAGS)" -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ./main.go
 
 # Cross-build: careful, does always rebuild!
 build-x: clean
