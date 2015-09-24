@@ -228,6 +228,10 @@ var Commands = []cli.Command{
 				Name:  "unset, u",
 				Usage: "Unset variables instead of setting them",
 			},
+			cli.BoolFlag{
+				Name:  "no-proxy",
+				Usage: "Add machine IP to NO_PROXY environment variable",
+			},
 		},
 	},
 	{
