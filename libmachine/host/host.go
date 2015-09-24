@@ -175,7 +175,3 @@ func (h *Host) ConfigureAuth() error {
 
 	return nil
 }
-
-func WaitForSSH(h *Host) error {
-	return drivers.WaitForSSH(h.Driver)
-}

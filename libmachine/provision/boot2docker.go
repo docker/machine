@@ -3,8 +3,10 @@ package provision
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"path"
 	"text/template"
+	"time"
 
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/auth"
@@ -182,6 +184,35 @@ func (provisioner *Boot2DockerProvisioner) GetOsReleaseInfo() (*OsRelease, error
 }
 
 func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+	const (
+		dockerPort = 2376
+	)
+
+	defer func() {
+		ip, err := provisioner.Driver.GetIP()
+		if err != nil {
+			log.Fatalf("Could not get IP address for created machine: %s", err)
+		}
+
+		if conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, dockerPort), 5*time.Second); err != nil {
+			log.Warn(`
+This machine has been allocated an IP address, but Docker Machine could not
+reach it successfully.
+
+SSH for the machine should still work, but connecting to exposed ports, such as
+the Docker daemon port (usually <ip>:2376), may not work properly.
+
+You may need to add the route manually, or use another related workaround.
+
+This could be due to a VPN, proxy, or host file configuration issue.
+
+You also might want to clear any VirtualBox host only interfaces you are not using.`)
+			log.Fatal(err)
+		} else {
+			conn.Close()
+		}
+	}()
+
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
@@ -194,14 +225,9 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 		return err
 	}
 
-	ip, err := provisioner.GetDriver().GetIP()
-	if err != nil {
-		return err
-	}
-
 	// b2d hosts need to wait for the daemon to be up
 	// before continuing with provisioning
-	if err := mcnutils.WaitForDocker(ip, 2376); err != nil {
+	if err := waitForDocker(provisioner, dockerPort); err != nil {
 		return err
 	}
 

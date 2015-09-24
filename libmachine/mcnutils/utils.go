@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"runtime"
 	"strconv"
@@ -93,18 +92,6 @@ func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration)
 
 func WaitFor(f func() bool) error {
 	return WaitForSpecific(f, 60, 3*time.Second)
-}
-
-func WaitForDocker(ip string, daemonPort int) error {
-	return WaitFor(func() bool {
-		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, daemonPort))
-		if err != nil {
-			log.Debugf("Daemon not responding yet: %s", err)
-			return false
-		}
-		conn.Close()
-		return true
-	})
 }
 
 func DumpVal(vals ...interface{}) {
