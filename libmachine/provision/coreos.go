@@ -9,7 +9,6 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
@@ -59,11 +58,7 @@ func (provisioner *CoreOSProvisioner) Service(name string, action serviceaction.
 
 	// wait until docker is running
 	if (name == "docker") && (action.String() == "start") {
-		ip, err := provisioner.GetDriver().GetIP()
-		if err != nil {
-			return err
-		}
-		if err := mcnutils.WaitForDocker(ip, 2376); err != nil {
+		if err := waitForDocker(provisioner, 2376); err != nil {
 			return err
 		}
 	}

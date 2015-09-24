@@ -2,15 +2,10 @@ package drivers
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
-)
-
-const (
-	ErrExitCode255 = "255"
 )
 
 func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
@@ -33,10 +28,6 @@ func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 
 }
 
-func isErr255Exit(err error) bool {
-	return strings.Contains(err.Error(), ErrExitCode255)
-}
-
 func RunSSHCommandFromDriver(d Driver, command string) (string, error) {
 	client, err := GetSSHClientFromDriver(d)
 	if err != nil {
@@ -47,34 +38,21 @@ func RunSSHCommandFromDriver(d Driver, command string) (string, error) {
 
 	output, err := client.Output(command)
 	log.Debugf("SSH cmd err, output: %v: %s", err, output)
-	if err != nil && !isErr255Exit(err) {
-		log.Error("SSH cmd error!")
-		log.Errorf("command: %s", command)
-		log.Errorf("err    : %v", err)
-		log.Fatalf("output : %s", output)
+	if err != nil {
+		returnedErr := fmt.Errorf(`Something went wrong running an SSH command!
+command : %s
+err     : %v
+output  : %s
+`, command, err, output)
+		return "", returnedErr
 	}
 
-	return output, err
+	return output, nil
 }
 
 func sshAvailableFunc(d Driver) func() bool {
 	return func() bool {
 		log.Debug("Getting to WaitForSSH function...")
-		hostname, err := d.GetSSHHostname()
-		if err != nil {
-			log.Debugf("Error getting IP address waiting for SSH: %s", err)
-			return false
-		}
-		port, err := d.GetSSHPort()
-		if err != nil {
-			log.Debugf("Error getting SSH port: %s", err)
-			return false
-		}
-		if err := ssh.WaitForTCP(fmt.Sprintf("%s:%d", hostname, port)); err != nil {
-			log.Debugf("Error waiting for TCP waiting for SSH: %s", err)
-			return false
-		}
-
 		if _, err := RunSSHCommandFromDriver(d, "exit 0"); err != nil {
 			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
 			return false
@@ -85,7 +63,7 @@ func sshAvailableFunc(d Driver) func() bool {
 
 func WaitForSSH(d Driver) error {
 	if err := mcnutils.WaitFor(sshAvailableFunc(d)); err != nil {
-		return fmt.Errorf("Too many retries.  Last error: %s", err)
+		return fmt.Errorf("Too many retries waiting for SSH to be available.  Last error: %s", err)
 	}
 	return nil
 }

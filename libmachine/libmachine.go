@@ -59,7 +59,7 @@ func Create(store persist.Store, h *host.Host) error {
 		}
 
 		log.Info("Machine is running, waiting for SSH to be available...")
-		if err := host.WaitForSSH(h); err != nil {
+		if err := drivers.WaitForSSH(h.Driver); err != nil {
 			return fmt.Errorf("Error waiting for SSH: %s", err)
 		}
 
