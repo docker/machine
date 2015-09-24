@@ -2,6 +2,7 @@ package provision
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net"
 	"path"
@@ -72,14 +73,26 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 	// relevant files.
 	b2dutils := mcnutils.NewB2dUtils(mcndirs.GetBaseDir())
 
-	// Usually we call this implicitly, but call it here explicitly to get
-	// the latest boot2docker ISO.
-	if err := b2dutils.DownloadLatestBoot2Docker(""); err != nil {
+	//Check if the driver has specifed a custom b2d url
+	jsonDriver, err := json.Marshal(provisioner.GetDriver())
+	if err != nil {
 		return err
 	}
+	var d struct {
+		Boot2DockerURL string
+	}
+	json.Unmarshal(jsonDriver, &d)
 
-	// Copy the latest version of boot2docker ISO to the machine's directory
-	if err := b2dutils.CopyIsoToMachineDir("", machineName); err != nil {
+	// Usually we call this implicitly, but call it here explicitly to get
+	// the latest default boot2docker ISO.
+	if d.Boot2DockerURL == "" {
+		if err := b2dutils.DownloadLatestBoot2Docker(d.Boot2DockerURL); err != nil {
+			return err
+		}
+	}
+	// Either download the latest version of the b2d url that was explicitly
+	// specified when creating the VM or copy the (updated) default ISO
+	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, machineName); err != nil {
 		return err
 	}
 
