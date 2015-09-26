@@ -20,7 +20,8 @@ func BootstrapCertificates(authOptions *auth.AuthOptions) error {
 	// TODO: I'm not super happy about this use of "org", the user should
 	// have to specify it explicitly instead of implicitly basing it on
 	// $USER.
-	org := mcnutils.GetUsername()
+	caOrg := mcnutils.GetUsername()
+	org := caOrg + ".<bootstrap>"
 
 	bits := 2048
 
@@ -42,7 +43,7 @@ func BootstrapCertificates(authOptions *auth.AuthOptions) error {
 			return errors.New("The CA key already exists.  Please remove it or specify a different key/cert.")
 		}
 
-		if err := GenerateCACertificate(caCertPath, caPrivateKeyPath, org, bits); err != nil {
+		if err := GenerateCACertificate(caCertPath, caPrivateKeyPath, caOrg, bits); err != nil {
 			return fmt.Errorf("Generating CA certificate failed: %s", err)
 		}
 	}

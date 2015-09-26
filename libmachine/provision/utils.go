@@ -63,7 +63,7 @@ func ConfigureAuth(p Provisioner) error {
 	driver := p.GetDriver()
 	machineName := driver.GetMachineName()
 	authOptions := p.GetAuthOptions()
-	org := machineName
+	org := mcnutils.GetUsername() + "." + machineName
 	bits := 2048
 
 	ip, err := driver.GetIP()
