@@ -342,10 +342,10 @@ func isActive(h *host.Host) (bool, error) {
 
 	dockerHost := os.Getenv("DOCKER_HOST")
 
-	notStopped := currentState != state.Stopped
+	running := currentState == state.Running
 	correctURL := url == dockerHost
 
-	isActive := notStopped && correctURL
+	isActive := running && correctURL
 
 	return isActive, nil
 }

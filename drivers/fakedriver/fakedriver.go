@@ -8,6 +8,7 @@ import (
 type FakeDriver struct {
 	*drivers.BaseDriver
 	MockState state.State
+	MockURL   string
 	MockName  string
 }
 
@@ -20,7 +21,7 @@ func (d *FakeDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *FakeDriver) GetURL() (string, error) {
-	return "", nil
+	return d.MockURL, nil
 }
 
 func (d *FakeDriver) GetMachineName() string {
