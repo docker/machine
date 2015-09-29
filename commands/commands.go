@@ -56,10 +56,6 @@ func confirmInput(msg string) bool {
 	return false
 }
 
-func getMachineDir(rootPath string) string {
-	return filepath.Join(rootPath, "machines")
-}
-
 func getStore(c *cli.Context) persist.Store {
 	certInfo := getCertPathInfoFromContext(c)
 	return &persist.Filestore{
