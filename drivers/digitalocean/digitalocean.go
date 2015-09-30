@@ -179,6 +179,7 @@ func (d *Driver) Create() error {
 
 	d.DropletID = newDroplet.Droplet.ID
 
+	log.Info("Waiting for IP address to be assigned to the Droplet...")
 	for {
 		newDroplet, _, err = client.Droplets.Get(d.DropletID)
 		if err != nil {
