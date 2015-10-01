@@ -156,8 +156,21 @@
 			"Rev": "a09229c13c2f13bbdedf7b31b506cad4c83ef3bf"
 		},
 		{
+			"ImportPath": "github.com/OpenNebula/goca",
+			"Rev": "3f7eb5b3de6b79aef4a5cb0f4ca606f08b6e5d66"
+		},
+		{
 			"ImportPath": "google.golang.org/api/googleapi",
 			"Rev": "a09229c13c2f13bbdedf7b31b506cad4c83ef3bf"
+		},
+		{
+			"ImportPath": "github.com/kolo/xmlrpc",
+			"Rev": "0826b98aaa29c0766956cb40d45cf7482a597671"
+		},
+		{
+			"ImportPath": "launchpad.net/xmlpath",
+			"Comment": "4",
+			"Rev": "gustavo@niemeyer.net-20130614043138-kasci7s9kddz0e5v"
 		}
 	]
 }

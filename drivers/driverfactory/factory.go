@@ -11,6 +11,7 @@ import (
 	"github.com/docker/machine/drivers/google"
 	"github.com/docker/machine/drivers/hyperv"
 	"github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/drivers/opennebula"
 	"github.com/docker/machine/drivers/openstack"
 	"github.com/docker/machine/drivers/rackspace"
 	"github.com/docker/machine/drivers/softlayer"
@@ -55,6 +56,8 @@ func NewDriver(driverName, hostName, storePath string) (drivers.Driver, error) {
 		driver = vmwarevcloudair.NewDriver(hostName, storePath)
 	case "vmwarevsphere":
 		driver = vmwarevsphere.NewDriver(hostName, storePath)
+	case "opennebula":
+		driver = opennebula.NewDriver(hostName, storePath)
 	case "none":
 		driver = none.NewDriver(hostName, storePath)
 	default:
