@@ -135,12 +135,6 @@ func GetCreateFlags() []cli.Flag {
 			Value:  "",
 			EnvVar: "ECS_VPC_PRIVATE_IP",
 		},
-		//		cli.StringFlag{
-		//			Name:   "aliyunecs-ssh-user",
-		//			Usage:  "set the name of the ssh user",
-		//			Value:  "root",
-		//			EnvVar: "ECS_SSH_USER",
-		//		},
 		cli.StringFlag{
 			Name:   "aliyunecs-ssh-password",
 			Usage:  "set the password of the ssh user",
@@ -160,11 +154,6 @@ func GetCreateFlags() []cli.Flag {
 			Name:   "aliyunecs-route-cidr",
 			Usage:  "Destination CIDR for route entry",
 			EnvVar: "ECS_ROUTE_CIDR",
-		},
-		cli.StringFlag{
-			Name:   "aliyunecs-slb-ip",
-			Usage:  "SLB IP address for COS cluster management endpoint",
-			EnvVar: "ECS_SLB_IP",
 		},
 	}
 }
@@ -429,114 +418,6 @@ func (d *Driver) Create() error {
 	return err
 }
 
-// add vpc support
-func (d *Driver) setupVpcNetwork() (vpcInfo *ecs.VpcSetType, err error) {
-
-	//如果传递vpcId，那么可以假设当前VPC是我们自己的VPC
-	if d.VpcId != "" {
-		vpcInfo, err = d.describeVpcInfo(d.VpcId, d.Region)
-
-		if err != nil {
-			return vpcInfo, fmt.Errorf("%s | Failed to describe VPC info: %v", d.MachineName, err)
-		}
-
-		if vpcInfo == nil {
-			return vpcInfo, fmt.Errorf("%s | VPC not found", d.MachineName)
-		}
-
-		return vpcInfo, nil
-	}
-
-	// 	remove create vpc check
-	//	if err := d.checkVpcStatus(); err != nil {
-	//		return vpcInfo, fmt.Errorf("Can not setup more vpc network")
-	//	}
-
-	//TODO maybe need to detect and create custom CIDR .
-
-	vpcArgs := ecs.CreateVpcArgs{
-		RegionId:    d.Region,
-		CidrBlock:   vpcCidrBlock,
-		VpcName:     "container-cluster",
-		Description: "container-cluster",
-		ClientToken: d.getClient().GenerateClientToken(),
-	}
-	log.Infof("%s | Creating VPC %s ...", d.MachineName, vpcArgs.VpcName)
-
-	vpc, err := d.getClient().CreateVpc(&vpcArgs)
-
-	if err != nil {
-		return vpcInfo, fmt.Errorf("%s | Fail to create vpc network: %v", d.MachineName, err)
-	}
-
-	log.Infof("%s | Create VPC network successfully in %v ,vpcId: %v.", d.MachineName, d.Region, vpc.VpcId)
-
-	err = d.getClient().WaitForVpcAvailable(d.Region, vpc.VpcId, timeout)
-
-	if err != nil {
-		return vpcInfo, fmt.Errorf("%s | Failed to wait for VPC 'available': %v", d.MachineName, err)
-	}
-
-	//创建vswitch
-	vSwitchId, err := d.setupVswitch(vpc.VpcId)
-	if err != nil {
-		return vpcInfo, fmt.Errorf("%s | Failed to create vSwitch %v", d.MachineName, err)
-	}
-
-	err = d.getClient().WaitForVSwitchAvailable(vpc.VpcId, vSwitchId, timeout)
-
-	if err != nil {
-		return vpcInfo, fmt.Errorf("%s | Failed to wait vSwitch available", d.MachineName)
-	}
-
-	vpcInfo, err = d.describeVpcInfo(vpc.VpcId, d.Region)
-
-	if err != nil {
-		return vpcInfo, fmt.Errorf("%s | Failed to describe VPC info: %v", d.MachineName, err)
-	}
-
-	return vpcInfo, nil
-}
-
-func (d *Driver) describeVpcInfo(vpcId string, region ecs.Region) (vpcInfo *ecs.VpcSetType, err error) {
-	if vpcId == "" || region == "" {
-		return vpcInfo, fmt.Errorf("%s | You must pass one specific vpcid or region when describe VPC infomation", d.MachineName)
-	}
-
-	vpcDescArgs := ecs.DescribeVpcsArgs{
-		VpcId:    vpcId,
-		RegionId: region,
-	}
-	vpcs, _, err := d.getClient().DescribeVpcs(&vpcDescArgs)
-
-	if err != nil {
-		return vpcInfo, fmt.Errorf("%s | Describe VPC network failed", d.MachineName)
-	}
-	if len(vpcs) > 0 {
-		vpcInfo = &vpcs[0]
-	}
-	return vpcInfo, err
-}
-
-//add vSwitch creation
-func (d *Driver) setupVswitch(vpcId string) (vSwitchId string, err error) {
-	vSwitchArgs := ecs.CreateVSwitchArgs{
-		ZoneId:      d.Zone,
-		CidrBlock:   vSwitchCidrBlock,
-		VpcId:       vpcId,
-		ClientToken: d.getClient().GenerateClientToken(),
-	}
-	log.Infof("%s | Creating VSwitch for %s with CIDR ...", d.MachineName, vpcId, vSwitchCidrBlock)
-	vSwitchId, err = d.getClient().CreateVSwitch(&vSwitchArgs)
-
-	if err != nil {
-		return vSwitchId, fmt.Errorf("%s | Failed to create vSwitch: %v", d.MachineName, err)
-	}
-	log.Infof("%s | Create VSwitch %s successfully", d.MachineName, vpcId, vSwitchId)
-
-	return vSwitchId, nil
-}
-
 func (d *Driver) configNetwork(vpcId string, instanceId string) error {
 	err := d.addRouteEntry(vpcId)
 	if err != nil {
@@ -713,28 +594,6 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	return d.getIP(inst), nil
-}
-
-func (d *Driver) GetIPs() ([]string, error) {
-	inst, err := d.getInstance()
-	if err != nil {
-		return nil, err
-	}
-	ips := make([]string, 0, 0)
-	if inst.InnerIpAddress.IpAddress != nil && len(inst.InnerIpAddress.IpAddress) > 0 {
-		ips = append(ips, inst.InnerIpAddress.IpAddress[0])
-	}
-	if inst.VpcAttributes.PrivateIpAddress.IpAddress != nil && len(inst.VpcAttributes.PrivateIpAddress.IpAddress) > 0 {
-		ips = append(ips, inst.VpcAttributes.PrivateIpAddress.IpAddress[0])
-	}
-	if inst.PublicIpAddress.IpAddress != nil && len(inst.PublicIpAddress.IpAddress) > 0 {
-		ips = append(ips, inst.PublicIpAddress.IpAddress[0])
-	}
-	if len(inst.EipAddress.IpAddress) > 0 {
-		ips = append(ips, inst.EipAddress.IpAddress)
-	}
-	log.Infof("%s | GetIPs: %v", d.MachineName, ips)
-	return ips, nil
 }
 
 func (d *Driver) getPrivateIP(inst *ecs.InstanceAttributesType) string {
@@ -945,20 +804,30 @@ func (d *Driver) configureSecurityGroup(vpcId string, groupName string) error {
 		VpcId:    vpcId,
 	}
 
-	//TODO handle pagination
-	groups, _, err := d.getClient().DescribeSecurityGroups(&args)
-	if err != nil {
-		return err
-	}
+	for {
+		groups, pagination, err := d.getClient().DescribeSecurityGroups(&args)
+		if err != nil {
+			return err
+		}
+		//log.Debugf("DescribeSecurityGroups: %++v\n", groups)
 
-	//log.Debugf("DescribeSecurityGroups: %++v\n", groups)
+		for _, grp := range groups {
+			if grp.SecurityGroupName == groupName && grp.VpcId == d.VpcId {
+				log.Debugf("%s | Found existing security group (%s) in %s", d.MachineName, groupName, d.VpcId)
+				securityGroup, _ = d.getSecurityGroup(grp.SecurityGroupId)
+				break
+			}
+		}
 
-	for _, grp := range groups {
-		if grp.SecurityGroupName == groupName && grp.VpcId == d.VpcId {
-			log.Debugf("%s | Found existing security group (%s) in %s", d.MachineName, groupName, d.VpcId)
-			securityGroup, _ = d.getSecurityGroup(grp.SecurityGroupId)
+		if securityGroup != nil {
 			break
 		}
+
+		nextPage := pagination.NextPage()
+		if nextPage == nil {
+			break
+		}
+		args.Pagination = *nextPage
 	}
 
 	// if not found, create
