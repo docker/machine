@@ -34,6 +34,7 @@ Options:
  - `--openstack-floatingip-pool`: The IP pool that will be used to get a public IP can assign it to the machine. If there is an
    IP address already allocated but not assigned to any machine, this IP will be chosen and assigned to the machine. If
    there is no IP address already allocated a new IP will be allocated and assigned to the machine.
+ - `--openstack-ip-version`: If the instance has both IPv4 and IPv6 address, you can select IP version. If not provided `4` will be used.
  - `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
  - `--openstack-ssh-port`: Customize the SSH port if the SSH server on the machine does not listen on the default port.
  - `--openstack-active-timeout`: The timeout in seconds until the OpenStack instance must be active.
@@ -61,6 +62,7 @@ Environment variables and default values:
 | `--openstack-net-id`             | -                      | -       |
 | `--openstack-sec-groups`         | -                      | -       |
 | `--openstack-floatingip-pool`    | -                      | -       |
+| `--openstack-ip-version`         | `OS_IP_VERSION`        | `4`     |
 | `--openstack-ssh-user`           | -                      | `root`  |
 | `--openstack-ssh-port`           | -                      | `22`    |
 | `--openstack-active-timeout`     | -                      | `200`   |
