@@ -89,6 +89,7 @@ type IpAddress struct {
 	Network     string
 	AddressType string
 	Address     string
+	Version     int
 	Mac         string
 }
 
@@ -163,10 +164,16 @@ func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 	for network, networkAddresses := range server.Addresses {
 		for _, element := range networkAddresses.([]interface{}) {
 			address := element.(map[string]interface{})
+			version, ok := address["version"].(float64)
+			if !ok {
+				// Assume IPv4 if no version present.
+				version = 4
+			}
 
 			addr := IpAddress{
 				Network: network,
 				Address: address["addr"].(string),
+				Version: int(version),
 			}
 
 			if tp, ok := address["OS-EXT-IPS:type"]; ok {
@@ -179,6 +186,7 @@ func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 			addresses = append(addresses, addr)
 		}
 	}
+
 	return addresses, nil
 }
 
