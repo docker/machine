@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/docker/machine/libmachine/log"
 )
@@ -36,6 +37,9 @@ func setVmwareCmd(cmd string) string {
 }
 
 func vmrun(args ...string) (string, string, error) {
+	// vmrun with nogui on VMware Fusion through at least 8.0.1 doesn't work right
+	// if the umask is set to not allow world-readable permissions
+	_ = syscall.Umask(022)
 	cmd := exec.Command(vmrunbin, args...)
 	if os.Getenv("MACHINE_DEBUG") != "" {
 		cmd.Stdout = os.Stdout
