@@ -491,19 +491,16 @@ func getCertPathInfoFromContext(c *cli.Context) cert.CertPathInfo {
 }
 
 func detectShell() (string, error) {
-	// check for windows env and not bash (i.e. msysgit, etc)
-	// the SHELL env var is not set for processes in msysgit; we check
-	// for TERM instead
-	if runtime.GOOS == "windows" && os.Getenv("TERM") != "cygwin" {
-		log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
-		return "", ErrUnknownShell
-	}
-
 	// attempt to get the SHELL env var
 	shell := filepath.Base(os.Getenv("SHELL"))
 
 	log.Debugf("shell: %s", shell)
 	if shell == "" {
+		// check for windows env and not bash (i.e. msysgit, etc)
+		if runtime.GOOS == "windows" {
+			log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
+		}
+
 		return "", ErrUnknownShell
 	}
 
