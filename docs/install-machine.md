@@ -38,7 +38,7 @@ target="_blank">Docker version 1.7.1 or greater</a>:
 2. Download the Machine binary to somewhere in your `PATH` (for example,
 `/usr/local/bin`).
 
-        $ curl -L https://github.com/docker/machine/releases/download/v0.4.0/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
+        $ curl -L https://github.com/docker/machine/releases/download/v0.4.1/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
 
 3. Apply executable permissions to the binary:
 
@@ -47,7 +47,7 @@ target="_blank">Docker version 1.7.1 or greater</a>:
 4. Check the installation by displaying the Machine version:
 
 			$ docker-machine -v
-			machine version 0.4.0
+			machine version 0.4.1 (e2c88d6)
 
 ## Install from binary
 
@@ -70,7 +70,7 @@ Github](https://github.com/docker/machine/releases/). To install from a binary:
 6. Check the installation by displaying the Machine version:
 
         $ docker-machine -v
-        machine version 0.4.0
+        machine version 0.4.1 (e2c88d6)
 
 ## Where to go next
 
