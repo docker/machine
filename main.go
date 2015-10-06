@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"github.com/codegangsta/cli"
-
 	"github.com/docker/machine/commands"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/version"
 )
@@ -75,9 +75,12 @@ func main() {
 	app.Author = "Docker Machine Contributors"
 	app.Email = "https://github.com/docker/machine"
 	app.Before = func(c *cli.Context) error {
+		// TODO: Need better handling of config, everything is too
+		// complected together right now.
 		if c.GlobalBool("native-ssh") {
 			ssh.SetDefaultClient(ssh.Native)
 		}
+		mcnutils.GithubApiToken = c.GlobalString("github-api-token")
 		return nil
 	}
 	app.Commands = commands.Commands
@@ -118,6 +121,12 @@ func main() {
 			EnvVar: "MACHINE_TLS_CLIENT_KEY",
 			Name:   "tls-client-key",
 			Usage:  "Private key used in client TLS auth",
+			Value:  "",
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_GITHUB_API_TOKEN",
+			Name:   "github-api-token",
+			Usage:  "Token to use for requests to the Github API",
 			Value:  "",
 		},
 		cli.BoolFlag{
