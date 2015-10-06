@@ -7,12 +7,15 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 )
 
+var (
+	BaseDir = os.Getenv("MACHINE_STORAGE_PATH")
+)
+
 func GetBaseDir() string {
-	baseDir := os.Getenv("MACHINE_STORAGE_PATH")
-	if baseDir == "" {
-		baseDir = filepath.Join(mcnutils.GetHomeDir(), ".docker", "machine")
+	if BaseDir == "" {
+		BaseDir = filepath.Join(mcnutils.GetHomeDir(), ".docker", "machine")
 	}
-	return baseDir
+	return BaseDir
 }
 
 func GetDockerDir() string {

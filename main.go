@@ -81,6 +81,7 @@ func main() {
 			ssh.SetDefaultClient(ssh.Native)
 		}
 		mcnutils.GithubApiToken = c.GlobalString("github-api-token")
+		mcndirs.BaseDir = c.GlobalString("storage-path")
 		return nil
 	}
 	app.Commands = commands.Commands
