@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/docker/machine/commands/mcndirs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,7 +57,7 @@ func getTestStorePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	os.Setenv("MACHINE_STORAGE_PATH", tmpDir)
+	mcndirs.BaseDir = tmpDir
 	return tmpDir, nil
 }
 
