@@ -32,10 +32,10 @@ endif
 
 # Honor verbose
 VERBOSE_GO := 
-VERBOSE_GOX :=
+GO := @go
 ifeq ($(VERBOSE),true)
 	VERBOSE_GO := -v
-	VERBOSE_GOX := -verbose
+	GO := go
 endif
 
 include mk/build.mk
@@ -50,4 +50,10 @@ include mk/validate.mk
 .all_test: test-short test-long test-integration
 .all_validate: dco fmt vet lint
 
-.PHONY: .all_build .all_coverage .all_release .all_test .all_validate
+default: build
+clean: coverage-clean build-clean
+build: build-simple
+test: dco fmt vet test-short
+validate: dco fmt vet lint test-short test-long
+
+.PHONY: .all_build .all_coverage .all_release .all_test .all_validate test build validate clean

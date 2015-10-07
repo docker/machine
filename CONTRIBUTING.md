@@ -18,21 +18,25 @@ guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md).
 
 The requirements to build Machine are:
 
-1. A running instance of Docker (or alternatively a golang 1.5 development environment)
+1. A running instance of Docker
 2. The `bash` shell
 3. [Make](https://www.gnu.org/software/make/)
 
 Call `export USE_CONTAINER=true` to instruct the build system to use containers to build.
-If you want to build natively using golang instead, don't set this variable.
+
+# Alternative: build using go only
+
+Alternatively, you can build without docker, using only golang.
+
+[Install and setup go](https://golang.org/doc/install), then clone the machine repository inside your gopath.
 
 ## Building
 
 To build the docker-machine binary, simply run:
 
-    $ make
+    $ make build
 
-From the Machine repository's root. You will now find a `bin/docker-machine`
-binary at the root of the project.
+From the Machine repository's root. You will now have a `bin/docker-machine`.
 
 You may call:
 
@@ -61,6 +65,8 @@ To generate an html code coverage report of the Machine codebase, run:
 
 And navigate to http://localhost:8000 (hit `CTRL+C` to stop the server).
 
+### Native build
+
 Alternatively, if you are building natively, you can simply run:
 
     make coverage-html
@@ -80,9 +86,9 @@ This will generate and open the report file:
 
 ### Build targets
 
-Build a single, native machine binary:
+Just build the machine binary itself:
 
-    make build-simple
+    make `pwd`/bin/docker-machine
 
 Build for all supported oses and architectures (binaries will be in the `bin` project subfolder):
 
@@ -97,8 +103,7 @@ You can further control build options through the following environment variable
     DEBUG=true # enable debug build
     STATIC=true # build static (note: when cross-compiling, the build is always static)
     VERBOSE=true # verbose output
-    PARALLEL=X # lets you control build parallelism when cross-compiling multiple builds
-    PREFIX=folder
+    PREFIX=folder # put binaries in another folder (not the default `./bin`)
 
 Scrub build results:
 
@@ -134,16 +139,12 @@ first make sure to [install it](https://github.com/sstephenson/bats#installing-b
 
 ### Basic Usage
 
-Integration tests can be invoked calling `make test-integration`.
+You first need to build, calling `make build`.
 
-:warn: you cannot run integration test inside a container for now.
-Be sure to unset the `USE_CONTAINER` env variable if you set it earlier, or alternatively
-call directly `./test/integration/run-bats.sh` instead of `make test-integration`.
+You can then invoke integration tests calling `DRIVER=foo make test-integration TESTSUITE`, where `TESTSUITE` is
+one of the `test/integration` subfolder, and `foo` is the specific driver you want to test.
 
-You can invoke a test or subset of tests for a particular driver.
-To set the driver, use the `DRIVER` environment variable.
-
-To invoke just one test:
+Examples:
 
 ```console
 $ DRIVER=virtualbox make test-integration test/integration/core/core-commands.bats
@@ -168,13 +169,6 @@ $ DRIVER=virtualbox make test-integration test/integration/core/core-commands.ba
 17 tests, 0 failures
 Cleaning up machines...
 Successfully removed bats-virtualbox-test
-```
-
-To invoke a shared test with a different driver:
-
-```console
-$ DRIVER=digitalocean make test-integration test/integration/core/core-commands.bats
-...
 ```
 
 To invoke a directory of tests recursively:

@@ -5,12 +5,6 @@ set -e
 # Wrapper script to run bats tests for various drivers.
 # Usage: DRIVER=[driver] ./run-bats.sh [subtest]
 
-function build_machine() {
-    cd ${MACHINE_ROOT}
-    make build-x
-    cd -
-}
-
 function quiet_run () {
     if [[ "$VERBOSE" == "1" ]]; then
         "$@"
@@ -27,6 +21,7 @@ function cleanup_machines() {
 }
 
 function machine() {
+    export PATH="$MACHINE_ROOT"/bin:$PATH
     "$MACHINE_ROOT"/bin/"$MACHINE_BIN_NAME" "$@"
 }
 
@@ -46,31 +41,9 @@ function run_bats() {
     done
 }
 
-# Platform and architecture information is used to correctly identify the
-# binary we want to test.
-PLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
-case "$(uname -m)" in
-    arm*)
-        ARCH="arm"
-        ;;
-    x86_64)
-        ARCH="amd64"
-        ;;
-    i*86)
-        ARCH="386"
-        ;;
-    *)
-        ARCH="$(uname -m)"
-esac
-
 # Set this ourselves in case bats call fails
 EXIT_STATUS=0
 export BATS_FILE="$1"
-
-# build machine binary if needed
-if [ ! -e "$MACHINE_ROOT"/bin/"$MACHINE_BIN_NAME" ]; then
-    build_machine
-fi
 
 if [[ -z "$DRIVER" ]]; then
     echo "You must specify the DRIVER environment variable."
@@ -92,7 +65,7 @@ export BASE_TEST_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 export MACHINE_ROOT="$BASE_TEST_DIR/../.."
 export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH="/tmp/machine-bats-test-$DRIVER"
-export MACHINE_BIN_NAME=docker-machine_$PLATFORM-$ARCH
+export MACHINE_BIN_NAME=docker-machine
 export BATS_LOG="$MACHINE_ROOT/bats.log"
 
 # This function gets used in the integration tests, so export it.

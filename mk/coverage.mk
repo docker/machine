@@ -37,9 +37,9 @@ coverage-clean:
 
 $(COVERAGE_PROFILE): $(shell find . -type f -name '*.go')
 	@mkdir -p "$(COVERAGE_OUTPUT)/coverage"
-	@$(foreach PKG,$(PKGS), go test $(VERBOSE) -tags "$(BUILDTAGS)" -covermode=$(COVERAGE_MODE) -coverprofile="$(COVERAGE_OUTPUT)/coverage/`echo $(PKG) | tr "/" "-"`.cover" "$(PKG)";)
+	@$(foreach PKG,$(PKGS), go test $(VERBOSE_GO) -tags "$(BUILDTAGS)" -covermode=$(COVERAGE_MODE) -coverprofile="$(COVERAGE_OUTPUT)/coverage/`echo $(PKG) | tr "/" "-"`.cover" "$(PKG)";)
 	@echo "mode: $(COVERAGE_MODE)" > "$(COVERAGE_PROFILE)"
 	@grep -h -v "^mode:" "$(COVERAGE_OUTPUT)/coverage"/*.cover >> "$(COVERAGE_PROFILE)"
 
 $(COVERAGE_HTML): $(COVERAGE_PROFILE)
-	@go tool cover -html="$(COVERAGE_PROFILE)" -o "$(COVERAGE_HTML)"
+	$(GO) tool cover -html="$(COVERAGE_PROFILE)" -o "$(COVERAGE_HTML)"

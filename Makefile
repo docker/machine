@@ -1,11 +1,16 @@
-# Plain make targets if not requested inside a container
-ifeq ($(USE_CONTAINER),)
+# # Plain make targets if not requested inside a container
+ifneq (,$(findstring test-integration,$(MAKECMDGOALS)))
+	include Makefile.inc
+	include mk/main.mk
+else ifeq ($(USE_CONTAINER),)
 	include Makefile.inc
 	include mk/main.mk
 else
 # Otherwise, with docker, swallow all targets and forward into a container
 DOCKER_IMAGE_NAME := "docker-machine-build"
 DOCKER_CONTAINER_NAME := "docker-machine-build-container"
+
+test: FORCE
 
 %:
 		@docker build -t $(DOCKER_IMAGE_NAME) .

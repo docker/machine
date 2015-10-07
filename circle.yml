@@ -9,7 +9,6 @@ machine:
 
   post:
     - gvm install go1.5 -B --name=stable
-    - gvm use stable && go get github.com/mitchellh/gox
 
   environment:
   # Convenient shortcuts to "common" locations
@@ -30,7 +29,7 @@ dependencies:
 test:
   pre:
     - gvm use stable && go version
-    - gvm use stable && TARGET_ARCH=amd64 TARGET_OS=linux make build-x:
+    - gvm use stable && make build-simple:
         pwd: $BASE_STABLE
 
   override:

@@ -11,7 +11,7 @@ STATIC ?=
 VERBOSE ?=
 # Build tags
 BUILDTAGS ?=
-# Adjust parallelism for gox
+# Adjust number of parallel builds (XXX not used)
 PARALLEL ?= -1
 # Coverage default directory
 COVERAGE_DIR ?= cover
@@ -20,20 +20,14 @@ USE_CONTAINER ?=
 
 # List of cross compilation targets
 ifeq ($(TARGET_OS),)
-  TARGET_OS := darwin freebsd linux windows
+  TARGET_OS := darwin linux windows
 endif
 
 ifeq ($(TARGET_ARCH),)
-  TARGET_ARCH := amd64 arm 386
+  TARGET_ARCH := amd64 386
 endif
 
 # Output prefix, defaults to local directory if not specified
 ifeq ($(PREFIX),)
   PREFIX := $(shell pwd)
 endif
-
-default: build
-clean: coverage-clean build-clean
-build: build-simple
-test: dco fmt vet test-short
-validate: dco fmt vet lint test-short test-long
