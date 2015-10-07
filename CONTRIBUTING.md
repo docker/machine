@@ -31,7 +31,7 @@ To build the docker-machine binary, simply run:
 
     $ make
 
-From the Machine repository's root. You will now find a `docker-machine`
+From the Machine repository's root. You will now find a `bin/docker-machine`
 binary at the root of the project.
 
 You may call:
