@@ -56,3 +56,31 @@ func TestDownloadIso(t *testing.T) {
 		t.Fatalf("expected data \"%s\"; received \"%s\"", testData, string(data))
 	}
 }
+
+func TestGetReleasesRequestNoToken(t *testing.T) {
+	GithubApiToken = ""
+	b2d := NewB2dUtils("", "", "/tmp/store")
+	req, err := b2d.getReleasesRequest()
+	if err != nil {
+		t.Fatal("Expected err to be nil, got ", err)
+	}
+
+	if req.Header.Get("Authorization") != "" {
+		t.Fatal("Expected not to get an 'Authorization' header, but got one: ", req.Header.Get("Authorization"))
+	}
+}
+
+func TestGetReleasesRequest(t *testing.T) {
+	expectedToken := "CATBUG"
+	GithubApiToken = expectedToken
+	b2d := NewB2dUtils("", "", "/tmp/store")
+
+	req, err := b2d.getReleasesRequest()
+	if err != nil {
+		t.Fatal("Expected err to be nil, got ", err)
+	}
+
+	if req.Header.Get("Authorization") != fmt.Sprintf("token %s", expectedToken) {
+		t.Fatal("Header was not set as expected: ", req.Header.Get("Authorization"))
+	}
+}
