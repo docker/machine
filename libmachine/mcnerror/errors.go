@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrInvalidHostname     = errors.New("Invalid hostname specified")
+	ErrInvalidHostname     = errors.New("Invalid hostname specified. Allowed hostname chars are: 0-9a-zA-Z . -")
 	ErrUnknownProviderType = errors.New("Unknown hypervisor type")
 )
 
