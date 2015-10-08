@@ -19,25 +19,25 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine create -d none --url none ∞
   last=$((${#lines[@]} - 1))
   [ "$status" -eq 1 ]
-  [[ ${lines[$last]} == "Error creating machine: Invalid hostname specified" ]]
+  [[ ${lines[$last]} == "Error creating machine: Invalid hostname specified. Allowed hostname chars are: 0-9a-zA-Z . -" ]]
 }
 
 @test "none: create with invalid name fails 'machine create -d none --url none -'" {
   run machine create -d none --url none -
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Error creating machine: Invalid hostname specified" ]]
+  [[ ${lines[0]} == "Error creating machine: Invalid hostname specified. Allowed hostname chars are: 0-9a-zA-Z . -" ]]
 }
 
 @test "none: create with invalid name fails 'machine create -d none --url none .'" {
   run machine create -d none --url none .
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Error creating machine: Invalid hostname specified" ]]
+  [[ ${lines[0]} == "Error creating machine: Invalid hostname specified. Allowed hostname chars are: 0-9a-zA-Z . -" ]]
 }
 
 @test "none: create with invalid name fails 'machine create -d none --url none ..'" {
   run machine create -d none --url none ..
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Error creating machine: Invalid hostname specified" ]]
+  [[ ${lines[0]} == "Error creating machine: Invalid hostname specified. Allowed hostname chars are: 0-9a-zA-Z . -" ]]
 }
 
 @test "none: create with weird but valid name succeeds 'machine create -d none --url none a'" {
