@@ -376,3 +376,92 @@ func TestGetHostListItems(t *testing.T) {
 		}
 	}
 }
+
+// issue #1908
+func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
+	orgDockerHost := os.Getenv("DOCKER_HOST")
+	defer func() {
+		cleanup()
+
+		// revert DOCKER_HOST
+		os.Setenv("DOCKER_HOST", orgDockerHost)
+	}()
+
+	// unset DOCKER_HOST
+	os.Unsetenv("DOCKER_HOST")
+
+	hostListItemsChan := make(chan HostListItem)
+
+	hosts := []*host.Host{
+		{
+			Name:       "foo",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Running,
+				MockURL:   "tcp://120.0.0.1:2376",
+			},
+			HostOptions: &host.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+		{
+			Name:       "bar",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Stopped,
+			},
+			HostOptions: &host.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+		{
+			Name:       "baz",
+			DriverName: "fakedriver",
+			Driver: &fakedriver.FakeDriver{
+				MockState: state.Saved,
+			},
+			HostOptions: &host.HostOptions{
+				SwarmOptions: &swarm.SwarmOptions{
+					Master:    false,
+					Address:   "",
+					Discovery: "",
+				},
+			},
+		},
+	}
+
+	expected := map[string]struct {
+		state  state.State
+		active bool
+	}{
+		"foo": {state.Running, false},
+		"bar": {state.Stopped, false},
+		"baz": {state.Saved, false},
+	}
+
+	items := []HostListItem{}
+	for _, host := range hosts {
+		go getHostState(host, hostListItemsChan)
+	}
+
+	for i := 0; i < len(hosts); i++ {
+		items = append(items, <-hostListItemsChan)
+	}
+
+	for _, item := range items {
+		if expected[item.Name].state != item.State {
+			t.Fatal("Expected state did not match for item", item)
+		}
+		if expected[item.Name].active != item.Active {
+			t.Fatal("Expected active flag did not match for item", item)
+		}
+	}
+}
