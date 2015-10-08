@@ -181,17 +181,17 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) PreCreateCheck() error {
+	// Check that VBoxManage exists and works
+	if err := vbm(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Driver) Create() error {
-	var (
-		err error
-	)
-
-	// Check that VBoxManage exists and works
-	if err = vbm(); err != nil {
-		return err
+	if err := vbm("--version"); err != nil {
+		return fmt.Errorf("Checking VirtualBox version failed: %s", err)
 	}
 
 	b2dutils := mcnutils.NewB2dUtils("", "", d.StorePath)
