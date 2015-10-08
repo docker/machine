@@ -1,17 +1,17 @@
 package host
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
+	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
 func TestMigrateHostV0ToV1(t *testing.T) {
-	os.Setenv("MACHINE_STORAGE_PATH", "/tmp/migration")
+	mcndirs.BaseDir = "/tmp/migration"
 	originalHost := &HostV0{
 		HostOptions:    nil,
 		SwarmDiscovery: "token://foobar",
