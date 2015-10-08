@@ -183,19 +183,15 @@ func (provisioner *Boot2DockerProvisioner) GetOsReleaseInfo() (*OsRelease, error
 	return provisioner.OsReleaseInfo, nil
 }
 
-func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
-	const (
-		dockerPort = 2376
-	)
+func (provisioner *Boot2DockerProvisioner) AttemptIPContact(dockerPort int) {
+	ip, err := provisioner.Driver.GetIP()
+	if err != nil {
+		log.Warnf("Could not get IP address for created machine: %s", err)
+		return
+	}
 
-	defer func() {
-		ip, err := provisioner.Driver.GetIP()
-		if err != nil {
-			log.Fatalf("Could not get IP address for created machine: %s", err)
-		}
-
-		if conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, dockerPort), 5*time.Second); err != nil {
-			log.Warn(`
+	if conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, dockerPort), 5*time.Second); err != nil {
+		log.Warn(`
 This machine has been allocated an IP address, but Docker Machine could not
 reach it successfully.
 
@@ -207,9 +203,23 @@ You may need to add the route manually, or use another related workaround.
 This could be due to a VPN, proxy, or host file configuration issue.
 
 You also might want to clear any VirtualBox host only interfaces you are not using.`)
-			log.Fatal(err)
-		} else {
-			conn.Close()
+	} else {
+		conn.Close()
+	}
+}
+
+func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+	const (
+		dockerPort = 2376
+	)
+
+	var (
+		err error
+	)
+
+	defer func() {
+		if err == nil {
+			provisioner.AttemptIPContact(dockerPort)
 		}
 	}()
 
@@ -221,27 +231,27 @@ You also might want to clear any VirtualBox host only interfaces you are not usi
 		provisioner.EngineOptions.StorageDriver = "aufs"
 	}
 
-	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
+	if err = provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
 
 	// b2d hosts need to wait for the daemon to be up
 	// before continuing with provisioning
-	if err := waitForDocker(provisioner, dockerPort); err != nil {
+	if err = waitForDocker(provisioner, dockerPort); err != nil {
 		return err
 	}
 
-	if err := makeDockerOptionsDir(provisioner); err != nil {
+	if err = makeDockerOptionsDir(provisioner); err != nil {
 		return err
 	}
 
 	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
 
-	if err := ConfigureAuth(provisioner); err != nil {
+	if err = ConfigureAuth(provisioner); err != nil {
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
+	if err = configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
 		return err
 	}
 
