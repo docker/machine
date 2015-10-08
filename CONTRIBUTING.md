@@ -14,29 +14,40 @@ Docker does things, you'll feel right at home.
 Otherwise, please read [Docker's contributions
 guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md).
 
-# Building using docker
+# Building
 
 The requirements to build Machine are:
 
-1. A running instance of Docker
+1. A running instance of Docker or a Golang 1.5 development environment
 2. The `bash` shell
 3. [Make](https://www.gnu.org/software/make/)
 
-Call `export USE_CONTAINER=true` to instruct the build system to use containers to build.
+## Build using Docker containers
 
-# Alternative: build using go only
+To build the `docker-machine` binary using containers, simply run:
 
-Alternatively, you can build without docker, using only golang.
+    $ export USE_CONTAINER=true
+    $ make build
 
-[Install and setup go](https://golang.org/doc/install), then clone the machine repository inside your gopath.
+## Local Go 1.5 development environment
 
-## Building
+Make sure the source code directory is under a correct directory structure to use Go 1.5 vendoring;
+example of cloning and preparing the correct environment `GOPATH`:
+```
+    mkdir -p projects/docker-machine/src/github.com/docker
+    export GOPATH="$PWD/projects/docker-machine"
+    cd projects/docker-machine/src/github.com/docker
+    git clone https://github.com/docker/machine
+    cd machine
+```
 
-To build the docker-machine binary, simply run:
+At this point, simply run:
 
     $ make build
 
-From the Machine repository's root. You will now have a `bin/docker-machine`.
+## Built binary
+
+After the build is complete a `bin/docker-machine` binary will be created.
 
 You may call:
 
