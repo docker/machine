@@ -16,7 +16,7 @@ import (
 
 type Client interface {
 	Output(command string) (string, error)
-	Shell() error
+	Shell(args ...string) error
 }
 
 type ExternalClient struct {
@@ -195,7 +195,7 @@ func (client NativeClient) OutputWithPty(command string) (string, error) {
 	return string(output), err
 }
 
-func (client NativeClient) Shell() error {
+func (client NativeClient) Shell(args ...string) error {
 	var (
 		termWidth, termHeight int
 	)
@@ -243,11 +243,14 @@ func (client NativeClient) Shell() error {
 		return err
 	}
 
-	if err := session.Shell(); err != nil {
-		return err
+	if len(args) == 0 {
+		if err := session.Shell(); err != nil {
+			return err
+		}
+		session.Wait()
+	} else {
+		session.Run(strings.Join(args, " "))
 	}
-
-	session.Wait()
 
 	return nil
 }
@@ -272,23 +275,21 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 	return client, nil
 }
 
+func getSSHCmd(binaryPath string, args ...string) *exec.Cmd {
+	return exec.Command(binaryPath, args...)
+}
+
 func (client ExternalClient) Output(command string) (string, error) {
-	// TODO: Ugh, gross hack.  Replace with all instances using variadic
-	// syntax
-	args := append(client.BaseArgs, strings.Split(command, " ")...)
-
-	cmd := exec.Command(client.BinaryPath, args...)
-	log.Debug(cmd)
-
-	// Allow piping of local things to remote commands.
-	cmd.Stdin = os.Stdin
-
+	args := append(client.BaseArgs, command)
+	cmd := getSSHCmd(client.BinaryPath, args...)
 	output, err := cmd.CombinedOutput()
 	return string(output), err
 }
 
-func (client ExternalClient) Shell() error {
-	cmd := exec.Command(client.BinaryPath, client.BaseArgs...)
+func (client ExternalClient) Shell(args ...string) error {
+	args = append(client.BaseArgs, args...)
+	cmd := getSSHCmd(client.BinaryPath, args...)
+
 	log.Debug(cmd)
 
 	cmd.Stdin = os.Stdin
