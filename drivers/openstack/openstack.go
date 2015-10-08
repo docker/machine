@@ -39,6 +39,7 @@ type Driver struct {
 	SecurityGroups   []string
 	FloatingIpPool   string
 	FloatingIpPoolId string
+	IpVersion        int
 	client           Client
 }
 
@@ -160,6 +161,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage: "OpenStack floating IP pool to get an IP from to assign to the instance",
 			Value: "",
 		},
+		cli.IntFlag{
+			EnvVar: "OS_IP_VERSION",
+			Name:   "openstack-ip-version",
+			Usage:  "OpenStack version of IP address assigned for the machine",
+			Value:  4,
+		},
 		cli.StringFlag{
 			Name:  "openstack-ssh-user",
 			Usage: "OpenStack SSH user",
@@ -226,6 +233,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.SecurityGroups = strings.Split(flags.String("openstack-sec-groups"), ",")
 	}
 	d.FloatingIpPool = flags.String("openstack-floatingip-pool")
+	d.IpVersion = flags.Int("openstack-ip-version")
 	d.SSHUser = flags.String("openstack-ssh-user")
 	d.SSHPort = flags.Int("openstack-ssh-port")
 	d.SwarmMaster = flags.Bool("swarm-master")
@@ -269,7 +277,7 @@ func (d *Driver) GetIP() (string, error) {
 			return "", err
 		}
 		for _, a := range addresses {
-			if a.AddressType == addressType {
+			if a.AddressType == addressType && a.Version == d.IpVersion {
 				return a.Address, nil
 			}
 		}
