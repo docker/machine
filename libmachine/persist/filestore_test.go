@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/docker/machine/commands/mcndirs"
 	_ "github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/libmachine/hosttest"
 )
@@ -23,7 +24,7 @@ func getTestStore() Filestore {
 		os.Exit(1)
 	}
 
-	os.Setenv("MACHINE_STORAGE_PATH", tmpDir)
+	mcndirs.BaseDir = tmpDir
 
 	return Filestore{
 		Path:             tmpDir,
