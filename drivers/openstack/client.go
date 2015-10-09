@@ -2,8 +2,11 @@ package openstack
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/docker/machine/libmachine/log"
@@ -415,6 +418,8 @@ func (c *GenericClient) getEndpointType(d *Driver) gophercloud.Availability {
 }
 
 func (c *GenericClient) Authenticate(d *Driver) error {
+	var config *tls.Config
+
 	if c.Provider != nil {
 		return nil
 	}
@@ -447,12 +452,26 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 
 	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%d", version.ApiVersion))
 
+	// Configure custom TLS settings.
 	if d.Insecure {
-		// Configure custom TLS settings.
-		config := &tls.Config{InsecureSkipVerify: true}
-		transport := &http.Transport{TLSClientConfig: config}
-		provider.HTTPClient.Transport = transport
+		config = &tls.Config{InsecureSkipVerify: true}
 	}
+
+	if d.TlsCACert != "" {
+		flCa := filepath.Join(utils.GetMachineCertDir(), d.TlsCACert)
+		certPool := x509.NewCertPool()
+		file, err := ioutil.ReadFile(flCa)
+		if err != nil {
+			log.Debug("Couldn't read ca cert %s: %s", flCa, err)
+			return err
+		}
+		certPool.AppendCertsFromPEM(file)
+		config = &tls.Config{RootCAs: certPool,
+			InsecureSkipVerify: false,
+		}
+	}
+	transport := &http.Transport{TLSClientConfig: config}
+	provider.HTTPClient.Transport = transport
 
 	err = openstack.Authenticate(provider, opts)
 	if err != nil {
