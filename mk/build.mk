@@ -1,33 +1,23 @@
 build-clean:
 	@rm -f $(PREFIX)/bin/*
 
-# Simple build
-build-simple: $(PREFIX)/bin/$(PKG_NAME)
+# Cross builder helper
+define gocross
+	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o $(PREFIX)/bin/$(1)-$(2)/docker-$(patsubst cmd/%.go,%,$3) \
+		-a $(VERBOSE_GO) -tags "static_build netgo $(BUILDTAGS)" -installsuffix netgo -ldflags "$(GO_LDFLAGS) \
+		-extldflags -static" $(GO_GCFLAGS) $(3);
+endef
 
 # XXX building with -a fails in debug (with -N -l) ????
-$(PREFIX)/bin/$(PKG_NAME): $(shell find . -type f -name '*.go')
-	@go build -o $@ $(VERBOSE_GO) -tags "$(BUILDTAGS)" -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ./main.go
+$(PREFIX)/bin/docker-%: ./cmd/%.go $(shell find . -type f -name '*.go')
+	$(GO) build -o $@ $(VERBOSE_GO) -tags "$(BUILDTAGS)" -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) $<
 
-# Cross-build: careful, does always rebuild!
-build-x: clean
-	$(if $(GOX), , \
-		$(error Please install gox: go get -u github.com/mitchellh/gox))
-	@$(GOX) \
-		-os "$(TARGET_OS)" \
-		-arch "$(TARGET_ARCH)" \
-		-output="$(PREFIX)/bin/docker-machine_{{.OS}}-{{.Arch}}" \
-		-ldflags="$(GO_LDFLAGS)" \
-		-tags="$(BUILDTAGS)" \
-		-gcflags="$(GO_GCFLAGS)" \
-		-parallel=$(PARALLEL) \
-		-rebuild $(VERBOSE_GOX)
+# Native build
+build-simple: $(patsubst ./cmd/%.go,$(PREFIX)/bin/docker-%,$(wildcard ./cmd/*.go))
 
-# Cross builder helper
-# define gocross
-# 	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build -o $(PREFIX)/$(PKG_NAME)_$(1)-$(2) \
-# 		-a $(VERBOSE_GO) -tags "static_build netgo $(BUILDTAGS)" -installsuffix netgo -ldflags "$(GO_LDFLAGS) -extldflags -static" $(GO_GCFLAGS) ./main.go;
-# endef
+# Cross compilation targets
+build-x-%: ./cmd/%.go $(shell find . -type f -name '*.go')
+	@$(foreach GOARCH,$(TARGET_ARCH),$(foreach GOOS,$(TARGET_OS),$(call gocross,$(GOOS),$(GOARCH),$<)))
 
-# Native build-x (no gox)
-# build-x: $(shell find . -type f -name '*.go')
-# 	@$(foreach GOARCH,$(TARGET_ARCH),$(foreach GOOS,$(TARGET_OS),$(call gocross,$(GS),$(GA))))
+# Cross-build
+build-x: $(patsubst ./cmd/%.go,build-x-%,$(wildcard ./cmd/*.go))
