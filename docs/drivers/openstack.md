@@ -41,28 +41,28 @@ Options:
 
 Environment variables and default values:
 
-| CLI option                       | Environment variable   | Default |
-|----------------------------------|------------------------|---------|
-| `--openstack-auth-url`           | `OS_AUTH_URL`          | -       |
-| `--openstack-flavor-name`        | -                      | -       |
-| `--openstack-flavor-id`          | -                      | -       |
-| `--openstack-image-name`         | -                      | -       |
-| `--openstack-image-id`           | -                      | -       |
-| `--openstack-insecure`           | -                      | -       |
-| `--openstack-domain-name`        | `OS_DOMAIN_NAME`       | -       |
-| `--openstack-domain-id`          | `OS_DOMAIN_ID`         | -       |
-| `--openstack-username`           | `OS_USERNAME`          | -       |
-| `--openstack-password`           | `OS_PASSWORD`          | -       |
-| `--openstack-tenant-name`        | `OS_TENANT_NAME`       | -       |
-| `--openstack-tenant-id`          | `OS_TENANT_ID`         | -       |
-| `--openstack-region`             | `OS_REGION_NAME`       | -       |
-| `--openstack-availability-zone`  | `OS_AVAILABILITY_ZONE` | -       |
-| `--openstack-endpoint-type`      | `OS_ENDPOINT_TYPE`     | -       |
-| `--openstack-net-name`           | -                      | -       |
-| `--openstack-net-id`             | -                      | -       |
-| `--openstack-sec-groups`         | -                      | -       |
-| `--openstack-floatingip-pool`    | -                      | -       |
-| `--openstack-ip-version`         | `OS_IP_VERSION`        | `4`     |
-| `--openstack-ssh-user`           | -                      | `root`  |
-| `--openstack-ssh-port`           | -                      | `22`    |
-| `--openstack-active-timeout`     | -                      | `200`   |
+| CLI option                       | Environment variable   | Default     |
+|----------------------------------|------------------------|-------------|
+| `--openstack-auth-url`           | `OS_AUTH_URL`          | -           |
+| `--openstack-flavor-name`        | `OS_FLAVOR_NAME`       | -           |
+| `--openstack-flavor-id`          | `OS_FLAVOR_ID`         | -           |
+| `--openstack-image-name`         | `OS_IMAGE_NAME`        | -           |
+| `--openstack-image-id`           | `OS_IMAGE_ID`          | -           |
+| `--openstack-insecure`           | `OS_INSECURE`          | `false`     |
+| `--openstack-domain-name`        | `OS_DOMAIN_NAME`       | -           |
+| `--openstack-domain-id`          | `OS_DOMAIN_ID`         | -           |
+| `--openstack-username`           | `OS_USERNAME`          | -           |
+| `--openstack-password`           | `OS_PASSWORD`          | -           |
+| `--openstack-tenant-name`        | `OS_TENANT_NAME`       | -           |
+| `--openstack-tenant-id`          | `OS_TENANT_ID`         | -           |
+| `--openstack-region`             | `OS_REGION_NAME`       | -           |
+| `--openstack-availability-zone`  | `OS_AVAILABILITY_ZONE` | -           |
+| `--openstack-endpoint-type`      | `OS_ENDPOINT_TYPE`     | `publicURL` |
+| `--openstack-net-name`           | `OS_NETWORK_NAME`      | -           |
+| `--openstack-net-id`             | `OS_NETWORK_ID`        | -           |
+| `--openstack-sec-groups`         | `OS_SECURITY_GROUPS`   | -           |
+| `--openstack-floatingip-pool`    | `OS_FLOATINGIP_POOL`   | -           |
+| `--openstack-ip-version`         | `OS_IP_VERSION`        | `4`         |
+| `--openstack-ssh-user`           | `OS_SSH_USER`          | `root`      |
+| `--openstack-ssh-port`           | `OS_SSH_PORT`          | `22`        |
+| `--openstack-active-timeout`     | `OS_ACTIVE_TIMEOUT`    | `200`       |
