@@ -52,10 +52,10 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[0]} == "Error creating machine: Machine A already exists" ]]
 }
 
-@test "none: extraneous argument is ignored in name 'machine create -d none --url none a foo'" {
-  run machine create -d none a foo
+@test "none: fail with extra argument 'machine create -d none --url none a extra'" {
+  run machine create -d none --url none a extra
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Host already exists: \"a\"" ]]
+  [[ ${lines[0]} == "Invalid command line. Found extra arguments [extra]" ]]
 }
 
 @test "none: create with weird but valid name succeeds 'machine create -d none --url none 0'" {
