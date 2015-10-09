@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,10 +18,6 @@ import (
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/swarm"
-)
-
-var (
-	ErrDriverNotRecognized = errors.New("Driver not recognized.")
 )
 
 func cmdCreate(c *cli.Context) {
@@ -54,6 +49,10 @@ func cmdCreate(c *cli.Context) {
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
 		log.Fatal("You must specify a machine name")
+	}
+
+	if len(c.Args()) > 1 {
+		log.Fatalf("Invalid command line. Found extra arguments %v", c.Args()[1:])
 	}
 
 	validName := host.ValidateHostName(name)
