@@ -1,6 +1,12 @@
-# Validate DCO on all history
+# Validate DCO on all history
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
+
+# XXX vendorized script miss exec bit, hence the gymnastic
+# plus the path resolution...
+# TODO migrate away from the shell script and have a make equivalent instead
 dco:
-	@script/validate-dco
+	@echo `bash $(current_dir)/../script/validate-dco`
 
 # Fmt
 fmt:
@@ -15,4 +21,3 @@ lint:
 	$(if $(GOLINT), , \
 		$(error Please install golint: go get -u github.com/golang/lint/golint))
 	@test -z "$$($(GOLINT) ./... 2>&1 | grep -v vendor/ | grep -v Godeps/ | tee /dev/stderr)"
-
