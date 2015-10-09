@@ -10,8 +10,8 @@ else
 DOCKER_IMAGE_NAME := "docker-machine-build"
 DOCKER_CONTAINER_NAME := "docker-machine-build-container"
 
-test: FORCE
-
+build:
+test: build
 %:
 		@docker build -t $(DOCKER_IMAGE_NAME) .
 
