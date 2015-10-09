@@ -13,11 +13,11 @@ $(PREFIX)/bin/docker-%: ./cmd/%.go $(shell find . -type f -name '*.go')
 	$(GO) build -o $@ $(VERBOSE_GO) -tags "$(BUILDTAGS)" -ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) $<
 
 # Native build
-build-simple: $(patsubst ./cmd/%.go,$(PREFIX)/bin/docker-%,$(wildcard ./cmd/*.go))
+build-simple: $(patsubst ./cmd/%.go,$(PREFIX)/bin/docker-%,$(filter-out %_test.go, $(wildcard ./cmd/*.go)))
 
 # Cross compilation targets
 build-x-%: ./cmd/%.go $(shell find . -type f -name '*.go')
 	@$(foreach GOARCH,$(TARGET_ARCH),$(foreach GOOS,$(TARGET_OS),$(call gocross,$(GOOS),$(GOARCH),$<)))
 
 # Cross-build
-build-x: $(patsubst ./cmd/%.go,build-x-%,$(wildcard ./cmd/*.go))
+build-x: $(patsubst ./cmd/%.go,build-x-%,$(filter-out %_test.go, $(wildcard ./cmd/*.go)))
