@@ -34,11 +34,11 @@ To build the `docker-machine` binary using containers, simply run:
 Make sure the source code directory is under a correct directory structure to use Go 1.5 vendoring;
 example of cloning and preparing the correct environment `GOPATH`:
 ```
-    mkdir -p projects/docker-machine/src/github.com/docker
-    export GOPATH="$PWD/projects/docker-machine"
-    cd projects/docker-machine/src/github.com/docker
-    git clone https://github.com/docker/machine
-    cd machine
+    mkdir docker-machine
+    cd docker-machine
+    export GOPATH="$PWD"
+    go get github.com/docker/machine
+    cd docker-machine/src/github.com/docker/machine
 ```
 
 At this point, simply run:
