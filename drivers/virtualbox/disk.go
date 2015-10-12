@@ -11,6 +11,16 @@ type VirtualDisk struct {
 	Path string
 }
 
+func (d *Driver) getVMDiskInfo() (*VirtualDisk, error) {
+	out, err := d.vbmOut("showvminfo", d.MachineName, "--machinereadable")
+	if err != nil {
+		return nil, err
+	}
+
+	r := strings.NewReader(out)
+	return parseDiskInfo(r)
+}
+
 func parseDiskInfo(r io.Reader) (*VirtualDisk, error) {
 	s := bufio.NewScanner(r)
 	disk := &VirtualDisk{}
@@ -35,13 +45,4 @@ func parseDiskInfo(r io.Reader) (*VirtualDisk, error) {
 		return nil, err
 	}
 	return disk, nil
-}
-
-func getVMDiskInfo(name string) (*VirtualDisk, error) {
-	out, err := vbmOut("showvminfo", name, "--machinereadable")
-	if err != nil {
-		return nil, err
-	}
-	r := strings.NewReader(out)
-	return parseDiskInfo(r)
 }
