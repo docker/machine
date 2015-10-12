@@ -23,7 +23,7 @@ type Driver struct {
 	DiskSize      int
 	AuthTokenPath string
 	Project       string
-	Tags          []string
+	Tags          string
 }
 
 const (
@@ -154,7 +154,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AuthTokenPath = flags.String("google-auth-token")
 	d.Project = flags.String("google-project")
 	d.Scopes = flags.String("google-scopes")
-	d.Tags = flags.StringSlice("google-tags")
+	d.Tags = flags.String("google-tags")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
