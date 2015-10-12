@@ -15,58 +15,40 @@ import (
 )
 
 var (
-	reVMNameUUID      = regexp.MustCompile(`"(.+)" {([0-9a-f-]+)}`)
-	reVMInfoLine      = regexp.MustCompile(`(?:"(.+)"|(.+))=(?:"(.*)"|(.*))`)
 	reColonLine       = regexp.MustCompile(`(.+):\s+(.*)`)
 	reEqualLine       = regexp.MustCompile(`(.+)=(.*)`)
 	reEqualQuoteLine  = regexp.MustCompile(`"(.+)"="(.*)"`)
 	reMachineNotFound = regexp.MustCompile(`Could not find a registered machine named '(.+)'`)
-)
 
-var (
-	ErrMachineExist    = errors.New("machine already exists")
 	ErrMachineNotExist = errors.New("machine does not exist")
 	ErrVBMNotFound     = errors.New("VBoxManage not found")
-	vboxManageCmd      = setVBoxManageCmd()
+
+	vboxManageCmd = detectVBoxManageCmd()
 )
 
-// detect the VBoxManage cmd's path if needed
-func setVBoxManageCmd() string {
-	cmd := "VBoxManage"
-	if path, err := exec.LookPath(cmd); err == nil {
-		return path
-	}
-	if runtime.GOOS == "windows" {
-		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" {
-			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
-				return path
-			}
-		}
-		if p := os.Getenv("VBOX_MSI_INSTALL_PATH"); p != "" {
-			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
-				return path
-			}
-		}
-		// look at HKEY_LOCAL_MACHINE\SOFTWARE\Oracle\VirtualBox\InstallDir
-		p := "C:\\Program Files\\Oracle\\VirtualBox"
-		if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
-			return path
-		}
-	}
-	return cmd
+// VBoxManager defines the interface to communicate to VirtualBox.
+type VBoxManager interface {
+	vbm(args ...string) error
+
+	vbmOut(args ...string) (string, error)
+
+	vbmOutErr(args ...string) (string, string, error)
 }
 
-func vbm(args ...string) error {
-	_, _, err := vbmOutErr(args...)
+// VBoxCmdManager communicates with VirtualBox through the commandline using `VBoxManage`.
+type VBoxCmdManager struct{}
+
+func (v *VBoxCmdManager) vbm(args ...string) error {
+	_, _, err := v.vbmOutErr(args...)
 	return err
 }
 
-func vbmOut(args ...string) (string, error) {
-	stdout, _, err := vbmOutErr(args...)
+func (v *VBoxCmdManager) vbmOut(args ...string) (string, error) {
+	stdout, _, err := v.vbmOutErr(args...)
 	return stdout, err
 }
 
-func vbmOutErr(args ...string) (string, string, error) {
+func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
 	cmd := exec.Command(vboxManageCmd, args...)
 	log.Debugf("COMMAND: %v %v", vboxManageCmd, strings.Join(args, " "))
 	var stdout bytes.Buffer
@@ -91,4 +73,32 @@ func vbmOutErr(args ...string) (string, string, error) {
 		}
 	}
 	return stdout.String(), stderrStr, err
+}
+
+// detectVBoxManageCmd detects the VBoxManage cmd's path if needed
+func detectVBoxManageCmd() string {
+	cmd := "VBoxManage"
+	if path, err := exec.LookPath(cmd); err == nil {
+		return path
+	}
+
+	if runtime.GOOS == "windows" {
+		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" {
+			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+				return path
+			}
+		}
+		if p := os.Getenv("VBOX_MSI_INSTALL_PATH"); p != "" {
+			if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+				return path
+			}
+		}
+		// look at HKEY_LOCAL_MACHINE\SOFTWARE\Oracle\VirtualBox\InstallDir
+		p := "C:\\Program Files\\Oracle\\VirtualBox"
+		if path, err := exec.LookPath(filepath.Join(p, cmd)); err == nil {
+			return path
+		}
+	}
+
+	return cmd
 }

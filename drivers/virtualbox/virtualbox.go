@@ -48,6 +48,7 @@ var (
 )
 
 type Driver struct {
+	VBoxManager
 	*drivers.BaseDriver
 	CPU                 int
 	Memory              int
@@ -60,8 +61,10 @@ type Driver struct {
 	NoShare             bool
 }
 
+// NewDriver creates a new VirtualBox driver with default settings.
 func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
+		VBoxManager: &VBoxCmdManager{},
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -75,6 +78,8 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 }
 
+// GetCreateFlags registers the flags this driver adds to
+// "docker hosts create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
@@ -176,9 +181,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+// PreCreateCheck checks that VBoxManage exists and works
 func (d *Driver) PreCreateCheck() error {
 	// Check that VBoxManage exists and works
-	return vbm()
+	return d.vbm()
 }
 
 // IsVTXDisabled checks if VT-X is disabled in the BIOS. If it is, the vm will fail to start.
@@ -250,9 +256,9 @@ func (d *Driver) Create() error {
 		name := d.Boot2DockerImportVM
 
 		// make sure vm is stopped
-		_ = vbm("controlvm", name, "poweroff")
+		_ = d.vbm("controlvm", name, "poweroff")
 
-		diskInfo, err := getVMDiskInfo(name)
+		diskInfo, err := d.getVMDiskInfo()
 		if err != nil {
 			return err
 		}
@@ -261,12 +267,12 @@ func (d *Driver) Create() error {
 			return err
 		}
 
-		if err := vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
+		if err := d.vbm("clonehd", diskInfo.Path, d.diskPath()); err != nil {
 			return err
 		}
 
 		log.Debugf("Importing VM settings...")
-		vmInfo, err := getVMInfo(name)
+		vmInfo, err := d.getVMInfo()
 		if err != nil {
 			return err
 		}
@@ -291,7 +297,7 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	if err := vbm("createvm",
+	if err := d.vbm("createvm",
 		"--basefolder", d.ResolveStorePath("."),
 		"--name", d.MachineName,
 		"--register"); err != nil {
@@ -309,7 +315,7 @@ func (d *Driver) Create() error {
 		cpus = 32
 	}
 
-	if err := vbm("modifyvm", d.MachineName,
+	if err := d.vbm("modifyvm", d.MachineName,
 		"--firmware", "bios",
 		"--bioslogofadein", "off",
 		"--bioslogofadeout", "off",
@@ -335,7 +341,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := vbm("modifyvm", d.MachineName,
+	if err := d.vbm("modifyvm", d.MachineName,
 		"--nic1", "nat",
 		"--nictype1", "82540EM",
 		"--cableconnected1", "on"); err != nil {
@@ -346,14 +352,14 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := vbm("storagectl", d.MachineName,
+	if err := d.vbm("storagectl", d.MachineName,
 		"--name", "SATA",
 		"--add", "sata",
 		"--hostiocache", "on"); err != nil {
 		return err
 	}
 
-	if err := vbm("storageattach", d.MachineName,
+	if err := d.vbm("storageattach", d.MachineName,
 		"--storagectl", "SATA",
 		"--port", "0",
 		"--device", "0",
@@ -362,7 +368,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := vbm("storageattach", d.MachineName,
+	if err := d.vbm("storageattach", d.MachineName,
 		"--storagectl", "SATA",
 		"--port", "1",
 		"--device", "0",
@@ -372,10 +378,10 @@ func (d *Driver) Create() error {
 	}
 
 	// let VBoxService do nice magic automounting (when it's used)
-	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
+	if err := d.vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", "/"); err != nil {
 		return err
 	}
-	if err := vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountDir", "/"); err != nil {
+	if err := d.vbm("guestproperty", "set", d.MachineName, "/VirtualBox/GuestAdd/SharedFolders/MountDir", "/"); err != nil {
 		return err
 	}
 
@@ -403,12 +409,12 @@ func (d *Driver) Create() error {
 			}
 
 			// woo, shareDir exists!  let's carry on!
-			if err := vbm("sharedfolder", "add", d.MachineName, "--name", shareName, "--hostpath", shareDir, "--automount"); err != nil {
+			if err := d.vbm("sharedfolder", "add", d.MachineName, "--name", shareName, "--hostpath", shareDir, "--automount"); err != nil {
 				return err
 			}
 
 			// enable symlinks
-			if err := vbm("setextradata", d.MachineName, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/"+shareName, "1"); err != nil {
+			if err := d.vbm("setextradata", d.MachineName, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/"+shareName, "1"); err != nil {
 				return err
 			}
 		}
@@ -425,12 +431,13 @@ func (d *Driver) hostOnlyIpAvailable() bool {
 		log.Debugf("ERROR getting IP: %s", err)
 		return false
 	}
-	if ip != "" {
-		log.Debugf("IP is %s", ip)
-		return true
+	if ip == "" {
+		log.Debug("Strangely, there was no error attempting to get the IP, but it was still empty.")
+		return false
 	}
-	log.Debug("Strangely, there was no error attempting to get the IP, but it was still empty.")
-	return false
+
+	log.Debugf("IP is %s", ip)
+	return true
 }
 
 func (d *Driver) Start() error {
@@ -448,16 +455,16 @@ func (d *Driver) Start() error {
 
 	switch s {
 	case state.Stopped, state.Saved:
-		d.SSHPort, err = setPortForwarding(d.MachineName, 1, "ssh", "tcp", 22, d.SSHPort)
+		d.SSHPort, err = setPortForwarding(d, 1, "ssh", "tcp", 22, d.SSHPort)
 		if err != nil {
 			return err
 		}
-		if err := vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
+		if err := d.vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
 		log.Infof("Starting VM...")
 	case state.Paused:
-		if err := vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
+		if err := d.vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
 			return err
 		}
 		log.Infof("Resuming VM ...")
@@ -491,7 +498,7 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	if err := vbm("controlvm", d.MachineName, "acpipowerbutton"); err != nil {
+	if err := d.vbm("controlvm", d.MachineName, "acpipowerbutton"); err != nil {
 		return err
 	}
 	for {
@@ -527,7 +534,7 @@ func (d *Driver) Remove() error {
 	}
 	// vbox will not release it's lock immediately after the stop
 	time.Sleep(1 * time.Second)
-	return vbm("unregistervm", "--delete", d.MachineName)
+	return d.vbm("unregistervm", "--delete", d.MachineName)
 }
 
 func (d *Driver) Restart() error {
@@ -545,11 +552,11 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	return vbm("controlvm", d.MachineName, "poweroff")
+	return d.vbm("controlvm", d.MachineName, "poweroff")
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	stdout, stderr, err := vbmOutErr("showvminfo", d.MachineName,
+	stdout, stderr, err := d.vbmOutErr("showvminfo", d.MachineName,
 		"--machinereadable")
 	if err != nil {
 		if reMachineNotFound.FindString(stderr) != "" {
@@ -694,21 +701,16 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 		lowerDHCPIP,
 		upperDHCPIP,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	if err := vbm("modifyvm", machineName,
+	return d.vbm("modifyvm", machineName,
 		"--nic2", "hostonly",
 		"--nictype2", d.HostOnlyNicType,
 		"--nicpromisc2", d.HostOnlyPromiscMode,
 		"--hostonlyadapter2", hostOnlyNetwork.Name,
-		"--cableconnected2", "on"); err != nil {
-		return err
-	}
-
-	return nil
+		"--cableconnected2", "on")
 }
 
 // createDiskImage makes a disk image at dest with the given size in MB. If r is
@@ -800,7 +802,7 @@ func getAvailableTCPPort(port int) (int, error) {
 }
 
 // Setup a NAT port forwarding entry.
-func setPortForwarding(machine string, interfaceNum int, mapName, protocol string, guestPort, desiredHostPort int) (int, error) {
+func setPortForwarding(d *Driver, interfaceNum int, mapName, protocol string, guestPort, desiredHostPort int) (int, error) {
 	actualHostPort, err := getAvailableTCPPort(desiredHostPort)
 	if err != nil {
 		return -1, err
@@ -810,8 +812,8 @@ func setPortForwarding(machine string, interfaceNum int, mapName, protocol strin
 			guestPort, mapName, desiredHostPort, actualHostPort)
 	}
 	cmd := fmt.Sprintf("--natpf%d", interfaceNum)
-	vbm("modifyvm", machine, cmd, "delete", mapName)
-	if err := vbm("modifyvm", machine,
+	d.vbm("modifyvm", d.MachineName, cmd, "delete", mapName)
+	if err := d.vbm("modifyvm", d.MachineName,
 		cmd, fmt.Sprintf("%s,%s,127.0.0.1,%d,,%d", mapName, protocol, actualHostPort, guestPort)); err != nil {
 		return -1, err
 	}

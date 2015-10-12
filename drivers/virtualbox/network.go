@@ -31,7 +31,21 @@ type hostOnlyNetwork struct {
 	NetworkName string // referenced in DHCP.NetworkName
 }
 
-// Config changes the configuration of the host-only network.
+// TODO: use VBoxManager.vbm() instead
+func vbm(args ...string) error {
+	vBoxManager := &VBoxCmdManager{}
+	_, _, err := vBoxManager.vbmOutErr(args...)
+	return err
+}
+
+// TODO: use VBoxManager.vbmOut() instead
+func vbmOut(args ...string) (string, error) {
+	vBoxManager := &VBoxCmdManager{}
+	stdout, _, err := vBoxManager.vbmOutErr(args...)
+	return stdout, err
+}
+
+// Save changes the configuration of the host-only network.
 func (n *hostOnlyNetwork) Save() error {
 	if n.IPv4.IP != nil && n.IPv4.Mask != nil {
 		if err := vbm("hostonlyif", "ipconfig", n.Name, "--ip", n.IPv4.IP.String(), "--netmask", net.IP(n.IPv4.Mask).String()); err != nil {
@@ -66,7 +80,7 @@ func createHostonlyNet() (*hostOnlyNetwork, error) {
 	return &hostOnlyNetwork{Name: res[1]}, nil
 }
 
-// HostonlyNets gets all host-only networks in a  map keyed by HostonlyNet.NetworkName.
+// listHostOnlyNetworks gets all host-only networks in a  map keyed by HostonlyNet.NetworkName.
 func listHostOnlyNetworks() (map[string]*hostOnlyNetwork, error) {
 	out, err := vbmOut("list", "hostonlyifs")
 	if err != nil {
@@ -211,17 +225,17 @@ func addDHCPServer(kind, name string, d dhcpServer) error {
 	return vbm(args...)
 }
 
-// AddInternalDHCP adds a DHCP server to an internal network.
+// addInternalDHCP adds a DHCP server to an internal network.
 func addInternalDHCP(netname string, d dhcpServer) error {
 	return addDHCPServer("--netname", netname, d)
 }
 
-// AddHostonlyDHCP adds a DHCP server to a host-only network.
+// addHostonlyDHCP adds a DHCP server to a host-only network.
 func addHostonlyDHCP(ifname string, d dhcpServer) error {
 	return addDHCPServer("--netname", "HostInterfaceNetworking-"+ifname, d)
 }
 
-// DHCPs gets all DHCP server settings in a map keyed by DHCP.NetworkName.
+// getDHCPServers gets all DHCP server settings in a map keyed by DHCP.NetworkName.
 func getDHCPServers() (map[string]*dhcpServer, error) {
 	out, err := vbmOut("list", "dhcpservers")
 	if err != nil {
