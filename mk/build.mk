@@ -1,5 +1,5 @@
 build-clean:
-	@rm -f $(PREFIX)/bin/*
+	@rm -Rf $(PREFIX)/bin/*
 
 # Cross builder helper
 define gocross
