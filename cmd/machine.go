@@ -1,4 +1,4 @@
-package main
+package machine
 
 import (
 	"fmt"
@@ -66,7 +66,7 @@ func setDebugOutputLevel() {
 	}
 }
 
-func main() {
+func App() *cli.App {
 	setDebugOutputLevel()
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
@@ -137,7 +137,7 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
+	return app
 }
 
 func cmdNotFound(c *cli.Context, command string) {

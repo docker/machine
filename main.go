@@ -1,0 +1,14 @@
+// Machine defines interfaces to manage a variety of docker instances
+// deployed on different backends (VMs, baremetal).
+// The goal is to allow users get from zero to docker as fast as possible.
+package main
+
+import (
+	"os"
+
+	"github.com/docker/machine/cmd"
+)
+
+func main() {
+	machine.App().Run(os.Args)
+}
