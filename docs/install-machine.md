@@ -75,5 +75,5 @@ Github](https://github.com/docker/machine/releases/). To install from a binary:
 ## Where to go next
 
 * [Docker Machine overview](/)
-* [Docker Machine driver reference](/drivers)
-* [Docker Machine subcommand reference](/reference)
+* [Docker Machine driver reference](drivers/index.md)
+* [Docker Machine subcommand reference](reference/index.md)
