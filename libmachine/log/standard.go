@@ -2,94 +2,106 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"sort"
 )
 
-type TerminalLogger struct {
+type StandardLogger struct {
 	// fieldOut is used to do log.WithFields correctly
-	fieldOut string
+	fieldOut  string
+	OutWriter io.Writer
+	ErrWriter io.Writer
 }
 
-func (t TerminalLogger) log(args ...interface{}) {
-	fmt.Print(args...)
-	fmt.Print(t.fieldOut, "\n")
+func (t StandardLogger) log(args ...interface{}) {
+	fmt.Fprint(t.OutWriter, args...)
+	fmt.Fprint(t.OutWriter, t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
-func (t TerminalLogger) logf(fmtString string, args ...interface{}) {
-	fmt.Printf(fmtString, args...)
-	fmt.Print(t.fieldOut, "\n")
+func (t StandardLogger) logf(fmtString string, args ...interface{}) {
+	fmt.Fprintf(t.OutWriter, fmtString, args...)
+	fmt.Fprint(t.OutWriter, "\n")
 	t.fieldOut = ""
 }
 
-func (t TerminalLogger) err(args ...interface{}) {
-	fmt.Fprint(os.Stderr, args...)
-	fmt.Fprint(os.Stderr, t.fieldOut, "\n")
+func (t StandardLogger) err(args ...interface{}) {
+	fmt.Fprint(t.ErrWriter, args...)
+	fmt.Fprint(t.ErrWriter, t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
-func (t TerminalLogger) errf(fmtString string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, fmtString, args...)
-	fmt.Fprint(os.Stderr, t.fieldOut, "\n")
+func (t StandardLogger) errf(fmtString string, args ...interface{}) {
+	fmt.Fprintf(t.ErrWriter, fmtString, args...)
+	fmt.Fprint(t.ErrWriter, t.fieldOut, "\n")
 	t.fieldOut = ""
 }
 
-func (t TerminalLogger) Debug(args ...interface{}) {
+func (t StandardLogger) Debug(args ...interface{}) {
 	if IsDebug {
-		t.log(args...)
+		t.err(args...)
 	}
 }
 
-func (t TerminalLogger) Debugf(fmtString string, args ...interface{}) {
+func (t StandardLogger) Debugf(fmtString string, args ...interface{}) {
 	if IsDebug {
-		t.logf(fmtString, args...)
+		t.errf(fmtString, args...)
 	}
 }
 
-func (t TerminalLogger) Error(args ...interface{}) {
+func (t StandardLogger) Error(args ...interface{}) {
 	t.err(args...)
 }
 
-func (t TerminalLogger) Errorf(fmtString string, args ...interface{}) {
+func (t StandardLogger) Errorf(fmtString string, args ...interface{}) {
 	t.errf(fmtString, args...)
 }
 
-func (t TerminalLogger) Info(args ...interface{}) {
+func (t StandardLogger) Errorln(args ...interface{}) {
+
+	t.err(args...)
+}
+
+func (t StandardLogger) Info(args ...interface{}) {
 	t.log(args...)
 }
 
-func (t TerminalLogger) Infof(fmtString string, args ...interface{}) {
+func (t StandardLogger) Infof(fmtString string, args ...interface{}) {
 	t.logf(fmtString, args...)
 }
 
-func (t TerminalLogger) Fatal(args ...interface{}) {
+func (t StandardLogger) Infoln(args ...interface{}) {
+	t.log(args...)
+}
+
+func (t StandardLogger) Fatal(args ...interface{}) {
 	t.err(args...)
 	os.Exit(1)
 }
 
-func (t TerminalLogger) Fatalf(fmtString string, args ...interface{}) {
+func (t StandardLogger) Fatalf(fmtString string, args ...interface{}) {
 	t.errf(fmtString, args...)
 	os.Exit(1)
 }
 
-func (t TerminalLogger) Print(args ...interface{}) {
+func (t StandardLogger) Print(args ...interface{}) {
 	t.log(args...)
 }
 
-func (t TerminalLogger) Printf(fmtString string, args ...interface{}) {
+func (t StandardLogger) Printf(fmtString string, args ...interface{}) {
 	t.logf(fmtString, args...)
 }
 
-func (t TerminalLogger) Warn(args ...interface{}) {
+func (t StandardLogger) Warn(args ...interface{}) {
 	t.log(args...)
 }
 
-func (t TerminalLogger) Warnf(fmtString string, args ...interface{}) {
+func (t StandardLogger) Warnf(fmtString string, args ...interface{}) {
 	t.logf(fmtString, args...)
 }
 
-func (t TerminalLogger) WithFields(fields Fields) Logger {
+func (t StandardLogger) WithFields(fields Fields) Logger {
 	// When the user calls WithFields, we make a string which gets appended
 	// to the output of the final [Info|Warn|Error] call for the
 	// descriptive fields.  Because WithFields returns the proper Logger
