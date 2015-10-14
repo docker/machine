@@ -1,7 +1,6 @@
-package main
+package machine
 
 import (
-	"os"
 	"testing"
 
 	"github.com/docker/machine/commands/mcndirs"
@@ -9,9 +8,10 @@ import (
 
 func TestStorePathSetCorrectly(t *testing.T) {
 	mcndirs.BaseDir = ""
-	os.Args = []string{"docker-machine", "--storage-path", "/tmp/foo"}
-	main()
+
+	App().Run([]string{"docker-machine", "--storage-path", "/tmp/foo"})
+
 	if mcndirs.BaseDir != "/tmp/foo" {
-		t.Fatal("Expected MACHINE_STORAGE_PATH environment variable to be /tmp/foo but was ", os.Getenv("MACHINE_STORAGE_PATH"))
+		t.Fatal("Expected BaseDir to be /tmp/foo but was ", mcndirs.BaseDir)
 	}
 }
