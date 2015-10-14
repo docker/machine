@@ -177,8 +177,6 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		}
 	}
 
-	tags := append(d.Tags, firewallTargetTag)
-
 	instance := &raw.Instance{
 		Name:        c.instanceName,
 		Description: "docker host vm",
@@ -200,7 +198,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 			},
 		},
 		Tags: &raw.Tags{
-			Items: tags,
+			Items: parseTags(d),
 		},
 		ServiceAccounts: []*raw.ServiceAccount{
 			{
@@ -275,6 +273,17 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	}
 
 	return nil
+}
+
+// parseTags computes the tags for the instance.
+func parseTags(d *Driver) []string {
+	tags := []string{firewallTargetTag}
+
+	if d.Tags != "" {
+		tags = append(tags, strings.Split(d.Tags, ",")...)
+	}
+
+	return tags
 }
 
 // deleteInstance deletes the instance, leaving the persistent disk.
