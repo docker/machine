@@ -26,7 +26,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: test command did what it purported to -- native ssh" {
   run machine --native-ssh ssh $NAME echo foo
-  [[ "$output" == "foo"  ]]
+  [[ "$output" =~ "foo"  ]]
 }
 
 @test "$DRIVER: ensure that ssh extra arguments work" {
