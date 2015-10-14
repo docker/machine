@@ -74,15 +74,6 @@ func (h *Host) CreateSSHClient() (ssh.Client, error) {
 	return ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
 }
 
-func (h *Host) CreateSSHShell() error {
-	client, err := h.CreateSSHClient()
-	if err != nil {
-		return err
-	}
-
-	return client.Shell()
-}
-
 func (h *Host) runActionForState(action func() error, desiredState state.State) error {
 	if drivers.MachineInState(h.Driver, desiredState)() {
 		return fmt.Errorf("Machine %q is already %s.", h.Name, strings.ToLower(desiredState.String()))
