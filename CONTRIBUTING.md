@@ -95,19 +95,23 @@ This will generate and open the report file:
     make test
     make validate
 
-### Build targets
+### Advanced build targets
 
-Just build the machine binary itself:
+Just build the machine binary itself (native):
 
-    make `pwd`/bin/docker-machine
+    make machine
+
+Just build the plugins (native):
+
+    make plugins
 
 Build for all supported oses and architectures (binaries will be in the `bin` project subfolder):
 
-    make build-x
+    make cross
 
 Build for a specific list of oses and architectures:
 
-    TARGET_OS=linux TARGET_ARCH="amd64 arm" make build-x
+    TARGET_OS=linux TARGET_ARCH="amd64 arm" make cross
 
 You can further control build options through the following environment variables:
 

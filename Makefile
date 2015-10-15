@@ -31,6 +31,6 @@ test: build
 		    make $@
 
 		@test ! -d bin || rm -Rf bin
-		@test -z "$(findstring build,$@)" || docker cp $(DOCKER_CONTAINER_NAME):/go/src/github.com/docker/machine/bin bin
+		@test -z "$(findstring build,$(patsubst cross,build,$@))" || docker cp $(DOCKER_CONTAINER_NAME):/go/src/github.com/docker/machine/bin bin
 
 endif
