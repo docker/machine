@@ -171,9 +171,10 @@ func (c *GenericClient) GetInstanceIpAddresses(d *Driver) ([]IpAddress, error) {
 			}
 
 			addr := IpAddress{
-				Network: network,
-				Address: address["addr"].(string),
-				Version: int(version),
+				Network:     network,
+				AddressType: Fixed,
+				Address:     address["addr"].(string),
+				Version:     int(version),
 			}
 
 			if tp, ok := address["OS-EXT-IPS:type"]; ok {
