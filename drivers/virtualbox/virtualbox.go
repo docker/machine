@@ -2,6 +2,7 @@ package virtualbox
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -17,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"path"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
@@ -41,6 +44,7 @@ const (
 
 var (
 	ErrUnableToGenerateRandomIP = errors.New("unable to generate random IP")
+	ErrMustEnableVTX            = errors.New("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
 )
 
 type Driver struct {
@@ -174,21 +178,69 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 func (d *Driver) PreCreateCheck() error {
 	// Check that VBoxManage exists and works
-	if err := vbm(); err != nil {
-		return err
+	return vbm()
+}
+
+// IsVTXDisabled checks if VT-X is disabled in the BIOS. If it is, the vm will fail to start.
+// If we can't be sure it is disabled, we carry on and will check the vm logs after it's started.
+func (d *Driver) IsVTXDisabled() bool {
+	if runtime.GOOS == "windows" {
+		output, err := cmdOutput("wmic", "cpu", "get", "VirtualizationFirmwareEnabled")
+		if err != nil {
+			log.Debugf("Couldn't check that VT-X/AMD-v is enabled. Will check that the vm is properly created: %v", err)
+			return false
+		}
+
+		disabled := strings.Contains(output, "FALSE")
+		return disabled
 	}
 
-	return nil
+	// TODO: linux and OSX
+	return false
+}
+
+// cmdOutput runs a shell command and returns its output.
+func cmdOutput(name string, args ...string) (string, error) {
+	cmd := exec.Command(name, args...)
+	log.Debugf("COMMAND: %v %v", name, strings.Join(args, " "))
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	log.Debugf("STDOUT:\n{\n%v}", string(stdout))
+
+	return string(stdout), nil
+}
+
+// IsVTXDisabledInTheVM checks if VT-X is disabled in the started vm.
+func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
+	file, err := os.Open(path.Join(d.ResolveStorePath(d.MachineName), "Logs", "VBox.log"))
+	if err != nil {
+		return true, err
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), "VT-x is disabled") {
+			return true, ErrMustEnableVTX
+		}
+	}
+
+	return false, nil
 }
 
 func (d *Driver) Create() error {
-	if err := vbm("--version"); err != nil {
-		return fmt.Errorf("Checking VirtualBox version failed: %s", err)
-	}
-
 	b2dutils := mcnutils.NewB2dUtils("", "", d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
+	}
+
+	if d.IsVTXDisabled() {
+		return ErrMustEnableVTX
 	}
 
 	log.Infof("Creating VirtualBox VM...")
@@ -364,11 +416,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Starting VirtualBox VM...")
 
-	if err := d.Start(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.Start()
 }
 
 func (d *Driver) hostOnlyIpAvailable() bool {
@@ -415,6 +463,16 @@ func (d *Driver) Start() error {
 		log.Infof("Resuming VM ...")
 	default:
 		log.Infof("VM not in restartable state")
+	}
+
+	// Verify that VT-X is not disabled in the started VM
+	disabled, err := d.IsVTXDisabledInTheVM()
+	if err != nil {
+		return fmt.Errorf("Checking if hardware virtualization is enabled failed: %s", err)
+	}
+
+	if disabled {
+		return ErrMustEnableVTX
 	}
 
 	// Wait for SSH over NAT to be available before returning to user
