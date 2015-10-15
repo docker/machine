@@ -29,7 +29,7 @@ dependencies:
 test:
   pre:
     - gvm use stable && go version
-    - gvm use stable && make build-simple:
+    - gvm use stable && make build:
         pwd: $BASE_STABLE
 
   override:
