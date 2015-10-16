@@ -3,6 +3,7 @@ package openstack
 import (
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -66,6 +67,13 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 				UUID: d.NetworkId,
 			},
 		}
+	}
+	if d.UserData != "" {
+		userdata, err := ioutil.ReadFile(d.UserData)
+		if err != nil {
+			return "", err
+		}
+		serverOpts.UserData = userdata
 	}
 
 	log.Info("Creating machine...")

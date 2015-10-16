@@ -40,6 +40,7 @@ type Driver struct {
 	FloatingIpPool   string
 	FloatingIpPoolId string
 	IpVersion        int
+	UserData         string
 	client           Client
 }
 
@@ -194,6 +195,12 @@ func GetCreateFlags() []cli.Flag {
 			Usage:  "OpenStack active timeout",
 			Value:  defaultActiveTimeout,
 		},
+		cli.StringFlag{
+			EnvVar: "OS_USER_DATA",
+			Name:   "openstack-user-data",
+			Usage:  "Path to OpenStack user data",
+			Value:  "",
+		},
 	}
 }
 
@@ -248,6 +255,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IpVersion = flags.Int("openstack-ip-version")
 	d.SSHUser = flags.String("openstack-ssh-user")
 	d.SSHPort = flags.Int("openstack-ssh-port")
+	d.UserData = flags.String("openstack-user-data")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
