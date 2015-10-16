@@ -56,7 +56,7 @@ unix  3      [ ]         DGRAM                     14242`
 
 func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 	p := &Boot2DockerProvisioner{
-		Driver: &fakedriver.FakeDriver{},
+		Driver: &fakedriver.Driver{},
 	}
 	dockerPort := 1234
 	p.AuthOptions = auth.AuthOptions{
@@ -94,7 +94,7 @@ func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 
 func TestMachinePortBoot2Docker(t *testing.T) {
 	p := &Boot2DockerProvisioner{
-		Driver: &fakedriver.FakeDriver{},
+		Driver: &fakedriver.Driver{},
 	}
 	dockerPort := 2376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
@@ -126,7 +126,7 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 
 func TestMachineCustomPortBoot2Docker(t *testing.T) {
 	p := &Boot2DockerProvisioner{
-		Driver: &fakedriver.FakeDriver{},
+		Driver: &fakedriver.Driver{},
 	}
 	dockerPort := 3376
 	bindUrl := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)

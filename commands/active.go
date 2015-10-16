@@ -3,19 +3,18 @@ package commands
 import (
 	"fmt"
 
-	"github.com/codegangsta/cli"
-	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/cli"
 )
 
 func cmdActive(c *cli.Context) {
 	if len(c.Args()) > 0 {
-		log.Fatal("Error: Too many arguments given.")
+		fatal("Error: Too many arguments given.")
 	}
 
 	store := getStore(c)
 	host, err := getActiveHost(store)
 	if err != nil {
-		log.Fatalf("Error getting active host: %s", err)
+		fatalf("Error getting active host: %s", err)
 	}
 
 	if host != nil {

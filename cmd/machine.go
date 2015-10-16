@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"path"
 	"strconv"
 
-	"github.com/codegangsta/cli"
+	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
@@ -84,10 +85,13 @@ func main() {
 		mcndirs.BaseDir = c.GlobalString("storage-path")
 		return nil
 	}
+
 	app.Commands = commands.Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
 	app.Version = version.Version + " (" + version.GitCommit + ")"
+
+	log.Debug("Docker Machine Version: ", app.Version)
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
@@ -137,7 +141,30 @@ func main() {
 		},
 	}
 
+	go commands.DeferClosePluginServers()
+
+	// Cleanup to run in case the user sends an interrupt (CTRL+C) to the
+	// Machine program.  Ensure that we do not leave dangling OS processes.
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt)
+
+	// Atypical exit condition -- write to the cleanup done channel after
+	// ensuring that we have closed all exec-ed plugin servers.
+	go func() {
+		for range signalCh {
+			log.Info("\nReceieved an interrupt, performing cleanup work...")
+			close(commands.RpcClientDriversCh)
+			<-commands.RpcDriversClosedCh
+			os.Exit(1)
+		}
+	}()
+
+	// TODO: Close plugin servers in case of client panic.
+
 	app.Run(os.Args)
+
+	close(commands.RpcClientDriversCh)
+	<-commands.RpcDriversClosedCh
 }
 
 func cmdNotFound(c *cli.Context, command string) {
@@ -146,6 +173,6 @@ func cmdNotFound(c *cli.Context, command string) {
 		c.App.Name,
 		command,
 		c.App.Name,
-		c.App.Name,
+		os.Args[0],
 	)
 }

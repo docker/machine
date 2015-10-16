@@ -3,10 +3,10 @@ package rackspace
 import (
 	"fmt"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/drivers/openstack"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 )
 
 // Driver is a machine driver for Rackspace. It's a specialization of the generic OpenStack one.
@@ -24,61 +24,55 @@ const (
 	defaultDockerInstall = "true"
 )
 
-func init() {
-	drivers.Register("rackspace", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
 // GetCreateFlags registers the "machine create" flags recognized by this driver, including
 // their help text and defaults.
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_USERNAME",
 			Name:   "rackspace-username",
 			Usage:  "Rackspace account username",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_API_KEY",
 			Name:   "rackspace-api-key",
 			Usage:  "Rackspace API key",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_REGION_NAME",
 			Name:   "rackspace-region",
 			Usage:  "Rackspace region name",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_ENDPOINT_TYPE",
 			Name:   "rackspace-endpoint-type",
 			Usage:  "Rackspace endpoint type (adminURL, internalURL or the default publicURL)",
 			Value:  defaultEndpointType,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "rackspace-image-id",
 			Usage: "Rackspace image ID. Default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "rackspace-flavor-id",
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
 			Value:  defaultFlavorId,
 			EnvVar: "OS_FLAVOR_ID",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "rackspace-ssh-user",
 			Usage: "SSH user for the newly booted machine. Set to root by default",
 			Value: defaultSSHUser,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			Name:  "rackspace-ssh-port",
 			Usage: "SSH port for the newly booted machine. Set to 22 by default",
 			Value: defaultSSHPort,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "rackspace-docker-install",
 			Usage: "Set if docker have to be installed on the machine",
 			Value: defaultDockerInstall,

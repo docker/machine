@@ -3,6 +3,7 @@ package log
 import (
 	"io"
 	"os"
+	"sync"
 )
 
 // Why the interface?  We may only want to print to STDOUT and STDERR for now,
@@ -33,7 +34,9 @@ type Logger interface {
 }
 
 var (
-	l            = StandardLogger{}
+	l = StandardLogger{
+		mu: &sync.Mutex{},
+	}
 	IsDebug bool = false
 )
 

@@ -40,14 +40,14 @@ type HostV1 struct {
 	StorePath     string
 }
 
-func MigrateHostV1ToHostV2(hostV1 *HostV1) *Host {
+func MigrateHostV1ToHostV2(hostV1 *HostV1) *HostV2 {
 	// Changed:  Put StorePath directly in AuthOptions (for provisioning),
 	// and AuthOptions.PrivateKeyPath => AuthOptions.CaPrivateKeyPath
 	// Also, CertDir has been added.
 
 	globalStorePath := filepath.Dir(filepath.Dir(hostV1.StorePath))
 
-	h := &Host{
+	h := &HostV2{
 		ConfigVersion: hostV1.ConfigVersion,
 		Driver:        hostV1.Driver,
 		Name:          hostV1.Driver.GetMachineName(),

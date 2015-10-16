@@ -9,6 +9,8 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 )
 
@@ -17,6 +19,12 @@ type ScpFakeDriver struct {
 }
 
 type ScpFakeStore struct{}
+
+type ScpFakeHostLoader struct{}
+
+func (d ScpFakeDriver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{}
+}
 
 func (d ScpFakeDriver) DriverName() string {
 	return "fake"
@@ -123,16 +131,10 @@ func (s ScpFakeStore) List() ([]*host.Host, error) {
 }
 
 func (s ScpFakeStore) Load(name string) (*host.Host, error) {
-	if name == "myfunhost" {
-		return &host.Host{
-			Name:   "myfunhost",
-			Driver: ScpFakeDriver{},
-		}, nil
-	}
-	return nil, errors.New("Host not found")
+	return nil, nil
 }
 
-func (s ScpFakeStore) Remove(name string, force bool) error {
+func (s ScpFakeStore) Remove(name string) error {
 	return nil
 }
 
@@ -144,8 +146,19 @@ func (s ScpFakeStore) NewHost(driver drivers.Driver) (*host.Host, error) {
 	return nil, nil
 }
 
+func (fshl *ScpFakeHostLoader) LoadHost(store persist.Store, name string) (*host.Host, error) {
+	if name == "myfunhost" {
+		return &host.Host{
+			Name:   "myfunhost",
+			Driver: ScpFakeDriver{},
+		}, nil
+	}
+	return nil, errors.New("Host not found")
+}
+
 func TestGetInfoForScpArg(t *testing.T) {
 	store := ScpFakeStore{}
+	hostLoader = &ScpFakeHostLoader{}
 
 	expectedPath := "/tmp/foo"
 	host, path, opts, err := getInfoForScpArg("/tmp/foo", store)
