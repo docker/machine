@@ -80,4 +80,11 @@ if [[ -d "$MACHINE_STORAGE_PATH" ]]; then
     rm -r "$MACHINE_STORAGE_PATH"
 fi
 
+set +e
+pkill docker-machine
+if [[ $? -eq 0 ]]; then
+    EXIT_STATUS=1
+fi
+set -e
+
 exit ${EXIT_STATUS}

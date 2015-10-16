@@ -5,14 +5,14 @@ load ${BASE_TEST_DIR}/helpers.bash
 @test "bogus: non-existent driver fails 'machine create -d bogus bogus'" {
   run machine create -d bogus bogus
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Driver bogus not found" ]]
+  [[ ${lines[0]} == "Driver \"bogus\" not found. Do you have the plugin binary accessible in your PATH?" ]]
 }
 
-@test "none: create with no name fails 'machine create -d none " "'" {
+@test "none: create with no name fails 'machine create -d none \" \"'" {
   run machine create -d none
   last=$((${#lines[@]} - 1))
   [ "$status" -eq 1 ]
-  [[ ${lines[$last]} == "You must specify a machine name" ]]
+  [[ ${lines[$last]} == "Error: No machine name specified." ]]
 }
 
 @test "none: create with invalid name fails 'machine create -d none --url none ∞'" {
@@ -73,7 +73,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 @test "none: rm non existent machine fails 'machine rm ∞'" {
   run machine rm ∞
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Error removing machine ∞: Host does not exist: \"∞\"" ]]
+  [[ ${lines[0]} == "Error removing host \"∞\": Loading host from store failed: Host does not exist: \"∞\"" ]]
 }
 
 @test "none: rm is succesful 'machine rm 0'" {

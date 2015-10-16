@@ -74,15 +74,15 @@ func ConfigureAuth(p Provisioner) error {
 	log.Info("Copying certs to the local machine directory...")
 
 	if err := mcnutils.CopyFile(authOptions.CaCertPath, filepath.Join(authOptions.StorePath, "ca.pem")); err != nil {
-		log.Fatalf("Error copying ca.pem to machine dir: %s", err)
+		return fmt.Errorf("Copying ca.pem to machine dir failed: %s", err)
 	}
 
 	if err := mcnutils.CopyFile(authOptions.ClientCertPath, filepath.Join(authOptions.StorePath, "cert.pem")); err != nil {
-		log.Fatalf("Error copying cert.pem to machine dir: %s", err)
+		return fmt.Errorf("Copying cert.pem to machine dir failed: %s", err)
 	}
 
 	if err := mcnutils.CopyFile(authOptions.ClientKeyPath, filepath.Join(authOptions.StorePath, "key.pem")); err != nil {
-		log.Fatalf("Error copying key.pem to machine dir: %s", err)
+		return fmt.Errorf("Copying key.pem to machine dir failed: %s", err)
 	}
 
 	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s",

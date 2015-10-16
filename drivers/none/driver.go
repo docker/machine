@@ -4,10 +4,16 @@ import (
 	"fmt"
 	neturl "net/url"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 )
+
+const drivername = "none"
+
+// func main() {
+//   plugin.RegisterDriver(new(Driver))
+// }
 
 // Driver is the driver used when no driver is selected. It is used to
 // connect to existing Docker hosts by specifying the URL of the host as
@@ -15,22 +21,6 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	URL string
-}
-
-func init() {
-	drivers.Register("none", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
-			Name:  "url",
-			Usage: "URL of host when no driver is selected",
-			Value: "",
-		},
-	}
 }
 
 func NewDriver(hostName, storePath string) *Driver {
@@ -42,12 +32,22 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 }
 
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
+			Name:  "url",
+			Usage: "URL of host when no driver is selected",
+			Value: "",
+		},
+	}
+}
+
 func (d *Driver) Create() error {
 	return nil
 }
 
 func (d *Driver) DriverName() string {
-	return "none"
+	return drivername
 }
 
 func (d *Driver) GetIP() (string, error) {

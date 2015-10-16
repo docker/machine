@@ -98,7 +98,7 @@ func DumpVal(vals ...interface{}) {
 	for _, val := range vals {
 		prettyJSON, err := json.MarshalIndent(val, "", "    ")
 		if err != nil {
-			log.Fatal(err)
+			log.Warn(err)
 		}
 		log.Debug(string(prettyJSON))
 	}

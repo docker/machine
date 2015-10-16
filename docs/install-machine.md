@@ -11,12 +11,6 @@ weight=3
 
 # Install Docker Machine
 
-Docker Machine is supported on Windows, OS X, and Linux operating systems. You
-can install using one of Docker's automated installation methods or you can
-download and install via a binary. This page details each of those methods.
-
-## OS X and Windows
-
 On OS X and Windows, Machine is installed along with other Docker products when
 you install the Docker Toolbox. For details on installing Docker Toolbox, see
 the <a href="https://docs.docker.com/installation/mac/" target="_blank">Mac OS X
@@ -24,53 +18,52 @@ installation</a> instructions or <a
 href="https://docs.docker.com/installation/windows" target="_blank">Windows
 installation</a> instructions.
 
-If you only want Docker Machine, you can install [the Machine binaries
-directly](https://github.com/docker/machine/releases/). Alternatively, OS X
-users have the option to follow the Linux installation instructions.
+If you only want Docker Machine, you can install the Machine binaries (the
+latest versions of which are located at
+https://github.com/docker/machine/releases/) directly by following the
+instructions in the next section.
 
-## On Linux
-
-To install on Linux, do the following:
+## Installing Machine Directly
 
 1. Install <a href="https://docs.docker.com/installation/"
-target="_blank">Docker version 1.7.1 or greater</a>:
+target="_blank">the Docker binary</a>.
 
-2. Download the Machine binary to somewhere in your `PATH` (for example,
-`/usr/local/bin`).
+2. Download the archive containing the Docker Machine binaries and extract them
+to your PATH.
 
-        $ curl -L https://github.com/docker/machine/releases/download/v0.4.1/docker-machine_linux-amd64 > /usr/local/bin/docker-machine
+Linux:
 
-3. Apply executable permissions to the binary:
+```
+$ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip >machine.zip && \
+  unzip machine.zip && \
+  rm machine.zip && \
+  mv docker-machine* /usr/local/bin
+```
 
-        $ chmod +x /usr/local/bin/docker-machine
+OSX:
 
-4. Check the installation by displaying the Machine version:
+```
+$ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip >machine.zip && \
+  unzip machine.zip && \
+  rm machine.zip && \
+  mv docker-machine* /usr/local/bin
+```
 
-			$ docker-machine -v
-			machine version 0.4.1 (e2c88d6)
+Windows (using Git Bash):
 
-## Install from binary
+```
+$ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_windows-amd64.zip >machine.zip && \
+  unzip machine.zip && \
+  rm machine.zip && \
+  mv docker-machine* /usr/local/bin
+```
 
-The Docker Machine team compiles binaries for several platforms and
-architectures and makes them available from [the Machine release page on
-Github](https://github.com/docker/machine/releases/). To install from a binary:
+3. Check the installation by displaying the Machine version:
 
-1. Download the binary you want.
-2. Rename the binary to `docker-machine`.
-3. Move the `docker-machine` file to an appropriate directory on your system.
-
-    For example, on an OS X machine, you might move it to the `/usr/local/bin`
-    directory.
-
-4. Ensure the file's executable permissions are correct.
-5. Apply executable permissions to the binary:
-
-        $ chmod +x /usr/local/bin/docker-machine
-
-6. Check the installation by displaying the Machine version:
-
-        $ docker-machine -v
-        machine version 0.4.1 (e2c88d6)
+```
+$ docker-machine -v
+machine version 0.5.0 (3e06852)
+```
 
 ## Where to go next
 

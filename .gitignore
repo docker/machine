@@ -2,5 +2,5 @@ docker-machine*
 *.log
 *.iml
 .idea/
-bin
+./bin
 cover

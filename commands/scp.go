@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/persist"
@@ -25,7 +25,21 @@ var (
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 	}
+
+	hostLoader HostLoader
 )
+
+// TODO: Remove this hack in favor of better strategy.  Currently the
+// HostLoader interface wraps the loadHost() function for easier testing.
+type HostLoader interface {
+	LoadHost(persist.Store, string) (*host.Host, error)
+}
+
+type ScpHostLoader struct{}
+
+func (s *ScpHostLoader) LoadHost(store persist.Store, name string) (*host.Host, error) {
+	return loadHost(store, name)
+}
 
 func getInfoForScpArg(hostAndPath string, store persist.Store) (*host.Host, string, []string, error) {
 	// TODO: What to do about colon in filepath?
@@ -39,7 +53,7 @@ func getInfoForScpArg(hostAndPath string, store persist.Store) (*host.Host, stri
 	// Remote path.  e.g. "machinename:/usr/bin/cmatrix"
 	if len(splitInfo) == 2 {
 		path := splitInfo[1]
-		host, err := store.Load(splitInfo[0])
+		host, err := hostLoader.LoadHost(store, splitInfo[0])
 		if err != nil {
 			return nil, "", nil, fmt.Errorf("Error loading host: %s", err)
 		}
@@ -107,16 +121,18 @@ func runCmdWithStdIo(cmd exec.Cmd) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 	return nil
 }
 
 func cmdScp(c *cli.Context) {
+	hostLoader = &ScpHostLoader{}
+
 	args := c.Args()
 	if len(args) != 2 {
 		cli.ShowCommandHelp(c, "scp")
-		log.Fatal("Improper number of arguments.")
+		fatal("Improper number of arguments.")
 	}
 
 	// TODO: Check that "-3" flag is available in user's version of scp.
@@ -134,9 +150,9 @@ func cmdScp(c *cli.Context) {
 	cmd, err := getScpCmd(src, dest, sshArgs, store)
 
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 	if err := runCmdWithStdIo(*cmd); err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 }

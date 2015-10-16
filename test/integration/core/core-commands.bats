@@ -6,7 +6,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine inspect $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "unable to load host: Error: Host does not exist: $NAME" ]]
+  [[ ${lines[0]} == "Host \"$NAME\" does not exist" ]]
 }
 
 @test "$DRIVER: create" {
@@ -33,7 +33,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine create -d $DRIVER $NAME
   echo ${output}
   [ "$status" -eq 1  ]
-  [[ ${lines[0]} == "Error creating machine: Machine $NAME already exists" ]]
+  [[ ${lines[0]} == "Host already exists: \"$NAME\"" ]]
 }
 
 @test "$DRIVER: run busybox container" {

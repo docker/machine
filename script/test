@@ -3,7 +3,7 @@ set -e
 
 ARGS=$@
 if [ -z "$ARGS" ]; then
-    ARGS="./..."
+    ARGS="./libmachine/... ./commands/... ./drivers/..."
 fi
 
 echo $ARGS

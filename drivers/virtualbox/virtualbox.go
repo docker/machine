@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
@@ -56,12 +56,6 @@ type Driver struct {
 	NoShare             bool
 }
 
-func init() {
-	drivers.Register("virtualbox", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
 func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
 		BaseDriver: &drivers.BaseDriver{
@@ -77,58 +71,56 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 }
 
-// RegisterCreateFlags registers the flags this driver adds to
-// "docker hosts create"
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.IntFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.IntFlag{
 			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
 			Name:   "virtualbox-memory",
 			Usage:  "Size of memory for host in MB",
 			Value:  defaultMemory,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  defaultCPU,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			EnvVar: "VIRTUALBOX_DISK_SIZE",
 			Name:   "virtualbox-disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  defaultDiskSize,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
 			Name:   "virtualbox-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  defaultBoot2DockerURL,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "virtualbox-import-boot2docker-vm",
 			Usage: "The name of a Boot2Docker VM to import",
 			Value: defaultBoot2DockerImportVM,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "virtualbox-hostonly-cidr",
 			Usage:  "Specify the Host Only CIDR",
 			Value:  defaultHostOnlyCIDR,
 			EnvVar: "VIRTUALBOX_HOSTONLY_CIDR",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "virtualbox-hostonly-nictype",
 			Usage:  "Specify the Host Only Network Adapter Type",
 			Value:  defaultHostOnlyNictype,
 			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_TYPE",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "virtualbox-hostonly-nicpromisc",
 			Usage:  "Specify the Host Only Network Adapter Promiscuous Mode",
 			Value:  defaultHostOnlyPromiscMode,
 			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_PROMISC",
 		},
-		cli.BoolFlag{
+		mcnflag.BoolFlag{
 			Name:  "virtualbox-no-share",
 			Usage: "Disable the mount of your home directory",
 		},

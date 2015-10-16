@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
@@ -49,146 +49,150 @@ const (
 	defaultActiveTimeout = 200
 )
 
-func init() {
-	drivers.Register("openstack", &drivers.RegisteredDriver{
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_AUTH_URL",
 			Name:   "openstack-auth-url",
 			Usage:  "OpenStack authentication URL",
 			Value:  "",
 		},
-		cli.BoolFlag{
+		mcnflag.BoolFlag{
 			EnvVar: "OS_INSECURE",
 			Name:   "openstack-insecure",
 			Usage:  "Disable TLS credential checking.",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_DOMAIN_ID",
 			Name:   "openstack-domain-id",
 			Usage:  "OpenStack domain ID (identity v3 only)",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_DOMAIN_NAME",
 			Name:   "openstack-domain-name",
 			Usage:  "OpenStack domain name (identity v3 only)",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_USERNAME",
 			Name:   "openstack-username",
 			Usage:  "OpenStack username",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_PASSWORD",
 			Name:   "openstack-password",
 			Usage:  "OpenStack password",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_TENANT_NAME",
 			Name:   "openstack-tenant-name",
 			Usage:  "OpenStack tenant name",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_TENANT_ID",
 			Name:   "openstack-tenant-id",
 			Usage:  "OpenStack tenant id",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_REGION_NAME",
 			Name:   "openstack-region",
 			Usage:  "OpenStack region name",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_AVAILABILITY_ZONE",
 			Name:   "openstack-availability-zone",
 			Usage:  "OpenStack availability zone",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_ENDPOINT_TYPE",
 			Name:   "openstack-endpoint-type",
 			Usage:  "OpenStack endpoint type (adminURL, internalURL or publicURL)",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_FLAVOR_ID",
 			Name:   "openstack-flavor-id",
 			Usage:  "OpenStack flavor id to use for the instance",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_FLAVOR_NAME",
 			Name:   "openstack-flavor-name",
 			Usage:  "OpenStack flavor name to use for the instance",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_IMAGE_ID",
 			Name:   "openstack-image-id",
 			Usage:  "OpenStack image id to use for the instance",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_IMAGE_NAME",
 			Name:   "openstack-image-name",
 			Usage:  "OpenStack image name to use for the instance",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_NETWORK_ID",
 			Name:   "openstack-net-id",
 			Usage:  "OpenStack network id the machine will be connected on",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_NETWORK_NAME",
 			Name:   "openstack-net-name",
 			Usage:  "OpenStack network name the machine will be connected on",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_SECURITY_GROUPS",
 			Name:   "openstack-sec-groups",
 			Usage:  "OpenStack comma separated security groups for the machine",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_FLOATINGIP_POOL",
 			Name:   "openstack-floatingip-pool",
 			Usage:  "OpenStack floating IP pool to get an IP from to assign to the instance",
 			Value:  "",
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			EnvVar: "OS_IP_VERSION",
 			Name:   "openstack-ip-version",
 			Usage:  "OpenStack version of IP address assigned for the machine",
 			Value:  4,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_SSH_USER",
 			Name:   "openstack-ssh-user",
 			Usage:  "OpenStack SSH user",
 			Value:  defaultSSHUser,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			EnvVar: "OS_SSH_PORT",
 			Name:   "openstack-ssh-port",
 			Usage:  "OpenStack SSH port",
 			Value:  defaultSSHPort,
 		},
-		cli.IntFlag{
+		mcnflag.StringFlag{
+			Name:  "openstack-ssh-user",
+			Usage: "OpenStack SSH user",
+			Value: defaultSSHUser,
+		},
+		mcnflag.IntFlag{
+			Name:  "openstack-ssh-port",
+			Usage: "OpenStack SSH port",
+			Value: defaultSSHPort,
+		},
+		mcnflag.IntFlag{
 			EnvVar: "OS_ACTIVE_TIMEOUT",
 			Name:   "openstack-active-timeout",
 			Usage:  "OpenStack active timeout",

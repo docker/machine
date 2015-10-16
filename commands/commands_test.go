@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -19,14 +20,14 @@ func TestRunActionForeachMachine(t *testing.T) {
 		{
 			Name:       "foo",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 			},
 		},
 		{
 			Name:       "bar",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
 		},
@@ -37,28 +38,28 @@ func TestRunActionForeachMachine(t *testing.T) {
 			// virtualbox...  (to test serial actions)
 			// It's actually FakeDriver!
 			DriverName: "virtualbox",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
 		},
 		{
 			Name:       "spam",
 			DriverName: "virtualbox",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 			},
 		},
 		{
 			Name:       "eggs",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
 		},
 		{
 			Name:       "ham",
 			DriverName: "fakedriver",
-			Driver: &fakedriver.FakeDriver{
+			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 			},
 		},
@@ -117,7 +118,7 @@ func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
 func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
 	defer cleanup()
 	host, _ := hosttest.GetDefaultTestHost()
-	host.Driver = &fakedriver.FakeDriver{}
+	host.Driver = &fakedriver.Driver{}
 
 	out, w := captureStdout()
 
@@ -126,4 +127,29 @@ func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
 	w.Close()
 
 	assert.Equal(t, "1.2.3.4", strings.TrimSpace(<-out))
+}
+
+func TestConsolidateError(t *testing.T) {
+	cases := []struct {
+		inputErrs   []error
+		expectedErr error
+	}{
+		{
+			inputErrs: []error{
+				errors.New("Couldn't remove host 'bar'"),
+			},
+			expectedErr: errors.New("Couldn't remove host 'bar'"),
+		},
+		{
+			inputErrs: []error{
+				errors.New("Couldn't remove host 'bar'"),
+				errors.New("Couldn't remove host 'foo'"),
+			},
+			expectedErr: errors.New("Couldn't remove host 'bar'\nCouldn't remove host 'foo'"),
+		},
+	}
+
+	for _, c := range cases {
+		assert.Equal(t, c.expectedErr, consolidateErrs(c.inputErrs))
+	}
 }

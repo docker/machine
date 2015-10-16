@@ -1,12 +1,16 @@
 #!/bin/bash
 
-teardown() {
+echo_to_log() {
     echo "$BATS_TEST_NAME
 ----------
 $output
 ----------
 
 "   >> ${BATS_LOG}
+}
+
+teardown() {
+    echo_to_log
 }
 
 function errecho () {

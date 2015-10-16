@@ -2,16 +2,24 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
+setup () {
+  machine create -d none --url none testmachine3
+  machine create -d none --url none testmachine2
+  machine create -d none --url none testmachine
+}
+
 teardown () {
-  machine rm testmachine
-  machine rm testmachine2
-  machine rm testmachine3
+  machine rm $(machine ls -q)
+  echo_to_log
+}
+
+bootstrap_swarm () {
+  machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-master --swarm-discovery token://deadbeef testswarm
+  machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testswarm2
+  machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testswarm3
 }
 
 @test "ls: filter on driver 'machine ls --filter driver=none'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls --filter driver=none
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 4 ]]
@@ -21,9 +29,6 @@ teardown () {
 }
 
 @test "ls: filter on driver 'machine ls -q --filter driver=none'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls -q --filter driver=none
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
@@ -33,9 +38,6 @@ teardown () {
 }
 
 @test "ls: filter on state 'machine ls --filter state=\"\"'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls --filter state=""
   [ "$status" -eq 0  ]
   [[ ${#lines[@]} == 4 ]]
@@ -68,9 +70,6 @@ teardown () {
 }
 
 @test "ls: filter on state 'machine ls -q --filter state=\"\"'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls -q --filter state=""
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
@@ -80,9 +79,6 @@ teardown () {
 }
 
 @test "ls: filter on name 'machine ls --filter name=\"testmachine2\"'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls --filter name="testmachine2"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 2 ]]
@@ -90,9 +86,6 @@ teardown () {
 }
 
 @test "ls: filter on name 'machine ls -q --filter name=\"testmachine2\"'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls -q --filter name="testmachine2"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 1 ]]
@@ -100,9 +93,6 @@ teardown () {
 }
 
 @test "ls: filter on name with regex 'machine ls --filter name=\"^t.*e\"'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls --filter name="^t.*e"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 4 ]]
@@ -112,9 +102,6 @@ teardown () {
 }
 
 @test "ls: filter on name with regex 'machine ls -q --filter name=\"^t.*e\"'" {
-  run machine create -d none --url none testmachine3
-  run machine create -d none --url none testmachine2
-  run machine create -d none --url none testmachine
   run machine ls -q --filter name="^t.*e"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
@@ -123,41 +110,32 @@ teardown () {
   [[ ${lines[2]} == "testmachine3" ]]
 }
 
-@test "ls: filter on swarm 'machine ls --filter swarm=testmachine3'" {
-  run machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-master --swarm-discovery token://deadbeef testmachine3
-  run machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testmachine2
-  run machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testmachine
-  sleep 0.5
-  run machine ls --filter swarm=testmachine3
+@test "ls: filter on swarm 'machine ls --filter swarm=testswarm" {
+  bootstrap_swarm
+  run machine ls --filter swarm=testswarm
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 4 ]]
-  [[ ${lines[1]} =~ "testmachine" ]]
-  [[ ${lines[2]} =~ "testmachine2" ]]
-  [[ ${lines[3]} =~ "testmachine3" ]]
+  [[ ${lines[1]} =~ "testswarm" ]]
+  [[ ${lines[2]} =~ "testswarm2" ]]
+  [[ ${lines[3]} =~ "testswarm3" ]]
 }
 
-@test "ls: filter on swarm 'machine ls -q --filter swarm=testmachine3'" {
-  run machine create -d none --url none --swarm --swarm-master --swarm-discovery token://deadbeef testmachine3
-  run machine create -d none --url none --swarm --swarm-discovery token://deadbeef testmachine2
-  run machine create -d none --url none --swarm --swarm-discovery token://deadbeef testmachine
-  sleep 0.5
-  run machine ls -q --filter swarm=testmachine3
+@test "ls: filter on swarm 'machine ls -q --filter swarm=testswarm" {
+  bootstrap_swarm
+  run machine ls -q --filter swarm=testswarm
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
-  [[ ${lines[0]} == "testmachine" ]]
-  [[ ${lines[1]} == "testmachine2" ]]
-  [[ ${lines[2]} == "testmachine3" ]]
+  [[ ${lines[0]} == "testswarm" ]]
+  [[ ${lines[1]} == "testswarm2" ]]
+  [[ ${lines[2]} == "testswarm3" ]]
 }
 
-@test "ls: multi filter 'machine ls -q --filter swarm=testmachine3 --filter name=\"^t.*e\" --filter driver=none --filter state=\"\"'" {
-  run machine create -d none --url none --swarm --swarm-master --swarm-discovery token://deadbeef testmachine3
-  run machine create -d none --url none --swarm --swarm-discovery token://deadbeef testmachine2
-  run machine create -d none --url none --swarm --swarm-discovery token://deadbeef testmachine
-  sleep 0.5
-  run machine ls -q --filter swarm=testmachine3 --filter name="^t.*e" --filter driver=none --filter state=""
+@test "ls: multi filter 'machine ls -q --filter swarm=testswarm --filter name=\"^t.*e\" --filter driver=none --filter state=\"\"'" {
+  bootstrap_swarm
+  run machine ls -q --filter swarm=testswarm --filter name="^t.*e" --filter driver=none --filter state=""
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
-  [[ ${lines[0]} == "testmachine" ]]
-  [[ ${lines[1]} == "testmachine2" ]]
-  [[ ${lines[2]} == "testmachine3" ]]
+  [[ ${lines[0]} == "testswarm" ]]
+  [[ ${lines[1]} == "testswarm2" ]]
+  [[ ${lines[2]} == "testswarm3" ]]
 }

@@ -2,11 +2,9 @@ package drivers
 
 import (
 	"errors"
-	"fmt"
-	"sort"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 )
 
@@ -59,9 +57,13 @@ type Driver interface {
 	// have any special restart behaviour.
 	Restart() error
 
+	// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+	// that can be set, their descriptions and defaults.
+	GetCreateFlags() []mcnflag.Flag
+
 	// SetConfigFromFlags configures the driver with the object that was returned
 	// by RegisterCreateFlags
-	SetConfigFromFlags(flags DriverOptions) error
+	SetConfigFromFlags(opts DriverOptions) error
 
 	// Start a host
 	Start() error
@@ -70,74 +72,7 @@ type Driver interface {
 	Stop() error
 }
 
-// RegisteredDriver is a wrapper struct used to "register" drivers so that
-// information about them can be displayed in the CLI.
-type RegisteredDriver struct {
-	// GetCreateFlags gets the FlagSet for "docker-machine create" for
-	// display to the user.
-	GetCreateFlags func() []cli.Flag
-}
-
 var ErrHostIsNotRunning = errors.New("Host is not running")
-
-var (
-	drivers map[string]*RegisteredDriver
-)
-
-func init() {
-	drivers = make(map[string]*RegisteredDriver)
-}
-
-// Register a driver
-func Register(name string, registeredDriver *RegisteredDriver) error {
-	if _, exists := drivers[name]; exists {
-		return fmt.Errorf("Name already registered %s", name)
-	}
-
-	drivers[name] = registeredDriver
-	return nil
-}
-
-// GetCreateFlags runs GetCreateFlags for all of the drivers and
-// returns their return values indexed by the driver name
-func GetCreateFlags() []cli.Flag {
-	flags := []cli.Flag{}
-
-	for driverName := range drivers {
-		driver := drivers[driverName]
-		for _, f := range driver.GetCreateFlags() {
-			flags = append(flags, f)
-		}
-	}
-
-	sort.Sort(ByFlagName(flags))
-
-	return flags
-}
-
-func GetCreateFlagsForDriver(name string) ([]cli.Flag, error) {
-
-	for driverName := range drivers {
-		if name == driverName {
-			driver := drivers[driverName]
-			flags := driver.GetCreateFlags()
-			sort.Sort(ByFlagName(flags))
-			return flags, nil
-		}
-	}
-
-	return nil, fmt.Errorf("Driver %s not found", name)
-}
-
-// GetDriverNames returns a slice of all registered driver names
-func GetDriverNames() []string {
-	names := make([]string, 0, len(drivers))
-	for k := range drivers {
-		names = append(names, k)
-	}
-	sort.Strings(names)
-	return names
-}
 
 type DriverOptions interface {
 	String(key string) string

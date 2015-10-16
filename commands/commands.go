@@ -8,25 +8,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
-	_ "github.com/docker/machine/drivers/amazonec2"
-	_ "github.com/docker/machine/drivers/azure"
-	_ "github.com/docker/machine/drivers/digitalocean"
-	_ "github.com/docker/machine/drivers/exoscale"
-	_ "github.com/docker/machine/drivers/generic"
-	_ "github.com/docker/machine/drivers/google"
-	_ "github.com/docker/machine/drivers/hyperv"
-	_ "github.com/docker/machine/drivers/none"
-	_ "github.com/docker/machine/drivers/openstack"
-	_ "github.com/docker/machine/drivers/rackspace"
-	_ "github.com/docker/machine/drivers/softlayer"
-	_ "github.com/docker/machine/drivers/virtualbox"
-	_ "github.com/docker/machine/drivers/vmwarefusion"
-	_ "github.com/docker/machine/drivers/vmwarevcloudair"
-	_ "github.com/docker/machine/drivers/vmwarevsphere"
 	"github.com/docker/machine/libmachine/cert"
-	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/persist"
@@ -36,7 +21,60 @@ var (
 	ErrUnknownShell       = errors.New("Error: Unknown shell")
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments.")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument.")
+
+	RpcClientDriversCh = make(chan *rpcdriver.RpcClientDriver)
+	RpcDriversClosedCh = make(chan bool)
 )
+
+func newPluginDriver(driverName string, rawContent []byte) (*rpcdriver.RpcClientDriver, error) {
+	d, err := rpcdriver.NewRpcClientDriver(rawContent, driverName)
+	if err != nil {
+		return nil, err
+	}
+
+	RpcClientDriversCh <- d
+
+	return d, nil
+}
+
+func DeferClosePluginServers() {
+	rpcClientDrivers := []*rpcdriver.RpcClientDriver{}
+
+	for d := range RpcClientDriversCh {
+		rpcClientDrivers = append(rpcClientDrivers, d)
+	}
+
+	doneCh := make(chan bool)
+
+	for _, d := range rpcClientDrivers {
+		d := d
+		go func() {
+			if err := d.Close(); err != nil {
+				log.Debugf("Error closing connection to plugin server: %s", err)
+			}
+
+			doneCh <- true
+		}()
+	}
+
+	for range rpcClientDrivers {
+		<-doneCh
+	}
+
+	RpcDriversClosedCh <- true
+}
+
+func fatal(args ...interface{}) {
+	close(RpcClientDriversCh)
+	<-RpcDriversClosedCh
+	log.Fatal(args...)
+}
+
+func fatalf(fmtString string, args ...interface{}) {
+	close(RpcClientDriversCh)
+	<-RpcDriversClosedCh
+	log.Fatalf(fmtString, args...)
+}
 
 func confirmInput(msg string) bool {
 	fmt.Printf("%s (y/n): ", msg)
@@ -44,8 +82,7 @@ func confirmInput(msg string) bool {
 	_, err := fmt.Scanln(&resp)
 
 	if err != nil {
-		log.Fatal(err)
-
+		fatal(err)
 	}
 
 	if strings.Index(strings.ToLower(resp), "y") == 0 {
@@ -65,16 +102,72 @@ func getStore(c *cli.Context) persist.Store {
 	}
 }
 
+func listHosts(store persist.Store) ([]*host.Host, error) {
+	cliHosts := []*host.Host{}
+
+	hosts, err := store.List()
+	if err != nil {
+		return nil, fmt.Errorf("Error attempting to list hosts from store: %s", err)
+	}
+
+	for _, h := range hosts {
+		d, err := newPluginDriver(h.DriverName, h.RawDriver)
+		if err != nil {
+			return nil, fmt.Errorf("Error attempting to invoke binary for plugin: %s", err)
+		}
+
+		h.Driver = d
+
+		cliHosts = append(cliHosts, h)
+	}
+
+	return cliHosts, nil
+}
+
+func loadHost(store persist.Store, hostName string) (*host.Host, error) {
+	h, err := store.Load(hostName)
+	if err != nil {
+		return nil, fmt.Errorf("Loading host from store failed: %s", err)
+	}
+
+	d, err := newPluginDriver(h.DriverName, h.RawDriver)
+	if err != nil {
+		return nil, fmt.Errorf("Error attempting to invoke binary for plugin: %s", err)
+	}
+
+	h.Driver = d
+
+	return h, nil
+}
+
+func saveHost(store persist.Store, h *host.Host) error {
+	if err := store.Save(h); err != nil {
+		return fmt.Errorf("Error attempting to save host to store: %s", err)
+	}
+
+	return nil
+}
+
 func getFirstArgHost(c *cli.Context) *host.Host {
 	store := getStore(c)
 	hostName := c.Args().First()
-	h, err := store.Load(hostName)
+
+	exists, err := store.Exists(hostName)
+	if err != nil {
+		fatalf("Error checking if host %q exists: %s", hostName, err)
+	}
+
+	if !exists {
+		fatalf("Host %q does not exist", hostName)
+	}
+
+	h, err := loadHost(store, hostName)
 	if err != nil {
 		// I guess I feel OK with bailing here since if we can't get
 		// the host reliably we're definitely not going to be able to
 		// do anything else interesting, but also this premature exit
 		// feels wrong to me.  Let's revisit it later.
-		log.Fatalf("Error trying to get host %q: %s", hostName, err)
+		fatalf("Error trying to get host %q: %s", hostName, err)
 	}
 	return h
 }
@@ -84,7 +177,7 @@ func getHostsFromContext(c *cli.Context) ([]*host.Host, error) {
 	hosts := []*host.Host{}
 
 	for _, hostName := range c.Args() {
-		h, err := store.Load(hostName)
+		h, err := loadHost(store, hostName)
 		if err != nil {
 			return nil, fmt.Errorf("Could not load host %q: %s", hostName, err)
 		}
@@ -92,91 +185,6 @@ func getHostsFromContext(c *cli.Context) ([]*host.Host, error) {
 	}
 
 	return hosts, nil
-}
-
-var sharedCreateFlags = []cli.Flag{
-	cli.StringFlag{
-		Name: "driver, d",
-		Usage: fmt.Sprintf(
-			"Driver to create machine with. Available drivers: %s",
-			strings.Join(drivers.GetDriverNames(), ", "),
-		),
-		Value: "none",
-	},
-	cli.StringFlag{
-		Name:   "engine-install-url",
-		Usage:  "Custom URL to use for engine installation",
-		Value:  "https://get.docker.com",
-		EnvVar: "MACHINE_DOCKER_INSTALL_URL",
-	},
-	cli.StringSliceFlag{
-		Name:  "engine-opt",
-		Usage: "Specify arbitrary flags to include with the created engine in the form flag=value",
-		Value: &cli.StringSlice{},
-	},
-	cli.StringSliceFlag{
-		Name:  "engine-insecure-registry",
-		Usage: "Specify insecure registries to allow with the created engine",
-		Value: &cli.StringSlice{},
-	},
-	cli.StringSliceFlag{
-		Name:  "engine-registry-mirror",
-		Usage: "Specify registry mirrors to use",
-		Value: &cli.StringSlice{},
-	},
-	cli.StringSliceFlag{
-		Name:  "engine-label",
-		Usage: "Specify labels for the created engine",
-		Value: &cli.StringSlice{},
-	},
-	cli.StringFlag{
-		Name:  "engine-storage-driver",
-		Usage: "Specify a storage driver to use with the engine",
-	},
-	cli.StringSliceFlag{
-		Name:  "engine-env",
-		Usage: "Specify environment variables to set in the engine",
-		Value: &cli.StringSlice{},
-	},
-	cli.BoolFlag{
-		Name:  "swarm",
-		Usage: "Configure Machine with Swarm",
-	},
-	cli.StringFlag{
-		Name:   "swarm-image",
-		Usage:  "Specify Docker image to use for Swarm",
-		Value:  "swarm:latest",
-		EnvVar: "MACHINE_SWARM_IMAGE",
-	},
-	cli.BoolFlag{
-		Name:  "swarm-master",
-		Usage: "Configure Machine to be a Swarm master",
-	},
-	cli.StringFlag{
-		Name:  "swarm-discovery",
-		Usage: "Discovery service to use with Swarm",
-		Value: "",
-	},
-	cli.StringFlag{
-		Name:  "swarm-strategy",
-		Usage: "Define a default scheduling strategy for Swarm",
-		Value: "spread",
-	},
-	cli.StringSliceFlag{
-		Name:  "swarm-opt",
-		Usage: "Define arbitrary flags for swarm",
-		Value: &cli.StringSlice{},
-	},
-	cli.StringFlag{
-		Name:  "swarm-host",
-		Usage: "ip/socket to listen on for Swarm master",
-		Value: "tcp://0.0.0.0:3376",
-	},
-	cli.StringFlag{
-		Name:  "swarm-addr",
-		Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
-		Value: "",
-	},
 }
 
 var Commands = []cli.Command{
@@ -198,13 +206,11 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Flags: append(
-			drivers.GetCreateFlags(),
-			sharedCreateFlags...,
-		),
-		Name:   "create",
-		Usage:  "Create a machine",
-		Action: cmdCreate,
+		Flags:           sharedCreateFlags,
+		Name:            "create",
+		Usage:           "Create a machine.\n\nSpecify a driver with --driver to include the create flags for that driver in the help text.",
+		Action:          cmdCreateOuter,
+		SkipFlagParsing: true,
 	},
 	{
 		Name:        "env",
@@ -379,20 +385,16 @@ func machineCommand(actionName string, host *host.Host, errorChan chan<- error) 
 
 	log.Debugf("command=%s machine=%s", actionName, host.Name)
 
-	if err := commands[actionName](); err != nil {
-		errorChan <- err
-		return
-	}
-
-	errorChan <- nil
+	errorChan <- commands[actionName]()
 }
 
 // runActionForeachMachine will run the command across multiple machines
-func runActionForeachMachine(actionName string, machines []*host.Host) {
+func runActionForeachMachine(actionName string, machines []*host.Host) []error {
 	var (
 		numConcurrentActions = 0
 		serialMachines       = []*host.Host{}
 		errorChan            = make(chan error)
+		errs                 = []error{}
 	)
 
 	for _, machine := range machines {
@@ -427,10 +429,22 @@ func runActionForeachMachine(actionName string, machines []*host.Host) {
 	for i := 0; i < numConcurrentActions; i++ {
 		if err := <-errorChan; err != nil {
 			log.Errorln(err)
+			errs = append(errs, err)
 		}
 	}
 
 	close(errorChan)
+
+	return errs
+}
+
+func consolidateErrs(errs []error) error {
+	finalErr := ""
+	for _, err := range errs {
+		finalErr = fmt.Sprintf("%s\n%s", finalErr, err)
+	}
+
+	return errors.New(strings.TrimSpace(finalErr))
 }
 
 func runActionWithContext(actionName string, c *cli.Context) error {
@@ -442,13 +456,15 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 	}
 
 	if len(hosts) == 0 {
-		log.Fatal(ErrNoMachineSpecified)
+		return ErrNoMachineSpecified
 	}
 
-	runActionForeachMachine(actionName, hosts)
+	if errs := runActionForeachMachine(actionName, hosts); len(errs) > 0 {
+		return consolidateErrs(errs)
+	}
 
 	for _, h := range hosts {
-		if err := store.Save(h); err != nil {
+		if err := saveHost(store, h); err != nil {
 			return fmt.Errorf("Error saving host to store: %s", err)
 		}
 	}

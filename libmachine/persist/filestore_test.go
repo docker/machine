@@ -72,7 +72,7 @@ func TestStoreRemove(t *testing.T) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
 
-	err = store.Remove(h.Name, false)
+	err = store.Remove(h.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestStoreExists(t *testing.T) {
 		t.Fatal("Host should exist after saving")
 	}
 
-	if err := store.Remove(h.Name, true); err != nil {
+	if err := store.Remove(h.Name); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1,6 +1,6 @@
-package drivers
+package commands
 
-import "github.com/codegangsta/cli"
+import "github.com/docker/machine/cli"
 
 type ByFlagName []cli.Flag
 
