@@ -1,36 +1,41 @@
-# # Plain make targets if not requested inside a container
-ifneq (,$(findstring test-integration,$(MAKECMDGOALS)))
-	include Makefile.inc
+# Project name, used to name the binaries
+PKG_NAME := docker-machine
+GH_USER ?= docker
+GH_REPO ?= machine
+
+# If true, disable optimizations and does NOT strip the binary
+DEBUG ?=
+# If true, "build" will produce a static binary (cross compile always produce static build regardless)
+STATIC ?=
+# If true, turn on verbose output for build
+VERBOSE ?=
+# Build tags
+BUILDTAGS ?=
+# Adjust number of parallel builds (XXX not used)
+PARALLEL ?= -1
+# Coverage default directory
+COVERAGE_DIR ?= cover
+# Whether to perform targets inside a docker container, or natively on the host
+USE_CONTAINER ?=
+
+# List of cross compilation targets
+ifeq ($(TARGET_OS),)
+  TARGET_OS := darwin linux windows
+endif
+
+ifeq ($(TARGET_ARCH),)
+  TARGET_ARCH := amd64 386
+endif
+
+# Output prefix, defaults to local directory if not specified
+ifeq ($(PREFIX),)
+  PREFIX := $(shell pwd)
+endif
+
+ifneq ($(findstring test-integration,$(MAKECMDGOALS)),)
 	include mk/main.mk
 else ifeq ($(USE_CONTAINER),)
-	include Makefile.inc
 	include mk/main.mk
 else
-# Otherwise, with docker, swallow all targets and forward into a container
-DOCKER_IMAGE_NAME := "docker-machine-build"
-DOCKER_CONTAINER_NAME := "docker-machine-build-container"
-
-build:
-test: build
-%:
-		@docker build -t $(DOCKER_IMAGE_NAME) .
-
-		@test -z '$(shell docker ps -a | grep $(DOCKER_CONTAINER_NAME))' || docker rm -f $(DOCKER_CONTAINER_NAME)
-
-		@docker run --name $(DOCKER_CONTAINER_NAME) \
-		    -e DEBUG \
-		    -e STATIC \
-		    -e VERBOSE \
-		    -e BUILDTAGS \
-		    -e PARALLEL \
-		    -e COVERAGE_DIR \
-		    -e TARGET_OS \
-		    -e TARGET_ARCH \
-		    -e PREFIX \
-		    $(DOCKER_IMAGE_NAME) \
-		    make $@
-
-		@test ! -d bin || rm -Rf bin
-		@test -z "$(findstring build,$(patsubst cross,build,$@))" || docker cp $(DOCKER_CONTAINER_NAME):/go/src/github.com/docker/machine/bin bin
-
+	include mk/in-container.mk
 endif
