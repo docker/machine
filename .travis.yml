@@ -1,13 +1,5 @@
-language: go
-go:
-- 1.5.1
-install:
-- go get github.com/mattn/goveralls
-script:
-- make dco
-- make fmt
-# - make lint
-- make vet
-- make test-short
-- make test-long
-- make coverage-send
+sudo: required
+dist: trusty
+language: bash
+services: docker
+script: USE_CONTAINER=true make dco fmt vet test-short test-long coverage-send
