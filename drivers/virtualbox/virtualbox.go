@@ -374,7 +374,7 @@ func (d *Driver) Create() error {
 func (d *Driver) hostOnlyIpAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {
-		log.Debug("ERROR getting IP: %s", err)
+		log.Debugf("ERROR getting IP: %s", err)
 		return false
 	}
 	if ip != "" {
