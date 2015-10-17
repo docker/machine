@@ -1,6 +1,7 @@
 package host
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/docker/machine/libmachine/log"
@@ -22,7 +23,9 @@ func MigrateHostV2ToHostV3(hostV2 *HostV2, data []byte, storePath string) *Host 
 
 	// Must migrate to include store path in driver since it was not
 	// previously stored in drivers directly
-	if err := json.Unmarshal(*rawHost.Driver, &m); err != nil {
+	d := json.NewDecoder(bytes.NewReader(*rawHost.Driver))
+	d.UseNumber()
+	if err := d.Decode(&m); err != nil {
 		log.Warnf("Could not unmarshal raw host into map[string]interface{}: %s", err)
 	}
 
