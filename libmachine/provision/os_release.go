@@ -69,7 +69,7 @@ func (osr *OsRelease) ParseOsRelease(osReleaseContents []byte) error {
 	for scanner.Scan() {
 		key, val, err := parseLine(scanner.Text())
 		if err != nil {
-			log.Warn("Warning: got an invalid line error parsing /etc/os-release: %s", err)
+			log.Warnf("Warning: got an invalid line error parsing /etc/os-release: %s", err)
 			continue
 		}
 		if err := osr.setIfPossible(key, val); err != nil {
