@@ -19,16 +19,16 @@ Options:
 
  - `--generic-ip-address`: **required** IP Address of host.
  - `--generic-ssh-user`: SSH username used to connect.
- - `--generic-ssh-key`: Path to the SSH user private key.
+ - `--generic-ssh-key`: Path to the SSH user public key.
  - `--generic-ssh-port`: Port to use for SSH.
 
 > **Note**: You must use a base operating system supported by Machine.
 
 Environment variables and default values:
 
-| CLI option                 | Environment variable | Default             |
-|----------------------------|----------------------|---------------------|
-| **`--generic-ip-address`** | -                    | -                   |
-| `--generic-ssh-user`       | -                    | `root`              |
-| `--generic-ssh-key`        | -                    | `$HOME/.ssh/id_rsa` |
-| `--generic-ssh-port`       | -                    | `22`                |
+| CLI option                 | Environment variable | Default                 |
+|----------------------------|----------------------|-------------------------|
+| **`--generic-ip-address`** | -                    | -                       |
+| `--generic-ssh-user`       | -                    | `root`                  |
+| `--generic-ssh-key`        | -                    | `$HOME/.ssh/id_rsa.pub` |
+| `--generic-ssh-port`       | -                    | `22`                    |
