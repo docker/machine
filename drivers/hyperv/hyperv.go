@@ -98,7 +98,7 @@ func (d *Driver) GetSSHUsername() string {
 }
 
 func (d *Driver) DriverName() string {
-	return "hyper-v"
+	return "hyperv"
 }
 
 func (d *Driver) PreCreateCheck() error {
