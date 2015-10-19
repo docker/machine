@@ -113,7 +113,7 @@ func listHosts(store persist.Store) ([]*host.Host, error) {
 	for _, h := range hosts {
 		d, err := newPluginDriver(h.DriverName, h.RawDriver)
 		if err != nil {
-			return nil, fmt.Errorf("Error attempting to invoke binary for plugin: %s", err)
+			return nil, fmt.Errorf("Error attempting to invoke binary for plugin '%s': %s", h.DriverName, err)
 		}
 
 		h.Driver = d
