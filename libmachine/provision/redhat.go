@@ -186,7 +186,7 @@ func (provisioner *RedHatProvisioner) installOfficialDocker() error {
 
 func (provisioner *RedHatProvisioner) dockerDaemonResponding() bool {
 	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
-		log.Warn("Error getting SSH command to check if the daemon is up: %s", err)
+		log.Warnf("Error getting SSH command to check if the daemon is up: %s", err)
 		return false
 	}
 

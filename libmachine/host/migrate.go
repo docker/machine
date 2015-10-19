@@ -64,7 +64,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 	} else {
 		migrationPerformed = true
 		for h.ConfigVersion = migratedHostMetadata.ConfigVersion; h.ConfigVersion < version.ConfigVersion; h.ConfigVersion++ {
-			log.Debug("Migrating to config v%d", h.ConfigVersion)
+			log.Debugf("Migrating to config v%d", h.ConfigVersion)
 			switch h.ConfigVersion {
 			case 0:
 				hostV0 := &HostV0{

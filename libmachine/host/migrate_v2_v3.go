@@ -15,7 +15,7 @@ func MigrateHostV2ToHostV3(hostV2 *HostV2, data []byte, storePath string) *Host 
 	// smoothly.
 	rawHost := &RawHost{}
 	if err := json.Unmarshal(data, &rawHost); err != nil {
-		log.Warn("Could not unmarshal raw host for RawDriver information: %s", err)
+		log.Warnf("Could not unmarshal raw host for RawDriver information: %s", err)
 	}
 
 	m := make(map[string]interface{})
@@ -23,7 +23,7 @@ func MigrateHostV2ToHostV3(hostV2 *HostV2, data []byte, storePath string) *Host 
 	// Must migrate to include store path in driver since it was not
 	// previously stored in drivers directly
 	if err := json.Unmarshal(*rawHost.Driver, &m); err != nil {
-		log.Warn("Could not unmarshal raw host into map[string]interface{}: %s", err)
+		log.Warnf("Could not unmarshal raw host into map[string]interface{}: %s", err)
 	}
 
 	m["StorePath"] = storePath
@@ -31,7 +31,7 @@ func MigrateHostV2ToHostV3(hostV2 *HostV2, data []byte, storePath string) *Host 
 	// Now back to []byte
 	rawDriver, err := json.Marshal(m)
 	if err != nil {
-		log.Warn("Could not re-marshal raw driver: %s", err)
+		log.Warnf("Could not re-marshal raw driver: %s", err)
 	}
 
 	h := &Host{
