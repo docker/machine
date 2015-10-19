@@ -82,7 +82,7 @@ func checkCert(hostUrl string, authOptions *auth.AuthOptions, c *cli.Context) er
 		authOptions.ServerKeyPath,
 	)
 	if err != nil {
-		return fmt.Errorf("Error attempting to validate the certficate: %s", err)
+		return fmt.Errorf("Error attempting to validate the certificates: %s", err)
 	}
 
 	if !valid {
