@@ -13,6 +13,10 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"errors"
+
+	"github.com/docker/machine/libmachine/log"
 )
 
 type ErrValidatingCert struct {
@@ -29,7 +33,11 @@ func getTLSConfig(caCert, cert, key []byte, allowInsecure bool) (*tls.Config, er
 	tlsConfig.InsecureSkipVerify = allowInsecure
 	certPool := x509.NewCertPool()
 
-	certPool.AppendCertsFromPEM(caCert)
+	ok := certPool.AppendCertsFromPEM(caCert)
+	if !ok {
+		return &tlsConfig, errors.New("There was an error reading certificate")
+	}
+
 	tlsConfig.RootCAs = certPool
 	keypair, err := tls.X509KeyPair(cert, key)
 	if err != nil {
@@ -174,17 +182,21 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	return nil
 }
 
+// ValidateCertificate validate the certificate installed on the vm.
 func ValidateCertificate(addr, caCertPath, serverCertPath, serverKeyPath string) (bool, error) {
+	log.Debugf("Reading CA certificate from %s", caCertPath)
 	caCert, err := ioutil.ReadFile(caCertPath)
 	if err != nil {
 		return false, ErrValidatingCert{err}
 	}
 
+	log.Debugf("Reading server certificate from %s", serverCertPath)
 	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
 		return false, ErrValidatingCert{err}
 	}
 
+	log.Debugf("Reading server key from %s", serverKeyPath)
 	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
 		return false, ErrValidatingCert{err}
@@ -201,6 +213,7 @@ func ValidateCertificate(addr, caCertPath, serverCertPath, serverKeyPath string)
 
 	_, err = tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
 	if err != nil {
+		log.Debugf("Certificates are not valid: %s", err)
 		return false, nil
 	}
 
