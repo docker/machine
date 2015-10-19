@@ -718,7 +718,7 @@ func generateId() string {
 	rb := make([]byte, 10)
 	_, err := rand.Read(rb)
 	if err != nil {
-		log.Warn("Unable to generate id: %s", err)
+		log.Warnf("Unable to generate id: %s", err)
 	}
 
 	h := md5.New()
