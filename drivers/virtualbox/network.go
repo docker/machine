@@ -100,7 +100,7 @@ func listHostOnlyNetworks() (map[string]*hostOnlyNetwork, error) {
 		case "IPV6Address":
 			n.IPv6.IP = net.ParseIP(val)
 		case "IPV6NetworkMaskPrefixLength":
-			l, err := strconv.ParseUint(val, 10, 7)
+			l, err := strconv.ParseUint(val, 10, 8)
 			if err != nil {
 				return nil, err
 			}
