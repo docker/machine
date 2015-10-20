@@ -6,6 +6,7 @@ RUN go get  github.com/golang/lint/golint \
             github.com/tools/godep \
             github.com/aktau/github-release
 
+ENV USER root
 WORKDIR /go/src/github.com/docker/machine
 
 ADD . /go/src/github.com/docker/machine
