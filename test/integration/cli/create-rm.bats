@@ -76,13 +76,13 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[0]} == "Error removing host \"∞\": Loading host from store failed: Host does not exist: \"∞\"" ]]
 }
 
-@test "none: rm is succesful 'machine rm 0'" {
+@test "none: rm is successful 'machine rm 0'" {
   run machine rm 0
   [ "$status" -eq 0 ]
 }
 
 # Should be replaced by the test below
-@test "none: rm is succesful 'machine rm a'" {
+@test "none: rm is successful 'machine rm a'" {
   run machine rm a
   [ "$status" -eq 0 ]
 }
