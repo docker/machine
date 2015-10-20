@@ -160,8 +160,9 @@ func main() {
 	}()
 
 	// TODO: Close plugin servers in case of client panic.
-
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		log.Error(err)
+	}
 
 	close(commands.RpcClientDriversCh)
 	<-commands.RpcDriversClosedCh
