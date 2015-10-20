@@ -12,6 +12,16 @@ type VirtualBoxVM struct {
 	Memory int
 }
 
+func (d *Driver) getVMInfo() (*VirtualBoxVM, error) {
+	out, err := d.vbmOut("showvminfo", d.MachineName, "--machinereadable")
+	if err != nil {
+		return nil, err
+	}
+
+	r := strings.NewReader(out)
+	return parseVMInfo(r)
+}
+
 func parseVMInfo(r io.Reader) (*VirtualBoxVM, error) {
 	s := bufio.NewScanner(r)
 	vm := &VirtualBoxVM{}
@@ -43,13 +53,4 @@ func parseVMInfo(r io.Reader) (*VirtualBoxVM, error) {
 		return nil, err
 	}
 	return vm, nil
-}
-
-func getVMInfo(name string) (*VirtualBoxVM, error) {
-	out, err := vbmOut("showvminfo", name, "--machinereadable")
-	if err != nil {
-		return nil, err
-	}
-	r := strings.NewReader(out)
-	return parseVMInfo(r)
 }
