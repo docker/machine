@@ -38,6 +38,7 @@ func getMigratedHostMetadata(data []byte) (*HostMetadata, error) {
 
 func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 	var (
+		migrationNeeded    = false
 		migrationPerformed = false
 		hostV1             *HostV1
 		hostV2             *HostV2
@@ -61,7 +62,29 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 		if err := json.Unmarshal(data, &h); err != nil {
 			return nil, migrationPerformed, fmt.Errorf("Error unmarshalling most recent host version: %s", err)
 		}
+
+		// We are config version 3, so we definitely should have a
+		// RawDriver field.  However, it's possible some might use
+		// older clients after already migrating, so check if it exists
+		// and create one if not.  The following code is an (admittedly
+		// fragile) attempt to account for the fact that the above code
+		// to forbid loading from future clients was not introduced
+		// sooner.
+		if h.RawDriver == nil {
+			log.Warn("It looks like you have used an older Docker Machine binary to interact with hosts after using a 0.5.0 binary.")
+			log.Warn("Please be advised that doing so can result in erratic behavior due to migrated configuration settings.")
+			log.Warn("Machine will attempt to re-migrate the configuration settings, but safety is not guaranteed.")
+			migrationNeeded = true
+
+			// Treat the data as config version 1, even though it
+			// says "latest".
+			migratedHostMetadata.ConfigVersion = 1
+		}
 	} else {
+		migrationNeeded = true
+	}
+
+	if migrationNeeded {
 		migrationPerformed = true
 		for h.ConfigVersion = migratedHostMetadata.ConfigVersion; h.ConfigVersion < version.ConfigVersion; h.ConfigVersion++ {
 			log.Debug("Migrating to config v%d", h.ConfigVersion)
@@ -96,9 +119,6 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 				h = MigrateHostV2ToHostV3(hostV2, data, globalStorePath)
 				h.Driver = RawDataDriver{driver, nil}
 			case 3:
-				// Everything for migration to plugin model is
-				// already set up in previous block, so no need
-				// to do anything here.
 			}
 		}
 	}
