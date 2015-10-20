@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
@@ -54,17 +53,10 @@ func TestCopyFile(t *testing.T) {
 }
 
 func TestGetUsername(t *testing.T) {
-	currentUser := "unknown"
-	switch runtime.GOOS {
-	case "darwin", "linux":
-		currentUser = os.Getenv("USER")
-	case "windows":
-		currentUser = os.Getenv("USERNAME")
-	}
-
 	username := GetUsername()
-	if username != currentUser {
-		t.Fatalf("expected username %s; received %s", currentUser, username)
+
+	if username == "unknown" {
+		t.Fatalf("Couldn't find username. Got %s", username)
 	}
 }
 

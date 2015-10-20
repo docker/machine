@@ -11,6 +11,9 @@ import (
 	"strconv"
 	"time"
 
+	"os/exec"
+	"strings"
+
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -23,22 +26,25 @@ func GetHomeDir() string {
 	return os.Getenv("HOME")
 }
 
+// GetUsername finds current user's login.
+// We can't rely on `user.Current()` in standard library because it doesn't cross-compile well.
 func GetUsername() string {
-	u := "unknown"
-	osUser := ""
-
+	username := ""
 	switch runtime.GOOS {
 	case "darwin", "linux":
-		osUser = os.Getenv("USER")
+		output, err := exec.Command("whoami").Output()
+		if err == nil {
+			username = strings.TrimSpace(string(output))
+		}
 	case "windows":
-		osUser = os.Getenv("USERNAME")
+		username = os.Getenv("USERNAME")
 	}
 
-	if osUser != "" {
-		u = osUser
+	if username != "" {
+		return username
 	}
 
-	return u
+	return "unknown"
 }
 
 func CopyFile(src, dst string) error {
