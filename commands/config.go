@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/docker/machine/cli"
@@ -14,6 +15,10 @@ import (
 )
 
 func cmdConfig(c *cli.Context) {
+	// Ensure that log messages always go to stderr when this command is
+	// being run (it is intended to be run in a subshell)
+	log.SetOutWriter(os.Stderr)
+
 	if len(c.Args()) != 1 {
 		fatal(ErrExpectedOneMachine)
 	}
