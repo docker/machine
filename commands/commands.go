@@ -419,6 +419,7 @@ func runActionForeachMachine(actionName string, machines []*host.Host) []error {
 		go machineCommand(actionName, machine, serialChan)
 		if err := <-serialChan; err != nil {
 			log.Errorln(err)
+			errs = append(errs, err)
 		}
 		close(serialChan)
 	}
