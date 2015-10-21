@@ -52,7 +52,7 @@ to your PATH.
         rm machine.zip && \
         mv docker-machine* /usr/local/bin
 
-4. Check the installation by displaying the Machine version:
+3. Check the installation by displaying the Machine version:
 
         $ docker-machine -v
         machine version 0.5.0 (3e06852)
