@@ -31,39 +31,31 @@ target="_blank">the Docker binary</a>.
 2. Download the archive containing the Docker Machine binaries and extract them
 to your PATH.
 
-Linux:
+    Linux:
 
-```
-$ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip >machine.zip && \
-  unzip machine.zip && \
-  rm machine.zip && \
-  mv docker-machine* /usr/local/bin
-```
+        $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip >machine.zip && \
+        unzip machine.zip && \
+        rm machine.zip && \
+        mv docker-machine* /usr/local/bin
 
-OSX:
+    OSX:
 
-```
-$ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip >machine.zip && \
-  unzip machine.zip && \
-  rm machine.zip && \
-  mv docker-machine* /usr/local/bin
-```
+        $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip >machine.zip && \
+        unzip machine.zip && \
+        rm machine.zip && \
+        mv docker-machine* /usr/local/bin
 
-Windows (using Git Bash):
+    Windows (using Git Bash):
 
-```
-$ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_windows-amd64.zip >machine.zip && \
-  unzip machine.zip && \
-  rm machine.zip && \
-  mv docker-machine* /usr/local/bin
-```
+        $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_windows-amd64.zip >machine.zip && \
+        unzip machine.zip && \
+        rm machine.zip && \
+        mv docker-machine* /usr/local/bin
 
-3. Check the installation by displaying the Machine version:
+4. Check the installation by displaying the Machine version:
 
-```
-$ docker-machine -v
-machine version 0.5.0 (3e06852)
-```
+        $ docker-machine -v
+        machine version 0.5.0 (3e06852)
 
 ## Where to go next
 
