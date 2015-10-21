@@ -666,6 +666,13 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 
 	nAddr := network.IP.To4()
 
+	if ip.Equal(nAddr) {
+		err := errors.New("virtualbox-hostonly-cidr must be specified with a host address, not a network address")
+		if err != nil {
+			return err
+		}
+	}
+
 	dhcpAddr, err := getRandomIPinSubnet(network.IP)
 	if err != nil {
 		return err
