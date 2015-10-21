@@ -59,7 +59,7 @@ func cmdEnv(c *cli.Context) {
 
 	t := template.New("envConfig")
 
-	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell)
+	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell, c.Bool("no-proxy"), c.Bool("swarm"))
 
 	shellCfg := &ShellConfig{
 		DockerCertPath:  authOptions.CertDir,
@@ -164,29 +164,25 @@ func cmdEnv(c *cli.Context) {
 	}
 }
 
-func generateUsageHint(appName, machineName, userShell string) string {
+func generateUsageHint(appName, machineName, userShell string, noProxy bool, swarm bool) string {
+	flags := ""
+	if noProxy {
+		flags += "--no-proxy "
+	}
+	if swarm {
+		flags += "--swarm "
+	}
+
 	cmd := ""
 	switch userShell {
 	case "fish":
-		if machineName != "" {
-			cmd = fmt.Sprintf("eval (%s env %s)", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("eval (%s env)", appName)
-		}
+		cmd = fmt.Sprintf("eval (%s env --shell=fish %s%s)", appName, flags, machineName)
 	case "powershell":
-		if machineName != "" {
-			cmd = fmt.Sprintf("%s env --shell=powershell %s | Invoke-Expression", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("%s env --shell=powershell | Invoke-Expression", appName)
-		}
+		cmd = fmt.Sprintf("%s env --shell=powershell %s%s | Invoke-Expression", appName, flags, machineName)
 	case "cmd":
 		cmd = "copy and paste the above values into your command prompt"
 	default:
-		if machineName != "" {
-			cmd = fmt.Sprintf("eval \"$(%s env %s)\"", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("eval \"$(%s env)\"", appName)
-		}
+		cmd = fmt.Sprintf("eval \"$(%s env %s%s)\"", appName, flags, machineName)
 	}
 
 	return fmt.Sprintf("# Run this command to configure your shell: \n# %s\n", cmd)
