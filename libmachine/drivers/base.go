@@ -26,6 +26,16 @@ func (d *BaseDriver) DriverName() string {
 }
 
 // GetIP returns the ip
+func (d *BaseDriver) GetIP() (string, error) {
+	if d.IPAddress == "" {
+		return "", fmt.Errorf("IP address is not set")
+	}
+	ip := net.ParseIP(d.IPAddress)
+	if ip == nil {
+		return "", fmt.Errorf("IP address is invalid")
+	}
+	return d.IPAddress, nil
+}
 func (d *BaseDriver) GetMachineName() string {
 	return d.MachineName
 }

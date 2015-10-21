@@ -226,13 +226,6 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
-func (d *Driver) GetIP() (string, error) {
-	if d.IPAddress == "" {
-		return "", fmt.Errorf("IP address is not set")
-	}
-	return d.IPAddress, nil
-}
-
 func (d *Driver) GetState() (state.State, error) {
 	droplet, _, err := d.getClient().Droplets.Get(d.DropletID)
 	if err != nil {
