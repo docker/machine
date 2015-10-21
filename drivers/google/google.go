@@ -165,12 +165,6 @@ func (d *Driver) initApis() (*ComputeUtil, error) {
 	return newComputeUtil(d)
 }
 
-// PreCreateCheck allows for pre-create operations to make sure a driver is ready for creation
-// It's a noop on GCE.
-func (d *Driver) PreCreateCheck() error {
-	return nil
-}
-
 // Create creates a GCE VM instance acting as a docker host.
 func (d *Driver) Create() error {
 	c, err := newComputeUtil(d)

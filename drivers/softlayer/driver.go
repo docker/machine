@@ -303,10 +303,6 @@ func (d *Driver) GetActiveTransaction() (string, error) {
 	return t, nil
 }
 
-func (d *Driver) PreCreateCheck() error {
-	return nil
-}
-
 func (d *Driver) waitForStart() {
 	log.Infof("Waiting for host to become available")
 	for {

@@ -101,10 +101,6 @@ func (d *Driver) DriverName() string {
 	return "hyperv"
 }
 
-func (d *Driver) PreCreateCheck() error {
-	return nil
-}
-
 func (d *Driver) GetURL() (string, error) {
 	ip, err := d.GetIP()
 	if err != nil {
