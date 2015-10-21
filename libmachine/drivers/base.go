@@ -20,12 +20,12 @@ func (d *BaseDriver) GetSSHKeyPath() string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, "id_rsa")
 }
 
-// DriverName - This must be implemented in every driver
+// DriverName returns the name of the driver
 func (d *BaseDriver) DriverName() string {
 	return "unknown"
 }
 
-// GetMachineName -
+// GetIP returns the ip
 func (d *BaseDriver) GetMachineName() string {
 	return d.MachineName
 }
@@ -35,7 +35,7 @@ func (d *BaseDriver) ResolveStorePath(file string) string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, file)
 }
 
-// GetSSHPort -
+// GetSSHPort returns the ssh port, 22 if not specified
 func (d *BaseDriver) GetSSHPort() (int, error) {
 	if d.SSHPort == 0 {
 		d.SSHPort = 22
@@ -44,7 +44,7 @@ func (d *BaseDriver) GetSSHPort() (int, error) {
 	return d.SSHPort, nil
 }
 
-// GetSSHUsername -
+// GetSSHUsername returns the ssh user name, root if not specified
 func (d *BaseDriver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		d.SSHUser = "root"
