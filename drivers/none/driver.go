@@ -82,10 +82,6 @@ func (d *Driver) Kill() error {
 	return fmt.Errorf("hosts without a driver cannot be killed")
 }
 
-func (d *Driver) PreCreateCheck() error {
-	return nil
-}
-
 func (d *Driver) Remove() error {
 	return nil
 }

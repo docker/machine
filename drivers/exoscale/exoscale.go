@@ -188,10 +188,6 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-func (d *Driver) PreCreateCheck() error {
-	return nil
-}
-
 func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group string) (string, error) {
 	rules := []egoscale.SecurityGroupRule{
 		{

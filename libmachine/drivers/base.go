@@ -52,3 +52,8 @@ func (d *BaseDriver) GetSSHUsername() string {
 
 	return d.SSHUser
 }
+
+// PreCreateCheck is called to enforce pre-creation steps
+func (d *BaseDriver) PreCreateCheck() error {
+	return nil
+}

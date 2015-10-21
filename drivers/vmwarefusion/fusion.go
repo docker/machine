@@ -198,10 +198,6 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.Stopped, nil
 }
 
-func (d *Driver) PreCreateCheck() error {
-	return nil
-}
-
 func (d *Driver) Create() error {
 	b2dutils := mcnutils.NewB2dUtils("", "", d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
