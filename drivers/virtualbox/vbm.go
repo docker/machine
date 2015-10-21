@@ -21,7 +21,7 @@ var (
 	reMachineNotFound = regexp.MustCompile(`Could not find a registered machine named '(.+)'`)
 
 	ErrMachineNotExist = errors.New("machine does not exist")
-	ErrVBMNotFound     = errors.New("VBoxManage not found")
+	ErrVBMNotFound     = errors.New("VBoxManage not found. Make sure VirtualBox is installed and VBoxManage is in the path")
 
 	vboxManageCmd = detectVBoxManageCmd()
 )
