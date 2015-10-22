@@ -3,6 +3,7 @@ package rpcdriver
 import (
 	"fmt"
 	"net/rpc"
+	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
@@ -11,8 +12,14 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
+var (
+	heartbeatInterval = 200 * time.Millisecond
+)
+
 type RpcClientDriver struct {
-	Client *InternalClient
+	plugin          localbinary.DriverPlugin
+	heartbeatDoneCh chan bool
+	Client          *InternalClient
 }
 
 type RpcCall struct {
@@ -22,35 +29,26 @@ type RpcCall struct {
 }
 
 type InternalClient struct {
-	RpcClient *rpc.Client
-	Calls     chan RpcCall
-	CallErrs  chan error
+	MachineName string
+	RpcClient   *rpc.Client
 }
 
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
-	ic.Calls <- RpcCall{
-		ServiceMethod: serviceMethod,
-		Args:          args,
-		Reply:         reply,
+	if serviceMethod != "RpcServerDriver.Heartbeat" {
+		log.Debugf("(%s) Calling %+v", ic.MachineName, serviceMethod)
 	}
-
-	return <-ic.CallErrs
+	return ic.RpcClient.Call(serviceMethod, args, reply)
 }
 
 func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 	return &InternalClient{
 		RpcClient: rpcclient,
-		Calls:     make(chan RpcCall),
-		CallErrs:  make(chan error),
 	}
 }
-
 func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriver, error) {
 	mcnName := ""
 
 	p := localbinary.NewLocalBinaryPlugin(driverName)
-
-	c := &RpcClientDriver{}
 
 	go func() {
 		if err := p.Serve(); err != nil {
@@ -70,31 +68,24 @@ func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriv
 		return nil, err
 	}
 
-	c.Client = NewInternalClient(rpcclient)
+	c := &RpcClientDriver{
+		Client:          NewInternalClient(rpcclient),
+		heartbeatDoneCh: make(chan bool),
+	}
 
-	go func() {
+	go func(heartbeatDoneCh <-chan bool) {
 		for {
-			call := <-c.Client.Calls
-
-			log.Debugf("(%s) Got msg %+v", mcnName, call)
-
-			if call.ServiceMethod == "RpcServerDriver.Close" {
-				p.Close()
-			}
-
-			c.Client.CallErrs <- c.Client.RpcClient.Call(call.ServiceMethod, call.Args, call.Reply)
-
-			if call.ServiceMethod == "RpcServerDriver.Close" {
-				// If we're messaging the server to close,
-				// we're not accepting any more RPC calls at
-				// all, so return from this function
-				// (subsequent "requests" to make a call by
-				// sending on the Calls channel will simply
-				// block and never go through)
+			select {
+			case <-heartbeatDoneCh:
 				return
+			default:
+				if err := c.Client.Call("RpcServerDriver.Heartbeat", struct{}{}, nil); err != nil {
+					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
+				}
+				time.Sleep(heartbeatInterval)
 			}
 		}
-	}()
+	}(c.heartbeatDoneCh)
 
 	var version int
 	if err := c.Client.Call("RpcServerDriver.GetVersion", struct{}{}, &version); err != nil {
@@ -108,6 +99,8 @@ func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriv
 
 	mcnName = c.GetMachineName()
 	p.MachineName = mcnName
+	c.Client.MachineName = mcnName
+	c.plugin = p
 
 	return c, nil
 }
@@ -121,6 +114,15 @@ func (c *RpcClientDriver) UnmarshalJSON(data []byte) error {
 }
 
 func (c *RpcClientDriver) Close() error {
+	c.heartbeatDoneCh <- true
+	close(c.heartbeatDoneCh)
+
+	log.Debug("Making call to close connection to plugin binary")
+
+	if err := c.plugin.Close(); err != nil {
+		return err
+	}
+
 	log.Debug("Making call to close driver server")
 
 	if err := c.Client.Call("RpcServerDriver.Close", struct{}{}, nil); err != nil {

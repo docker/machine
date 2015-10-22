@@ -6,11 +6,16 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"time"
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/drivers/rpc"
+)
+
+var (
+	heartbeatTimeout = 500 * time.Millisecond
 )
 
 func RegisterDriver(d drivers.Driver) {
@@ -23,11 +28,8 @@ Please use this plugin through the main 'docker-machine' binary.`)
 
 	libmachine.SetDebug(true)
 
-	rpcd := new(rpcdriver.RpcServerDriver)
-	rpcd.ActualDriver = d
-	rpcd.CloseCh = make(chan bool)
+	rpcd := rpcdriver.NewRpcServerDriver(d)
 	rpc.Register(rpcd)
-
 	rpc.HandleHTTP()
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -41,5 +43,14 @@ Please use this plugin through the main 'docker-machine' binary.`)
 
 	go http.Serve(listener, nil)
 
-	<-rpcd.CloseCh
+	for {
+		select {
+		case <-rpcd.CloseCh:
+			os.Exit(0)
+		case <-rpcd.HeartbeatCh:
+			continue
+		case <-time.After(heartbeatTimeout):
+			os.Exit(1)
+		}
+	}
 }
