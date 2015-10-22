@@ -73,10 +73,12 @@ func (provisioner *RedHatProvisioner) SSHCommand(args string) (string, error) {
 	}
 
 	// redhat needs "-t" for tty allocation on ssh therefore we check for the
-	// external client and add as needed
+	// external client and add as needed.
+	// Note: CentOS 7.0 needs multiple "-tt" to force tty allocation when ssh has
+	// no local tty.
 	switch c := client.(type) {
 	case ssh.ExternalClient:
-		c.BaseArgs = append(c.BaseArgs, "-t")
+		c.BaseArgs = append(c.BaseArgs, "-tt")
 		client = c
 	case ssh.NativeClient:
 		return c.OutputWithPty(args)
