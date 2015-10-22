@@ -174,6 +174,10 @@ func generateUsageHint(appName, machineName, userShell string, noProxy bool, swa
 	}
 
 	cmd := ""
+	if strings.Contains(appName, " ") {
+		// putting quotes around the command works on windows, sh and bash
+		appName = strings.Join([]string{"\"", appName, "\""}, "")
+	}
 	switch userShell {
 	case "fish":
 		cmd = fmt.Sprintf("eval (%s env --shell=fish %s%s)", appName, flags, machineName)
