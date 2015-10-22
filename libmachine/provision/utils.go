@@ -179,11 +179,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if err := waitForDocker(p, dockerPort); err != nil {
-		return err
-	}
-
-	return nil
+	return waitForDocker(p, dockerPort)
 }
 
 func matchNetstatOut(reDaemonListening, netstatOut string) bool {
