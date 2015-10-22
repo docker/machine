@@ -231,6 +231,24 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
 	}
 
+	if d.SubnetId != "" && d.VpcId != "" {
+		filters := []amz.Filter{
+			{
+				Name:  "subnet-id",
+				Value: d.SubnetId,
+			},
+		}
+
+		subnets, err := d.getClient().GetSubnets(filters)
+		if err != nil {
+			return err
+		}
+
+		if subnets[0].VpcId != d.VpcId {
+			return fmt.Errorf("SubnetId: %s does not belong to VpcId: %s", d.SubnetId, d.VpcId)
+		}
+	}
+
 	if d.isSwarmMaster() {
 		u, err := url.Parse(d.SwarmHost)
 		if err != nil {
