@@ -126,7 +126,7 @@ Labels:
 The supported flags are as follows:
 
 - `--engine-insecure-registry`: Specify [insecure registries](https://docs.docker.com/reference/commandline/cli/#insecure-registries) to allow with the created engine
-- `--engine-registry-mirror`: Specify <a href="https://github.com/docker/docker/blob/master/docs/sources/articles/registry_mirror.md">registry mirrors</a> to use
+- `--engine-registry-mirror`: Specify [registry mirrors](https://github.com/docker/distribution/blob/master/docs/mirror.md) to use
 - `--engine-label`: Specify [labels](https://docs.docker.com/userguide/labels-custom-metadata/#daemon-labels) for the created engine
 - `--engine-storage-driver`: Specify a [storage driver](https://docs.docker.com/reference/commandline/cli/#daemon-storage-driver-option) to use with the engine
 

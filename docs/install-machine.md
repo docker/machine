@@ -20,7 +20,7 @@ installation</a> instructions.
 
 If you only want Docker Machine, you can install the Machine binaries (the
 latest versions of which are located at
-https://github.com/docker/machine/releases/) directly by following the
+https://github.com/docker/machine/releases/ ) directly by following the
 instructions in the next section.
 
 ## Installing Machine Directly
