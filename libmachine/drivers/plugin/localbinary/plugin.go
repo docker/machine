@@ -77,7 +77,7 @@ type LocalBinaryExecutor struct {
 
 func NewLocalBinaryPlugin(driverName string) *LocalBinaryPlugin {
 	return &LocalBinaryPlugin{
-		stopCh: make(chan bool, 1),
+		stopCh: make(chan bool),
 		addrCh: make(chan string, 1),
 		Executor: &LocalBinaryExecutor{
 			DriverName: driverName,
@@ -132,13 +132,19 @@ func (lbe *LocalBinaryExecutor) Close() error {
 }
 
 func stream(scanner *bufio.Scanner, streamOutCh chan<- string, stopCh <-chan bool) {
-	for scanner.Scan() {
+	lines := make(chan string)
+	go func() {
+		for scanner.Scan() {
+			lines <- scanner.Text()
+		}
+	}()
+	for {
 		select {
 		case <-stopCh:
 			close(streamOutCh)
 			return
-		default:
-			streamOutCh <- strings.Trim(scanner.Text(), "\n")
+		case line := <-lines:
+			streamOutCh <- strings.Trim(line, "\n")
 			if err := scanner.Err(); err != nil {
 				log.Warnf("Scanning stream: %s", err)
 			}
@@ -148,7 +154,7 @@ func stream(scanner *bufio.Scanner, streamOutCh chan<- string, stopCh <-chan boo
 
 func (lbp *LocalBinaryPlugin) AttachStream(scanner *bufio.Scanner) (<-chan string, chan<- bool) {
 	streamOutCh := make(chan string)
-	stopCh := make(chan bool, 1)
+	stopCh := make(chan bool)
 	go stream(scanner, streamOutCh, stopCh)
 	return streamOutCh, stopCh
 }

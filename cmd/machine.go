@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"path"
 	"strconv"
 
@@ -141,31 +140,10 @@ func main() {
 		},
 	}
 
-	go commands.DeferClosePluginServers()
-
-	// Cleanup to run in case the user sends an interrupt (CTRL+C) to the
-	// Machine program.  Ensure that we do not leave dangling OS processes.
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, os.Interrupt)
-
-	// Atypical exit condition -- write to the cleanup done channel after
-	// ensuring that we have closed all exec-ed plugin servers.
-	go func() {
-		for range signalCh {
-			log.Info("\nReceieved an interrupt, performing cleanup work...")
-			close(commands.RpcClientDriversCh)
-			<-commands.RpcDriversClosedCh
-			os.Exit(1)
-		}
-	}()
-
 	// TODO: Close plugin servers in case of client panic.
 	if err := app.Run(os.Args); err != nil {
 		log.Error(err)
 	}
-
-	close(commands.RpcClientDriversCh)
-	<-commands.RpcDriversClosedCh
 }
 
 func cmdNotFound(c *cli.Context, command string) {
