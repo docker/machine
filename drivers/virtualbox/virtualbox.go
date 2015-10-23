@@ -416,7 +416,7 @@ func (d *Driver) Create() error {
 	return d.Start()
 }
 
-func (d *Driver) hostOnlyIpAvailable() bool {
+func (d *Driver) hostOnlyIPAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {
 		log.Debugf("ERROR getting IP: %s", err)
@@ -479,7 +479,7 @@ func (d *Driver) Start() error {
 	}
 
 	// Bail if we don't get an IP from DHCP after a given number of seconds.
-	if err := mcnutils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
+	if err := mcnutils.WaitForSpecific(d.hostOnlyIPAvailable, 5, 4*time.Second); err != nil {
 		return err
 	}
 
