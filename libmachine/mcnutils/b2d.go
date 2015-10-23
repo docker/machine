@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/docker/machine/libmachine/log"
@@ -50,33 +51,19 @@ type B2dUtils struct {
 	githubBaseUrl    string
 }
 
-func NewB2dUtils(githubApiBaseUrl, githubBaseUrl, storePath string) *B2dUtils {
-	defaultBaseApiUrl := "https://api.github.com"
-	defaultBaseUrl := "https://github.com"
+func NewB2dUtils(storePath string) *B2dUtils {
 	imgCachePath := filepath.Join(storePath, "cache")
 	isoFilename := "boot2docker.iso"
 
-	if githubApiBaseUrl == "" {
-		githubApiBaseUrl = defaultBaseApiUrl
-	}
-
-	if githubBaseUrl == "" {
-		githubBaseUrl = defaultBaseUrl
-	}
-
 	return &B2dUtils{
-		storePath:        storePath,
-		isoFilename:      isoFilename,
-		imgCachePath:     imgCachePath,
-		commonIsoPath:    filepath.Join(imgCachePath, isoFilename),
-		githubApiBaseUrl: githubApiBaseUrl,
-		githubBaseUrl:    githubBaseUrl,
+		storePath:     storePath,
+		isoFilename:   isoFilename,
+		imgCachePath:  imgCachePath,
+		commonIsoPath: filepath.Join(imgCachePath, isoFilename),
 	}
 }
 
-func (b *B2dUtils) getReleasesRequest() (*http.Request, error) {
-	apiUrl := fmt.Sprintf("%s/repos/boot2docker/boot2docker/releases", b.githubApiBaseUrl)
-
+func (b *B2dUtils) getReleasesRequest(apiUrl string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", apiUrl, nil)
 	if err != nil {
 		return nil, err
@@ -91,33 +78,52 @@ func (b *B2dUtils) getReleasesRequest() (*http.Request, error) {
 
 // Get the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
-func (b *B2dUtils) GetLatestBoot2DockerReleaseURL() (string, error) {
-	client := getClient()
+func (b *B2dUtils) GetLatestBoot2DockerReleaseURL(apiUrl string) (string, error) {
+	if apiUrl == "" {
+		apiUrl = "https://api.github.com/repos/boot2docker/boot2docker/releases"
+	}
+	isoUrl := ""
+	// match github (enterprise) release urls:
+	// https://api.github.com/repos/../../releases or
+	// https://some.github.enterprise/api/v3/repos/../../releases
+	re := regexp.MustCompile("(https?)://([^/]+)(/api/v3)?/repos/([^/]+)/([^/]+)/releases")
+	if matches := re.FindStringSubmatch(apiUrl); len(matches) == 6 {
+		scheme := matches[1]
+		host := matches[2]
+		org := matches[4]
+		repo := matches[5]
+		if host == "api.github.com" {
+			host = "github.com"
+		}
+		client := getClient()
+		req, err := b.getReleasesRequest(apiUrl)
+		if err != nil {
+			return "", err
+		}
+		rsp, err := client.Do(req)
+		if err != nil {
+			return "", err
+		}
+		defer rsp.Body.Close()
 
-	req, err := b.getReleasesRequest()
-	if err != nil {
-		return "", err
+		var t []struct {
+			TagName string `json:"tag_name"`
+		}
+		if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
+			return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
+		}
+		if len(t) == 0 {
+			return "", fmt.Errorf("no releases found")
+		}
+
+		tag := t[0].TagName
+		log.Infof("Latest release for %s/%s/%s is %s\n", host, org, repo, tag)
+		isoUrl = fmt.Sprintf("%s://%s/%s/%s/releases/download/%s/boot2docker.iso", scheme, host, org, repo, tag)
+	} else {
+		//does not match a github releases api url
+		isoUrl = apiUrl
 	}
 
-	rsp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	defer rsp.Body.Close()
-
-	var t []struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
-		return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
-	}
-	if len(t) == 0 {
-		return "", fmt.Errorf("no releases found")
-	}
-
-	tag := t[0].TagName
-	isoUrl := fmt.Sprintf("%s/boot2docker/boot2docker/releases/download/%s/boot2docker.iso", b.githubBaseUrl, tag)
 	return isoUrl, nil
 }
 
@@ -188,8 +194,8 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 	return nil
 }
 
-func (b *B2dUtils) DownloadLatestBoot2Docker() error {
-	latestReleaseUrl, err := b.GetLatestBoot2DockerReleaseURL()
+func (b *B2dUtils) DownloadLatestBoot2Docker(apiUrl string) error {
+	latestReleaseUrl, err := b.GetLatestBoot2DockerReleaseURL(apiUrl)
 	if err != nil {
 		return err
 	}
@@ -227,9 +233,14 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 			return err
 		}
 	} else {
-		// But if ISO is specified go get it directly
-		log.Infof("Downloading %s from %s...", b.isoFilename, isoURL)
-		if err := b.DownloadISO(machineDir, b.isoFilename, isoURL); err != nil {
+		//if ISO is specified, check if it matches a github releases url or fallback
+		//to a direct download
+		if downloadUrl, err := b.GetLatestBoot2DockerReleaseURL(isoURL); err == nil {
+			log.Infof("Downloading %s from %s...", b.isoFilename, downloadUrl)
+			if err := b.DownloadISO(machineDir, b.isoFilename, downloadUrl); err != nil {
+				return err
+			}
+		} else {
 			return err
 		}
 	}
@@ -240,7 +251,7 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 func (b *B2dUtils) copyDefaultIsoToMachine(machineIsoPath string) error {
 	if _, err := os.Stat(b.commonIsoPath); os.IsNotExist(err) {
 		log.Info("No default boot2docker iso found locally, downloading the latest release...")
-		if err := b.DownloadLatestBoot2Docker(); err != nil {
+		if err := b.DownloadLatestBoot2Docker(""); err != nil {
 			return err
 		}
 	}
