@@ -19,8 +19,8 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	URL              string
-	ApiKey           string
-	ApiSecretKey     string
+	APIKey           string
+	APISecretKey     string
 	InstanceProfile  string
 	DiskSize         int
 	Image            string
@@ -28,7 +28,7 @@ type Driver struct {
 	AvailabilityZone string
 	KeyPair          string
 	PublicKey        string
-	Id               string
+	ID               string
 }
 
 const (
@@ -38,8 +38,8 @@ const (
 	defaultAvailabilityZone = "ch-gva-2"
 )
 
-// RegisterCreateFlags registers the flags this driver adds to
-// "docker hosts create"
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
@@ -90,6 +90,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
+// NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
 		InstanceProfile:  defaultInstanceProfile,
@@ -117,8 +118,8 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.URL = flags.String("exoscale-endpoint")
-	d.ApiKey = flags.String("exoscale-api-key")
-	d.ApiSecretKey = flags.String("exoscale-api-secret-key")
+	d.APIKey = flags.String("exoscale-api-key")
+	d.APISecretKey = flags.String("exoscale-api-secret-key")
 	d.InstanceProfile = flags.String("exoscale-instance-profile")
 	d.DiskSize = flags.Int("exoscale-disk-size")
 	d.Image = flags.String("exoscale-image")
@@ -135,7 +136,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if d.URL == "" {
 		d.URL = "https://api.exoscale.ch/compute"
 	}
-	if d.ApiKey == "" || d.ApiSecretKey == "" {
+	if d.APIKey == "" || d.APISecretKey == "" {
 		return fmt.Errorf("Please specify an API key (--exoscale-api-key) and an API secret key (--exoscale-api-secret-key).")
 	}
 
@@ -158,8 +159,8 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
-	vm, err := client.GetVirtualMachine(d.Id)
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+	vm, err := client.GetVirtualMachine(d.ID)
 	if err != nil {
 		return state.Error, err
 	}
@@ -229,7 +230,7 @@ func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group strin
 
 func (d *Driver) Create() error {
 	log.Infof("Querying exoscale for the requested parameters...")
-	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 	topology, err := client.GetTopology()
 	if err != nil {
 		return err
@@ -321,7 +322,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 	d.IPAddress = vm.Nic[0].Ipaddress
-	d.Id = vm.Id
+	d.ID = vm.Id
 
 	return nil
 }
@@ -336,8 +337,8 @@ func (d *Driver) Start() error {
 		return nil
 	}
 
-	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
-	svmresp, err := client.StartVirtualMachine(d.Id)
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+	svmresp, err := client.StartVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
@@ -357,8 +358,8 @@ func (d *Driver) Stop() error {
 		return nil
 	}
 
-	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
-	svmresp, err := client.StopVirtualMachine(d.Id)
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+	svmresp, err := client.StopVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
@@ -369,7 +370,7 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Remove() error {
-	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
 	// Destroy the SSH key
 	if _, err := client.DeleteKeypair(d.KeyPair); err != nil {
@@ -377,7 +378,7 @@ func (d *Driver) Remove() error {
 	}
 
 	// Destroy the virtual machine
-	dvmresp, err := client.DestroyVirtualMachine(d.Id)
+	dvmresp, err := client.DestroyVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
@@ -396,8 +397,8 @@ func (d *Driver) Restart() error {
 		return fmt.Errorf("Host is stopped, use start command to start it")
 	}
 
-	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
-	svmresp, err := client.RebootVirtualMachine(d.Id)
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+	svmresp, err := client.RebootVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
