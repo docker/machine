@@ -19,8 +19,8 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	URL              string
-	APIKey           string
-	APISecretKey     string
+	APIKey           string `json:"ApiKey"`
+	APISecretKey     string `json:"ApiSecretKey"`
 	InstanceProfile  string
 	DiskSize         int
 	Image            string
@@ -28,7 +28,7 @@ type Driver struct {
 	AvailabilityZone string
 	KeyPair          string
 	PublicKey        string
-	ID               string
+	ID               string `json:"Id"`
 }
 
 const (

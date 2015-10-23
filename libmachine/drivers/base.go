@@ -15,7 +15,7 @@ type BaseDriver struct {
 	StorePath      string
 }
 
-// GetSSHKeyPath -
+// GetSSHKeyPath returns the machine ssh key path
 func (d *BaseDriver) GetSSHKeyPath() string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, "id_rsa")
 }
@@ -25,12 +25,12 @@ func (d *BaseDriver) DriverName() string {
 	return "unknown"
 }
 
-// GetIP returns the ip
+// GetMachineName returns the machine name
 func (d *BaseDriver) GetMachineName() string {
 	return d.MachineName
 }
 
-// ResolveStorePath -
+// ResolveStorePath returns the machine local store path
 func (d *BaseDriver) ResolveStorePath(file string) string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, file)
 }
