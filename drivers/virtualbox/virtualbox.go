@@ -39,7 +39,7 @@ const (
 	defaultHostOnlyNictype     = "82540EM"
 	defaultHostOnlyPromiscMode = "deny"
 	defaultNoShare             = false
-	defaultDiskSize            = 20000
+	defaultDiskSize            = 204800
 )
 
 var (
