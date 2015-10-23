@@ -17,8 +17,6 @@ release: clean dco fmt test test-long build-x release-pack release-checksum
 	$(if $(VERSION), , \
 		$(error Pass the version number as the first arg. E.g.: make release 1.2.3))
 
-	echo $(VERSION)
-
 	git tag $(VERSION)
 	git push --tags
 
