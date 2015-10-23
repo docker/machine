@@ -12,20 +12,27 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdActive(c *cli.Context) {
+var (
+	errTooManyArguments = errors.New("Error: Too many arguments given")
+)
+
+func cmdActive(c *cli.Context) error {
 	if len(c.Args()) > 0 {
-		fatal("Error: Too many arguments given.")
+		return errTooManyArguments
 	}
 
 	store := getStore(c)
+
 	host, err := getActiveHost(store)
 	if err != nil {
-		fatalf("Error getting active host: %s", err)
+		return fmt.Errorf("Error getting active host: %s", err)
 	}
 
 	if host != nil {
 		fmt.Println(host.Name)
 	}
+
+	return nil
 }
 
 func getActiveHost(store persist.Store) (*host.Host, error) {

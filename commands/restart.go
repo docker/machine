@@ -6,9 +6,12 @@ import (
 	"github.com/docker/machine/cli"
 )
 
-func cmdRestart(c *cli.Context) {
+func cmdRestart(c *cli.Context) error {
 	if err := runActionWithContext("restart", c); err != nil {
-		fatal(err)
+		return err
 	}
+
 	log.Info("Restarted machines may have new IP addresses. You may need to re-run the `docker-machine env` command.")
+
+	return nil
 }

@@ -8,11 +8,11 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[0]} == "Driver \"bogus\" not found. Do you have the plugin binary accessible in your PATH?" ]]
 }
 
-@test "none: create with no name fails 'machine create -d none \" \"'" {
+@test "none: create with no name fails 'machine create -d none'" {
   run machine create -d none
   last=$((${#lines[@]} - 1))
   [ "$status" -eq 1 ]
-  [[ ${lines[$last]} == "Error: No machine name specified." ]]
+  [[ ${lines[$last]} == "Error: No machine name specified" ]]
 }
 
 @test "none: create with invalid name fails 'machine create -d none --url none ∞'" {
