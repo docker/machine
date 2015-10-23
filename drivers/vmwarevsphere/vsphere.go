@@ -135,10 +135,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	}
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
-	return d.GetIP()
-}
-
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		d.SSHUser = "docker"
@@ -210,10 +206,6 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Stopped, nil
 	}
 	return state.None, nil
-}
-
-func (d *Driver) PreCreateCheck() error {
-	return nil
 }
 
 // the current implementation does the following:

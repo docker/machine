@@ -218,10 +218,6 @@ func NewDerivedDriver(hostName, storePath string) *Driver {
 	}
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
-	return d.GetIP()
-}
-
 func (d *Driver) DriverName() string {
 	return "openstack"
 }
@@ -333,10 +329,6 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Error, nil
 	}
 	return state.None, nil
-}
-
-func (d *Driver) PreCreateCheck() error {
-	return nil
 }
 
 func (d *Driver) Create() error {
