@@ -21,9 +21,6 @@ var (
 	ErrUnknownShell       = errors.New("Error: Unknown shell")
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments.")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument.")
-
-	RpcClientDriversCh = make(chan *rpcdriver.RpcClientDriver)
-	RpcDriversClosedCh = make(chan bool)
 )
 
 func newPluginDriver(driverName string, rawContent []byte) (*rpcdriver.RpcClientDriver, error) {
@@ -32,47 +29,14 @@ func newPluginDriver(driverName string, rawContent []byte) (*rpcdriver.RpcClient
 		return nil, err
 	}
 
-	RpcClientDriversCh <- d
-
 	return d, nil
 }
 
-func DeferClosePluginServers() {
-	rpcClientDrivers := []*rpcdriver.RpcClientDriver{}
-
-	for d := range RpcClientDriversCh {
-		rpcClientDrivers = append(rpcClientDrivers, d)
-	}
-
-	doneCh := make(chan bool)
-
-	for _, d := range rpcClientDrivers {
-		d := d
-		go func() {
-			if err := d.Close(); err != nil {
-				log.Debugf("Error closing connection to plugin server: %s", err)
-			}
-
-			doneCh <- true
-		}()
-	}
-
-	for range rpcClientDrivers {
-		<-doneCh
-	}
-
-	RpcDriversClosedCh <- true
-}
-
 func fatal(args ...interface{}) {
-	close(RpcClientDriversCh)
-	<-RpcDriversClosedCh
 	log.Fatal(args...)
 }
 
 func fatalf(fmtString string, args ...interface{}) {
-	close(RpcClientDriversCh)
-	<-RpcDriversClosedCh
 	log.Fatalf(fmtString, args...)
 }
 

@@ -106,7 +106,7 @@ func TestExecServer(t *testing.T) {
 		stopCh:      make(chan bool, 1),
 	}
 
-	finalErr := make(chan error, 1)
+	finalErr := make(chan error)
 
 	// Start the docker-machine-foo plugin server
 	go func() {
