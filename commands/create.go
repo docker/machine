@@ -305,6 +305,10 @@ func cmdCreateOuter(c *cli.Context) {
 		}
 	}
 
+	if err := driver.Close(); err != nil {
+		fatal(err)
+	}
+
 	if err := c.App.Run(os.Args); err != nil {
 		fatal(err)
 	}

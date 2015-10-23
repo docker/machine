@@ -67,6 +67,15 @@ func (r RpcFlags) Bool(key string) bool {
 type RpcServerDriver struct {
 	ActualDriver drivers.Driver
 	CloseCh      chan bool
+	HeartbeatCh  chan bool
+}
+
+func NewRpcServerDriver(d drivers.Driver) *RpcServerDriver {
+	return &RpcServerDriver{
+		ActualDriver: d,
+		CloseCh:      make(chan bool),
+		HeartbeatCh:  make(chan bool),
+	}
 }
 
 func (r *RpcServerDriver) Close(_, _ *struct{}) error {
@@ -180,4 +189,9 @@ func (r *RpcServerDriver) Start(_ *struct{}, _ *struct{}) error {
 
 func (r *RpcServerDriver) Stop(_ *struct{}, _ *struct{}) error {
 	return r.ActualDriver.Stop()
+}
+
+func (r *RpcServerDriver) Heartbeat(_ *struct{}, _ *struct{}) error {
+	r.HeartbeatCh <- true
+	return nil
 }
