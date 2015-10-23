@@ -49,6 +49,8 @@ const (
 	defaultActiveTimeout = 200
 )
 
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
@@ -201,6 +203,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
+// NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return NewDerivedDriver(hostName, storePath)
 }

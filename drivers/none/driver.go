@@ -19,7 +19,8 @@ type Driver struct {
 	URL string
 }
 
-func NewDriver(hostName, storePath string) *Driver {
+// NewDriver creates and returns a new instance of the driver
+func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
@@ -28,6 +29,8 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 }
 
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{

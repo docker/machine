@@ -178,5 +178,5 @@ func TestInvalidNetworkIpCIDR(t *testing.T) {
 }
 
 func newTestDriver(name string) *Driver {
-	return NewDriver(name, "")
+	return NewDriver(name, "").(*Driver)
 }

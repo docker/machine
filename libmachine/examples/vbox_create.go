@@ -25,7 +25,7 @@ func main() {
 	hostName := "myfunhost"
 
 	// Set some options on the provider...
-	driver := virtualbox.NewDriver(hostName, "/tmp/automatic")
+	driver := virtualbox.NewDriver(hostName, "/tmp/automatic").(*virtualbox.Driver)
 	driver.CPU = 2
 	driver.Memory = 2048
 

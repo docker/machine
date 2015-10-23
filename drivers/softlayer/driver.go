@@ -51,6 +51,7 @@ const (
 	defaultPrivateVLANIP = 0
 )
 
+// NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
 		Client: &Client{
@@ -73,6 +74,8 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	}
 }
 
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	// Set hourly billing to true by default since codegangsta cli doesn't take default bool values
 	if os.Getenv("SOFTLAYER_HOURLY_BILLING") == "" {

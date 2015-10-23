@@ -24,8 +24,8 @@ const (
 	defaultDockerInstall = "true"
 )
 
-// GetCreateFlags registers the "machine create" flags recognized by this driver, including
-// their help text and defaults.
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
@@ -80,7 +80,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
-// NewDriver instantiates a Rackspace driver.
+// NewDriver creates and returns a new instance of the driver
 func NewDriver(machineName, storePath string) drivers.Driver {
 	log.WithFields(log.Fields{
 		"machineName": machineName,
@@ -93,7 +93,7 @@ func NewDriver(machineName, storePath string) drivers.Driver {
 	}
 }
 
-// DriverName is the user-visible name of this driver.
+// DriverName returns the name of the driver as it is registered
 func (d *Driver) DriverName() string {
 	return "rackspace"
 }
@@ -107,7 +107,8 @@ func missingEnvOrOption(setting, envVar, opt string) error {
 	)
 }
 
-// SetConfigFromFlags assigns and verifies the command-line arguments presented to the driver.
+// SetConfigFromFlags configures the driver with the object that was returned
+// by RegisterCreateFlags
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Username = flags.String("rackspace-username")
 	d.APIKey = flags.String("rackspace-api-key")
