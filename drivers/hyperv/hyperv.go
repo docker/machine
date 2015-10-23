@@ -85,10 +85,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
-	return d.GetIP()
-}
-
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		d.SSHUser = "docker"
@@ -99,10 +95,6 @@ func (d *Driver) GetSSHUsername() string {
 
 func (d *Driver) DriverName() string {
 	return "hyperv"
-}
-
-func (d *Driver) PreCreateCheck() error {
-	return nil
 }
 
 func (d *Driver) GetURL() (string, error) {

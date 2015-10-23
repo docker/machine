@@ -9,11 +9,7 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-const drivername = "none"
-
-// func main() {
-//   plugin.RegisterDriver(new(Driver))
-// }
+const driverName = "none"
 
 // Driver is the driver used when no driver is selected. It is used to
 // connect to existing Docker hosts by specifying the URL of the host as
@@ -47,7 +43,7 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) DriverName() string {
-	return drivername
+	return driverName
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -80,10 +76,6 @@ func (d *Driver) GetState() (state.State, error) {
 
 func (d *Driver) Kill() error {
 	return fmt.Errorf("hosts without a driver cannot be killed")
-}
-
-func (d *Driver) PreCreateCheck() error {
-	return nil
 }
 
 func (d *Driver) Remove() error {

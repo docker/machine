@@ -57,10 +57,6 @@ func (d *Driver) GetState() (state.State, error) {
 	return d.MockState, nil
 }
 
-func (d *Driver) PreCreateCheck() error {
-	return nil
-}
-
 func (d *Driver) Create() error {
 	return nil
 }

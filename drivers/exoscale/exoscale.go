@@ -103,10 +103,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	}
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
-	return d.GetIP()
-}
-
 func (d *Driver) GetSSHUsername() string {
 	return "ubuntu"
 }
@@ -150,13 +146,6 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
-func (d *Driver) GetIP() (string, error) {
-	if d.IPAddress == "" {
-		return "", fmt.Errorf("IP address is not set")
-	}
-	return d.IPAddress, nil
-}
-
 func (d *Driver) GetState() (state.State, error) {
 	client := egoscale.NewClient(d.URL, d.ApiKey, d.ApiSecretKey)
 	vm, err := client.GetVirtualMachine(d.Id)
@@ -186,10 +175,6 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Stopped, nil
 	}
 	return state.None, nil
-}
-
-func (d *Driver) PreCreateCheck() error {
-	return nil
 }
 
 func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group string) (string, error) {

@@ -18,6 +18,10 @@ type Driver interface {
 	// DriverName returns the name of the driver as it is registered
 	DriverName() string
 
+	// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+	// that can be set, their descriptions and defaults.
+	GetCreateFlags() []mcnflag.Flag
+
 	// GetIP returns an IP or hostname that this host is available at
 	// e.g. 1.2.3.4 or docker-host-d60b70a14d3a.cloudapp.net
 	GetIP() (string, error)
@@ -56,10 +60,6 @@ type Driver interface {
 	// Restart a host. This may just call Stop(); Start() if the provider does not
 	// have any special restart behaviour.
 	Restart() error
-
-	// GetCreateFlags returns the mcnflag.Flag slice representing the flags
-	// that can be set, their descriptions and defaults.
-	GetCreateFlags() []mcnflag.Flag
 
 	// SetConfigFromFlags configures the driver with the object that was returned
 	// by RegisterCreateFlags

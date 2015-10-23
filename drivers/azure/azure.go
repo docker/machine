@@ -119,10 +119,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	return d
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
-	return d.GetIP()
-}
-
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		d.SSHUser = "ubuntu"

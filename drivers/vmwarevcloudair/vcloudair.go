@@ -138,10 +138,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	}
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
-	return d.GetIP()
-}
-
 // Driver interface implementation
 func (d *Driver) DriverName() string {
 	return "vmwarevcloudair"
@@ -239,10 +235,6 @@ func (d *Driver) GetState() (state.State, error) {
 	}
 	return state.None, nil
 
-}
-
-func (d *Driver) PreCreateCheck() error {
-	return nil
 }
 
 func (d *Driver) Create() error {

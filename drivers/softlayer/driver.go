@@ -73,10 +73,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	}
 }
 
-func (d *Driver) GetSSHHostname() (string, error) {
-	return d.GetIP()
-}
-
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	// Set hourly billing to true by default since codegangsta cli doesn't take default bool values
 	if os.Getenv("SOFTLAYER_HOURLY_BILLING") == "" {
@@ -301,10 +297,6 @@ func (d *Driver) GetActiveTransaction() (string, error) {
 		return "", err
 	}
 	return t, nil
-}
-
-func (d *Driver) PreCreateCheck() error {
-	return nil
 }
 
 func (d *Driver) waitForStart() {
