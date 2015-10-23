@@ -29,6 +29,8 @@ test: .ignore
 				-e TARGET_OS \
 				-e TARGET_ARCH \
 				-e PREFIX \
+				-e TRAVIS_JOB_ID \
+				-e TRAVIS_PULL_REQUEST \
 				$(DOCKER_IMAGE_NAME) \
 				make $@
 
