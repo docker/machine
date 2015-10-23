@@ -13,7 +13,6 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
-	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 )
@@ -40,8 +39,8 @@ const (
 	defaultSSHUsername     = "ubuntu"
 )
 
-// GetCreateFlags registers the flags this d adds to
-// "docker hosts create"
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
@@ -103,6 +102,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
+// NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	d := &Driver{
 		DockerPort:            defaultDockerPort,
@@ -376,11 +376,6 @@ func (d *Driver) Kill() error {
 
 	d.IPAddress = ""
 	return nil
-}
-
-func generateVMName() string {
-	randomID := mcnutils.TruncateID(mcnutils.GenerateRandomID())
-	return fmt.Sprintf("docker-host-%s", randomID)
 }
 
 func (d *Driver) setUserSubscription() error {
