@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	improperEnvArgsError = errors.New("Error: Expected either one machine name, or -u flag to unset the variables in the arguments.")
+	errImproperEnvArgs = errors.New("Error: Expected either one machine name, or -u flag to unset the variables in the arguments")
 )
 
 type ShellConfig struct {
@@ -42,7 +42,7 @@ func cmdEnv(c *cli.Context) {
 	log.SetOutWriter(os.Stderr)
 
 	if len(c.Args()) != 1 && !c.Bool("unset") {
-		fatal(improperEnvArgsError)
+		fatal(errImproperEnvArgs)
 	}
 
 	h := getFirstArgHost(c)

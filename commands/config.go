@@ -44,7 +44,7 @@ func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.AuthO
 		return "", &auth.AuthOptions{}, fmt.Errorf("Error trying to get host state: %s", err)
 	}
 	if hostState != state.Running {
-		return "", &auth.AuthOptions{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings.", h.Name)
+		return "", &auth.AuthOptions{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings", h.Name)
 	}
 
 	dockerHost, err := h.Driver.GetURL()
@@ -74,9 +74,9 @@ func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.AuthO
 	return dockerHost, authOptions, nil
 }
 
-func checkCert(hostUrl string, authOptions *auth.AuthOptions, c *cli.Context) error {
+func checkCert(hostURL string, authOptions *auth.AuthOptions, c *cli.Context) error {
 	valid, err := cert.ValidateCertificate(
-		hostUrl,
+		hostURL,
 		authOptions.CaCertPath,
 		authOptions.ServerCertPath,
 		authOptions.ServerKeyPath,
@@ -86,7 +86,7 @@ func checkCert(hostUrl string, authOptions *auth.AuthOptions, c *cli.Context) er
 	}
 
 	if !valid {
-		log.Errorf("Invalid certs detected; regenerating for %s", hostUrl)
+		log.Errorf("Invalid certs detected; regenerating for %s", hostURL)
 
 		if err := runActionWithContext("configureAuth", c); err != nil {
 			return fmt.Errorf("Error attempting to regenerate the certs: %s", err)
@@ -97,7 +97,7 @@ func checkCert(hostUrl string, authOptions *auth.AuthOptions, c *cli.Context) er
 }
 
 // TODO: This could use a unit test.
-func parseSwarm(hostUrl string, h *host.Host) (string, error) {
+func parseSwarm(hostURL string, h *host.Host) (string, error) {
 	swarmOptions := h.HostOptions.SwarmOptions
 
 	if !swarmOptions.Master {
@@ -112,15 +112,15 @@ func parseSwarm(hostUrl string, h *host.Host) (string, error) {
 	swarmPort := parts[1]
 
 	// get IP of machine to replace in case swarm host is 0.0.0.0
-	mUrl, err := url.Parse(hostUrl)
+	mURL, err := url.Parse(hostURL)
 	if err != nil {
 		return "", fmt.Errorf("There was an error parsing the url: %s", err)
 	}
 
-	mParts := strings.Split(mUrl.Host, ":")
-	machineIp := mParts[0]
+	mParts := strings.Split(mURL.Host, ":")
+	machineIP := mParts[0]
 
-	hostUrl = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+	hostURL = fmt.Sprintf("tcp://%s:%s", machineIP, swarmPort)
 
-	return hostUrl, nil
+	return hostURL, nil
 }

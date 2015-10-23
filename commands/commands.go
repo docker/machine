@@ -217,7 +217,7 @@ var Commands = []cli.Command{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      cmdIp,
+		Action:      cmdIP,
 	},
 	{
 		Name:        "kill",
@@ -275,7 +275,7 @@ var Commands = []cli.Command{
 		Name:            "ssh",
 		Usage:           "Log into or run a command on a machine with SSH.",
 		Description:     "Arguments are [machine-name] [command]",
-		Action:          cmdSsh,
+		Action:          cmdSSH,
 		SkipFlagParsing: true,
 	},
 	{
@@ -318,7 +318,7 @@ var Commands = []cli.Command{
 		Name:        "url",
 		Usage:       "Get the URL of a machine",
 		Description: "Argument is a machine name.",
-		Action:      cmdUrl,
+		Action:      cmdURL,
 	},
 }
 

@@ -5,7 +5,7 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdSsh(c *cli.Context) {
+func cmdSSH(c *cli.Context) {
 	args := c.Args()
 	name := args.First()
 
