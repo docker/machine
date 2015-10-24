@@ -56,6 +56,9 @@ plugins: build-plugins
 # Build all, cross platform
 cross: build-x
 
+install:
+	cp $(PREFIX)/bin/docker-machine $(PREFIX)/bin/docker-machine-driver* /usr/local/bin
+
 clean: coverage-clean build-clean
 test: dco fmt test-short vet
 validate: dco fmt vet lint test-short test-long
