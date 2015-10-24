@@ -37,7 +37,7 @@ var (
 	l = StandardLogger{
 		mu: &sync.Mutex{},
 	}
-	IsDebug bool = false
+	IsDebug = false
 )
 
 type Fields map[string]interface{}

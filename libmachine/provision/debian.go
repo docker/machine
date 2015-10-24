@@ -26,7 +26,7 @@ func NewDebianProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/systemd/system/docker.service",
-			OsReleaseId:       "debian",
+			OsReleaseID:       "debian",
 			Packages: []string{
 				"curl",
 			},
@@ -121,7 +121,7 @@ func (provisioner *DebianProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions

@@ -10,7 +10,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 )
 
-func BootstrapCertificates(authOptions *auth.AuthOptions) error {
+func BootstrapCertificates(authOptions *auth.Options) error {
 	certDir := authOptions.CertDir
 	caCertPath := authOptions.CaCertPath
 	caPrivateKeyPath := authOptions.CaPrivateKeyPath

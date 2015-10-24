@@ -36,45 +36,45 @@ func cmdConfig(c *cli.Context) {
 		authOptions.CaCertPath, authOptions.ClientCertPath, authOptions.ClientKeyPath, dockerHost)
 }
 
-func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.AuthOptions, error) {
+func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.Options, error) {
 	hostState, err := h.Driver.GetState()
 	if err != nil {
 		// TODO: This is a common operation and should have a commonly
 		// defined error.
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error trying to get host state: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error trying to get host state: %s", err)
 	}
 	if hostState != state.Running {
-		return "", &auth.AuthOptions{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings", h.Name)
+		return "", &auth.Options{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings", h.Name)
 	}
 
 	dockerHost, err := h.Driver.GetURL()
 	if err != nil {
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error getting driver URL: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error getting driver URL: %s", err)
 	}
 
 	if c.Bool("swarm") {
 		var err error
 		dockerHost, err = parseSwarm(dockerHost, h)
 		if err != nil {
-			return "", &auth.AuthOptions{}, fmt.Errorf("Error parsing swarm: %s", err)
+			return "", &auth.Options{}, fmt.Errorf("Error parsing swarm: %s", err)
 		}
 	}
 
 	u, err := url.Parse(dockerHost)
 	if err != nil {
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error parsing URL: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error parsing URL: %s", err)
 	}
 
 	authOptions := h.HostOptions.AuthOptions
 
 	if err := checkCert(u.Host, authOptions, c); err != nil {
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error checking and/or regenerating the certs: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error checking and/or regenerating the certs: %s", err)
 	}
 
 	return dockerHost, authOptions, nil
 }
 
-func checkCert(hostURL string, authOptions *auth.AuthOptions, c *cli.Context) error {
+func checkCert(hostURL string, authOptions *auth.Options, c *cli.Context) error {
 	valid, err := cert.ValidateCertificate(
 		hostURL,
 		authOptions.CaCertPath,

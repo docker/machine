@@ -15,14 +15,14 @@ import (
 
 // validates host config and modifies if needed
 // this is used for configuration updates
-func MigrateHostV0ToHostV1(hostV0 *HostV0) *HostV1 {
-	hostV1 := &HostV1{
+func MigrateHostV0ToHostV1(hostV0 *V0) *V1 {
+	hostV1 := &V1{
 		Driver: hostV0.Driver,
 	}
 
-	hostV1.HostOptions = &HostOptionsV1{}
-	hostV1.HostOptions.EngineOptions = &engine.EngineOptions{}
-	hostV1.HostOptions.SwarmOptions = &swarm.SwarmOptions{
+	hostV1.HostOptions = &OptionsV1{}
+	hostV1.HostOptions.EngineOptions = &engine.Options{}
+	hostV1.HostOptions.SwarmOptions = &swarm.Options{
 		Address:   "",
 		Discovery: hostV0.SwarmDiscovery,
 		Host:      hostV0.SwarmHost,
@@ -46,11 +46,11 @@ func MigrateHostV0ToHostV1(hostV0 *HostV0) *HostV1 {
 
 // fills nested host metadata and modifies if needed
 // this is used for configuration updates
-func MigrateHostMetadataV0ToHostMetadataV1(m *HostMetadataV0) *HostMetadata {
-	hostMetadata := &HostMetadata{}
+func MigrateHostMetadataV0ToHostMetadataV1(m *MetadataV0) *Metadata {
+	hostMetadata := &Metadata{}
 	hostMetadata.DriverName = m.DriverName
-	hostMetadata.HostOptions.EngineOptions = &engine.EngineOptions{}
-	hostMetadata.HostOptions.AuthOptions = &auth.AuthOptions{
+	hostMetadata.HostOptions.EngineOptions = &engine.Options{}
+	hostMetadata.HostOptions.AuthOptions = &auth.Options{
 		StorePath:            m.StorePath,
 		CaCertPath:           m.CaCertPath,
 		CaCertRemotePath:     "",

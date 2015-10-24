@@ -42,7 +42,7 @@ func makeDockerOptionsDir(p Provisioner) error {
 	return nil
 }
 
-func setRemoteAuthOptions(p Provisioner) auth.AuthOptions {
+func setRemoteAuthOptions(p Provisioner) auth.Options {
 	dockerDir := p.GetDockerOptionsDir()
 	authOptions := p.GetAuthOptions()
 
@@ -146,11 +146,11 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	dockerUrl, err := driver.GetURL()
+	dockerURL, err := driver.GetURL()
 	if err != nil {
 		return err
 	}
-	u, err := url.Parse(dockerUrl)
+	u, err := url.Parse(dockerURL)
 	if err != nil {
 		return err
 	}

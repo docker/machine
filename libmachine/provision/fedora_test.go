@@ -7,7 +7,7 @@ import (
 
 func TestFedoraGenerateYumRepoList(t *testing.T) {
 	info := &OsRelease{
-		Id: "fedora",
+		ID: "fedora",
 	}
 	p := NewCentosProvisioner(nil)
 	p.SetOsReleaseInfo(info)

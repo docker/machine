@@ -35,15 +35,15 @@ type Auth struct {
 	Keys      []string
 }
 
-type SSHClientType string
+type ClientType string
 
 const (
 	maxDialAttempts = 10
 )
 
 const (
-	External SSHClientType = "external"
-	Native   SSHClientType = "native"
+	External ClientType = "external"
+	Native   ClientType = "native"
 )
 
 var (
@@ -58,10 +58,10 @@ var (
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=no",
 	}
-	defaultClientType SSHClientType = External
+	defaultClientType = External
 )
 
-func SetDefaultClient(clientType SSHClientType) {
+func SetDefaultClient(clientType ClientType) {
 	// Allow over-riding of default client type, so that even if ssh binary
 	// is found in PATH we can still use the Go native implementation if
 	// desired.

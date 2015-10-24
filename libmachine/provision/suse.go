@@ -32,7 +32,7 @@ func NewOpenSUSEProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/sysconfig/docker",
-			OsReleaseId:       "opensuse",
+			OsReleaseID:       "opensuse",
 			Packages: []string{
 				"curl",
 			},
@@ -46,7 +46,7 @@ func NewSLEDProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/sysconfig/docker",
-			OsReleaseId:       "sled",
+			OsReleaseID:       "sled",
 			Packages: []string{
 				"curl",
 			},
@@ -60,7 +60,7 @@ func NewSLESProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/sysconfig/docker",
-			OsReleaseId:       "sles",
+			OsReleaseID:       "sles",
 			Packages: []string{
 				"curl",
 			},
@@ -129,7 +129,7 @@ func (provisioner *SUSEProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions

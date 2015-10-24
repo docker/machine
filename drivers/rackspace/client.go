@@ -41,7 +41,7 @@ func (c *Client) Authenticate(d *openstack.Driver) error {
 		return err
 	}
 
-	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%d", version.ApiVersion))
+	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%d", version.APIVersion))
 
 	err = rackspace.Authenticate(provider, opts)
 	if err != nil {

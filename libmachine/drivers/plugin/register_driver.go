@@ -28,7 +28,7 @@ Please use this plugin through the main 'docker-machine' binary.`)
 
 	libmachine.SetDebug(true)
 
-	rpcd := rpcdriver.NewRpcServerDriver(d)
+	rpcd := rpcdriver.NewRPCServerDriver(d)
 	rpc.Register(rpcd)
 	rpc.HandleHTTP()
 

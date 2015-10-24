@@ -1,6 +1,6 @@
 package auth
 
-type AuthOptions struct {
+type Options struct {
 	CertDir              string
 	CaCertPath           string
 	CaPrivateKeyPath     string

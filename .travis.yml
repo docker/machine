@@ -3,10 +3,11 @@ go:
 - 1.5.1
 install:
 - go get github.com/mattn/goveralls
+- go get github.com/golang/lint/golint
 script:
 - make dco
 - make fmt
-# - make lint
+- make lint
 - make vet
 - make test-short
 - make test-long

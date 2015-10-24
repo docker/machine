@@ -20,4 +20,4 @@ vet: build
 lint:
 	$(if $(GOLINT), , \
 		$(error Please install golint: go get -u github.com/golang/lint/golint))
-	@test -z "$$($(GOLINT) ./... 2>&1 | grep -v vendor/ | grep -v Godeps/ | tee /dev/stderr)"
+	@test -z "$$($(GOLINT) ./... 2>&1 | grep -v vendor/ | grep -v Godeps/ | grep -v "exported" | grep -v "amazonec2" | tee /dev/stderr)"
