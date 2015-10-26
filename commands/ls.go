@@ -14,7 +14,6 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/skarademir/naturalsort"
@@ -228,27 +227,6 @@ func matchesName(host *host.Host, names []string) bool {
 	return false
 }
 
-func getActiveHost(store persist.Store) (*host.Host, error) {
-	hosts, err := listHosts(store)
-	if err != nil {
-		return nil, err
-	}
-
-	hostListItems := getHostListItems(hosts)
-
-	for _, item := range hostListItems {
-		if item.Active {
-			h, err := loadHost(store, item.Name)
-			if err != nil {
-				return nil, err
-			}
-			return h, nil
-		}
-	}
-
-	return nil, errors.New("Active host not found")
-}
-
 func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	stateCh := make(chan state.State)
 	urlCh := make(chan string)
@@ -334,19 +312,6 @@ func getHostListItems(hostList []*host.Host) []HostListItem {
 
 	close(hostListItemsChan)
 	return hostListItems
-}
-
-// IsActive provides a single function for determining if a host is active
-// based on both the url and if the host is stopped.
-func isActive(h *host.Host, currentState state.State, url string) (bool, error) {
-	dockerHost := os.Getenv("DOCKER_HOST")
-
-	running := currentState == state.Running
-	correctURL := url == dockerHost
-
-	isActive := running && correctURL
-
-	return isActive, nil
 }
 
 func sortHostListItemsByName(items []HostListItem) {
