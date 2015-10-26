@@ -120,6 +120,11 @@ func NewDriver(machineName string, storePath string) *Driver {
 	}
 }
 
+// GetSSHHostname returns hostname for use with ssh
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
 // GetSSHUsername returns username for use with ssh
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
