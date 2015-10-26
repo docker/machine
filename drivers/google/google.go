@@ -14,22 +14,21 @@ import (
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	*drivers.BaseDriver
-	Zone          string
-	MachineType   string
-	DiskType      string
-	Address       string
-	Preemptible   bool
-	Scopes        string
-	DiskSize      int
-	AuthTokenPath string
-	Project       string
-	Tags          string
+	Zone        string
+	MachineType string
+	DiskType    string
+	Address     string
+	Preemptible bool
+	Scopes      string
+	DiskSize    int
+	Project     string
+	Tags        string
 }
 
 const (
 	defaultZone        = "us-central1-a"
 	defaultUser        = "docker-user"
-	defaultMachineType = "f1-micro"
+	defaultMachineType = "n1-standard-1"
 	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write"
 	defaultDiskType    = "pd-standard"
 	defaultDiskSize    = 10
@@ -61,11 +60,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "google-project",
 			Usage:  "GCE Project",
 			EnvVar: "GOOGLE_PROJECT",
-		},
-		mcnflag.StringFlag{
-			Name:   "google-auth-token",
-			Usage:  "GCE oAuth token",
-			EnvVar: "GOOGLE_AUTH_TOKEN",
 		},
 		mcnflag.StringFlag{
 			Name:   "google-scopes",
@@ -140,24 +134,25 @@ func (d *Driver) DriverName() string {
 
 // SetConfigFromFlags initializes the driver based on the command line flags.
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.Project = flags.String("google-project")
+	if d.Project == "" {
+		return fmt.Errorf("Please specify the Google Cloud Project name using the option --google-project.")
+	}
+
 	d.Zone = flags.String("google-zone")
 	d.MachineType = flags.String("google-machine-type")
 	d.DiskSize = flags.Int("google-disk-size")
 	d.DiskType = flags.String("google-disk-type")
 	d.Address = flags.String("google-address")
 	d.Preemptible = flags.Bool("google-preemptible")
-	d.AuthTokenPath = flags.String("google-auth-token")
-	d.Project = flags.String("google-project")
 	d.Scopes = flags.String("google-scopes")
 	d.Tags = flags.String("google-tags")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	if d.Project == "" {
-		return fmt.Errorf("Please specify the Google Cloud Project name using the option --google-project.")
-	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
+
 	return nil
 }
 
@@ -183,7 +178,12 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	return c.createInstance(d)
+	err = c.createInstance(d)
+	if err != nil {
+		return fmt.Errorf("You might have to run `gcloud auth login` to get the authorization credentials: %s", err)
+	}
+
+	return err
 }
 
 // GetURL returns the URL of the remote docker daemon.

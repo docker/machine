@@ -11,29 +11,31 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/ssh"
 	raw "google.golang.org/api/compute/v1"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
 type ComputeUtil struct {
-	zone          string
-	instanceName  string
-	userName      string
-	project       string
-	diskTypeURL   string
-	address       string
-	preemptible   bool
-	service       *raw.Service
-	zoneURL       string
-	authTokenPath string
-	globalURL     string
-	ipAddress     string
-	SwarmMaster   bool
-	SwarmHost     string
+	zone         string
+	instanceName string
+	userName     string
+	project      string
+	diskTypeURL  string
+	address      string
+	preemptible  bool
+	service      *raw.Service
+	zoneURL      string
+	globalURL    string
+	ipAddress    string
+	SwarmMaster  bool
+	SwarmHost    string
 }
 
 const (
 	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
-	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150316"
+	imageName          = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150909a"
 	firewallRule       = "docker-machines"
 	port               = "2376"
 	firewallTargetTag  = "docker-machine"
@@ -43,24 +45,29 @@ const (
 
 // NewComputeUtil creates and initializes a ComputeUtil.
 func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
-	service, err := newGCEService(driver.ResolveStorePath("."), driver.AuthTokenPath)
+	client, err := google.DefaultClient(oauth2.NoContext, raw.ComputeScope)
 	if err != nil {
 		return nil, err
 	}
+
+	service, err := raw.New(client)
+	if err != nil {
+		return nil, err
+	}
+
 	c := ComputeUtil{
-		authTokenPath: driver.AuthTokenPath,
-		zone:          driver.Zone,
-		instanceName:  driver.MachineName,
-		userName:      driver.SSHUser,
-		project:       driver.Project,
-		diskTypeURL:   driver.DiskType,
-		address:       driver.Address,
-		preemptible:   driver.Preemptible,
-		service:       service,
-		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
-		globalURL:     apiURL + driver.Project + "/global",
-		SwarmMaster:   driver.SwarmMaster,
-		SwarmHost:     driver.SwarmHost,
+		zone:         driver.Zone,
+		instanceName: driver.MachineName,
+		userName:     driver.SSHUser,
+		project:      driver.Project,
+		diskTypeURL:  driver.DiskType,
+		address:      driver.Address,
+		preemptible:  driver.Preemptible,
+		service:      service,
+		zoneURL:      apiURL + driver.Project + "/zones/" + driver.Zone,
+		globalURL:    apiURL + driver.Project + "/global",
+		SwarmMaster:  driver.SwarmMaster,
+		SwarmHost:    driver.SwarmHost,
 	}
 	return &c, nil
 }
@@ -267,12 +274,8 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 	log.Infof("Waiting for SSH Key")
-	err = c.waitForRegionalOp(op.Name)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return c.waitForRegionalOp(op.Name)
 }
 
 // parseTags computes the tags for the instance.
