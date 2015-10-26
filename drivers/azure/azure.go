@@ -13,7 +13,6 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
-	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 )
@@ -40,8 +39,8 @@ const (
 	defaultSSHUsername     = "ubuntu"
 )
 
-// GetCreateFlags registers the flags this d adds to
-// "docker hosts create"
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
@@ -103,6 +102,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
+// NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	d := &Driver{
 		DockerPort:            defaultDockerPort,
@@ -374,11 +374,6 @@ func (d *Driver) Kill() error {
 	return nil
 }
 
-func generateVMName() string {
-	randomID := mcnutils.TruncateID(mcnutils.GenerateRandomID())
-	return fmt.Sprintf("docker-host-%s", randomID)
-}
-
 func (d *Driver) setUserSubscription() error {
 	if d.PublishSettingsFilePath != "" {
 		return azure.ImportPublishSettingsFile(d.PublishSettingsFilePath)
@@ -402,13 +397,13 @@ func (d *Driver) addDockerEndpoints(vmConfig *vmClient.Role) error {
 			LocalPort: d.DockerPort,
 		}
 		if d.SwarmMaster {
-			swarm_ep := vmClient.InputEndpoint{
+			swarmEp := vmClient.InputEndpoint{
 				Name:      "docker swarm",
 				Protocol:  "tcp",
 				Port:      d.DockerSwarmMasterPort,
 				LocalPort: d.DockerSwarmMasterPort,
 			}
-			configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, swarm_ep)
+			configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, swarmEp)
 			log.Debugf("added Docker swarm master endpoint (port %d) to configuration", d.DockerSwarmMasterPort)
 		}
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)

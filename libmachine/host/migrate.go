@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 
 	"github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/version"
 )
 
 type RawDataDriver struct {
-	*none.Driver
+	drivers.Driver
 	data []byte // passed directly back when invoking json.Marshal on this type
 }
 

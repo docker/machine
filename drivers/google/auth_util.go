@@ -19,7 +19,7 @@ import (
 const (
 	AuthURL      = "https://accounts.google.com/o/oauth2/auth"
 	TokenURL     = "https://accounts.google.com/o/oauth2/token"
-	ClientId     = "22738965389-8arp8bah3uln9eoenproamovfjj1ac33.apps.googleusercontent.com"
+	ClientID     = "22738965389-8arp8bah3uln9eoenproamovfjj1ac33.apps.googleusercontent.com"
 	ClientSecret = "qApc3amTyr5wI74vVrRWAfC_"
 	RedirectURI  = "urn:ietf:wg:oauth:2.0:oob"
 )
@@ -32,7 +32,7 @@ func newGCEService(storePath, authTokenPath string) (*raw.Service, error) {
 
 func newOauthClient(storePath, authTokenPath string) *http.Client {
 	config := &oauth.Config{
-		ClientId:     ClientId,
+		ClientId:     ClientID,
 		ClientSecret: ClientSecret,
 		Scope:        raw.ComputeScope,
 		AuthURL:      AuthURL,
