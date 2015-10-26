@@ -11,7 +11,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine env --shell powershell --no-proxy $NAME
   [[ ${lines[0]} == "\$Env:DOCKER_TLS_VERIFY = \"1\"" ]]
   [[ ${lines[1]} == "\$Env:DOCKER_HOST = \"$(machine url $NAME)\"" ]]
-  [[ ${lines[2]} == "\$Env:DOCKER_CERT_PATH = \"$MACHINE_STORAGE_PATH/certs\"" ]]
+  [[ ${lines[2]} == "\$Env:DOCKER_CERT_PATH = \"$MACHINE_STORAGE_PATH/machines/$NAME\"" ]]
   [[ ${lines[3]} == "\$Env:DOCKER_MACHINE_NAME = \"$NAME\"" ]]
   [[ ${lines[4]} == "\$Env:NO_PROXY = \"$(machine ip $NAME)\"" ]]
 }
@@ -20,25 +20,25 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine env --no-proxy $NAME
   [[ ${lines[0]} == "export DOCKER_TLS_VERIFY=\"1\"" ]]
   [[ ${lines[1]} == "export DOCKER_HOST=\"$(machine url $NAME)\"" ]]
-  [[ ${lines[2]} == "export DOCKER_CERT_PATH=\"$MACHINE_STORAGE_PATH/certs\"" ]]
+  [[ ${lines[2]} == "export DOCKER_CERT_PATH=\"$MACHINE_STORAGE_PATH/machines/$NAME\"" ]]
   [[ ${lines[3]} == "export DOCKER_MACHINE_NAME=\"$NAME\"" ]]
   [[ ${lines[4]} == "export NO_PROXY=\"$(machine ip $NAME)\"" ]]
 }
 
 @test "$DRIVER: test cmd.exe notation" {
   run machine env --shell cmd --no-proxy $NAME
-  [[ ${lines[0]} == "set DOCKER_TLS_VERIFY=1" ]]
-  [[ ${lines[1]} == "set DOCKER_HOST=$(machine url $NAME)" ]]
-  [[ ${lines[2]} == "set DOCKER_CERT_PATH=$MACHINE_STORAGE_PATH/certs" ]]
-  [[ ${lines[3]} == "set DOCKER_MACHINE_NAME=$NAME" ]]
-  [[ ${lines[4]} == "set NO_PROXY=$(machine ip $NAME)" ]]
+  [[ ${lines[0]} == "SET DOCKER_TLS_VERIFY=1" ]]
+  [[ ${lines[1]} == "SET DOCKER_HOST=$(machine url $NAME)" ]]
+  [[ ${lines[2]} == "SET DOCKER_CERT_PATH=$MACHINE_STORAGE_PATH/machines/$NAME" ]]
+  [[ ${lines[3]} == "SET DOCKER_MACHINE_NAME=$NAME" ]]
+  [[ ${lines[4]} == "SET NO_PROXY=$(machine ip $NAME)" ]]
 }
 
 @test "$DRIVER: test fish notation" {
   run machine env --shell fish --no-proxy $NAME
   [[ ${lines[0]} == "set -x DOCKER_TLS_VERIFY \"1\";" ]]
   [[ ${lines[1]} == "set -x DOCKER_HOST \"$(machine url $NAME)\";" ]]
-  [[ ${lines[2]} == "set -x DOCKER_CERT_PATH \"$MACHINE_STORAGE_PATH/certs\";" ]]
+  [[ ${lines[2]} == "set -x DOCKER_CERT_PATH \"$MACHINE_STORAGE_PATH/machines/$NAME\";" ]]
   [[ ${lines[3]} == "set -x DOCKER_MACHINE_NAME \"$NAME\";" ]]
   [[ ${lines[4]} == "set -x NO_PROXY \"$(machine ip $NAME)\";" ]]
 }
