@@ -31,15 +31,6 @@ func TestGetCustomBaseDir(t *testing.T) {
 	BaseDir = ""
 }
 
-func TestGetDockerDir(t *testing.T) {
-	homeDir := mcnutils.GetHomeDir()
-	baseDir := GetBaseDir()
-
-	if strings.Index(baseDir, homeDir) != 0 {
-		t.Fatalf("expected base dir with prefix %s; received %s", homeDir, baseDir)
-	}
-}
-
 func TestGetMachineDir(t *testing.T) {
 	root := "/tmp"
 	BaseDir = root
