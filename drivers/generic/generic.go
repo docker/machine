@@ -72,6 +72,10 @@ func (d *Driver) DriverName() string {
 	return "generic"
 }
 
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
 func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
