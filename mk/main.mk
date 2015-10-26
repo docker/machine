@@ -34,6 +34,8 @@ ifeq ($(VERBOSE),true)
 	VERBOSE_GO := -v
 endif
 
+default: build
+
 include mk/build.mk
 include mk/coverage.mk
 include mk/release.mk
@@ -46,7 +48,6 @@ include mk/validate.mk
 .all_test: test-short test-long test-integration
 .all_validate: dco fmt vet lint
 
-default: build
 # Build native machine and all drivers
 build: build-machine build-plugins
 # Just build native machine itself
@@ -60,7 +61,7 @@ install:
 	cp $(PREFIX)/bin/docker-machine $(PREFIX)/bin/docker-machine-driver* /usr/local/bin
 
 clean: coverage-clean build-clean
-test: dco fmt test-short vet
-validate: dco fmt vet lint test-short test-long
+test: dco test-short fmt lint vet
+validate: .all_validate .all_test
 
 .PHONY: .all_build .all_coverage .all_release .all_test .all_validate test build validate clean

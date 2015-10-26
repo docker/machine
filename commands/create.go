@@ -161,8 +161,8 @@ func cmdCreateInner(c *cli.Context) {
 		fatalf("Error getting new host: %s", err)
 	}
 
-	h.HostOptions = &host.HostOptions{
-		AuthOptions: &auth.AuthOptions{
+	h.HostOptions = &host.Options{
+		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
 			CaCertPath:       certInfo.CaCertPath,
 			CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
@@ -172,17 +172,17 @@ func cmdCreateInner(c *cli.Context) {
 			ServerKeyPath:    filepath.Join(mcndirs.GetMachineDir(), name, "server-key.pem"),
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
 		},
-		EngineOptions: &engine.EngineOptions{
+		EngineOptions: &engine.Options{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),
 			Env:              c.StringSlice("engine-env"),
 			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
 			Labels:           c.StringSlice("engine-label"),
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
 			StorageDriver:    c.String("engine-storage-driver"),
-			TlsVerify:        true,
+			TLSVerify:        true,
 			InstallURL:       c.String("engine-install-url"),
 		},
-		SwarmOptions: &swarm.SwarmOptions{
+		SwarmOptions: &swarm.Options{
 			IsSwarm:        c.Bool("swarm"),
 			Image:          c.String("swarm-image"),
 			Master:         c.Bool("swarm-master"),
@@ -321,7 +321,7 @@ func getDriverOpts(c *cli.Context, mcnflags []mcnflag.Flag) drivers.DriverOption
 	// But, we need it so that we can actually send the flags for creating
 	// a machine over the wire (cli.Context is a no go since there is so
 	// much stuff in it).
-	driverOpts := rpcdriver.RpcFlags{
+	driverOpts := rpcdriver.RPCFlags{
 		Values: make(map[string]interface{}),
 	}
 

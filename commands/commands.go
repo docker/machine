@@ -23,8 +23,8 @@ var (
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument.")
 )
 
-func newPluginDriver(driverName string, rawContent []byte) (*rpcdriver.RpcClientDriver, error) {
-	d, err := rpcdriver.NewRpcClientDriver(rawContent, driverName)
+func newPluginDriver(driverName string, rawContent []byte) (*rpcdriver.RPCClientDriver, error) {
+	d, err := rpcdriver.NewRPCClientDriver(rawContent, driverName)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ var Commands = []cli.Command{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      cmdIp,
+		Action:      cmdIP,
 	},
 	{
 		Name:        "kill",
@@ -275,7 +275,7 @@ var Commands = []cli.Command{
 		Name:            "ssh",
 		Usage:           "Log into or run a command on a machine with SSH.",
 		Description:     "Arguments are [machine-name] [command]",
-		Action:          cmdSsh,
+		Action:          cmdSSH,
 		SkipFlagParsing: true,
 	},
 	{
@@ -318,7 +318,7 @@ var Commands = []cli.Command{
 		Name:        "url",
 		Usage:       "Get the URL of a machine",
 		Description: "Argument is a machine name.",
-		Action:      cmdUrl,
+		Action:      cmdURL,
 	},
 }
 
@@ -441,7 +441,7 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 // codegangsta/cli will not set the cert paths if the storage-path is set to
 // something different so we cannot use the paths in the global options. le
 // sigh.
-func getCertPathInfoFromContext(c *cli.Context) cert.CertPathInfo {
+func getCertPathInfoFromContext(c *cli.Context) cert.PathInfo {
 	caCertPath := c.GlobalString("tls-ca-cert")
 	caKeyPath := c.GlobalString("tls-ca-key")
 	clientCertPath := c.GlobalString("tls-client-cert")
@@ -463,7 +463,7 @@ func getCertPathInfoFromContext(c *cli.Context) cert.CertPathInfo {
 		clientKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "key.pem")
 	}
 
-	return cert.CertPathInfo{
+	return cert.PathInfo{
 		CaCertPath:       caCertPath,
 		CaPrivateKeyPath: caKeyPath,
 		ClientCertPath:   clientCertPath,

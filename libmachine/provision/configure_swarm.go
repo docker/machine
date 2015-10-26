@@ -16,10 +16,10 @@ type SwarmCommandContext struct {
 	ContainerName string
 	DockerDir     string
 	DockerPort    int
-	Ip            string
+	IP            string
 	Port          string
-	AuthOptions   auth.AuthOptions
-	SwarmOptions  swarm.SwarmOptions
+	AuthOptions   auth.Options
+	SwarmOptions  swarm.Options
 	SwarmImage    string
 }
 
@@ -46,7 +46,7 @@ func runSwarmCommandFromTemplate(p Provisioner, cmdTmpl string, swarmCmdContext 
 	return nil
 }
 
-func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
+func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.Options) error {
 	if !swarmOptions.IsSwarm {
 		return nil
 	}
@@ -72,7 +72,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions 
 		ContainerName: "",
 		DockerDir:     dockerDir,
 		DockerPort:    2376,
-		Ip:            ip,
+		IP:            ip,
 		Port:          port,
 		AuthOptions:   authOptions,
 		SwarmOptions:  swarmOptions,

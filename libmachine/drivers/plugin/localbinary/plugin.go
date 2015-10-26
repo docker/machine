@@ -62,7 +62,7 @@ type DriverPlugin interface {
 	PluginStreamer
 }
 
-type LocalBinaryPlugin struct {
+type Plugin struct {
 	Executor    McnBinaryExecutor
 	Addr        string
 	MachineName string
@@ -70,22 +70,22 @@ type LocalBinaryPlugin struct {
 	stopCh      chan bool
 }
 
-type LocalBinaryExecutor struct {
+type Executor struct {
 	pluginStdout, pluginStderr io.ReadCloser
 	DriverName                 string
 }
 
-func NewLocalBinaryPlugin(driverName string) *LocalBinaryPlugin {
-	return &LocalBinaryPlugin{
+func NewLocalBinaryPlugin(driverName string) *Plugin {
+	return &Plugin{
 		stopCh: make(chan bool),
 		addrCh: make(chan string, 1),
-		Executor: &LocalBinaryExecutor{
+		Executor: &Executor{
 			DriverName: driverName,
 		},
 	}
 }
 
-func (lbe *LocalBinaryExecutor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
+func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 	log.Debugf("Launching plugin server for driver %s", lbe.DriverName)
 
 	binaryPath, err := exec.LookPath(fmt.Sprintf("docker-machine-driver-%s", lbe.DriverName))
@@ -119,7 +119,7 @@ func (lbe *LocalBinaryExecutor) Start() (*bufio.Scanner, *bufio.Scanner, error) 
 	return outScanner, errScanner, nil
 }
 
-func (lbe *LocalBinaryExecutor) Close() error {
+func (lbe *Executor) Close() error {
 	if err := lbe.pluginStdout.Close(); err != nil {
 		return err
 	}
@@ -152,14 +152,14 @@ func stream(scanner *bufio.Scanner, streamOutCh chan<- string, stopCh <-chan boo
 	}
 }
 
-func (lbp *LocalBinaryPlugin) AttachStream(scanner *bufio.Scanner) (<-chan string, chan<- bool) {
+func (lbp *Plugin) AttachStream(scanner *bufio.Scanner) (<-chan string, chan<- bool) {
 	streamOutCh := make(chan string)
 	stopCh := make(chan bool)
 	go stream(scanner, streamOutCh, stopCh)
 	return streamOutCh, stopCh
 }
 
-func (lbp *LocalBinaryPlugin) execServer() error {
+func (lbp *Plugin) execServer() error {
 	outScanner, errScanner, err := lbp.Executor.Start()
 	if err != nil {
 		return err
@@ -195,11 +195,11 @@ func (lbp *LocalBinaryPlugin) execServer() error {
 	}
 }
 
-func (lbp *LocalBinaryPlugin) Serve() error {
+func (lbp *Plugin) Serve() error {
 	return lbp.execServer()
 }
 
-func (lbp *LocalBinaryPlugin) Address() (string, error) {
+func (lbp *Plugin) Address() (string, error) {
 	if lbp.Addr == "" {
 		select {
 		case lbp.Addr = <-lbp.addrCh:
@@ -213,7 +213,7 @@ func (lbp *LocalBinaryPlugin) Address() (string, error) {
 	return lbp.Addr, nil
 }
 
-func (lbp *LocalBinaryPlugin) Close() error {
+func (lbp *Plugin) Close() error {
 	lbp.stopCh <- true
 	return nil
 }

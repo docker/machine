@@ -7,7 +7,7 @@ import (
 
 func TestCentosGenerateYumRepoList(t *testing.T) {
 	info := &OsRelease{
-		Id: "centos",
+		ID: "centos",
 	}
 	p := NewCentosProvisioner(nil)
 	p.SetOsReleaseInfo(info)

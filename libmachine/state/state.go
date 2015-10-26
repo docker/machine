@@ -31,7 +31,6 @@ var states = []string{
 func (s State) String() string {
 	if int(s) >= 0 && int(s) < len(states) {
 		return states[s]
-	} else {
-		return ""
 	}
+	return ""
 }

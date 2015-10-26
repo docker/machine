@@ -73,7 +73,7 @@ func TestFilterHostsReturnsSameGivenNoFilters(t *testing.T) {
 		{
 			Name:        "testhost",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		},
 	}
 	actual := filterHosts(hosts, opts)
@@ -96,7 +96,7 @@ func TestFilterHostsReturnsEmptyGivenNonMatchingFilters(t *testing.T) {
 		{
 			Name:        "testhost",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		},
 	}
 	assert.Empty(t, filterHosts(hosts, opts))
@@ -109,22 +109,22 @@ func TestFilterHostsBySwarmName(t *testing.T) {
 	master :=
 		&host.Host{
 			Name: "master",
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{Master: true, Discovery: "foo"},
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{Master: true, Discovery: "foo"},
 			},
 		}
 	node1 :=
 		&host.Host{
 			Name: "node1",
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{Master: false, Discovery: "foo"},
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{Master: false, Discovery: "foo"},
 			},
 		}
 	othermaster :=
 		&host.Host{
 			Name: "othermaster",
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{Master: true, Discovery: "bar"},
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{Master: true, Discovery: "bar"},
 			},
 		}
 	hosts := []*host.Host{master, node1, othermaster}
@@ -141,19 +141,19 @@ func TestFilterHostsByDriverName(t *testing.T) {
 		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		}
 	hosts := []*host.Host{node1, node2, node3}
 	expected := []*host.Host{node1, node3}
@@ -169,21 +169,21 @@ func TestFilterHostsByState(t *testing.T) {
 		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Paused},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Stopped},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Running},
 		}
 	hosts := []*host.Host{node1, node2, node3}
@@ -200,28 +200,28 @@ func TestFilterHostsByName(t *testing.T) {
 		&host.Host{
 			Name:        "fire",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "fire"},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "ice",
 			DriverName:  "adriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "ice"},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "air",
 			DriverName:  "nodriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "air"},
 		}
 	node4 :=
 		&host.Host{
 			Name:        "water",
 			DriverName:  "falsedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Paused, MockName: "water"},
 		}
 	hosts := []*host.Host{node1, node2, node3, node4}
@@ -239,19 +239,19 @@ func TestFilterHostsMultiFlags(t *testing.T) {
 		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "node3",
 			DriverName:  "softlayer",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 		}
 	hosts := []*host.Host{node1, node2, node3}
 	expected := []*host.Host{node1, node2}
@@ -268,21 +268,21 @@ func TestFilterHostsDifferentFlagsProduceAND(t *testing.T) {
 		&host.Host{
 			Name:        "node1",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Paused},
 		}
 	node2 :=
 		&host.Host{
 			Name:        "node2",
 			DriverName:  "virtualbox",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Stopped},
 		}
 	node3 :=
 		&host.Host{
 			Name:        "node3",
 			DriverName:  "fakedriver",
-			HostOptions: &host.HostOptions{},
+			HostOptions: &host.Options{},
 			Driver:      &fakedriver.Driver{MockState: state.Running},
 		}
 	hosts := []*host.Host{node1, node2, node3}
@@ -317,8 +317,8 @@ func TestGetHostListItems(t *testing.T) {
 			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 			},
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{
 					Master:    false,
 					Address:   "",
 					Discovery: "",
@@ -331,8 +331,8 @@ func TestGetHostListItems(t *testing.T) {
 			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{
 					Master:    false,
 					Address:   "",
 					Discovery: "",
@@ -345,8 +345,8 @@ func TestGetHostListItems(t *testing.T) {
 			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 			},
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{
 					Master:    false,
 					Address:   "",
 					Discovery: "",
@@ -400,8 +400,8 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 				MockState: state.Running,
 				MockURL:   "tcp://120.0.0.1:2376",
 			},
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{
 					Master:    false,
 					Address:   "",
 					Discovery: "",
@@ -414,8 +414,8 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{
 					Master:    false,
 					Address:   "",
 					Discovery: "",
@@ -428,8 +428,8 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 			Driver: &fakedriver.Driver{
 				MockState: state.Saved,
 			},
-			HostOptions: &host.HostOptions{
-				SwarmOptions: &swarm.SwarmOptions{
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{
 					Master:    false,
 					Address:   "",
 					Discovery: "",
