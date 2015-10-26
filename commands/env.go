@@ -34,10 +34,6 @@ type ShellConfig struct {
 	NoProxyValue    string
 }
 
-type CmdEnvFlags interface {
-	Bool(name string) bool
-}
-
 func cmdEnv(c *cli.Context) {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
@@ -65,7 +61,7 @@ func cmdEnv(c *cli.Context) {
 
 	t := template.New("envConfig")
 
-	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell, c)
+	usageHint := generateUsageHint(userShell, os.Args)
 
 	shellCfg := &ShellConfig{
 		DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), h.Name),
@@ -170,28 +166,22 @@ func cmdEnv(c *cli.Context) {
 	}
 }
 
-func generateUsageHint(appName, machineName, userShell string, flags CmdEnvFlags) string {
-	args := machineName
-	if flags.Bool("swarm") {
-		args = "--swarm " + args
-	}
-	if flags.Bool("no-proxy") {
-		args = "--no-proxy " + args
-	}
-
+func generateUsageHint(userShell string, args []string) string {
 	cmd := ""
 	comment := "#"
 
+	commandLine := strings.Join(args, " ")
+
 	switch userShell {
 	case "fish":
-		cmd = fmt.Sprintf("eval (%s env --shell=fish %s)", appName, args)
+		cmd = fmt.Sprintf("eval (%s)", commandLine)
 	case "powershell":
-		cmd = fmt.Sprintf("%s env --shell=powershell %s | Invoke-Expression", appName, args)
+		cmd = fmt.Sprintf("%s | Invoke-Expression", commandLine)
 	case "cmd":
-		cmd = fmt.Sprintf("\tFOR /f \"tokens=*\" %%i IN ('%s env --shell=cmd %s') DO %%i", appName, args)
+		cmd = fmt.Sprintf("\tFOR /f \"tokens=*\" %%i IN ('%s') DO %%i", commandLine)
 		comment = "REM"
 	default:
-		cmd = fmt.Sprintf("eval \"$(%s env %s)\"", appName, args)
+		cmd = fmt.Sprintf("eval \"$(%s)\"", commandLine)
 	}
 
 	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
