@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/docker/machine/cli"
+	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -47,7 +49,7 @@ func cmdEnv(c *cli.Context) {
 
 	h := getFirstArgHost(c)
 
-	dockerHost, authOptions, err := runConnectionBoilerplate(h, c)
+	dockerHost, _, err := runConnectionBoilerplate(h, c)
 	if err != nil {
 		fatalf("Error running connection boilerplate: %s", err)
 	}
@@ -66,7 +68,7 @@ func cmdEnv(c *cli.Context) {
 	usageHint := generateUsageHint(c.App.Name, c.Args().First(), userShell, c)
 
 	shellCfg := &ShellConfig{
-		DockerCertPath:  authOptions.CertDir,
+		DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), h.Name),
 		DockerHost:      dockerHost,
 		DockerTLSVerify: "1",
 		UsageHint:       usageHint,
