@@ -218,6 +218,10 @@ func NewDerivedDriver(hostName, storePath string) *Driver {
 	}
 }
 
+func (d *Driver) GetSSHHostname() (string, error) {
+	return d.GetIP()
+}
+
 func (d *Driver) DriverName() string {
 	return "openstack"
 }
