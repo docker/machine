@@ -18,18 +18,10 @@ func GetBaseDir() string {
 	return BaseDir
 }
 
-func GetDockerDir() string {
-	return filepath.Join(mcnutils.GetHomeDir(), ".docker")
-}
-
 func GetMachineDir() string {
 	return filepath.Join(GetBaseDir(), "machines")
 }
 
 func GetMachineCertDir() string {
 	return filepath.Join(GetBaseDir(), "certs")
-}
-
-func GetMachineCacheDir() string {
-	return filepath.Join(GetBaseDir(), "cache")
 }
