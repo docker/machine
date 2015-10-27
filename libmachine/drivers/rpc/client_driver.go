@@ -73,19 +73,21 @@ func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriv
 		heartbeatDoneCh: make(chan bool),
 	}
 
-	go func(heartbeatDoneCh <-chan bool) {
+	go func(c *RpcClientDriver) {
 		for {
 			select {
-			case <-heartbeatDoneCh:
+			case <-c.heartbeatDoneCh:
 				return
 			default:
 				if err := c.Client.Call("RpcServerDriver.Heartbeat", struct{}{}, nil); err != nil {
 					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
+					c.Close()
+					return
 				}
 				time.Sleep(heartbeatInterval)
 			}
 		}
-	}(c.heartbeatDoneCh)
+	}(c)
 
 	var version int
 	if err := c.Client.Call("RpcServerDriver.GetVersion", struct{}{}, &version); err != nil {
