@@ -66,16 +66,6 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 	}
 	json.Unmarshal(jsonDriver, &d)
 
-	log.Info("Downloading latest boot2docker iso...")
-
-	// Usually we call this implicitly, but call it here explicitly to get
-	// the latest default boot2docker ISO.
-	if d.Boot2DockerURL == "" {
-		if err := b2dutils.DownloadLatestBoot2Docker(d.Boot2DockerURL); err != nil {
-			return err
-		}
-	}
-
 	log.Info("Stopping machine to do the upgrade...")
 
 	if err := provisioner.Driver.Stop(); err != nil {
