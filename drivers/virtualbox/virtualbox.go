@@ -60,6 +60,7 @@ type Driver struct {
 	HostOnlyNicType     string
 	HostOnlyPromiscMode string
 	NoShare             bool
+	ShareFolder         string
 }
 
 // NewDriver creates a new VirtualBox driver with default settings.
@@ -134,6 +135,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "virtualbox-no-share",
 			Usage: "Disable the mount of your home directory",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "VIRTUALBOX_SHARE_FOLDER",
+			Name: "virtualbox-share-folder",
+			Usage: "Mount the specified directory instead of the default home location. Format: dir:name",
+		},
 	}
 }
 
@@ -178,6 +184,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostOnlyNicType = flags.String("virtualbox-hostonly-nictype")
 	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
 	d.NoShare = flags.Bool("virtualbox-no-share")
+	d.ShareFolder = flags.String("virtualbox-share-folder")
 
 	return nil
 }
@@ -369,14 +376,19 @@ func (d *Driver) Create() error {
 	}
 
 	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "windows":
-		shareName = "c/Users"
-		shareDir = "c:\\Users"
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-		// TODO "linux"
+	if d.ShareFolder != "" {
+		split := strings.Split(d.ShareFolder, ":")
+		shareDir, shareName = split[0], split[1]
+	} else {
+		switch runtime.GOOS {
+		case "windows":
+			shareName = "c/Users"
+			shareDir = "c:\\Users"
+		case "darwin":
+			shareName = "Users"
+			shareDir = "/Users"
+			// TODO "linux"
+		}
 	}
 
 	if shareDir != "" && !d.NoShare {
