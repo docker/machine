@@ -61,17 +61,21 @@ func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
 		log.Debugf("STDOUT:\n{\n%v}", stdout.String())
 		log.Debugf("STDERR:\n{\n%v}", stderrStr)
 	}
+
 	if err != nil {
 		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
 			err = ErrVBMNotFound
 		}
-	} else {
+	}
+
+	if err == nil || strings.HasPrefix(err.Error(), "exit status ") {
 		// VBoxManage will sometimes not set the return code, but has a fatal error
 		// such as VBoxManage.exe: error: VT-x is not available. (VERR_VMX_NO_VMX)
 		if strings.Contains(stderrStr, "error:") {
-			err = fmt.Errorf("%v %v failed: %v", vboxManageCmd, strings.Join(args, " "), stderrStr)
+			err = fmt.Errorf("%v %v failed:\n%v", vboxManageCmd, strings.Join(args, " "), stderrStr)
 		}
 	}
+
 	return stdout.String(), stderrStr, err
 }
 
