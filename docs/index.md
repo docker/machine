@@ -53,7 +53,7 @@ For a complete list of the `docker-machine` subcommands, see the [Docker Machine
 ## Getting help
 
 Docker Machine is still in its infancy and under active development. If you need
-help, would like to contribute, or simply want to talk about to the project with
+help, would like to contribute, or simply want to talk about the project with
 like-minded individuals, we have a number of open channels for communication.
 
 - To report bugs or file feature requests: please use the [issue tracker on
