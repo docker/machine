@@ -158,6 +158,14 @@
 		{
 			"ImportPath": "google.golang.org/api/googleapi",
 			"Rev": "a09229c13c2f13bbdedf7b31b506cad4c83ef3bf"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2",
+			"Rev": "038cb4adce85ed41e285c2e7cc6221a92bfa44aa"
+		},
+		{
+			"ImportPath": "google.golang.org/cloud/compute",
+			"Rev": "2400193c85c3561d13880d34e0e10c4315bb02af"
 		}
 	]
 }
