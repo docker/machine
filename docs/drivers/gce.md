@@ -11,7 +11,7 @@ parent="smn_machine_drivers"
 # Google Compute Engine
 
 Create machines on [Google Compute Engine](https://cloud.google.com/compute/).
-You will need a Google account and project name.
+You will need a Google account and a project id.
 See https://cloud.google.com/compute/docs/projects for details on projects.
 
 ### Credentials
@@ -26,7 +26,7 @@ through the oauth2 process with `gcloud auth login`.
 
 ### Example
 
-To create a machine instance, specify `--driver google`, the project and the machine name.
+To create a machine instance, specify `--driver google`, the project id and the machine name.
 
 ```
 $ gcloud auth login
@@ -40,7 +40,7 @@ $ docker-machine create --driver google \
 
 ### Options
 
-- `--google-project`: **required** The name of your project to use when launching the instance.
+- `--google-project`: **required** The id of your project to use when launching the instance.
  - `--google-zone`: The zone to launch the instance.
  - `--google-machine-type`: The type of instance.
  - `--google-username`: The username to use for the instance.
