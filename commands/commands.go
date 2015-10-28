@@ -382,7 +382,6 @@ func runActionForeachMachine(actionName string, machines []*host.Host) []error {
 		serialChan := make(chan error)
 		go machineCommand(actionName, machine, serialChan)
 		if err := <-serialChan; err != nil {
-			log.Errorln(err)
 			errs = append(errs, err)
 		}
 		close(serialChan)
@@ -393,7 +392,6 @@ func runActionForeachMachine(actionName string, machines []*host.Host) []error {
 	// rate limit us.
 	for i := 0; i < numConcurrentActions; i++ {
 		if err := <-errorChan; err != nil {
-			log.Errorln(err)
 			errs = append(errs, err)
 		}
 	}
