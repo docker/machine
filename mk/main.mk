@@ -1,5 +1,5 @@
 # Initialize version and gc flags
-GO_LDFLAGS := -X `go list ./version`.GitCommit=`git rev-parse --short HEAD`
+GO_LDFLAGS := -X `go list ./version`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 GO_GCFLAGS :=
 
 # Full package list
