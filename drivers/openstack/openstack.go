@@ -182,16 +182,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "OpenStack SSH port",
 			Value:  defaultSSHPort,
 		},
-		mcnflag.StringFlag{
-			Name:  "openstack-ssh-user",
-			Usage: "OpenStack SSH user",
-			Value: defaultSSHUser,
-		},
-		mcnflag.IntFlag{
-			Name:  "openstack-ssh-port",
-			Usage: "OpenStack SSH port",
-			Value: defaultSSHPort,
-		},
 		mcnflag.IntFlag{
 			EnvVar: "OS_ACTIVE_TIMEOUT",
 			Name:   "openstack-active-timeout",
