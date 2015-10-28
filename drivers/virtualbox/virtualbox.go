@@ -19,8 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"path"
-
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -44,7 +42,7 @@ const (
 
 var (
 	ErrUnableToGenerateRandomIP = errors.New("unable to generate random IP")
-	ErrMustEnableVTX            = errors.New("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
+	ErrMustEnableVTX            = errors.New("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory")
 	ErrNetworkAddrCidr          = errors.New("host-only cidr must be specified with a host address, not a network address")
 )
 
@@ -205,7 +203,10 @@ func cmdOutput(name string, args ...string) (string, error) {
 
 // IsVTXDisabledInTheVM checks if VT-X is disabled in the started vm.
 func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
-	file, err := os.Open(path.Join(d.ResolveStorePath(d.MachineName), "Logs", "VBox.log"))
+	logPath := filepath.Join(d.ResolveStorePath(d.MachineName), "Logs", "VBox.log")
+	log.Debugf("Checking vm logs: %s", logPath)
+
+	file, err := os.Open(logPath)
 	if err != nil {
 		return true, err
 	}
@@ -215,7 +216,7 @@ func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), "VT-x is disabled") {
-			return true, ErrMustEnableVTX
+			return true, nil
 		}
 	}
 
@@ -229,7 +230,11 @@ func (d *Driver) Create() error {
 	}
 
 	if d.IsVTXDisabled() {
-		return ErrMustEnableVTX
+		// Let's log a warning to warn the user. When the vm is started, logs
+		// will be checked for an error anyway.
+		// We could fail right here but the method to check didn't prove being
+		// bulletproof.
+		log.Warn("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
 	}
 
 	log.Infof("Creating VirtualBox VM...")
