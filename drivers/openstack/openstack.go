@@ -38,6 +38,7 @@ type Driver struct {
 	NetworkId        string
 	SecurityGroups   []string
 	FloatingIpPool   string
+	ComputeNetwork   bool
 	FloatingIpPoolId string
 	IpVersion        int
 	client           Client
@@ -158,6 +159,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "OpenStack comma separated security groups for the machine",
 			Value:  "",
 		},
+		mcnflag.BoolFlag{
+			EnvVar: "OS_NOVA_NETWORK",
+			Name:   "openstack-nova-network",
+			Usage:  "Use the nova networking services instead of neutron.",
+		},
 		mcnflag.StringFlag{
 			EnvVar: "OS_FLOATINGIP_POOL",
 			Name:   "openstack-floatingip-pool",
@@ -240,6 +246,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 	d.FloatingIpPool = flags.String("openstack-floatingip-pool")
 	d.IpVersion = flags.Int("openstack-ip-version")
+	d.ComputeNetwork = flags.Bool("openstack-nova-network")
 	d.SSHUser = flags.String("openstack-ssh-user")
 	d.SSHPort = flags.Int("openstack-ssh-port")
 	d.SwarmMaster = flags.Bool("swarm-master")
@@ -454,7 +461,7 @@ func (d *Driver) checkConfig() error {
 }
 
 func (d *Driver) resolveIds() error {
-	if d.NetworkName != "" {
+	if d.NetworkName != "" && !d.ComputeNetwork {
 		if err := d.initNetwork(); err != nil {
 			return err
 		}
@@ -518,7 +525,7 @@ func (d *Driver) resolveIds() error {
 		}).Debug("Found image id using its name")
 	}
 
-	if d.FloatingIpPool != "" {
+	if d.FloatingIpPool != "" && !d.ComputeNetwork {
 		if err := d.initNetwork(); err != nil {
 			return err
 		}
@@ -599,12 +606,14 @@ func (d *Driver) createMachine() error {
 }
 
 func (d *Driver) assignFloatingIp() error {
+	var err error
 
-	if err := d.initNetwork(); err != nil {
-		return err
+	if d.ComputeNetwork {
+		err = d.initCompute()
+	} else {
+		err = d.initNetwork()
 	}
 
-	portId, err := d.client.GetInstancePortId(d)
 	if err != nil {
 		return err
 	}
@@ -639,7 +648,7 @@ func (d *Driver) assignFloatingIp() error {
 		log.WithField("MachineId", d.MachineId).Debugf("Assigning floating IP to the instance")
 	}
 
-	if err := d.client.AssignFloatingIP(d, floatingIp, portId); err != nil {
+	if err := d.client.AssignFloatingIP(d, floatingIp); err != nil {
 		return err
 	}
 	d.IPAddress = floatingIp.Ip
