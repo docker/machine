@@ -241,6 +241,11 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Name:   "provision",
+		Usage:  "Re-provision existing machines",
+		Action: runCommand(cmdProvision),
+	},
+	{
 		Name:        "regenerate-certs",
 		Usage:       "Regenerate TLS Certificates for a machine",
 		Description: "Argument(s) are one or more machine names.",
@@ -355,6 +360,7 @@ func machineCommand(actionName string, host *host.Host, errorChan chan<- error) 
 		"kill":          host.Kill,
 		"upgrade":       host.Upgrade,
 		"ip":            printIP(host),
+		"provision":     host.Provision,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, host.Name)
