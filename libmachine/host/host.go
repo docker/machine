@@ -192,3 +192,12 @@ func (h *Host) ConfigureAuth() error {
 	// Call provision to re-provision the certs properly.
 	return provisioner.Provision(swarm.Options{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
 }
+
+func (h *Host) Provision() error {
+	provisioner, err := provision.DetectProvisioner(h.Driver)
+	if err != nil {
+		return err
+	}
+
+	return provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
+}
