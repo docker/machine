@@ -1,14 +1,17 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdRm(c *cli.Context) {
+func cmdRm(c *cli.Context) error {
 	if len(c.Args()) == 0 {
 		cli.ShowCommandHelp(c, "rm")
-		fatal("You must specify a machine name")
+		return errors.New("You must specify a machine name")
 	}
 
 	force := c.Bool("force")
@@ -17,8 +20,9 @@ func cmdRm(c *cli.Context) {
 	for _, hostName := range c.Args() {
 		h, err := loadHost(store, hostName)
 		if err != nil {
-			fatalf("Error removing host %q: %s", hostName, err)
+			return fmt.Errorf("Error removing host %q: %s", hostName, err)
 		}
+
 		if err := h.Driver.Remove(); err != nil {
 			if !force {
 				log.Errorf("Provider error removing machine %q: %s", hostName, err)
@@ -32,4 +36,6 @@ func cmdRm(c *cli.Context) {
 			log.Infof("Successfully removed %s", hostName)
 		}
 	}
+
+	return nil
 }

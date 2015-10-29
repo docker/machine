@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 
+	"errors"
+
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
@@ -23,6 +25,10 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/swarm"
+)
+
+var (
+	errNoMachineName = errors.New("Error: No machine name specified")
 )
 
 var (
@@ -111,9 +117,9 @@ var (
 	}
 )
 
-func cmdCreateInner(c *cli.Context) {
+func cmdCreateInner(c *cli.Context) error {
 	if len(c.Args()) > 1 {
-		fatalf("Invalid command line. Found extra arguments %v", c.Args()[1:])
+		return fmt.Errorf("Invalid command line. Found extra arguments %v", c.Args()[1:])
 	}
 
 	name := c.Args().First()
@@ -130,16 +136,16 @@ func cmdCreateInner(c *cli.Context) {
 
 	if name == "" {
 		cli.ShowCommandHelp(c, "create")
-		fatal("Error: No machine name specified.")
+		return errNoMachineName
 	}
 
 	validName := host.ValidateHostName(name)
 	if !validName {
-		fatal("Error creating machine: ", mcnerror.ErrInvalidHostname)
+		return fmt.Errorf("Error creating machine: %s", mcnerror.ErrInvalidHostname)
 	}
 
 	if err := validateSwarmDiscovery(c.String("swarm-discovery")); err != nil {
-		fatalf("Error parsing swarm discovery: %s", err)
+		return fmt.Errorf("Error parsing swarm discovery: %s", err)
 	}
 
 	// TODO: Fix hacky JSON solution
@@ -148,17 +154,17 @@ func cmdCreateInner(c *cli.Context) {
 		StorePath:   c.GlobalString("storage-path"),
 	})
 	if err != nil {
-		fatalf("Error attempting to marshal bare driver data: %s", err)
+		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
 	}
 
 	driver, err := newPluginDriver(driverName, bareDriverData)
 	if err != nil {
-		fatalf("Error loading driver %q: %s", driverName, err)
+		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
 	}
 
 	h, err := store.NewHost(driver)
 	if err != nil {
-		fatalf("Error getting new host: %s", err)
+		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
 	h.HostOptions = &host.HostOptions{
@@ -196,12 +202,12 @@ func cmdCreateInner(c *cli.Context) {
 
 	exists, err := store.Exists(h.Name)
 	if err != nil {
-		fatalf("Error checking if host exists: %s", err)
+		return fmt.Errorf("Error checking if host exists: %s", err)
 	}
 	if exists {
-		fatal(mcnerror.ErrHostAlreadyExists{
+		return mcnerror.ErrHostAlreadyExists{
 			Name: h.Name,
-		})
+		}
 	}
 
 	// driverOpts is the actual data we send over the wire to set the
@@ -211,18 +217,20 @@ func cmdCreateInner(c *cli.Context) {
 	driverOpts := getDriverOpts(c, mcnFlags)
 
 	if err := h.Driver.SetConfigFromFlags(driverOpts); err != nil {
-		fatalf("Error setting machine configuration from flags provided: %s", err)
+		return fmt.Errorf("Error setting machine configuration from flags provided: %s", err)
 	}
 
 	if err := libmachine.Create(store, h); err != nil {
-		fatalf("Error creating machine: %s", err)
+		return fmt.Errorf("Error creating machine: %s", err)
 	}
 
 	if err := saveHost(store, h); err != nil {
-		fatalf("Error attempting to save store: %s", err)
+		return fmt.Errorf("Error attempting to save store: %s", err)
 	}
 
 	log.Infof("To see how to connect Docker to this machine, run: %s", fmt.Sprintf("%s env %s", os.Args[0], name))
+
+	return nil
 }
 
 // The following function is needed because the CLI acrobatics that we're doing
@@ -261,13 +269,13 @@ func flagHackLookup(flagName string) string {
 	return ""
 }
 
-func cmdCreateOuter(c *cli.Context) {
+func cmdCreateOuter(c *cli.Context) error {
 	driverName := flagHackLookup("--driver")
 
 	// We didn't recognize the driver name.
 	if driverName == "" {
 		cli.ShowCommandHelp(c, "create")
-		return
+		return nil // ?
 	}
 
 	name := c.Args().First()
@@ -277,12 +285,12 @@ func cmdCreateOuter(c *cli.Context) {
 		MachineName: name,
 	})
 	if err != nil {
-		fatalf("Error attempting to marshal bare driver data: %s", err)
+		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
 	}
 
 	driver, err := newPluginDriver(driverName, bareDriverData)
 	if err != nil {
-		fatalf("Error loading driver %q: %s", driverName, err)
+		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
 	}
 
 	// TODO: So much flag manipulation and voodoo here, it seems to be
@@ -296,8 +304,9 @@ func cmdCreateOuter(c *cli.Context) {
 	// on the requested driver.
 	cliFlags, err := convertMcnFlagsToCliFlags(mcnFlags)
 	if err != nil {
-		fatalf("Error trying to convert provided driver flags to cli flags: %s", err)
+		return fmt.Errorf("Error trying to convert provided driver flags to cli flags: %s", err)
 	}
+
 	for i := range c.App.Commands {
 		cmd := &c.App.Commands[i]
 		if cmd.HasName("create") {
@@ -306,12 +315,10 @@ func cmdCreateOuter(c *cli.Context) {
 	}
 
 	if err := driver.Close(); err != nil {
-		fatal(err)
+		return err
 	}
 
-	if err := c.App.Run(os.Args); err != nil {
-		fatal(err)
-	}
+	return c.App.Run(os.Args)
 }
 
 func getDriverOpts(c *cli.Context, mcnflags []mcnflag.Flag) drivers.DriverOptions {
@@ -401,7 +408,7 @@ func convertMcnFlagsToCliFlags(mcnFlags []mcnflag.Flag) ([]cli.Flag, error) {
 func addDriverFlagsToCommand(cliFlags []cli.Flag, cmd *cli.Command) *cli.Command {
 	cmd.Flags = append(sharedCreateFlags, cliFlags...)
 	cmd.SkipFlagParsing = false
-	cmd.Action = cmdCreateInner
+	cmd.Action = fatalOnError(cmdCreateInner)
 	sort.Sort(ByFlagName(cmd.Flags))
 
 	return cmd

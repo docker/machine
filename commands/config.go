@@ -14,26 +14,31 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdConfig(c *cli.Context) {
+func cmdConfig(c *cli.Context) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
 	if len(c.Args()) != 1 {
-		fatal(ErrExpectedOneMachine)
+		return ErrExpectedOneMachine
 	}
 
-	h := getFirstArgHost(c)
-
-	dockerHost, authOptions, err := runConnectionBoilerplate(h, c)
+	host, err := getFirstArgHost(c)
 	if err != nil {
-		fatalf("Error running connection boilerplate: %s", err)
+		return err
+	}
+
+	dockerHost, authOptions, err := runConnectionBoilerplate(host, c)
+	if err != nil {
+		return fmt.Errorf("Error running connection boilerplate: %s", err)
 	}
 
 	log.Debug(dockerHost)
 
 	fmt.Printf("--tlsverify --tlscacert=%q --tlscert=%q --tlskey=%q -H=%s",
 		authOptions.CaCertPath, authOptions.ClientCertPath, authOptions.ClientKeyPath, dockerHost)
+
+	return nil
 }
 
 func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.AuthOptions, error) {
@@ -44,7 +49,7 @@ func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.AuthO
 		return "", &auth.AuthOptions{}, fmt.Errorf("Error trying to get host state: %s", err)
 	}
 	if hostState != state.Running {
-		return "", &auth.AuthOptions{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings.", h.Name)
+		return "", &auth.AuthOptions{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings", h.Name)
 	}
 
 	dockerHost, err := h.Driver.GetURL()
@@ -101,7 +106,7 @@ func parseSwarm(hostUrl string, h *host.Host) (string, error) {
 	swarmOptions := h.HostOptions.SwarmOptions
 
 	if !swarmOptions.Master {
-		return "", fmt.Errorf("Error: %s is not a swarm master.  The --swarm flag is intended for use with swarm masters.", h.Name)
+		return "", fmt.Errorf("Error: %s is not a swarm master.  The --swarm flag is intended for use with swarm masters", h.Name)
 	}
 
 	u, err := url.Parse(swarmOptions.Host)

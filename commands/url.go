@@ -6,14 +6,22 @@ import (
 	"github.com/docker/machine/cli"
 )
 
-func cmdUrl(c *cli.Context) {
+func cmdUrl(c *cli.Context) error {
 	if len(c.Args()) != 1 {
-		fatal(ErrExpectedOneMachine)
+		return ErrExpectedOneMachine
 	}
-	url, err := getFirstArgHost(c).GetURL()
+
+	host, err := getFirstArgHost(c)
 	if err != nil {
-		fatal(err)
+		return err
+	}
+
+	url, err := host.GetURL()
+	if err != nil {
+		return err
 	}
 
 	fmt.Println(url)
+
+	return nil
 }

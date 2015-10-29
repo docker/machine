@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	ErrMalformedInput = fmt.Errorf("The input was malformed")
+	errMalformedInput       = errors.New("The input was malformed")
+	errWrongNumberArguments = errors.New("Improper number of arguments")
 )
 
 var (
@@ -64,7 +65,7 @@ func getInfoForScpArg(hostAndPath string, store persist.Store) (*host.Host, stri
 		return host, path, args, nil
 	}
 
-	return nil, "", nil, ErrMalformedInput
+	return nil, "", nil, errMalformedInput
 }
 
 func generateLocationArg(host *host.Host, path string) (string, error) {
@@ -120,19 +121,17 @@ func runCmdWithStdIo(cmd exec.Cmd) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fatal(err)
-	}
-	return nil
+
+	return cmd.Run()
 }
 
-func cmdScp(c *cli.Context) {
+func cmdScp(c *cli.Context) error {
 	hostLoader = &ScpHostLoader{}
 
 	args := c.Args()
 	if len(args) != 2 {
 		cli.ShowCommandHelp(c, "scp")
-		fatal("Improper number of arguments.")
+		return errWrongNumberArguments
 	}
 
 	// TODO: Check that "-3" flag is available in user's version of scp.
@@ -147,12 +146,11 @@ func cmdScp(c *cli.Context) {
 	dest := args[1]
 
 	store := getStore(c)
-	cmd, err := getScpCmd(src, dest, sshArgs, store)
 
+	cmd, err := getScpCmd(src, dest, sshArgs, store)
 	if err != nil {
-		fatal(err)
+		return err
 	}
-	if err := runCmdWithStdIo(*cmd); err != nil {
-		fatal(err)
-	}
+
+	return runCmdWithStdIo(*cmd)
 }

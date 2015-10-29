@@ -196,7 +196,7 @@ func TestGetInfoForScpArg(t *testing.T) {
 	}
 
 	host, path, opts, err = getInfoForScpArg("foo:bar:widget", store)
-	if err != ErrMalformedInput {
+	if err != errMalformedInput {
 		t.Fatalf("Didn't get back an error when we were expecting it for malformed args")
 	}
 }
