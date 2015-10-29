@@ -1,10 +1,12 @@
 package generic
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -20,13 +22,11 @@ type Driver struct {
 }
 
 const (
-	defaultSSHUser = "root"
-	defaultSSHPort = 22
 	defaultTimeout = 1 * time.Second
 )
 
 var (
-	defaultSSHKey = filepath.Join(mcnutils.GetHomeDir(), ".ssh", "id_rsa")
+	defaultSourceSSHKey = filepath.Join(mcnutils.GetHomeDir(), ".ssh", "id_rsa")
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -40,17 +40,17 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:  "generic-ssh-user",
 			Usage: "SSH user",
-			Value: defaultSSHUser,
+			Value: drivers.DefaultSSHUser,
 		},
 		mcnflag.StringFlag{
 			Name:  "generic-ssh-key",
 			Usage: "SSH private key path",
-			Value: defaultSSHKey,
+			Value: defaultSourceSSHKey,
 		},
 		mcnflag.IntFlag{
 			Name:  "generic-ssh-port",
 			Usage: "SSH port",
-			Value: defaultSSHPort,
+			Value: drivers.DefaultSSHPort,
 		},
 	}
 }
@@ -58,13 +58,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 // NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
-		SSHKey: defaultSSHKey,
 		BaseDriver: &drivers.BaseDriver{
-			SSHUser:     defaultSSHUser,
-			SSHPort:     defaultSSHPort,
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
+		SSHKey: defaultSourceSSHKey,
 	}
 }
 
@@ -87,29 +85,26 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = flags.Int("generic-ssh-port")
 
 	if d.IPAddress == "" {
-		return fmt.Errorf("generic driver requires the --generic-ip-address option")
+		return errors.New("generic driver requires the --generic-ip-address option")
 	}
 
 	if d.SSHKey == "" {
-		return fmt.Errorf("generic driver requires the --generic-ssh-key option")
+		return errors.New("generic driver requires the --generic-ssh-key option")
 	}
 
-	return nil
-}
-
-func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Importing SSH key...")
+	log.Info("Importing SSH key...")
 
+	// TODO: validate the key is a valid key
 	if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
 		return fmt.Errorf("unable to copy ssh key: %s", err)
 	}
 
 	if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
-		return err
+		return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
 	}
 
 	log.Debugf("IP: %s", d.IPAddress)
@@ -125,16 +120,10 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
-func (d *Driver) GetIP() (string, error) {
-	if d.IPAddress == "" {
-		return "", fmt.Errorf("IP address is not set")
-	}
-	return d.IPAddress, nil
-}
-
 func (d *Driver) GetState() (state.State, error) {
-	addr := fmt.Sprintf("%s:%d", d.IPAddress, d.SSHPort)
-	_, err := net.DialTimeout("tcp", addr, defaultTimeout)
+
+	address := net.JoinHostPort(d.IPAddress, strconv.Itoa(d.SSHPort))
+	_, err := net.DialTimeout("tcp", address, defaultTimeout)
 	var st state.State
 	if err != nil {
 		st = state.Stopped
@@ -145,11 +134,11 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) Start() error {
-	return fmt.Errorf("generic driver does not support start")
+	return errors.New("generic driver does not support start")
 }
 
 func (d *Driver) Stop() error {
-	return fmt.Errorf("generic driver does not support stop")
+	return errors.New("generic driver does not support stop")
 }
 
 func (d *Driver) Remove() error {
@@ -158,22 +147,15 @@ func (d *Driver) Remove() error {
 
 func (d *Driver) Restart() error {
 	log.Debug("Restarting...")
-
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now"); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now")
+	return err
 }
 
 func (d *Driver) Kill() error {
 	log.Debug("Killing...")
 
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now"); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now")
+	return err
 }
 
 func (d *Driver) publicSSHKeyPath() string {
