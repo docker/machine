@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
@@ -16,7 +15,7 @@ var (
 	errTooManyArguments = errors.New("Error: Too many arguments given")
 )
 
-func cmdActive(c *cli.Context) error {
+func cmdActive(c CommandLine) error {
 	if len(c.Args()) > 0 {
 		return errTooManyArguments
 	}

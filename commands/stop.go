@@ -1,7 +1,5 @@
 package commands
 
-import "github.com/docker/machine/cli"
-
-func cmdStop(c *cli.Context) error {
+func cmdStop(c CommandLine) error {
 	return runActionWithContext("stop", c)
 }

@@ -118,7 +118,7 @@ var (
 	}
 )
 
-func cmdCreateInner(c *cli.Context) error {
+func cmdCreateInner(c CommandLine) error {
 	if len(c.Args()) > 1 {
 		return fmt.Errorf("Invalid command line. Found extra arguments %v", c.Args()[1:])
 	}
@@ -136,7 +136,7 @@ func cmdCreateInner(c *cli.Context) error {
 	}
 
 	if name == "" {
-		cli.ShowCommandHelp(c, "create")
+		c.ShowHelp()
 		return errNoMachineName
 	}
 
@@ -270,16 +270,15 @@ func flagHackLookup(flagName string) string {
 	return ""
 }
 
-func cmdCreateOuter(c *cli.Context) error {
+func cmdCreateOuter(c CommandLine) error {
 	const (
 		flagLookupMachineName = "flag-lookup"
 	)
-
 	driverName := flagHackLookup("--driver")
 
 	// We didn't recognize the driver name.
 	if driverName == "" {
-		cli.ShowCommandHelp(c, "create")
+		c.ShowHelp()
 		return nil // ?
 	}
 
@@ -314,8 +313,8 @@ func cmdCreateOuter(c *cli.Context) error {
 		return fmt.Errorf("Error trying to convert provided driver flags to cli flags: %s", err)
 	}
 
-	for i := range c.App.Commands {
-		cmd := &c.App.Commands[i]
+	for i := range c.Application().Commands {
+		cmd := &c.Application().Commands[i]
 		if cmd.HasName("create") {
 			cmd = addDriverFlagsToCommand(cliFlags, cmd)
 		}
@@ -327,10 +326,10 @@ func cmdCreateOuter(c *cli.Context) error {
 		}
 	}
 
-	return c.App.Run(os.Args)
+	return c.Application().Run(os.Args)
 }
 
-func getDriverOpts(c *cli.Context, mcnflags []mcnflag.Flag) drivers.DriverOptions {
+func getDriverOpts(c CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions {
 	// TODO: This function is pretty damn YOLO and would benefit from some
 	// sanity checking around types and assertions.
 	//

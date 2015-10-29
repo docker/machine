@@ -26,6 +26,39 @@ var (
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 )
 
+// CommandLine contains all the information passed to the commands on the command line.
+type CommandLine interface {
+	ShowHelp()
+
+	Application() *cli.App
+
+	Args() cli.Args
+
+	Bool(name string) bool
+
+	String(name string) string
+
+	StringSlice(name string) []string
+
+	GlobalString(name string) string
+
+	FlagNames() (names []string)
+
+	Generic(name string) interface{}
+}
+
+type contextCommandLine struct {
+	*cli.Context
+}
+
+func (c *contextCommandLine) ShowHelp() {
+	cli.ShowCommandHelp(c.Context, c.Command.Name)
+}
+
+func (c *contextCommandLine) Application() *cli.App {
+	return c.App
+}
+
 func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, error) {
 	d, err := rpcdriver.NewRpcClientDriver(rawContent, driverName)
 	if err != nil {
@@ -39,9 +72,9 @@ func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, erro
 	return d, nil
 }
 
-func fatalOnError(command func(context *cli.Context) error) func(context *cli.Context) {
+func fatalOnError(command func(commandLine CommandLine) error) func(context *cli.Context) {
 	return func(context *cli.Context) {
-		if err := command(context); err != nil {
+		if err := command(&contextCommandLine{context}); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -60,7 +93,7 @@ func confirmInput(msg string) (bool, error) {
 	return confirmed, nil
 }
 
-func getStore(c *cli.Context) persist.Store {
+func getStore(c CommandLine) persist.Store {
 	certInfo := getCertPathInfoFromContext(c)
 	return &persist.Filestore{
 		Path:             c.GlobalString("storage-path"),
@@ -115,7 +148,7 @@ func saveHost(store persist.Store, h *host.Host) error {
 	return nil
 }
 
-func getFirstArgHost(c *cli.Context) (*host.Host, error) {
+func getFirstArgHost(c CommandLine) (*host.Host, error) {
 	store := getStore(c)
 	hostName := c.Args().First()
 
@@ -139,7 +172,7 @@ func getFirstArgHost(c *cli.Context) (*host.Host, error) {
 	return h, nil
 }
 
-func getHostsFromContext(c *cli.Context) ([]*host.Host, error) {
+func getHostsFromContext(c CommandLine) ([]*host.Host, error) {
 	store := getStore(c)
 	hosts := []*host.Host{}
 
@@ -413,7 +446,7 @@ func consolidateErrs(errs []error) error {
 	return errors.New(strings.TrimSpace(finalErr))
 }
 
-func runActionWithContext(actionName string, c *cli.Context) error {
+func runActionWithContext(actionName string, c CommandLine) error {
 	store := getStore(c)
 
 	hosts, err := getHostsFromContext(c)
@@ -442,7 +475,7 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 // codegangsta/cli will not set the cert paths if the storage-path is set to
 // something different so we cannot use the paths in the global options. le
 // sigh.
-func getCertPathInfoFromContext(c *cli.Context) cert.CertPathInfo {
+func getCertPathInfoFromContext(c CommandLine) cert.CertPathInfo {
 	caCertPath := c.GlobalString("tls-ca-cert")
 	caKeyPath := c.GlobalString("tls-ca-key")
 	clientCertPath := c.GlobalString("tls-client-cert")
