@@ -40,17 +40,17 @@ type HostListItem struct {
 	SwarmOptions *swarm.SwarmOptions
 }
 
-func cmdLs(c *cli.Context) {
+func cmdLs(c *cli.Context) error {
 	quiet := c.Bool("quiet")
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	store := getStore(c)
 	hostList, err := listHosts(store)
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	hostList = filterHosts(hostList, filters)
@@ -60,7 +60,7 @@ func cmdLs(c *cli.Context) {
 		for _, host := range hostList {
 			fmt.Println(host.Name)
 		}
-		return
+		return nil
 	}
 
 	swarmMasters := make(map[string]string)
@@ -103,6 +103,8 @@ func cmdLs(c *cli.Context) {
 	}
 
 	w.Flush()
+
+	return nil
 }
 
 func parseFilters(filters []string) (FilterOptions, error) {
@@ -218,7 +220,8 @@ func matchesName(host *host.Host, names []string) bool {
 	for _, n := range names {
 		r, err := regexp.Compile(n)
 		if err != nil {
-			fatal(err)
+			// TODO: remove that call to Fatal
+			log.Fatal(err)
 		}
 		if r.MatchString(host.Driver.GetMachineName()) {
 			return true
