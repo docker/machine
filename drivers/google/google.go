@@ -156,34 +156,48 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
-func (d *Driver) initApis() (*ComputeUtil, error) {
-	return newComputeUtil(d)
-}
-
-// Create creates a GCE VM instance acting as a docker host.
-func (d *Driver) Create() error {
+// PreCreateCheck is called to enforce pre-creation steps
+func (d *Driver) PreCreateCheck() error {
 	c, err := newComputeUtil(d)
 	if err != nil {
 		return err
 	}
-	log.Infof("Creating host...")
+
+	// Check that the project exists. It will also check that credentials
+	// at the same time.
+	log.Infof("Check that the project exists")
+
+	if _, err = c.service.Projects.Get(d.Project).Do(); err != nil {
+		return fmt.Errorf("Project with ID %q not found. %v", d.Project, err)
+	}
+
 	// Check if the instance already exists. There will be an error if the instance
 	// doesn't exist, so just check instance for nil.
+	log.Infof("Check if the instance already exists")
+
 	if instance, _ := c.instance(); instance != nil {
 		return fmt.Errorf("Instance %v already exists.", d.MachineName)
 	}
 
+	return nil
+}
+
+// Create creates a GCE VM instance acting as a docker host.
+func (d *Driver) Create() error {
 	log.Infof("Generating SSH Key")
+
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
-	err = c.createInstance(d)
+	log.Infof("Creating host...")
+
+	c, err := newComputeUtil(d)
 	if err != nil {
-		return fmt.Errorf("You might have to run `gcloud auth login` to get the authorization credentials: %s", err)
+		return err
 	}
 
-	return err
+	return c.createInstance(d)
 }
 
 // GetURL returns the URL of the remote docker daemon.
