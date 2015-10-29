@@ -5,13 +5,13 @@ import (
 	"io/ioutil"
 	"time"
 
-	"code.google.com/p/goauth2/oauth"
 	"github.com/digitalocean/godo"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"golang.org/x/oauth2"
 )
 
 type Driver struct {
@@ -293,11 +293,11 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) getClient() *godo.Client {
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: d.AccessToken},
-	}
+	token := &oauth2.Token{AccessToken: d.AccessToken}
+	tokenSource := oauth2.StaticTokenSource(token)
+	client := oauth2.NewClient(oauth2.NoContext, tokenSource)
 
-	return godo.NewClient(t.Client())
+	return godo.NewClient(client)
 }
 
 func (d *Driver) publicSSHKeyPath() string {
