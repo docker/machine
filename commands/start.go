@@ -2,11 +2,9 @@ package commands
 
 import (
 	"github.com/docker/machine/libmachine/log"
-
-	"github.com/docker/machine/cli"
 )
 
-func cmdStart(c *cli.Context) error {
+func cmdStart(c CommandLine) error {
 	if err := runActionWithContext("start", c); err != nil {
 		return err
 	}

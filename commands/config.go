@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/host"
@@ -27,7 +26,7 @@ Be advised that this will trigger a Docker daemon restart which will stop runnin
 `, e.hostUrl, e.wrappedErr)
 }
 
-func cmdConfig(c *cli.Context) error {
+func cmdConfig(c CommandLine) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
@@ -54,7 +53,7 @@ func cmdConfig(c *cli.Context) error {
 	return nil
 }
 
-func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.AuthOptions, error) {
+func runConnectionBoilerplate(h *host.Host, c CommandLine) (string, *auth.AuthOptions, error) {
 	hostState, err := h.Driver.GetState()
 	if err != nil {
 		// TODO: This is a common operation and should have a commonly

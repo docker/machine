@@ -3,15 +3,14 @@ package commands
 import (
 	"fmt"
 
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdSSH(c *cli.Context) error {
+func cmdSSH(c CommandLine) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
 	for _, arg := range c.Args() {
 		if arg == "-help" || arg == "--help" || arg == "-h" {
-			cli.ShowCommandHelp(c, "ssh")
+			c.ShowHelp()
 			return nil
 		}
 	}

@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/persist"
 )
@@ -53,10 +52,10 @@ func (s *storeHostInfoLoader) load(name string) (HostInfo, error) {
 	return host.Driver, nil
 }
 
-func cmdScp(c *cli.Context) error {
+func cmdScp(c CommandLine) error {
 	args := c.Args()
 	if len(args) != 2 {
-		cli.ShowCommandHelp(c, "scp")
+		c.ShowHelp()
 		return errWrongNumberArguments
 	}
 

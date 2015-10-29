@@ -1,7 +1,5 @@
 package commands
 
-import "github.com/docker/machine/cli"
-
-func cmdKill(c *cli.Context) error {
+func cmdKill(c CommandLine) error {
 	return runActionWithContext("kill", c)
 }
