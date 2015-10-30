@@ -17,7 +17,7 @@ type BaseDriver struct {
 
 // GetSSHKeyPath -
 func (d *BaseDriver) GetSSHKeyPath() string {
-	return filepath.Join(d.StorePath, "machines", d.MachineName, "id_rsa")
+	return ResolveStorePath("id_rsa")
 }
 
 // DriverName returns the name of the driver
