@@ -57,6 +57,7 @@ var (
 		"-o", "ConnectTimeout=10", // timeout after 10 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=no",
+		"-o", "ProxyCommand=none", // Disable default ProxyCommand in ssh/config
 	}
 	defaultClientType SSHClientType = External
 )
