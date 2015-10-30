@@ -8,6 +8,14 @@ import (
 )
 
 func cmdSsh(c *cli.Context) error {
+	// Check for help flag -- Needed due to SkipFlagParsing
+	for _, arg := range c.Args() {
+		if arg == "-help" || arg == "--help" || arg == "-h" {
+			cli.ShowCommandHelp(c, "ssh")
+			return nil
+		}
+	}
+
 	name := c.Args().First()
 	if name == "" {
 		return ErrExpectedOneMachine
