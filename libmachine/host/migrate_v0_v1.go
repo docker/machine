@@ -6,7 +6,7 @@ import (
 	"github.com/docker/machine/libmachine/swarm"
 )
 
-// In the 0.0.1 => 0.0.2 transition, the JSON representation of
+// In the 0.1.0 => 0.2.0 transition, the JSON representation of
 // machines changed from a "flat" to a more "nested" structure
 // for various options and configuration settings.  To preserve
 // compatibility with existing machines, these migration functions
@@ -17,11 +17,15 @@ import (
 // this is used for configuration updates
 func MigrateHostV0ToHostV1(hostV0 *HostV0) *HostV1 {
 	hostV1 := &HostV1{
-		Driver: hostV0.Driver,
+		Driver:     hostV0.Driver,
+		DriverName: hostV0.DriverName,
 	}
 
 	hostV1.HostOptions = &HostOptionsV1{}
-	hostV1.HostOptions.EngineOptions = &engine.EngineOptions{}
+	hostV1.HostOptions.EngineOptions = &engine.EngineOptions{
+		TlsVerify:  true,
+		InstallURL: "https://get.docker.com",
+	}
 	hostV1.HostOptions.SwarmOptions = &swarm.SwarmOptions{
 		Address:   "",
 		Discovery: hostV0.SwarmDiscovery,
