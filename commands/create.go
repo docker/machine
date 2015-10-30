@@ -270,6 +270,10 @@ func flagHackLookup(flagName string) string {
 }
 
 func cmdCreateOuter(c *cli.Context) error {
+	const (
+		flagLookupMachineName = "flag-lookup"
+	)
+
 	driverName := flagHackLookup("--driver")
 
 	// We didn't recognize the driver name.
@@ -278,11 +282,9 @@ func cmdCreateOuter(c *cli.Context) error {
 		return nil // ?
 	}
 
-	name := c.Args().First()
-
 	// TODO: Fix hacky JSON solution
 	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
-		MachineName: name,
+		MachineName: flagLookupMachineName,
 	})
 	if err != nil {
 		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
