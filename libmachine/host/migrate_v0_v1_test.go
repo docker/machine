@@ -38,7 +38,10 @@ func TestMigrateHostV0ToV1(t *testing.T) {
 			ServerCertPath: "/tmp/migration/certs/server.pem",
 			ServerKeyPath:  "/tmp/migration/certs/server-key.pem",
 		},
-		EngineOptions: &engine.EngineOptions{},
+		EngineOptions: &engine.EngineOptions{
+			InstallURL: "https://get.docker.com",
+			TlsVerify:  true,
+		},
 	}
 
 	expectedHost := &HostV1{
