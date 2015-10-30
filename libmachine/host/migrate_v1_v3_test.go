@@ -81,7 +81,7 @@ var (
 }`)
 )
 
-func TestMigrateHostV1ToHostV2(t *testing.T) {
+func TestMigrateHostV1ToHostV3(t *testing.T) {
 	h := &Host{}
 	expectedGlobalStorePath := "/Users/catbug/.docker/machine"
 	expectedCaPrivateKeyPath := "/Users/catbug/.docker/machine/certs/ca-key.pem"
@@ -104,5 +104,9 @@ func TestMigrateHostV1ToHostV2(t *testing.T) {
 
 	if migratedHost.HostOptions.AuthOptions.CertDir != filepath.Join(expectedGlobalStorePath, "certs") {
 		t.Fatalf("Expected %q, got %q for the cert dir in AuthOptions", migratedHost.HostOptions.AuthOptions.CaPrivateKeyPath, expectedGlobalStorePath)
+	}
+
+	if migratedHost.DriverName != "virtualbox" {
+		t.Fatalf("Expected %q, got %q for the driver name", "virtualbox", migratedHost.DriverName)
 	}
 }
