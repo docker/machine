@@ -17,7 +17,8 @@ import (
 // this is used for configuration updates
 func MigrateHostV0ToHostV1(hostV0 *HostV0) *HostV1 {
 	hostV1 := &HostV1{
-		Driver: hostV0.Driver,
+		Driver:     hostV0.Driver,
+		DriverName: hostV0.DriverName,
 	}
 
 	hostV1.HostOptions = &HostOptionsV1{}
