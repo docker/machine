@@ -79,7 +79,3 @@ func Create(store persist.Store, h *host.Host) error {
 
 	return nil
 }
-
-func SetDebug(val bool) {
-	log.IsDebug = val
-}

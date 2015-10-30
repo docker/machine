@@ -10,17 +10,18 @@ import (
 	"time"
 
 	"github.com/docker/machine/libmachine/log"
+	"reflect"
 )
 
 var (
 	// Timeout where we will bail if we're not able to properly contact the
 	// plugin server.
-	defaultTimeout = 10 * time.Second
+	defaultTimeout  = 10 * time.Second
+	currentLogLevel = "Debug"
 )
 
 const (
-	pluginOutPrefix = "(%s) OUT | "
-	pluginErrPrefix = "(%s) DBG | "
+	pluginOutPrefix = "(%s) "
 	PluginEnvKey    = "MACHINE_PLUGIN_TOKEN"
 	PluginEnvVal    = "42"
 )
@@ -172,7 +173,7 @@ func (lbp *Plugin) AttachStream(scanner *bufio.Scanner) (<-chan string, chan<- b
 }
 
 func (lbp *Plugin) execServer() error {
-	outScanner, errScanner, err := lbp.Executor.Start()
+	outScanner, _, err := lbp.Executor.Start()
 	if err != nil {
 		return err
 	}
@@ -188,17 +189,20 @@ func (lbp *Plugin) execServer() error {
 	lbp.addrCh <- strings.TrimSpace(addr)
 
 	stdOutCh, stopStdoutCh := lbp.AttachStream(outScanner)
-	stdErrCh, stopStderrCh := lbp.AttachStream(errScanner)
 
 	for {
 		select {
 		case out := <-stdOutCh:
-			log.Info(fmt.Sprintf(pluginOutPrefix, lbp.MachineName), out)
-		case err := <-stdErrCh:
-			log.Debug(fmt.Sprintf(pluginErrPrefix, lbp.MachineName), err)
+			data := out
+			if strings.Index(out, log.Prefix) == 0 {
+				cut := strings.Index(out, ":")
+				currentLogLevel = out[len(log.Prefix):cut]
+				data = out[cut+1:]
+			}
+			in := []reflect.Value{reflect.ValueOf(fmt.Sprintf(pluginOutPrefix, lbp.MachineName)), reflect.ValueOf(currentLogLevel), reflect.ValueOf(data)}
+			reflect.ValueOf(log.GetLogger()).MethodByName(currentLogLevel).Call(in)
 		case _ = <-lbp.stopCh:
 			stopStdoutCh <- true
-			stopStderrCh <- true
 			if err := lbp.Executor.Close(); err != nil {
 				return fmt.Errorf("Error closing local plugin binary: %s", err)
 			}

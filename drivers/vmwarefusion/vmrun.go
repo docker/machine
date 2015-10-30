@@ -37,10 +37,8 @@ func setVmwareCmd(cmd string) string {
 
 func vmrun(args ...string) (string, string, error) {
 	cmd := exec.Command(vmrunbin, args...)
-	if os.Getenv("MACHINE_DEBUG") != "" {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -60,10 +58,8 @@ func vmrun(args ...string) (string, string, error) {
 // Make a vmdk disk image with the given size (in MB).
 func vdiskmanager(dest string, size int) error {
 	cmd := exec.Command(vdiskmanbin, "-c", "-t", "0", "-s", fmt.Sprintf("%dMB", size), "-a", "lsilogic", dest)
-	if os.Getenv("MACHINE_DEBUG") != "" {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	if stdout := cmd.Run(); stdout != nil {
 		if ee, ok := stdout.(*exec.Error); ok && ee == exec.ErrNotFound {
