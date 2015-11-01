@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/log"
 )
 
 // The /etc/os-release file contains operating system identification data
@@ -69,7 +69,7 @@ func (osr *OsRelease) ParseOsRelease(osReleaseContents []byte) error {
 	for scanner.Scan() {
 		key, val, err := parseLine(scanner.Text())
 		if err != nil {
-			log.Warn("Warning: got an invalid line error parsing /etc/os-release: %s", err)
+			log.Warnf("Warning: got an invalid line error parsing /etc/os-release: %s", err)
 			continue
 		}
 		if err := osr.setIfPossible(key, val); err != nil {

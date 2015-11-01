@@ -11,22 +11,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/amazonec2/amz"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/state"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/ssh"
+	"github.com/docker/machine/libmachine/state"
 )
 
 const (
 	driverName               = "amazonec2"
+	ipRange                  = "0.0.0.0/0"
+	machineSecurityGroupName = "docker-machine"
+	defaultAmiId             = "ami-615cb725"
 	defaultRegion            = "us-east-1"
 	defaultInstanceType      = "t2.micro"
 	defaultRootSize          = 16
-	ipRange                  = "0.0.0.0/0"
-	machineSecurityGroupName = "docker-machine"
+	defaultZone              = "a"
+	defaultSecurityGroup     = machineSecurityGroupName
+	defaultSSHUser           = "ubuntu"
+	defaultSpotPrice         = "0.50"
 )
 
 var (
@@ -59,121 +64,124 @@ type Driver struct {
 	RequestSpotInstance bool
 	SpotPrice           string
 	PrivateIPOnly       bool
+	UsePrivateIP        bool
 	Monitoring          bool
 }
 
-func init() {
-	drivers.Register(driverName, &drivers.RegisteredDriver{
-		New:            NewDriver,
-		GetCreateFlags: GetCreateFlags,
-	})
-}
-
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-access-key",
 			Usage:  "AWS Access Key",
-			Value:  "",
 			EnvVar: "AWS_ACCESS_KEY_ID",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-secret-key",
 			Usage:  "AWS Secret Key",
-			Value:  "",
 			EnvVar: "AWS_SECRET_ACCESS_KEY",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-session-token",
 			Usage:  "AWS Session Token",
-			Value:  "",
 			EnvVar: "AWS_SESSION_TOKEN",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-ami",
 			Usage:  "AWS machine image",
 			EnvVar: "AWS_AMI",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-region",
 			Usage:  "AWS region",
 			Value:  defaultRegion,
 			EnvVar: "AWS_DEFAULT_REGION",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-vpc-id",
 			Usage:  "AWS VPC id",
-			Value:  "",
 			EnvVar: "AWS_VPC_ID",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-zone",
 			Usage:  "AWS zone for instance (i.e. a,b,c,d,e)",
-			Value:  "a",
+			Value:  defaultZone,
 			EnvVar: "AWS_ZONE",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-subnet-id",
 			Usage:  "AWS VPC subnet id",
-			Value:  "",
 			EnvVar: "AWS_SUBNET_ID",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-security-group",
 			Usage:  "AWS VPC security group",
-			Value:  "docker-machine",
+			Value:  defaultSecurityGroup,
 			EnvVar: "AWS_SECURITY_GROUP",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-instance-type",
 			Usage:  "AWS instance type",
 			Value:  defaultInstanceType,
 			EnvVar: "AWS_INSTANCE_TYPE",
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			Name:   "amazonec2-root-size",
 			Usage:  "AWS root disk size (in GB)",
 			Value:  defaultRootSize,
 			EnvVar: "AWS_ROOT_SIZE",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-iam-instance-profile",
 			Usage:  "AWS IAM Instance Profile",
 			EnvVar: "AWS_INSTANCE_PROFILE",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "amazonec2-ssh-user",
 			Usage:  "set the name of the ssh user",
-			Value:  "ubuntu",
+			Value:  defaultSSHUser,
 			EnvVar: "AWS_SSH_USER",
 		},
-		cli.BoolFlag{
+		mcnflag.BoolFlag{
 			Name:  "amazonec2-request-spot-instance",
 			Usage: "Set this flag to request spot instance",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "amazonec2-spot-price",
 			Usage: "AWS spot instance bid price (in dollar)",
-			Value: "0.50",
+			Value: defaultSpotPrice,
 		},
-		cli.BoolFlag{
+		mcnflag.StringFlag{
 			Name:  "amazonec2-private-address-only",
 			Usage: "Only use a private IP address",
 		},
-		cli.BoolFlag{
+		mcnflag.BoolFlag{
+			Name:  "amazonec2-use-private-address",
+			Usage: "Force the usage of private IP address",
+		},
+		mcnflag.BoolFlag{
 			Name:  "amazonec2-monitoring",
 			Usage: "Set this flag to enable CloudWatch monitoring",
 		},
 	}
 }
 
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+func NewDriver(hostName, storePath string) drivers.Driver {
 	id := generateId()
-	inner := drivers.NewBaseDriver(machineName, storePath, caCert, privateKey)
 	return &Driver{
-		Id:         id,
-		BaseDriver: inner,
-	}, nil
+		Id:                id,
+		AMI:               defaultAmiId,
+		Region:            defaultRegion,
+		InstanceType:      defaultInstanceType,
+		RootSize:          defaultRootSize,
+		Zone:              defaultZone,
+		SecurityGroupName: defaultSecurityGroup,
+		SpotPrice:         defaultSpotPrice,
+		BaseDriver: &drivers.BaseDriver{
+			SSHUser:     defaultSSHUser,
+			MachineName: hostName,
+			StorePath:   storePath,
+		},
+	}
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
@@ -208,6 +216,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
+	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 
 	if d.AccessKey == "" {
@@ -220,6 +229,24 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if d.SubnetId == "" && d.VpcId == "" {
 		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
+	}
+
+	if d.SubnetId != "" && d.VpcId != "" {
+		filters := []amz.Filter{
+			{
+				Name:  "subnet-id",
+				Value: d.SubnetId,
+			},
+		}
+
+		subnets, err := d.getClient().GetSubnets(filters)
+		if err != nil {
+			return err
+		}
+
+		if subnets[0].VpcId != d.VpcId {
+			return fmt.Errorf("SubnetId: %s does not belong to VpcId: %s", d.SubnetId, d.VpcId)
+		}
 	}
 
 	if d.isSwarmMaster() {
@@ -366,7 +393,7 @@ func (d *Driver) Create() error {
 	d.InstanceId = instance.InstanceId
 
 	log.Debug("waiting for ip address to become available")
-	if err := utils.WaitFor(d.instanceIpAvailable); err != nil {
+	if err := mcnutils.WaitFor(d.instanceIpAvailable); err != nil {
 		return err
 	}
 
@@ -415,6 +442,10 @@ func (d *Driver) GetIP() (string, error) {
 		return inst.PrivateIpAddress, nil
 	}
 
+	if d.UsePrivateIP {
+		return inst.PrivateIpAddress, nil
+	}
+
 	return inst.IpAddress, nil
 }
 
@@ -437,7 +468,6 @@ func (d *Driver) GetState() (state.State, error) {
 	default:
 		return state.Error, nil
 	}
-	return state.None, nil
 }
 
 // GetSSHHostname -
@@ -527,7 +557,7 @@ func (d *Driver) instanceIsRunning() bool {
 }
 
 func (d *Driver) waitForInstance() error {
-	if err := utils.WaitFor(d.instanceIsRunning); err != nil {
+	if err := mcnutils.WaitFor(d.instanceIsRunning); err != nil {
 		return err
 	}
 
@@ -613,7 +643,7 @@ func (d *Driver) configureSecurityGroup(groupName string) error {
 		securityGroup = group
 		// wait until created (dat eventual consistency)
 		log.Debugf("waiting for group (%s) to become available", group.GroupId)
-		if err := utils.WaitFor(d.securityGroupAvailableFunc(group.GroupId)); err != nil {
+		if err := mcnutils.WaitFor(d.securityGroupAvailableFunc(group.GroupId)); err != nil {
 			return err
 		}
 	}
@@ -706,7 +736,7 @@ func generateId() string {
 	rb := make([]byte, 10)
 	_, err := rand.Read(rb)
 	if err != nil {
-		log.Fatalf("unable to generate id: %s", err)
+		log.Warnf("Unable to generate id: %s", err)
 	}
 
 	h := md5.New()

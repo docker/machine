@@ -3,10 +3,10 @@ package rackspace
 import (
 	"fmt"
 
-	"github.com/codegangsta/cli"
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/drivers/openstack"
-	"github.com/docker/machine/log"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 )
 
 // Driver is a machine driver for Rackspace. It's a specialization of the generic OpenStack one.
@@ -16,87 +16,81 @@ type Driver struct {
 	APIKey string
 }
 
-func init() {
-	drivers.Register("rackspace", &drivers.RegisteredDriver{
-		New:            NewDriver,
-		GetCreateFlags: GetCreateFlags,
-	})
-}
+const (
+	defaultEndpointType  = "publicURL"
+	defaultFlavorId      = "general1-1"
+	defaultSSHUser       = "root"
+	defaultSSHPort       = 22
+	defaultDockerInstall = "true"
+)
 
 // GetCreateFlags registers the "machine create" flags recognized by this driver, including
 // their help text and defaults.
-func GetCreateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
+func (d *Driver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_USERNAME",
 			Name:   "rackspace-username",
 			Usage:  "Rackspace account username",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_API_KEY",
 			Name:   "rackspace-api-key",
 			Usage:  "Rackspace API key",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_REGION_NAME",
 			Name:   "rackspace-region",
 			Usage:  "Rackspace region name",
 			Value:  "",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			EnvVar: "OS_ENDPOINT_TYPE",
 			Name:   "rackspace-endpoint-type",
 			Usage:  "Rackspace endpoint type (adminURL, internalURL or the default publicURL)",
-			Value:  "publicURL",
+			Value:  defaultEndpointType,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "rackspace-image-id",
 			Usage: "Rackspace image ID. Default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:   "rackspace-flavor-id",
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
-			Value:  "general1-1",
+			Value:  defaultFlavorId,
 			EnvVar: "OS_FLAVOR_ID",
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "rackspace-ssh-user",
 			Usage: "SSH user for the newly booted machine. Set to root by default",
-			Value: "root",
+			Value: defaultSSHUser,
 		},
-		cli.IntFlag{
+		mcnflag.IntFlag{
 			Name:  "rackspace-ssh-port",
 			Usage: "SSH port for the newly booted machine. Set to 22 by default",
-			Value: 22,
+			Value: defaultSSHPort,
 		},
-		cli.StringFlag{
+		mcnflag.StringFlag{
 			Name:  "rackspace-docker-install",
 			Usage: "Set if docker have to be installed on the machine",
-			Value: "true",
+			Value: defaultDockerInstall,
 		},
 	}
 }
 
 // NewDriver instantiates a Rackspace driver.
-func NewDriver(machineName string, storePath string, caCert string, privateKey string) (drivers.Driver, error) {
+func NewDriver(machineName, storePath string) drivers.Driver {
 	log.WithFields(log.Fields{
 		"machineName": machineName,
-		"storePath":   storePath,
-		"caCert":      caCert,
-		"privateKey":  privateKey,
 	}).Debug("Instantiating Rackspace driver.")
 
-	client := &Client{}
-	inner, err := openstack.NewDerivedDriver(machineName, storePath, client, caCert, privateKey)
-	if err != nil {
-		return nil, err
-	}
+	inner := openstack.NewDerivedDriver(machineName, storePath)
 
-	driver := &Driver{Driver: inner}
-	client.driver = driver
-	return driver, nil
+	return &Driver{
+		Driver: inner,
+	}
 }
 
 // DriverName is the user-visible name of this driver.

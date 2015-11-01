@@ -31,6 +31,7 @@ The currently supported filters are:
 * driver (driver name)
 * swarm (swarm master's name)
 * state (`Running|Paused|Saved|Stopped|Stopping|Starting|Error`)
+* name (Machine name returned by driver, supports [golang style](https://github.com/google/re2/wiki/Syntax) regular expressions)
 
 ## Examples
 

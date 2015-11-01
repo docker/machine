@@ -3,12 +3,13 @@ package provision
 import (
 	"fmt"
 
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/log"
 )
 
 var provisioners = make(map[string]*RegisteredProvisioner)
@@ -45,7 +46,7 @@ type Provisioner interface {
 	Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error
 
 	// Perform action on a named service e.g. stop
-	Service(name string, action pkgaction.ServiceAction) error
+	Service(name string, action serviceaction.ServiceAction) error
 
 	// Get the driver which is contained in the provisioner.
 	GetDriver() drivers.Driver

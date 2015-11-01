@@ -1,44 +1,41 @@
 package commands
 
 import (
-	"github.com/codegangsta/cli"
-	"github.com/docker/machine/log"
+	"errors"
+	"fmt"
+
+	"github.com/docker/machine/cli"
+	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdRm(c *cli.Context) {
+func cmdRm(c *cli.Context) error {
 	if len(c.Args()) == 0 {
 		cli.ShowCommandHelp(c, "rm")
-		log.Fatal("You must specify a machine name")
+		return errors.New("You must specify a machine name")
 	}
 
 	force := c.Bool("force")
+	store := getStore(c)
 
-	isError := false
+	for _, hostName := range c.Args() {
+		h, err := loadHost(store, hostName)
+		if err != nil {
+			return fmt.Errorf("Error removing host %q: %s", hostName, err)
+		}
 
-	certInfo := getCertPathInfo(c)
-	defaultStore, err := getDefaultStore(
-		c.GlobalString("storage-path"),
-		certInfo.CaCertPath,
-		certInfo.CaKeyPath,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+		if err := h.Driver.Remove(); err != nil {
+			if !force {
+				log.Errorf("Provider error removing machine %q: %s", hostName, err)
+				continue
+			}
+		}
 
-	provider, err := newProvider(defaultStore)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, host := range c.Args() {
-		if err := provider.Remove(host, force); err != nil {
-			log.Errorf("Error removing machine %s: %s", host, err)
-			isError = true
+		if err := store.Remove(hostName); err != nil {
+			log.Errorf("Error removing machine %q from store: %s", hostName, err)
 		} else {
-			log.Infof("Successfully removed %s", host)
+			log.Infof("Successfully removed %s", hostName)
 		}
 	}
-	if isError {
-		log.Fatal("There was an error removing a machine. To force remove it, pass the -f option. Warning: this might leave it running on the provider.")
-	}
+
+	return nil
 }

@@ -1,13 +1,7 @@
 package commands
 
-import (
-	"github.com/docker/machine/log"
+import "github.com/docker/machine/cli"
 
-	"github.com/codegangsta/cli"
-)
-
-func cmdUpgrade(c *cli.Context) {
-	if err := runActionWithContext("upgrade", c); err != nil {
-		log.Fatal(err)
-	}
+func cmdUpgrade(c *cli.Context) error {
+	return runActionWithContext("upgrade", c)
 }

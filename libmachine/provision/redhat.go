@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/ssh"
-	"github.com/docker/machine/utils"
 )
 
 var (
@@ -72,10 +73,12 @@ func (provisioner *RedHatProvisioner) SSHCommand(args string) (string, error) {
 	}
 
 	// redhat needs "-t" for tty allocation on ssh therefore we check for the
-	// external client and add as needed
+	// external client and add as needed.
+	// Note: CentOS 7.0 needs multiple "-tt" to force tty allocation when ssh has
+	// no local tty.
 	switch c := client.(type) {
 	case ssh.ExternalClient:
-		c.BaseArgs = append(c.BaseArgs, "-t")
+		c.BaseArgs = append(c.BaseArgs, "-tt")
 		client = c
 	case ssh.NativeClient:
 		return c.OutputWithPty(args)
@@ -107,10 +110,10 @@ func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
 	return nil
 }
 
-func (provisioner *RedHatProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+func (provisioner *RedHatProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	reloadDaemon := false
 	switch action {
-	case pkgaction.Start, pkgaction.Restart:
+	case serviceaction.Start, serviceaction.Restart:
 		reloadDaemon = true
 	}
 
@@ -158,11 +161,11 @@ func installDocker(provisioner *RedHatProvisioner) error {
 		return err
 	}
 
-	if err := provisioner.Service("docker", pkgaction.Restart); err != nil {
+	if err := provisioner.Service("docker", serviceaction.Restart); err != nil {
 		return err
 	}
 
-	if err := provisioner.Service("docker", pkgaction.Enable); err != nil {
+	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
 		return err
 	}
 
@@ -185,7 +188,7 @@ func (provisioner *RedHatProvisioner) installOfficialDocker() error {
 
 func (provisioner *RedHatProvisioner) dockerDaemonResponding() bool {
 	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
-		log.Warn("Error getting SSH command to check if the daemon is up: %s", err)
+		log.Warnf("Error getting SSH command to check if the daemon is up: %s", err)
 		return false
 	}
 
@@ -224,7 +227,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	if err := utils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
+	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
 		return err
 	}
 

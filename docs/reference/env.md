@@ -90,3 +90,28 @@ $ /usr/bin/env | grep DOCKER
 ```
 
 Here, the parent shell's environment is unchanged; only the environment for the `/usr/bin/env` command run by `docker-machine env dev /usr/bin/env` is altered.
+
+## Excluding the created machine from proxies
+
+The env command supports a `--no-proxy` flag which will ensure that the created
+machine's IP address is added to the [`NO_PROXY`/`no_proxy` environment
+variable](https://wiki.archlinux.org/index.php/Proxy_settings).
+
+This is useful when using `docker-machine` with a local VM provider (e.g.
+`virtualbox` or `vmwarefusion`) in network environments where a HTTP proxy is
+required for internet access.
+
+```
+$ docker-machine env --no-proxy default
+export DOCKER_TLS_VERIFY="1"
+export DOCKER_HOST="tcp://192.168.99.104:2376"
+export DOCKER_CERT_PATH="/Users/databus23/.docker/machine/certs"
+export DOCKER_MACHINE_NAME="default"
+export NO_PROXY="192.168.99.104"
+# Run this command to configure your shell:
+# eval "$(docker-machine env default)"
+```
+
+You may also want to visit the [documentation on setting `HTTP_PROXY` for the
+created daemon using the `--engine-env` flag for `docker-machine
+create`](https://docs.docker.com/machine/reference/create/#specifying-configuration-options-for-the-created-docker-engine).

@@ -7,9 +7,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/docker/machine/drivers"
-	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/state"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/persist"
+	"github.com/docker/machine/libmachine/state"
 )
 
 type ScpFakeDriver struct {
@@ -18,12 +20,10 @@ type ScpFakeDriver struct {
 
 type ScpFakeStore struct{}
 
-func (d ScpFakeDriver) AuthorizePort(ports []*drivers.Port) error {
-	return nil
-}
+type ScpFakeHostLoader struct{}
 
-func (d ScpFakeDriver) DeauthorizePort(ports []*drivers.Port) error {
-	return nil
+func (d ScpFakeDriver) GetCreateFlags() []mcnflag.Flag {
+	return []mcnflag.Flag{}
 }
 
 func (d ScpFakeDriver) DriverName() string {
@@ -114,33 +114,41 @@ func (d ScpFakeDriver) GetSSHKeyPath() string {
 	return "/fake/keypath/id_rsa"
 }
 
+func (d ScpFakeDriver) ResolveStorePath(file string) string {
+	return "/tmp/store/machines/fake"
+}
+
 func (s ScpFakeStore) Exists(name string) (bool, error) {
 	return true, nil
 }
 
-func (s ScpFakeStore) GetActive() (*libmachine.Host, error) {
+func (s ScpFakeStore) GetActive() (*host.Host, error) {
 	return nil, nil
 }
 
-func (s ScpFakeStore) GetPath() string {
-	return ""
-}
-
-func (s ScpFakeStore) GetCACertificatePath() (string, error) {
-	return "", nil
-}
-
-func (s ScpFakeStore) GetPrivateKeyPath() (string, error) {
-	return "", nil
-}
-
-func (s ScpFakeStore) List() ([]*libmachine.Host, error) {
+func (s ScpFakeStore) List() ([]*host.Host, error) {
 	return nil, nil
 }
 
-func (s ScpFakeStore) Get(name string) (*libmachine.Host, error) {
+func (s ScpFakeStore) Load(name string) (*host.Host, error) {
+	return nil, nil
+}
+
+func (s ScpFakeStore) Remove(name string) error {
+	return nil
+}
+
+func (s ScpFakeStore) Save(host *host.Host) error {
+	return nil
+}
+
+func (s ScpFakeStore) NewHost(driver drivers.Driver) (*host.Host, error) {
+	return nil, nil
+}
+
+func (fshl *ScpFakeHostLoader) LoadHost(store persist.Store, name string) (*host.Host, error) {
 	if name == "myfunhost" {
-		return &libmachine.Host{
+		return &host.Host{
 			Name:   "myfunhost",
 			Driver: ScpFakeDriver{},
 		}, nil
@@ -148,19 +156,12 @@ func (s ScpFakeStore) Get(name string) (*libmachine.Host, error) {
 	return nil, errors.New("Host not found")
 }
 
-func (s ScpFakeStore) Remove(name string, force bool) error {
-	return nil
-}
-
-func (s ScpFakeStore) Save(host *libmachine.Host) error {
-	return nil
-}
-
 func TestGetInfoForScpArg(t *testing.T) {
-	provider, _ := libmachine.New(ScpFakeStore{})
+	store := ScpFakeStore{}
+	hostLoader = &ScpFakeHostLoader{}
 
 	expectedPath := "/tmp/foo"
-	host, path, opts, err := getInfoForScpArg("/tmp/foo", *provider)
+	host, path, opts, err := getInfoForScpArg("/tmp/foo", store)
 	if err != nil {
 		t.Fatalf("Unexpected error in local getInfoForScpArg call: %s", err)
 	}
@@ -174,9 +175,9 @@ func TestGetInfoForScpArg(t *testing.T) {
 		t.Fatal("opts should be nil")
 	}
 
-	host, path, opts, err = getInfoForScpArg("myfunhost:/home/docker/foo", *provider)
+	host, path, opts, err = getInfoForScpArg("myfunhost:/home/docker/foo", store)
 	if err != nil {
-		t.Fatal("Unexpected error in machine-based getInfoForScpArg call: %s", err)
+		t.Fatalf("Unexpected error in machine-based getInfoForScpArg call: %s", err)
 	}
 	expectedOpts := []string{
 		"-i",
@@ -188,20 +189,20 @@ func TestGetInfoForScpArg(t *testing.T) {
 		}
 	}
 	if host.Name != "myfunhost" {
-		t.Fatal("Expected host.Name to be myfunhost, got %s", host.Name)
+		t.Fatalf("Expected host.Name to be myfunhost, got %s", host.Name)
 	}
 	if path != "/home/docker/foo" {
 		t.Fatalf("Expected path to be /home/docker/foo, got %s", path)
 	}
 
-	host, path, opts, err = getInfoForScpArg("foo:bar:widget", *provider)
-	if err != ErrMalformedInput {
+	host, path, opts, err = getInfoForScpArg("foo:bar:widget", store)
+	if err != errMalformedInput {
 		t.Fatalf("Didn't get back an error when we were expecting it for malformed args")
 	}
 }
 
 func TestGenerateLocationArg(t *testing.T) {
-	host := libmachine.Host{
+	host := host.Host{
 		Driver: ScpFakeDriver{},
 	}
 
@@ -224,8 +225,6 @@ func TestGenerateLocationArg(t *testing.T) {
 }
 
 func TestGetScpCmd(t *testing.T) {
-	provider, _ := libmachine.New(ScpFakeStore{})
-
 	// TODO: This is a little "integration-ey".  Perhaps
 	// make an ScpDispatcher (name?) interface so that the reliant
 	// methods can be mocked.
@@ -238,8 +237,9 @@ func TestGetScpCmd(t *testing.T) {
 		"root@12.34.56.78:/home/docker/foo",
 	)
 	expectedCmd := exec.Command("/usr/bin/scp", expectedArgs...)
+	store := ScpFakeStore{}
 
-	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", append(baseSSHArgs, "-3"), *provider)
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", append(baseSSHArgs, "-3"), store)
 	if err != nil {
 		t.Fatalf("Unexpected err getting scp command: %s", err)
 	}

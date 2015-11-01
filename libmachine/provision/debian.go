@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/docker/machine/drivers"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/log"
-	"github.com/docker/machine/utils"
 )
 
 func init() {
@@ -38,13 +39,13 @@ type DebianProvisioner struct {
 	GenericProvisioner
 }
 
-func (provisioner *DebianProvisioner) Service(name string, action pkgaction.ServiceAction) error {
+func (provisioner *DebianProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	// daemon-reload to catch config updates; systemd -- ugh
 	if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
 		return err
 	}
 
-	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
+	command := fmt.Sprintf("sudo systemctl -f %s %s", action.String(), name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
@@ -59,23 +60,43 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 	updateMetadata := true
 
 	switch action {
-	case pkgaction.Install:
+	case pkgaction.Install, pkgaction.Upgrade:
 		packageAction = "install"
 	case pkgaction.Remove:
 		packageAction = "remove"
 		updateMetadata = false
-	case pkgaction.Upgrade:
-		packageAction = "upgrade"
 	}
 
 	switch name {
 	case "docker":
-		name = "lxc-docker"
+		name = "docker-engine"
 	}
 
 	if updateMetadata {
 		if _, err := provisioner.SSHCommand("sudo apt-get update"); err != nil {
 			return err
+		}
+	}
+
+	// handle the new docker-engine package; we can probably remove this
+	// after we have a few versions
+	if action == pkgaction.Upgrade && name == "docker-engine" {
+		// run the force remove on the existing lxc-docker package
+		// and remove the existing apt source list
+		// also re-run the get.docker.com script to properly setup
+		// the system again
+
+		commands := []string{
+			"rm /etc/apt/sources.list.d/docker.list || true",
+			"apt-get remove -y lxc-docker || true",
+			"curl -sSL https://get.docker.com | sh",
+		}
+
+		for _, cmd := range commands {
+			command := fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive %s", cmd)
+			if _, err := provisioner.SSHCommand(command); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -133,7 +154,7 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	}
 
 	log.Debug("waiting for docker daemon")
-	if err := utils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
+	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
 		return err
 	}
 
@@ -151,7 +172,7 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 
 	// enable in systemd
 	log.Debug("enabling docker in systemd")
-	if err := provisioner.Service("docker", pkgaction.Enable); err != nil {
+	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
 		return err
 	}
 

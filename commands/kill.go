@@ -1,13 +1,7 @@
 package commands
 
-import (
-	"github.com/docker/machine/log"
+import "github.com/docker/machine/cli"
 
-	"github.com/codegangsta/cli"
-)
-
-func cmdKill(c *cli.Context) {
-	if err := runActionWithContext("kill", c); err != nil {
-		log.Fatal(err)
-	}
+func cmdKill(c *cli.Context) error {
+	return runActionWithContext("kill", c)
 }

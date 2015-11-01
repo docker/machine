@@ -3,24 +3,23 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
 
-	"github.com/docker/machine/log"
-
-	"github.com/codegangsta/cli"
-	"github.com/docker/machine/utils"
+	"github.com/docker/machine/cli"
+	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/libmachine/log"
 )
 
 const (
-	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ .UsageHint }}`
+	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
 )
 
 var (
-	improperEnvArgsError = errors.New("Error: Expected either one machine name, or -u flag to unset the variables in the arguments.")
+	errImproperEnvArgs = errors.New("Error: Expected either one machine name, or -u flag to unset the variables in the arguments")
 )
 
 type ShellConfig struct {
@@ -32,106 +31,117 @@ type ShellConfig struct {
 	DockerTLSVerify string
 	UsageHint       string
 	MachineName     string
+	NoProxyVar      string
+	NoProxyValue    string
 }
 
-func NewShellConfig(c *cli.Context) *ShellConfig {
-	cfg, err := getMachineConfig(c)
+func cmdEnv(c *cli.Context) error {
+	// Ensure that log messages always go to stderr when this command is
+	// being run (it is intended to be run in a subshell)
+	log.SetOutWriter(os.Stderr)
+
+	host, err := getFirstArgHost(c)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	if cfg.machineUrl == "" {
-		log.Fatalf("%s is not running. Please start this with %s start %s", cfg.machineName, c.App.Name, cfg.machineName)
-	}
-
-	dockerHost := cfg.machineUrl
-	if c.Bool("swarm") {
-		if !cfg.SwarmOptions.Master {
-			log.Fatalf("%s is not a swarm master", cfg.machineName)
-		}
-		u, err := url.Parse(cfg.SwarmOptions.Host)
-		if err != nil {
-			log.Fatal(err)
-		}
-		parts := strings.Split(u.Host, ":")
-		swarmPort := parts[1]
-
-		// get IP of machine to replace in case swarm host is 0.0.0.0
-		mUrl, err := url.Parse(cfg.machineUrl)
-		if err != nil {
-			log.Fatal(err)
-		}
-		mParts := strings.Split(mUrl.Host, ":")
-		machineIp := mParts[0]
-
-		dockerHost = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
-	}
-
-	u, err := url.Parse(cfg.machineUrl)
+	dockerHost, _, err := runConnectionBoilerplate(host, c)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("Error running connection boilerplate: %s", err)
 	}
 
-	if u.Scheme != "unix" {
-		// validate cert and regenerate if needed
-		valid, err := utils.ValidateCertificate(
-			u.Host,
-			cfg.caCertPath,
-			cfg.serverCertPath,
-			cfg.serverKeyPath,
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if !valid {
-			log.Debugf("invalid certs detected; regenerating for %s", u.Host)
-
-			if err := runActionWithContext("configureAuth", c); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-
-	return &ShellConfig{
-		DockerCertPath:  cfg.machineDir,
+	shellCfg := &ShellConfig{
+		DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), host.Name),
 		DockerHost:      dockerHost,
 		DockerTLSVerify: "1",
-		MachineName:     cfg.machineName,
+		MachineName:     host.Name,
 	}
-}
 
-func cmdEnv(c *cli.Context) {
+	if c.Bool("no-proxy") {
+		ip, err := host.Driver.GetIP()
+		if err != nil {
+			return fmt.Errorf("Error getting host IP: %s", err)
+		}
+
+		// first check for an existing lower case no_proxy var
+		noProxyVar := "no_proxy"
+		noProxyValue := os.Getenv("no_proxy")
+
+		// otherwise default to allcaps HTTP_PROXY
+		if noProxyValue == "" {
+			noProxyVar = "NO_PROXY"
+			noProxyValue = os.Getenv("NO_PROXY")
+		}
+
+		// add the docker host to the no_proxy list idempotently
+		switch {
+		case noProxyValue == "":
+			noProxyValue = ip
+		case strings.Contains(noProxyValue, ip):
+			//ip already in no_proxy list, nothing to do
+		default:
+			noProxyValue = fmt.Sprintf("%s,%s", noProxyValue, ip)
+		}
+
+		shellCfg.NoProxyVar = noProxyVar
+		shellCfg.NoProxyValue = noProxyValue
+	}
+
 	if len(c.Args()) < 1 && !c.Bool("unset") {
-		log.Fatal(improperEnvArgsError)
+		return errImproperEnvArgs
 	} else if len(c.Args()) > 1 {
-		cmdEnvChild(c)
+		return cmdEnvChild(c, shellCfg)
 	} else {
-		cmdEnvShell(c)
+		return cmdEnvShell(c, shellCfg)
 	}
-	return
 }
 
-func cmdEnvShell(c *cli.Context) {
+func cmdEnvShell(c *cli.Context, shellCfg *ShellConfig) error {
 	userShell := c.String("shell")
 	if userShell == "" {
 		shell, err := detectShell()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		userShell = shell
 	}
+
+	shellCfg.UsageHint = generateUsageHint(userShell, os.Args)
 
 	t := template.New("envConfig")
 
 	// unset vars
 	if c.Bool("unset") {
-		cmdEnvUnset(c, t, userShell)
-		return
-	}
+		switch userShell {
+		case "fish":
+			shellCfg.Prefix = "set -e "
+			shellCfg.Delimiter = ""
+			shellCfg.Suffix = ";\n"
+		case "powershell":
+			shellCfg.Prefix = "Remove-Item Env:\\\\"
+			shellCfg.Delimiter = ""
+			shellCfg.Suffix = "\n"
+		case "cmd":
+			// since there is no way to unset vars in cmd just reset to empty
+			shellCfg.DockerCertPath = ""
+			shellCfg.DockerHost = ""
+			shellCfg.DockerTLSVerify = ""
+			shellCfg.Prefix = "set "
+			shellCfg.Delimiter = "="
+			shellCfg.Suffix = "\n"
+		default:
+			shellCfg.Prefix = "unset "
+			shellCfg.Delimiter = " "
+			shellCfg.Suffix = "\n"
+		}
 
-	shellCfg := NewShellConfig(c)
-	shellCfg.UsageHint = generateUsageHint(c.App.Name, c.Args().First(), userShell)
+		tmpl, err := t.Parse(envTmpl)
+		if err != nil {
+			return err
+		}
+
+		return tmpl.Execute(os.Stdout, shellCfg)
+	}
 
 	switch userShell {
 	case "fish":
@@ -143,7 +153,7 @@ func cmdEnvShell(c *cli.Context) {
 		shellCfg.Suffix = "\"\n"
 		shellCfg.Delimiter = " = \""
 	case "cmd":
-		shellCfg.Prefix = "set "
+		shellCfg.Prefix = "SET "
 		shellCfg.Suffix = "\n"
 		shellCfg.Delimiter = "="
 	default:
@@ -154,94 +164,48 @@ func cmdEnvShell(c *cli.Context) {
 
 	tmpl, err := t.Parse(envTmpl)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
-		log.Fatal(err)
-	}
+	return tmpl.Execute(os.Stdout, shellCfg)
 }
 
-func generateUsageHint(appName, machineName, userShell string) string {
+func generateUsageHint(userShell string, args []string) string {
 	cmd := ""
-	switch userShell {
-	case "fish":
-		if machineName != "" {
-			cmd = fmt.Sprintf("eval (%s env %s)", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("eval (%s env)", appName)
-		}
-	case "powershell":
-		if machineName != "" {
-			cmd = fmt.Sprintf("%s env --shell=powershell %s | Invoke-Expression", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("%s env --shell=powershell | Invoke-Expression", appName)
-		}
-	case "cmd":
-		cmd = "copy and paste the above values into your command prompt"
-	default:
-		if machineName != "" {
-			cmd = fmt.Sprintf("eval \"$(%s env %s)\"", appName, machineName)
-		} else {
-			cmd = fmt.Sprintf("eval \"$(%s env)\"", appName)
-		}
-	}
+	comment := "#"
 
-	return fmt.Sprintf("# Run this command to configure your shell: \n# %s\n", cmd)
-}
-
-func cmdEnvUnset(c *cli.Context, t *template.Template, userShell string) {
-	shellCfg := ShellConfig{
-		DockerCertPath:  "",
-		DockerHost:      "",
-		DockerTLSVerify: "",
-		MachineName:     "",
-	}
+	commandLine := strings.Join(args, " ")
 
 	switch userShell {
 	case "fish":
-		shellCfg.Prefix = "set -e "
-		shellCfg.Delimiter = ""
-		shellCfg.Suffix = ";\n"
+		cmd = fmt.Sprintf("eval (%s)", commandLine)
 	case "powershell":
-		shellCfg.Prefix = "Remove-Item Env:\\\\"
-		shellCfg.Delimiter = ""
-		shellCfg.Suffix = "\n"
+		cmd = fmt.Sprintf("%s | Invoke-Expression", commandLine)
 	case "cmd":
-		// since there is no way to unset vars in cmd just reset to empty
-		shellCfg.DockerCertPath = ""
-		shellCfg.DockerHost = ""
-		shellCfg.DockerTLSVerify = ""
-		shellCfg.Prefix = "set "
-		shellCfg.Delimiter = "="
-		shellCfg.Suffix = "\n"
+		cmd = fmt.Sprintf("\tFOR /f \"tokens=*\" %%i IN ('%s') DO %%i", commandLine)
+		comment = "REM"
 	default:
-		shellCfg.Prefix = "unset "
-		shellCfg.Delimiter = " "
-		shellCfg.Suffix = "\n"
+		cmd = fmt.Sprintf("eval \"$(%s)\"", commandLine)
 	}
 
-	tmpl, err := t.Parse(envTmpl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := tmpl.Execute(os.Stdout, shellCfg); err != nil {
-		log.Fatal(err)
-	}
-	return
+	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
 }
 
-func cmdEnvChild(c *cli.Context) {
+func cmdEnvChild(c *cli.Context, shellCfg *ShellConfig) error {
 	commands := c.Args().Tail()
-	shellCfg := NewShellConfig(c)
 
-	env := append([]string{
+	vars := []string{
 		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", shellCfg.DockerTLSVerify),
 		fmt.Sprintf("DOCKER_HOST=%s", shellCfg.DockerHost),
 		fmt.Sprintf("DOCKER_CERT_PATH=%s", shellCfg.DockerCertPath),
 		fmt.Sprintf("DOCKER_MACHINE_NAME=%s", shellCfg.MachineName),
-	}, os.Environ()...)
+	}
+
+	if shellCfg.NoProxyVar != "" {
+		vars = append(vars, fmt.Sprintf("%s=%s", shellCfg.NoProxyVar, shellCfg.NoProxyValue))
+	}
+
+	env := append(vars, os.Environ()...)
 
 	cmd := exec.Command(commands[0], commands[1:]...)
 	cmd.Stdin = os.Stdin
@@ -249,6 +213,7 @@ func cmdEnvChild(c *cli.Context) {
 	cmd.Stderr = os.Stderr
 	cmd.Env = env
 	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }

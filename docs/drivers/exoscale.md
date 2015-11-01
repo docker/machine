@@ -35,6 +35,6 @@ Environment variables and default values:
 | **`--exoscale-api-secret-key`** | `EXOSCALE_API_SECRET`        | -                                 |
 | `--exoscale-instance-profile`   | `EXOSCALE_INSTANCE_PROFILE`  | `small`                           |
 | `--exoscale-disk-size`          | `EXOSCALE_DISK_SIZE`         | `50`                              |
-| `--exoscale-image`              | `EXSOCALE_IMAGE`             | `ubuntu-14.04`                    |
+| `--exoscale-image`              | `EXOSCALE_IMAGE`             | `ubuntu-14.04`                    |
 | `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine`                  |
 | `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`                        |
