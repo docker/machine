@@ -26,6 +26,7 @@ Options:
 -   `--digitalocean-ipv6`: Enable IPv6 support for the droplet.
 -   `--digitalocean-private-networking`: Enable private networking support for the droplet.
 -   `--digitalocean-backups`: Enable Digital Oceans backups for the droplet.
+-   `--digitalocean-userdata`: Path to file containing User Data for the droplet.
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
@@ -40,3 +41,4 @@ Environment variables and default values:
 | `--digitalocean-ipv6`               | `DIGITALOCEAN_IPV6`               | `false`  |
 | `--digitalocean-private-networking` | `DIGITALOCEAN_PRIVATE_NETWORKING` | `false`  |
 | `--digitalocean-backups`            | `DIGITALOCEAN_BACKUPS`            | `false`  |
+| `--digitalocean-userdata`           | `DIGITALOCEAN_USERDATA`           | -        |

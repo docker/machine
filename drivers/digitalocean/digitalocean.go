@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"time"
 
 	"github.com/digitalocean/godo"
@@ -27,6 +28,7 @@ type Driver struct {
 	IPv6              bool
 	Backups           bool
 	PrivateNetworking bool
+	UserDataFile      string
 }
 
 const (
@@ -83,6 +85,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "digitalocean-backups",
 			Usage:  "enable backups for droplet",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "DIGITALOCEAN_USERDATA",
+			Name:   "digitalocean-userdata",
+			Usage:  "path to file with cloud-init user-data",
+		},
 	}
 }
 
@@ -115,6 +122,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IPv6 = flags.Bool("digitalocean-ipv6")
 	d.PrivateNetworking = flags.Bool("digitalocean-private-networking")
 	d.Backups = flags.Bool("digitalocean-backups")
+	d.UserDataFile = flags.String("digitalocean-userdata")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -129,6 +137,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) PreCreateCheck() error {
+	if d.UserDataFile != "" {
+		if _, err := os.Stat(d.UserDataFile); os.IsNotExist(err) {
+			return fmt.Errorf("user-data file %s could not be found", d.UserDataFile)
+		}
+	}
+
 	client := d.getClient()
 	regions, _, err := client.Regions.List(nil)
 	if err != nil {
@@ -144,6 +158,15 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
+	var userdata string
+	if d.UserDataFile != "" {
+		buf, err := ioutil.ReadFile(d.UserDataFile)
+		if err != nil {
+			return err
+		}
+		userdata = string(buf)
+	}
+
 	log.Infof("Creating SSH key...")
 
 	key, err := d.createSSHKey()
@@ -165,6 +188,7 @@ func (d *Driver) Create() error {
 		IPv6:              d.IPv6,
 		PrivateNetworking: d.PrivateNetworking,
 		Backups:           d.Backups,
+		UserData:          userdata,
 		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID}},
 	}
 
