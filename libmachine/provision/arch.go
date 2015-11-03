@@ -49,11 +49,8 @@ func (provisioner *ArchProvisioner) Service(name string, action serviceaction.Se
 
 	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *ArchProvisioner) Package(name string, action pkgaction.PackageAction) error {
@@ -87,11 +84,8 @@ func (provisioner *ArchProvisioner) Package(name string, action pkgaction.Packag
 
 	log.Debugf("package: action=%s name=%s", action.String(), name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *ArchProvisioner) dockerDaemonResponding() bool {
@@ -160,11 +154,8 @@ func (provisioner *ArchProvisioner) Provision(swarmOptions swarm.SwarmOptions, a
 
 	// enable in systemd
 	log.Debug("Enabling docker in systemd")
-	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
-		return err
-	}
 
-	return nil
+	return provisioner.Service("docker", serviceaction.Enable)
 }
 
 func (provisioner *ArchProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {

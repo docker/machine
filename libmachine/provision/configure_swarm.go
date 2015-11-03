@@ -26,9 +26,7 @@ type SwarmCommandContext struct {
 // Wrapper function to generate a docker run swarm command (manage or join)
 // from a template/context and execute it.
 func runSwarmCommandFromTemplate(p Provisioner, cmdTmpl string, swarmCmdContext SwarmCommandContext) error {
-	var (
-		executedCmdTmpl bytes.Buffer
-	)
+	var executedCmdTmpl bytes.Buffer
 
 	parsedMasterCmdTemplate, err := template.New("swarmMasterCmd").Parse(cmdTmpl)
 	if err != nil {
@@ -39,11 +37,8 @@ func runSwarmCommandFromTemplate(p Provisioner, cmdTmpl string, swarmCmdContext 
 
 	log.Debugf("The swarm command being run is: %s", executedCmdTmpl.String())
 
-	if _, err := p.SSHCommand(executedCmdTmpl.String()); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = p.SSHCommand(executedCmdTmpl.String())
+	return err
 }
 
 func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
@@ -114,9 +109,6 @@ join --advertise {{.Ip}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
 	}
 
 	log.Debug("Launch swarm worker")
-	if err := runSwarmCommandFromTemplate(p, swarmWorkerCmdTemplate, swarmCmdContext); err != nil {
-		return err
-	}
 
-	return nil
+	return runSwarmCommandFromTemplate(p, swarmWorkerCmdTemplate, swarmCmdContext)
 }

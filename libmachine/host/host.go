@@ -113,11 +113,7 @@ func (h *Host) Restart() error {
 		return err
 	}
 
-	if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
-		return err
-	}
-
-	return nil
+	return mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running))
 }
 
 func (h *Host) Upgrade() error {
@@ -139,10 +135,7 @@ func (h *Host) Upgrade() error {
 		return err
 	}
 
-	if err := provisioner.Service("docker", serviceaction.Restart); err != nil {
-		return err
-	}
-	return nil
+	return provisioner.Service("docker", serviceaction.Restart)
 }
 
 func (h *Host) GetURL() (string, error) {
@@ -160,9 +153,5 @@ func (h *Host) ConfigureAuth() error {
 	// and modularity of the provisioners should be).
 	//
 	// Call provision to re-provision the certs properly.
-	if err := provisioner.Provision(swarm.SwarmOptions{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
-		return err
-	}
-
-	return nil
+	return provisioner.Provision(swarm.SwarmOptions{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
 }

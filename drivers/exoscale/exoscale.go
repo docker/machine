@@ -341,10 +341,8 @@ func (d *Driver) Start() error {
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
-	return nil
+
+	return d.waitForJob(client, svmresp)
 }
 
 func (d *Driver) Stop() error {
@@ -362,10 +360,8 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
-	return nil
+
+	return d.waitForJob(client, svmresp)
 }
 
 func (d *Driver) Remove() error {
@@ -381,10 +377,8 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, dvmresp); err != nil {
-		return err
-	}
-	return nil
+
+	return d.waitForJob(client, dvmresp)
 }
 
 func (d *Driver) Restart() error {
@@ -401,11 +395,8 @@ func (d *Driver) Restart() error {
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
 
-	return nil
+	return d.waitForJob(client, svmresp)
 }
 
 func (d *Driver) Kill() error {
@@ -443,12 +434,8 @@ func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.Dep
 	if err != nil {
 		return nil, err
 	}
-	vm, err := client.AsyncToVirtualMachine(*resp)
-	if err != nil {
-		return nil, err
-	}
 
-	return vm, nil
+	return client.AsyncToVirtualMachine(*resp)
 }
 
 // Build a cloud-init user data string that will install and run
