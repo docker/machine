@@ -45,16 +45,20 @@ func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 		RpcClient: rpcclient,
 	}
 }
+
 func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriver, error) {
 	mcnName := ""
 
-	p := localbinary.NewLocalBinaryPlugin(driverName)
+	p, err := localbinary.NewLocalBinaryPlugin(driverName)
+	if err != nil {
+		return nil, err
+	}
 
 	go func() {
 		if err := p.Serve(); err != nil {
-			// If we can't safely load the server, best to just
-			// bail.
-			log.Fatal(err)
+			// TODO: Is this best approach?
+			log.Warn(err)
+			return
 		}
 	}()
 
