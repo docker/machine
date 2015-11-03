@@ -73,29 +73,41 @@ type LocalBinaryPlugin struct {
 type LocalBinaryExecutor struct {
 	pluginStdout, pluginStderr io.ReadCloser
 	DriverName                 string
+	binaryPath                 string
 }
 
-func NewLocalBinaryPlugin(driverName string) *LocalBinaryPlugin {
+type ErrPluginBinaryNotFound struct {
+	driverName string
+}
+
+func (e ErrPluginBinaryNotFound) Error() string {
+	return fmt.Sprintf("Driver %q not found. Do you have the plugin binary accessible in your PATH?", e.driverName)
+}
+
+func NewLocalBinaryPlugin(driverName string) (*LocalBinaryPlugin, error) {
+	binaryPath, err := exec.LookPath(fmt.Sprintf("docker-machine-driver-%s", driverName))
+	if err != nil {
+		return nil, ErrPluginBinaryNotFound{driverName}
+	}
+
+	log.Debugf("Found binary path at %s", binaryPath)
+
 	return &LocalBinaryPlugin{
 		stopCh: make(chan bool),
 		addrCh: make(chan string, 1),
 		Executor: &LocalBinaryExecutor{
 			DriverName: driverName,
+			binaryPath: binaryPath,
 		},
-	}
+	}, nil
 }
 
 func (lbe *LocalBinaryExecutor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
+	var err error
+
 	log.Debugf("Launching plugin server for driver %s", lbe.DriverName)
 
-	binaryPath, err := exec.LookPath(fmt.Sprintf("docker-machine-driver-%s", lbe.DriverName))
-	if err != nil {
-		return nil, nil, fmt.Errorf("Driver %q not found. Do you have the plugin binary accessible in your PATH?", lbe.DriverName)
-	}
-
-	log.Debugf("Found binary path at %s", binaryPath)
-
-	cmd := exec.Command(binaryPath)
+	cmd := exec.Command(lbe.binaryPath)
 
 	lbe.pluginStdout, err = cmd.StdoutPipe()
 	if err != nil {

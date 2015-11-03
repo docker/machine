@@ -14,6 +14,7 @@ import (
 
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
@@ -295,6 +296,10 @@ func cmdCreateOuter(c *cli.Context) error {
 		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
 	}
 
+	if _, ok := driver.(*errdriver.Driver); ok {
+		return errdriver.ErrDriverNotLoadable{driverName}
+	}
+
 	// TODO: So much flag manipulation and voodoo here, it seems to be
 	// asking for trouble.
 	//
@@ -316,8 +321,10 @@ func cmdCreateOuter(c *cli.Context) error {
 		}
 	}
 
-	if err := driver.Close(); err != nil {
-		return err
+	if rpcd, ok := driver.(*rpcdriver.RpcClientDriver); ok {
+		if err := rpcd.Close(); err != nil {
+			return err
+		}
 	}
 
 	return c.App.Run(os.Args)
