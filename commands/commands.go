@@ -10,7 +10,10 @@ import (
 
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -23,9 +26,13 @@ var (
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 )
 
-func newPluginDriver(driverName string, rawContent []byte) (*rpcdriver.RpcClientDriver, error) {
+func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, error) {
 	d, err := rpcdriver.NewRpcClientDriver(rawContent, driverName)
 	if err != nil {
+		// Not being able to find a driver binary is a "known error"
+		if _, ok := err.(localbinary.ErrPluginBinaryNotFound); ok {
+			return errdriver.NewDriver(driverName), nil
+		}
 		return nil, err
 	}
 
