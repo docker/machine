@@ -168,7 +168,7 @@ var Commands = []cli.Command{
 	{
 		Flags:           sharedCreateFlags,
 		Name:            "create",
-		Usage:           "Create a machine.\n\nSpecify a driver with --driver to include the create flags for that driver in the help text.",
+		Usage:           fmt.Sprintf("Create a machine.\n\nRun '%s create --driver name' to include the create flags for that driver in the help text.", os.Args[0]),
 		Action:          fatalOnError(cmdCreateOuter),
 		SkipFlagParsing: true,
 	},
