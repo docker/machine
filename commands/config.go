@@ -14,6 +14,19 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
+// For when the cert is computed to be invalid.
+type ErrCertInvalid struct {
+	wrappedErr error
+	hostUrl    string
+}
+
+func (e ErrCertInvalid) Error() string {
+	return fmt.Sprintf(`There was an error validating certificates for host %q: %s
+You can attempt to regenerate them using 'docker-machine regenerate-certs name'.
+Be advised that this will trigger a Docker daemon restart which will stop running containers.
+`, e.hostUrl, e.wrappedErr)
+}
+
 func cmdConfig(c *cli.Context) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
@@ -72,29 +85,19 @@ func runConnectionBoilerplate(h *host.Host, c *cli.Context) (string, *auth.AuthO
 
 	authOptions := h.HostOptions.AuthOptions
 
-	if err := checkCert(u.Host, authOptions, c); err != nil {
+	if err := checkCert(u.Host, authOptions); err != nil {
 		return "", &auth.AuthOptions{}, fmt.Errorf("Error checking and/or regenerating the certs: %s", err)
 	}
 
 	return dockerHost, authOptions, nil
 }
 
-func checkCert(hostUrl string, authOptions *auth.AuthOptions, c *cli.Context) error {
-	valid, err := cert.ValidateCertificate(
-		hostUrl,
-		authOptions.CaCertPath,
-		authOptions.ServerCertPath,
-		authOptions.ServerKeyPath,
-	)
-	if err != nil {
-		return fmt.Errorf("Error attempting to validate the certificates: %s", err)
-	}
-
-	if !valid {
-		log.Errorf("Invalid certs detected; regenerating for %s", hostUrl)
-
-		if err := runActionWithContext("configureAuth", c); err != nil {
-			return fmt.Errorf("Error attempting to regenerate the certs: %s", err)
+func checkCert(hostUrl string, authOptions *auth.AuthOptions) error {
+	valid, err := cert.ValidateCertificate(hostUrl, authOptions)
+	if !valid || err != nil {
+		return ErrCertInvalid{
+			wrappedErr: err,
+			hostUrl:    hostUrl,
 		}
 	}
 
