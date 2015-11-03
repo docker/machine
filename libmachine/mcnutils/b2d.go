@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 
 	"github.com/docker/machine/libmachine/log"
 )
@@ -20,12 +19,8 @@ var (
 	GithubAPIToken string
 )
 
-const (
-	timeout = time.Second * 5
-)
-
 func defaultTimeout(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, timeout)
+	return net.Dial(network, addr)
 }
 
 func getClient() *http.Client {
@@ -139,12 +134,14 @@ func removeFileIfExists(name string) error {
 // DownloadISO downloads boot2docker ISO image for the given tag and save it at dest.
 func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
 	u, err := url.Parse(isoURL)
+
 	var src io.ReadCloser
 	if u.Scheme == "file" || u.Scheme == "" {
 		s, err := os.Open(u.Path)
 		if err != nil {
 			return err
 		}
+
 		src = s
 	} else {
 		client := getClient()
@@ -152,7 +149,12 @@ func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
 		if err != nil {
 			return err
 		}
-		src = s.Body
+
+		src = &ReaderWithProgress{
+			ReadCloser:     s.Body,
+			out:            os.Stdout,
+			expectedLength: s.ContentLength,
+		}
 	}
 
 	defer src.Close()
@@ -170,7 +172,6 @@ func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
 	}()
 
 	if _, err := io.Copy(f, src); err != nil {
-		// TODO: display download progress?
 		return err
 	}
 
@@ -192,6 +193,39 @@ func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
 	}
 
 	return nil
+}
+
+type ReaderWithProgress struct {
+	io.ReadCloser
+	out                io.Writer
+	bytesTransferred   int64
+	expectedLength     int64
+	nextPercentToPrint int64
+}
+
+func (r *ReaderWithProgress) Read(p []byte) (int, error) {
+	n, err := r.ReadCloser.Read(p)
+
+	if n > 0 {
+		r.bytesTransferred += int64(n)
+		percentage := r.bytesTransferred * 100 / r.expectedLength
+
+		for percentage >= r.nextPercentToPrint {
+			if r.nextPercentToPrint%10 == 0 {
+				fmt.Fprintf(r.out, "%d%%", r.nextPercentToPrint)
+			} else if r.nextPercentToPrint%2 == 0 {
+				fmt.Fprint(r.out, ".")
+			}
+			r.nextPercentToPrint += 2
+		}
+	}
+
+	return n, err
+}
+
+func (r *ReaderWithProgress) Close() error {
+	fmt.Fprintln(r.out)
+	return r.ReadCloser.Close()
 }
 
 func (b *B2dUtils) DownloadLatestBoot2Docker(apiURL string) error {
