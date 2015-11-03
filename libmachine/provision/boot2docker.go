@@ -42,18 +42,36 @@ type Boot2DockerProvisioner struct {
 }
 
 func (provisioner *Boot2DockerProvisioner) Service(name string, action serviceaction.ServiceAction) error {
-	var (
-		err error
-	)
-
-	if _, err = provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String())); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String()))
+	return err
 }
 
 func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
+	// TODO: Ideally, we should not read from mcndirs directory at all.
+	// The driver should be able to communicate how and where to place the
+	// relevant files.
+	b2dutils := mcnutils.NewB2dUtils(mcndirs.GetBaseDir())
+
+	// Check if the driver has specified a custom b2d url
+	jsonDriver, err := json.Marshal(provisioner.GetDriver())
+	if err != nil {
+		return err
+	}
+	var d struct {
+		Boot2DockerURL string
+	}
+	json.Unmarshal(jsonDriver, &d)
+
+	log.Info("Downloading latest boot2docker iso...")
+
+	// Usually we call this implicitly, but call it here explicitly to get
+	// the latest default boot2docker ISO.
+	if d.Boot2DockerURL == "" {
+		if err := b2dutils.DownloadLatestBoot2Docker(d.Boot2DockerURL); err != nil {
+			return err
+		}
+	}
+
 	log.Info("Stopping machine to do the upgrade...")
 
 	if err := provisioner.Driver.Stop(); err != nil {
@@ -66,30 +84,8 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 
 	machineName := provisioner.GetDriver().GetMachineName()
 
-	log.Infof("Upgrading machine %s...", machineName)
+	log.Infof("Upgrading machine %q...", machineName)
 
-	// TODO: Ideally, we should not read from mcndirs directory at all.
-	// The driver should be able to communicate how and where to place the
-	// relevant files.
-	b2dutils := mcnutils.NewB2dUtils(mcndirs.GetBaseDir())
-
-	//Check if the driver has specifed a custom b2d url
-	jsonDriver, err := json.Marshal(provisioner.GetDriver())
-	if err != nil {
-		return err
-	}
-	var d struct {
-		Boot2DockerURL string
-	}
-	json.Unmarshal(jsonDriver, &d)
-
-	// Usually we call this implicitly, but call it here explicitly to get
-	// the latest default boot2docker ISO.
-	if d.Boot2DockerURL == "" {
-		if err := b2dutils.DownloadLatestBoot2Docker(d.Boot2DockerURL); err != nil {
-			return err
-		}
-	}
 	// Either download the latest version of the b2d url that was explicitly
 	// specified when creating the VM or copy the (updated) default ISO
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, machineName); err != nil {
