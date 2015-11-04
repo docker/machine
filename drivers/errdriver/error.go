@@ -70,6 +70,14 @@ func (d *Driver) GetSSHUsername() string {
 	return ""
 }
 
+func (d *Driver) GetSSHPassword() string {
+	return ""
+}
+
+func (d *Driver) SSHSudo(string) string {
+	return ""
+}
+
 func (d *Driver) GetState() (state.State, error) {
 	return state.Error, ErrDriverNotLoadable{d.Name}
 }

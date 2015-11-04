@@ -151,6 +151,15 @@ func (r *RpcServerDriver) GetSSHUsername(_ *struct{}, reply *string) error {
 	return nil
 }
 
+func (r *RpcServerDriver) GetSSHPassword(_ *struct{}, reply *string) error {
+	*reply = r.ActualDriver.GetSSHPassword()
+	return nil
+}
+
+func (r *RpcServerDriver) SSHSudo(command string) string {
+	return r.ActualDriver.SSHSudo(command)
+}
+
 func (r *RpcServerDriver) GetURL(_ *struct{}, reply *string) error {
 	info, err := r.ActualDriver.GetURL()
 	*reply = info

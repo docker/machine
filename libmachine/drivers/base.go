@@ -1,12 +1,16 @@
 package drivers
 
-import "path/filepath"
+import (
+	"fmt"
+	"path/filepath"
+)
 
 // BaseDriver - Embed this struct into drivers to provide the common set
 // of fields and functions.
 type BaseDriver struct {
 	IPAddress      string
 	SSHUser        string
+	SSHPass        string
 	SSHPort        int
 	MachineName    string
 	SwarmMaster    bool
@@ -51,6 +55,29 @@ func (d *BaseDriver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
+}
+
+// GetSSHPassword returns the ssh password
+func (d *BaseDriver) GetSSHPassword() string {
+	return d.SSHPass
+}
+
+// SSHSudo formats the command to pipe the password to sudo
+func (d *BaseDriver) SSHSudo(command string) string {
+	sudo := "sudo"
+	// If there is a password given pipe it to sudo to avoid no tty error
+	if d.SSHPass != "" {
+		sudo = fmt.Sprintf(
+			"echo %q | sudo -SE",
+			d.SSHPass,
+		)
+	}
+	command = fmt.Sprintf(
+		"%s %s",
+		sudo,
+		command,
+	)
+	return command
 }
 
 // PreCreateCheck is called to enforce pre-creation steps
