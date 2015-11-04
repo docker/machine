@@ -7,7 +7,7 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdSsh(c *cli.Context) error {
+func cmdSSH(c *cli.Context) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
 	for _, arg := range c.Args() {
 		if arg == "-help" || arg == "--help" || arg == "-h" {

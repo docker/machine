@@ -14,7 +14,7 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-// For when the cert is computed to be invalid.
+// ErrCertInvalid for when the cert is computed to be invalid.
 type ErrCertInvalid struct {
 	wrappedErr error
 	hostUrl    string
