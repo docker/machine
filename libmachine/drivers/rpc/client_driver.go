@@ -239,6 +239,25 @@ func (c *RpcClientDriver) GetSSHUsername() string {
 	return username
 }
 
+func (c *RpcClientDriver) GetSSHPassword() string {
+	password, err := c.rpcStringCall("RpcServerDriver.GetSSHPassword")
+	if err != nil {
+		log.Warnf("Error attempting call to get SSH password: %s", err)
+	}
+
+	return password
+}
+
+func (c *RpcClientDriver) SSHSudo(command string) string {
+	var escaped string
+
+	if err := c.Client.Call("RpcServerDriver.SSHSudo", command, &escaped); err != nil {
+		log.Warnf("Error attempting call to get SSHSudo: %s", err)
+	}
+
+	return escaped
+}
+
 func (c *RpcClientDriver) GetState() (state.State, error) {
 	var s state.State
 

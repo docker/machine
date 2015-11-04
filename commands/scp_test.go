@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"os/exec"
 	"testing"
 
@@ -12,6 +13,7 @@ type MockHostInfo struct {
 	ip          string
 	sshUsername string
 	sshKeyPath  string
+	sshPass     string
 }
 
 func (h *MockHostInfo) GetMachineName() string {
@@ -24,6 +26,27 @@ func (h *MockHostInfo) GetIP() (string, error) {
 
 func (h *MockHostInfo) GetSSHUsername() string {
 	return h.sshUsername
+}
+
+func (h *MockHostInfo) GetSSHPassword() string {
+	return h.sshPass
+}
+
+func (h *MockHostInfo) SSHSudo(command string) string {
+	sudo := "sudo"
+	// If there is a password given pipe it to sudo to avoid no tty error
+	if h.sshPass != "" {
+		sudo = fmt.Sprintf(
+			"echo %q | sudo -SE",
+			h.sshPass,
+		)
+	}
+	command = fmt.Sprintf(
+		"%s %s",
+		sudo,
+		command,
+	)
+	return command
 }
 
 func (h *MockHostInfo) GetSSHKeyPath() string {

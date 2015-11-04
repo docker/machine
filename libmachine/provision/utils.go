@@ -35,7 +35,8 @@ func installDockerGeneric(p Provisioner, baseURL string) error {
 
 func makeDockerOptionsDir(p Provisioner) error {
 	dockerDir := p.GetDockerOptionsDir()
-	if _, err := p.SSHCommand(fmt.Sprintf("sudo mkdir -p %s", dockerDir)); err != nil {
+	mkdir_command := p.GetDriver().SSHSudo("mkdir -p %s")
+	if _, err := p.SSHCommand(fmt.Sprintf(mkdir_command, dockerDir)); err != nil {
 		return err
 	}
 
@@ -129,9 +130,12 @@ func ConfigureAuth(p Provisioner) error {
 
 	log.Info("Copying certs to the remote machine...")
 
-	// printf will choke if we don't pass a format string because of the
-	// dashes, so that's the reason for the '%%s'
-	certTransferCmdFmt := "printf '%%s' '%s' | sudo tee %s"
+	// Create the file with echo then move it to its proper location
+	certTransferCmdFmt := fmt.Sprintf(
+		"%s && %s",
+		"echo -e %q > /tmp/docker_cert",
+		p.GetDriver().SSHSudo("mv /tmp/docker_cert %s"),
+	)
 
 	// These ones are for Jessie and Mike <3 <3 <3
 	if _, err := p.SSHCommand(fmt.Sprintf(certTransferCmdFmt, string(caCert), authOptions.CaCertRemotePath)); err != nil {
@@ -171,7 +175,16 @@ func ConfigureAuth(p Provisioner) error {
 
 	log.Info("Setting Docker configuration on the remote daemon...")
 
-	if _, err = p.SSHCommand(fmt.Sprintf("printf %%s \"%s\" | sudo tee %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
+	// Create the file with echo then move it to its proper location
+	move_config_command := fmt.Sprintf(
+		"echo -e %q > /tmp/docker_defaults && %s",
+		dkrcfg.EngineOptions,
+		p.GetDriver().SSHSudo("mv /tmp/docker_defaults %s"),
+	)
+	if _, err = p.SSHCommand(fmt.Sprintf(
+		move_config_command,
+		dkrcfg.EngineOptionsPath,
+	)); err != nil {
 		return err
 	}
 

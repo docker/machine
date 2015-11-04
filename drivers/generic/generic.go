@@ -43,6 +43,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value: defaultSSHUser,
 		},
 		mcnflag.StringFlag{
+			Name:  "generic-ssh-pass",
+			Usage: "SSH password for user, used for sudo",
+			Value: "",
+		},
+		mcnflag.StringFlag{
 			Name:  "generic-ssh-key",
 			Usage: "SSH private key path",
 			Value: defaultSSHKey,
@@ -83,6 +88,7 @@ func (d *Driver) GetSSHUsername() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IPAddress = flags.String("generic-ip-address")
 	d.SSHUser = flags.String("generic-ssh-user")
+	d.SSHPass = flags.String("generic-ssh-pass")
 	d.SSHKey = flags.String("generic-ssh-key")
 	d.SSHPort = flags.Int("generic-ssh-port")
 
@@ -159,7 +165,9 @@ func (d *Driver) Remove() error {
 func (d *Driver) Restart() error {
 	log.Debug("Restarting...")
 
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now"); err != nil {
+	command := "shutdown -r now"
+	command = d.SSHSudo(command)
+	if _, err := drivers.RunSSHCommandFromDriver(d, command); err != nil {
 		return err
 	}
 
@@ -169,7 +177,9 @@ func (d *Driver) Restart() error {
 func (d *Driver) Kill() error {
 	log.Debug("Killing...")
 
-	if _, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now"); err != nil {
+	command := "shutdown -P now"
+	command = d.SSHSudo(command)
+	if _, err := drivers.RunSSHCommandFromDriver(d, command); err != nil {
 		return err
 	}
 
