@@ -14,16 +14,17 @@ import (
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	*drivers.BaseDriver
-	Zone         string
-	MachineType  string
-	MachineImage string
-	DiskType     string
-	Address      string
-	Preemptible  bool
-	Scopes       string
-	DiskSize     int
-	Project      string
-	Tags         string
+	Zone          string
+	MachineType   string
+	MachineImage  string
+	DiskType      string
+	Address       string
+	Preemptible   bool
+	UseInternalIP bool
+	Scopes        string
+	DiskSize      int
+	Project       string
+	Tags          string
 }
 
 const (
@@ -103,6 +104,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "GOOGLE_TAGS",
 			Value:  "",
 		},
+		mcnflag.BoolFlag{
+			Name:   "google-use-internal-ip",
+			Usage:  "Use internal GCE Instance IP rather than public one",
+			EnvVar: "GOOGLE_USE_INTERNAL_IP",
+		},
 	}
 }
 
@@ -155,6 +161,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskType = flags.String("google-disk-type")
 	d.Address = flags.String("google-address")
 	d.Preemptible = flags.Bool("google-preemptible")
+	d.UseInternalIP = flags.Bool("google-use-internal-ip")
 	d.Scopes = flags.String("google-scopes")
 	d.Tags = flags.String("google-tags")
 	d.SwarmMaster = flags.Bool("swarm-master")
