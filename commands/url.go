@@ -6,7 +6,7 @@ import (
 	"github.com/docker/machine/cli"
 )
 
-func cmdUrl(c *cli.Context) error {
+func cmdURL(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}

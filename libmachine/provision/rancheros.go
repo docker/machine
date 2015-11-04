@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	versionsUrl  = "http://releases.rancher.com/os/versions.yml"
-	isoUrl       = "https://github.com/rancherio/os/releases/download/%s/machine-rancheros.iso"
+	versionsURL  = "http://releases.rancher.com/os/versions.yml"
+	isoURL       = "https://github.com/rancherio/os/releases/download/%s/machine-rancheros.iso"
 	hostnameTmpl = `sudo mkdir -p /var/lib/rancher/conf/cloud-config.d/  
 sudo tee /var/lib/rancher/conf/cloud-config.d/machine-hostname.yml << EOF
 #cloud-config
@@ -206,8 +206,8 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 }
 
 func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
-	log.Debugf("Reading %s", versionsUrl)
-	resp, err := http.Get(versionsUrl)
+	log.Debugf("Reading %s", versionsURL)
+	resp, err := http.Get(versionsURL)
 	if err != nil {
 		return "", err
 	}
@@ -219,7 +219,7 @@ func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "current: ") {
 			log.Debugf("Found %s", line)
-			return fmt.Sprintf(isoUrl, strings.Split(line, ":")[2]), err
+			return fmt.Sprintf(isoURL, strings.Split(line, ":")[2]), err
 		}
 	}
 

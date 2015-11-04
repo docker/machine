@@ -28,7 +28,7 @@ type KeyPair struct {
 	PublicKey  []byte
 }
 
-// Generate a new SSH keypair
+// NewKeyPair generates a new SSH keypair
 // This will return a private & public key encoded as DER.
 func NewKeyPair() (keyPair *KeyPair, err error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -53,7 +53,7 @@ func NewKeyPair() (keyPair *KeyPair, err error) {
 	}, nil
 }
 
-// Write keypair to files
+// WriteToFile writes keypair to files
 func (kp *KeyPair) WriteToFile(privateKeyPath string, publicKeyPath string) error {
 	files := []struct {
 		File  string
@@ -92,7 +92,7 @@ func (kp *KeyPair) WriteToFile(privateKeyPath string, publicKeyPath string) erro
 	return nil
 }
 
-// Calculate the fingerprint of the public key
+// Fingerprint calculates the fingerprint of the public key
 func (kp *KeyPair) Fingerprint() string {
 	b, _ := base64.StdEncoding.DecodeString(string(kp.PublicKey))
 	h := md5.New()
@@ -102,7 +102,7 @@ func (kp *KeyPair) Fingerprint() string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-// Generate SSH keypair based on path of the private key
+// GenerateSSHKey generates SSH keypair based on path of the private key
 // The public key would be generated to the same path with ".pub" added
 func GenerateSSHKey(path string) error {
 	if _, err := os.Stat(path); err != nil {
