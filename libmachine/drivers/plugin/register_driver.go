@@ -12,6 +12,7 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/drivers/rpc"
+	"github.com/docker/machine/libmachine/version"
 )
 
 var (
@@ -20,9 +21,11 @@ var (
 
 func RegisterDriver(d drivers.Driver) {
 	if os.Getenv(localbinary.PluginEnvKey) != localbinary.PluginEnvVal {
-		fmt.Fprintln(os.Stderr, `This is a Docker Machine plugin binary.
+		fmt.Fprintf(os.Stderr, `This is a Docker Machine plugin binary.
 Plugin binaries are not intended to be invoked directly.
-Please use this plugin through the main 'docker-machine' binary.`)
+Please use this plugin through the main 'docker-machine' binary.
+(API version: %d)
+`, version.ApiVersion)
 		os.Exit(1)
 	}
 
