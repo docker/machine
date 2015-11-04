@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/docker/machine/libmachine/version"
 )
 
 var (
@@ -93,11 +94,15 @@ func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriv
 		}
 	}(c)
 
-	var version int
-	if err := c.Client.Call("RpcServerDriver.GetVersion", struct{}{}, &version); err != nil {
+	var serverVersion int
+	if err := c.Client.Call("RpcServerDriver.GetVersion", struct{}{}, &serverVersion); err != nil {
 		return nil, err
 	}
-	log.Debug("Using API Version ", version)
+
+	if serverVersion != version.ApiVersion {
+		return nil, fmt.Errorf("Driver binary uses an incompatible API version (%d)", serverVersion)
+	}
+	log.Debug("Using API Version ", serverVersion)
 
 	if err := c.SetConfigRaw(rawDriverData); err != nil {
 		return nil, err
