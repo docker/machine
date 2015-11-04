@@ -60,8 +60,8 @@ type Driver struct {
 	NoShare             bool
 }
 
-// NewDriver creates a new VirtualBox driver with default settings.
-func NewDriver(hostName, storePath string) *Driver {
+// NewDriver creates and returns a new instance of the driver
+func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
 		VBoxManager: &VBoxCmdManager{},
 		BaseDriver: &drivers.BaseDriver{
@@ -77,8 +77,8 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 }
 
-// GetCreateFlags registers the flags this driver adds to
-// "docker hosts create"
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
@@ -416,7 +416,7 @@ func (d *Driver) Create() error {
 	return d.Start()
 }
 
-func (d *Driver) hostOnlyIpAvailable() bool {
+func (d *Driver) hostOnlyIPAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {
 		log.Debugf("ERROR getting IP: %s", err)
@@ -479,7 +479,7 @@ func (d *Driver) Start() error {
 	}
 
 	// Bail if we don't get an IP from DHCP after a given number of seconds.
-	if err := mcnutils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
+	if err := mcnutils.WaitForSpecific(d.hostOnlyIPAvailable, 5, 4*time.Second); err != nil {
 		return err
 	}
 

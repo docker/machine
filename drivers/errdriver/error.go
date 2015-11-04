@@ -34,6 +34,8 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return nil
 }

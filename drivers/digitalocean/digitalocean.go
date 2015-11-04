@@ -34,8 +34,8 @@ const (
 	defaultSize   = "512mb"
 )
 
-// GetCreateFlags registers the flags this driver adds to
-// "docker hosts create"
+// GetCreateFlags returns the mcnflag.Flag slice representing the flags
+// that can be set, their descriptions and defaults.
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
@@ -85,7 +85,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
-func NewDriver(hostName, storePath string) *Driver {
+// NewDriver creates and returns a new instance of the driver
+func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
 		Image:  defaultImage,
 		Size:   defaultSize,
