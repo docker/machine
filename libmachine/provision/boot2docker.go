@@ -42,15 +42,8 @@ type Boot2DockerProvisioner struct {
 }
 
 func (provisioner *Boot2DockerProvisioner) Service(name string, action serviceaction.ServiceAction) error {
-	var (
-		err error
-	)
-
-	if _, err = provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String())); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String()))
+	return err
 }
 
 func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
@@ -119,15 +112,12 @@ func (provisioner *Boot2DockerProvisioner) Hostname() (string, error) {
 }
 
 func (provisioner *Boot2DockerProvisioner) SetHostname(hostname string) error {
-	if _, err := provisioner.SSHCommand(fmt.Sprintf(
+	_, err := provisioner.SSHCommand(fmt.Sprintf(
 		"sudo /usr/bin/sethostname %s && echo %q | sudo tee /var/lib/boot2docker/etc/hostname",
 		hostname,
 		hostname,
-	)); err != nil {
-		return err
-	}
-
-	return nil
+	))
+	return err
 }
 
 func (provisioner *Boot2DockerProvisioner) GetDockerOptionsDir() string {
@@ -264,11 +254,7 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOpt
 		return err
 	}
 
-	if err = configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
-		return err
-	}
-
-	return nil
+	return configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions)
 }
 
 func (provisioner *Boot2DockerProvisioner) SSHCommand(args string) (string, error) {

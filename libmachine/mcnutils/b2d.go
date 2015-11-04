@@ -187,11 +187,7 @@ func (b *B2dUtils) DownloadISO(dir, file, isoUrl string) error {
 		return err
 	}
 
-	if err := os.Rename(f.Name(), dest); err != nil {
-		return err
-	}
-
-	return nil
+	return os.Rename(f.Name(), dest)
 }
 
 func (b *B2dUtils) DownloadLatestBoot2Docker(apiUrl string) error {
@@ -205,11 +201,8 @@ func (b *B2dUtils) DownloadLatestBoot2Docker(apiUrl string) error {
 
 func (b *B2dUtils) DownloadISOFromURL(latestReleaseUrl string) error {
 	log.Infof("Downloading %s to %s...", latestReleaseUrl, b.commonIsoPath)
-	if err := b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseUrl); err != nil {
-		return err
-	}
 
-	return nil
+	return b.DownloadISO(b.imgCachePath, b.isoFilename, latestReleaseUrl)
 }
 
 func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
@@ -229,23 +222,18 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 	// By default just copy the existing "cached" iso to
 	// the machine's directory...
 	if isoURL == "" {
-		if err := b.copyDefaultIsoToMachine(machineIsoPath); err != nil {
-			return err
-		}
-	} else {
-		//if ISO is specified, check if it matches a github releases url or fallback
-		//to a direct download
-		if downloadUrl, err := b.GetLatestBoot2DockerReleaseURL(isoURL); err == nil {
-			log.Infof("Downloading %s from %s...", b.isoFilename, downloadUrl)
-			if err := b.DownloadISO(machineDir, b.isoFilename, downloadUrl); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
+		return b.copyDefaultIsoToMachine(machineIsoPath)
 	}
 
-	return nil
+	//if ISO is specified, check if it matches a github releases url or fallback
+	//to a direct download
+	downloadUrl, err := b.GetLatestBoot2DockerReleaseURL(isoURL)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Downloading %s from %s...", b.isoFilename, downloadUrl)
+	return b.DownloadISO(machineDir, b.isoFilename, downloadUrl)
 }
 
 func (b *B2dUtils) copyDefaultIsoToMachine(machineIsoPath string) error {
@@ -256,9 +244,5 @@ func (b *B2dUtils) copyDefaultIsoToMachine(machineIsoPath string) error {
 		}
 	}
 
-	if err := CopyFile(b.commonIsoPath, machineIsoPath); err != nil {
-		return err
-	}
-
-	return nil
+	return CopyFile(b.commonIsoPath, machineIsoPath)
 }

@@ -54,11 +54,8 @@ type RancherProvisioner struct {
 func (provisioner *RancherProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	command := fmt.Sprintf("sudo system-docker %s %s", action.String(), name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *RancherProvisioner) Package(name string, action pkgaction.PackageAction) error {
@@ -80,11 +77,8 @@ func (provisioner *RancherProvisioner) Package(name string, action pkgaction.Pac
 
 	command := fmt.Sprintf("sudo rancherctl service %s %s", packageAction, name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
@@ -119,11 +113,7 @@ func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.SwarmOptions
 	}
 
 	log.Debugf("Configuring swarm")
-	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
-		return err
-	}
-
-	return nil
+	return configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions)
 }
 
 func (provisioner *RancherProvisioner) SetHostname(hostname string) error {
@@ -136,11 +126,8 @@ func (provisioner *RancherProvisioner) SetHostname(hostname string) error {
 		return err
 	}
 
-	if _, err := provisioner.SSHCommand(fmt.Sprintf(hostnameTmpl, hostname)); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(fmt.Sprintf(hostnameTmpl, hostname))
+	return err
 }
 
 func (provisioner *RancherProvisioner) upgrade() error {

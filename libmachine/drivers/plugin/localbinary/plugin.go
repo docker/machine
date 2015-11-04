@@ -136,11 +136,7 @@ func (lbe *LocalBinaryExecutor) Close() error {
 		return err
 	}
 
-	if err := lbe.pluginStderr.Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return lbe.pluginStderr.Close()
 }
 
 func stream(scanner *bufio.Scanner, streamOutCh chan<- string, stopCh <-chan bool) {

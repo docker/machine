@@ -63,17 +63,17 @@ func ImportPublishSettingsFile(filePath string) error {
 
 func getSubscriptionCert(subscription subscription) ([]byte, error) {
 	certPassword := ""
-	
+
 	pfxCert, err := base64.StdEncoding.DecodeString(subscription.ManagementCertificate)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	subscriptionCert, err := ExecuteCommand(fmt.Sprintf("openssl pkcs12 -nodes -passin pass:%s", certPassword), pfxCert)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return subscriptionCert, nil
 }
 

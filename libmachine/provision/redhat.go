@@ -99,15 +99,12 @@ func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
 	}
 
 	// ubuntu/debian use 127.0.1.1 for non "localhost" loopback hostnames: https://www.debian.org/doc/manuals/debian-reference/ch05.en.html#_the_hostname_resolution
-	if _, err := provisioner.SSHCommand(fmt.Sprintf(
+	_, err := provisioner.SSHCommand(fmt.Sprintf(
 		"if grep -xq 127.0.1.1.* /etc/hosts; then sudo sed -i 's/^127.0.1.1.*/127.0.1.1 %s/g' /etc/hosts; else echo '127.0.1.1 %s' | sudo tee -a /etc/hosts; fi",
 		hostname,
 		hostname,
-	)); err != nil {
-		return err
-	}
-
-	return nil
+	))
+	return err
 }
 
 func (provisioner *RedHatProvisioner) Service(name string, action serviceaction.ServiceAction) error {
@@ -128,11 +125,8 @@ func (provisioner *RedHatProvisioner) Service(name string, action serviceaction.
 
 	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.PackageAction) error {
@@ -149,11 +143,8 @@ func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.Pack
 
 	command := fmt.Sprintf("sudo -E yum %s -y %s", packageAction, name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func installDocker(provisioner *RedHatProvisioner) error {
@@ -165,11 +156,7 @@ func installDocker(provisioner *RedHatProvisioner) error {
 		return err
 	}
 
-	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
-		return err
-	}
-
-	return nil
+	return provisioner.Service("docker", serviceaction.Enable)
 }
 
 func (provisioner *RedHatProvisioner) installOfficialDocker() error {
@@ -179,11 +166,8 @@ func (provisioner *RedHatProvisioner) installOfficialDocker() error {
 		return err
 	}
 
-	if _, err := provisioner.SSHCommand("sudo yum install -y docker-engine"); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand("sudo yum install -y docker-engine")
+	return err
 }
 
 func (provisioner *RedHatProvisioner) dockerDaemonResponding() bool {
@@ -241,11 +225,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
-		return err
-	}
-
-	return nil
+	return configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions)
 }
 
 func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
@@ -323,9 +303,7 @@ func (provisioner *RedHatProvisioner) ConfigurePackageList() error {
 	// we cannot use %q here as it combines the newlines in the formatting
 	// on transport causing yum to not use the repo
 	packageCmd := fmt.Sprintf("echo \"%s\" | sudo tee /etc/yum.repos.d/docker.repo", buf.String())
-	if _, err := provisioner.SSHCommand(packageCmd); err != nil {
-		return err
-	}
 
-	return nil
+	_, err := provisioner.SSHCommand(packageCmd)
+	return err
 }

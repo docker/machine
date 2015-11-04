@@ -25,7 +25,6 @@ func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 
 	client, err := ssh.NewClient(d.GetSSHUsername(), address, port, auth)
 	return client, err
-
 }
 
 func RunSSHCommandFromDriver(d Driver, command string) (string, error) {

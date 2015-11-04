@@ -91,11 +91,8 @@ func (provisioner *SUSEProvisioner) Service(name string, action serviceaction.Se
 
 	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *SUSEProvisioner) Package(name string, action pkgaction.PackageAction) error {
@@ -112,11 +109,8 @@ func (provisioner *SUSEProvisioner) Package(name string, action pkgaction.Packag
 
 	command := fmt.Sprintf("sudo -E zypper -n %s %s", packageAction, name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *SUSEProvisioner) dockerDaemonResponding() bool {
@@ -183,11 +177,7 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.SwarmOptions, a
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
-		return err
-	}
-
-	return nil
+	return configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions)
 }
 
 func (provisioner *SUSEProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {

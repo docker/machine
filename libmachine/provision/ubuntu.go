@@ -40,11 +40,8 @@ type UbuntuProvisioner struct {
 func (provisioner *UbuntuProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	command := fmt.Sprintf("sudo service %s %s", name, action.String())
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.PackageAction) error {
@@ -97,11 +94,8 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 
 	log.Debugf("package: action=%s name=%s", action.String(), name)
 
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := provisioner.SSHCommand(command)
+	return err
 }
 
 func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
@@ -151,9 +145,5 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 		return err
 	}
 
-	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
-		return err
-	}
-
-	return nil
+	return configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions)
 }
