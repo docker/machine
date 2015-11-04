@@ -24,7 +24,7 @@ func GetImageList() (ImageList, error) {
 	if err != nil {
 		return imageList, err
 	}
-	
+
 	return imageList, err
 }
 

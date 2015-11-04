@@ -1,11 +1,11 @@
 package awsauth
 
 import (
+	. "github.com/smartystreets/goconvey/convey"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSignature3(t *testing.T) {

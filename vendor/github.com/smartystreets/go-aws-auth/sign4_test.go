@@ -1,11 +1,11 @@
 package awsauth
 
 import (
+	. "github.com/smartystreets/goconvey/convey"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestVersion4RequestPreparer(t *testing.T) {

@@ -1,8 +1,8 @@
 package awsauth
 
 import (
-	"testing"
 	"net/url"
+	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

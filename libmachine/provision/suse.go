@@ -177,7 +177,7 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.SwarmOptions, a
 		return err
 	}
 
-	return err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions)
+	return configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions)
 }
 
 func (provisioner *SUSEProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {

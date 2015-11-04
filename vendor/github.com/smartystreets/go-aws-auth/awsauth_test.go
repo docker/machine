@@ -1,6 +1,7 @@
 package awsauth
 
 import (
+	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -8,7 +9,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIntegration(t *testing.T) {
