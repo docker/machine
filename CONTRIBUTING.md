@@ -145,6 +145,11 @@ Scrub build results:
     make lint
     make dco
 
+### Save and restore dependencies
+
+    make dep-save
+    make dep-restore
+
 ## Integration Tests
 
 ### Setup
