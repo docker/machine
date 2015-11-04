@@ -63,7 +63,7 @@ type Driver struct {
 // NewDriver creates a new VirtualBox driver with default settings.
 func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
-		VBoxManager: &VBoxCmdManager{},
+		VBoxManager: &VBoxCmdManager{&VBoxCmder{}},
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
