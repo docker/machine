@@ -18,19 +18,20 @@ import (
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
 type ComputeUtil struct {
-	zone         string
-	instanceName string
-	userName     string
-	project      string
-	diskTypeURL  string
-	address      string
-	preemptible  bool
-	service      *raw.Service
-	zoneURL      string
-	globalURL    string
-	ipAddress    string
-	SwarmMaster  bool
-	SwarmHost    string
+	zone          string
+	instanceName  string
+	userName      string
+	project       string
+	diskTypeURL   string
+	address       string
+	preemptible   bool
+	useInternalIP bool
+	service       *raw.Service
+	zoneURL       string
+	globalURL     string
+	ipAddress     string
+	SwarmMaster   bool
+	SwarmHost     string
 }
 
 const (
@@ -55,18 +56,19 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 	}
 
 	c := ComputeUtil{
-		zone:         driver.Zone,
-		instanceName: driver.MachineName,
-		userName:     driver.SSHUser,
-		project:      driver.Project,
-		diskTypeURL:  driver.DiskType,
-		address:      driver.Address,
-		preemptible:  driver.Preemptible,
-		service:      service,
-		zoneURL:      apiURL + driver.Project + "/zones/" + driver.Zone,
-		globalURL:    apiURL + driver.Project + "/global",
-		SwarmMaster:  driver.SwarmMaster,
-		SwarmHost:    driver.SwarmHost,
+		zone:          driver.Zone,
+		instanceName:  driver.MachineName,
+		userName:      driver.SSHUser,
+		project:       driver.Project,
+		diskTypeURL:   driver.DiskType,
+		address:       driver.Address,
+		preemptible:   driver.Preemptible,
+		useInternalIP: driver.UseInternalIP,
+		service:       service,
+		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
+		globalURL:     apiURL + driver.Project + "/global",
+		SwarmMaster:   driver.SwarmMaster,
+		SwarmHost:     driver.SwarmHost,
 	}
 	return &c, nil
 }
@@ -380,7 +382,11 @@ func (c *ComputeUtil) ip() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		c.ipAddress = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
+		if c.useInternalIP {
+			c.ipAddress = instance.NetworkInterfaces[0].NetworkIP
+		} else {
+			c.ipAddress = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
+		}
 	}
 	return c.ipAddress, nil
 }
