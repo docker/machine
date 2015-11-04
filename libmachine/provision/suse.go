@@ -133,6 +133,7 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.SwarmOptions, a
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
+	swarmOptions.Env = engineOptions.Env
 
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
