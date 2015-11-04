@@ -14,7 +14,7 @@ import (
 
 var provisioners = make(map[string]*RegisteredProvisioner)
 
-// Distribution specific actions
+// Provisioner defines distribution specific actions
 type Provisioner interface {
 	// Create the files for the daemon to consume configuration settings (return struct of content and path)
 	GenerateDockerOptions(dockerPort int) (*DockerOptions, error)
@@ -62,7 +62,7 @@ type Provisioner interface {
 	GetOsReleaseInfo() (*OsRelease, error)
 }
 
-// Detection
+// RegisteredProvisioner creates a new provisioner
 type RegisteredProvisioner struct {
 	New func(d drivers.Driver) Provisioner
 }
