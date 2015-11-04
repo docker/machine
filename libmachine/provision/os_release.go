@@ -13,6 +13,7 @@ import (
 // The /etc/os-release file contains operating system identification data
 // See http://www.freedesktop.org/software/systemd/man/os-release.html for more details
 
+// OsRelease reflects values in /etc/os-release
 // Values in this struct must always be string
 // or the reflection will not work properly.
 type OsRelease struct {
