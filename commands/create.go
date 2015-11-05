@@ -168,8 +168,8 @@ func cmdCreateInner(c CommandLine) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
-	h.HostOptions = &host.HostOptions{
-		AuthOptions: &auth.AuthOptions{
+	h.HostOptions = &host.Options{
+		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
 			CaCertPath:       certInfo.CaCertPath,
 			CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
@@ -179,17 +179,17 @@ func cmdCreateInner(c CommandLine) error {
 			ServerKeyPath:    filepath.Join(mcndirs.GetMachineDir(), name, "server-key.pem"),
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
 		},
-		EngineOptions: &engine.EngineOptions{
+		EngineOptions: &engine.Options{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),
 			Env:              c.StringSlice("engine-env"),
 			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
 			Labels:           c.StringSlice("engine-label"),
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
 			StorageDriver:    c.String("engine-storage-driver"),
-			TlsVerify:        true,
+			TLSVerify:        true,
 			InstallURL:       c.String("engine-install-url"),
 		},
-		SwarmOptions: &swarm.SwarmOptions{
+		SwarmOptions: &swarm.Options{
 			IsSwarm:        c.Bool("swarm"),
 			Image:          c.String("swarm-image"),
 			Master:         c.Bool("swarm-master"),

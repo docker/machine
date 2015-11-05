@@ -36,7 +36,7 @@ type HostListItem struct {
 	DriverName   string
 	State        state.State
 	URL          string
-	SwarmOptions *swarm.SwarmOptions
+	SwarmOptions *swarm.Options
 }
 
 func cmdLs(c CommandLine) error {

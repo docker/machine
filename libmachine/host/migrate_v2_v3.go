@@ -11,7 +11,7 @@ type RawHost struct {
 	Driver *json.RawMessage
 }
 
-func MigrateHostV2ToHostV3(hostV2 *HostV2, data []byte, storePath string) *Host {
+func MigrateHostV2ToHostV3(hostV2 *V2, data []byte, storePath string) *Host {
 	// Migrate to include RawDriver so that driver plugin will work
 	// smoothly.
 	rawHost := &RawHost{}

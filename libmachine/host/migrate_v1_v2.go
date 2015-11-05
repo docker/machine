@@ -22,43 +22,43 @@ type AuthOptionsV1 struct {
 	ClientCertPath       string
 }
 
-type HostOptionsV1 struct {
+type OptionsV1 struct {
 	Driver        string
 	Memory        int
 	Disk          int
-	EngineOptions *engine.EngineOptions
-	SwarmOptions  *swarm.SwarmOptions
+	EngineOptions *engine.Options
+	SwarmOptions  *swarm.Options
 	AuthOptions   *AuthOptionsV1
 }
 
-type HostV1 struct {
+type V1 struct {
 	ConfigVersion int
 	Driver        drivers.Driver
 	DriverName    string
-	HostOptions   *HostOptionsV1
+	HostOptions   *OptionsV1
 	Name          string `json:"-"`
 	StorePath     string
 }
 
-func MigrateHostV1ToHostV2(hostV1 *HostV1) *HostV2 {
+func MigrateHostV1ToHostV2(hostV1 *V1) *V2 {
 	// Changed:  Put StorePath directly in AuthOptions (for provisioning),
 	// and AuthOptions.PrivateKeyPath => AuthOptions.CaPrivateKeyPath
 	// Also, CertDir has been added.
 
 	globalStorePath := filepath.Dir(filepath.Dir(hostV1.StorePath))
 
-	h := &HostV2{
+	h := &V2{
 		ConfigVersion: hostV1.ConfigVersion,
 		Driver:        hostV1.Driver,
 		Name:          hostV1.Driver.GetMachineName(),
 		DriverName:    hostV1.DriverName,
-		HostOptions: &HostOptions{
+		HostOptions: &Options{
 			Driver:        hostV1.HostOptions.Driver,
 			Memory:        hostV1.HostOptions.Memory,
 			Disk:          hostV1.HostOptions.Disk,
 			EngineOptions: hostV1.HostOptions.EngineOptions,
 			SwarmOptions:  hostV1.HostOptions.SwarmOptions,
-			AuthOptions: &auth.AuthOptions{
+			AuthOptions: &auth.Options{
 				CertDir:              filepath.Join(globalStorePath, "certs"),
 				CaCertPath:           hostV1.HostOptions.AuthOptions.CaCertPath,
 				CaPrivateKeyPath:     hostV1.HostOptions.AuthOptions.PrivateKeyPath,

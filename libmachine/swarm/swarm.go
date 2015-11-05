@@ -4,7 +4,7 @@ const (
 	DiscoveryServiceEndpoint = "https://discovery-stage.hub.docker.com/v1"
 )
 
-type SwarmOptions struct {
+type Options struct {
 	IsSwarm        bool
 	Address        string
 	Discovery      string

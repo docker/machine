@@ -16,14 +16,14 @@ import (
 // ErrCertInvalid for when the cert is computed to be invalid.
 type ErrCertInvalid struct {
 	wrappedErr error
-	hostUrl    string
+	hostURL    string
 }
 
 func (e ErrCertInvalid) Error() string {
 	return fmt.Sprintf(`There was an error validating certificates for host %q: %s
 You can attempt to regenerate them using 'docker-machine regenerate-certs name'.
 Be advised that this will trigger a Docker daemon restart which will stop running containers.
-`, e.hostUrl, e.wrappedErr)
+`, e.hostURL, e.wrappedErr)
 }
 
 func cmdConfig(c CommandLine) error {
@@ -53,50 +53,50 @@ func cmdConfig(c CommandLine) error {
 	return nil
 }
 
-func runConnectionBoilerplate(h *host.Host, c CommandLine) (string, *auth.AuthOptions, error) {
+func runConnectionBoilerplate(h *host.Host, c CommandLine) (string, *auth.Options, error) {
 	hostState, err := h.Driver.GetState()
 	if err != nil {
 		// TODO: This is a common operation and should have a commonly
 		// defined error.
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error trying to get host state: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error trying to get host state: %s", err)
 	}
 	if hostState != state.Running {
-		return "", &auth.AuthOptions{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings", h.Name)
+		return "", &auth.Options{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings", h.Name)
 	}
 
 	dockerHost, err := h.Driver.GetURL()
 	if err != nil {
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error getting driver URL: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error getting driver URL: %s", err)
 	}
 
 	if c.Bool("swarm") {
 		var err error
 		dockerHost, err = parseSwarm(dockerHost, h)
 		if err != nil {
-			return "", &auth.AuthOptions{}, fmt.Errorf("Error parsing swarm: %s", err)
+			return "", &auth.Options{}, fmt.Errorf("Error parsing swarm: %s", err)
 		}
 	}
 
 	u, err := url.Parse(dockerHost)
 	if err != nil {
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error parsing URL: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error parsing URL: %s", err)
 	}
 
 	authOptions := h.HostOptions.AuthOptions
 
 	if err := checkCert(u.Host, authOptions); err != nil {
-		return "", &auth.AuthOptions{}, fmt.Errorf("Error checking and/or regenerating the certs: %s", err)
+		return "", &auth.Options{}, fmt.Errorf("Error checking and/or regenerating the certs: %s", err)
 	}
 
 	return dockerHost, authOptions, nil
 }
 
-func checkCert(hostUrl string, authOptions *auth.AuthOptions) error {
-	valid, err := cert.ValidateCertificate(hostUrl, authOptions)
+func checkCert(hostURL string, authOptions *auth.Options) error {
+	valid, err := cert.ValidateCertificate(hostURL, authOptions)
 	if !valid || err != nil {
 		return ErrCertInvalid{
 			wrappedErr: err,
-			hostUrl:    hostUrl,
+			hostURL:    hostURL,
 		}
 	}
 
@@ -104,7 +104,7 @@ func checkCert(hostUrl string, authOptions *auth.AuthOptions) error {
 }
 
 // TODO: This could use a unit test.
-func parseSwarm(hostUrl string, h *host.Host) (string, error) {
+func parseSwarm(hostURL string, h *host.Host) (string, error) {
 	swarmOptions := h.HostOptions.SwarmOptions
 
 	if !swarmOptions.Master {
@@ -119,15 +119,15 @@ func parseSwarm(hostUrl string, h *host.Host) (string, error) {
 	swarmPort := parts[1]
 
 	// get IP of machine to replace in case swarm host is 0.0.0.0
-	mUrl, err := url.Parse(hostUrl)
+	mURL, err := url.Parse(hostURL)
 	if err != nil {
 		return "", fmt.Errorf("There was an error parsing the url: %s", err)
 	}
 
-	mParts := strings.Split(mUrl.Host, ":")
-	machineIp := mParts[0]
+	mParts := strings.Split(mURL.Host, ":")
+	machineIP := mParts[0]
 
-	hostUrl = fmt.Sprintf("tcp://%s:%s", machineIp, swarmPort)
+	hostURL = fmt.Sprintf("tcp://%s:%s", machineIP, swarmPort)
 
-	return hostUrl, nil
+	return hostURL, nil
 }

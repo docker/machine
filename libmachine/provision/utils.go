@@ -42,7 +42,7 @@ func makeDockerOptionsDir(p Provisioner) error {
 	return nil
 }
 
-func setRemoteAuthOptions(p Provisioner) auth.AuthOptions {
+func setRemoteAuthOptions(p Provisioner) auth.Options {
 	dockerDir := p.GetDockerOptionsDir()
 	authOptions := p.GetAuthOptions()
 
