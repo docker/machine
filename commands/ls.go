@@ -10,7 +10,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -40,7 +39,7 @@ type HostListItem struct {
 	SwarmOptions *swarm.SwarmOptions
 }
 
-func cmdLs(c *cli.Context) error {
+func cmdLs(c CommandLine) error {
 	quiet := c.Bool("quiet")
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {

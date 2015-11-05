@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"text/template"
-
-	"github.com/docker/machine/cli"
 )
 
 var funcMap = template.FuncMap{
@@ -20,9 +18,9 @@ var funcMap = template.FuncMap{
 	},
 }
 
-func cmdInspect(c *cli.Context) error {
+func cmdInspect(c CommandLine) error {
 	if len(c.Args()) == 0 {
-		cli.ShowCommandHelp(c, "inspect")
+		c.ShowHelp()
 		return ErrExpectedOneMachine
 	}
 

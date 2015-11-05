@@ -1,7 +1,5 @@
 package commands
 
-import "github.com/docker/machine/cli"
-
-func cmdUpgrade(c *cli.Context) error {
+func cmdUpgrade(c CommandLine) error {
 	return runActionWithContext("upgrade", c)
 }
