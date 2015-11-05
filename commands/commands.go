@@ -69,6 +69,10 @@ func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, erro
 		return nil, err
 	}
 
+	if driverName == "virtualbox" {
+		return drivers.NewSerialDriver(d), nil
+	}
+
 	return d, nil
 }
 
@@ -392,35 +396,13 @@ func machineCommand(actionName string, host *host.Host, errorChan chan<- error) 
 func runActionForeachMachine(actionName string, machines []*host.Host) []error {
 	var (
 		numConcurrentActions = 0
-		serialMachines       = []*host.Host{}
 		errorChan            = make(chan error)
 		errs                 = []error{}
 	)
 
 	for _, machine := range machines {
-		// Virtualbox is temperamental about doing things concurrently,
-		// so we schedule the actions in a "queue" to be executed serially
-		// after the concurrent actions are scheduled.
-		switch machine.DriverName {
-		case "virtualbox":
-			machine := machine
-			serialMachines = append(serialMachines, machine)
-		default:
-			numConcurrentActions++
-			go machineCommand(actionName, machine, errorChan)
-		}
-	}
-
-	// While the concurrent actions are running,
-	// do the serial actions.  As the name implies,
-	// these run one at a time.
-	for _, machine := range serialMachines {
-		serialChan := make(chan error)
-		go machineCommand(actionName, machine, serialChan)
-		if err := <-serialChan; err != nil {
-			errs = append(errs, err)
-		}
-		close(serialChan)
+		numConcurrentActions++
+		go machineCommand(actionName, machine, errorChan)
 	}
 
 	// TODO: We should probably only do 5-10 of these
