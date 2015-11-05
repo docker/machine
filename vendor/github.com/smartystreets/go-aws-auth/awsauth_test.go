@@ -8,115 +8,120 @@ import (
 	"strings"
 	"testing"
 	"time"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping long-running integration test.")
+	}
+
 	Convey("Given real credentials from environment variables", t, func() {
 		Convey("A request (with out-of-order query string) with to IAM should succeed (assuming Administrator Access policy)", func() {
-			req := newRequest("GET", "https://iam.amazonaws.com/?Version=2010-05-08&Action=ListRoles", nil)
+			request := newRequest("GET", "https://iam.amazonaws.com/?Version=2010-05-08&Action=ListRoles", nil)
 
 			if !credentialsSet() {
 				SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 			} else {
-				resp := sign4AndDo(req)
-				if resp.StatusCode != http.StatusOK {
-					msg, _ := ioutil.ReadAll(resp.Body)
-					t.Error(string(msg))
+				response := sign4AndDo(request)
+				if response.StatusCode != http.StatusOK {
+					message, _ := ioutil.ReadAll(response.Body)
+					t.Error(string(message))
 				}
-				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(response.StatusCode, ShouldEqual, http.StatusOK)
 			}
 		})
 
 		Convey("A request to S3 should succeed", func() {
-			req, _ := http.NewRequest("GET", "https://s3.amazonaws.com", nil)
+			request, _ := http.NewRequest("GET", "https://s3.amazonaws.com", nil)
 
 			if !credentialsSet() {
 				SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 			} else {
-				resp := sign4AndDo(req)
-				if resp.StatusCode != http.StatusOK {
-					msg, _ := ioutil.ReadAll(resp.Body)
-					t.Error(string(msg))
+				response := sign4AndDo(request)
+				if response.StatusCode != http.StatusOK {
+					message, _ := ioutil.ReadAll(response.Body)
+					t.Error(string(message))
 				}
-				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(response.StatusCode, ShouldEqual, http.StatusOK)
 			}
 		})
 
 		Convey("A request to EC2 should succeed", func() {
-			req := newRequest("GET", "https://ec2.amazonaws.com/?Version=2013-10-15&Action=DescribeInstances", nil)
+			request := newRequest("GET", "https://ec2.amazonaws.com/?Version=2013-10-15&Action=DescribeInstances", nil)
 
 			if !credentialsSet() {
 				SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 			} else {
-				resp := sign2AndDo(req)
-				if resp.StatusCode != http.StatusOK {
-					msg, _ := ioutil.ReadAll(resp.Body)
-					t.Error(string(msg))
+				response := sign2AndDo(request)
+				if response.StatusCode != http.StatusOK {
+					message, _ := ioutil.ReadAll(response.Body)
+					t.Error(string(message))
 				}
-				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(response.StatusCode, ShouldEqual, http.StatusOK)
 			}
 		})
 
 		Convey("A request to SQS should succeed", func() {
-			req := newRequest("POST", "https://sqs.us-west-2.amazonaws.com", url.Values{
+			request := newRequest("POST", "https://sqs.us-west-2.amazonaws.com", url.Values{
 				"Action": []string{"ListQueues"},
 			})
 
 			if !credentialsSet() {
 				SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 			} else {
-				resp := sign4AndDo(req)
-				if resp.StatusCode != http.StatusOK {
-					msg, _ := ioutil.ReadAll(resp.Body)
-					t.Error(string(msg))
+				response := sign4AndDo(request)
+				if response.StatusCode != http.StatusOK {
+					message, _ := ioutil.ReadAll(response.Body)
+					t.Error(string(message))
 				}
-				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(response.StatusCode, ShouldEqual, http.StatusOK)
 			}
 		})
 
 		Convey("A request to SES should succeed", func() {
-			req := newRequest("GET", "https://email.us-east-1.amazonaws.com/?Action=GetSendStatistics", nil)
+			request := newRequest("GET", "https://email.us-east-1.amazonaws.com/?Action=GetSendStatistics", nil)
 
 			if !credentialsSet() {
 				SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 			} else {
-				resp := sign3AndDo(req)
-				if resp.StatusCode != http.StatusOK {
-					msg, _ := ioutil.ReadAll(resp.Body)
-					t.Error(string(msg))
+				response := sign3AndDo(request)
+				if response.StatusCode != http.StatusOK {
+					message, _ := ioutil.ReadAll(response.Body)
+					t.Error(string(message))
 				}
-				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(response.StatusCode, ShouldEqual, http.StatusOK)
 			}
 		})
 
 		Convey("A request to Route 53 should succeed", func() {
-			req := newRequest("GET", "https://route53.amazonaws.com/2013-04-01/hostedzone?maxitems=1", nil)
+			request := newRequest("GET", "https://route53.amazonaws.com/2013-04-01/hostedzone?maxitems=1", nil)
 
 			if !credentialsSet() {
 				SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 			} else {
-				resp := sign3AndDo(req)
-				if resp.StatusCode != http.StatusOK {
-					msg, _ := ioutil.ReadAll(resp.Body)
-					t.Error(string(msg))
+				response := sign3AndDo(request)
+				if response.StatusCode != http.StatusOK {
+					message, _ := ioutil.ReadAll(response.Body)
+					t.Error(string(message))
 				}
-				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(response.StatusCode, ShouldEqual, http.StatusOK)
 			}
 		})
 
 		Convey("A request to SimpleDB should succeed", func() {
-			req := newRequest("GET", "https://sdb.amazonaws.com/?Action=ListDomains&Version=2009-04-15", nil)
+			request := newRequest("GET", "https://sdb.amazonaws.com/?Action=ListDomains&Version=2009-04-15", nil)
 
 			if !credentialsSet() {
 				SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 			} else {
-				resp := sign2AndDo(req)
-				if resp.StatusCode != http.StatusOK {
-					msg, _ := ioutil.ReadAll(resp.Body)
-					t.Error(string(msg))
+				response := sign2AndDo(request)
+				if response.StatusCode != http.StatusOK {
+					message, _ := ioutil.ReadAll(response.Body)
+					t.Error(string(message))
 				}
-				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				So(response.StatusCode, ShouldEqual, http.StatusOK)
 			}
 		})
 
@@ -124,17 +129,17 @@ func TestIntegration(t *testing.T) {
 			s3res := os.Getenv("S3Resource")
 
 			Convey("A URL-signed request to that S3 resource should succeed", func() {
-				req, _ := http.NewRequest("GET", s3res, nil)
+				request, _ := http.NewRequest("GET", s3res, nil)
 
 				if !credentialsSet() || s3res == "" {
 					SkipSo(http.StatusOK, ShouldEqual, http.StatusOK)
 				} else {
-					resp := signS3UrlAndDo(req)
-					if resp.StatusCode != http.StatusOK {
-						msg, _ := ioutil.ReadAll(resp.Body)
-						t.Error(string(msg))
+					response := signS3UrlAndDo(request)
+					if response.StatusCode != http.StatusOK {
+						message, _ := ioutil.ReadAll(response.Body)
+						t.Error(string(message))
 					}
-					So(resp.StatusCode, ShouldEqual, http.StatusOK)
+					So(response.StatusCode, ShouldEqual, http.StatusOK)
 				}
 			})
 		})
@@ -147,8 +152,8 @@ func TestSign(t *testing.T) {
 			newRequest("GET", "https://ec2.amazonaws.com", url.Values{}),
 			newRequest("GET", "https://elasticache.amazonaws.com/", url.Values{}),
 		}
-		for _, req := range reqs {
-			signedReq := Sign(req)
+		for _, request := range reqs {
+			signedReq := Sign(request)
 			So(signedReq.URL.Query().Get("SignatureVersion"), ShouldEqual, "2")
 		}
 	})
@@ -158,8 +163,8 @@ func TestSign(t *testing.T) {
 			newRequest("GET", "https://route53.amazonaws.com", url.Values{}),
 			newRequest("GET", "https://email.us-east-1.amazonaws.com/", url.Values{}),
 		}
-		for _, req := range reqs {
-			signedReq := Sign(req)
+		for _, request := range reqs {
+			signedReq := Sign(request)
 			So(signedReq.Header.Get("X-Amzn-Authorization"), ShouldNotBeBlank)
 		}
 	})
@@ -170,8 +175,8 @@ func TestSign(t *testing.T) {
 			newRequest("GET", "https://iam.amazonaws.com", url.Values{}),
 			newRequest("GET", "https://s3.amazonaws.com", url.Values{}),
 		}
-		for _, req := range reqs {
-			signedReq := Sign(req)
+		for _, request := range reqs {
+			signedReq := Sign(request)
 			So(signedReq.Header.Get("Authorization"), ShouldContainSubstring, ", Signature=")
 		}
 	})
@@ -183,8 +188,8 @@ func TestSign(t *testing.T) {
 			newRequest("GET", "https://ec2.amazonaws.com", url.Values{}),
 			newRequest("GET", "https://elasticache.amazonaws.com/", url.Values{}),
 		}
-		for _, req := range reqs {
-			signedReq := Sign(req, keys)
+		for _, request := range reqs {
+			signedReq := Sign(request, keys)
 			So(signedReq.URL.Query().Get("SignatureVersion"), ShouldEqual, "2")
 		}
 	})
@@ -194,8 +199,8 @@ func TestSign(t *testing.T) {
 			newRequest("GET", "https://route53.amazonaws.com", url.Values{}),
 			newRequest("GET", "https://email.us-east-1.amazonaws.com/", url.Values{}),
 		}
-		for _, req := range reqs {
-			signedReq := Sign(req, keys)
+		for _, request := range reqs {
+			signedReq := Sign(request, keys)
 			So(signedReq.Header.Get("X-Amzn-Authorization"), ShouldNotBeBlank)
 		}
 	})
@@ -206,33 +211,33 @@ func TestSign(t *testing.T) {
 			newRequest("GET", "https://iam.amazonaws.com", url.Values{}),
 			newRequest("GET", "https://s3.amazonaws.com", url.Values{}),
 		}
-		for _, req := range reqs {
-			signedReq := Sign(req, keys)
+		for _, request := range reqs {
+			signedReq := Sign(request, keys)
 			So(signedReq.Header.Get("Authorization"), ShouldContainSubstring, ", Signature=")
 		}
 	})
 }
 
 func TestExpiration(t *testing.T) {
-	var c = &Credentials{}
+	var credentials = &Credentials{}
 
 	Convey("Credentials without an expiration can't expire", t, func() {
-		So(c.expired(), ShouldBeFalse)
+		So(credentials.expired(), ShouldBeFalse)
 	})
 
 	Convey("Credentials that expire in 5 minutes aren't expired", t, func() {
-		c.Expiration = time.Now().Add(5 * time.Minute)
-		So(c.expired(), ShouldBeFalse)
+		credentials.Expiration = time.Now().Add(5 * time.Minute)
+		So(credentials.expired(), ShouldBeFalse)
 	})
 
 	Convey("Credentials that expire in 1 minute are expired", t, func() {
-		c.Expiration = time.Now().Add(1 * time.Minute)
-		So(c.expired(), ShouldBeTrue)
+		credentials.Expiration = time.Now().Add(1 * time.Minute)
+		So(credentials.expired(), ShouldBeTrue)
 	})
 
 	Convey("Credentials that expired 2 hours ago are expired", t, func() {
-		c.Expiration = time.Now().Add(-2 * time.Hour)
-		So(c.expired(), ShouldBeTrue)
+		credentials.Expiration = time.Now().Add(-2 * time.Hour)
+		So(credentials.expired(), ShouldBeTrue)
 	})
 }
 
@@ -247,38 +252,38 @@ func credentialsSet() bool {
 }
 
 func newRequest(method string, url string, v url.Values) *http.Request {
-	req, _ := http.NewRequest(method, url, strings.NewReader(v.Encode()))
-	return req
+	request, _ := http.NewRequest(method, url, strings.NewReader(v.Encode()))
+	return request
 }
 
-func sign2AndDo(req *http.Request) *http.Response {
-	Sign2(req)
-	resp, _ := client.Do(req)
-	return resp
+func sign2AndDo(request *http.Request) *http.Response {
+	Sign2(request)
+	response, _ := client.Do(request)
+	return response
 }
 
-func sign3AndDo(req *http.Request) *http.Response {
-	Sign3(req)
-	resp, _ := client.Do(req)
-	return resp
+func sign3AndDo(request *http.Request) *http.Response {
+	Sign3(request)
+	response, _ := client.Do(request)
+	return response
 }
 
-func sign4AndDo(req *http.Request) *http.Response {
-	Sign4(req)
-	resp, _ := client.Do(req)
-	return resp
+func sign4AndDo(request *http.Request) *http.Response {
+	Sign4(request)
+	response, _ := client.Do(request)
+	return response
 }
 
-func signS3AndDo(req *http.Request) *http.Response {
-	SignS3(req)
-	resp, _ := client.Do(req)
-	return resp
+func signS3AndDo(request *http.Request) *http.Response {
+	SignS3(request)
+	response, _ := client.Do(request)
+	return response
 }
 
-func signS3UrlAndDo(req *http.Request) *http.Response {
-	SignS3Url(req, time.Now().AddDate(0, 0, 1))
-	resp, _ := client.Do(req)
-	return resp
+func signS3UrlAndDo(request *http.Request) *http.Response {
+	SignS3Url(request, time.Now().AddDate(0, 0, 1))
+	response, _ := client.Do(request)
+	return response
 }
 
 var client = &http.Client{}

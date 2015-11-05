@@ -1,10 +1,13 @@
 package objects
 
 import (
+	"bufio"
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/sha1"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -134,10 +137,11 @@ func Download(c *gophercloud.ServiceClient, containerName, objectName string, op
 		MoreHeaders: h,
 		OkCodes:     []int{200, 304},
 	})
-
-	res.Body = resp.Body
+	if resp != nil {
+		res.Header = resp.Header
+		res.Body = resp.Body
+	}
 	res.Err = err
-	res.Header = resp.Header
 
 	return res
 }
@@ -164,7 +168,7 @@ type CreateOpts struct {
 	ObjectManifest     string `h:"X-Object-Manifest"`
 	TransferEncoding   string `h:"Transfer-Encoding"`
 	Expires            string `q:"expires"`
-	MultipartManifest  string `q:"multiple-manifest"`
+	MultipartManifest  string `q:"multipart-manifest"`
 	Signature          string `q:"signature"`
 }
 
@@ -187,8 +191,9 @@ func (opts CreateOpts) ToObjectCreateParams() (map[string]string, string, error)
 	return h, q.String(), nil
 }
 
-// Create is a function that creates a new object or replaces an existing object.
-func Create(c *gophercloud.ServiceClient, containerName, objectName string, content io.Reader, opts CreateOptsBuilder) CreateResult {
+// Create is a function that creates a new object or replaces an existing object. If the returned response's ETag
+// header fails to match the local checksum, the failed request will automatically be retried up to a maximum of 3 times.
+func Create(c *gophercloud.ServiceClient, containerName, objectName string, content io.ReadSeeker, opts CreateOptsBuilder) CreateResult {
 	var res CreateResult
 
 	url := createURL(c, containerName, objectName)
@@ -208,14 +213,38 @@ func Create(c *gophercloud.ServiceClient, containerName, objectName string, cont
 		url += query
 	}
 
+	hash := md5.New()
+	bufioReader := bufio.NewReader(io.TeeReader(content, hash))
+	io.Copy(ioutil.Discard, bufioReader)
+	localChecksum := hash.Sum(nil)
+
+	h["ETag"] = fmt.Sprintf("%x", localChecksum)
+
+	_, err := content.Seek(0, 0)
+	if err != nil {
+		res.Err = err
+		return res
+	}
+
 	ropts := gophercloud.RequestOpts{
 		RawBody:     content,
 		MoreHeaders: h,
 	}
 
 	resp, err := c.Request("PUT", url, ropts)
-	res.Header = resp.Header
-	res.Err = err
+	if err != nil {
+		res.Err = err
+		return res
+	}
+	if resp != nil {
+		res.Header = resp.Header
+		if resp.Header.Get("ETag") == fmt.Sprintf("%x", localChecksum) {
+			res.Err = err
+			return res
+		}
+		res.Err = fmt.Errorf("Local checksum does not match API ETag header")
+	}
+
 	return res
 }
 
@@ -270,7 +299,9 @@ func Copy(c *gophercloud.ServiceClient, containerName, objectName string, opts C
 		MoreHeaders: h,
 		OkCodes:     []int{201},
 	})
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }
@@ -310,7 +341,9 @@ func Delete(c *gophercloud.ServiceClient, containerName, objectName string, opts
 	}
 
 	resp, err := c.Delete(url, nil)
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }
@@ -354,7 +387,9 @@ func Get(c *gophercloud.ServiceClient, containerName, objectName string, opts Ge
 	resp, err := c.Request("HEAD", url, gophercloud.RequestOpts{
 		OkCodes: []int{200, 204},
 	})
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }
@@ -410,7 +445,9 @@ func Update(c *gophercloud.ServiceClient, containerName, objectName string, opts
 	resp, err := c.Request("POST", url, gophercloud.RequestOpts{
 		MoreHeaders: h,
 	})
-	res.Header = resp.Header
+	if resp != nil {
+		res.Header = resp.Header
+	}
 	res.Err = err
 	return res
 }

@@ -8,12 +8,6 @@ import (
 	"testing"
 )
 
-func TestKeys_KeysServiceOpImplementsKeysService(t *testing.T) {
-	if !Implements((*KeysService)(nil), new(KeysServiceOp)) {
-		t.Error("KeysServiceOp does not implement KeysService")
-	}
-}
-
 func TestKeys_List(t *testing.T) {
 	setup()
 	defer teardown()
@@ -131,7 +125,10 @@ func TestKeys_Create(t *testing.T) {
 
 	mux.HandleFunc("/v2/account/keys", func(w http.ResponseWriter, r *http.Request) {
 		v := new(KeyCreateRequest)
-		json.NewDecoder(r.Body).Decode(v)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
 
 		testMethod(t, r, "POST")
 		if !reflect.DeepEqual(v, createRequest) {
@@ -149,6 +146,78 @@ func TestKeys_Create(t *testing.T) {
 	expected := &Key{ID: 1}
 	if !reflect.DeepEqual(key, expected) {
 		t.Errorf("Keys.Create returned %+v, expected %+v", key, expected)
+	}
+}
+
+func TestKeys_UpdateByID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &KeyUpdateRequest{
+		Name: "name",
+	}
+
+	mux.HandleFunc("/v2/account/keys/12345", func(w http.ResponseWriter, r *http.Request) {
+		expected := map[string]interface{}{
+			"name": "name",
+		}
+
+		var v map[string]interface{}
+		err := json.NewDecoder(r.Body).Decode(&v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("Request body = %#v, expected %#v", v, expected)
+		}
+
+		fmt.Fprintf(w, `{"ssh_key":{"id":1}}`)
+	})
+
+	key, _, err := client.Keys.UpdateByID(12345, updateRequest)
+	if err != nil {
+		t.Errorf("Keys.Update returned error: %v", err)
+	} else {
+		if id := key.ID; id != 1 {
+			t.Errorf("expected id '%d', received '%d'", 1, id)
+		}
+	}
+}
+
+func TestKeys_UpdateByFingerprint(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &KeyUpdateRequest{
+		Name: "name",
+	}
+
+	mux.HandleFunc("/v2/account/keys/3b:16:bf:e4:8b:00:8b:b8:59:8c:a9:d3:f0:19:45:fa", func(w http.ResponseWriter, r *http.Request) {
+		expected := map[string]interface{}{
+			"name": "name",
+		}
+
+		var v map[string]interface{}
+		err := json.NewDecoder(r.Body).Decode(&v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("Request body = %#v, expected %#v", v, expected)
+		}
+
+		fmt.Fprintf(w, `{"ssh_key":{"id":1}}`)
+	})
+
+	key, _, err := client.Keys.UpdateByFingerprint("3b:16:bf:e4:8b:00:8b:b8:59:8c:a9:d3:f0:19:45:fa", updateRequest)
+	if err != nil {
+		t.Errorf("Keys.Update returned error: %v", err)
+	} else {
+		if id := key.ID; id != 1 {
+			t.Errorf("expected id '%d', received '%d'", 1, id)
+		}
 	}
 }
 

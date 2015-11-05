@@ -5,129 +5,123 @@
 package govcloudair
 
 import (
-	"github.com/vmware/govcloudair/testutil"
+	"testing"
 
-	. "gopkg.in/check.v1"
+	"github.com/stretchr/testify/assert"
 )
 
-func (s *S) Test_FindVDCNetwork(c *C) {
-
-	testServer.Response(200, nil, orgvdcnetExample)
-
-	net, err := s.vdc.FindVDCNetwork("networkName")
-
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(net, NotNil)
-	c.Assert(net.OrgVDCNetwork.HREF, Equals, "http://localhost:4444/api/network/cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1")
-
-	// find Invalid Network
-	net, err = s.vdc.FindVDCNetwork("INVALID")
-	c.Assert(err, NotNil)
-}
-
-func (s *S) Test_GetVDCOrg(c *C) {
-
-	testServer.Response(200, nil, orgExample)
-
-	org, err := s.vdc.GetVDCOrg()
-
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(org, NotNil)
-	c.Assert(org.Org.HREF, Equals, "http://localhost:4444/api/org/23bd2339-c55f-403c-baf3-13109e8c8d57")
-}
-
-func (s *S) Test_NewVdc(c *C) {
-
-	testServer.Response(200, nil, vdcExample)
-	err := s.vdc.Refresh()
-	_ = testServer.WaitRequest()
-	c.Assert(err, IsNil)
-
-	c.Assert(s.vdc.Vdc.Link[0].Rel, Equals, "up")
-	c.Assert(s.vdc.Vdc.Link[0].Type, Equals, "application/vnd.vmware.vcloud.org+xml")
-	c.Assert(s.vdc.Vdc.Link[0].HREF, Equals, "http://localhost:4444/api/org/11111111-1111-1111-1111-111111111111")
-
-	c.Assert(s.vdc.Vdc.AllocationModel, Equals, "AllocationPool")
-
-	for _, v := range s.vdc.Vdc.ComputeCapacity {
-		c.Assert(v.CPU.Units, Equals, "MHz")
-		c.Assert(v.CPU.Allocated, Equals, int64(30000))
-		c.Assert(v.CPU.Limit, Equals, int64(30000))
-		c.Assert(v.CPU.Reserved, Equals, int64(15000))
-		c.Assert(v.CPU.Used, Equals, int64(0))
-		c.Assert(v.CPU.Overhead, Equals, int64(0))
-		c.Assert(v.Memory.Units, Equals, "MB")
-		c.Assert(v.Memory.Allocated, Equals, int64(61440))
-		c.Assert(v.Memory.Limit, Equals, int64(61440))
-		c.Assert(v.Memory.Reserved, Equals, int64(61440))
-		c.Assert(v.Memory.Used, Equals, int64(6144))
-		c.Assert(v.Memory.Overhead, Equals, int64(95))
+func Test_FindVDCNetwork(t *testing.T) {
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/network/44444444-4444-4444-4444-4444444444444": {200, nil, orgvdcnetExample},
 	}
 
-	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, "vAppTemplate")
-	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
-	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if assert.NoError(t, err) {
+		net, err := ctx.VDC.FindVDCNetwork("networkName")
+		if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+			assert.NotNil(t, net)
+			assert.Equal(t, ctx.Server.URL+"/api/network/cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1", net.OrgVDCNetwork.HREF)
+		}
 
-	for _, v := range s.vdc.Vdc.AvailableNetworks {
-		for _, v2 := range v.Network {
-			c.Assert(v2.Name, Equals, "networkName")
-			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.network+xml")
-			c.Assert(v2.HREF, Equals, "http://localhost:4444/api/network/44444444-4444-4444-4444-4444444444444")
+		net, err = ctx.VDC.FindVDCNetwork("INVALID")
+		assert.Error(t, err)
+	}
+}
+
+func Test_GetVDCOrg(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(catalogResponses, cc)))
+	if assert.NoError(t, err) {
+		org, err := ctx.VDC.GetVDCOrg()
+		if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+			assert.Equal(t, ctx.Server.URL+"/api/org/23bd2339-c55f-403c-baf3-13109e8c8d57", org.Org.HREF)
+		}
+	}
+}
+
+func Test_NewVdc(t *testing.T) {
+
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/vdc/00000000-0000-0000-0000-000000000000":       {200, nil, vdcExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": {200, nil, vappExample},
+	}
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if assert.NoError(t, err) {
+		err := ctx.VDC.Refresh()
+		if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+			vdc := ctx.VDC.Vdc
+			lnk := vdc.Link[0]
+			assert.Equal(t, "up", lnk.Rel)
+			assert.Equal(t, "application/vnd.vmware.vcloud.org+xml", lnk.Type)
+			assert.Equal(t, ctx.Server.URL+"/api/org/11111111-1111-1111-1111-111111111111", lnk.HREF)
+
+			assert.Equal(t, "AllocationPool", vdc.AllocationModel)
+
+			for _, v := range vdc.ComputeCapacity {
+				cpu, mem := v.CPU, v.Memory
+				assert.Equal(t, "MHz", cpu.Units)
+				assert.Equal(t, int64(30000), cpu.Allocated)
+				assert.Equal(t, int64(30000), cpu.Limit)
+				assert.Equal(t, int64(15000), cpu.Reserved)
+				assert.Equal(t, int64(0), cpu.Used)
+				assert.Equal(t, int64(0), cpu.Overhead)
+
+				assert.Equal(t, "MB", mem.Units)
+				assert.Equal(t, int64(61440), mem.Allocated)
+				assert.Equal(t, int64(61440), mem.Limit)
+				assert.Equal(t, int64(61440), mem.Reserved)
+				assert.Equal(t, int64(6144), mem.Used)
+				assert.Equal(t, int64(95), mem.Overhead)
+			}
+
+			entity := vdc.ResourceEntities[0].ResourceEntity[0]
+			assert.Equal(t, "vAppTemplate", entity.Name)
+			assert.Equal(t, "application/vnd.vmware.vcloud.vAppTemplate+xml", entity.Type)
+			assert.Equal(t, ctx.Server.URL+"/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222", entity.HREF)
+
+			for _, v := range vdc.AvailableNetworks {
+				for _, v2 := range v.Network {
+					assert.Equal(t, "networkName", v2.Name)
+					assert.Equal(t, "application/vnd.vmware.vcloud.network+xml", v2.Type)
+					assert.Equal(t, ctx.Server.URL+"/api/network/44444444-4444-4444-4444-4444444444444", v2.HREF)
+				}
+			}
+
+			assert.Equal(t, 0, vdc.NicQuota)
+			assert.Equal(t, 20, vdc.NetworkQuota)
+			assert.Equal(t, 0, vdc.UsedNetworkCount)
+			assert.Equal(t, 0, vdc.VMQuota)
+			assert.True(t, vdc.IsEnabled)
+
+			for _, v := range vdc.VdcStorageProfiles {
+				for _, v2 := range v.VdcStorageProfile {
+					assert.Equal(t, "storageProfile", v2.Name)
+					assert.Equal(t, "application/vnd.vmware.vcloud.vdcStorageProfile+xml", v2.Type)
+					assert.Equal(t, ctx.Server.URL+"/api/vdcStorageProfile/88888888-8888-8888-8888-888888888888", v2.HREF)
+				}
+			}
 		}
 	}
 
-	c.Assert(s.vdc.Vdc.NicQuota, Equals, 0)
-	c.Assert(s.vdc.Vdc.NetworkQuota, Equals, 20)
-	c.Assert(s.vdc.Vdc.UsedNetworkCount, Equals, 0)
-	c.Assert(s.vdc.Vdc.VMQuota, Equals, 0)
-	c.Assert(s.vdc.Vdc.IsEnabled, Equals, true)
-
-	for _, v := range s.vdc.Vdc.VdcStorageProfiles {
-		for _, v2 := range v.VdcStorageProfile {
-			c.Assert(v2.Name, Equals, "storageProfile")
-			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
-			c.Assert(v2.HREF, Equals, "http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-888888888888")
-		}
-	}
-
 }
 
-func (s *S) Test_FindVApp(c *C) {
-
-	// testServer.Response(200, nil, vappExample)
-
-	// vapp, err := s.vdc.FindVAppByID("")
-
-	// _ = testServer.WaitRequest()
-	// testServer.Flush()
-	// c.Assert(err, IsNil)
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000":       testutil.Response{200, nil, vdcExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
-	})
-
-	_, err := s.vdc.FindVAppByName("myVApp")
-
-	_ = testServer.WaitRequests(2)
-
-	c.Assert(err, IsNil)
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000":       testutil.Response{200, nil, vdcExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
-	})
-
-	_, err = s.vdc.FindVAppByID("urn:vcloud:vapp:00000000-0000-0000-0000-000000000000")
-
-	_ = testServer.WaitRequests(2)
-
-	c.Assert(err, IsNil)
-
+func Test_FindVApp(t *testing.T) {
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/vdc/00000000-0000-0000-0000-000000000000":       {200, nil, vdcExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": {200, nil, vappExample},
+	}
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if assert.NoError(t, err) {
+		_, err := ctx.VDC.FindVAppByName("myVApp")
+		if assert.NoError(t, err) && assert.Equal(t, 2, cc.Pop()) {
+			_, err = ctx.VDC.FindVAppByID("urn:vcloud:vapp:00000000-0000-0000-0000-000000000000")
+			assert.NoError(t, err)
+			assert.Equal(t, 2, cc.Pop())
+		}
+	}
 }
 
 var vdcExample = `

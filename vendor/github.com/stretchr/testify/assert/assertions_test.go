@@ -2,9 +2,79 @@ package assert
 
 import (
 	"errors"
+	"io"
+	"math"
+	"reflect"
 	"regexp"
 	"testing"
 	"time"
+)
+
+var (
+	i     interface{}
+	zeros = []interface{}{
+		false,
+		byte(0),
+		complex64(0),
+		complex128(0),
+		float32(0),
+		float64(0),
+		int(0),
+		int8(0),
+		int16(0),
+		int32(0),
+		int64(0),
+		rune(0),
+		uint(0),
+		uint8(0),
+		uint16(0),
+		uint32(0),
+		uint64(0),
+		uintptr(0),
+		"",
+		[0]interface{}{},
+		[]interface{}(nil),
+		struct{ x int }{},
+		(*interface{})(nil),
+		(func())(nil),
+		nil,
+		interface{}(nil),
+		map[interface{}]interface{}(nil),
+		(chan interface{})(nil),
+		(<-chan interface{})(nil),
+		(chan<- interface{})(nil),
+	}
+	nonZeros = []interface{}{
+		true,
+		byte(1),
+		complex64(1),
+		complex128(1),
+		float32(1),
+		float64(1),
+		int(1),
+		int8(1),
+		int16(1),
+		int32(1),
+		int64(1),
+		rune(1),
+		uint(1),
+		uint8(1),
+		uint16(1),
+		uint32(1),
+		uint64(1),
+		uintptr(1),
+		"s",
+		[1]interface{}{1},
+		[]interface{}{},
+		struct{ x int }{1},
+		(*interface{})(&i),
+		(func())(func() {}),
+		interface{}(1),
+		map[interface{}]interface{}{},
+		(chan interface{})(make(chan interface{})),
+		(<-chan interface{})(make(chan interface{})),
+		(chan<- interface{})(make(chan interface{})),
+	}
 )
 
 // AssertionTesterInterface defines an interface to be used for testing assertion methods
@@ -115,10 +185,6 @@ func TestEqual(t *testing.T) {
 	if !Equal(mockT, uint64(123), uint64(123)) {
 		t.Error("Equal should return true")
 	}
-	funcA := func() int { return 42 }
-	if !Equal(mockT, funcA, funcA) {
-		t.Error("Equal should return true")
-	}
 
 }
 
@@ -132,6 +198,9 @@ func TestNotNil(t *testing.T) {
 	if NotNil(mockT, nil) {
 		t.Error("NotNil should return false: object is nil")
 	}
+	if NotNil(mockT, (*struct{})(nil)) {
+		t.Error("NotNil should return false: object is (*struct{})(nil)")
+	}
 
 }
 
@@ -141,6 +210,9 @@ func TestNil(t *testing.T) {
 
 	if !Nil(mockT, nil) {
 		t.Error("Nil should return true: object is nil")
+	}
+	if !Nil(mockT, (*struct{})(nil)) {
+		t.Error("Nil should return true: object is (*struct{})(nil)")
 	}
 	if Nil(mockT, new(AssertionTesterConformingObject)) {
 		t.Error("Nil should return false: object is not nil")
@@ -258,6 +330,7 @@ func TestContains(t *testing.T) {
 		{"g", "h"},
 		{"j", "k"},
 	}
+	simpleMap := map[interface{}]interface{}{"Foo": "Bar"}
 
 	if !Contains(mockT, "Hello World", "Hello") {
 		t.Error("Contains should return true: \"Hello World\" contains \"Hello\"")
@@ -278,12 +351,22 @@ func TestContains(t *testing.T) {
 	if Contains(mockT, complexList, &A{"g", "e"}) {
 		t.Error("Contains should return false: complexList contains {\"g\", \"e\"}")
 	}
+	if Contains(mockT, complexList, &A{"g", "e"}) {
+		t.Error("Contains should return false: complexList contains {\"g\", \"e\"}")
+	}
+	if !Contains(mockT, simpleMap, "Foo") {
+		t.Error("Contains should return true: \"{\"Foo\": \"Bar\"}\" contains \"Foo\"")
+	}
+	if Contains(mockT, simpleMap, "Bar") {
+		t.Error("Contains should return false: \"{\"Foo\": \"Bar\"}\" does not contains \"Bar\"")
+	}
 }
 
 func TestNotContains(t *testing.T) {
 
 	mockT := new(testing.T)
 	list := []string{"Foo", "Bar"}
+	simpleMap := map[interface{}]interface{}{"Foo": "Bar"}
 
 	if !NotContains(mockT, "Hello World", "Hello!") {
 		t.Error("NotContains should return true: \"Hello World\" does not contain \"Hello!\"")
@@ -298,13 +381,19 @@ func TestNotContains(t *testing.T) {
 	if NotContains(mockT, list, "Foo") {
 		t.Error("NotContains should return false: \"[\"Foo\", \"Bar\"]\" contains \"Foo\"")
 	}
-
+	if NotContains(mockT, simpleMap, "Foo") {
+		t.Error("Contains should return true: \"{\"Foo\": \"Bar\"}\" contains \"Foo\"")
+	}
+	if !NotContains(mockT, simpleMap, "Bar") {
+		t.Error("Contains should return false: \"{\"Foo\": \"Bar\"}\" does not contains \"Bar\"")
+	}
 }
 
 func Test_includeElement(t *testing.T) {
 
 	list1 := []string{"Foo", "Bar"}
 	list2 := []int{1, 2}
+	simpleMap := map[interface{}]interface{}{"Foo": "Bar"}
 
 	ok, found := includeElement("Hello World", "World")
 	True(t, ok)
@@ -338,10 +427,17 @@ func Test_includeElement(t *testing.T) {
 	True(t, ok)
 	False(t, found)
 
+	ok, found = includeElement(simpleMap, "Foo")
+	True(t, ok)
+	True(t, found)
+
+	ok, found = includeElement(simpleMap, "Bar")
+	True(t, ok)
+	False(t, found)
+
 	ok, found = includeElement(1433, "1")
 	False(t, ok)
 	False(t, found)
-
 }
 
 func TestCondition(t *testing.T) {
@@ -403,19 +499,6 @@ func TestNotPanics(t *testing.T) {
 	}) {
 		t.Error("NotPanics should return false")
 	}
-
-}
-
-func TestEqual_Funcs(t *testing.T) {
-
-	type f func() int
-	f1 := func() int { return 1 }
-	f2 := func() int { return 2 }
-
-	f1Copy := f1
-
-	Equal(t, f1Copy, f1, "Funcs are the same and should be considered equal")
-	NotEqual(t, f1, f2, "f1 and f2 are different")
 
 }
 
@@ -669,6 +752,8 @@ func TestInDelta(t *testing.T) {
 	False(t, InDelta(mockT, 1, 2, 0.5), "Expected |1 - 2| <= 0.5 to fail")
 	False(t, InDelta(mockT, 2, 1, 0.5), "Expected |2 - 1| <= 0.5 to fail")
 	False(t, InDelta(mockT, "", nil, 1), "Expected non numerals to fail")
+	False(t, InDelta(mockT, 42, math.NaN(), 0.01), "Expected NaN for actual to fail")
+	False(t, InDelta(mockT, math.NaN(), 42, 0.01), "Expected NaN for expected to fail")
 
 	cases := []struct {
 		a, b  interface{}
@@ -692,6 +777,27 @@ func TestInDelta(t *testing.T) {
 	for _, tc := range cases {
 		True(t, InDelta(mockT, tc.a, tc.b, tc.delta), "Expected |%V - %V| <= %v", tc.a, tc.b, tc.delta)
 	}
+}
+
+func TestInDeltaSlice(t *testing.T) {
+	mockT := new(testing.T)
+
+	True(t, InDeltaSlice(mockT,
+		[]float64{1.001, 0.999},
+		[]float64{1, 1},
+		0.1), "{1.001, 0.009} is element-wise close to {1, 1} in delta=0.1")
+
+	True(t, InDeltaSlice(mockT,
+		[]float64{1, 2},
+		[]float64{0, 3},
+		1), "{1, 2} is element-wise close to {0, 3} in delta=1")
+
+	False(t, InDeltaSlice(mockT,
+		[]float64{1, 2},
+		[]float64{0, 3},
+		0.1), "{1, 2} is not element-wise close to {0, 3} in delta=0.1")
+
+	False(t, InDeltaSlice(mockT, "", nil, 1), "Expected non numeral slices to fail")
 }
 
 func TestInEpsilon(t *testing.T) {
@@ -733,6 +839,22 @@ func TestInEpsilon(t *testing.T) {
 
 }
 
+func TestInEpsilonSlice(t *testing.T) {
+	mockT := new(testing.T)
+
+	True(t, InEpsilonSlice(mockT,
+		[]float64{2.2, 2.0},
+		[]float64{2.1, 2.1},
+		0.06), "{2.2, 2.0} is element-wise close to {2.1, 2.1} in espilon=0.06")
+
+	False(t, InEpsilonSlice(mockT,
+		[]float64{2.2, 2.0},
+		[]float64{2.1, 2.1},
+		0.04), "{2.2, 2.0} is not element-wise close to {2.1, 2.1} in espilon=0.04")
+
+	False(t, InEpsilonSlice(mockT, "", nil, 1), "Expected non numeral slices to fail")
+}
+
 func TestRegexp(t *testing.T) {
 	mockT := new(testing.T)
 
@@ -765,4 +887,100 @@ func TestRegexp(t *testing.T) {
 		True(t, NotRegexp(mockT, tc.rx, tc.str))
 		True(t, NotRegexp(mockT, regexp.MustCompile(tc.rx), tc.str))
 	}
+}
+
+func testAutogeneratedFunction() {
+	defer func() {
+		if err := recover(); err == nil {
+			panic("did not panic")
+		}
+		CallerInfo()
+	}()
+	t := struct {
+		io.Closer
+	}{}
+	var c io.Closer
+	c = t
+	c.Close()
+}
+
+func TestCallerInfoWithAutogeneratedFunctions(t *testing.T) {
+	NotPanics(t, func() {
+		testAutogeneratedFunction()
+	})
+}
+
+func TestZero(t *testing.T) {
+	mockT := new(testing.T)
+
+	for _, test := range zeros {
+		True(t, Zero(mockT, test, "%#v is not the %v zero value", test, reflect.TypeOf(test)))
+	}
+
+	for _, test := range nonZeros {
+		False(t, Zero(mockT, test, "%#v is not the %v zero value", test, reflect.TypeOf(test)))
+	}
+}
+
+func TestNotZero(t *testing.T) {
+	mockT := new(testing.T)
+
+	for _, test := range zeros {
+		False(t, NotZero(mockT, test, "%#v is not the %v zero value", test, reflect.TypeOf(test)))
+	}
+
+	for _, test := range nonZeros {
+		True(t, NotZero(mockT, test, "%#v is not the %v zero value", test, reflect.TypeOf(test)))
+	}
+}
+
+func TestJSONEq_EqualSONString(t *testing.T) {
+	mockT := new(testing.T)
+	True(t, JSONEq(mockT, `{"hello": "world", "foo": "bar"}`, `{"hello": "world", "foo": "bar"}`))
+}
+
+func TestJSONEq_EquivalentButNotEqual(t *testing.T) {
+	mockT := new(testing.T)
+	True(t, JSONEq(mockT, `{"hello": "world", "foo": "bar"}`, `{"foo": "bar", "hello": "world"}`))
+}
+
+func TestJSONEq_HashOfArraysAndHashes(t *testing.T) {
+	mockT := new(testing.T)
+	True(t, JSONEq(mockT, "{\r\n\t\"numeric\": 1.5,\r\n\t\"array\": [{\"foo\": \"bar\"}, 1, \"string\", [\"nested\", \"array\", 5.5]],\r\n\t\"hash\": {\"nested\": \"hash\", \"nested_slice\": [\"this\", \"is\", \"nested\"]},\r\n\t\"string\": \"foo\"\r\n}",
+		"{\r\n\t\"numeric\": 1.5,\r\n\t\"hash\": {\"nested\": \"hash\", \"nested_slice\": [\"this\", \"is\", \"nested\"]},\r\n\t\"string\": \"foo\",\r\n\t\"array\": [{\"foo\": \"bar\"}, 1, \"string\", [\"nested\", \"array\", 5.5]]\r\n}"))
+}
+
+func TestJSONEq_Array(t *testing.T) {
+	mockT := new(testing.T)
+	True(t, JSONEq(mockT, `["foo", {"hello": "world", "nested": "hash"}]`, `["foo", {"nested": "hash", "hello": "world"}]`))
+}
+
+func TestJSONEq_HashAndArrayNotEquivalent(t *testing.T) {
+	mockT := new(testing.T)
+	False(t, JSONEq(mockT, `["foo", {"hello": "world", "nested": "hash"}]`, `{"foo": "bar", {"nested": "hash", "hello": "world"}}`))
+}
+
+func TestJSONEq_HashesNotEquivalent(t *testing.T) {
+	mockT := new(testing.T)
+	False(t, JSONEq(mockT, `{"foo": "bar"}`, `{"foo": "bar", "hello": "world"}`))
+}
+
+func TestJSONEq_ActualIsNotJSON(t *testing.T) {
+	mockT := new(testing.T)
+	False(t, JSONEq(mockT, `{"foo": "bar"}`, "Not JSON"))
+}
+
+func TestJSONEq_ExpectedIsNotJSON(t *testing.T) {
+	mockT := new(testing.T)
+	False(t, JSONEq(mockT, "Not JSON", `{"foo": "bar", "hello": "world"}`))
+}
+
+func TestJSONEq_ExpectedAndActualNotJSON(t *testing.T) {
+	mockT := new(testing.T)
+	False(t, JSONEq(mockT, "Not JSON", "Not JSON"))
+}
+
+func TestJSONEq_ArraysOfDifferentOrder(t *testing.T) {
+	mockT := new(testing.T)
+	False(t, JSONEq(mockT, `["foo", {"hello": "world", "nested": "hash"}]`, `[{ "hello": "world", "nested": "hash"}, "foo"]`))
 }

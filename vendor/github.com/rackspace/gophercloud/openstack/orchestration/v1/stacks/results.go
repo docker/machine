@@ -69,6 +69,7 @@ type ListedStack struct {
 	Name         string             `mapstructure:"stack_name"`
 	Status       string             `mapstructure:"stack_status"`
 	StatusReason string             `mapstructure:"stack_status_reason"`
+	Tags         []string           `mapstructure:"tags"`
 	UpdatedTime  time.Time          `mapstructure:"-"`
 }
 
@@ -81,7 +82,7 @@ func ExtractStacks(page pagination.Page) ([]ListedStack, error) {
 		Stacks []ListedStack `mapstructure:"stacks"`
 	}
 
-	err := mapstructure.Decode(page.(StackPage).Body, &res)
+	err := mapstructure.Decode(casted, &res)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func ExtractStacks(page pagination.Page) ([]ListedStack, error) {
 		thisStack := (rawStacks[i]).(map[string]interface{})
 
 		if t, ok := thisStack["creation_time"].(string); ok && t != "" {
-			creationTime, err := time.Parse(time.RFC3339, t)
+			creationTime, err := time.Parse(gophercloud.STACK_TIME_FMT, t)
 			if err != nil {
 				return res.Stacks, err
 			}
@@ -108,7 +109,7 @@ func ExtractStacks(page pagination.Page) ([]ListedStack, error) {
 		}
 
 		if t, ok := thisStack["updated_time"].(string); ok && t != "" {
-			updatedTime, err := time.Parse(time.RFC3339, t)
+			updatedTime, err := time.Parse(gophercloud.STACK_TIME_FMT, t)
 			if err != nil {
 				return res.Stacks, err
 			}
@@ -133,6 +134,7 @@ type RetrievedStack struct {
 	Name                string                   `mapstructure:"stack_name"`
 	Status              string                   `mapstructure:"stack_status"`
 	StatusReason        string                   `mapstructure:"stack_status_reason"`
+	Tags                []string                 `mapstructure:"tags"`
 	TemplateDescription string                   `mapstructure:"template_description"`
 	Timeout             int                      `mapstructure:"timeout_mins"`
 	UpdatedTime         time.Time                `mapstructure:"-"`
@@ -170,7 +172,7 @@ func (r GetResult) Extract() (*RetrievedStack, error) {
 	b := r.Body.(map[string]interface{})["stack"].(map[string]interface{})
 
 	if date, ok := b["creation_time"]; ok && date != nil {
-		t, err := time.Parse(time.RFC3339, date.(string))
+		t, err := time.Parse(gophercloud.STACK_TIME_FMT, date.(string))
 		if err != nil {
 			return nil, err
 		}
@@ -178,7 +180,7 @@ func (r GetResult) Extract() (*RetrievedStack, error) {
 	}
 
 	if date, ok := b["updated_time"]; ok && date != nil {
-		t, err := time.Parse(time.RFC3339, date.(string))
+		t, err := time.Parse(gophercloud.STACK_TIME_FMT, date.(string))
 		if err != nil {
 			return nil, err
 		}
@@ -200,21 +202,19 @@ type DeleteResult struct {
 
 // PreviewedStack represents the result of a Preview operation.
 type PreviewedStack struct {
-	Capabilities        []interface{}            `mapstructure:"capabilities"`
-	CreationTime        time.Time                `mapstructure:"-"`
-	Description         string                   `mapstructure:"description"`
-	DisableRollback     bool                     `mapstructure:"disable_rollback"`
-	ID                  string                   `mapstructure:"id"`
-	Links               []gophercloud.Link       `mapstructure:"links"`
-	Name                string                   `mapstructure:"stack_name"`
-	NotificationTopics  []interface{}            `mapstructure:"notification_topics"`
-	Parameters          map[string]string        `mapstructure:"parameters"`
-	Resources           []map[string]interface{} `mapstructure:"resources"`
-	Status              string                   `mapstructure:"stack_status"`
-	StatusReason        string                   `mapstructure:"stack_status_reason"`
-	TemplateDescription string                   `mapstructure:"template_description"`
-	Timeout             int                      `mapstructure:"timeout_mins"`
-	UpdatedTime         time.Time                `mapstructure:"-"`
+	Capabilities        []interface{}      `mapstructure:"capabilities"`
+	CreationTime        time.Time          `mapstructure:"-"`
+	Description         string             `mapstructure:"description"`
+	DisableRollback     bool               `mapstructure:"disable_rollback"`
+	ID                  string             `mapstructure:"id"`
+	Links               []gophercloud.Link `mapstructure:"links"`
+	Name                string             `mapstructure:"stack_name"`
+	NotificationTopics  []interface{}      `mapstructure:"notification_topics"`
+	Parameters          map[string]string  `mapstructure:"parameters"`
+	Resources           []interface{}      `mapstructure:"resources"`
+	TemplateDescription string             `mapstructure:"template_description"`
+	Timeout             int                `mapstructure:"timeout_mins"`
+	UpdatedTime         time.Time          `mapstructure:"-"`
 }
 
 // PreviewResult represents the result of a Preview operation.
@@ -249,7 +249,7 @@ func (r PreviewResult) Extract() (*PreviewedStack, error) {
 	b := r.Body.(map[string]interface{})["stack"].(map[string]interface{})
 
 	if date, ok := b["creation_time"]; ok && date != nil {
-		t, err := time.Parse(time.RFC3339, date.(string))
+		t, err := time.Parse(gophercloud.STACK_TIME_FMT, date.(string))
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +257,7 @@ func (r PreviewResult) Extract() (*PreviewedStack, error) {
 	}
 
 	if date, ok := b["updated_time"]; ok && date != nil {
-		t, err := time.Parse(time.RFC3339, date.(string))
+		t, err := time.Parse(gophercloud.STACK_TIME_FMT, date.(string))
 		if err != nil {
 			return nil, err
 		}
@@ -269,12 +269,16 @@ func (r PreviewResult) Extract() (*PreviewedStack, error) {
 
 // AbandonedStack represents the result of an Abandon operation.
 type AbandonedStack struct {
-	Status    string                 `mapstructure:"status"`
-	Name      string                 `mapstructure:"name"`
-	Template  map[string]interface{} `mapstructure:"template"`
-	Action    string                 `mapstructure:"action"`
-	ID        string                 `mapstructure:"id"`
-	Resources map[string]interface{} `mapstructure:"resources"`
+	Status             string                 `mapstructure:"status"`
+	Name               string                 `mapstructure:"name"`
+	Template           map[string]interface{} `mapstructure:"template"`
+	Action             string                 `mapstructure:"action"`
+	ID                 string                 `mapstructure:"id"`
+	Resources          map[string]interface{} `mapstructure:"resources"`
+	Files              map[string]string      `mapstructure:"files"`
+	StackUserProjectID string                 `mapstructure:"stack_user_project_id"`
+	ProjectID          string                 `mapstructure:"project_id"`
+	Environment        map[string]interface{} `mapstructure:"environment"`
 }
 
 // AbandonResult represents the result of an Abandon operation.

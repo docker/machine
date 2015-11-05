@@ -5,299 +5,349 @@
 package govcloudair
 
 import (
-	"github.com/vmware/govcloudair/testutil"
+	"encoding/xml"
+	"strings"
+	"testing"
 
-	. "gopkg.in/check.v1"
+	"github.com/stretchr/testify/assert"
 )
 
-func (s *S) Test_ComposeVApp(c *C) {
-
-	testServer.ResponseMap(7, testutil.ResponseMap{
-		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
-		"/api/network/44444444-4444-4444-4444-4444444444444":                  testutil.Response{200, nil, orgvdcnetExample},
-		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                   testutil.Response{200, nil, catalogExample},
-		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":               testutil.Response{200, nil, catalogitemExample},
-		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5": testutil.Response{200, nil, vapptemplateExample},
-		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":    testutil.Response{200, nil, instantiatedvappExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                 testutil.Response{200, nil, vappExample},
-	})
-
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
-	// Populate OrgVDCNetwork
-	net, err := s.vdc.FindVDCNetwork("networkName")
-	c.Assert(err, IsNil)
-
-	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
-	c.Assert(err, IsNil)
-
-	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	c.Assert(err, IsNil)
-
-	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
-	c.Assert(err, IsNil)
-
-	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
-
-	status, err := s.vapp.GetStatus()
-
-	c.Assert(err, IsNil)
-	c.Assert(status, Equals, "POWERED_OFF")
-
-	_ = testServer.WaitRequests(7)
-
-}
-
-func (s *S) Test_PowerOn(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.PowerOn()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_PowerOff(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.PowerOff()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_Reboot(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Reboot()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_Reset(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Reset()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_Suspend(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Suspend()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_Shutdown(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Shutdown()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_Undeploy(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Undeploy()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_Deploy(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Deploy()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_Delete(c *C) {
-
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Delete()
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-}
-
-func (s *S) Test_RunCustomizationScript(c *C) {
-
-	testServer.ResponseMap(8, testutil.ResponseMap{
-		"/api/org/11111111-1111-1111-1111-111111111111":                                testutil.Response{200, nil, orgExample},
-		"/api/network/44444444-4444-4444-4444-4444444444444":                           testutil.Response{200, nil, orgvdcnetExample},
-		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                            testutil.Response{200, nil, catalogExample},
-		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":                        testutil.Response{200, nil, catalogitemExample},
-		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5":          testutil.Response{200, nil, vapptemplateExample},
-		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":             testutil.Response{200, nil, instantiatedvappExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, vappExample},
-		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/guestCustomizationSection/": testutil.Response{200, nil, taskExample},
-	})
+func Test_ComposeVApp(t *testing.T) {
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/org/11111111-1111-1111-1111-111111111111":                       {200, nil, orgExample},
+		"/api/network/44444444-4444-4444-4444-4444444444444":                  {200, nil, orgvdcnetExample},
+		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                   {200, nil, catalogExample},
+		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":               {200, nil, catalogitemExample},
+		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5": {200, nil, vapptemplateExample},
+		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":    {200, nil, instantiatedvappExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                 {200, nil, vappExample},
+	}
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
+	org, err := ctx.VDC.GetVDCOrg()
+	if assert.NoError(t, err) {
+		// Populate OrgVDCNetwork
+		net, err := ctx.VDC.FindVDCNetwork("networkName")
+		if assert.NoError(t, err) {
+			// Populate Catalog
+			cat, err := org.FindCatalog("Public Catalog")
+			if assert.NoError(t, err) {
+				// Populate Catalog Item
+				catitem, err := cat.FindCatalogItem("CentOS64-32bit")
+				if assert.NoError(t, err) {
+					// Get VAppTemplate
+					vapptemplate, err := catitem.GetVAppTemplate()
+					if assert.NoError(t, err) {
+						// Compose VApp
+						task, err := ctx.VApp.ComposeVApp(net, vapptemplate, "name", "description")
+						if assert.NoError(t, err) {
+							assert.Equal(t, "vdcInstantiateVapp", task.Task.OperationName)
+							assert.Equal(t, ctx.Server.URL+"/api/vApp/vapp-00000000-0000-0000-0000-000000000000", ctx.VApp.VApp.HREF)
 
-	// Populate OrgVDCNetwork
-	net, err := s.vdc.FindVDCNetwork("networkName")
-	c.Assert(err, IsNil)
+							status, err := ctx.VApp.GetStatus()
+							if assert.NoError(t, err) {
+								assert.Equal(t, "POWERED_OFF", status)
+								assert.Equal(t, 7, cc.Pop())
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
-	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
-	c.Assert(err, IsNil)
+var vappResponses = map[string]testResponse{
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/power/action/powerOn":  {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/power/action/powerOff": {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/power/action/reboot":   {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/power/action/reset":    {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/power/action/suspend":  {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/power/action/shutdown": {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/action/undeploy":       {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/action/deploy":         {200, nil, taskExample},
+	"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                       {200, nil, taskExample},
+}
 
-	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	c.Assert(err, IsNil)
-
-	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
-	c.Assert(err, IsNil)
-
-	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
-
-	task, err = s.vapp.RunCustomizationScript("computername", "this is my script")
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-	_ = testServer.WaitRequests(8)
+func Test_PowerOn(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.PowerOn()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
 
 }
 
-func (s *S) Test_ChangeCPUcount(c *C) {
-
-	testServer.ResponseMap(8, testutil.ResponseMap{
-		"/api/org/11111111-1111-1111-1111-111111111111":                                testutil.Response{200, nil, orgExample},
-		"/api/network/44444444-4444-4444-4444-4444444444444":                           testutil.Response{200, nil, orgvdcnetExample},
-		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                            testutil.Response{200, nil, catalogExample},
-		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":                        testutil.Response{200, nil, catalogitemExample},
-		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5":          testutil.Response{200, nil, vapptemplateExample},
-		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":             testutil.Response{200, nil, instantiatedvappExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, vappExample},
-		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/virtualHardwareSection/cpu": testutil.Response{200, nil, taskExample},
-	})
-
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
-	// Populate OrgVDCNetwork
-	net, err := s.vdc.FindVDCNetwork("networkName")
-	c.Assert(err, IsNil)
-
-	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
-	c.Assert(err, IsNil)
-
-	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	c.Assert(err, IsNil)
-
-	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
-	c.Assert(err, IsNil)
-
-	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
-
-	task, err = s.vapp.ChangeCPUcount(2)
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-	_ = testServer.WaitRequests(8)
-
+func Test_PowerOff(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.PowerOff()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
 }
 
-func (s *S) Test_ChangeMemorySize(c *C) {
+func Test_Reboot(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Reboot()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
+}
 
-	testServer.ResponseMap(8, testutil.ResponseMap{
-		"/api/org/11111111-1111-1111-1111-111111111111":                                   testutil.Response{200, nil, orgExample},
-		"/api/network/44444444-4444-4444-4444-4444444444444":                              testutil.Response{200, nil, orgvdcnetExample},
-		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                               testutil.Response{200, nil, catalogExample},
-		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":                           testutil.Response{200, nil, catalogitemExample},
-		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5":             testutil.Response{200, nil, vapptemplateExample},
-		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":                testutil.Response{200, nil, instantiatedvappExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                             testutil.Response{200, nil, vappExample},
-		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/virtualHardwareSection/memory": testutil.Response{200, nil, taskExample},
-	})
+func Test_Reset(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Reset()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
+}
+
+func Test_Suspend(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Suspend()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
+}
+
+func Test_Shutdown(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Shutdown()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
+}
+
+func Test_Undeploy(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Undeploy()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
+}
+
+func Test_Deploy(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Deploy()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
+}
+
+func Test_Delete(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(vappResponses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Delete()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				assert.Equal(t, "success", task.Task.Status)
+			}
+		}
+	}
+}
+
+func Test_RunCustomizationScript(t *testing.T) {
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/org/11111111-1111-1111-1111-111111111111":                                {200, nil, orgExample},
+		"/api/network/44444444-4444-4444-4444-4444444444444":                           {200, nil, orgvdcnetExample},
+		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                            {200, nil, catalogExample},
+		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":                        {200, nil, catalogitemExample},
+		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5":          {200, nil, vapptemplateExample},
+		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":             {200, nil, instantiatedvappExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                          {200, nil, vappExample},
+		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/guestCustomizationSection/": {200, nil, taskExample},
+	}
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
+	org, err := ctx.VDC.GetVDCOrg()
+	if assert.NoError(t, err) {
+		// Populate OrgVDCNetwork
+		net, err := ctx.VDC.FindVDCNetwork("networkName")
+		if assert.NoError(t, err) {
+			// Populate Catalog
+			cat, err := org.FindCatalog("Public Catalog")
+			if assert.NoError(t, err) {
+				// Populate Catalog Item
+				catitem, err := cat.FindCatalogItem("CentOS64-32bit")
+				if assert.NoError(t, err) {
+					// Get VAppTemplate
+					vapptemplate, err := catitem.GetVAppTemplate()
+					if assert.NoError(t, err) {
+						// Compose VApp
+						task, err := ctx.VApp.ComposeVApp(net, vapptemplate, "name", "description")
+						if assert.NoError(t, err) {
+							assert.Equal(t, "vdcInstantiateVapp", task.Task.OperationName)
+							task, err = ctx.VApp.RunCustomizationScript("computername", "this is my script")
+							if assert.NoError(t, err) {
+								assert.Equal(t, "success", task.Task.Status)
+								assert.Equal(t, 8, cc.Pop())
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
-	// Populate OrgVDCNetwork
-	net, err := s.vdc.FindVDCNetwork("networkName")
-	c.Assert(err, IsNil)
+func Test_ChangeCPUcount(t *testing.T) {
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/org/11111111-1111-1111-1111-111111111111":                                {200, nil, orgExample},
+		"/api/network/44444444-4444-4444-4444-4444444444444":                           {200, nil, orgvdcnetExample},
+		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                            {200, nil, catalogExample},
+		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":                        {200, nil, catalogitemExample},
+		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5":          {200, nil, vapptemplateExample},
+		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":             {200, nil, instantiatedvappExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                          {200, nil, vappExample},
+		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/virtualHardwareSection/cpu": {200, nil, taskExample},
+	}
 
-	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
-	c.Assert(err, IsNil)
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if !assert.NoError(t, err) {
+		return
+	}
 
-	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	c.Assert(err, IsNil)
+	// Get the Org populated
+	org, err := ctx.VDC.GetVDCOrg()
+	if assert.NoError(t, err) {
+		// Populate OrgVDCNetwork
+		net, err := ctx.VDC.FindVDCNetwork("networkName")
+		if assert.NoError(t, err) {
+			// Populate Catalog
+			cat, err := org.FindCatalog("Public Catalog")
+			if assert.NoError(t, err) {
+				// Populate Catalog Item
+				catitem, err := cat.FindCatalogItem("CentOS64-32bit")
+				if assert.NoError(t, err) {
+					// Get VAppTemplate
+					vapptemplate, err := catitem.GetVAppTemplate()
+					if assert.NoError(t, err) {
+						// Compose VApp
+						task, err := ctx.VApp.ComposeVApp(net, vapptemplate, "name", "description")
+						if assert.NoError(t, err) {
+							assert.Equal(t, "vdcInstantiateVapp", task.Task.OperationName)
+							task, err = ctx.VApp.ChangeCPUcount(2)
+							if assert.NoError(t, err) {
+								assert.Equal(t, "success", task.Task.Status)
+								assert.Equal(t, 8, cc.Pop())
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
-	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
-	c.Assert(err, IsNil)
+func Test_ChangeMemorySize(t *testing.T) {
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/org/11111111-1111-1111-1111-111111111111":                                   {200, nil, orgExample},
+		"/api/network/44444444-4444-4444-4444-4444444444444":                              {200, nil, orgvdcnetExample},
+		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                               {200, nil, catalogExample},
+		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":                           {200, nil, catalogitemExample},
+		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5":             {200, nil, vapptemplateExample},
+		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":                {200, nil, instantiatedvappExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                             {200, nil, vappExample},
+		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/virtualHardwareSection/memory": {200, nil, taskExample},
+	}
 
-	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if !assert.NoError(t, err) {
+		return
+	}
 
-	task, err = s.vapp.ChangeMemorySize(4096)
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-	_ = testServer.WaitRequests(8)
-
+	// Get the Org populated
+	org, err := ctx.VDC.GetVDCOrg()
+	if assert.NoError(t, err) {
+		// Populate OrgVDCNetwork
+		net, err := ctx.VDC.FindVDCNetwork("networkName")
+		if assert.NoError(t, err) {
+			// Populate Catalog
+			cat, err := org.FindCatalog("Public Catalog")
+			if assert.NoError(t, err) {
+				// Populate Catalog Item
+				catitem, err := cat.FindCatalogItem("CentOS64-32bit")
+				if assert.NoError(t, err) {
+					// Get VAppTemplate
+					vapptemplate, err := catitem.GetVAppTemplate()
+					if assert.NoError(t, err) {
+						// Compose VApp
+						task, err := ctx.VApp.ComposeVApp(net, vapptemplate, "name", "description")
+						if assert.NoError(t, err) {
+							assert.Equal(t, "vdcInstantiateVapp", task.Task.OperationName)
+							task, err = ctx.VApp.ChangeMemorySize(4096)
+							if assert.NoError(t, err) {
+								assert.Equal(t, "success", task.Task.Status)
+								assert.Equal(t, 8, cc.Pop())
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 var instantiatedvappExample = `

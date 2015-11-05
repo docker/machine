@@ -8,12 +8,6 @@ import (
 	"testing"
 )
 
-func TestAction_DropletsServiceOpImplementsActionService(t *testing.T) {
-	if !Implements((*DropletsService)(nil), new(DropletsServiceOp)) {
-		t.Error("DropletsServiceOp does not implement DropletsService")
-	}
-}
-
 func TestDroplets_ListDroplets(t *testing.T) {
 	setup()
 	defer teardown()
@@ -43,8 +37,8 @@ func TestDroplets_ListDropletsMultiplePages(t *testing.T) {
 
 		dr := dropletsRoot{
 			Droplets: []Droplet{
-				Droplet{ID: 1},
-				Droplet{ID: 2},
+				{ID: 1},
+				{ID: 2},
 			},
 			Links: &Links{
 				Pages: &Pages{Next: "http://example.com/v2/droplets/?page=2"},
@@ -112,7 +106,7 @@ func TestDroplets_GetDroplet(t *testing.T) {
 		t.Errorf("Droplet.Get returned error: %v", err)
 	}
 
-	expected := &DropletRoot{Droplet: &Droplet{ID: 12345}}
+	expected := &Droplet{ID: 12345}
 	if !reflect.DeepEqual(droplets, expected) {
 		t.Errorf("Droplets.Get returned %+v, expected %+v", droplets, expected)
 	}
@@ -126,27 +120,42 @@ func TestDroplets_Create(t *testing.T) {
 		Name:   "name",
 		Region: "region",
 		Size:   "size",
-		Image:  "1",
+		Image: DropletCreateImage{
+			ID: 1,
+		},
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
-		v := new(DropletCreateRequest)
-		json.NewDecoder(r.Body).Decode(v)
+		expected := map[string]interface{}{
+			"name":               "name",
+			"region":             "region",
+			"size":               "size",
+			"image":              float64(1),
+			"ssh_keys":           nil,
+			"backups":            false,
+			"ipv6":               false,
+			"private_networking": false,
+		}
 
-		testMethod(t, r, "POST")
-		if !reflect.DeepEqual(v, createRequest) {
-			t.Errorf("Request body = %+v, expected %+v", v, createRequest)
+		var v map[string]interface{}
+		err := json.NewDecoder(r.Body).Decode(&v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("Request body = %#v, expected %#v", v, expected)
 		}
 
 		fmt.Fprintf(w, `{"droplet":{"id":1}, "links":{"actions": [{"id": 1, "href": "http://example.com", "rel": "create"}]}}`)
 	})
 
-	root, resp, err := client.Droplets.Create(createRequest)
+	droplet, resp, err := client.Droplets.Create(createRequest)
 	if err != nil {
 		t.Errorf("Droplets.Create returned error: %v", err)
 	}
 
-	if id := root.Droplet.ID; id != 1 {
+	if id := droplet.ID; id != 1 {
 		t.Errorf("expected id '%d', received '%d'", 1, id)
 	}
 
@@ -169,19 +178,136 @@ func TestDroplets_Destroy(t *testing.T) {
 	}
 }
 
-func TestNetwork_String(t *testing.T) {
-	network := &Network{
+func TestDroplets_Kernels(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/kernels", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{"kernels": [{"id":1},{"id":2}]}`)
+	})
+
+	opt := &ListOptions{Page: 2}
+	kernels, _, err := client.Droplets.Kernels(12345, opt)
+	if err != nil {
+		t.Errorf("Droplets.Kernels returned error: %v", err)
+	}
+
+	expected := []Kernel{{ID: 1}, {ID: 2}}
+	if !reflect.DeepEqual(kernels, expected) {
+		t.Errorf("Droplets.Kernels returned %+v, expected %+v", kernels, expected)
+	}
+}
+
+func TestDroplets_Snapshots(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/snapshots", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{"snapshots": [{"id":1},{"id":2}]}`)
+	})
+
+	opt := &ListOptions{Page: 2}
+	snapshots, _, err := client.Droplets.Snapshots(12345, opt)
+	if err != nil {
+		t.Errorf("Droplets.Snapshots returned error: %v", err)
+	}
+
+	expected := []Image{{ID: 1}, {ID: 2}}
+	if !reflect.DeepEqual(snapshots, expected) {
+		t.Errorf("Droplets.Snapshots returned %+v, expected %+v", snapshots, expected)
+	}
+}
+
+func TestDroplets_Backups(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/backups", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{"backups": [{"id":1},{"id":2}]}`)
+	})
+
+	opt := &ListOptions{Page: 2}
+	backups, _, err := client.Droplets.Backups(12345, opt)
+	if err != nil {
+		t.Errorf("Droplets.Backups returned error: %v", err)
+	}
+
+	expected := []Image{{ID: 1}, {ID: 2}}
+	if !reflect.DeepEqual(backups, expected) {
+		t.Errorf("Droplets.Backups returned %+v, expected %+v", backups, expected)
+	}
+}
+
+func TestDroplets_Actions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/actions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{"actions": [{"id":1},{"id":2}]}`)
+	})
+
+	opt := &ListOptions{Page: 2}
+	actions, _, err := client.Droplets.Actions(12345, opt)
+	if err != nil {
+		t.Errorf("Droplets.Actions returned error: %v", err)
+	}
+
+	expected := []Action{{ID: 1}, {ID: 2}}
+	if !reflect.DeepEqual(actions, expected) {
+		t.Errorf("Droplets.Actions returned %+v, expected %+v", actions, expected)
+	}
+}
+
+func TestDroplets_Neighbors(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/neighbors", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{"droplets": [{"id":1},{"id":2}]}`)
+	})
+
+	neighbors, _, err := client.Droplets.Neighbors(12345)
+	if err != nil {
+		t.Errorf("Droplets.Neighbors returned error: %v", err)
+	}
+
+	expected := []Droplet{{ID: 1}, {ID: 2}}
+	if !reflect.DeepEqual(neighbors, expected) {
+		t.Errorf("Droplets.Neighbors returned %+v, expected %+v", neighbors, expected)
+	}
+}
+
+func TestNetworkV4_String(t *testing.T) {
+	network := &NetworkV4{
 		IPAddress: "192.168.1.2",
 		Netmask:   "255.255.255.0",
 		Gateway:   "192.168.1.1",
 	}
 
 	stringified := network.String()
-	expected := `godo.Network{IPAddress:"192.168.1.2", Netmask:"255.255.255.0", Gateway:"192.168.1.1", Type:""}`
+	expected := `godo.NetworkV4{IPAddress:"192.168.1.2", Netmask:"255.255.255.0", Gateway:"192.168.1.1", Type:""}`
 	if expected != stringified {
-		t.Errorf("Distribution.String returned %+v, expected %+v", stringified, expected)
+		t.Errorf("NetworkV4.String returned %+v, expected %+v", stringified, expected)
 	}
 
+}
+
+func TestNetworkV6_String(t *testing.T) {
+	network := &NetworkV6{
+		IPAddress: "2604:A880:0800:0010:0000:0000:02DD:4001",
+		Netmask:   64,
+		Gateway:   "2604:A880:0800:0010:0000:0000:0000:0001",
+	}
+	stringified := network.String()
+	expected := `godo.NetworkV6{IPAddress:"2604:A880:0800:0010:0000:0000:02DD:4001", Netmask:64, Gateway:"2604:A880:0800:0010:0000:0000:0000:0001", Type:""}`
+	if expected != stringified {
+		t.Errorf("NetworkV6.String returned %+v, expected %+v", stringified, expected)
+	}
 }
 
 func TestDroplet_String(t *testing.T) {
@@ -196,10 +322,13 @@ func TestDroplet_String(t *testing.T) {
 	image := &Image{
 		ID:           1,
 		Name:         "Image",
+		Type:         "snapshot",
 		Distribution: "Ubuntu",
 		Slug:         "image",
 		Public:       true,
 		Regions:      []string{"one", "two"},
+		MinDiskSize:  20,
+		Created:      "2013-11-27T09:24:55Z",
 	}
 
 	size := &Size{
@@ -208,13 +337,13 @@ func TestDroplet_String(t *testing.T) {
 		PriceHourly:  456,
 		Regions:      []string{"1", "2"},
 	}
-	network := &Network{
+	network := &NetworkV4{
 		IPAddress: "192.168.1.2",
 		Netmask:   "255.255.255.0",
 		Gateway:   "192.168.1.1",
 	}
 	networks := &Networks{
-		V4: []Network{*network},
+		V4: []NetworkV4{*network},
 	}
 
 	droplet := &Droplet{
@@ -232,10 +361,11 @@ func TestDroplet_String(t *testing.T) {
 		Locked:      false,
 		Status:      "active",
 		Networks:    networks,
+		SizeSlug:    "1gb",
 	}
 
 	stringified := droplet.String()
-	expected := `godo.Droplet{ID:1, Name:"droplet", Memory:123, Vcpus:456, Disk:789, Region:godo.Region{Slug:"region", Name:"Region", Sizes:["1" "2"], Available:true}, Image:godo.Image{ID:1, Name:"Image", Distribution:"Ubuntu", Slug:"image", Public:true, Regions:["one" "two"]}, Size:godo.Size{Slug:"size", Memory:0, Vcpus:0, Disk:0, PriceMonthly:123, PriceHourly:456, Regions:["1" "2"]}, BackupIDs:[1], SnapshotIDs:[1], Locked:false, Status:"active", Networks:godo.Networks{V4:[godo.Network{IPAddress:"192.168.1.2", Netmask:"255.255.255.0", Gateway:"192.168.1.1", Type:""}]}, ActionIDs:[1]}`
+	expected := `godo.Droplet{ID:1, Name:"droplet", Memory:123, Vcpus:456, Disk:789, Region:godo.Region{Slug:"region", Name:"Region", Sizes:["1" "2"], Available:true}, Image:godo.Image{ID:1, Name:"Image", Type:"snapshot", Distribution:"Ubuntu", Slug:"image", Public:true, Regions:["one" "two"], MinDiskSize:20, Created:"2013-11-27T09:24:55Z"}, Size:godo.Size{Slug:"size", Memory:0, Vcpus:0, Disk:0, PriceMonthly:123, PriceHourly:456, Regions:["1" "2"], Available:false, Transfer:0}, SizeSlug:"1gb", BackupIDs:[1], SnapshotIDs:[1], Locked:false, Status:"active", Networks:godo.Networks{V4:[godo.NetworkV4{IPAddress:"192.168.1.2", Netmask:"255.255.255.0", Gateway:"192.168.1.1", Type:""}]}, ActionIDs:[1], Created:""}`
 	if expected != stringified {
 		t.Errorf("Droplet.String returned %+v, expected %+v", stringified, expected)
 	}

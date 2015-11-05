@@ -14,35 +14,35 @@ func signatureS3(stringToSign string, keys Credentials) string {
 	return base64.StdEncoding.EncodeToString(hashed)
 }
 
-func stringToSignS3(req *http.Request) string {
-	str := req.Method + "\n"
+func stringToSignS3(request *http.Request) string {
+	str := request.Method + "\n"
 
-	if req.Header.Get("Content-Md5") != "" {
-		str += req.Header.Get("Content-Md5")
+	if request.Header.Get("Content-Md5") != "" {
+		str += request.Header.Get("Content-Md5")
 	} else {
-		body := readAndReplaceBody(req)
+		body := readAndReplaceBody(request)
 		if len(body) > 0 {
 			str += hashMD5(body)
 		}
 	}
 	str += "\n"
 
-	str += req.Header.Get("Content-Type") + "\n"
+	str += request.Header.Get("Content-Type") + "\n"
 
-	if req.Header.Get("Date") != "" {
-		str += req.Header.Get("Date")
+	if request.Header.Get("Date") != "" {
+		str += request.Header.Get("Date")
 	} else {
 		str += timestampS3()
 	}
 
 	str += "\n"
 
-	canonicalHeaders := canonicalAmzHeadersS3(req)
+	canonicalHeaders := canonicalAmzHeadersS3(request)
 	if canonicalHeaders != "" {
 		str += canonicalHeaders
 	}
 
-	str += canonicalResourceS3(req)
+	str += canonicalResourceS3(request)
 
 	return str
 }
@@ -55,10 +55,10 @@ func timeToUnixEpochString(t time.Time) string {
 	return strconv.FormatInt(t.Unix(), 10)
 }
 
-func canonicalAmzHeadersS3(req *http.Request) string {
+func canonicalAmzHeadersS3(request *http.Request) string {
 	var headers []string
 
-	for header := range req.Header {
+	for header := range request.Header {
 		standardized := strings.ToLower(strings.TrimSpace(header))
 		if strings.HasPrefix(standardized, "x-amz") {
 			headers = append(headers, standardized)
@@ -68,7 +68,7 @@ func canonicalAmzHeadersS3(req *http.Request) string {
 	sort.Strings(headers)
 
 	for i, header := range headers {
-		headers[i] = header + ":" + strings.Replace(req.Header.Get(header), "\n", " ", -1)
+		headers[i] = header + ":" + strings.Replace(request.Header.Get(header), "\n", " ", -1)
 	}
 
 	if len(headers) > 0 {
@@ -78,18 +78,18 @@ func canonicalAmzHeadersS3(req *http.Request) string {
 	}
 }
 
-func canonicalResourceS3(req *http.Request) string {
+func canonicalResourceS3(request *http.Request) string {
 	res := ""
 
-	if isS3VirtualHostedStyle(req) {
-		bucketname := strings.Split(req.Host, ".")[0]
+	if isS3VirtualHostedStyle(request) {
+		bucketname := strings.Split(request.Host, ".")[0]
 		res += "/" + bucketname
 	}
 
-	res += req.URL.Path
+	res += request.URL.Path
 
 	for _, subres := range strings.Split(subresourcesS3, ",") {
-		if strings.HasPrefix(req.URL.RawQuery, subres) {
+		if strings.HasPrefix(request.URL.RawQuery, subres) {
 			res += "?" + subres
 		}
 	}
@@ -97,18 +97,18 @@ func canonicalResourceS3(req *http.Request) string {
 	return res
 }
 
-func prepareRequestS3(req *http.Request) *http.Request {
-	req.Header.Set("Date", timestampS3())
-	if req.URL.Path == "" {
-		req.URL.Path += "/"
+func prepareRequestS3(request *http.Request) *http.Request {
+	request.Header.Set("Date", timestampS3())
+	if request.URL.Path == "" {
+		request.URL.Path += "/"
 	}
-	return req
+	return request
 }
 
 // Info: http://docs.aws.amazon.com/AmazonS3/latest/dev/VirtualHosting.html
-func isS3VirtualHostedStyle(req *http.Request) bool {
-	service, _ := serviceAndRegion(req.Host)
-	return service == "s3" && strings.Count(req.Host, ".") == 3
+func isS3VirtualHostedStyle(request *http.Request) bool {
+	service, _ := serviceAndRegion(request.Host)
+	return service == "s3" && strings.Count(request.Host, ".") == 3
 }
 
 func timestampS3() string {

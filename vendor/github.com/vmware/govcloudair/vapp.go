@@ -15,18 +15,21 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// VApp a vApp client
 type VApp struct {
 	VApp *types.VApp
-	c    *Client
+	c    Client
 }
 
-func NewVApp(c *Client) *VApp {
+// NewVApp creates a new vApp client
+func NewVApp(c Client) *VApp {
 	return &VApp{
 		VApp: new(types.VApp),
 		c:    c,
 	}
 }
 
+// Refresh refreshes this vApp
 func (v *VApp) Refresh() error {
 
 	if v.VApp.HREF == "" {
@@ -35,9 +38,9 @@ func (v *VApp) Refresh() error {
 
 	u, _ := url.ParseRequestURI(v.VApp.HREF)
 
-	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return fmt.Errorf("error retrieving task: %s", err)
 	}
@@ -54,6 +57,7 @@ func (v *VApp) Refresh() error {
 	return nil
 }
 
+// ComposeVApp composes a new vapp
 func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, name string, description string) (Task, error) {
 
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetwork.OrgVDCNetwork == nil {
@@ -124,14 +128,14 @@ func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplat
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
-	s := v.c.VCDVDCHREF
+	s := v.c.BaseURL()
 	s.Path += "/action/composeVApp"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", s, b)
+	req := v.c.NewRequest(map[string]string{}, "POST", &s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.composeVAppParams+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error instantiating a new vApp: %s", err)
 	}
@@ -148,14 +152,15 @@ func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplat
 
 }
 
+// PowerOn powers this vApp on
 func (v *VApp) PowerOn() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/power/action/powerOn"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error powering on vApp: %s", err)
 	}
@@ -171,14 +176,15 @@ func (v *VApp) PowerOn() (Task, error) {
 
 }
 
+// PowerOff powers this vApp off
 func (v *VApp) PowerOff() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/power/action/powerOff"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error powering off vApp: %s", err)
 	}
@@ -194,14 +200,15 @@ func (v *VApp) PowerOff() (Task, error) {
 
 }
 
+// Reboot reboots this vApp
 func (v *VApp) Reboot() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/power/action/reboot"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error rebooting vApp: %s", err)
 	}
@@ -217,14 +224,15 @@ func (v *VApp) Reboot() (Task, error) {
 
 }
 
+// Reset resets this vApp
 func (v *VApp) Reset() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/power/action/reset"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error resetting vApp: %s", err)
 	}
@@ -240,14 +248,15 @@ func (v *VApp) Reset() (Task, error) {
 
 }
 
+// Suspend suspends this vApp
 func (v *VApp) Suspend() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/power/action/suspend"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error suspending vApp: %s", err)
 	}
@@ -263,14 +272,15 @@ func (v *VApp) Suspend() (Task, error) {
 
 }
 
+// Shutdown shuts this vApp down
 func (v *VApp) Shutdown() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/power/action/shutdown"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error shutting down vApp: %s", err)
 	}
@@ -286,6 +296,7 @@ func (v *VApp) Shutdown() (Task, error) {
 
 }
 
+// Undeploy removes the deployment for this vApp
 func (v *VApp) Undeploy() (Task, error) {
 
 	vu := &types.UndeployVAppParams{
@@ -309,11 +320,11 @@ func (v *VApp) Undeploy() (Task, error) {
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/action/undeploy"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.undeployVAppParams+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error undeploy vApp: %s", err)
 	}
@@ -329,6 +340,7 @@ func (v *VApp) Undeploy() (Task, error) {
 
 }
 
+// Deploy this vApp
 func (v *VApp) Deploy() (Task, error) {
 
 	vu := &types.DeployVAppParams{
@@ -352,11 +364,11 @@ func (v *VApp) Deploy() (Task, error) {
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/action/deploy"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := v.c.NewRequest(map[string]string{}, "POST", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.deployVAppParams+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error undeploy vApp: %s", err)
 	}
@@ -372,13 +384,14 @@ func (v *VApp) Deploy() (Task, error) {
 
 }
 
+// Delete this vApp
 func (v *VApp) Delete() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 
-	req := v.c.NewRequest(map[string]string{}, "DELETE", *s, nil)
+	req := v.c.NewRequest(map[string]string{}, "DELETE", s, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error deleting vApp: %s", err)
 	}
@@ -394,6 +407,7 @@ func (v *VApp) Delete() (Task, error) {
 
 }
 
+// RunCustomizationScript runs a customization script on the vApp
 func (v *VApp) RunCustomizationScript(computername, script string) (Task, error) {
 
 	err := v.Refresh()
@@ -435,11 +449,11 @@ func (v *VApp) RunCustomizationScript(computername, script string) (Task, error)
 	s, _ := url.ParseRequestURI(v.VApp.Children.VM[0].HREF)
 	s.Path += "/guestCustomizationSection/"
 
-	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+	req := v.c.NewRequest(map[string]string{}, "PUT", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.guestCustomizationSection+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing VM: %s", err)
 	}
@@ -455,6 +469,7 @@ func (v *VApp) RunCustomizationScript(computername, script string) (Task, error)
 
 }
 
+// GetStatus gets the status for this vApp
 func (v *VApp) GetStatus() (string, error) {
 	err := v.Refresh()
 	if err != nil {
@@ -463,6 +478,7 @@ func (v *VApp) GetStatus() (string, error) {
 	return types.VAppStatuses[v.VApp.Status], nil
 }
 
+// ChangeCPUcount change the cpu count for this vApp
 func (v *VApp) ChangeCPUcount(size int) (Task, error) {
 
 	err := v.Refresh()
@@ -512,11 +528,11 @@ func (v *VApp) ChangeCPUcount(size int) (Task, error) {
 	s, _ := url.ParseRequestURI(v.VApp.Children.VM[0].HREF)
 	s.Path += "/virtualHardwareSection/cpu"
 
-	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+	req := v.c.NewRequest(map[string]string{}, "PUT", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.rasdItem+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing VM: %s", err)
 	}
@@ -532,6 +548,7 @@ func (v *VApp) ChangeCPUcount(size int) (Task, error) {
 
 }
 
+// ChangeMemorySize change the memory for this vApp
 func (v *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	err := v.Refresh()
@@ -581,11 +598,11 @@ func (v *VApp) ChangeMemorySize(size int) (Task, error) {
 	s, _ := url.ParseRequestURI(v.VApp.Children.VM[0].HREF)
 	s.Path += "/virtualHardwareSection/memory"
 
-	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+	req := v.c.NewRequest(map[string]string{}, "PUT", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.rasdItem+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing VM: %s", err)
 	}

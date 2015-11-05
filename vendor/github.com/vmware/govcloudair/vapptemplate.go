@@ -8,12 +8,14 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// VAppTemplate client
 type VAppTemplate struct {
 	VAppTemplate *types.VAppTemplate
-	c            *Client
+	c            Client
 }
 
-func NewVAppTemplate(c *Client) *VAppTemplate {
+// NewVAppTemplate create a new VAppTemplate client
+func NewVAppTemplate(c Client) *VAppTemplate {
 	return &VAppTemplate{
 		VAppTemplate: new(types.VAppTemplate),
 		c:            c,

@@ -5,38 +5,39 @@
 package govcloudair
 
 import (
-	. "gopkg.in/check.v1"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func (s *S) Test_FindCatalogItem(c *C) {
+var catalogResponses = map[string]testResponse{
+	"/api/org/11111111-1111-1111-1111-111111111111":         {200, nil, orgExample},
+	"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":     {200, nil, catalogExample},
+	"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae": {200, nil, catalogitemExample},
+}
 
-	// Get the Org populated
-	testServer.Response(200, nil, orgExample)
-	org, err := s.vdc.GetVDCOrg()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
+func Test_FindCatalogItem(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(catalogResponses, cc)))
+	if assert.NoError(t, err) {
 
-	// Populate Catalog
-	testServer.Response(200, nil, catalogExample)
-	cat, err := org.FindCatalog("Public Catalog")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
+		org, err := ctx.VDC.GetVDCOrg()
+		if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
 
-	// Find Catalog Item
-	testServer.Response(200, nil, catalogitemExample)
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
+			cat, err := org.FindCatalog("Public Catalog")
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
 
-	c.Assert(err, IsNil)
-	c.Assert(catitem.CatalogItem.HREF, Equals, "http://localhost:4444/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae")
-	c.Assert(catitem.CatalogItem.Description, Equals, "id: cts-6.4-32bit")
+				catitem, err := cat.FindCatalogItem("CentOS64-32bit")
+				if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+					assert.Equal(t, ctx.Server.URL+"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae", catitem.CatalogItem.HREF)
+					assert.Equal(t, "id: cts-6.4-32bit", catitem.CatalogItem.Description)
+				}
 
-	// Test non-existant catalog item
-	catitem, err = cat.FindCatalogItem("INVALID")
-	c.Assert(err, NotNil)
-
+				_, err = cat.FindCatalogItem("INVALID")
+				assert.Error(t, err)
+			}
+		}
+	}
 }
 
 var catalogExample = `

@@ -99,6 +99,11 @@ func Create(client *gophercloud.ServiceClient, opts servers.CreateOptsBuilder) s
 		return res
 	}
 
+	// Delete imageName and flavorName that come from ToServerCreateMap().
+	// As of Liberty, Boot From Volume is failing if they are passed.
+	delete(reqBody["server"].(map[string]interface{}), "imageName")
+	delete(reqBody["server"].(map[string]interface{}), "flavorName")
+
 	_, res.Err = client.Post(createURL(client), reqBody, &res.Body, &gophercloud.RequestOpts{
 		OkCodes: []int{200, 202},
 	})

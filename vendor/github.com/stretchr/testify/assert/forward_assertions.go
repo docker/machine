@@ -2,10 +2,13 @@ package assert
 
 import "time"
 
+// Assertions provides assertion methods around the
+// TestingT interface.
 type Assertions struct {
 	t TestingT
 }
 
+// New makes a new Assertions object for the specified TestingT.
 func New(t TestingT) *Assertions {
 	return &Assertions{
 		t: t,
@@ -85,7 +88,7 @@ func (a *Assertions) Empty(object interface{}, msgAndArgs ...interface{}) bool {
 	return Empty(a.t, object, msgAndArgs...)
 }
 
-// Empty asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or a
+// NotEmpty asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or a
 // slice with len == 0.
 //
 // if assert.NotEmpty(obj) {
@@ -152,7 +155,7 @@ func (a *Assertions) NotContains(s, contains interface{}, msgAndArgs ...interfac
 	return NotContains(a.t, s, contains, msgAndArgs...)
 }
 
-// Uses a Comparison to assert a complex condition.
+// Condition uses a Comparison to assert a complex condition.
 func (a *Assertions) Condition(comp Comparison, msgAndArgs ...interface{}) bool {
 	return Condition(a.t, comp, msgAndArgs...)
 }
@@ -259,4 +262,23 @@ func (a *Assertions) Regexp(rx interface{}, str interface{}, msgAndArgs ...inter
 // Returns whether the assertion was successful (true) or not (false).
 func (a *Assertions) NotRegexp(rx interface{}, str interface{}, msgAndArgs ...interface{}) bool {
 	return NotRegexp(a.t, rx, str, msgAndArgs...)
+}
+
+// Zero asserts that i is the zero value for its type and returns the truth.
+func (a *Assertions) Zero(i interface{}, msgAndArgs ...interface{}) bool {
+	return Zero(a.t, i, msgAndArgs...)
+}
+
+// NotZero asserts that i is not the zero value for its type and returns the truth.
+func (a *Assertions) NotZero(i interface{}, msgAndArgs ...interface{}) bool {
+	return NotZero(a.t, i, msgAndArgs...)
+}
+
+// JSONEq asserts that two JSON strings are equivalent.
+//
+//  assert.JSONEq(t, `{"hello": "world", "foo": "bar"}`, `{"foo": "bar", "hello": "world"}`)
+//
+// Returns whether the assertion was successful (true) or not (false).
+func (a *Assertions) JSONEq(expected string, actual string, msgAndArgs ...interface{}) bool {
+	return JSONEq(a.t, expected, actual, msgAndArgs...)
 }

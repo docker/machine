@@ -8,12 +8,6 @@ import (
 	"testing"
 )
 
-func TestAction_DomainsServiceOpImplementsDomainsService(t *testing.T) {
-	if !Implements((*DomainsService)(nil), new(DomainsServiceOp)) {
-		t.Error("DomainsServiceOp does not implement DomainsService")
-	}
-}
-
 func TestDomains_ListDomains(t *testing.T) {
 	setup()
 	defer teardown()
@@ -96,7 +90,7 @@ func TestDomains_GetDomain(t *testing.T) {
 		t.Errorf("domain.Get returned error: %v", err)
 	}
 
-	expected := &DomainRoot{Domain: &Domain{Name: "example.com"}}
+	expected := &Domain{Name: "example.com"}
 	if !reflect.DeepEqual(domains, expected) {
 		t.Errorf("domains.Get returned %+v, expected %+v", domains, expected)
 	}
@@ -123,13 +117,7 @@ func TestDomains_Create(t *testing.T) {
 			t.Errorf("Request body = %+v, expected %+v", v, createRequest)
 		}
 
-		dr := DomainRoot{&Domain{Name: v.Name}}
-		b, err := json.Marshal(dr)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		fmt.Fprint(w, string(b))
+		fmt.Fprint(w, `{"domain":{"name":"example.com"}}`)
 	})
 
 	domain, _, err := client.Domains.Create(createRequest)
@@ -137,7 +125,7 @@ func TestDomains_Create(t *testing.T) {
 		t.Errorf("Domains.Create returned error: %v", err)
 	}
 
-	expected := &DomainRoot{Domain: &Domain{Name: "example.com"}}
+	expected := &Domain{Name: "example.com"}
 	if !reflect.DeepEqual(domain, expected) {
 		t.Errorf("Domains.Create returned %+v, expected %+v", domain, expected)
 	}
@@ -252,7 +240,11 @@ func TestDomains_CreateRecordForDomainName(t *testing.T) {
 	mux.HandleFunc("/v2/domains/example.com/records",
 		func(w http.ResponseWriter, r *http.Request) {
 			v := new(DomainRecordEditRequest)
-			json.NewDecoder(r.Body).Decode(v)
+			err := json.NewDecoder(r.Body).Decode(v)
+
+			if err != nil {
+				t.Fatalf("decode json: %v", err)
+			}
 
 			testMethod(t, r, "POST")
 			if !reflect.DeepEqual(v, createRequest) {
@@ -288,7 +280,10 @@ func TestDomains_EditRecordForDomainName(t *testing.T) {
 
 	mux.HandleFunc("/v2/domains/example.com/records/1", func(w http.ResponseWriter, r *http.Request) {
 		v := new(DomainRecordEditRequest)
-		json.NewDecoder(r.Body).Decode(v)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
 
 		testMethod(t, r, "PUT")
 		if !reflect.DeepEqual(v, editRequest) {

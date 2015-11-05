@@ -14,18 +14,21 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// EdgeGateway an edgegateway client
 type EdgeGateway struct {
 	EdgeGateway *types.EdgeGateway
-	c           *Client
+	c           Client
 }
 
-func NewEdgeGateway(c *Client) *EdgeGateway {
+// NewEdgeGateway creates a new edge gateway client
+func NewEdgeGateway(c Client) *EdgeGateway {
 	return &EdgeGateway{
 		EdgeGateway: new(types.EdgeGateway),
 		c:           c,
 	}
 }
 
+// Refresh refreshes the edge gateway
 func (e *EdgeGateway) Refresh() error {
 
 	if e.EdgeGateway == nil {
@@ -34,9 +37,9 @@ func (e *EdgeGateway) Refresh() error {
 
 	u, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
 
-	req := e.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := e.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-	resp, err := checkResp(e.c.Http.Do(req))
+	resp, err := checkResp(e.c.DoHTTP(req))
 	if err != nil {
 		return fmt.Errorf("error retreiving Edge Gateway: %s", err)
 	}
@@ -53,6 +56,7 @@ func (e *EdgeGateway) Refresh() error {
 	return nil
 }
 
+// Remove1to1Mapping removes a 1 to 1 mapping on the gateway
 func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error) {
 
 	// Refresh EdgeGateway rules
@@ -171,11 +175,11 @@ func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error)
 	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
 	s.Path += "/action/configureServices"
 
-	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := e.c.NewRequest(map[string]string{}, "POST", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.Http.Do(req))
+	resp, err := checkResp(e.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}
@@ -191,6 +195,7 @@ func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error)
 
 }
 
+// Create1to1Mapping creates a 1-to-1 mapping in the gateway
 func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) (Task, error) {
 
 	// Refresh EdgeGateway rules
@@ -290,11 +295,11 @@ func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) 
 	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
 	s.Path += "/action/configureServices"
 
-	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := e.c.NewRequest(map[string]string{}, "POST", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.Http.Do(req))
+	resp, err := checkResp(e.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}

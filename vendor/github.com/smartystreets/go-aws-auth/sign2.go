@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func prepareRequestV2(req *http.Request, keys Credentials) *http.Request {
+func prepareRequestV2(request *http.Request, keys Credentials) *http.Request {
 
 	keyID := keys.AccessKeyID
 
@@ -17,20 +17,20 @@ func prepareRequestV2(req *http.Request, keys Credentials) *http.Request {
 	values.Set("SignatureMethod", "HmacSHA256")
 	values.Set("Timestamp", timestampV2())
 
-	augmentRequestQuery(req, values)
+	augmentRequestQuery(request, values)
 
-	if req.URL.Path == "" {
-		req.URL.Path += "/"
+	if request.URL.Path == "" {
+		request.URL.Path += "/"
 	}
 
-	return req
+	return request
 }
 
-func stringToSignV2(req *http.Request) string {
-	str := req.Method + "\n"
-	str += strings.ToLower(req.URL.Host) + "\n"
-	str += req.URL.Path + "\n"
-	str += canonicalQueryStringV2(req)
+func stringToSignV2(request *http.Request) string {
+	str := request.Method + "\n"
+	str += strings.ToLower(request.URL.Host) + "\n"
+	str += request.URL.Path + "\n"
+	str += canonicalQueryStringV2(request)
 	return str
 }
 
@@ -39,8 +39,8 @@ func signatureV2(strToSign string, keys Credentials) string {
 	return base64.StdEncoding.EncodeToString(hashed)
 }
 
-func canonicalQueryStringV2(req *http.Request) string {
-	return req.URL.RawQuery
+func canonicalQueryStringV2(request *http.Request) string {
+	return request.URL.RawQuery
 }
 
 func timestampV2() string {

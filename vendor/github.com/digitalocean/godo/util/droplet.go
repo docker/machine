@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/digitaloceancloud/godo"
+	"github.com/digitalocean/godo"
 )
 
 const (

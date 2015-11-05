@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"testing"
 	"time"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -21,41 +22,41 @@ func TestSignature2(t *testing.T) {
 		}
 
 		Convey("Given a plain request that is unprepared", func() {
-			req := test_plainRequestV2()
+			request := test_plainRequestV2()
 
 			Convey("The request should be prepared to be signed", func() {
 				expectedUnsigned := test_unsignedRequestV2()
-				prepareRequestV2(req, keys)
-				So(req, ShouldResemble, expectedUnsigned)
+				prepareRequestV2(request, keys)
+				So(request, ShouldResemble, expectedUnsigned)
 			})
 		})
 
 		Convey("Given a prepared, but unsigned, request", func() {
-			req := test_unsignedRequestV2()
+			request := test_unsignedRequestV2()
 
 			Convey("The canonical query string should be correct", func() {
-				actual := canonicalQueryStringV2(req)
+				actual := canonicalQueryStringV2(request)
 				expected := canonicalQsV2
 				So(actual, ShouldEqual, expected)
 			})
 
 			Convey("The absolute path should be extracted correctly", func() {
-				So(req.URL.Path, ShouldEqual, "/")
+				So(request.URL.Path, ShouldEqual, "/")
 			})
 
 			Convey("The string to sign should be well-formed", func() {
-				actual := stringToSignV2(req)
+				actual := stringToSignV2(request)
 				So(actual, ShouldEqual, expectedStringToSignV2)
 			})
 
 			Convey("The resulting signature should be correct", func() {
-				actual := signatureV2(stringToSignV2(req), keys)
+				actual := signatureV2(stringToSignV2(request), keys)
 				So(actual, ShouldEqual, "i91nKc4PWAt0JJIdXwz9HxZCJDdiy6cf/Mj6vPxyYIs=")
 			})
 
 			Convey("The final signed request should be correctly formed", func() {
-				Sign2(req, keys)
-				actual := req.URL.String()
+				Sign2(request, keys)
+				actual := request.URL.String()
 				So(actual, ShouldResemble, expectedFinalUrlV2)
 			})
 		})
@@ -64,14 +65,14 @@ func TestSignature2(t *testing.T) {
 
 func TestVersion2STSRequestPreparer(t *testing.T) {
 	Convey("Given a plain request ", t, func() {
-		req := test_plainRequestV2()
+		request := test_plainRequestV2()
 
 		Convey("And a set of credentials with an STS token", func() {
 			var keys Credentials
 			keys = *testCredV2WithSTS
 
 			Convey("It should include the SecurityToken parameter when the request is signed", func() {
-				actualSigned := Sign2(req, keys)
+				actualSigned := Sign2(request, keys)
 				actual := actualSigned.URL.Query()["SecurityToken"][0]
 
 				So(actual, ShouldNotBeBlank)
@@ -90,19 +91,19 @@ func test_plainRequestV2() *http.Request {
 
 	url := baseUrlV2 + "?" + values.Encode()
 
-	req, err := http.NewRequest("GET", url, nil)
+	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	return req
+	return request
 }
 
 func test_unsignedRequestV2() *http.Request {
-	req := test_plainRequestV2()
+	request := test_plainRequestV2()
 	newUrl, _ := url.Parse(baseUrlV2 + "/?" + canonicalQsV2)
-	req.URL = newUrl
-	return req
+	request.URL = newUrl
+	return request
 }
 
 var (

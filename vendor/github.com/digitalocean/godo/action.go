@@ -13,7 +13,7 @@ const (
 )
 
 // ActionsService handles communction with action related methods of the
-// DigitalOcean API: https://developers.digitalocean.com/#actions
+// DigitalOcean API: https://developers.digitalocean.com/documentation/v2#actions
 type ActionsService interface {
 	List(*ListOptions) ([]Action, *Response, error)
 	Get(int) (*Action, *Response, error)
@@ -24,6 +24,8 @@ type ActionsService interface {
 type ActionsServiceOp struct {
 	client *Client
 }
+
+var _ ActionsService = &ActionsServiceOp{}
 
 type actionsRoot struct {
 	Actions []Action `json:"actions"`
@@ -43,6 +45,8 @@ type Action struct {
 	CompletedAt  *Timestamp `json:"completed_at"`
 	ResourceID   int        `json:"resource_id"`
 	ResourceType string     `json:"resource_type"`
+	Region       *Region    `json:"region,omitempty"`
+	RegionSlug   string     `json:"region_slug,omitempty"`
 }
 
 // List all actions
@@ -70,8 +74,12 @@ func (s *ActionsServiceOp) List(opt *ListOptions) ([]Action, *Response, error) {
 	return root.Actions, resp, err
 }
 
-// Get an action by ID
+// Get an action by ID.
 func (s *ActionsServiceOp) Get(id int) (*Action, *Response, error) {
+	if id < 1 {
+		return nil, nil, NewArgError("id", "cannot be less than 1")
+	}
+
 	path := fmt.Sprintf("%s/%d", actionsBasePath, id)
 	req, err := s.client.NewRequest("GET", path, nil)
 	if err != nil {

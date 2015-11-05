@@ -5,26 +5,23 @@
 package govcloudair
 
 import (
-	. "gopkg.in/check.v1"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func (s *S) Test_FindCatalog(c *C) {
-
-	// Get the Org populated
-	testServer.Response(200, nil, orgExample)
-	org, err := s.vdc.GetVDCOrg()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
-
-	// Find Catalog
-	testServer.Response(200, nil, catalogExample)
-	cat, err := org.FindCatalog("Public Catalog")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
-	c.Assert(cat.Catalog.Description, Equals, "vCHS service catalog")
-
+func Test_FindCatalog(t *testing.T) {
+	cc := new(callCounter)
+	ctx, err := setupTestContext(authHandler(testHandler(catalogResponses, cc)))
+	if assert.NoError(t, err) {
+		org, err := ctx.VDC.GetVDCOrg()
+		if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+			cat, err := org.FindCatalog("Public Catalog")
+			assert.NoError(t, err)
+			assert.Equal(t, 1, cc.Pop())
+			assert.Equal(t, "vCHS service catalog", cat.Catalog.Description)
+		}
+	}
 }
 
 var orgExample = `

@@ -12,18 +12,21 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// Task a task client
 type Task struct {
 	Task *types.Task
-	c    *Client
+	c    Client
 }
 
-func NewTask(c *Client) *Task {
+// NewTask create a new task client
+func NewTask(c Client) *Task {
 	return &Task{
 		Task: new(types.Task),
 		c:    c,
 	}
 }
 
+// Refresh this task
 func (t *Task) Refresh() error {
 
 	if t.Task == nil {
@@ -32,9 +35,9 @@ func (t *Task) Refresh() error {
 
 	u, _ := url.ParseRequestURI(t.Task.HREF)
 
-	req := t.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := t.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-	resp, err := checkResp(t.c.Http.Do(req))
+	resp, err := checkResp(t.c.DoHTTP(req))
 	if err != nil {
 		return fmt.Errorf("error retrieving task: %s", err)
 	}
@@ -51,6 +54,7 @@ func (t *Task) Refresh() error {
 	return nil
 }
 
+// WaitTaskCompletion wait for this task to complete
 func (t *Task) WaitTaskCompletion() error {
 
 	if t.Task == nil {

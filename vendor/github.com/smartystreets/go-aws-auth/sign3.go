@@ -8,10 +8,10 @@ import (
 	"time"
 )
 
-func stringToSignV3(req *http.Request) string {
+func stringToSignV3(request *http.Request) string {
 	// TASK 1. http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/RESTAuthentication.html#StringToSign
 
-	return req.Header.Get("Date") + req.Header.Get("x-amz-nonce")
+	return request.Header.Get("Date") + request.Header.Get("x-amz-nonce")
 }
 
 func signatureV3(stringToSign string, keys Credentials) string {
@@ -29,7 +29,7 @@ func buildAuthHeaderV3(signature string, keys Credentials) string {
 		", Signature=" + signature
 }
 
-func prepareRequestV3(req *http.Request) *http.Request {
+func prepareRequestV3(request *http.Request) *http.Request {
 	ts := timestampV3()
 	necessaryDefaults := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
@@ -39,16 +39,16 @@ func prepareRequestV3(req *http.Request) *http.Request {
 	}
 
 	for header, value := range necessaryDefaults {
-		if req.Header.Get(header) == "" {
-			req.Header.Set(header, value)
+		if request.Header.Get(header) == "" {
+			request.Header.Set(header, value)
 		}
 	}
 
-	if req.URL.Path == "" {
-		req.URL.Path += "/"
+	if request.URL.Path == "" {
+		request.URL.Path += "/"
 	}
 
-	return req
+	return request
 }
 
 func timestampV3() string {

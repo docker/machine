@@ -1,4 +1,4 @@
-## govcloudair [![Build Status](https://travis-ci.org/vmware/govcloudair.svg?branch=master)](https://travis-ci.org/frapposelli/govcloudair) [![Coverage Status](https://img.shields.io/coveralls/vmware/govcloudair.svg)](https://coveralls.io/r/vmware/govcloudair) [![GoDoc](https://godoc.org/github.com/vmware/govcloudair?status.svg)](http://godoc.org/github.com/vmware/govcloudair)
+## govcloudair [![Build Status](https://travis-ci.org/vmware/govcloudair.svg?branch=master)](https://travis-ci.org/vmware/govcloudair) [![Coverage Status](https://coveralls.io/repos/vmware/govcloudair/badge.svg?branch=master&service=github)](https://coveralls.io/github/vmware/govcloudair?branch=master) [![GoDoc](https://godoc.org/github.com/vmware/govcloudair?status.svg)](http://godoc.org/github.com/vmware/govcloudair)
 
 This package provides the `govcloudair` package which offers an interface to the vCloud Air 5.6 API.
 

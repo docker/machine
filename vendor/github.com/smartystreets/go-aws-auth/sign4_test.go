@@ -5,24 +5,25 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestVersion4RequestPreparer(t *testing.T) {
 	Convey("Given a plain request with no custom headers", t, func() {
-		req := test_plainRequestV4(false)
+		request := test_plainRequestV4(false)
 
 		expectedUnsigned := test_unsignedRequestV4(true, false)
 		expectedUnsigned.Header.Set("X-Amz-Date", timestampV4())
 
 		Convey("The necessary, default headers should be appended", func() {
-			prepareRequestV4(req)
-			So(req, ShouldResemble, expectedUnsigned)
+			prepareRequestV4(request)
+			So(request, ShouldResemble, expectedUnsigned)
 		})
 
 		Convey("Forward-slash should be appended to URI if not present", func() {
-			prepareRequestV4(req)
-			So(req.URL.Path, ShouldEqual, "/")
+			prepareRequestV4(request)
+			So(request.URL.Path, ShouldEqual, "/")
 		})
 
 		Convey("And a set of credentials", func() {
@@ -30,7 +31,7 @@ func TestVersion4RequestPreparer(t *testing.T) {
 			keys = *testCredV4
 
 			Convey("It should be signed with an Authorization header", func() {
-				actualSigned := Sign4(req, keys)
+				actualSigned := Sign4(request, keys)
 				actual := actualSigned.Header.Get("Authorization")
 
 				So(actual, ShouldNotBeBlank)
@@ -44,23 +45,23 @@ func TestVersion4RequestPreparer(t *testing.T) {
 
 	Convey("Given a request with custom, necessary headers", t, func() {
 		Convey("The custom, necessary headers must not be changed", func() {
-			req := test_unsignedRequestV4(true, false)
-			prepareRequestV4(req)
-			So(req, ShouldResemble, test_unsignedRequestV4(true, false))
+			request := test_unsignedRequestV4(true, false)
+			prepareRequestV4(request)
+			So(request, ShouldResemble, test_unsignedRequestV4(true, false))
 		})
 	})
 }
 
 func TestVersion4STSRequestPreparer(t *testing.T) {
 	Convey("Given a plain request with no custom headers", t, func() {
-		req := test_plainRequestV4(false)
+		request := test_plainRequestV4(false)
 
 		Convey("And a set of credentials with an STS token", func() {
 			var keys Credentials
 			keys = *testCredV4WithSTS
 
 			Convey("It should include an X-Amz-Security-Token when the request is signed", func() {
-				actualSigned := Sign4(req, keys)
+				actualSigned := Sign4(request, keys)
 				actual := actualSigned.Header.Get("X-Amz-Security-Token")
 
 				So(actual, ShouldNotBeBlank)
@@ -76,25 +77,25 @@ func TestVersion4SigningTasks(t *testing.T) {
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
 
 	Convey("Given a bogus request and credentials from AWS documentation with an additional meta tag", t, func() {
-		req := test_unsignedRequestV4(true, true)
+		request := test_unsignedRequestV4(true, true)
 		meta := new(metadata)
 
 		Convey("(Task 1) The canonical request should be built correctly", func() {
-			hashedCanonReq := hashedCanonicalRequestV4(req, meta)
+			hashedCanonReq := hashedCanonicalRequestV4(request, meta)
 
 			So(hashedCanonReq, ShouldEqual, expectingV4["CanonicalHash"])
 		})
 
 		Convey("(Task 2) The string to sign should be built correctly", func() {
-			hashedCanonReq := hashedCanonicalRequestV4(req, meta)
-			stringToSign := stringToSignV4(req, hashedCanonReq, meta)
+			hashedCanonReq := hashedCanonicalRequestV4(request, meta)
+			stringToSign := stringToSignV4(request, hashedCanonReq, meta)
 
 			So(stringToSign, ShouldEqual, expectingV4["StringToSign"])
 		})
 
 		Convey("(Task 3) The version 4 signed signature should be correct", func() {
-			hashedCanonReq := hashedCanonicalRequestV4(req, meta)
-			stringToSign := stringToSignV4(req, hashedCanonReq, meta)
+			hashedCanonReq := hashedCanonicalRequestV4(request, meta)
+			stringToSign := stringToSignV4(request, hashedCanonReq, meta)
 			signature := signatureV4(test_signingKeyV4(), stringToSign)
 
 			So(signature, ShouldEqual, expectingV4["SignatureV4"])
@@ -145,15 +146,15 @@ func TestSignature4Helpers(t *testing.T) {
 	})
 
 	Convey("Given any request with a body", t, func() {
-		req := test_plainRequestV4(false)
+		request := test_plainRequestV4(false)
 
 		Convey("Its body should be read and replaced without differences", func() {
 			expected := []byte(requestValuesV4.Encode())
 
-			actual1 := readAndReplaceBody(req)
+			actual1 := readAndReplaceBody(request)
 			So(actual1, ShouldResemble, expected)
 
-			actual2 := readAndReplaceBody(req)
+			actual2 := readAndReplaceBody(request)
 			So(actual2, ShouldResemble, expected)
 		})
 	})
@@ -167,23 +168,23 @@ func test_plainRequestV4(trailingSlash bool) *http.Request {
 		url += "/"
 	}
 
-	req, err := http.NewRequest("POST", url, body)
+	request, err := http.NewRequest("POST", url, body)
 
 	if err != nil {
 		panic(err)
 	}
 
-	return req
+	return request
 }
 
 func test_unsignedRequestV4(trailingSlash, tag bool) *http.Request {
-	req := test_plainRequestV4(trailingSlash)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
-	req.Header.Set("X-Amz-Date", "20110909T233600Z")
+	request := test_plainRequestV4(trailingSlash)
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
+	request.Header.Set("X-Amz-Date", "20110909T233600Z")
 	if tag {
-		req.Header.Set("X-Amz-Meta-Foo", "Bar!")
+		request.Header.Set("X-Amz-Meta-Foo", "Bar!")
 	}
-	return req
+	return request
 }
 
 func test_signingKeyV4() []byte {
