@@ -1,11 +1,10 @@
 package commands
 
 import (
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdStatus(c *cli.Context) error {
+func cmdStatus(c CommandLine) error {
 	if len(c.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}

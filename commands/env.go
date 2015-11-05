@@ -8,7 +8,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
 )
@@ -34,7 +33,7 @@ type ShellConfig struct {
 	NoProxyValue    string
 }
 
-func cmdEnv(c *cli.Context) error {
+func cmdEnv(c CommandLine) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
