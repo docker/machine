@@ -7,6 +7,8 @@ import (
 
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/drivers/amazonec2/amz"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -234,4 +236,23 @@ func TestValidateAwsRegionInvalid(t *testing.T) {
 			t.Fatal("Wrong region returned")
 		}
 	}
+}
+
+func TestSetConfigFromFlags(t *testing.T) {
+	driver, err := getTestDriver()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkFlags := &drivers.CheckDriverOptions{
+		FlagsValues: map[string]interface{}{
+			"amazonec2-region": "us-west-2",
+		},
+		CreateFlags: driver.GetCreateFlags(),
+	}
+
+	driver.SetConfigFromFlags(checkFlags)
+
+	assert.NoError(t, err)
+	assert.Empty(t, checkFlags.InvalidFlags)
 }

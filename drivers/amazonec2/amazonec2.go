@@ -150,7 +150,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage: "AWS spot instance bid price (in dollar)",
 			Value: defaultSpotPrice,
 		},
-		mcnflag.StringFlag{
+		mcnflag.BoolFlag{
 			Name:  "amazonec2-private-address-only",
 			Usage: "Only use a private IP address",
 		},
