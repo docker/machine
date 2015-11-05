@@ -46,6 +46,7 @@ type Driver struct {
 	SSHPassword    string
 	ConfigDriveISO string
 	ConfigDriveURL string
+	NoShare        bool
 }
 
 const (
@@ -102,6 +103,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "SSH password",
 			Value:  defaultSSHPass,
 		},
+		mcnflag.BoolFlag{
+			EnvVar: "FUSION_NO_SHARE",
+			Name:   "vmwarefusion-no-share",
+			Usage:  "Disable the mount of your home directory",
+		},
 	}
 }
 
@@ -150,6 +156,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("vmwarefusion-ssh-user")
 	d.SSHPassword = flags.String("vmwarefusion-ssh-password")
 	d.SSHPort = 22
+	d.NoShare = flags.Bool("vmwarefusion-no-share")
 
 	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
 	// specs.
@@ -344,7 +351,7 @@ func (d *Driver) Create() error {
 		// TODO "linux" and "windows"
 	}
 
-	if shareDir != "" {
+	if shareDir != "" && !d.NoShare {
 		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
 			return err
 		} else if !os.IsNotExist(err) {
