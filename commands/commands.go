@@ -10,11 +10,7 @@ import (
 
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/cert"
-	"github.com/docker/machine/libmachine/drivers"
-	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
-	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/persist"
@@ -59,24 +55,23 @@ func (c *contextCommandLine) Application() *cli.App {
 	return c.App
 }
 
-func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, error) {
-	d, err := rpcdriver.NewRpcClientDriver(rawContent, driverName)
-	if err != nil {
-		// Not being able to find a driver binary is a "known error"
-		if _, ok := err.(localbinary.ErrPluginBinaryNotFound); ok {
-			return errdriver.NewDriver(driverName), nil
-		}
-		return nil, err
-	}
-
-	return d, nil
-}
-
-func fatalOnError(command func(commandLine CommandLine) error) func(context *cli.Context) {
+func fatalOnError(command func(commandLine CommandLine, store persist.Store) error) func(context *cli.Context) {
 	return func(context *cli.Context) {
-		if err := command(&contextCommandLine{context}); err != nil {
+		commandLine := &contextCommandLine{context}
+		store := getStore(commandLine)
+
+		if err := command(commandLine, store); err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+func getStore(c CommandLine) persist.Store {
+	certInfo := getCertPathInfoFromContext(c)
+	return &persist.Filestore{
+		Path:             c.GlobalString("storage-path"),
+		CaCertPath:       certInfo.CaCertPath,
+		CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
 	}
 }
 
@@ -93,98 +88,12 @@ func confirmInput(msg string) (bool, error) {
 	return confirmed, nil
 }
 
-func getStore(c CommandLine) persist.Store {
-	certInfo := getCertPathInfoFromContext(c)
-	return &persist.Filestore{
-		Path:             c.GlobalString("storage-path"),
-		CaCertPath:       certInfo.CaCertPath,
-		CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
-	}
-}
-
-func listHosts(store persist.Store) ([]*host.Host, error) {
-	cliHosts := []*host.Host{}
-
-	hosts, err := store.List()
-	if err != nil {
-		return nil, fmt.Errorf("Error attempting to list hosts from store: %s", err)
-	}
-
-	for _, h := range hosts {
-		d, err := newPluginDriver(h.DriverName, h.RawDriver)
-		if err != nil {
-			return nil, fmt.Errorf("Error attempting to invoke binary for plugin '%s': %s", h.DriverName, err)
-		}
-
-		h.Driver = d
-
-		cliHosts = append(cliHosts, h)
-	}
-
-	return cliHosts, nil
-}
-
-func loadHost(store persist.Store, hostName string) (*host.Host, error) {
-	h, err := store.Load(hostName)
-	if err != nil {
-		return nil, fmt.Errorf("Loading host from store failed: %s", err)
-	}
-
-	d, err := newPluginDriver(h.DriverName, h.RawDriver)
-	if err != nil {
-		return nil, fmt.Errorf("Error attempting to invoke binary for plugin: %s", err)
-	}
-
-	h.Driver = d
-
-	return h, nil
-}
-
 func saveHost(store persist.Store, h *host.Host) error {
 	if err := store.Save(h); err != nil {
 		return fmt.Errorf("Error attempting to save host to store: %s", err)
 	}
 
 	return nil
-}
-
-func getFirstArgHost(c CommandLine) (*host.Host, error) {
-	store := getStore(c)
-	hostName := c.Args().First()
-
-	exists, err := store.Exists(hostName)
-	if err != nil {
-		return nil, fmt.Errorf("Error checking if host %q exists: %s", hostName, err)
-	}
-	if !exists {
-		return nil, fmt.Errorf("Host %q does not exist", hostName)
-	}
-
-	h, err := loadHost(store, hostName)
-	if err != nil {
-		// I guess I feel OK with bailing here since if we can't get
-		// the host reliably we're definitely not going to be able to
-		// do anything else interesting, but also this premature exit
-		// feels wrong to me.  Let's revisit it later.
-		return nil, fmt.Errorf("Error trying to get host %q: %s", hostName, err)
-	}
-
-	return h, nil
-}
-
-func getHostsFromContext(c CommandLine) ([]*host.Host, error) {
-	store := getStore(c)
-	hosts := []*host.Host{}
-
-	for _, hostName := range c.Args() {
-		h, err := loadHost(store, hostName)
-		if err != nil {
-			return nil, fmt.Errorf("Could not load host %q: %s", hostName, err)
-		}
-		hosts = append(hosts, h)
-	}
-
-	return hosts, nil
 }
 
 var Commands = []cli.Command{
@@ -206,11 +115,92 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Flags:           sharedCreateFlags,
-		Name:            "create",
-		Usage:           fmt.Sprintf("Create a machine.\n\nRun '%s create --driver name' to include the create flags for that driver in the help text.", os.Args[0]),
-		Action:          fatalOnError(cmdCreateOuter),
-		SkipFlagParsing: true,
+		Name:   "create",
+		Usage:  fmt.Sprintf("Create a machine.\n\nRun '%s create --driver name' to include the create flags for that driver in the help text.", os.Args[0]),
+		Action: fatalOnError(cmdCreate),
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name: "driver, d",
+				Usage: fmt.Sprintf(
+					"Driver to create machine with.",
+				),
+				Value: "none",
+			},
+			cli.StringFlag{
+				Name:   "engine-install-url",
+				Usage:  "Custom URL to use for engine installation",
+				Value:  "https://get.docker.com",
+				EnvVar: "MACHINE_DOCKER_INSTALL_URL",
+			},
+			cli.StringSliceFlag{
+				Name:  "engine-opt",
+				Usage: "Specify arbitrary flags to include with the created engine in the form flag=value",
+				Value: &cli.StringSlice{},
+			},
+			cli.StringSliceFlag{
+				Name:  "engine-insecure-registry",
+				Usage: "Specify insecure registries to allow with the created engine",
+				Value: &cli.StringSlice{},
+			},
+			cli.StringSliceFlag{
+				Name:  "engine-registry-mirror",
+				Usage: "Specify registry mirrors to use",
+				Value: &cli.StringSlice{},
+			},
+			cli.StringSliceFlag{
+				Name:  "engine-label",
+				Usage: "Specify labels for the created engine",
+				Value: &cli.StringSlice{},
+			},
+			cli.StringFlag{
+				Name:  "engine-storage-driver",
+				Usage: "Specify a storage driver to use with the engine",
+			},
+			cli.StringSliceFlag{
+				Name:  "engine-env",
+				Usage: "Specify environment variables to set in the engine",
+				Value: &cli.StringSlice{},
+			},
+			cli.BoolFlag{
+				Name:  "swarm",
+				Usage: "Configure Machine with Swarm",
+			},
+			cli.StringFlag{
+				Name:   "swarm-image",
+				Usage:  "Specify Docker image to use for Swarm",
+				Value:  "swarm:latest",
+				EnvVar: "MACHINE_SWARM_IMAGE",
+			},
+			cli.BoolFlag{
+				Name:  "swarm-master",
+				Usage: "Configure Machine to be a Swarm master",
+			},
+			cli.StringFlag{
+				Name:  "swarm-discovery",
+				Usage: "Discovery service to use with Swarm",
+				Value: "",
+			},
+			cli.StringFlag{
+				Name:  "swarm-strategy",
+				Usage: "Define a default scheduling strategy for Swarm",
+				Value: "spread",
+			},
+			cli.StringSliceFlag{
+				Name:  "swarm-opt",
+				Usage: "Define arbitrary flags for swarm",
+				Value: &cli.StringSlice{},
+			},
+			cli.StringFlag{
+				Name:  "swarm-host",
+				Usage: "ip/socket to listen on for Swarm master",
+				Value: "tcp://0.0.0.0:3376",
+			},
+			cli.StringFlag{
+				Name:  "swarm-addr",
+				Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
+				Value: "",
+			},
+		},
 	},
 	{
 		Name:        "env",
@@ -446,16 +436,19 @@ func consolidateErrs(errs []error) error {
 	return errors.New(strings.TrimSpace(finalErr))
 }
 
-func runActionWithContext(actionName string, c CommandLine) error {
-	store := getStore(c)
+func runActionWithContext(actionName string, c CommandLine, store persist.Store) error {
+	hosts := []*host.Host{}
 
-	hosts, err := getHostsFromContext(c)
-	if err != nil {
-		return err
+	if len(c.Args()) == 0 {
+		return ErrNoMachineSpecified
 	}
 
-	if len(hosts) == 0 {
-		return ErrNoMachineSpecified
+	for _, hostName := range c.Args() {
+		h, err := store.Load(hostName)
+		if err != nil {
+			return fmt.Errorf("Could not load host %q: %s", hostName, err)
+		}
+		hosts = append(hosts, h)
 	}
 
 	if errs := runActionForeachMachine(actionName, hosts); len(errs) > 0 {
