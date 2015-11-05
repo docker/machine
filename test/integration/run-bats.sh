@@ -15,8 +15,7 @@ function quiet_run () {
 
 function cleanup_machines() {
     if [[ $(machine ls -q | wc -l) -ne 0 ]]; then
-        quiet_run machine stop $(machine ls -q)
-        quiet_run machine rm $(machine ls -q)
+        quiet_run machine rm -f $(machine ls -q)
     fi
 }
 
