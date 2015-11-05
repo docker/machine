@@ -108,6 +108,7 @@ func (provisioner *ArchProvisioner) Provision(swarmOptions swarm.SwarmOptions, a
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
+	swarmOptions.Env = engineOptions.Env
 
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "overlay"
