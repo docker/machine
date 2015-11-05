@@ -41,7 +41,7 @@ func NewRancherProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/var/lib/rancher/conf",
 			DaemonOptionsFile: "/var/lib/rancher/conf/docker",
-			OsReleaseId:       "rancheros",
+			OsReleaseID:       "rancheros",
 			Driver:            d,
 		},
 	}
@@ -87,7 +87,7 @@ func (provisioner *RancherProvisioner) Package(name string, action pkgaction.Pac
 	return nil
 }
 
-func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions

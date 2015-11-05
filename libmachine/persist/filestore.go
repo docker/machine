@@ -154,8 +154,8 @@ func (s Filestore) Load(name string) (*host.Host, error) {
 func (s Filestore) NewHost(driver drivers.Driver) (*host.Host, error) {
 	certDir := filepath.Join(s.Path, "certs")
 
-	hostOptions := &host.HostOptions{
-		AuthOptions: &auth.AuthOptions{
+	hostOptions := &host.Options{
+		AuthOptions: &auth.Options{
 			CertDir:          certDir,
 			CaCertPath:       filepath.Join(certDir, "ca.pem"),
 			CaPrivateKeyPath: filepath.Join(certDir, "ca-key.pem"),
@@ -164,12 +164,12 @@ func (s Filestore) NewHost(driver drivers.Driver) (*host.Host, error) {
 			ServerCertPath:   filepath.Join(s.getMachinesDir(), "server.pem"),
 			ServerKeyPath:    filepath.Join(s.getMachinesDir(), "server-key.pem"),
 		},
-		EngineOptions: &engine.EngineOptions{
+		EngineOptions: &engine.Options{
 			InstallURL:    "https://get.docker.com",
 			StorageDriver: "aufs",
-			TlsVerify:     true,
+			TLSVerify:     true,
 		},
-		SwarmOptions: &swarm.SwarmOptions{
+		SwarmOptions: &swarm.Options{
 			Host:     "tcp://0.0.0.0:3376",
 			Image:    "swarm:latest",
 			Strategy: "spread",

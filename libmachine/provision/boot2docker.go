@@ -36,9 +36,9 @@ func NewBoot2DockerProvisioner(d drivers.Driver) Provisioner {
 type Boot2DockerProvisioner struct {
 	OsReleaseInfo *OsRelease
 	Driver        drivers.Driver
-	AuthOptions   auth.AuthOptions
-	EngineOptions engine.EngineOptions
-	SwarmOptions  swarm.SwarmOptions
+	AuthOptions   auth.Options
+	EngineOptions engine.Options
+	SwarmOptions  swarm.Options
 }
 
 func (provisioner *Boot2DockerProvisioner) Service(name string, action serviceaction.ServiceAction) error {
@@ -134,7 +134,7 @@ func (provisioner *Boot2DockerProvisioner) GetDockerOptionsDir() string {
 	return "/var/lib/boot2docker"
 }
 
-func (provisioner *Boot2DockerProvisioner) GetAuthOptions() auth.AuthOptions {
+func (provisioner *Boot2DockerProvisioner) GetAuthOptions() auth.Options {
 	return provisioner.AuthOptions
 }
 
@@ -185,7 +185,7 @@ SERVERCERT={{.AuthOptions.ServerCertRemotePath}}
 }
 
 func (provisioner *Boot2DockerProvisioner) CompatibleWithHost() bool {
-	return provisioner.OsReleaseInfo.Id == "boot2docker"
+	return provisioner.OsReleaseInfo.ID == "boot2docker"
 }
 
 func (provisioner *Boot2DockerProvisioner) SetOsReleaseInfo(info *OsRelease) {
@@ -221,7 +221,7 @@ You also might want to clear any VirtualBox host only interfaces you are not usi
 	}
 }
 
-func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	const (
 		dockerPort = 2376
 	)

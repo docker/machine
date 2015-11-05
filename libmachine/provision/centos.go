@@ -14,7 +14,7 @@ func NewCentosProvisioner(d drivers.Driver) Provisioner {
 	g := GenericProvisioner{
 		DockerOptionsDir:  "/etc/docker",
 		DaemonOptionsFile: "/etc/systemd/system/docker.service",
-		OsReleaseId:       "centos",
+		OsReleaseID:       "centos",
 		Packages:          []string{},
 		Driver:            d,
 	}

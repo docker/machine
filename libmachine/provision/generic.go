@@ -12,15 +12,15 @@ import (
 )
 
 type GenericProvisioner struct {
-	OsReleaseId       string
+	OsReleaseID       string
 	DockerOptionsDir  string
 	DaemonOptionsFile string
 	Packages          []string
 	OsReleaseInfo     *OsRelease
 	Driver            drivers.Driver
-	AuthOptions       auth.AuthOptions
-	EngineOptions     engine.EngineOptions
-	SwarmOptions      swarm.SwarmOptions
+	AuthOptions       auth.Options
+	EngineOptions     engine.Options
+	SwarmOptions      swarm.Options
 }
 
 func (provisioner *GenericProvisioner) Hostname() (string, error) {
@@ -57,10 +57,10 @@ func (provisioner *GenericProvisioner) SSHCommand(args string) (string, error) {
 }
 
 func (provisioner *GenericProvisioner) CompatibleWithHost() bool {
-	return provisioner.OsReleaseInfo.Id == provisioner.OsReleaseId
+	return provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID
 }
 
-func (provisioner *GenericProvisioner) GetAuthOptions() auth.AuthOptions {
+func (provisioner *GenericProvisioner) GetAuthOptions() auth.Options {
 	return provisioner.AuthOptions
 }
 

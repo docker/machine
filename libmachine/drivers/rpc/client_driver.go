@@ -99,7 +99,7 @@ func NewRpcClientDriver(rawDriverData []byte, driverName string) (*RpcClientDriv
 		return nil, err
 	}
 
-	if serverVersion != version.ApiVersion {
+	if serverVersion != version.APIVersion {
 		return nil, fmt.Errorf("Driver binary uses an incompatible API version (%d)", serverVersion)
 	}
 	log.Debug("Using API Version ", serverVersion)

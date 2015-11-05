@@ -25,7 +25,7 @@ func RegisterDriver(d drivers.Driver) {
 Plugin binaries are not intended to be invoked directly.
 Please use this plugin through the main 'docker-machine' binary.
 (API version: %d)
-`, version.ApiVersion)
+`, version.APIVersion)
 		os.Exit(1)
 	}
 

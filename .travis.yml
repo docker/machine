@@ -2,4 +2,4 @@ sudo: required
 dist: trusty
 language: bash
 services: docker
-script: USE_CONTAINER=true make dco fmt vet test-short test-long coverage-send
+script: USE_CONTAINER=true make dco fmt lint vet test-short test-long coverage-send

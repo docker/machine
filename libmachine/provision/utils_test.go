@@ -59,7 +59,7 @@ func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 		Driver: &fakedriver.Driver{},
 	}
 	dockerPort := 1234
-	p.AuthOptions = auth.AuthOptions{
+	p.AuthOptions = auth.Options{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
 		ServerCertRemotePath: "/test/server-cert",
@@ -98,7 +98,7 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 	}
 	dockerPort := 2376
 	bindURL := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
-	p.AuthOptions = auth.AuthOptions{
+	p.AuthOptions = auth.Options{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
 		ServerCertRemotePath: "/test/server-cert",
@@ -130,7 +130,7 @@ func TestMachineCustomPortBoot2Docker(t *testing.T) {
 	}
 	dockerPort := 3376
 	bindURL := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
-	p.AuthOptions = auth.AuthOptions{
+	p.AuthOptions = auth.Options{
 		CaCertRemotePath:     "/test/ca-cert",
 		ServerKeyRemotePath:  "/test/server-key",
 		ServerCertRemotePath: "/test/server-cert",
