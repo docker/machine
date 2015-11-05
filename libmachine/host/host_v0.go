@@ -2,12 +2,12 @@ package host
 
 import "github.com/docker/machine/libmachine/drivers"
 
-type HostV0 struct {
+type V0 struct {
 	Name          string `json:"-"`
 	Driver        drivers.Driver
 	DriverName    string
 	ConfigVersion int
-	HostOptions   *HostOptions
+	HostOptions   *Options
 
 	StorePath      string
 	CaCertPath     string
@@ -21,8 +21,8 @@ type HostV0 struct {
 	ClientKeyPath  string
 }
 
-type HostMetadataV0 struct {
-	HostOptions HostOptions
+type MetadataV0 struct {
+	HostOptions Options
 	DriverName  string
 
 	ConfigVersion  int

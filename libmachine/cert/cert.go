@@ -21,15 +21,15 @@ import (
 
 var defaultGenerator = NewX509CertGenerator()
 
-type CertGenerator interface {
+type Generator interface {
 	GenerateCACertificate(certFile, keyFile, org string, bits int) error
 	GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org string, bits int) error
-	ValidateCertificate(addr string, authOptions *auth.AuthOptions) (bool, error)
+	ValidateCertificate(addr string, authOptions *auth.Options) (bool, error)
 }
 
 type X509CertGenerator struct{}
 
-func NewX509CertGenerator() CertGenerator {
+func NewX509CertGenerator() Generator {
 	return &X509CertGenerator{}
 }
 
@@ -41,11 +41,11 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 	return defaultGenerator.GenerateCert(hosts, certFile, keyFile, caFile, caKeyFile, org, bits)
 }
 
-func ValidateCertificate(addr string, authOptions *auth.AuthOptions) (bool, error) {
+func ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
 	return defaultGenerator.ValidateCertificate(addr, authOptions)
 }
 
-func SetCertGenerator(cg CertGenerator) {
+func SetCertGenerator(cg Generator) {
 	defaultGenerator = cg
 }
 
@@ -205,7 +205,7 @@ func (xcg *X509CertGenerator) GenerateCert(hosts []string, certFile, keyFile, ca
 }
 
 // ValidateCertificate validate the certificate installed on the vm.
-func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth.AuthOptions) (bool, error) {
+func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
 	caCertPath := authOptions.CaCertPath
 	serverCertPath := authOptions.ServerCertPath
 	serverKeyPath := authOptions.ServerKeyPath

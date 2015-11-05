@@ -14,7 +14,7 @@ func NewFedoraProvisioner(d drivers.Driver) Provisioner {
 	g := GenericProvisioner{
 		DockerOptionsDir:  "/etc/docker",
 		DaemonOptionsFile: "/etc/systemd/system/docker.service",
-		OsReleaseId:       "fedora",
+		OsReleaseID:       "fedora",
 		Packages:          []string{},
 		Driver:            d,
 	}

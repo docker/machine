@@ -475,7 +475,7 @@ func runActionWithContext(actionName string, c CommandLine) error {
 // codegangsta/cli will not set the cert paths if the storage-path is set to
 // something different so we cannot use the paths in the global options. le
 // sigh.
-func getCertPathInfoFromContext(c CommandLine) cert.CertPathInfo {
+func getCertPathInfoFromContext(c CommandLine) cert.PathInfo {
 	caCertPath := c.GlobalString("tls-ca-cert")
 	caKeyPath := c.GlobalString("tls-ca-key")
 	clientCertPath := c.GlobalString("tls-client-cert")
@@ -497,7 +497,7 @@ func getCertPathInfoFromContext(c CommandLine) cert.CertPathInfo {
 		clientKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "key.pem")
 	}
 
-	return cert.CertPathInfo{
+	return cert.PathInfo{
 		CaCertPath:       caCertPath,
 		CaPrivateKeyPath: caKeyPath,
 		ClientCertPath:   clientCertPath,

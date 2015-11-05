@@ -28,24 +28,24 @@ type Host struct {
 	ConfigVersion int
 	Driver        drivers.Driver
 	DriverName    string
-	HostOptions   *HostOptions
+	HostOptions   *Options
 	Name          string
 	RawDriver     []byte
 }
 
-type HostOptions struct {
+type Options struct {
 	Driver        string
 	Memory        int
 	Disk          int
-	EngineOptions *engine.EngineOptions
-	SwarmOptions  *swarm.SwarmOptions
-	AuthOptions   *auth.AuthOptions
+	EngineOptions *engine.Options
+	SwarmOptions  *swarm.Options
+	AuthOptions   *auth.Options
 }
 
-type HostMetadata struct {
+type Metadata struct {
 	ConfigVersion int
 	DriverName    string
-	HostOptions   HostOptions
+	HostOptions   Options
 }
 
 func ValidateHostName(name string) bool {
@@ -160,7 +160,7 @@ func (h *Host) ConfigureAuth() error {
 	// and modularity of the provisioners should be).
 	//
 	// Call provision to re-provision the certs properly.
-	if err := provisioner.Provision(swarm.SwarmOptions{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
+	if err := provisioner.Provision(swarm.Options{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 		return err
 	}
 

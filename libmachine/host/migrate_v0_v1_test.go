@@ -12,7 +12,7 @@ import (
 
 func TestMigrateHostV0ToV1(t *testing.T) {
 	mcndirs.BaseDir = "/tmp/migration"
-	originalHost := &HostV0{
+	originalHost := &V0{
 		HostOptions:    nil,
 		SwarmDiscovery: "token://foobar",
 		SwarmHost:      "1.2.3.4:2376",
@@ -24,8 +24,8 @@ func TestMigrateHostV0ToV1(t *testing.T) {
 		ServerCertPath: "/tmp/migration/certs/server.pem",
 		ServerKeyPath:  "/tmp/migration/certs/server-key.pem",
 	}
-	hostOptions := &HostOptionsV1{
-		SwarmOptions: &swarm.SwarmOptions{
+	hostOptions := &OptionsV1{
+		SwarmOptions: &swarm.Options{
 			Master:    true,
 			Discovery: "token://foobar",
 			Host:      "1.2.3.4:2376",
@@ -38,13 +38,13 @@ func TestMigrateHostV0ToV1(t *testing.T) {
 			ServerCertPath: "/tmp/migration/certs/server.pem",
 			ServerKeyPath:  "/tmp/migration/certs/server-key.pem",
 		},
-		EngineOptions: &engine.EngineOptions{
+		EngineOptions: &engine.Options{
 			InstallURL: "https://get.docker.com",
-			TlsVerify:  true,
+			TLSVerify:  true,
 		},
 	}
 
-	expectedHost := &HostV1{
+	expectedHost := &V1{
 		HostOptions: hostOptions,
 	}
 
@@ -58,8 +58,8 @@ func TestMigrateHostV0ToV1(t *testing.T) {
 }
 
 func TestMigrateHostMetadataV0ToV1(t *testing.T) {
-	metadata := &HostMetadataV0{
-		HostOptions: HostOptions{
+	metadata := &MetadataV0{
+		HostOptions: Options{
 			EngineOptions: nil,
 			AuthOptions:   nil,
 		},
@@ -67,15 +67,15 @@ func TestMigrateHostMetadataV0ToV1(t *testing.T) {
 		CaCertPath:     "/tmp/store/certs/ca.pem",
 		ServerCertPath: "/tmp/store/certs/server.pem",
 	}
-	expectedAuthOptions := &auth.AuthOptions{
+	expectedAuthOptions := &auth.Options{
 		StorePath:      "/tmp/store",
 		CaCertPath:     "/tmp/store/certs/ca.pem",
 		ServerCertPath: "/tmp/store/certs/server.pem",
 	}
 
-	expectedMetadata := &HostMetadata{
-		HostOptions: HostOptions{
-			EngineOptions: &engine.EngineOptions{},
+	expectedMetadata := &Metadata{
+		HostOptions: Options{
+			EngineOptions: &engine.Options{},
 			AuthOptions:   expectedAuthOptions,
 		},
 	}

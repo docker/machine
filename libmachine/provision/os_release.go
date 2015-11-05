@@ -20,13 +20,13 @@ type OsRelease struct {
 	AnsiColor    string `osr:"ANSI_COLOR"`
 	Name         string `osr:"NAME"`
 	Version      string `osr:"VERSION"`
-	Id           string `osr:"ID"`
-	IdLike       string `osr:"ID_LIKE"`
+	ID           string `osr:"ID"`
+	IDLike       string `osr:"ID_LIKE"`
 	PrettyName   string `osr:"PRETTY_NAME"`
-	VersionId    string `osr:"VERSION_ID"`
-	HomeUrl      string `osr:"HOME_URL"`
-	SupportUrl   string `osr:"SUPPORT_URL"`
-	BugReportUrl string `osr:"BUG_REPORT_URL"`
+	VersionID    string `osr:"VERSION_ID"`
+	HomeURL      string `osr:"HOME_URL"`
+	SupportURL   string `osr:"SUPPORT_URL"`
+	BugReportURL string `osr:"BUG_REPORT_URL"`
 }
 
 func stripQuotes(val string) string {

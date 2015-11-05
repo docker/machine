@@ -51,10 +51,10 @@ func GetTestDriverFlags() *DriverOptionsMock {
 }
 
 func GetDefaultTestHost() (*host.Host, error) {
-	hostOptions := &host.HostOptions{
-		EngineOptions: &engine.EngineOptions{},
-		SwarmOptions:  &swarm.SwarmOptions{},
-		AuthOptions: &auth.AuthOptions{
+	hostOptions := &host.Options{
+		EngineOptions: &engine.Options{},
+		SwarmOptions:  &swarm.Options{},
+		AuthOptions: &auth.Options{
 			CaCertPath:       HostTestCaCert,
 			CaPrivateKeyPath: HostTestPrivateKey,
 		},
