@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -100,4 +101,24 @@ func TestHostnameDefaultsToMachineName(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, machineTestName, d.deviceConfig.Hostname)
 	}
+}
+
+func TestSetConfigFromFlags(t *testing.T) {
+	driver := NewDriver("default", "path")
+
+	checkFlags := &drivers.CheckDriverOptions{
+		FlagsValues: map[string]interface{}{
+			"softlayer-api-key":      "KEY",
+			"softlayer-user":         "user",
+			"softlayer-api-endpoint": "ENDPOINT",
+			"softlayer-domain":       "DOMAIN",
+			"softlayer-region":       "REGION",
+		},
+		CreateFlags: driver.GetCreateFlags(),
+	}
+
+	err := driver.SetConfigFromFlags(checkFlags)
+
+	assert.NoError(t, err)
+	assert.Empty(t, checkFlags.InvalidFlags)
 }
