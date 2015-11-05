@@ -320,6 +320,10 @@ func cmdCreateOuter(c CommandLine) error {
 		}
 	}
 
+	if serialDriver, ok := driver.(*drivers.SerialDriver); ok {
+		driver = serialDriver.Driver
+	}
+
 	if rpcd, ok := driver.(*rpcdriver.RpcClientDriver); ok {
 		if err := rpcd.Close(); err != nil {
 			return err
