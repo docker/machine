@@ -64,7 +64,7 @@ install:
 	cp $(PREFIX)/bin/docker-machine $(PREFIX)/bin/docker-machine-driver* /usr/local/bin
 
 clean: coverage-clean build-clean
-test: dco fmt test-short vet
+test: dco fmt test-short lint vet
 validate: dco fmt vet lint test-short test-long
 
 .PHONY: .all_build .all_coverage .all_release .all_test .all_validate test build validate clean

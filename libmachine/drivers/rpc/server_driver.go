@@ -84,7 +84,7 @@ func (r *RpcServerDriver) Close(_, _ *struct{}) error {
 }
 
 func (r *RpcServerDriver) GetVersion(_ *struct{}, reply *int) error {
-	*reply = version.ApiVersion
+	*reply = version.APIVersion
 	return nil
 }
 
