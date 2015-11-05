@@ -15,4 +15,5 @@ type SwarmOptions struct {
 	Heartbeat      int
 	Overcommit     float64
 	ArbitraryFlags []string
+	Env            []string
 }

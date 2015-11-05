@@ -200,6 +200,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions,
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
+	swarmOptions.Env = engineOptions.Env
 
 	// set default storage driver for redhat
 	if provisioner.EngineOptions.StorageDriver == "" {
