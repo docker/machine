@@ -5,6 +5,8 @@ import "fmt"
 type Flag interface {
 	fmt.Stringer
 	Default() interface{}
+	Description() string
+	EnvVarName() string
 }
 
 type StringFlag struct {
@@ -14,13 +16,20 @@ type StringFlag struct {
 	Value  string
 }
 
-// TODO: Could this be done more succinctly using embedding?
 func (f StringFlag) String() string {
 	return f.Name
 }
 
 func (f StringFlag) Default() interface{} {
 	return f.Value
+}
+
+func (f StringFlag) Description() string {
+	return f.Usage
+}
+
+func (f StringFlag) EnvVarName() string {
+	return f.EnvVar
 }
 
 type StringSliceFlag struct {
@@ -30,13 +39,20 @@ type StringSliceFlag struct {
 	Value  []string
 }
 
-// TODO: Could this be done more succinctly using embedding?
 func (f StringSliceFlag) String() string {
 	return f.Name
 }
 
 func (f StringSliceFlag) Default() interface{} {
 	return f.Value
+}
+
+func (f StringSliceFlag) Description() string {
+	return f.Usage
+}
+
+func (f StringSliceFlag) EnvVarName() string {
+	return f.EnvVar
 }
 
 type IntFlag struct {
@@ -46,7 +62,6 @@ type IntFlag struct {
 	Value  int
 }
 
-// TODO: Could this be done more succinctly using embedding?
 func (f IntFlag) String() string {
 	return f.Name
 }
@@ -55,17 +70,32 @@ func (f IntFlag) Default() interface{} {
 	return f.Value
 }
 
+func (f IntFlag) Description() string {
+	return f.Usage
+}
+
+func (f IntFlag) EnvVarName() string {
+	return f.EnvVar
+}
+
 type BoolFlag struct {
 	Name   string
 	Usage  string
 	EnvVar string
 }
 
-// TODO: Could this be done more succinctly using embedding?
 func (f BoolFlag) String() string {
 	return f.Name
 }
 
 func (f BoolFlag) Default() interface{} {
 	return nil
+}
+
+func (f BoolFlag) Description() string {
+	return f.Usage
+}
+
+func (f BoolFlag) EnvVarName() string {
+	return f.EnvVar
 }

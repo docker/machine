@@ -15,12 +15,10 @@ var (
 	errTooManyArguments = errors.New("Error: Too many arguments given")
 )
 
-func cmdActive(c CommandLine) error {
+func cmdActive(c CommandLine, store persist.Store) error {
 	if len(c.Args()) > 0 {
 		return errTooManyArguments
 	}
-
-	store := getStore(c)
 
 	host, err := getActiveHost(store)
 	if err != nil {
@@ -35,7 +33,7 @@ func cmdActive(c CommandLine) error {
 }
 
 func getActiveHost(store persist.Store) (*host.Host, error) {
-	hosts, err := listHosts(store)
+	hosts, err := store.List()
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +42,7 @@ func getActiveHost(store persist.Store) (*host.Host, error) {
 
 	for _, item := range hostListItems {
 		if item.Active {
-			return loadHost(store, item.Name)
+			return store.Load(item.Name)
 		}
 	}
 

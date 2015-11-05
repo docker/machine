@@ -2,10 +2,11 @@ package commands
 
 import (
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdRestart(c CommandLine) error {
-	if err := runActionWithContext("restart", c); err != nil {
+func cmdRestart(c CommandLine, store persist.Store) error {
+	if err := runActionWithContext("restart", c, store); err != nil {
 		return err
 	}
 

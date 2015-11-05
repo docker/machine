@@ -1,7 +1,6 @@
 package persist
 
 import (
-	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
 )
 
@@ -10,7 +9,7 @@ type Store interface {
 	Exists(name string) (bool, error)
 
 	// NewHost will initialize a new host machine
-	NewHost(driver drivers.Driver) (*host.Host, error)
+	NewHost(name string, driverName string) (*host.Host, error)
 
 	// List returns a list of all hosts in the store
 	List() ([]*host.Host, error)
