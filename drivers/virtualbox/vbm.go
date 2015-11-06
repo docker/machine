@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/docker/machine/libmachine/log"
 )
@@ -24,10 +25,20 @@ var (
 	ErrVBMNotFound     = errors.New("VBoxManage not found. Make sure VirtualBox is installed and VBoxManage is in the path")
 
 	vboxManageCmd = detectVBoxManageCmd()
+	vboxManageMu  = &sync.Mutex{}
 )
+
+// Runs a command and chucks the relevant output into the passed byte buffers
+type cmder interface {
+	Run(stdout, stderr *bytes.Buffer, args ...string) error
+}
+
+type VBoxCmder struct{}
 
 // VBoxManager defines the interface to communicate to VirtualBox.
 type VBoxManager interface {
+	cmder
+
 	vbm(args ...string) error
 
 	vbmOut(args ...string) (string, error)
@@ -36,7 +47,9 @@ type VBoxManager interface {
 }
 
 // VBoxCmdManager communicates with VirtualBox through the commandline using `VBoxManage`.
-type VBoxCmdManager struct{}
+type VBoxCmdManager struct {
+	cmder
+}
 
 func (v *VBoxCmdManager) vbm(args ...string) error {
 	_, _, err := v.vbmOutErr(args...)
@@ -48,24 +61,41 @@ func (v *VBoxCmdManager) vbmOut(args ...string) (string, error) {
 	return stdout, err
 }
 
-func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
+func (c *VBoxCmder) Run(stdout, stderr *bytes.Buffer, args ...string) error {
 	cmd := exec.Command(vboxManageCmd, args...)
 	log.Debugf("COMMAND: %v %v", vboxManageCmd, strings.Join(args, " "))
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	stderrStr := stderr.String()
-	if len(args) > 0 {
-		log.Debugf("STDOUT:\n{\n%v}", stdout.String())
-		log.Debugf("STDERR:\n{\n%v}", stderrStr)
-	}
 
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+
+	return cmd.Run()
+}
+
+func (v *VBoxCmdManager) Run(stdout, stderr *bytes.Buffer, args ...string) error {
+	vboxManageMu.Lock()
+	defer vboxManageMu.Unlock()
+
+	return v.cmder.Run(stdout, stderr, args...)
+}
+
+func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
+	var (
+		stdout, stderr bytes.Buffer
+	)
+
+	err := v.Run(&stdout, &stderr, args...)
 	if err != nil {
 		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
 			err = ErrVBMNotFound
 		}
+	}
+
+	stdoutStr := stdout.String()
+	stderrStr := stderr.String()
+
+	if len(args) > 0 {
+		log.Debugf("STDOUT:\n{\n%v}", stdoutStr)
+		log.Debugf("STDERR:\n{\n%v}", stderrStr)
 	}
 
 	if err == nil || strings.HasPrefix(err.Error(), "exit status ") {
@@ -76,7 +106,7 @@ func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
 		}
 	}
 
-	return stdout.String(), stderrStr, err
+	return stdoutStr, stderrStr, err
 }
 
 // detectVBoxManageCmd detects the VBoxManage cmd's path if needed
