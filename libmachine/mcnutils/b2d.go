@@ -78,7 +78,7 @@ func (b *B2dUtils) getReleasesRequest(apiURL string) (*http.Request, error) {
 
 // GetLatestBoot2DockerReleaseURL gets the latest boot2docker release tag name (e.g. "v0.6.0").
 // FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
-func (b *B2dUtils) GetLatestBoot2DockerReleaseURL(apiURL string) (string, error) {
+func (b *B2dUtils) GetLatestBoot2DockerReleaseURL(apiURL string, preRelease bool) (string, error) {
 	if apiURL == "" {
 		apiURL = "https://api.github.com/repos/boot2docker/boot2docker/releases"
 	}
@@ -107,7 +107,8 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL(apiURL string) (string, error)
 		defer rsp.Body.Close()
 
 		var t []struct {
-			TagName string `json:"tag_name"`
+			TagName    string `json:"tag_name"`
+			PreRelease bool   `json:"prerelease"`
 		}
 		if err := json.NewDecoder(rsp.Body).Decode(&t); err != nil {
 			return "", fmt.Errorf("Error demarshaling the Github API response: %s\nYou may be getting rate limited by Github.", err)
@@ -116,7 +117,19 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL(apiURL string) (string, error)
 			return "", fmt.Errorf("no releases found")
 		}
 
-		tag := t[0].TagName
+		var tag string
+		// Releases are always sorted latest first
+		for i := 0; i < len(t); i++ {
+			// if preReleases are not enabled and this release is an RC, skip it
+			if !preRelease && t[i].PreRelease == true {
+				continue
+			}
+			tag = t[i].TagName
+			break
+		}
+		if tag == "" {
+			return "", fmt.Errorf("Could not find latest release for %s", apiURL)
+		}
 		log.Infof("Latest release for %s/%s/%s is %s\n", host, org, repo, tag)
 		isoURL = fmt.Sprintf("%s://%s/%s/%s/releases/download/%s/boot2docker.iso", scheme, host, org, repo, tag)
 	} else {
@@ -194,8 +207,8 @@ func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
 	return nil
 }
 
-func (b *B2dUtils) DownloadLatestBoot2Docker(apiURL string) error {
-	latestReleaseURL, err := b.GetLatestBoot2DockerReleaseURL(apiURL)
+func (b *B2dUtils) DownloadLatestBoot2Docker(apiURL string, preRelease bool) error {
+	latestReleaseURL, err := b.GetLatestBoot2DockerReleaseURL(apiURL, preRelease)
 	if err != nil {
 		return err
 	}
@@ -212,7 +225,7 @@ func (b *B2dUtils) DownloadISOFromURL(latestReleaseURL string) error {
 	return nil
 }
 
-func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
+func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string, preRelease bool) error {
 	// TODO: This is a bit off-color.
 	machineDir := filepath.Join(b.storePath, "machines", machineName)
 	machineIsoPath := filepath.Join(machineDir, b.isoFilename)
@@ -235,7 +248,7 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 	} else {
 		//if ISO is specified, check if it matches a github releases url or fallback
 		//to a direct download
-		if downloadURL, err := b.GetLatestBoot2DockerReleaseURL(isoURL); err == nil {
+		if downloadURL, err := b.GetLatestBoot2DockerReleaseURL(isoURL, preRelease); err == nil {
 			log.Infof("Downloading %s from %s...", b.isoFilename, downloadURL)
 			if err := b.DownloadISO(machineDir, b.isoFilename, downloadURL); err != nil {
 				return err
@@ -251,7 +264,7 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 func (b *B2dUtils) copyDefaultIsoToMachine(machineIsoPath string) error {
 	if _, err := os.Stat(b.commonIsoPath); os.IsNotExist(err) {
 		log.Info("No default boot2docker iso found locally, downloading the latest release...")
-		if err := b.DownloadLatestBoot2Docker(""); err != nil {
+		if err := b.DownloadLatestBoot2Docker("", false); err != nil {
 			return err
 		}
 	}

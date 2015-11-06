@@ -74,6 +74,10 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.Error, ErrDriverNotLoadable{d.Name}
 }
 
+func (d *Driver) GetReleaseCandidate() bool {
+	return false
+}
+
 func (d *Driver) Create() error {
 	return ErrDriverNotLoadable{d.Name}
 }

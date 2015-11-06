@@ -223,7 +223,7 @@ func (d *Driver) Create() error {
 	}
 
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
-	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
+	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName, d.ReleaseCandidate); err != nil {
 		return err
 	}
 

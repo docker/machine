@@ -163,6 +163,11 @@ func (r *RpcServerDriver) GetState(_ *struct{}, reply *state.State) error {
 	return err
 }
 
+func (r *RpcServerDriver) GetReleaseCandidate(_ *struct{}, reply *bool) error {
+	*reply = r.ActualDriver.GetReleaseCandidate()
+	return nil
+}
+
 func (r *RpcServerDriver) Kill(_ *struct{}, _ *struct{}) error {
 	return r.ActualDriver.Kill()
 }

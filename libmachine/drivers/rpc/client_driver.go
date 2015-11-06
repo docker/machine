@@ -254,6 +254,16 @@ func (c *RpcClientDriver) GetState() (state.State, error) {
 	return s, nil
 }
 
+func (c *RpcClientDriver) GetReleaseCandidate() bool {
+	var pr bool
+
+	if err := c.Client.Call("RpcServerDriver.GetReleaseCandidate", struct{}{}, &pr); err != nil {
+		log.Warnf("Error attempting to get ReleaseCandidate value: %s", err)
+		return false
+	}
+	return pr
+}
+
 func (c *RpcClientDriver) PreCreateCheck() error {
 	return c.Client.Call("RpcServerDriver.PreCreateCheck", struct{}{}, nil)
 }

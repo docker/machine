@@ -193,7 +193,7 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 	}
 
 	// Copy the latest version of boot2docker ISO to the machine's directory
-	if err := b2dutils.CopyIsoToMachineDir("", machineName); err != nil {
+	if err := b2dutils.CopyIsoToMachineDir("", machineName, false); err != nil {
 		return err
 	}
 

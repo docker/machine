@@ -11,18 +11,37 @@ import (
 
 func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		respText := `[{"tag_name": "0.1"}]`
+		respText := `[{"tag_name": "0.2rc1", "prerelease":true},{"tag_name": "0.1", "prerelease":false}]`
 		w.Write([]byte(respText))
 	}))
 	defer ts.Close()
 
 	b := NewB2dUtils("/tmp/isos")
-	isoURL, err := b.GetLatestBoot2DockerReleaseURL(ts.URL + "/repos/org/repo/releases")
+	isoURL, err := b.GetLatestBoot2DockerReleaseURL(ts.URL+"/repos/org/repo/releases", false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	expectedURL := fmt.Sprintf("%s/org/repo/releases/download/0.1/boot2docker.iso", ts.URL)
+	if isoURL != expectedURL {
+		t.Fatalf("expected url %s; received %s", expectedURL, isoURL)
+	}
+}
+
+func TestGetLatestBoot2DockerReleaseUrlPrerelease(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		respText := `[{"tag_name": "0.2rc1", "prerelease":true},{"tag_name": "0.1", "prerelease":false}]`
+		w.Write([]byte(respText))
+	}))
+	defer ts.Close()
+
+	b := NewB2dUtils("/tmp/isos")
+	isoURL, err := b.GetLatestBoot2DockerReleaseURL(ts.URL+"/repos/org/repo/releases", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedURL := fmt.Sprintf("%s/org/repo/releases/download/0.2rc1/boot2docker.iso", ts.URL)
 	if isoURL != expectedURL {
 		t.Fatalf("expected url %s; received %s", expectedURL, isoURL)
 	}
