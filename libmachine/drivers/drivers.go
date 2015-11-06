@@ -15,7 +15,7 @@ type Driver interface {
 	// Create a host using the driver's config
 	Create() error
 
-	// DriverName returns the name of the driver as it is registered
+	// DriverName returns the name of the driver
 	DriverName() string
 
 	// GetCreateFlags returns the mcnflag.Flag slice representing the flags

@@ -26,7 +26,7 @@ func (fe *FakeExecutor) Close() error {
 }
 
 func TestLocalBinaryPluginAddress(t *testing.T) {
-	lbp := &LocalBinaryPlugin{}
+	lbp := &Plugin{}
 	expectedAddr := "127.0.0.1:12345"
 
 	lbp.addrCh = make(chan string, 1)
@@ -55,7 +55,7 @@ func TestLocalBinaryPluginAddressTimeout(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping timeout test")
 	}
-	lbp := &LocalBinaryPlugin{}
+	lbp := &Plugin{}
 	lbp.addrCh = make(chan string, 1)
 	go func() {
 		_, err := lbp.Address()
@@ -67,7 +67,7 @@ func TestLocalBinaryPluginAddressTimeout(t *testing.T) {
 }
 
 func TestLocalBinaryPluginClose(t *testing.T) {
-	lbp := &LocalBinaryPlugin{}
+	lbp := &Plugin{}
 	lbp.stopCh = make(chan bool, 1)
 	go lbp.Close()
 	stopped := <-lbp.stopCh
@@ -99,7 +99,7 @@ func TestExecServer(t *testing.T) {
 		stderr: stderrReader,
 	}
 
-	lbp := &LocalBinaryPlugin{
+	lbp := &Plugin{
 		MachineName: machineName,
 		Executor:    fe,
 		addrCh:      make(chan string, 1),
