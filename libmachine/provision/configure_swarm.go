@@ -107,7 +107,7 @@ manage \
 {{range .Env}} -e {{.}}{{end}} \
 --name swarm-agent \
 {{.SwarmImage}} \
-join --advertise {{.Ip}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
+join --advertise {{.IP}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
 `
 
 	if swarmOptions.Master {
