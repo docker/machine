@@ -20,3 +20,7 @@ func (d *Driver) IsVTXDisabled() bool {
 	disabled := !strings.Contains(features, "VMX")
 	return disabled
 }
+
+func detectVBoxManageCmd() string {
+	return detectVBoxManageCmdInPath()
+}
