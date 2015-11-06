@@ -66,6 +66,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	}
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "generic"
 }

@@ -21,7 +21,7 @@ type HostSpec struct {
 	Cpu                            int               `json:"startCpus"`
 	Memory                         int               `json:"maxMemory"`
 	Datacenter                     Datacenter        `json:"datacenter"`
-	SshKeys                        []*SshKey         `json:"sshKeys"`
+	SshKeys                        []*SSHKey         `json:"sshKeys"`
 	BlockDevices                   []BlockDevice     `json:"blockDevices"`
 	InstallScript                  string            `json:"postInstallScriptUri"`
 	PrivateNetOnly                 bool              `json:"privateNetworkOnlyFlag"`
@@ -40,7 +40,7 @@ type NetworkVLAN struct {
 	Id int `json:"id"`
 }
 
-type SshKey struct {
+type SSHKey struct {
 	Key   string `json:"key,omitempty"`
 	Id    int    `json:"id,omitempty"`
 	Label string `json:"label,omitempty"`
@@ -63,7 +63,7 @@ type sshKey struct {
 	*Client
 }
 
-type virtualGuest struct {
+type VirtualGuest struct {
 	*Client
 }
 
@@ -95,11 +95,11 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	)
 
 	if body != nil {
-		bodyJson, err := json.Marshal(body)
+		bodyJSON, err := json.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
-		req, err = http.NewRequest(method, url, bytes.NewBuffer(bodyJson))
+		req, err = http.NewRequest(method, url, bytes.NewBuffer(bodyJSON))
 	} else {
 		req, err = http.NewRequest(method, url, nil)
 	}
@@ -132,7 +132,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	return data, nil
 }
 
-func (c *Client) SshKey() *sshKey {
+func (c *Client) SSHKey() *sshKey {
 	return &sshKey{c}
 }
 
@@ -140,11 +140,11 @@ func (c *sshKey) namespace() string {
 	return "SoftLayer_Security_Ssh_Key"
 }
 
-func (c *sshKey) Create(label, key string) (*SshKey, error) {
+func (c *sshKey) Create(label, key string) (*SSHKey, error) {
 	var (
 		method = "POST"
 		uri    = c.namespace()
-		body   = SshKey{Key: key, Label: label}
+		body   = SSHKey{Key: key, Label: label}
 	)
 
 	data, err := c.newRequest(method, uri, map[string]interface{}{"parameters": []interface{}{body}})
@@ -152,7 +152,7 @@ func (c *sshKey) Create(label, key string) (*SshKey, error) {
 		return nil, err
 	}
 
-	var k SshKey
+	var k SSHKey
 	if err := json.Unmarshal(data, &k); err != nil {
 		return nil, err
 	}
@@ -173,15 +173,15 @@ func (c *sshKey) Delete(id int) error {
 	return nil
 }
 
-func (c *Client) VirtualGuest() *virtualGuest {
-	return &virtualGuest{c}
+func (c *Client) VirtualGuest() *VirtualGuest {
+	return &VirtualGuest{c}
 }
 
-func (c *virtualGuest) namespace() string {
+func (c *VirtualGuest) namespace() string {
 	return "SoftLayer_Virtual_Guest"
 }
 
-func (c *virtualGuest) PowerState(id int) (string, error) {
+func (c *VirtualGuest) PowerState(id int) (string, error) {
 	type state struct {
 		KeyName string `json:"keyName"`
 		Name    string `json:"name"`
@@ -203,7 +203,7 @@ func (c *virtualGuest) PowerState(id int) (string, error) {
 	return s.Name, nil
 }
 
-func (c *virtualGuest) ActiveTransaction(id int) (string, error) {
+func (c *VirtualGuest) ActiveTransaction(id int) (string, error) {
 	type transactionStatus struct {
 		AverageDuration string `json:"averageDuration"`
 		FriendlyName    string `json:"friendlyName"`
@@ -236,7 +236,7 @@ func (c *virtualGuest) ActiveTransaction(id int) (string, error) {
 	return t.TransactionStatus.Name, nil
 }
 
-func (c *virtualGuest) Create(spec *HostSpec) (int, error) {
+func (c *VirtualGuest) Create(spec *HostSpec) (int, error) {
 	var (
 		method = "POST"
 		uri    = c.namespace() + ".json"
@@ -248,7 +248,7 @@ func (c *virtualGuest) Create(spec *HostSpec) (int, error) {
 	}
 
 	type createResp struct {
-		Id int `json:"id"`
+		ID int `json:"id"`
 	}
 
 	var r createResp
@@ -256,10 +256,10 @@ func (c *virtualGuest) Create(spec *HostSpec) (int, error) {
 		return -1, err
 	}
 
-	return r.Id, nil
+	return r.ID, nil
 }
 
-func (c *virtualGuest) Cancel(id int) error {
+func (c *VirtualGuest) Cancel(id int) error {
 	var (
 		method = "DELETE"
 		uri    = fmt.Sprintf("%s/%v", c.namespace(), id)
@@ -272,7 +272,7 @@ func (c *virtualGuest) Cancel(id int) error {
 	return nil
 }
 
-func (c *virtualGuest) PowerOn(id int) error {
+func (c *VirtualGuest) PowerOn(id int) error {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/powerOn.json", c.namespace(), id)
@@ -285,7 +285,7 @@ func (c *virtualGuest) PowerOn(id int) error {
 	return nil
 }
 
-func (c *virtualGuest) PowerOff(id int) error {
+func (c *VirtualGuest) PowerOff(id int) error {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/powerOff.json", c.namespace(), id)
@@ -298,7 +298,7 @@ func (c *virtualGuest) PowerOff(id int) error {
 	return nil
 }
 
-func (c *virtualGuest) Pause(id int) error {
+func (c *VirtualGuest) Pause(id int) error {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/pause.json", c.namespace(), id)
@@ -311,7 +311,7 @@ func (c *virtualGuest) Pause(id int) error {
 	return nil
 }
 
-func (c *virtualGuest) Resume(id int) error {
+func (c *VirtualGuest) Resume(id int) error {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/resume.json", c.namespace(), id)
@@ -324,7 +324,7 @@ func (c *virtualGuest) Resume(id int) error {
 	return nil
 }
 
-func (c *virtualGuest) Reboot(id int) error {
+func (c *VirtualGuest) Reboot(id int) error {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/rebootSoft.json", c.namespace(), id)
@@ -337,7 +337,7 @@ func (c *virtualGuest) Reboot(id int) error {
 	return nil
 }
 
-func (c *virtualGuest) GetPublicIp(id int) (string, error) {
+func (c *VirtualGuest) GetPublicIP(id int) (string, error) {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/getPrimaryIpAddress.json", c.namespace(), id)
@@ -350,7 +350,7 @@ func (c *virtualGuest) GetPublicIp(id int) (string, error) {
 	return strings.Replace(string(data), "\"", "", -1), nil
 }
 
-func (c *virtualGuest) GetPrivateIp(id int) (string, error) {
+func (c *VirtualGuest) GetPrivateIP(id int) (string, error) {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%v/getPrimaryBackendIpAddress.json", c.namespace(), id)
