@@ -101,6 +101,7 @@ func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "digitalocean"
 }

@@ -60,7 +60,7 @@ func (c *contextCommandLine) Application() *cli.App {
 }
 
 func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, error) {
-	d, err := rpcdriver.NewRpcClientDriver(rawContent, driverName)
+	d, err := rpcdriver.NewRPCClientDriver(rawContent, driverName)
 	if err != nil {
 		// Not being able to find a driver binary is a "known error"
 		if _, ok := err.(localbinary.ErrPluginBinaryNotFound); ok {
