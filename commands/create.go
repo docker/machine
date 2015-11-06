@@ -32,6 +32,10 @@ var (
 	errNoMachineName = errors.New("Error: No machine name specified")
 )
 
+const (
+	preReleaseInstallURL = "https://test.docker.com"
+)
+
 var (
 	sharedCreateFlags = []cli.Flag{
 		cli.StringFlag{
@@ -40,6 +44,10 @@ var (
 				"Driver to create machine with.",
 			),
 			Value: "none",
+		},
+		cli.BoolFlag{
+			Name:  "release-candidate",
+			Usage: "Use the latest release candidate versions of Docker",
 		},
 		cli.StringFlag{
 			Name:   "engine-install-url",
@@ -168,6 +176,11 @@ func cmdCreateInner(c CommandLine) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
+	installURL := c.String("engine-install-url")
+	if c.Bool("release-candidate") {
+		installURL = preReleaseInstallURL
+	}
+
 	h.HostOptions = &host.Options{
 		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
@@ -187,7 +200,7 @@ func cmdCreateInner(c CommandLine) error {
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
 			StorageDriver:    c.String("engine-storage-driver"),
 			TLSVerify:        true,
-			InstallURL:       c.String("engine-install-url"),
+			InstallURL:       installURL,
 		},
 		SwarmOptions: &swarm.Options{
 			IsSwarm:        c.Bool("swarm"),

@@ -48,6 +48,9 @@ type Driver interface {
 	// GetState returns the state that the host is in (running, stopped, etc)
 	GetState() (state.State, error)
 
+	// GetReleaseCandidate returns whether a driver should use a pre-release image
+	GetReleaseCandidate() bool
+
 	// Kill stops a host forcefully
 	Kill() error
 

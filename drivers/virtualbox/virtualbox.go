@@ -176,7 +176,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostOnlyNicType = flags.String("virtualbox-hostonly-nictype")
 	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
 	d.NoShare = flags.Bool("virtualbox-no-share")
-
+	d.ReleaseCandidate = flags.Bool("release-candidate")
 	return nil
 }
 
@@ -228,7 +228,7 @@ func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
 
 func (d *Driver) Create() error {
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
-	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
+	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName, d.ReleaseCandidate); err != nil {
 		return err
 	}
 

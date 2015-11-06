@@ -15,15 +15,16 @@ const (
 // BaseDriver - Embed this struct into drivers to provide the common set
 // of fields and functions.
 type BaseDriver struct {
-	IPAddress      string
-	MachineName    string
-	SSHUser        string
-	SSHPort        int
-	SSHKeyPath     string
-	StorePath      string
-	SwarmMaster    bool
-	SwarmHost      string
-	SwarmDiscovery string
+	IPAddress        string
+	MachineName      string
+	SSHUser          string
+	SSHPort          int
+	SSHKeyPath       string
+	StorePath        string
+	SwarmMaster      bool
+	SwarmHost        string
+	SwarmDiscovery   string
+	ReleaseCandidate bool
 }
 
 // DriverName returns the name of the driver
@@ -81,4 +82,9 @@ func (d *BaseDriver) PreCreateCheck() error {
 // ResolveStorePath returns the store path where the machine is
 func (d *BaseDriver) ResolveStorePath(file string) string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, file)
+}
+
+// GetPreRelease returns whether a driver should use a pre-release image or not
+func (d *BaseDriver) GetReleaseCandidate() bool {
+	return d.ReleaseCandidate
 }

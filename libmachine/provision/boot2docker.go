@@ -86,13 +86,13 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 	// Usually we call this implicitly, but call it here explicitly to get
 	// the latest default boot2docker ISO.
 	if d.Boot2DockerURL == "" {
-		if err := b2dutils.DownloadLatestBoot2Docker(d.Boot2DockerURL); err != nil {
+		if err := b2dutils.DownloadLatestBoot2Docker(d.Boot2DockerURL, provisioner.Driver.GetReleaseCandidate()); err != nil {
 			return err
 		}
 	}
 	// Either download the latest version of the b2d url that was explicitly
 	// specified when creating the VM or copy the (updated) default ISO
-	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, machineName); err != nil {
+	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, machineName, provisioner.Driver.GetReleaseCandidate()); err != nil {
 		return err
 	}
 
