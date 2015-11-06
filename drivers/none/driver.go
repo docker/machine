@@ -71,7 +71,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	return state.None, nil
+	return state.Running, nil
 }
 
 func (d *Driver) Kill() error {

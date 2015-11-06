@@ -37,8 +37,9 @@ bootstrap_swarm () {
   [[ ${lines[2]} == "testmachine3" ]]
 }
 
-@test "ls: filter on state 'machine ls --filter state=\"\"'" {
-  run machine ls --filter state=""
+@test "ls: filter on state 'machine ls --filter state=\"Running\"'" {
+  # Default state for 'none' driver is "Running"
+  run machine ls --filter state="Running"
   [ "$status" -eq 0  ]
   [[ ${#lines[@]} == 4 ]]
   [[ ${lines[1]} =~ "testmachine" ]]
@@ -46,7 +47,7 @@ bootstrap_swarm () {
   [[ ${lines[3]} =~ "testmachine3" ]]
 
   # TODO: have machines in that state
-  run machine ls --filter state="Running"
+  run machine ls --filter state="None"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 1 ]]
   run machine ls --filter state="Paused"
@@ -69,8 +70,8 @@ bootstrap_swarm () {
   [[ ${#lines[@]} == 1 ]]
 }
 
-@test "ls: filter on state 'machine ls -q --filter state=\"\"'" {
-  run machine ls -q --filter state=""
+@test "ls: filter on state 'machine ls -q --filter state=\"Running\"'" {
+  run machine ls -q --filter state="Running"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
   [[ ${lines[0]} == "testmachine" ]]
@@ -130,9 +131,9 @@ bootstrap_swarm () {
   [[ ${lines[2]} == "testswarm3" ]]
 }
 
-@test "ls: multi filter 'machine ls -q --filter swarm=testswarm --filter name=\"^t.*e\" --filter driver=none --filter state=\"\"'" {
+@test "ls: multi filter 'machine ls -q --filter swarm=testswarm --filter name=\"^t.*e\" --filter driver=none --filter state=\"Running\"'" {
   bootstrap_swarm
-  run machine ls -q --filter swarm=testswarm --filter name="^t.*e" --filter driver=none --filter state=""
+  run machine ls -q --filter swarm=testswarm --filter name="^t.*e" --filter driver=none --filter state="Running"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
   [[ ${lines[0]} == "testswarm" ]]
