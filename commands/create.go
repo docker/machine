@@ -296,7 +296,7 @@ func cmdCreateOuter(c CommandLine) error {
 	}
 
 	if _, ok := driver.(*errdriver.Driver); ok {
-		return errdriver.ErrDriverNotLoadable{driverName}
+		return errdriver.NotLoadable{driverName}
 	}
 
 	// TODO: So much flag manipulation and voodoo here, it seems to be
@@ -324,7 +324,7 @@ func cmdCreateOuter(c CommandLine) error {
 		driver = serialDriver.Driver
 	}
 
-	if rpcd, ok := driver.(*rpcdriver.RpcClientDriver); ok {
+	if rpcd, ok := driver.(*rpcdriver.RPCClientDriver); ok {
 		if err := rpcd.Close(); err != nil {
 			return err
 		}
@@ -340,7 +340,7 @@ func getDriverOpts(c CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions
 	// But, we need it so that we can actually send the flags for creating
 	// a machine over the wire (cli.Context is a no go since there is so
 	// much stuff in it).
-	driverOpts := rpcdriver.RpcFlags{
+	driverOpts := rpcdriver.RPCFlags{
 		Values: make(map[string]interface{}),
 	}
 

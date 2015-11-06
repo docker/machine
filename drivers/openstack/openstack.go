@@ -222,6 +222,7 @@ func (d *Driver) SetClient(client Client) {
 	d.client = client
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "openstack"
 }
@@ -289,7 +290,7 @@ func (d *Driver) GetIP() (string, error) {
 
 	// Looking for the IP address in a retry loop to deal with OpenStack latency
 	for retryCount := 0; retryCount < 200; retryCount++ {
-		addresses, err := d.client.GetInstanceIpAddresses(d)
+		addresses, err := d.client.GetInstanceIPAddresses(d)
 		if err != nil {
 			return "", err
 		}
@@ -352,11 +353,11 @@ func (d *Driver) Create() error {
 		return err
 	}
 	if d.FloatingIpPool != "" {
-		if err := d.assignFloatingIp(); err != nil {
+		if err := d.assignFloatingIP(); err != nil {
 			return err
 		}
 	}
-	if err := d.lookForIpAddress(); err != nil {
+	if err := d.lookForIPAddress(); err != nil {
 		return err
 	}
 	return nil
@@ -420,7 +421,7 @@ const (
 	errorMandatoryEnvOrOption    string = "%s must be specified either using the environment variable %s or the CLI option %s"
 	errorMandatoryOption         string = "%s must be specified using the CLI option %s"
 	errorExclusiveOptions        string = "Either %s or %s must be specified, not both"
-	errorMandatoryTenantNameOrId string = "Tenant id or name must be provided either using one of the environment variables OS_TENANT_ID and OS_TENANT_NAME or one of the CLI options --openstack-tenant-id and --openstack-tenant-name"
+	errorMandatoryTenantNameOrID string = "Tenant id or name must be provided either using one of the environment variables OS_TENANT_ID and OS_TENANT_NAME or one of the CLI options --openstack-tenant-id and --openstack-tenant-name"
 	errorWrongEndpointType       string = "Endpoint type must be 'publicURL', 'adminURL' or 'internalURL'"
 	errorUnknownFlavorName       string = "Unable to find flavor named %s"
 	errorUnknownImageName        string = "Unable to find image named %s"
@@ -438,7 +439,7 @@ func (d *Driver) checkConfig() error {
 		return fmt.Errorf(errorMandatoryEnvOrOption, "Password", "OS_PASSWORD", "--openstack-password")
 	}
 	if d.TenantName == "" && d.TenantId == "" {
-		return fmt.Errorf(errorMandatoryTenantNameOrId)
+		return fmt.Errorf(errorMandatoryTenantNameOrID)
 	}
 
 	if d.FlavorName == "" && d.FlavorId == "" {
@@ -470,17 +471,17 @@ func (d *Driver) resolveIds() error {
 			return err
 		}
 
-		networkId, err := d.client.GetNetworkId(d)
+		networkID, err := d.client.GetNetworkID(d)
 
 		if err != nil {
 			return err
 		}
 
-		if networkId == "" {
+		if networkID == "" {
 			return fmt.Errorf(errorUnknownNetworkName, d.NetworkName)
 		}
 
-		d.NetworkId = networkId
+		d.NetworkId = networkID
 		log.WithFields(log.Fields{
 			"Name": d.NetworkName,
 			"ID":   d.NetworkId,
@@ -491,17 +492,17 @@ func (d *Driver) resolveIds() error {
 		if err := d.initCompute(); err != nil {
 			return err
 		}
-		flavorId, err := d.client.GetFlavorId(d)
+		flavorID, err := d.client.GetFlavorID(d)
 
 		if err != nil {
 			return err
 		}
 
-		if flavorId == "" {
+		if flavorID == "" {
 			return fmt.Errorf(errorUnknownFlavorName, d.FlavorName)
 		}
 
-		d.FlavorId = flavorId
+		d.FlavorId = flavorID
 		log.WithFields(log.Fields{
 			"Name": d.FlavorName,
 			"ID":   d.FlavorId,
@@ -512,17 +513,17 @@ func (d *Driver) resolveIds() error {
 		if err := d.initCompute(); err != nil {
 			return err
 		}
-		imageId, err := d.client.GetImageId(d)
+		imageID, err := d.client.GetImageID(d)
 
 		if err != nil {
 			return err
 		}
 
-		if imageId == "" {
+		if imageID == "" {
 			return fmt.Errorf(errorUnknownImageName, d.ImageName)
 		}
 
-		d.ImageId = imageId
+		d.ImageId = imageID
 		log.WithFields(log.Fields{
 			"Name": d.ImageName,
 			"ID":   d.ImageId,
@@ -533,7 +534,7 @@ func (d *Driver) resolveIds() error {
 		if err := d.initNetwork(); err != nil {
 			return err
 		}
-		f, err := d.client.GetFloatingIpPoolId(d)
+		f, err := d.client.GetFloatingIPPoolID(d)
 
 		if err != nil {
 			return err
@@ -601,15 +602,15 @@ func (d *Driver) createMachine() error {
 	if err := d.initCompute(); err != nil {
 		return err
 	}
-	instanceId, err := d.client.CreateInstance(d)
+	instanceID, err := d.client.CreateInstance(d)
 	if err != nil {
 		return err
 	}
-	d.MachineId = instanceId
+	d.MachineId = instanceID
 	return nil
 }
 
-func (d *Driver) assignFloatingIp() error {
+func (d *Driver) assignFloatingIP() error {
 	var err error
 
 	if d.ComputeNetwork {
@@ -627,7 +628,7 @@ func (d *Driver) assignFloatingIp() error {
 		return err
 	}
 
-	var floatingIp *FloatingIp
+	var floatingIP *FloatingIP
 
 	log.WithFields(log.Fields{
 		"MachineId": d.MachineId,
@@ -640,22 +641,22 @@ func (d *Driver) assignFloatingIp() error {
 				"MachineId": d.MachineId,
 				"IP":        ip.Ip,
 			}).Debugf("Available floating IP found")
-			floatingIp = &ip
+			floatingIP = &ip
 			break
 		}
 	}
 
-	if floatingIp == nil {
-		floatingIp = &FloatingIp{}
+	if floatingIP == nil {
+		floatingIP = &FloatingIP{}
 		log.WithField("MachineId", d.MachineId).Debugf("No available floating IP found. Allocating a new one...")
 	} else {
 		log.WithField("MachineId", d.MachineId).Debugf("Assigning floating IP to the instance")
 	}
 
-	if err := d.client.AssignFloatingIP(d, floatingIp); err != nil {
+	if err := d.client.AssignFloatingIP(d, floatingIP); err != nil {
 		return err
 	}
-	d.IPAddress = floatingIp.Ip
+	d.IPAddress = floatingIP.Ip
 	return nil
 }
 
@@ -667,7 +668,7 @@ func (d *Driver) waitForInstanceActive() error {
 	return nil
 }
 
-func (d *Driver) lookForIpAddress() error {
+func (d *Driver) lookForIPAddress() error {
 	ip, err := d.GetIP()
 	if err != nil {
 		return err

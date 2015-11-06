@@ -147,6 +147,7 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "vmwarevsphere"
 }
@@ -212,7 +213,7 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-// the current implementation does the following:
+// Create has the following implementation:
 // 1. check whether the docker directory contains the boot2docker ISO
 // 2. generate an SSH keypair and bundle it in a tar.
 // 3. create a virtual machine with the boot2docker ISO mounted;
