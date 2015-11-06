@@ -156,14 +156,14 @@ func (d *Driver) Create() error {
 	client := d.getClient()
 
 	createRequest := &godo.DropletCreateRequest{
-		Image:             d.Image,
+		Image:             godo.DropletCreateImage{Slug: d.Image},
 		Name:              d.MachineName,
 		Region:            d.Region,
 		Size:              d.Size,
 		IPv6:              d.IPv6,
 		PrivateNetworking: d.PrivateNetworking,
 		Backups:           d.Backups,
-		SSHKeys:           []interface{}{d.SSHKeyID},
+		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID},},
 	}
 
 	newDroplet, _, err := client.Droplets.Create(createRequest)
@@ -171,7 +171,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	d.DropletID = newDroplet.Droplet.ID
+	d.DropletID = newDroplet.ID
 
 	log.Info("Waiting for IP address to be assigned to the Droplet...")
 	for {
@@ -179,7 +179,7 @@ func (d *Driver) Create() error {
 		if err != nil {
 			return err
 		}
-		for _, network := range newDroplet.Droplet.Networks.V4 {
+		for _, network := range newDroplet.Networks.V4 {
 			if network.Type == "public" {
 				d.IPAddress = network.IPAddress
 			}
@@ -193,7 +193,7 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("Created droplet ID %d, IP address %s",
-		newDroplet.Droplet.ID,
+		newDroplet.ID,
 		d.IPAddress)
 
 	return nil
@@ -235,7 +235,7 @@ func (d *Driver) GetState() (state.State, error) {
 	if err != nil {
 		return state.Error, err
 	}
-	switch droplet.Droplet.Status {
+	switch droplet.Status {
 	case "new":
 		return state.Starting, nil
 	case "active":
