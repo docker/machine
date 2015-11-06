@@ -218,6 +218,10 @@ func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
 
+func (d *Driver) SetClient(client Client) {
+	d.client = client
+}
+
 func (d *Driver) DriverName() string {
 	return "openstack"
 }
