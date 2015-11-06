@@ -6,27 +6,27 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: create SSH test box" {
   run machine create -d $DRIVER $NAME
-  [[ "$status" -eq 0  ]]
+  [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: test external ssh backend" {
   run machine ssh $NAME df -h
-  [[ "$status" -eq 0 ]]
+  [ "$status" -eq 0 ]
 }
 
 @test "$DRIVER: test command did what it purported to -- external ssh" {
   run machine ssh $NAME echo foo
-  [[ "$output" == "foo"  ]]
+  [ "$output" == "foo"  ]
 }
 
 @test "$DRIVER: test native ssh backend" {
   run machine --native-ssh ssh $NAME df -h
-  [[ "$status" -eq 0  ]]
+  [ "$status" -eq 0  ]
 }
 
 @test "$DRIVER: test command did what it purported to -- native ssh" {
   run machine --native-ssh ssh $NAME echo foo
-  [[ "$output" =~ "foo"  ]]
+  [[ "$output" =~ "foo"  ]] || false
 }
 
 @test "$DRIVER: ensure that ssh extra arguments work" {
@@ -40,6 +40,6 @@ load ${BASE_TEST_DIR}/helpers.bash
   # like intended
   run machine ssh $NAME -C echo foo
 
-  [[ "$status" -eq 0 ]]
-  [[ "$output" == "foo" ]]
+  [ "$status" -eq 0 ]
+  [ "$output" == "foo" ]
 }

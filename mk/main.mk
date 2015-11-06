@@ -48,7 +48,7 @@ include mk/validate.mk
 .all_coverage: coverage-generate coverage-html coverage-send coverage-serve coverage-clean
 .all_release: release-checksum release
 .all_test: test-short test-long test-integration
-.all_validate: dco fmt vet lint
+.all_validate: dco fmt vet lint lint-tests
 
 default: build
 # Build native machine and all drivers
@@ -65,6 +65,6 @@ install:
 
 clean: coverage-clean build-clean
 test: dco fmt test-short lint vet
-validate: dco fmt vet lint test-short test-long
+validate: dco fmt vet lint lint-tests test-short test-long
 
 .PHONY: .all_build .all_coverage .all_release .all_test .all_validate test build validate clean

@@ -14,10 +14,10 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: check for engine label" {
   spamlabel=$(docker $(machine config $NAME) info | grep spam)
-  [[ $spamlabel =~ "spam=eggs" ]]
+  [[ $spamlabel =~ "spam=eggs" ]] || false
 }
 
 @test "$DRIVER: check for engine storage driver" {
   storage_driver_info=$(docker $(machine config $NAME) info | grep "Storage Driver")
-  [[ $storage_driver_info =~ "overlay" ]]
+  [[ $storage_driver_info =~ "overlay" ]] || false
 }

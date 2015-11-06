@@ -21,3 +21,7 @@ lint:
 	$(if $(GOLINT), , \
 		$(error Please install golint: go get -u github.com/golang/lint/golint))
 	@test -z "$$($(GOLINT) ./... 2>&1 | grep -v vendor/ | grep -v "cli/" | grep -v "amazonec2/" |grep -v "openstack/" |grep -v "softlayer/" | grep -v "should have comment" | tee /dev/stderr)"
+
+lint-tests:
+	@test -z "$$(python ./script/validate-test 2>&1 | tee /dev/stderr)"
+

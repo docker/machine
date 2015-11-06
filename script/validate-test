@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import os
+import re
+
+# Make sure we're in the repo root
+abspath = os.path.abspath(__file__)
+dname = os.path.join(os.path.dirname(abspath), "../")
+os.chdir(dname)
+
+test_files = []
+
+# 1: Don't use [[ expr ]] without || false
+bad_conditional = r'\[\[.*\]\]$'
+err_bad_conditional = "conditional '[[ expr ]]' without '|| false'"
+
+errors = 0
+
+for (root, dirs, files) in os.walk("test/integration"):
+    for f in files:
+        if f.endswith(".bats"):
+            test_files.append(os.path.join(root, f))
+
+for fname in test_files:
+    with open(fname) as f:
+        lines = f.readlines()
+    for i in range(len(lines)):
+        if re.search(bad_conditional, lines[i]):
+            print("ERROR: {} line {}: {}".format(fname, i, err_bad_conditional))
+            errors += 1
+
+if (errors > 0):
+    print("{} errors found".format(errors))
+    exit(1)
+
+exit(0)

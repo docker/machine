@@ -6,7 +6,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine inspect $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Host \"$NAME\" does not exist" ]]
+  [ ${lines[0]} == "Host \"$NAME\" does not exist" ]
 }
 
 @test "$DRIVER: create" {
@@ -19,21 +19,21 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine ls -q
   echo ${output}
   [ "$status" -eq 0  ]
-  [[ ${lines[0]} == "$NAME" ]]
+  [ ${lines[0]} == "$NAME" ]
 }
 
 @test "$DRIVER: has status 'started' appearing in ls" {
   run machine ls -q --filter state=Running
   echo ${output}
   [ "$status" -eq 0  ]
-  [[ ${lines[0]} == "$NAME" ]]
+  [ ${lines[0]} == "$NAME" ]
 }
 
 @test "$DRIVER: create with same name again fails" {
   run machine create -d $DRIVER $NAME
   echo ${output}
   [ "$status" -eq 1  ]
-  [[ ${lines[0]} == "Host already exists: \"$NAME\"" ]]
+  [ ${lines[0]} == "Host already exists: \"$NAME\"" ]
 }
 
 @test "$DRIVER: run busybox container" {
@@ -58,7 +58,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine ssh $NAME -- ls -lah /
   echo ${output}
   [ "$status" -eq 0  ]
-  [[ ${lines[0]} =~ "total"  ]]
+  [[ ${lines[0]} =~ "total"  ]] || false
 }
 
 @test "$DRIVER: docker commands with the socket should work" {
@@ -76,27 +76,27 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine ls
   echo ${output}
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Stopped"*  ]]
+  [[ ${lines[1]} == *"Stopped"*  ]] || false
 }
 
 @test "$DRIVER: url should show an error when machine is stopped" {
   run machine url $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${output} == *"not running"* ]]
+  [[ ${output} == *"not running"* ]] || false
 }
 
 @test "$DRIVER: env should show an error when machine is stopped" {
   run machine env $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${output} == *"not running. Please start"* ]]
+  [[ ${output} == *"not running. Please start"* ]] || false
 }
 
 @test "$DRIVER: machine should not allow upgrade when stopped" {
   run machine upgrade $NAME
   echo ${output}
-  [[ "$status" -eq 1 ]]
+  [ "$status" -eq 1 ]
 }
 
 @test "$DRIVER: start" {
@@ -109,7 +109,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine ls
   echo ${output}
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Running"*  ]]
+  [[ ${lines[1]} == *"Running"*  ]] || false
 }
 
 @test "$DRIVER: kill" {
@@ -122,7 +122,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine ls
   echo ${output}
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Stopped"*  ]]
+  [[ ${lines[1]} == *"Stopped"*  ]] || false
 }
 
 @test "$DRIVER: restart" {
@@ -135,12 +135,12 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine ls
   echo ${output}
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Running"*  ]]
+  [[ ${lines[1]} == *"Running"* ]] || false
 }
 
 @test "$DRIVER: status" {
   run machine status $NAME
   echo ${output}
   [ "$status" -eq 0 ]
-  [[ ${output} == *"Running"* ]]
+  [[ ${output} == *"Running"* ]] || false
 }

@@ -22,5 +22,5 @@ force_env DRIVER virtualbox
   LOCAL_CHECKSUM=$(openssl dgst -sha256 $MACHINE_STORAGE_PATH/certs/ca.pem | awk '{ print $2 }')
   echo ${SERVER_CHECKSUM}
   echo ${LOCAL_CHECKSUM}
-  [[ ${SERVER_CHECKSUM} == ${LOCAL_CHECKSUM} ]]
+  [ ${SERVER_CHECKSUM} == ${LOCAL_CHECKSUM} ]
 }
