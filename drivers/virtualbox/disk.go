@@ -11,8 +11,8 @@ type VirtualDisk struct {
 	Path string
 }
 
-func (d *Driver) getVMDiskInfo() (*VirtualDisk, error) {
-	out, err := d.vbmOut("showvminfo", d.MachineName, "--machinereadable")
+func (d *Driver) getVMDiskInfo(name string) (*VirtualDisk, error) {
+	out, err := d.vbmOut("showvminfo", name, "--machinereadable")
 	if err != nil {
 		return nil, err
 	}
