@@ -12,8 +12,8 @@ type VirtualBoxVM struct {
 	Memory int
 }
 
-func (d *Driver) getVMInfo() (*VirtualBoxVM, error) {
-	out, err := d.vbmOut("showvminfo", d.MachineName, "--machinereadable")
+func (d *Driver) getVMInfo(name string) (*VirtualBoxVM, error) {
+	out, err := d.vbmOut("showvminfo", name, "--machinereadable")
 	if err != nil {
 		return nil, err
 	}
