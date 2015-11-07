@@ -112,7 +112,7 @@ func (b *B2dUtils) GetLatestBoot2DockerReleaseURL(apiURL string) (string, error)
 		}
 
 		tag := t[0].TagName
-		log.Infof("Latest release for %s/%s/%s is %s\n", host, org, repo, tag)
+		log.Infof("Latest release for %s/%s/%s is %s", host, org, repo, tag)
 		isoURL = fmt.Sprintf("%s://%s/%s/%s/releases/download/%s/boot2docker.iso", scheme, host, org, repo, tag)
 	} else {
 		//does not match a github releases api url
