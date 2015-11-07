@@ -193,7 +193,7 @@ func (lbp *LocalBinaryPlugin) execServer() error {
 	for {
 		select {
 		case out := <-stdOutCh:
-			log.Debug(fmt.Sprintf(pluginOutPrefix, lbp.MachineName), out)
+			log.Info(fmt.Sprintf(pluginOutPrefix, lbp.MachineName), out)
 		case err := <-stdErrCh:
 			log.Debug(fmt.Sprintf(pluginErrPrefix, lbp.MachineName), err)
 		case _ = <-lbp.stopCh:
