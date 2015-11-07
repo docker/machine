@@ -112,6 +112,10 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
+	if _, err := p.SSHCommand("sudo ip link delete docker0"); err != nil {
+		return err
+	}
+
 	// upload certs and configure TLS auth
 	caCert, err := ioutil.ReadFile(authOptions.CaCertPath)
 	if err != nil {
