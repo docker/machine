@@ -72,6 +72,8 @@ func Register(name string, p *RegisteredProvisioner) {
 }
 
 func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
+	log.Info("Detecting the provisioner...")
+
 	osReleaseOut, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
 	if err != nil {
 		return nil, fmt.Errorf("Error getting SSH command: %s", err)
