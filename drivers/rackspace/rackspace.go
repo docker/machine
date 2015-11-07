@@ -87,10 +87,14 @@ func NewDriver(machineName, storePath string) drivers.Driver {
 	}).Debug("Instantiating Rackspace driver.")
 
 	inner := openstack.NewDerivedDriver(machineName, storePath)
-
-	return &Driver{
+	driver := &Driver{
 		Driver: inner,
 	}
+	inner.SetClient(&Client{
+		driver: driver,
+	})
+
+	return driver
 }
 
 // DriverName is the user-visible name of this driver.
