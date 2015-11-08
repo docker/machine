@@ -77,6 +77,20 @@ set DOCKER_MACHINE_NAME=dev
 # Run this command to configure your shell: copy and paste the above values into your command prompt
 ```
 
+For unsupported shells, you may also `docker-machine env name` followed by the command you wish to run in the `docker-machine` environment:
+
+```
+$ /usr/bin/env | grep DOCKER
+$ docker-machine env dev /usr/bin/env | grep DOCKER
+DOCKER_HOST=tcp://192.168.99.101:2376
+DOCKER_CERT_PATH=/Users/nathanleclaire/.docker/machines/.client
+DOCKER_TLS_VERIFY=1
+DOCKER_MACHINE_NAME=dev
+$ /usr/bin/env | grep DOCKER
+```
+
+Here, the parent shell's environment is unchanged; only the environment for the `/usr/bin/env` command run by `docker-machine env dev /usr/bin/env` is altered.
+
 ## Excluding the created machine from proxies
 
 The env command supports a `--no-proxy` flag which will ensure that the created

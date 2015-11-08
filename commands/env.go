@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -38,10 +39,6 @@ func cmdEnv(c CommandLine) error {
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
-	if len(c.Args()) != 1 && !c.Bool("unset") {
-		return errImproperEnvArgs
-	}
-
 	host, err := getFirstArgHost(c)
 	if err != nil {
 		return err
@@ -52,24 +49,10 @@ func cmdEnv(c CommandLine) error {
 		return fmt.Errorf("Error running connection boilerplate: %s", err)
 	}
 
-	userShell := c.String("shell")
-	if userShell == "" {
-		shell, err := detectShell()
-		if err != nil {
-			return err
-		}
-		userShell = shell
-	}
-
-	t := template.New("envConfig")
-
-	usageHint := generateUsageHint(userShell, os.Args)
-
 	shellCfg := &ShellConfig{
 		DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), host.Name),
 		DockerHost:      dockerHost,
 		DockerTLSVerify: "1",
-		UsageHint:       usageHint,
 		MachineName:     host.Name,
 	}
 
@@ -102,6 +85,29 @@ func cmdEnv(c CommandLine) error {
 		shellCfg.NoProxyVar = noProxyVar
 		shellCfg.NoProxyValue = noProxyValue
 	}
+
+	if len(c.Args()) < 1 && !c.Bool("unset") {
+		return errImproperEnvArgs
+	} else if len(c.Args()) > 1 {
+		return cmdEnvChild(c, shellCfg)
+	} else {
+		return cmdEnvShell(c, shellCfg)
+	}
+}
+
+func cmdEnvShell(c *cli.Context, shellCfg *ShellConfig) error {
+	userShell := c.String("shell")
+	if userShell == "" {
+		shell, err := detectShell()
+		if err != nil {
+			return err
+		}
+		userShell = shell
+	}
+
+	shellCfg.UsageHint = generateUsageHint(userShell, os.Args)
+
+	t := template.New("envConfig")
 
 	// unset vars
 	if c.Bool("unset") {
@@ -182,4 +188,31 @@ func generateUsageHint(userShell string, args []string) string {
 	}
 
 	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
+}
+
+func cmdEnvChild(c *cli.Context, shellCfg *ShellConfig) error {
+	commands := c.Args().Tail()
+
+	vars := []string{
+		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", shellCfg.DockerTLSVerify),
+		fmt.Sprintf("DOCKER_HOST=%s", shellCfg.DockerHost),
+		fmt.Sprintf("DOCKER_CERT_PATH=%s", shellCfg.DockerCertPath),
+		fmt.Sprintf("DOCKER_MACHINE_NAME=%s", shellCfg.MachineName),
+	}
+
+	if shellCfg.NoProxyVar != "" {
+		vars = append(vars, fmt.Sprintf("%s=%s", shellCfg.NoProxyVar, shellCfg.NoProxyValue))
+	}
+
+	env := append(vars, os.Environ()...)
+
+	cmd := exec.Command(commands[0], commands[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = env
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
 }
