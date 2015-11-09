@@ -122,24 +122,15 @@ func (h *Host) Kill() error {
 }
 
 func (h *Host) Restart() error {
+	if drivers.MachineInState(h.Driver, state.Stopped)() {
+		return h.Start()
+	}
 	if drivers.MachineInState(h.Driver, state.Running)() {
-		if err := h.Stop(); err != nil {
+		if err := h.Driver.Restart(); err != nil {
 			return err
 		}
-
-		if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Stopped)); err != nil {
-			return err
-		}
+		return mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running))
 	}
-
-	if err := h.Start(); err != nil {
-		return err
-	}
-
-	if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
-		return err
-	}
-
 	return nil
 }
 
