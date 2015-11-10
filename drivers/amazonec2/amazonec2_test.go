@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	testSshPort           = 22
+	testSSHPort           = 22
 	testDockerPort        = 2376
 	testStoreDir          = ".store-test"
 	machineTestName       = "test-host"
@@ -133,8 +133,8 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 	group.IpPermissions = []amz.IpPermission{
 		{
 			IpProtocol: "tcp",
-			FromPort:   testSshPort,
-			ToPort:     testSshPort,
+			FromPort:   testSSHPort,
+			ToPort:     testSSHPort,
 		},
 	}
 
@@ -172,8 +172,8 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 	}
 
 	receivedPort := perms[0].FromPort
-	if receivedPort != testSshPort {
-		t.Fatalf("expected permission on port %d; received port %d", testSshPort, receivedPort)
+	if receivedPort != testSSHPort {
+		t.Fatalf("expected permission on port %d; received port %d", testSSHPort, receivedPort)
 	}
 }
 
@@ -189,8 +189,8 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 	group.IpPermissions = []amz.IpPermission{
 		{
 			IpProtocol: "tcp",
-			FromPort:   testSshPort,
-			ToPort:     testSshPort,
+			FromPort:   testSSHPort,
+			ToPort:     testSSHPort,
 		},
 		{
 			IpProtocol: "tcp",
