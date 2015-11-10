@@ -23,18 +23,18 @@ Administrator level account to create and manage Hyper-V machines.
 
 Options:
 
- - `--hyper-v-boot2docker-url`: The URL of the boot2docker ISO. Defaults to the latest available version.
- - `--hyper-v-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
- - `--hyper-v-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
- - `--hyper-v-disk-size`: Size of disk for the host in MB.
- - `--hyper-v-memory`: Size of memory for the host in MB. By default, the machine is setup to use dynamic memory.
+ - `--hyperv-boot2docker-url`: The URL of the boot2docker ISO. Defaults to the latest available version.
+ - `--hyperv-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
+ - `--hyperv-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
+ - `--hyperv-disk-size`: Size of disk for the host in MB.
+ - `--hyperv-memory`: Size of memory for the host in MB. By default, the machine is setup to use dynamic memory.
 
 Environment variables and default values:
 
 | CLI option                       | Environment variable | Default                  |
 |----------------------------------|----------------------| -------------------------|
-| `--hyper-v-boot2docker-url`      | -                    | *Latest boot2docker url* |
-| `--hyper-v-boot2docker-location` | -                    | -                        |
-| `--hyper-v-virtual-switch`       | -                    | *first found*            |
-| `--hyper-v-disk-size`            | -                    | `20000`                  |
-| `--hyper-v-memory`               | -                    | `1024`                   |
+| `--hyperv-boot2docker-url`       | -                    | *Latest boot2docker url* |
+| `--hyperv-boot2docker-location`  | -                    | -                        |
+| `--hyperv-virtual-switch`        | -                    | *first found*            |
+| `--hyperv-disk-size`             | -                    | `20000`                  |
+| `--hyperv-memory`                | -                    | `1024`                   |
