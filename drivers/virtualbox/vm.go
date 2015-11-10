@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-type VirtualBoxVM struct {
+type VM struct {
 	CPUs   int
 	Memory int
 }
 
-func (d *Driver) getVMInfo(name string) (*VirtualBoxVM, error) {
+func (d *Driver) getVMInfo(name string) (*VM, error) {
 	out, err := d.vbmOut("showvminfo", name, "--machinereadable")
 	if err != nil {
 		return nil, err
@@ -22,9 +22,9 @@ func (d *Driver) getVMInfo(name string) (*VirtualBoxVM, error) {
 	return parseVMInfo(r)
 }
 
-func parseVMInfo(r io.Reader) (*VirtualBoxVM, error) {
+func parseVMInfo(r io.Reader) (*VM, error) {
 	s := bufio.NewScanner(r)
-	vm := &VirtualBoxVM{}
+	vm := &VM{}
 	for s.Scan() {
 		line := s.Text()
 		if line == "" {

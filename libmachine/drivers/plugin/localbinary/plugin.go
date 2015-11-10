@@ -62,7 +62,7 @@ type DriverPlugin interface {
 	PluginStreamer
 }
 
-type LocalBinaryPlugin struct {
+type Plugin struct {
 	Executor    McnBinaryExecutor
 	Addr        string
 	MachineName string
@@ -70,7 +70,7 @@ type LocalBinaryPlugin struct {
 	stopCh      chan bool
 }
 
-type LocalBinaryExecutor struct {
+type Executor struct {
 	pluginStdout, pluginStderr io.ReadCloser
 	DriverName                 string
 	binaryPath                 string
@@ -84,7 +84,7 @@ func (e ErrPluginBinaryNotFound) Error() string {
 	return fmt.Sprintf("Driver %q not found. Do you have the plugin binary accessible in your PATH?", e.driverName)
 }
 
-func NewLocalBinaryPlugin(driverName string) (*LocalBinaryPlugin, error) {
+func NewPlugin(driverName string) (*Plugin, error) {
 	binaryPath, err := exec.LookPath(fmt.Sprintf("docker-machine-driver-%s", driverName))
 	if err != nil {
 		return nil, ErrPluginBinaryNotFound{driverName}
@@ -92,17 +92,17 @@ func NewLocalBinaryPlugin(driverName string) (*LocalBinaryPlugin, error) {
 
 	log.Debugf("Found binary path at %s", binaryPath)
 
-	return &LocalBinaryPlugin{
+	return &Plugin{
 		stopCh: make(chan bool),
 		addrCh: make(chan string, 1),
-		Executor: &LocalBinaryExecutor{
+		Executor: &Executor{
 			DriverName: driverName,
 			binaryPath: binaryPath,
 		},
 	}, nil
 }
 
-func (lbe *LocalBinaryExecutor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
+func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 	var err error
 
 	log.Debugf("Launching plugin server for driver %s", lbe.DriverName)
@@ -131,7 +131,7 @@ func (lbe *LocalBinaryExecutor) Start() (*bufio.Scanner, *bufio.Scanner, error) 
 	return outScanner, errScanner, nil
 }
 
-func (lbe *LocalBinaryExecutor) Close() error {
+func (lbe *Executor) Close() error {
 	if err := lbe.pluginStdout.Close(); err != nil {
 		return err
 	}
@@ -164,14 +164,14 @@ func stream(scanner *bufio.Scanner, streamOutCh chan<- string, stopCh <-chan boo
 	}
 }
 
-func (lbp *LocalBinaryPlugin) AttachStream(scanner *bufio.Scanner) (<-chan string, chan<- bool) {
+func (lbp *Plugin) AttachStream(scanner *bufio.Scanner) (<-chan string, chan<- bool) {
 	streamOutCh := make(chan string)
 	stopCh := make(chan bool)
 	go stream(scanner, streamOutCh, stopCh)
 	return streamOutCh, stopCh
 }
 
-func (lbp *LocalBinaryPlugin) execServer() error {
+func (lbp *Plugin) execServer() error {
 	outScanner, errScanner, err := lbp.Executor.Start()
 	if err != nil {
 		return err
@@ -207,11 +207,11 @@ func (lbp *LocalBinaryPlugin) execServer() error {
 	}
 }
 
-func (lbp *LocalBinaryPlugin) Serve() error {
+func (lbp *Plugin) Serve() error {
 	return lbp.execServer()
 }
 
-func (lbp *LocalBinaryPlugin) Address() (string, error) {
+func (lbp *Plugin) Address() (string, error) {
 	if lbp.Addr == "" {
 		select {
 		case lbp.Addr = <-lbp.addrCh:
@@ -225,7 +225,7 @@ func (lbp *LocalBinaryPlugin) Address() (string, error) {
 	return lbp.Addr, nil
 }
 
-func (lbp *LocalBinaryPlugin) Close() error {
+func (lbp *Plugin) Close() error {
 	lbp.stopCh <- true
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 func TestIP(t *testing.T) {
 	cases := []struct {
 		baseDriver  *BaseDriver
-		expectedIp  string
+		expectedIP  string
 		expectedErr error
 	}{
 		{&BaseDriver{}, "", errors.New("IP address is not set")},
@@ -22,7 +22,7 @@ func TestIP(t *testing.T) {
 
 	for _, c := range cases {
 		ip, err := c.baseDriver.GetIP()
-		assert.Equal(t, c.expectedIp, ip)
+		assert.Equal(t, c.expectedIP, ip)
 		assert.Equal(t, c.expectedErr, err)
 	}
 }

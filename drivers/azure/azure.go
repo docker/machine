@@ -131,6 +131,7 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "azure"
 }
@@ -406,13 +407,13 @@ func (d *Driver) addDockerEndpoints(vmConfig *vmClient.Role) error {
 			LocalPort: d.DockerPort,
 		}
 		if d.SwarmMaster {
-			swarm_ep := vmClient.InputEndpoint{
+			swarmEp := vmClient.InputEndpoint{
 				Name:      "docker swarm",
 				Protocol:  "tcp",
 				Port:      d.DockerSwarmMasterPort,
 				LocalPort: d.DockerSwarmMasterPort,
 			}
-			configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, swarm_ep)
+			configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, swarmEp)
 			log.Debugf("added Docker swarm master endpoint (port %d) to configuration", d.DockerSwarmMasterPort)
 		}
 		configSets[i].InputEndpoints.InputEndpoint = append(configSets[i].InputEndpoints.InputEndpoint, ep)
