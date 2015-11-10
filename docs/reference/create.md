@@ -110,7 +110,7 @@ output of `docker info`:
 
 ```
 $ eval $(docker-machine env foobarmachine)
-$ docker version
+$ docker info
 Containers: 0
 Images: 0
 Storage Driver: overlay
