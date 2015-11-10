@@ -186,21 +186,6 @@ func (d *Driver) PreCreateCheck() error {
 	return d.vbm()
 }
 
-// cmdOutput runs a shell command and returns its output.
-func cmdOutput(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	log.Debugf("COMMAND: %v %v", name, strings.Join(args, " "))
-
-	stdout, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	log.Debugf("STDOUT:\n{\n%v}", string(stdout))
-
-	return string(stdout), nil
-}
-
 // IsVTXDisabledInTheVM checks if VT-X is disabled in the started vm.
 func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
 	logPath := filepath.Join(d.ResolveStorePath(d.MachineName), "Logs", "VBox.log")
@@ -844,4 +829,12 @@ func getRandomIPinSubnet(baseIP net.IP) (net.IP, error) {
 	}
 
 	return dhcpAddr, nil
+}
+
+func detectVBoxManageCmdInPath() string {
+	cmd := "VBoxManage"
+	if path, err := exec.LookPath(cmd); err == nil {
+		return path
+	}
+	return cmd
 }
