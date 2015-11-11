@@ -38,18 +38,11 @@ func cmdEnv(c CommandLine) error {
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
-	if len(c.Args()) != 1 && !c.Bool("unset") {
+	// valid case:
+	//   1. one arg without --unset
+	//   2. no arg with --unset
+	if (len(c.Args()) != 1 && !c.Bool("unset")) || (len(c.Args()) != 0 && c.Bool("unset")) {
 		return errImproperEnvArgs
-	}
-
-	host, err := getFirstArgHost(c)
-	if err != nil {
-		return err
-	}
-
-	dockerHost, _, err := runConnectionBoilerplate(host, c)
-	if err != nil {
-		return fmt.Errorf("Error running connection boilerplate: %s", err)
 	}
 
 	userShell := c.String("shell")
@@ -64,6 +57,53 @@ func cmdEnv(c CommandLine) error {
 	t := template.New("envConfig")
 
 	usageHint := generateUsageHint(userShell, os.Args)
+
+	// unset vars
+	if c.Bool("unset") {
+		shellCfg := ShellConfig{
+			Suffix:    "\n",
+			UsageHint: usageHint,
+		}
+
+		switch userShell {
+		case "fish":
+			shellCfg.Prefix = "set -e "
+			shellCfg.Suffix = ";\n"
+		case "powershell":
+			shellCfg.Prefix = "Remove-Item Env:\\\\"
+		case "cmd":
+			// since there is no way to unset vars in cmd just reset to empty
+			shellCfg.Prefix = "SET "
+			shellCfg.Delimiter = "="
+		default:
+			shellCfg.Prefix = "unset "
+		}
+
+		if c.Bool("no-proxy") {
+			if _, ok := os.LookupEnv("no_proxy"); ok {
+				shellCfg.NoProxyVar = "no_proxy"
+			} else {
+				shellCfg.NoProxyVar = "NO_PROXY"
+			}
+		}
+
+		tmpl, err := t.Parse(envTmpl)
+		if err != nil {
+			return err
+		}
+
+		return tmpl.Execute(os.Stdout, shellCfg)
+	}
+
+	host, err := getFirstArgHost(c)
+	if err != nil {
+		return err
+	}
+
+	dockerHost, _, err := runConnectionBoilerplate(host, c)
+	if err != nil {
+		return fmt.Errorf("Error running connection boilerplate: %s", err)
+	}
 
 	shellCfg := &ShellConfig{
 		DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), host.Name),
@@ -101,39 +141,6 @@ func cmdEnv(c CommandLine) error {
 
 		shellCfg.NoProxyVar = noProxyVar
 		shellCfg.NoProxyValue = noProxyValue
-	}
-
-	// unset vars
-	if c.Bool("unset") {
-		switch userShell {
-		case "fish":
-			shellCfg.Prefix = "set -e "
-			shellCfg.Delimiter = ""
-			shellCfg.Suffix = ";\n"
-		case "powershell":
-			shellCfg.Prefix = "Remove-Item Env:\\\\"
-			shellCfg.Delimiter = ""
-			shellCfg.Suffix = "\n"
-		case "cmd":
-			// since there is no way to unset vars in cmd just reset to empty
-			shellCfg.DockerCertPath = ""
-			shellCfg.DockerHost = ""
-			shellCfg.DockerTLSVerify = ""
-			shellCfg.Prefix = "set "
-			shellCfg.Delimiter = "="
-			shellCfg.Suffix = "\n"
-		default:
-			shellCfg.Prefix = "unset "
-			shellCfg.Delimiter = " "
-			shellCfg.Suffix = "\n"
-		}
-
-		tmpl, err := t.Parse(envTmpl)
-		if err != nil {
-			return err
-		}
-
-		return tmpl.Execute(os.Stdout, shellCfg)
 	}
 
 	switch userShell {
