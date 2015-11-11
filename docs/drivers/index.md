@@ -23,5 +23,4 @@ identifier="smn_machine_drivers"
 * [IBM Softlayer](soft-layer.md)
 * [Oracle VirtualBox](virtualbox.md)
 * [VMware vCloud Air](vm-cloud.md)
-* [VMware Fusion](vm-fusion.md)
 * [VMware vSphere](vsphere.md)

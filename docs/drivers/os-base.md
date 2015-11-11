@@ -32,7 +32,7 @@ the [Docker Machine driver reference](../index.md).
 
 In addition to the provider, you have the option of identifying a base operating
 system. It is an option because Docker Machine has defaults for both local and
-remote providers. For local providers such as VirtualBox, Fusion, Hyper-V, and
+remote providers. For local providers such as VirtualBox, Hyper-V, and
 so forth, the default base operating system is Boot2Docker. For cloud providers,
 the base operating system is the latest Ubuntu LTS the provider supports.
 

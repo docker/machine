@@ -2,7 +2,7 @@
 +++
 title = "Overview of Docker Machine"
 description = "Introduction and Overview of Machine"
-keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
+keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarevcloudair, vmwarevsphere, exoscale"]
 [menu.main]
 parent="smn_workw_machine"
 +++

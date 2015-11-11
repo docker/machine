@@ -70,15 +70,15 @@ If you want a subset of information formatted as JSON, you can use the `json`
 function in the template.
 
 ```
-$ docker-machine inspect --format='{{json .Driver}}' dev-fusion
-{"Boot2DockerURL":"","CPUS":8,"CPUs":8,"CaCertPath":"/Users/hairyhenderson/.docker/machine/certs/ca.pem","DiskSize":20000,"IPAddress":"172.16.62.129","ISO":"/Users/hairyhenderson/.docker/machine/machines/dev-fusion/boot2docker-1.5.0-GH747.iso","MachineName":"dev-fusion","Memory":1024,"PrivateKeyPath":"/Users/hairyhenderson/.docker/machine/certs/ca-key.pem","SSHPort":22,"SSHUser":"docker","SwarmDiscovery":"","SwarmHost":"tcp://0.0.0.0:3376","SwarmMaster":false}
+$ docker-machine inspect --format='{{json .Driver}}' dev
+{"Boot2DockerURL":"","CPUS":8,"CPUs":8,"CaCertPath":"/Users/hairyhenderson/.docker/machine/certs/ca.pem","DiskSize":20000,"IPAddress":"172.16.62.129","ISO":"/Users/hairyhenderson/.docker/machine/machines/dev/boot2docker-1.5.0-GH747.iso","MachineName":"dev","Memory":1024,"PrivateKeyPath":"/Users/hairyhenderson/.docker/machine/certs/ca-key.pem","SSHPort":22,"SSHUser":"docker","SwarmDiscovery":"","SwarmHost":"tcp://0.0.0.0:3376","SwarmMaster":false}
 ```
 
 While this is usable, it's not very human-readable. For this reason, there is
 `prettyjson`:
 
 ```
-$ docker-machine inspect --format='{{prettyjson .Driver}}' dev-fusion
+$ docker-machine inspect --format='{{prettyjson .Driver}}' dev
 {
     "Boot2DockerURL": "",
     "CPUS": 8,
@@ -86,8 +86,8 @@ $ docker-machine inspect --format='{{prettyjson .Driver}}' dev-fusion
     "CaCertPath": "/Users/hairyhenderson/.docker/machine/certs/ca.pem",
     "DiskSize": 20000,
     "IPAddress": "172.16.62.129",
-    "ISO": "/Users/hairyhenderson/.docker/machine/machines/dev-fusion/boot2docker-1.5.0-GH747.iso",
-    "MachineName": "dev-fusion",
+    "ISO": "/Users/hairyhenderson/.docker/machine/machines/dev/boot2docker-1.5.0-GH747.iso",
+    "MachineName": "dev",
     "Memory": 1024,
     "PrivateKeyPath": "/Users/hairyhenderson/.docker/machine/certs/ca-key.pem",
     "SSHPort": 22,

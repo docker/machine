@@ -84,7 +84,7 @@ machine's IP address is added to the [`NO_PROXY`/`no_proxy` environment
 variable](https://wiki.archlinux.org/index.php/Proxy_settings).
 
 This is useful when using `docker-machine` with a local VM provider (e.g.
-`virtualbox` or `vmwarefusion`) in network environments where a HTTP proxy is
+`virtualbox`) in network environments where a HTTP proxy is
 required for internet access.
 
 ```
