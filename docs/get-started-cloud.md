@@ -2,7 +2,7 @@
 +++
 title = "Using Docker Machine with a cloud provider"
 description = "Using Docker Machine with a cloud provider"
-keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
+keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarevcloudair, vmwarevsphere, exoscale"]
 [menu.main]
 parent="smn_workw_machine"
 weight=2
