@@ -11,7 +11,6 @@ import (
 
 const (
 	DefaultHostName    = "test-host"
-	HostTestDriverName = "none"
 	HostTestCaCert     = "test-cert"
 	HostTestPrivateKey = "test-key"
 )
