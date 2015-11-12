@@ -79,39 +79,18 @@ func TestRunActionForeachMachine(t *testing.T) {
 
 	runActionForeachMachine("start", machines)
 
-	expected := map[string]state.State{
-		"foo":  state.Running,
-		"bar":  state.Running,
-		"baz":  state.Running,
-		"spam": state.Running,
-		"eggs": state.Running,
-		"ham":  state.Running,
-	}
-
 	for _, machine := range machines {
-		state, _ := machine.Driver.GetState()
-		if expected[machine.Name] != state {
-			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
-		}
-	}
+		machineState, _ := machine.Driver.GetState()
 
-	// OK, now let's stop them all!
-	expected = map[string]state.State{
-		"foo":  state.Stopped,
-		"bar":  state.Stopped,
-		"baz":  state.Stopped,
-		"spam": state.Stopped,
-		"eggs": state.Stopped,
-		"ham":  state.Stopped,
+		assert.Equal(t, state.Running, machineState)
 	}
 
 	runActionForeachMachine("stop", machines)
 
 	for _, machine := range machines {
-		state, _ := machine.Driver.GetState()
-		if expected[machine.Name] != state {
-			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
-		}
+		machineState, _ := machine.Driver.GetState()
+
+		assert.Equal(t, state.Stopped, machineState)
 	}
 }
 
