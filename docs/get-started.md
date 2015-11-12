@@ -15,9 +15,9 @@ weight=1
 Let's take a look at using `docker-machine` for creating, using, and managing a
 Docker host inside of [VirtualBox](https://www.virtualbox.org/).
 
-First, ensure that
-[VirtualBox 4.3.28](https://www.virtualbox.org/wiki/Downloads) is correctly
-installed on your system.
+First, ensure that [the latest
+VirtualBox](https://www.virtualbox.org/wiki/Downloads) is correctly installed on
+your system.
 
 If you run the `docker-machine ls` command to show all available machines, you will see
 that none have been created so far.

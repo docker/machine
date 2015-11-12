@@ -21,8 +21,8 @@ demonstrating the [Digital Ocean](https://digitalocean.com) driver (called
 Amazon Web Services, Google Compute Engine, and Microsoft Azure.
 
 Usually it is required that you pass account verification credentials for these
-providers as flags to `docker-machine create`. These flags are unique for each driver.
-For instance, to pass a Digital Ocean access token you use the
+providers as flags to `docker-machine create`. These flags are unique for each
+driver.  For instance, to pass a Digital Ocean access token you use the
 `--digitalocean-access-token` flag.
 
 Let's take a look at how to do this.
