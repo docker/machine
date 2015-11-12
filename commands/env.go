@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -207,4 +208,21 @@ func generateUsageHint(userShell string, args []string) string {
 	}
 
 	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
+}
+
+func detectShell() (string, error) {
+	// attempt to get the SHELL env var
+	shell := filepath.Base(os.Getenv("SHELL"))
+
+	log.Debugf("shell: %s", shell)
+	if shell == "" {
+		// check for windows env and not bash (i.e. msysgit, etc)
+		if runtime.GOOS == "windows" {
+			log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
+		}
+
+		return "", ErrUnknownShell
+	}
+
+	return shell, nil
 }
