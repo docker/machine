@@ -138,10 +138,6 @@
 		{
 			"ImportPath": "google.golang.org/cloud/internal",
 			"Rev": "2400193c85c3561d13880d34e0e10c4315bb02af"
-		},
-		{
-			"ImportPath": "golang.org/x/sys",
-			"Rev": "d9157a9621b69ad1d8d77a1933590c416593f24f"
 		}
 	]
 }
