@@ -22,7 +22,6 @@ package query
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -38,7 +37,7 @@ var encoderType = reflect.TypeOf(new(Encoder)).Elem()
 // Encoder is an interface implemented by any type that wishes to encode
 // itself into URL values in a non-standard way.
 type Encoder interface {
-	EncodeValues(v *url.Values) error
+	EncodeValues(key string, v *url.Values) error
 }
 
 // Values returns the url.Values encoding of v.
@@ -88,7 +87,9 @@ type Encoder interface {
 // Slice and Array values default to encoding as multiple URL values of the
 // same name.  Including the "comma" option signals that the field should be
 // encoded as a single comma-delimited value.  Including the "space" option
-// similarly encodes the value as a single space-delimited string.
+// similarly encodes the value as a single space-delimited string. Including
+// the "brackets" option signals that the multiple URL values should have "[]"
+// appended to the value name.
 //
 // Anonymous struct fields are usually encoded as if their inner exported
 // fields were fields in the outer struct, subject to the standard Go
@@ -97,32 +98,41 @@ type Encoder interface {
 //
 // Non-nil pointer values are encoded as the value pointed to.
 //
+// Nested structs are encoded including parent fields in value names for
+// scoping. e.g:
+//
+// 	"user[name]=acme&user[addr][postcode]=1234&user[addr][city]=SFO"
+//
 // All other values are encoded using their default string representation.
 //
 // Multiple fields that encode to the same URL parameter name will be included
 // as multiple URL values of the same name.
 func Values(v interface{}) (url.Values, error) {
+	values := make(url.Values)
 	val := reflect.ValueOf(v)
 	for val.Kind() == reflect.Ptr {
 		if val.IsNil() {
-			return nil, errors.New("query: Values() expects non-nil value")
+			return values, nil
 		}
 		val = val.Elem()
+	}
+
+	if v == nil {
+		return values, nil
 	}
 
 	if val.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("query: Values() expects struct input. Got %v", val.Kind())
 	}
 
-	values := make(url.Values)
-	err := reflectValue(values, val)
+	err := reflectValue(values, val, "")
 	return values, err
 }
 
 // reflectValue populates the values parameter from the struct fields in val.
 // Embedded structs are followed recursively (using the rules defined in the
 // Values function documentation) breadth-first.
-func reflectValue(values url.Values, val reflect.Value) error {
+func reflectValue(values url.Values, val reflect.Value, scope string) error {
 	var embedded []reflect.Value
 
 	typ := val.Type()
@@ -148,13 +158,21 @@ func reflectValue(values url.Values, val reflect.Value) error {
 			name = sf.Name
 		}
 
+		if scope != "" {
+			name = scope + "[" + name + "]"
+		}
+
 		if opts.Contains("omitempty") && isEmptyValue(sv) {
 			continue
 		}
 
 		if sv.Type().Implements(encoderType) {
+			if !reflect.Indirect(sv).IsValid() {
+				sv = reflect.New(sv.Type().Elem())
+			}
+
 			m := sv.Interface().(Encoder)
-			if err := m.EncodeValues(&values); err != nil {
+			if err := m.EncodeValues(name, &values); err != nil {
 				return err
 			}
 			continue
@@ -166,6 +184,8 @@ func reflectValue(values url.Values, val reflect.Value) error {
 				del = ','
 			} else if opts.Contains("space") {
 				del = ' '
+			} else if opts.Contains("brackets") {
+				name = name + "[]"
 			}
 
 			if del != 0 {
@@ -188,11 +208,28 @@ func reflectValue(values url.Values, val reflect.Value) error {
 			continue
 		}
 
+		if sv.Type() == timeType {
+			values.Add(name, valueString(sv, opts))
+			continue
+		}
+
+		for sv.Kind() == reflect.Ptr {
+			if sv.IsNil() {
+				break
+			}
+			sv = sv.Elem()
+		}
+
+		if sv.Kind() == reflect.Struct {
+			reflectValue(values, sv, name)
+			continue
+		}
+
 		values.Add(name, valueString(sv, opts))
 	}
 
 	for _, f := range embedded {
-		if err := reflectValue(values, f); err != nil {
+		if err := reflectValue(values, f, scope); err != nil {
 			return err
 		}
 	}

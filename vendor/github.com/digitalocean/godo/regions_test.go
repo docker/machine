@@ -7,12 +7,6 @@ import (
 	"testing"
 )
 
-func TestRegions_RegionsServiceOpImplementsRegionsService(t *testing.T) {
-	if !Implements((*RegionsService)(nil), new(RegionsServiceOp)) {
-		t.Error("RegionsServiceOp does not implement RegionsService")
-	}
-}
-
 func TestRegions_List(t *testing.T) {
 	setup()
 	defer teardown()

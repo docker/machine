@@ -43,16 +43,25 @@ type Client struct {
 	Rate Rate
 
 	// Services used for communicating with the API
-	Actions        ActionsService
-	Domains        DomainsService
-	Droplets       DropletsService
-	DropletActions DropletActionsService
-	Images         ImagesService
-	ImageActions   ImageActionsService
-	Keys           KeysService
-	Regions        RegionsService
-	Sizes          SizesService
+	Account           AccountService
+	Actions           ActionsService
+	Domains           DomainsService
+	Droplets          DropletsService
+	DropletActions    DropletActionsService
+	Images            ImagesService
+	ImageActions      ImageActionsService
+	Keys              KeysService
+	Regions           RegionsService
+	Sizes             SizesService
+	FloatingIPs       FloatingIPsService
+	FloatingIPActions FloatingIPActionsService
+
+	// Optional function called after every successful request made to the DO APIs
+	onRequestCompleted RequestCompletionCallback
 }
+
+// RequestCompletionCallback defines the type of the request callback function
+type RequestCompletionCallback func(*http.Request, *http.Response)
 
 // ListOptions specifies the optional parameters to various List methods that
 // support pagination.
@@ -64,7 +73,7 @@ type ListOptions struct {
 	PerPage int `url:"per_page,omitempty"`
 }
 
-// Response is a Digital Ocean response. This wraps the standard http.Response returned from DigitalOcean.
+// Response is a DigitalOcean response. This wraps the standard http.Response returned from DigitalOcean.
 type Response struct {
 	*http.Response
 
@@ -106,21 +115,27 @@ func addOptions(s string, opt interface{}) (string, error) {
 		return s, nil
 	}
 
-	u, err := url.Parse(s)
+	origURL, err := url.Parse(s)
 	if err != nil {
 		return s, err
 	}
 
-	qv, err := query.Values(opt)
+	origValues := origURL.Query()
+
+	newValues, err := query.Values(opt)
 	if err != nil {
 		return s, err
 	}
 
-	u.RawQuery = qv.Encode()
-	return u.String(), nil
+	for k, v := range newValues {
+		origValues[k] = v
+	}
+
+	origURL.RawQuery = origValues.Encode()
+	return origURL.String(), nil
 }
 
-// NewClient returns a new Digital Ocean API client.
+// NewClient returns a new DigitalOcean API client.
 func NewClient(httpClient *http.Client) *Client {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
@@ -129,6 +144,7 @@ func NewClient(httpClient *http.Client) *Client {
 	baseURL, _ := url.Parse(defaultBaseURL)
 
 	c := &Client{client: httpClient, BaseURL: baseURL, UserAgent: userAgent}
+	c.Account = &AccountServiceOp{client: c}
 	c.Actions = &ActionsServiceOp{client: c}
 	c.Domains = &DomainsServiceOp{client: c}
 	c.Droplets = &DropletsServiceOp{client: c}
@@ -138,6 +154,8 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Keys = &KeysServiceOp{client: c}
 	c.Regions = &RegionsServiceOp{client: c}
 	c.Sizes = &SizesServiceOp{client: c}
+	c.FloatingIPs = &FloatingIPsServiceOp{client: c}
+	c.FloatingIPActions = &FloatingIPActionsServiceOp{client: c}
 
 	return c
 }
@@ -170,6 +188,11 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	req.Header.Add("Accept", mediaType)
 	req.Header.Add("User-Agent", userAgent)
 	return req, nil
+}
+
+// OnRequestCompleted sets the DO API request completion callback
+func (c *Client) OnRequestCompleted(rc RequestCompletionCallback) {
+	c.onRequestCompleted = rc
 }
 
 // newResponse creates a new Response for the provided http.Response
@@ -222,8 +245,15 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	if c.onRequestCompleted != nil {
+		c.onRequestCompleted(req, resp)
+	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if rerr := resp.Body.Close(); err == nil {
+			err = rerr
+		}
+	}()
 
 	response := newResponse(resp)
 	c.Rate = response.Rate
@@ -235,9 +265,15 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
-			io.Copy(w, resp.Body)
+			_, err := io.Copy(w, resp.Body)
+			if err != nil {
+				return nil, err
+			}
 		} else {
-			json.NewDecoder(resp.Body).Decode(v)
+			err := json.NewDecoder(resp.Body).Decode(v)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -259,7 +295,10 @@ func CheckResponse(r *http.Response) error {
 	errorResponse := &ErrorResponse{Response: r}
 	data, err := ioutil.ReadAll(r.Body)
 	if err == nil && len(data) > 0 {
-		json.Unmarshal(data, errorResponse)
+		err := json.Unmarshal(data, errorResponse)
+		if err != nil {
+			return err
+		}
 	}
 
 	return errorResponse
@@ -297,6 +336,6 @@ func Bool(v bool) *bool {
 // StreamToString converts a reader to a string
 func StreamToString(stream io.Reader) string {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
+	_, _ = buf.ReadFrom(stream)
 	return buf.String()
 }

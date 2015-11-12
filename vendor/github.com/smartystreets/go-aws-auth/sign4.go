@@ -7,18 +7,18 @@ import (
 	"strings"
 )
 
-func hashedCanonicalRequestV4(req *http.Request, meta *metadata) string {
+func hashedCanonicalRequestV4(request *http.Request, meta *metadata) string {
 	// TASK 1. http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
 
-	payload := readAndReplaceBody(req)
+	payload := readAndReplaceBody(request)
 	payloadHash := hashSHA256(payload)
-	req.Header.Set("X-Amz-Content-Sha256", payloadHash)
+	request.Header.Set("X-Amz-Content-Sha256", payloadHash)
 
 	// Set this in header values to make it appear in the range of headers to sign
-	req.Header.Set("Host", req.Host)
+	request.Header.Set("Host", request.Host)
 
 	var sortedHeaderKeys []string
-	for key, _ := range req.Header {
+	for key, _ := range request.Header {
 		switch key {
 		case "Content-Type", "Content-Md5", "Host":
 		default:
@@ -32,22 +32,22 @@ func hashedCanonicalRequestV4(req *http.Request, meta *metadata) string {
 
 	var headersToSign string
 	for _, key := range sortedHeaderKeys {
-		value := strings.TrimSpace(req.Header.Get(key))
+		value := strings.TrimSpace(request.Header.Get(key))
 		headersToSign += key + ":" + value + "\n"
 	}
 	meta.signedHeaders = concat(";", sortedHeaderKeys...)
-	canonicalRequest := concat("\n", req.Method, normuri(req.URL.Path), normquery(req.URL.Query()), headersToSign, meta.signedHeaders, payloadHash)
+	canonicalRequest := concat("\n", request.Method, normuri(request.URL.Path), normquery(request.URL.Query()), headersToSign, meta.signedHeaders, payloadHash)
 
 	return hashSHA256([]byte(canonicalRequest))
 }
 
-func stringToSignV4(req *http.Request, hashedCanonReq string, meta *metadata) string {
+func stringToSignV4(request *http.Request, hashedCanonReq string, meta *metadata) string {
 	// TASK 2. http://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
 
-	requestTs := req.Header.Get("X-Amz-Date")
+	requestTs := request.Header.Get("X-Amz-Date")
 
 	meta.algorithm = "AWS4-HMAC-SHA256"
-	meta.service, meta.region = serviceAndRegion(req.Host)
+	meta.service, meta.region = serviceAndRegion(request.Host)
 	meta.date = tsDateV4(requestTs)
 	meta.credentialScope = concat("/", meta.date, meta.region, meta.service, "aws4_request")
 
@@ -60,23 +60,23 @@ func signatureV4(signingKey []byte, stringToSign string) string {
 	return hex.EncodeToString(hmacSHA256(signingKey, stringToSign))
 }
 
-func prepareRequestV4(req *http.Request) *http.Request {
+func prepareRequestV4(request *http.Request) *http.Request {
 	necessaryDefaults := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
 		"X-Amz-Date":   timestampV4(),
 	}
 
 	for header, value := range necessaryDefaults {
-		if req.Header.Get(header) == "" {
-			req.Header.Set(header, value)
+		if request.Header.Get(header) == "" {
+			request.Header.Set(header, value)
 		}
 	}
 
-	if req.URL.Path == "" {
-		req.URL.Path += "/"
+	if request.URL.Path == "" {
+		request.URL.Path += "/"
 	}
 
-	return req
+	return request
 }
 
 func signingKeyV4(secretKey, date, region, service string) []byte {

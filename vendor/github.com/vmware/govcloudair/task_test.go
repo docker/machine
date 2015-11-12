@@ -5,23 +5,32 @@
 package govcloudair
 
 import (
-	. "gopkg.in/check.v1"
+	"encoding/xml"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func (s *S) Test_WaitTaskCompletion(c *C) {
+func Test_WaitTaskCompletion(t *testing.T) {
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000/action/deploy": {200, nil, taskExample},
+		"/api/task/1b8f926c-eff5-4bea-9b13-4e49bdd50c05":                    {200, nil, taskExample},
+	}
 
-	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Deploy()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
-
-	testServer.Response(200, nil, taskExample)
-	err = task.WaitTaskCompletion()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
-
+	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
+	if assert.NoError(t, err) {
+		xmlTxt := strings.Replace(vappExample, "http://localhost:4444", ctx.Server.URL, -1)
+		if assert.NoError(t, xml.Unmarshal([]byte(xmlTxt), ctx.VApp.VApp)) {
+			task, err := ctx.VApp.Deploy()
+			if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+				err := task.WaitTaskCompletion()
+				assert.NoError(t, err)
+				assert.Equal(t, 1, cc.Pop())
+			}
+		}
+	}
 }
 
 var taskExample = `

@@ -11,18 +11,21 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// CatalogItem a client catalog item
 type CatalogItem struct {
 	CatalogItem *types.CatalogItem
-	c           *Client
+	c           Client
 }
 
-func NewCatalogItem(c *Client) *CatalogItem {
+// NewCatalogItem creates a new client catalog item
+func NewCatalogItem(c Client) *CatalogItem {
 	return &CatalogItem{
 		CatalogItem: new(types.CatalogItem),
 		c:           c,
 	}
 }
 
+// GetVAppTemplate gets a vApp template
 func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 	url, err := url.ParseRequestURI(ci.CatalogItem.Entity.HREF)
 
@@ -30,9 +33,9 @@ func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 		return VAppTemplate{}, fmt.Errorf("error decoding catalogitem response: %s", err)
 	}
 
-	req := ci.c.NewRequest(map[string]string{}, "GET", *url, nil)
+	req := ci.c.NewRequest(map[string]string{}, "GET", url, nil)
 
-	resp, err := checkResp(ci.c.Http.Do(req))
+	resp, err := checkResp(ci.c.DoHTTP(req))
 	if err != nil {
 		return VAppTemplate{}, fmt.Errorf("error retreiving vapptemplate: %s", err)
 	}

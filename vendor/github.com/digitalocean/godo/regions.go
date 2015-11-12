@@ -1,8 +1,8 @@
 package godo
 
 // RegionsService is an interface for interfacing with the regions
-// endpoints of the Digital Ocean API
-// See: https://developers.digitalocean.com/#regions
+// endpoints of the DigitalOcean API
+// See: https://developers.digitalocean.com/documentation/v2#regions
 type RegionsService interface {
 	List(*ListOptions) ([]Region, *Response, error)
 }
@@ -13,13 +13,15 @@ type RegionsServiceOp struct {
 	client *Client
 }
 
+var _ RegionsService = &RegionsServiceOp{}
+
 // Region represents a DigitalOcean Region
 type Region struct {
 	Slug      string   `json:"slug,omitempty"`
 	Name      string   `json:"name,omitempty"`
 	Sizes     []string `json:"sizes,omitempty"`
-	Available bool     `json:"available,omitempty`
-	Features  []string `json:"features,omitempty`
+	Available bool     `json:"available,omitempty"`
+	Features  []string `json:"features,omitempty"`
 }
 
 type regionsRoot struct {

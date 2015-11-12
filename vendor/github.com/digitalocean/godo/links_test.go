@@ -136,7 +136,7 @@ func TestLinks_ParseURL(t *testing.T) {
 		}
 
 		if p != lT.expected {
-			t.Error("expected page for '%s' to be '%d', was '%d'",
+			t.Errorf("expected page for '%s' to be '%d', was '%d'",
 				lT.url, lT.expected, p)
 		}
 	}

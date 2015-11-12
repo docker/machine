@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"testing"
 	"time"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -16,7 +17,7 @@ func TestSignatureS3(t *testing.T) {
 
 	Convey("Given a GET request to Amazon S3", t, func() {
 		keys := *testCredS3
-		req := test_plainRequestS3()
+		request := test_plainRequestS3()
 
 		// Mock time
 		now = func() time.Time {
@@ -25,8 +26,8 @@ func TestSignatureS3(t *testing.T) {
 		}
 
 		Convey("The request should be prepared with a Date header", func() {
-			prepareRequestS3(req)
-			So(req.Header.Get("Date"), ShouldEqual, exampleReqTsS3)
+			prepareRequestS3(request)
+			So(request.Header.Get("Date"), ShouldEqual, exampleReqTsS3)
 		})
 
 		Convey("The CanonicalizedAmzHeaders should be built properly", func() {
@@ -36,24 +37,24 @@ func TestSignatureS3(t *testing.T) {
 		})
 
 		Convey("The CanonicalizedResource should be built properly", func() {
-			actual := canonicalResourceS3(req)
+			actual := canonicalResourceS3(request)
 			So(actual, ShouldEqual, expectedCanonResourceS3)
 		})
 
 		Convey("The string to sign should be correct", func() {
-			actual := stringToSignS3(req)
+			actual := stringToSignS3(request)
 			So(actual, ShouldEqual, expectedStringToSignS3)
 		})
 
 		Convey("The final signature string should be exactly correct", func() {
-			actual := signatureS3(stringToSignS3(req), keys)
+			actual := signatureS3(stringToSignS3(request), keys)
 			So(actual, ShouldEqual, "bWq2s1WEIj+Ydj0vQ697zp+IXMU=")
 		})
 	})
 
 	Convey("Given a GET request for a resource on S3 for query string authentication", t, func() {
 		keys := *testCredS3
-		req, _ := http.NewRequest("GET", "https://johnsmith.s3.amazonaws.com/johnsmith/photos/puppy.jpg", nil)
+		request, _ := http.NewRequest("GET", "https://johnsmith.s3.amazonaws.com/johnsmith/photos/puppy.jpg", nil)
 
 		now = func() time.Time {
 			parsed, _ := time.Parse(timeFormatS3, exampleReqTsS3)
@@ -61,7 +62,7 @@ func TestSignatureS3(t *testing.T) {
 		}
 
 		Convey("The string to sign should be correct", func() {
-			actual := stringToSignS3Url("GET", now(), req.URL.Path)
+			actual := stringToSignS3Url("GET", now(), request.URL.Path)
 			So(actual, ShouldEqual, expectedStringToSignS3Url)
 		})
 
@@ -72,20 +73,20 @@ func TestSignatureS3(t *testing.T) {
 
 		Convey("The finished signed URL should be correct", func() {
 			expiry := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-			So(SignS3Url(req, expiry, keys).URL.String(), ShouldEqual, expectedSignedS3Url)
+			So(SignS3Url(request, expiry, keys).URL.String(), ShouldEqual, expectedSignedS3Url)
 		})
 	})
 }
 
 func TestS3STSRequestPreparer(t *testing.T) {
 	Convey("Given a plain request with no custom headers", t, func() {
-		req := test_plainRequestS3()
+		request := test_plainRequestS3()
 
 		Convey("And a set of credentials with an STS token", func() {
 			keys := *testCredS3WithSTS
 
 			Convey("It should include an X-Amz-Security-Token when the request is signed", func() {
-				actualSigned := SignS3(req, keys)
+				actualSigned := SignS3(request, keys)
 				actual := actualSigned.Header.Get("X-Amz-Security-Token")
 
 				So(actual, ShouldNotBeBlank)
@@ -97,16 +98,16 @@ func TestS3STSRequestPreparer(t *testing.T) {
 }
 
 func test_plainRequestS3() *http.Request {
-	req, _ := http.NewRequest("GET", "https://johnsmith.s3.amazonaws.com/photos/puppy.jpg", nil)
-	return req
+	request, _ := http.NewRequest("GET", "https://johnsmith.s3.amazonaws.com/photos/puppy.jpg", nil)
+	return request
 }
 
 func test_headerRequestS3() *http.Request {
-	req := test_plainRequestS3()
-	req.Header.Set("X-Amz-Meta-Something", "more foobar")
-	req.Header.Set("X-Amz-Date", "foobar")
-	req.Header.Set("X-Foobar", "nanoo-nanoo")
-	return req
+	request := test_plainRequestS3()
+	request.Header.Set("X-Amz-Meta-Something", "more foobar")
+	request.Header.Set("X-Amz-Date", "foobar")
+	request.Header.Set("X-Foobar", "nanoo-nanoo")
+	return request
 }
 
 func TestCanonical(t *testing.T) {
@@ -119,15 +120,15 @@ func TestCanonical(t *testing.T) {
 	u.Path = resource
 	urlStr := fmt.Sprintf("%v", u)
 
-	req, _ := http.NewRequest("PUT", urlStr, nil)
-	req.Header.Add("Content-Md5", "c8fdb181845a4ca6b8fec737b3581d76")
-	req.Header.Add("Content-Type", "text/html")
-	req.Header.Add("Date", "Thu, 17 Nov 2005 18:49:58 GMT")
-	req.Header.Add("X-Amz-Meta-Author", "foo@bar.com")
-	req.Header.Add("X-Amz-Magic", "abracadabra")
+	request, _ := http.NewRequest("PUT", urlStr, nil)
+	request.Header.Add("Content-Md5", "c8fdb181845a4ca6b8fec737b3581d76")
+	request.Header.Add("Content-Type", "text/html")
+	request.Header.Add("Date", "Thu, 17 Nov 2005 18:49:58 GMT")
+	request.Header.Add("X-Amz-Meta-Author", "foo@bar.com")
+	request.Header.Add("X-Amz-Magic", "abracadabra")
 
-	if stringToSignS3(req) != expectedCanonicalString {
-		t.Errorf("----Got\n***%s***\n----Expected\n***%s***", stringToSignS3(req), expectedCanonicalString)
+	if stringToSignS3(request) != expectedCanonicalString {
+		t.Errorf("----Got\n***%s***\n----Expected\n***%s***", stringToSignS3(request), expectedCanonicalString)
 	}
 }
 

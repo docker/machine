@@ -65,11 +65,19 @@ func serviceAndRegion(host string) (service string, region string) {
 func newKeys() (newCredentials Credentials) {
 	// First use credentials from environment variables
 	newCredentials.AccessKeyID = os.Getenv(envAccessKeyID)
+	if newCredentials.AccessKeyID == "" {
+		newCredentials.AccessKeyID = os.Getenv(envAccessKey)
+	}
+
 	newCredentials.SecretAccessKey = os.Getenv(envSecretAccessKey)
+	if newCredentials.SecretAccessKey == "" {
+		newCredentials.SecretAccessKey = os.Getenv(envSecretKey)
+	}
+
 	newCredentials.SecurityToken = os.Getenv(envSecurityToken)
 
 	// If there is no Access Key and you are on EC2, get the key from the role
-	if newCredentials.AccessKeyID == "" && onEC2() {
+	if (newCredentials.AccessKeyID == "" || newCredentials.SecretAccessKey == "") && onEC2() {
 		newCredentials = *getIAMRoleCredentials()
 	}
 
@@ -99,7 +107,7 @@ func onEC2() bool {
 		loc = &location{}
 	}
 	if !(loc.checked) {
-		c, err := net.DialTimeout("tcp", "169.254.169.254:80", time.Second)
+		c, err := net.DialTimeout("tcp", "169.254.169.254:80", time.Millisecond*100)
 
 		if err != nil {
 			loc.ec2 = false
@@ -121,20 +129,20 @@ func getIAMRoleList() []string {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", url, nil)
+	request, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
 		return roles
 	}
 
-	resp, err := client.Do(req)
+	response, err := client.Do(request)
 
 	if err != nil {
 		return roles
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
-	scanner := bufio.NewScanner(resp.Body)
+	scanner := bufio.NewScanner(response.Body)
 	for scanner.Scan() {
 		roles = append(roles, scanner.Text())
 	}
@@ -158,48 +166,48 @@ func getIAMRoleCredentials() *Credentials {
 	var buffer bytes.Buffer
 	buffer.WriteString(url)
 	buffer.WriteString(role)
-	roleurl := buffer.String()
+	roleURL := buffer.String()
 
 	// Get the role
-	rolereq, err := http.NewRequest("GET", roleurl, nil)
+	roleRequest, err := http.NewRequest("GET", roleURL, nil)
 
 	if err != nil {
 		return &Credentials{}
 	}
 
 	client := &http.Client{}
-	roleresp, err := client.Do(rolereq)
+	roleResponse, err := client.Do(roleRequest)
 
 	if err != nil {
 		return &Credentials{}
 	}
-	defer roleresp.Body.Close()
+	defer roleResponse.Body.Close()
 
-	rolebuf := new(bytes.Buffer)
-	rolebuf.ReadFrom(roleresp.Body)
+	roleBuffer := new(bytes.Buffer)
+	roleBuffer.ReadFrom(roleResponse.Body)
 
-	creds := Credentials{}
+	credentials := Credentials{}
 
-	err = json.Unmarshal(rolebuf.Bytes(), &creds)
+	err = json.Unmarshal(roleBuffer.Bytes(), &credentials)
 
 	if err != nil {
 		return &Credentials{}
 	}
 
-	return &creds
+	return &credentials
 
 }
 
-func augmentRequestQuery(req *http.Request, values url.Values) *http.Request {
-	for key, arr := range req.URL.Query() {
-		for _, val := range arr {
-			values.Set(key, val)
+func augmentRequestQuery(request *http.Request, values url.Values) *http.Request {
+	for key, array := range request.URL.Query() {
+		for _, value := range array {
+			values.Set(key, value)
 		}
 	}
 
-	req.URL.RawQuery = values.Encode()
+	request.URL.RawQuery = values.Encode()
 
-	return req
+	return request
 }
 
 func hmacSHA256(key []byte, content string) []byte {
@@ -226,12 +234,12 @@ func hashMD5(content []byte) string {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
-func readAndReplaceBody(req *http.Request) []byte {
-	if req.Body == nil {
+func readAndReplaceBody(request *http.Request) []byte {
+	if request.Body == nil {
 		return []byte{}
 	}
-	payload, _ := ioutil.ReadAll(req.Body)
-	req.Body = ioutil.NopCloser(bytes.NewReader(payload))
+	payload, _ := ioutil.ReadAll(request.Body)
+	request.Body = ioutil.NopCloser(bytes.NewReader(payload))
 	return payload
 }
 
@@ -290,11 +298,11 @@ func shouldEscape(c byte) bool {
 }
 
 func normquery(v url.Values) string {
-	qs := v.Encode()
+	queryString := v.Encode()
 
-	// Go encodes a space as '+' but Amazon require '%20'. Luckily any '+' in the
+	// Go encodes a space as '+' but Amazon requires '%20'. Luckily any '+' in the
 	// original query string has been percent escaped so all '+' chars that are left
 	// were originally spaces.
 
-	return strings.Replace(qs, "+", "%20", -1)
+	return strings.Replace(queryString, "+", "%20", -1)
 }
