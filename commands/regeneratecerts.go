@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/persist"
 )
@@ -19,5 +20,7 @@ func cmdRegenerateCerts(c CommandLine, store persist.Store) error {
 
 	log.Infof("Regenerating TLS certificates")
 
-	return runActionOnHosts("configureAuth", store, c.Args())
+	return runActionOnHosts(func(h *host.Host) error {
+		return h.ConfigureAuth()
+	}, store, c.Args())
 }

@@ -145,6 +145,16 @@ func (h *Host) Upgrade() error {
 	return nil
 }
 
+func (h *Host) PrintIP() error {
+	ip, err := h.Driver.GetIP()
+	if err != nil {
+		return fmt.Errorf("Error getting IP address: %s", err)
+	}
+
+	fmt.Println(ip)
+	return nil
+}
+
 func (h *Host) GetURL() (string, error) {
 	return h.Driver.GetURL()
 }

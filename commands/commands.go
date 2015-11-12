@@ -317,53 +317,22 @@ var Commands = []cli.Command{
 	},
 }
 
-func printIP(h *host.Host) func() error {
-	return func() error {
-		ip, err := h.Driver.GetIP()
-		if err != nil {
-			return fmt.Errorf("Error getting IP address: %s", err)
-		}
-		fmt.Println(ip)
-		return nil
-	}
-}
-
-// machineCommand maps the command name to the corresponding machine command.
-// We run commands concurrently and communicate back an error if there was one.
-func machineCommand(actionName string, host *host.Host, errorChan chan<- error) {
-	// TODO: These actions should have their own type.
-	commands := map[string](func() error){
-		"configureAuth": host.ConfigureAuth,
-		"start":         host.Start,
-		"stop":          host.Stop,
-		"restart":       host.Restart,
-		"kill":          host.Kill,
-		"upgrade":       host.Upgrade,
-		"ip":            printIP(host),
-	}
-
-	log.Debugf("command=%s machine=%s", actionName, host.Name)
-
-	errorChan <- commands[actionName]()
-}
-
 // runActionForeachMachine will run the command across multiple machines
-func runActionForeachMachine(actionName string, machines []*host.Host) []error {
-	var (
-		numConcurrentActions = 0
-		errorChan            = make(chan error)
-		errs                 = []error{}
-	)
-
+func runActionForeachMachine(action func(h *host.Host) error, machines []*host.Host) []error {
+	errorChan := make(chan error)
 	for _, machine := range machines {
-		numConcurrentActions++
-		go machineCommand(actionName, machine, errorChan)
+		theMachine := machine
+
+		go func() {
+			errorChan <- action(theMachine)
+		}()
 	}
 
 	// TODO: We should probably only do 5-10 of these
 	// at a time, since otherwise cloud providers might
 	// rate limit us.
-	for i := 0; i < numConcurrentActions; i++ {
+	errs := []error{}
+	for range machines {
 		if err := <-errorChan; err != nil {
 			errs = append(errs, err)
 		}
@@ -383,7 +352,7 @@ func consolidateErrs(errs []error) error {
 	return errors.New(strings.TrimSpace(finalErr))
 }
 
-func runActionOnHosts(actionName string, store persist.Store, hostNames []string) error {
+func runActionOnHosts(action func(h *host.Host) error, store persist.Store, hostNames []string) error {
 	if len(hostNames) == 0 {
 		return ErrNoMachineSpecified
 	}
@@ -393,7 +362,7 @@ func runActionOnHosts(actionName string, store persist.Store, hostNames []string
 		return err
 	}
 
-	if errs := runActionForeachMachine(actionName, hosts); len(errs) > 0 {
+	if errs := runActionForeachMachine(action, hosts); len(errs) > 0 {
 		return consolidateErrs(errs)
 	}
 
