@@ -2,4 +2,14 @@ sudo: required
 dist: trusty
 language: bash
 services: docker
-script: USE_CONTAINER=true make dco fmt lint vet test-long coverage-send
+env:
+  global:
+    - USE_CONTAINER=true
+  matrix:
+    - TARGET_OS=linux TARGET_ARCH=amd64
+    - TARGET_OS=darwin TARGET_ARCH=amd64
+    - TARGET_OS=windows TARGET_ARCH=amd64
+    # - TARGET_OS=linux TARGET_ARCH=386
+    # - TARGET_OS=darwin TARGET_ARCH=386
+    # - TARGET_OS=windows TARGET_ARCH=386
+script: make dco fmt lint vet test-long coverage-send
