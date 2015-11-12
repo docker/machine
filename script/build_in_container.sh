@@ -26,10 +26,8 @@ docker run --name $DOCKER_CONTAINER_NAME \
   $DOCKER_IMAGE_NAME \
   make "$@"
 
-if [[ -d bin ]]; then
+if [[ "$@" == *"clean"* ]] && [[ -d bin ]]; then
   rm -Rf bin
 fi
 
-if [[ "$@" == *"build"* ]]; then
-  docker cp $DOCKER_CONTAINER_NAME:/go/src/github.com/docker/machine/bin bin
-fi
+docker cp $DOCKER_CONTAINER_NAME:/go/src/github.com/docker/machine/bin .
