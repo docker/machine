@@ -6,7 +6,7 @@ test-short:
 test-long:
 	$(GO) test $(VERBOSE_GO) -race -tags "$(BUILDTAGS)" $(PKGS)
 
-test-integration:
+test-integration: build
 	$(eval TESTSUITE=$(filter-out $@,$(MAKECMDGOALS)))
 	test/integration/run-bats.sh $(TESTSUITE)
 

@@ -13,6 +13,7 @@ docker build -t $DOCKER_IMAGE_NAME .
 
 docker run --name $DOCKER_CONTAINER_NAME \
   -e DEBUG \
+  -e DRIVER \
   -e STATIC \
   -e VERBOSE \
   -e BUILDTAGS \
