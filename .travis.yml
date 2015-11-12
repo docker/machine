@@ -7,4 +7,5 @@ env:
     - TARGET_OS=linux TARGET_ARCH=amd64 TARGETS="make dco fmt lint vet test-long coverage-send"
     - TARGET_OS=darwin TARGET_ARCH=amd64 TARGETS="cross"
     - TARGET_OS=windows TARGET_ARCH=amd64 TARGETS="cross"
+    - DRIVER=none make TARGETS="test-integration test/integration/cli"
 script: USE_CONTAINER=true make "$TARGETS"
