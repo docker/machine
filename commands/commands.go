@@ -99,10 +99,10 @@ func confirmInput(msg string) (bool, error) {
 	return confirmed, nil
 }
 
-func getStore(c CommandLine) persist.Store {
-	certInfo := getCertPathInfoFromContext(c)
+func getStore(cli CommandLine) persist.Store {
+	certInfo := getCertPathInfoFromContext(cli)
 	return &persist.Filestore{
-		Path:             c.GlobalString("storage-path"),
+		Path:             cli.GlobalString("storage-path"),
 		CaCertPath:       certInfo.CaCertPath,
 		CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
 	}
@@ -393,23 +393,23 @@ func getHostsByName(store persist.Store, hostNames []string) ([]*host.Host, erro
 // codegangsta/cli will not set the cert paths if the storage-path is set to
 // something different so we cannot use the paths in the global options. le
 // sigh.
-func getCertPathInfoFromContext(c CommandLine) cert.PathInfo {
-	caCertPath := c.GlobalString("tls-ca-cert")
+func getCertPathInfoFromContext(cli CommandLine) cert.PathInfo {
+	caCertPath := cli.GlobalString("tls-ca-cert")
 	if caCertPath == "" {
 		caCertPath = filepath.Join(mcndirs.GetMachineCertDir(), "ca.pem")
 	}
 
-	caKeyPath := c.GlobalString("tls-ca-key")
+	caKeyPath := cli.GlobalString("tls-ca-key")
 	if caKeyPath == "" {
 		caKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "ca-key.pem")
 	}
 
-	clientCertPath := c.GlobalString("tls-client-cert")
+	clientCertPath := cli.GlobalString("tls-client-cert")
 	if clientCertPath == "" {
 		clientCertPath = filepath.Join(mcndirs.GetMachineCertDir(), "cert.pem")
 	}
 
-	clientKeyPath := c.GlobalString("tls-client-key")
+	clientKeyPath := cli.GlobalString("tls-client-key")
 	if clientKeyPath == "" {
 		clientKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "key.pem")
 	}

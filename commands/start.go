@@ -6,10 +6,10 @@ import (
 	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdStart(c CommandLine, store persist.Store) error {
+func cmdStart(cli CommandLine, store persist.Store) error {
 	if err := runActionOnHosts(func(h *host.Host) error {
 		return h.Start()
-	}, store, c.Args()); err != nil {
+	}, store, cli.Args()); err != nil {
 		return err
 	}
 
