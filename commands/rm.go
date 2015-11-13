@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdRm(cli CommandLine, store persist.Store) error {
+func cmdRm(cli CommandLine, store rpcdriver.Store) error {
 	if len(cli.Args()) == 0 {
 		cli.ShowHelp()
 		return errors.New("You must specify a machine name")
@@ -17,7 +17,7 @@ func cmdRm(cli CommandLine, store persist.Store) error {
 	force := cli.Bool("force")
 
 	for _, hostName := range cli.Args() {
-		h, err := loadHost(store, hostName)
+		h, err := store.Load(hostName)
 		if err != nil {
 			return fmt.Errorf("Error removing host %q: %s", hostName, err)
 		}

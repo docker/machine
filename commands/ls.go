@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/skarademir/naturalsort"
@@ -40,14 +40,14 @@ type HostListItem struct {
 	SwarmOptions *swarm.Options
 }
 
-func cmdLs(cli CommandLine, store persist.Store) error {
+func cmdLs(cli CommandLine, store rpcdriver.Store) error {
 	quiet := cli.Bool("quiet")
 	filters, err := parseFilters(cli.StringSlice("filter"))
 	if err != nil {
 		return err
 	}
 
-	hostList, err := listHosts(store)
+	hostList, err := store.List()
 	if err != nil {
 		return err
 	}

@@ -3,11 +3,11 @@ package commands
 import (
 	"fmt"
 
-	"github.com/docker/machine/libmachine/persist"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdSSH(cli CommandLine, store persist.Store) error {
+func cmdSSH(cli CommandLine, store rpcdriver.Store) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
 	for _, arg := range cli.Args() {
 		if arg == "-help" || arg == "--help" || arg == "-h" {
@@ -21,7 +21,7 @@ func cmdSSH(cli CommandLine, store persist.Store) error {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := loadHost(store, name)
+	host, err := store.Load(name)
 	if err != nil {
 		return err
 	}

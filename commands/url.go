@@ -3,15 +3,15 @@ package commands
 import (
 	"fmt"
 
-	"github.com/docker/machine/libmachine/persist"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 )
 
-func cmdURL(cli CommandLine, store persist.Store) error {
+func cmdURL(cli CommandLine, store rpcdriver.Store) error {
 	if len(cli.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := loadHost(store, cli.Args().First())
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}

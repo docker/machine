@@ -10,8 +10,8 @@ import (
 	"text/template"
 
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/persist"
 )
 
 const (
@@ -36,7 +36,7 @@ type ShellConfig struct {
 	NoProxyValue    string
 }
 
-func cmdEnv(cli CommandLine, store persist.Store) error {
+func cmdEnv(cli CommandLine, store rpcdriver.Store) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
@@ -48,12 +48,12 @@ func cmdEnv(cli CommandLine, store persist.Store) error {
 	return set(cli, store)
 }
 
-func set(cli CommandLine, store persist.Store) error {
+func set(cli CommandLine, store rpcdriver.Store) error {
 	if len(cli.Args()) != 1 {
 		return errImproperEnvArgs
 	}
 
-	host, err := loadHost(store, cli.Args().First())
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}

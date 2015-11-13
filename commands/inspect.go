@@ -6,7 +6,7 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/docker/machine/libmachine/persist"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 )
 
 var funcMap = template.FuncMap{
@@ -20,13 +20,13 @@ var funcMap = template.FuncMap{
 	},
 }
 
-func cmdInspect(cli CommandLine, store persist.Store) error {
+func cmdInspect(cli CommandLine, store rpcdriver.Store) error {
 	if len(cli.Args()) == 0 {
 		cli.ShowHelp()
 		return ErrExpectedOneMachine
 	}
 
-	host, err := loadHost(store, cli.Args().First())
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}
