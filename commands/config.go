@@ -14,6 +14,14 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
+var (
+	defaultConnChecker ConnChecker
+)
+
+func init() {
+	defaultConnChecker = &MachineConnChecker{}
+}
+
 // ErrCertInvalid for when the cert is computed to be invalid.
 type ErrCertInvalid struct {
 	wrappedErr error
@@ -41,7 +49,7 @@ func cmdConfig(c CommandLine, api libmachine.API) error {
 		return err
 	}
 
-	dockerHost, authOptions, err := runConnectionBoilerplate(host, c)
+	dockerHost, authOptions, err := defaultConnChecker.Check(host, c.Bool("swarm"))
 	if err != nil {
 		return fmt.Errorf("Error running connection boilerplate: %s", err)
 	}
@@ -54,7 +62,13 @@ func cmdConfig(c CommandLine, api libmachine.API) error {
 	return nil
 }
 
-func runConnectionBoilerplate(h *host.Host, c CommandLine) (string, *auth.Options, error) {
+type ConnChecker interface {
+	Check(*host.Host, bool) (string, *auth.Options, error)
+}
+
+type MachineConnChecker struct{}
+
+func (mcc *MachineConnChecker) Check(h *host.Host, swarm bool) (string, *auth.Options, error) {
 	hostState, err := h.Driver.GetState()
 	if err != nil {
 		// TODO: This is a common operation and should have a commonly
@@ -70,7 +84,7 @@ func runConnectionBoilerplate(h *host.Host, c CommandLine) (string, *auth.Option
 		return "", &auth.Options{}, fmt.Errorf("Error getting driver URL: %s", err)
 	}
 
-	if c.Bool("swarm") {
+	if swarm {
 		var err error
 		dockerHost, err = parseSwarm(dockerHost, h)
 		if err != nil {

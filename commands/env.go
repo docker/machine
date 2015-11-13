@@ -21,7 +21,12 @@ const (
 var (
 	errImproperEnvArgs      = errors.New("Error: Expected one machine name")
 	errImproperUnsetEnvArgs = errors.New("Error: Expected no machine name when the -u flag is present")
+	defaultUsageHinter      UsageHintGenerator
 )
+
+func init() {
+	defaultUsageHinter = &EnvUsageHintGenerator{}
+}
 
 type ShellConfig struct {
 	Prefix          string
@@ -37,48 +42,62 @@ type ShellConfig struct {
 }
 
 func cmdEnv(c CommandLine, api libmachine.API) error {
+	var (
+		err      error
+		shellCfg *ShellConfig
+	)
+
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
 	if c.Bool("unset") {
-		return unset(c, api)
+		shellCfg, err = shellCfgUnset(c, api)
+		if err != nil {
+			return err
+		}
+	} else {
+		shellCfg, err = shellCfgSet(c, api)
+		if err != nil {
+			return err
+		}
 	}
-	return set(c, api)
+
+	return executeTemplateStdout(shellCfg)
 }
 
-func set(c CommandLine, api libmachine.API) error {
+func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 	if len(c.Args()) != 1 {
-		return errImproperEnvArgs
+		return nil, errImproperEnvArgs
 	}
 
 	host, err := api.Load(c.Args().First())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	dockerHost, _, err := runConnectionBoilerplate(host, c)
+	dockerHost, _, err := defaultConnChecker.Check(host, c.Bool("swarm"))
 	if err != nil {
-		return fmt.Errorf("Error running connection boilerplate: %s", err)
+		return nil, fmt.Errorf("Error checking TLS connection: %s", err)
 	}
 
-	userShell, err := getShell(c)
+	userShell, err := getShell(c.String("shell"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	shellCfg := &ShellConfig{
 		DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), host.Name),
 		DockerHost:      dockerHost,
 		DockerTLSVerify: "1",
-		UsageHint:       generateUsageHint(userShell, os.Args),
+		UsageHint:       defaultUsageHinter.GenerateUsageHint(userShell, os.Args),
 		MachineName:     host.Name,
 	}
 
 	if c.Bool("no-proxy") {
 		ip, err := host.Driver.GetIP()
 		if err != nil {
-			return fmt.Errorf("Error getting host IP: %s", err)
+			return nil, fmt.Errorf("Error getting host IP: %s", err)
 		}
 
 		noProxyVar, noProxyValue := findNoProxyFromEnv()
@@ -116,21 +135,21 @@ func set(c CommandLine, api libmachine.API) error {
 		shellCfg.Delimiter = "=\""
 	}
 
-	return executeTemplateStdout(shellCfg)
+	return shellCfg, nil
 }
 
-func unset(c CommandLine, api libmachine.API) error {
+func shellCfgUnset(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 	if len(c.Args()) != 0 {
-		return errImproperUnsetEnvArgs
+		return nil, errImproperUnsetEnvArgs
 	}
 
-	userShell, err := getShell(c)
+	userShell, err := getShell(c.String("shell"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	shellCfg := &ShellConfig{
-		UsageHint: generateUsageHint(userShell, os.Args),
+		UsageHint: defaultUsageHinter.GenerateUsageHint(userShell, os.Args),
 	}
 
 	if c.Bool("no-proxy") {
@@ -156,7 +175,7 @@ func unset(c CommandLine, api libmachine.API) error {
 		shellCfg.Delimiter = ""
 	}
 
-	return executeTemplateStdout(shellCfg)
+	return shellCfg, nil
 }
 
 func executeTemplateStdout(shellCfg *ShellConfig) error {
@@ -169,8 +188,7 @@ func executeTemplateStdout(shellCfg *ShellConfig) error {
 	return tmpl.Execute(os.Stdout, shellCfg)
 }
 
-func getShell(c CommandLine) (string, error) {
-	userShell := c.String("shell")
+func getShell(userShell string) (string, error) {
 	if userShell != "" {
 		return userShell, nil
 	}
@@ -190,7 +208,13 @@ func findNoProxyFromEnv() (string, string) {
 	return noProxyVar, noProxyValue
 }
 
-func generateUsageHint(userShell string, args []string) string {
+type UsageHintGenerator interface {
+	GenerateUsageHint(string, []string) string
+}
+
+type EnvUsageHintGenerator struct{}
+
+func (g *EnvUsageHintGenerator) GenerateUsageHint(userShell string, args []string) string {
 	cmd := ""
 	comment := "#"
 

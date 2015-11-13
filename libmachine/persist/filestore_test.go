@@ -3,28 +3,15 @@ package persist
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/libmachine/drivers"
+	_ "github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/libmachine/hosttest"
-	"github.com/stretchr/testify/assert"
 )
-
-const (
-	storedDriverURL = "1.2.3.4"
-)
-
-type FakePluginDriverFactory struct {
-	drivers.Driver
-}
-
-func (fpdf *FakePluginDriverFactory) NewPluginDriver(string, []byte) (drivers.Driver, error) {
-	return fpdf.Driver, nil
-}
 
 func cleanup() {
 	os.RemoveAll(os.Getenv("MACHINE_STORAGE_PATH"))
@@ -43,11 +30,6 @@ func getTestStore() Filestore {
 		Path:             tmpDir,
 		CaCertPath:       filepath.Join(tmpDir, "certs", "ca-cert.pem"),
 		CaPrivateKeyPath: filepath.Join(tmpDir, "certs", "ca-key.pem"),
-		PluginDriverFactory: &FakePluginDriverFactory{
-			&none.Driver{
-				URL: storedDriverURL,
-			},
-		},
 	}
 }
 
@@ -165,13 +147,21 @@ func TestStoreExists(t *testing.T) {
 	}
 }
 
-func TestStoreSaveLoad(t *testing.T) {
+func TestStoreLoad(t *testing.T) {
 	defer cleanup()
+
+	expectedURL := "unix:///foo/baz"
+	flags := hosttest.GetTestDriverFlags()
+	flags.Data["url"] = expectedURL
 
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.Driver.SetConfigFromFlags(flags); err != nil {
 		t.Fatal(err)
 	}
 
@@ -181,7 +171,7 @@ func TestStoreSaveLoad(t *testing.T) {
 
 	h, err = store.Load(h.Name)
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 
 	actualURL, err := h.GetURL()
@@ -189,5 +179,7 @@ func TestStoreSaveLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, storedDriverURL, actualURL)
+	if actualURL != expectedURL {
+		t.Fatalf("GetURL is not %q, got %q", expectedURL, actualURL)
+	}
 }
