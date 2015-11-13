@@ -2,6 +2,7 @@ package google
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -223,8 +224,7 @@ func (d *Driver) GetURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	url := fmt.Sprintf("tcp://%s:2376", ip)
-	return url, nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
 // GetIP returns the IP address of the GCE instance.

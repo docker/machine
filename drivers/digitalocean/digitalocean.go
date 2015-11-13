@@ -3,6 +3,7 @@ package digitalocean
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"time"
 
 	"github.com/digitalocean/godo"
@@ -228,7 +229,7 @@ func (d *Driver) GetURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
