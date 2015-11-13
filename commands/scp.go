@@ -52,7 +52,7 @@ func (s *storeHostInfoLoader) load(name string) (HostInfo, error) {
 	return host.Driver, nil
 }
 
-func cmdScp(c CommandLine) error {
+func cmdScp(c CommandLine, store persist.Store) error {
 	args := c.Args()
 	if len(args) != 2 {
 		c.ShowHelp()
@@ -62,7 +62,6 @@ func cmdScp(c CommandLine) error {
 	src := args[0]
 	dest := args[1]
 
-	store := getStore(c)
 	hostInfoLoader := &storeHostInfoLoader{store}
 
 	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), hostInfoLoader)
