@@ -6,8 +6,8 @@ import (
 	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdRegenerateCerts(c CommandLine, store persist.Store) error {
-	if !c.Bool("force") {
+func cmdRegenerateCerts(cli CommandLine, store persist.Store) error {
+	if !cli.Bool("force") {
 		ok, err := confirmInput("Regenerate TLS machine certs?  Warning: this is irreversible.")
 		if err != nil {
 			return err
@@ -22,5 +22,5 @@ func cmdRegenerateCerts(c CommandLine, store persist.Store) error {
 
 	return runActionOnHosts(func(h *host.Host) error {
 		return h.ConfigureAuth()
-	}, store, c.Args())
+	}, store, cli.Args())
 }

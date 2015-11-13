@@ -7,16 +7,16 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdSSH(c CommandLine, store persist.Store) error {
+func cmdSSH(cli CommandLine, store persist.Store) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
-	for _, arg := range c.Args() {
+	for _, arg := range cli.Args() {
 		if arg == "-help" || arg == "--help" || arg == "-h" {
-			c.ShowHelp()
+			cli.ShowHelp()
 			return nil
 		}
 	}
 
-	name := c.Args().First()
+	name := cli.Args().First()
 	if name == "" {
 		return ErrExpectedOneMachine
 	}
@@ -40,5 +40,5 @@ func cmdSSH(c CommandLine, store persist.Store) error {
 		return err
 	}
 
-	return client.Shell(c.Args().Tail()...)
+	return client.Shell(cli.Args().Tail()...)
 }

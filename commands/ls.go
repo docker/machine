@@ -40,9 +40,9 @@ type HostListItem struct {
 	SwarmOptions *swarm.Options
 }
 
-func cmdLs(c CommandLine, store persist.Store) error {
-	quiet := c.Bool("quiet")
-	filters, err := parseFilters(c.StringSlice("filter"))
+func cmdLs(cli CommandLine, store persist.Store) error {
+	quiet := cli.Bool("quiet")
+	filters, err := parseFilters(cli.StringSlice("filter"))
 	if err != nil {
 		return err
 	}
