@@ -5,16 +5,16 @@ import (
 	"fmt"
 
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdRm(c CommandLine) error {
+func cmdRm(c CommandLine, store persist.Store) error {
 	if len(c.Args()) == 0 {
 		c.ShowHelp()
 		return errors.New("You must specify a machine name")
 	}
 
 	force := c.Bool("force")
-	store := getStore(c)
 
 	for _, hostName := range c.Args() {
 		h, err := loadHost(store, hostName)
