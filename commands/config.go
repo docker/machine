@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/state"
@@ -26,21 +27,21 @@ Be advised that this will trigger a Docker daemon restart which will stop runnin
 `, e.hostURL, e.wrappedErr)
 }
 
-func cmdConfig(c CommandLine) error {
+func cmdConfig(cli CommandLine, store rpcdriver.Store) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
-	if len(c.Args()) != 1 {
+	if len(cli.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}
 
-	dockerHost, authOptions, err := runConnectionBoilerplate(host, c)
+	dockerHost, authOptions, err := runConnectionBoilerplate(host, cli)
 	if err != nil {
 		return fmt.Errorf("Error running connection boilerplate: %s", err)
 	}
@@ -53,7 +54,7 @@ func cmdConfig(c CommandLine) error {
 	return nil
 }
 
-func runConnectionBoilerplate(h *host.Host, c CommandLine) (string, *auth.Options, error) {
+func runConnectionBoilerplate(h *host.Host, cli CommandLine) (string, *auth.Options, error) {
 	hostState, err := h.Driver.GetState()
 	if err != nil {
 		// TODO: This is a common operation and should have a commonly
@@ -69,7 +70,7 @@ func runConnectionBoilerplate(h *host.Host, c CommandLine) (string, *auth.Option
 		return "", &auth.Options{}, fmt.Errorf("Error getting driver URL: %s", err)
 	}
 
-	if c.Bool("swarm") {
+	if cli.Bool("swarm") {
 		var err error
 		dockerHost, err = parseSwarm(dockerHost, h)
 		if err != nil {

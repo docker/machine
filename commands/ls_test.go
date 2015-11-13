@@ -13,20 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	hostTestStorePath string
-	stdout            *os.File
-)
-
-func init() {
-	stdout = os.Stdout
-}
-
-func cleanup() {
-	os.Stdout = stdout
-	os.RemoveAll(hostTestStorePath)
-}
-
 func TestParseFiltersErrorsGivenInvalidFilter(t *testing.T) {
 	_, err := parseFilters([]string{"foo=bar"})
 	assert.EqualError(t, err, "Unsupported filter key 'foo'")
@@ -306,8 +292,6 @@ func captureStdout() (chan string, *os.File) {
 }
 
 func TestGetHostListItems(t *testing.T) {
-	defer cleanup()
-
 	hostListItemsChan := make(chan HostListItem)
 
 	hosts := []*host.Host{
@@ -381,8 +365,6 @@ func TestGetHostListItems(t *testing.T) {
 func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 	orgDockerHost := os.Getenv("DOCKER_HOST")
 	defer func() {
-		cleanup()
-
 		// revert DOCKER_HOST
 		os.Setenv("DOCKER_HOST", orgDockerHost)
 	}()
@@ -463,5 +445,31 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		if expected[item.Name].active != item.Active {
 			t.Fatal("Expected active flag did not match for item", item)
 		}
+	}
+}
+
+func TestIsActive(t *testing.T) {
+	cases := []struct {
+		dockerHost string
+		state      state.State
+		expected   bool
+	}{
+		{"", state.Running, false},
+		{"tcp://5.6.7.8:2376", state.Running, false},
+		{"tcp://1.2.3.4:2376", state.Stopped, false},
+		{"tcp://1.2.3.4:2376", state.Running, true},
+		{"tcp://1.2.3.4:3376", state.Running, true},
+	}
+
+	for _, c := range cases {
+		os.Unsetenv("DOCKER_HOST")
+		if c.dockerHost != "" {
+			os.Setenv("DOCKER_HOST", c.dockerHost)
+		}
+
+		actual, err := isActive(c.state, "tcp://1.2.3.4:2376")
+
+		assert.Equal(t, c.expected, actual, "IsActive(%s, \"%s\") should return %v, but didn't", c.state, c.dockerHost, c.expected)
+		assert.NoError(t, err)
 	}
 }

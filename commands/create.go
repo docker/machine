@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -24,7 +23,6 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnflag"
-	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -118,25 +116,14 @@ var (
 	}
 )
 
-func cmdCreateInner(c CommandLine) error {
-	if len(c.Args()) > 1 {
-		return fmt.Errorf("Invalid command line. Found extra arguments %v", c.Args()[1:])
+func cmdCreateInner(cli CommandLine, store rpcdriver.Store) error {
+	if len(cli.Args()) > 1 {
+		return fmt.Errorf("Invalid command line. Found extra arguments %v", cli.Args()[1:])
 	}
 
-	name := c.Args().First()
-	driverName := c.String("driver")
-	certInfo := getCertPathInfoFromContext(c)
-
-	storePath := c.GlobalString("storage-path")
-
-	store := &persist.Filestore{
-		Path:             storePath,
-		CaCertPath:       certInfo.CaCertPath,
-		CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
-	}
-
+	name := cli.Args().First()
 	if name == "" {
-		c.ShowHelp()
+		cli.ShowHelp()
 		return errNoMachineName
 	}
 
@@ -145,29 +132,17 @@ func cmdCreateInner(c CommandLine) error {
 		return fmt.Errorf("Error creating machine: %s", mcnerror.ErrInvalidHostname)
 	}
 
-	if err := validateSwarmDiscovery(c.String("swarm-discovery")); err != nil {
+	if err := validateSwarmDiscovery(cli.String("swarm-discovery")); err != nil {
 		return fmt.Errorf("Error parsing swarm discovery: %s", err)
 	}
 
-	// TODO: Fix hacky JSON solution
-	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
-		MachineName: name,
-		StorePath:   c.GlobalString("storage-path"),
-	})
-	if err != nil {
-		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
-	}
-
-	driver, err := newPluginDriver(driverName, bareDriverData)
-	if err != nil {
-		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
-	}
-
-	h, err := store.NewHost(driver)
+	driverName := cli.String("driver")
+	h, err := store.NewHost(driverName, name)
 	if err != nil {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
+	certInfo := getCertPathInfoFromContext(cli)
 	h.HostOptions = &host.Options{
 		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
@@ -180,42 +155,32 @@ func cmdCreateInner(c CommandLine) error {
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
 		},
 		EngineOptions: &engine.Options{
-			ArbitraryFlags:   c.StringSlice("engine-opt"),
-			Env:              c.StringSlice("engine-env"),
-			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
-			Labels:           c.StringSlice("engine-label"),
-			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
-			StorageDriver:    c.String("engine-storage-driver"),
+			ArbitraryFlags:   cli.StringSlice("engine-opt"),
+			Env:              cli.StringSlice("engine-env"),
+			InsecureRegistry: cli.StringSlice("engine-insecure-registry"),
+			Labels:           cli.StringSlice("engine-label"),
+			RegistryMirror:   cli.StringSlice("engine-registry-mirror"),
+			StorageDriver:    cli.String("engine-storage-driver"),
 			TLSVerify:        true,
-			InstallURL:       c.String("engine-install-url"),
+			InstallURL:       cli.String("engine-install-url"),
 		},
 		SwarmOptions: &swarm.Options{
-			IsSwarm:        c.Bool("swarm"),
-			Image:          c.String("swarm-image"),
-			Master:         c.Bool("swarm-master"),
-			Discovery:      c.String("swarm-discovery"),
-			Address:        c.String("swarm-addr"),
-			Host:           c.String("swarm-host"),
-			Strategy:       c.String("swarm-strategy"),
-			ArbitraryFlags: c.StringSlice("swarm-opt"),
+			IsSwarm:        cli.Bool("swarm"),
+			Image:          cli.String("swarm-image"),
+			Master:         cli.Bool("swarm-master"),
+			Discovery:      cli.String("swarm-discovery"),
+			Address:        cli.String("swarm-addr"),
+			Host:           cli.String("swarm-host"),
+			Strategy:       cli.String("swarm-strategy"),
+			ArbitraryFlags: cli.StringSlice("swarm-opt"),
 		},
-	}
-
-	exists, err := store.Exists(h.Name)
-	if err != nil {
-		return fmt.Errorf("Error checking if host exists: %s", err)
-	}
-	if exists {
-		return mcnerror.ErrHostAlreadyExists{
-			Name: h.Name,
-		}
 	}
 
 	// driverOpts is the actual data we send over the wire to set the
 	// driver parameters (an interface fulfilling drivers.DriverOptions,
 	// concrete type rpcdriver.RpcFlags).
-	mcnFlags := driver.GetCreateFlags()
-	driverOpts := getDriverOpts(c, mcnFlags)
+	mcnFlags := h.Driver.GetCreateFlags()
+	driverOpts := getDriverOpts(cli, mcnFlags)
 
 	if err := h.Driver.SetConfigFromFlags(driverOpts); err != nil {
 		return fmt.Errorf("Error setting machine configuration from flags provided: %s", err)
@@ -223,10 +188,6 @@ func cmdCreateInner(c CommandLine) error {
 
 	if err := libmachine.Create(store, h); err != nil {
 		return fmt.Errorf("Error creating machine: %s", err)
-	}
-
-	if err := saveHost(store, h); err != nil {
-		return fmt.Errorf("Error attempting to save store: %s", err)
 	}
 
 	log.Infof("To see how to connect Docker to this machine, run: %s", fmt.Sprintf("%s env %s", os.Args[0], name))
@@ -270,30 +231,24 @@ func flagHackLookup(flagName string) string {
 	return ""
 }
 
-func cmdCreateOuter(c CommandLine) error {
+func cmdCreateOuter(cli CommandLine, store rpcdriver.Store) error {
 	const (
 		flagLookupMachineName = "flag-lookup"
 	)
-	driverName := flagHackLookup("--driver")
 
-	// We didn't recognize the driver name.
+	driverName := flagHackLookup("--driver")
 	if driverName == "" {
-		c.ShowHelp()
+		// We didn't recognize the driver name.
+		cli.ShowHelp()
 		return nil // ?
 	}
 
-	// TODO: Fix hacky JSON solution
-	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
-		MachineName: flagLookupMachineName,
-	})
+	h, err := store.NewHost(driverName, flagLookupMachineName)
 	if err != nil {
-		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
+		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
-	driver, err := newPluginDriver(driverName, bareDriverData)
-	if err != nil {
-		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
-	}
+	driver := h.Driver
 
 	if _, ok := driver.(*errdriver.Driver); ok {
 		return errdriver.NotLoadable{driverName}
@@ -313,8 +268,8 @@ func cmdCreateOuter(c CommandLine) error {
 		return fmt.Errorf("Error trying to convert provided driver flags to cli flags: %s", err)
 	}
 
-	for i := range c.Application().Commands {
-		cmd := &c.Application().Commands[i]
+	for i := range cli.Application().Commands {
+		cmd := &cli.Application().Commands[i]
 		if cmd.HasName("create") {
 			cmd = addDriverFlagsToCommand(cliFlags, cmd)
 		}
@@ -330,10 +285,10 @@ func cmdCreateOuter(c CommandLine) error {
 		}
 	}
 
-	return c.Application().Run(os.Args)
+	return cli.Application().Run(os.Args)
 }
 
-func getDriverOpts(c CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions {
+func getDriverOpts(cli CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions {
 	// TODO: This function is pretty damn YOLO and would benefit from some
 	// sanity checking around types and assertions.
 	//
@@ -353,13 +308,13 @@ func getDriverOpts(c CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions
 		}
 	}
 
-	for _, name := range c.FlagNames() {
-		getter, ok := c.Generic(name).(flag.Getter)
+	for _, name := range cli.FlagNames() {
+		getter, ok := cli.Generic(name).(flag.Getter)
 		if !ok {
 			// TODO: This is pretty hacky.  StringSlice is the only
 			// type so far we have to worry about which is not a
 			// Getter, though.
-			driverOpts.Values[name] = c.StringSlice(name)
+			driverOpts.Values[name] = cli.StringSlice(name)
 			continue
 		}
 		driverOpts.Values[name] = getter.Get()

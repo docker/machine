@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/persist"
 )
 
 var (
@@ -40,11 +40,11 @@ type HostInfoLoader interface {
 }
 
 type storeHostInfoLoader struct {
-	store persist.Store
+	store rpcdriver.Store
 }
 
 func (s *storeHostInfoLoader) load(name string) (HostInfo, error) {
-	host, err := loadHost(s.store, name)
+	host, err := s.store.Load(name)
 	if err != nil {
 		return nil, fmt.Errorf("Error loading host: %s", err)
 	}
@@ -52,20 +52,19 @@ func (s *storeHostInfoLoader) load(name string) (HostInfo, error) {
 	return host.Driver, nil
 }
 
-func cmdScp(c CommandLine) error {
-	args := c.Args()
+func cmdScp(cli CommandLine, store rpcdriver.Store) error {
+	args := cli.Args()
 	if len(args) != 2 {
-		c.ShowHelp()
+		cli.ShowHelp()
 		return errWrongNumberArguments
 	}
 
 	src := args[0]
 	dest := args[1]
 
-	store := getStore(c)
 	hostInfoLoader := &storeHostInfoLoader{store}
 
-	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), hostInfoLoader)
+	cmd, err := getScpCmd(src, dest, cli.Bool("recursive"), hostInfoLoader)
 	if err != nil {
 		return err
 	}

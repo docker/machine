@@ -1,15 +1,16 @@
 package commands
 
 import (
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdStatus(c CommandLine) error {
-	if len(c.Args()) != 1 {
+func cmdStatus(cli CommandLine, store rpcdriver.Store) error {
+	if len(cli.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}

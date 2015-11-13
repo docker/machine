@@ -2,16 +2,28 @@ package commands
 
 import (
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/hosttest"
-	"github.com/docker/machine/libmachine/persisttest"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
+
+var (
+	stdout *os.File
+)
+
+func init() {
+	stdout = os.Stdout
+}
+
+func cleanup() {
+	os.Stdout = stdout
+}
 
 func TestRunActionForeachMachine(t *testing.T) {
 	// Assume a bunch of machines in randomly started or
@@ -65,51 +77,34 @@ func TestRunActionForeachMachine(t *testing.T) {
 		},
 	}
 
-	runActionForeachMachine("start", machines)
-
-	expected := map[string]state.State{
-		"foo":  state.Running,
-		"bar":  state.Running,
-		"baz":  state.Running,
-		"spam": state.Running,
-		"eggs": state.Running,
-		"ham":  state.Running,
-	}
+	runActionForeachMachine(func(h *host.Host) error {
+		return h.Start()
+	}, machines)
 
 	for _, machine := range machines {
-		state, _ := machine.Driver.GetState()
-		if expected[machine.Name] != state {
-			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
-		}
+		machineState, _ := machine.Driver.GetState()
+
+		assert.Equal(t, state.Running, machineState)
 	}
 
-	// OK, now let's stop them all!
-	expected = map[string]state.State{
-		"foo":  state.Stopped,
-		"bar":  state.Stopped,
-		"baz":  state.Stopped,
-		"spam": state.Stopped,
-		"eggs": state.Stopped,
-		"ham":  state.Stopped,
-	}
-
-	runActionForeachMachine("stop", machines)
+	runActionForeachMachine(func(h *host.Host) error {
+		return h.Stop()
+	}, machines)
 
 	for _, machine := range machines {
-		state, _ := machine.Driver.GetState()
-		if expected[machine.Name] != state {
-			t.Fatalf("Expected machine %s to have state %s, got state %s", machine.Name, state, expected[machine.Name])
-		}
+		machineState, _ := machine.Driver.GetState()
+
+		assert.Equal(t, state.Stopped, machineState)
 	}
 }
 
 func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
-	defer persisttest.Cleanup()
+	defer cleanup()
 	host, _ := hosttest.GetDefaultTestHost()
 
 	out, w := captureStdout()
 
-	assert.Nil(t, printIP(host)())
+	assert.Nil(t, host.PrintIP())
 	w.Close()
 
 	assert.Equal(t, "", strings.TrimSpace(<-out))
@@ -122,8 +117,7 @@ func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
 
 	out, w := captureStdout()
 
-	assert.Nil(t, printIP(host)())
-
+	assert.Nil(t, host.PrintIP())
 	w.Close()
 
 	assert.Equal(t, "1.2.3.4", strings.TrimSpace(<-out))

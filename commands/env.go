@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/template"
 
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -34,33 +36,34 @@ type ShellConfig struct {
 	NoProxyValue    string
 }
 
-func cmdEnv(c CommandLine) error {
+func cmdEnv(cli CommandLine, store rpcdriver.Store) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
-	if c.Bool("unset") {
-		return unset(c)
+	if cli.Bool("unset") {
+		return unset(cli)
 	}
-	return set(c)
+
+	return set(cli, store)
 }
 
-func set(c CommandLine) error {
-	if len(c.Args()) != 1 {
+func set(cli CommandLine, store rpcdriver.Store) error {
+	if len(cli.Args()) != 1 {
 		return errImproperEnvArgs
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}
 
-	dockerHost, _, err := runConnectionBoilerplate(host, c)
+	dockerHost, _, err := runConnectionBoilerplate(host, cli)
 	if err != nil {
 		return fmt.Errorf("Error running connection boilerplate: %s", err)
 	}
 
-	userShell, err := getShell(c)
+	userShell, err := getShell(cli)
 	if err != nil {
 		return err
 	}
@@ -73,7 +76,7 @@ func set(c CommandLine) error {
 		MachineName:     host.Name,
 	}
 
-	if c.Bool("no-proxy") {
+	if cli.Bool("no-proxy") {
 		ip, err := host.Driver.GetIP()
 		if err != nil {
 			return fmt.Errorf("Error getting host IP: %s", err)
@@ -117,12 +120,12 @@ func set(c CommandLine) error {
 	return executeTemplateStdout(shellCfg)
 }
 
-func unset(c CommandLine) error {
-	if len(c.Args()) != 0 {
+func unset(cli CommandLine) error {
+	if len(cli.Args()) != 0 {
 		return errImproperUnsetEnvArgs
 	}
 
-	userShell, err := getShell(c)
+	userShell, err := getShell(cli)
 	if err != nil {
 		return err
 	}
@@ -131,7 +134,7 @@ func unset(c CommandLine) error {
 		UsageHint: generateUsageHint(userShell, os.Args),
 	}
 
-	if c.Bool("no-proxy") {
+	if cli.Bool("no-proxy") {
 		shellCfg.NoProxyVar, shellCfg.NoProxyValue = findNoProxyFromEnv()
 	}
 
@@ -167,8 +170,8 @@ func executeTemplateStdout(shellCfg *ShellConfig) error {
 	return tmpl.Execute(os.Stdout, shellCfg)
 }
 
-func getShell(c CommandLine) (string, error) {
-	userShell := c.String("shell")
+func getShell(cli CommandLine) (string, error) {
+	userShell := cli.String("shell")
 	if userShell != "" {
 		return userShell, nil
 	}
@@ -207,4 +210,21 @@ func generateUsageHint(userShell string, args []string) string {
 	}
 
 	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
+}
+
+func detectShell() (string, error) {
+	// attempt to get the SHELL env var
+	shell := filepath.Base(os.Getenv("SHELL"))
+
+	log.Debugf("shell: %s", shell)
+	if shell == "" {
+		// check for windows env and not bash (i.e. msysgit, etc)
+		if runtime.GOOS == "windows" {
+			log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
+		}
+
+		return "", ErrUnknownShell
+	}
+
+	return shell, nil
 }

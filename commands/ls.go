@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/state"
@@ -39,15 +40,14 @@ type HostListItem struct {
 	SwarmOptions *swarm.Options
 }
 
-func cmdLs(c CommandLine) error {
-	quiet := c.Bool("quiet")
-	filters, err := parseFilters(c.StringSlice("filter"))
+func cmdLs(cli CommandLine, store rpcdriver.Store) error {
+	quiet := cli.Bool("quiet")
+	filters, err := parseFilters(cli.StringSlice("filter"))
 	if err != nil {
 		return err
 	}
 
-	store := getStore(c)
-	hostList, err := listHosts(store)
+	hostList, err := store.List()
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	close(stateCh)
 	close(urlCh)
 
-	active, err := isActive(h, currentState, url)
+	active, err := isActive(currentState, url)
 	if err != nil {
 		log.Errorf("error determining if host is active for host %s: %s",
 			h.Name, err)
@@ -328,4 +328,18 @@ func sortHostListItemsByName(items []HostListItem) {
 	for i, v := range s {
 		items[i] = m[v]
 	}
+}
+
+// IsActive provides a single function for determining if a host is active
+// based on both the url and if the host is stopped.
+func isActive(currentState state.State, url string) (bool, error) {
+	if currentState != state.Running {
+		return false, nil
+	}
+
+	// TODO: hard-coding the swarm port is a travesty...
+	dockerHost := os.Getenv("DOCKER_HOST")
+	deSwarmedHost := strings.Replace(dockerHost, ":3376", ":2376", 1)
+
+	return dockerHost == url || deSwarmedHost == url, nil
 }

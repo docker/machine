@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"text/template"
+
+	"github.com/docker/machine/libmachine/drivers/rpc"
 )
 
 var funcMap = template.FuncMap{
@@ -18,18 +20,18 @@ var funcMap = template.FuncMap{
 	},
 }
 
-func cmdInspect(c CommandLine) error {
-	if len(c.Args()) == 0 {
-		c.ShowHelp()
+func cmdInspect(cli CommandLine, store rpcdriver.Store) error {
+	if len(cli.Args()) == 0 {
+		cli.ShowHelp()
 		return ErrExpectedOneMachine
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}
 
-	tmplString := c.String("format")
+	tmplString := cli.String("format")
 	if tmplString != "" {
 		var tmpl *template.Template
 		var err error

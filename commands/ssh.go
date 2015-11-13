@@ -3,25 +3,25 @@ package commands
 import (
 	"fmt"
 
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdSSH(c CommandLine) error {
+func cmdSSH(cli CommandLine, store rpcdriver.Store) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
-	for _, arg := range c.Args() {
+	for _, arg := range cli.Args() {
 		if arg == "-help" || arg == "--help" || arg == "-h" {
-			c.ShowHelp()
+			cli.ShowHelp()
 			return nil
 		}
 	}
 
-	name := c.Args().First()
+	name := cli.Args().First()
 	if name == "" {
 		return ErrExpectedOneMachine
 	}
 
-	store := getStore(c)
-	host, err := loadHost(store, name)
+	host, err := store.Load(name)
 	if err != nil {
 		return err
 	}
@@ -40,5 +40,5 @@ func cmdSSH(c CommandLine) error {
 		return err
 	}
 
-	return client.Shell(c.Args().Tail()...)
+	return client.Shell(cli.Args().Tail()...)
 }

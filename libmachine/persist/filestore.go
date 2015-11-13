@@ -10,7 +10,6 @@ import (
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
-	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -34,38 +33,23 @@ func (s Filestore) saveToFile(data []byte, file string) error {
 }
 
 func (s Filestore) Save(host *host.Host) error {
-	if serialDriver, ok := host.Driver.(*drivers.SerialDriver); ok {
-		// Unwrap Driver
-		host.Driver = serialDriver.Driver
-
-		// Re-wrap Driver when done
-		defer func() {
-			host.Driver = serialDriver
-		}()
-	}
-
-	// TODO: Does this belong here?
-	if rpcClientDriver, ok := host.Driver.(*rpcdriver.RPCClientDriver); ok {
-		data, err := rpcClientDriver.GetConfigRaw()
-		if err != nil {
-			return fmt.Errorf("Error getting raw config for driver: %s", err)
-		}
-		host.RawDriver = data
-	}
-
 	data, err := json.MarshalIndent(host, "", "    ")
 	if err != nil {
-		return err
+		return NewSaveError(host.Name, err)
 	}
 
 	hostPath := filepath.Join(s.getMachinesDir(), host.Name)
 
 	// Ensure that the directory we want to save to exists.
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
-		return err
+		return NewSaveError(host.Name, err)
 	}
 
-	return s.saveToFile(data, filepath.Join(hostPath, "config.json"))
+	if err := s.saveToFile(data, filepath.Join(hostPath, "config.json")); err != nil {
+		return NewSaveError(host.Name, err)
+	}
+
+	return nil
 }
 
 func (s Filestore) Remove(name string) error {
@@ -138,7 +122,6 @@ func (s Filestore) loadConfig(h *host.Host) error {
 	}
 
 	return nil
-
 }
 
 func (s Filestore) Load(name string) (*host.Host, error) {
