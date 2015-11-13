@@ -48,24 +48,28 @@ func (s Filestore) Save(host *host.Host) error {
 	if rpcClientDriver, ok := host.Driver.(*rpcdriver.RPCClientDriver); ok {
 		data, err := rpcClientDriver.GetConfigRaw()
 		if err != nil {
-			return fmt.Errorf("Error getting raw config for driver: %s", err)
+			return NewSaveError(host.Name, fmt.Errorf("Unable to get raw config for driver: %s", err))
 		}
 		host.RawDriver = data
 	}
 
 	data, err := json.MarshalIndent(host, "", "    ")
 	if err != nil {
-		return err
+		return NewSaveError(host.Name, err)
 	}
 
 	hostPath := filepath.Join(s.getMachinesDir(), host.Name)
 
 	// Ensure that the directory we want to save to exists.
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
-		return err
+		return NewSaveError(host.Name, err)
 	}
 
-	return s.saveToFile(data, filepath.Join(hostPath, "config.json"))
+	if err := s.saveToFile(data, filepath.Join(hostPath, "config.json")); err != nil {
+		return NewSaveError(host.Name, err)
+	}
+
+	return nil
 }
 
 func (s Filestore) Remove(name string) error {
