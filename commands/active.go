@@ -4,46 +4,33 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/persist"
 )
 
 var (
 	errTooManyArguments = errors.New("Error: Too many arguments given")
+	errNoActiveHost     = errors.New("No active host found")
 )
 
-func cmdActive(c CommandLine) error {
+func cmdActive(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) > 0 {
 		return errTooManyArguments
 	}
 
-	store := getStore(c)
-
-	host, err := getActiveHost(store)
+	hosts, err := persist.LoadAllHosts(api)
 	if err != nil {
 		return fmt.Errorf("Error getting active host: %s", err)
 	}
 
-	if host != nil {
-		fmt.Println(host.Name)
-	}
+	items := getHostListItems(hosts)
 
-	return nil
-}
-
-func getActiveHost(store persist.Store) (*host.Host, error) {
-	hosts, err := listHosts(store)
-	if err != nil {
-		return nil, err
-	}
-
-	hostListItems := getHostListItems(hosts)
-
-	for _, item := range hostListItems {
+	for _, item := range items {
 		if item.Active {
-			return loadHost(store, item.Name)
+			fmt.Println(item.Name)
+			return nil
 		}
 	}
 
-	return nil, errors.New("Active host not found")
+	return errNoActiveHost
 }

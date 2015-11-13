@@ -1,15 +1,16 @@
 package commands
 
 import (
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdStatus(c CommandLine) error {
+func cmdStatus(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := api.Load(c.Args().First())
 	if err != nil {
 		return err
 	}
