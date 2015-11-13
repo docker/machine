@@ -4,29 +4,81 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/provision"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/libmachine/version"
 )
 
-func GetDefaultStore() *persist.Filestore {
-	homeDir := mcnutils.GetHomeDir()
-	certsDir := filepath.Join(homeDir, ".docker", "machine", "certs")
-	return &persist.Filestore{
-		Path:             homeDir,
-		CaCertPath:       certsDir,
-		CaPrivateKeyPath: certsDir,
+type API interface {
+	persist.Store
+	NewPluginDriver(string, []byte) (drivers.Driver, error)
+	NewHost(drivers.Driver) (*host.Host, error)
+	Create(h *host.Host) error
+}
+
+type Client struct {
+	*persist.PluginStore
+	IsDebug        bool
+	SSHClientType  ssh.ClientType
+	GithubAPIToken string
+}
+
+func NewClient(storePath string) *Client {
+	certsDir := filepath.Join(storePath, ".docker", "machine", "certs")
+	return &Client{
+		IsDebug:       false,
+		SSHClientType: ssh.External,
+		PluginStore:   persist.NewPluginStore(storePath, certsDir, certsDir),
 	}
+}
+
+func (api *Client) NewHost(driver drivers.Driver) (*host.Host, error) {
+	certDir := filepath.Join(api.Path, "certs")
+
+	hostOptions := &host.Options{
+		AuthOptions: &auth.Options{
+			CertDir:          certDir,
+			CaCertPath:       filepath.Join(certDir, "ca.pem"),
+			CaPrivateKeyPath: filepath.Join(certDir, "ca-key.pem"),
+			ClientCertPath:   filepath.Join(certDir, "cert.pem"),
+			ClientKeyPath:    filepath.Join(certDir, "key.pem"),
+			ServerCertPath:   filepath.Join(api.GetMachinesDir(), "server.pem"),
+			ServerKeyPath:    filepath.Join(api.GetMachinesDir(), "server-key.pem"),
+		},
+		EngineOptions: &engine.Options{
+			InstallURL:    "https://get.docker.com",
+			StorageDriver: "aufs",
+			TLSVerify:     true,
+		},
+		SwarmOptions: &swarm.Options{
+			Host:     "tcp://0.0.0.0:3376",
+			Image:    "swarm:latest",
+			Strategy: "spread",
+		},
+	}
+
+	return &host.Host{
+		ConfigVersion: version.ConfigVersion,
+		Name:          driver.GetMachineName(),
+		Driver:        driver,
+		DriverName:    driver.DriverName(),
+		HostOptions:   hostOptions,
+	}, nil
 }
 
 // Create is the wrapper method which covers all of the boilerplate around
 // actually creating, provisioning, and persisting an instance in the store.
-func Create(store persist.Store, h *host.Host) error {
+func (api *Client) Create(h *host.Host) error {
 	if err := cert.BootstrapCertificates(h.HostOptions.AuthOptions); err != nil {
 		return fmt.Errorf("Error generating certificates: %s", err)
 	}
@@ -37,7 +89,7 @@ func Create(store persist.Store, h *host.Host) error {
 		return fmt.Errorf("Error with pre-create check: %s", err)
 	}
 
-	if err := store.Save(h); err != nil {
+	if err := api.Save(h); err != nil {
 		return fmt.Errorf("Error saving host to store before attempting creation: %s", err)
 	}
 
@@ -47,7 +99,7 @@ func Create(store persist.Store, h *host.Host) error {
 		return fmt.Errorf("Error in driver during machine creation: %s", err)
 	}
 
-	if err := store.Save(h); err != nil {
+	if err := api.Save(h); err != nil {
 		return fmt.Errorf("Error saving host to store after attempting creation: %s", err)
 	}
 
@@ -78,8 +130,4 @@ func Create(store persist.Store, h *host.Host) error {
 	log.Debug("Reticulating splines...")
 
 	return nil
-}
-
-func SetDebug(val bool) {
-	log.IsDebug = val
 }

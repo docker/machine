@@ -10,8 +10,6 @@ import (
 	"github.com/docker/machine/commands"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/mcnutils"
-	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/version"
 )
 
@@ -74,16 +72,6 @@ func main() {
 	app.Name = path.Base(os.Args[0])
 	app.Author = "Docker Machine Contributors"
 	app.Email = "https://github.com/docker/machine"
-	app.Before = func(c *cli.Context) error {
-		// TODO: Need better handling of config, everything is too
-		// complected together right now.
-		if c.GlobalBool("native-ssh") {
-			ssh.SetDefaultClient(ssh.Native)
-		}
-		mcnutils.GithubAPIToken = c.GlobalString("github-api-token")
-		mcndirs.BaseDir = c.GlobalString("storage-path")
-		return nil
-	}
 
 	app.Commands = commands.Commands
 	app.CommandNotFound = cmdNotFound
