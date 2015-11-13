@@ -8,7 +8,6 @@ import (
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/hosttest"
-	"github.com/docker/machine/libmachine/persisttest"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
@@ -104,7 +103,7 @@ func TestRunActionForeachMachine(t *testing.T) {
 }
 
 func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
-	defer persisttest.Cleanup()
+	defer cleanup()
 	host, _ := hosttest.GetDefaultTestHost()
 
 	out, w := captureStdout()
