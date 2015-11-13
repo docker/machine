@@ -128,7 +128,6 @@ func main() {
 		},
 	}
 
-	// TODO: Close plugin servers in case of client panic.
 	if err := app.Run(os.Args); err != nil {
 		log.Error(err)
 	}
