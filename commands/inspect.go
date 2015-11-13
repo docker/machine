@@ -20,18 +20,18 @@ var funcMap = template.FuncMap{
 	},
 }
 
-func cmdInspect(c CommandLine, store persist.Store) error {
-	if len(c.Args()) == 0 {
-		c.ShowHelp()
+func cmdInspect(cli CommandLine, store persist.Store) error {
+	if len(cli.Args()) == 0 {
+		cli.ShowHelp()
 		return ErrExpectedOneMachine
 	}
 
-	host, err := loadHost(store, c.Args().First())
+	host, err := loadHost(store, cli.Args().First())
 	if err != nil {
 		return err
 	}
 
-	tmplString := c.String("format")
+	tmplString := cli.String("format")
 	if tmplString != "" {
 		var tmpl *template.Template
 		var err error

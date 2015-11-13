@@ -5,8 +5,8 @@ import (
 	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdKill(c CommandLine, store persist.Store) error {
+func cmdKill(cli CommandLine, store persist.Store) error {
 	return runActionOnHosts(func(h *host.Host) error {
 		return h.Kill()
-	}, store, c.Args())
+	}, store, cli.Args())
 }
