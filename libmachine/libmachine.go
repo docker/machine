@@ -8,6 +8,7 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/provision"
@@ -24,9 +25,27 @@ func GetDefaultStore() *persist.Filestore {
 	}
 }
 
+type HostSaver interface {
+	// Exists returns whether a machine exists or not
+	Exists(name string) (bool, error)
+
+	// Save persists a machine in the store
+	Save(host *host.Host) error
+}
+
 // Create is the wrapper method which covers all of the boilerplate around
 // actually creating, provisioning, and persisting an instance in the store.
-func Create(store persist.Store, h *host.Host) error {
+func Create(s HostSaver, h *host.Host) error {
+	exists, err := s.Exists(h.Name)
+	if err != nil {
+		return fmt.Errorf("Error checking if host exists: %s", err)
+	}
+	if exists {
+		return mcnerror.ErrHostAlreadyExists{
+			Name: h.Name,
+		}
+	}
+
 	if err := cert.BootstrapCertificates(h.HostOptions.AuthOptions); err != nil {
 		return fmt.Errorf("Error generating certificates: %s", err)
 	}
@@ -37,7 +56,7 @@ func Create(store persist.Store, h *host.Host) error {
 		return fmt.Errorf("Error with pre-create check: %s", err)
 	}
 
-	if err := store.Save(h); err != nil {
+	if err := s.Save(h); err != nil {
 		return fmt.Errorf("Error saving host to store before attempting creation: %s", err)
 	}
 
@@ -47,7 +66,7 @@ func Create(store persist.Store, h *host.Host) error {
 		return fmt.Errorf("Error in driver during machine creation: %s", err)
 	}
 
-	if err := store.Save(h); err != nil {
+	if err := s.Save(h); err != nil {
 		return fmt.Errorf("Error saving host to store after attempting creation: %s", err)
 	}
 
@@ -73,6 +92,11 @@ func Create(store persist.Store, h *host.Host) error {
 		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
 			return fmt.Errorf("Error running provisioning: %s", err)
 		}
+	}
+
+	// TODO: is this really needed
+	if err := s.Save(h); err != nil {
+		return fmt.Errorf("Error attempting to save store: %s", err)
 	}
 
 	log.Debug("Reticulating splines...")

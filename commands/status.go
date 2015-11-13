@@ -1,16 +1,16 @@
 package commands
 
 import (
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdStatus(cli CommandLine, store persist.Store) error {
+func cmdStatus(cli CommandLine, store rpcdriver.Store) error {
 	if len(cli.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := loadHost(store, cli.Args().First())
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}

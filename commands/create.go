@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -24,7 +23,6 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnflag"
-	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -118,7 +116,7 @@ var (
 	}
 )
 
-func cmdCreateInner(cli CommandLine, store persist.Store) error {
+func cmdCreateInner(cli CommandLine, store rpcdriver.Store) error {
 	if len(cli.Args()) > 1 {
 		return fmt.Errorf("Invalid command line. Found extra arguments %v", cli.Args()[1:])
 	}
@@ -138,22 +136,8 @@ func cmdCreateInner(cli CommandLine, store persist.Store) error {
 		return fmt.Errorf("Error parsing swarm discovery: %s", err)
 	}
 
-	// TODO: Fix hacky JSON solution
-	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
-		MachineName: name,
-		StorePath:   cli.GlobalString("storage-path"),
-	})
-	if err != nil {
-		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
-	}
-
 	driverName := cli.String("driver")
-	driver, err := newPluginDriver(driverName, bareDriverData)
-	if err != nil {
-		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
-	}
-
-	h, err := store.NewHost(driver)
+	h, err := store.NewHost(driverName, name)
 	if err != nil {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
@@ -192,20 +176,10 @@ func cmdCreateInner(cli CommandLine, store persist.Store) error {
 		},
 	}
 
-	exists, err := store.Exists(h.Name)
-	if err != nil {
-		return fmt.Errorf("Error checking if host exists: %s", err)
-	}
-	if exists {
-		return mcnerror.ErrHostAlreadyExists{
-			Name: h.Name,
-		}
-	}
-
 	// driverOpts is the actual data we send over the wire to set the
 	// driver parameters (an interface fulfilling drivers.DriverOptions,
 	// concrete type rpcdriver.RpcFlags).
-	mcnFlags := driver.GetCreateFlags()
+	mcnFlags := h.Driver.GetCreateFlags()
 	driverOpts := getDriverOpts(cli, mcnFlags)
 
 	if err := h.Driver.SetConfigFromFlags(driverOpts); err != nil {
@@ -214,10 +188,6 @@ func cmdCreateInner(cli CommandLine, store persist.Store) error {
 
 	if err := libmachine.Create(store, h); err != nil {
 		return fmt.Errorf("Error creating machine: %s", err)
-	}
-
-	if err := store.Save(h); err != nil {
-		return fmt.Errorf("Error attempting to save store: %s", err)
 	}
 
 	log.Infof("To see how to connect Docker to this machine, run: %s", fmt.Sprintf("%s env %s", os.Args[0], name))
@@ -261,30 +231,24 @@ func flagHackLookup(flagName string) string {
 	return ""
 }
 
-func cmdCreateOuter(cli CommandLine, store persist.Store) error {
+func cmdCreateOuter(cli CommandLine, store rpcdriver.Store) error {
 	const (
 		flagLookupMachineName = "flag-lookup"
 	)
-	driverName := flagHackLookup("--driver")
 
-	// We didn't recognize the driver name.
+	driverName := flagHackLookup("--driver")
 	if driverName == "" {
+		// We didn't recognize the driver name.
 		cli.ShowHelp()
 		return nil // ?
 	}
 
-	// TODO: Fix hacky JSON solution
-	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
-		MachineName: flagLookupMachineName,
-	})
+	h, err := store.NewHost(driverName, flagLookupMachineName)
 	if err != nil {
-		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
+		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
-	driver, err := newPluginDriver(driverName, bareDriverData)
-	if err != nil {
-		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
-	}
+	driver := h.Driver
 
 	if _, ok := driver.(*errdriver.Driver); ok {
 		return errdriver.NotLoadable{driverName}

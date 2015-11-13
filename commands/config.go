@@ -8,9 +8,9 @@ import (
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 )
 
@@ -27,7 +27,7 @@ Be advised that this will trigger a Docker daemon restart which will stop runnin
 `, e.hostURL, e.wrappedErr)
 }
 
-func cmdConfig(cli CommandLine, store persist.Store) error {
+func cmdConfig(cli CommandLine, store rpcdriver.Store) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
@@ -36,7 +36,7 @@ func cmdConfig(cli CommandLine, store persist.Store) error {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := loadHost(store, cli.Args().First())
+	host, err := store.Load(cli.Args().First())
 	if err != nil {
 		return err
 	}
