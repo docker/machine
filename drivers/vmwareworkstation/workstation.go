@@ -33,7 +33,7 @@ const (
 	isoConfigDrive = "configdrive.iso"
 )
 
-// Driver for VMware Fusion
+// Driver for VMware Workstation
 type Driver struct {
 	*drivers.BaseDriver
 	Memory         int
@@ -61,44 +61,44 @@ const (
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
-			EnvVar: "FUSION_BOOT2DOCKER_URL",
-			Name:   "vmwarefusion-boot2docker-url",
-			Usage:  "Fusion URL for boot2docker image",
+			EnvVar: "WORKSTATION_BOOT2DOCKER_URL",
+			Name:   "vmwareworkstation-boot2docker-url",
+			Usage:  "VMWare Workstation URL for boot2docker image",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "FUSION_CONFIGDRIVE_URL",
-			Name:   "vmwarefusion-configdrive-url",
-			Usage:  "Fusion URL for cloud-init configdrive",
+			EnvVar: "WORKSTATION_CONFIGDRIVE_URL",
+			Name:   "vmwareworkstation-configdrive-url",
+			Usage:  "VMWare Workstation URL for cloud-init configdrive",
 			Value:  "",
 		},
 		mcnflag.IntFlag{
-			EnvVar: "FUSION_CPU_COUNT",
-			Name:   "vmwarefusion-cpu-count",
+			EnvVar: "WORKSTATION_CPU_COUNT",
+			Name:   "vmwareworkstation-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  defaultCpus,
 		},
 		mcnflag.IntFlag{
-			EnvVar: "FUSION_MEMORY_SIZE",
-			Name:   "vmwarefusion-memory-size",
-			Usage:  "Fusion size of memory for host VM (in MB)",
+			EnvVar: "WORKSTATION_MEMORY_SIZE",
+			Name:   "vmwareworkstation-memory-size",
+			Usage:  "VMWare Workstation size of memory for host VM (in MB)",
 			Value:  defaultMemory,
 		},
 		mcnflag.IntFlag{
-			EnvVar: "FUSION_DISK_SIZE",
-			Name:   "vmwarefusion-disk-size",
-			Usage:  "Fusion size of disk for host VM (in MB)",
+			EnvVar: "WORKSTATION_DISK_SIZE",
+			Name:   "vmwareworkstation-disk-size",
+			Usage:  "VMWare Workstation size of disk for host VM (in MB)",
 			Value:  defaultDiskSize,
 		},
 		mcnflag.StringFlag{
-			EnvVar: "FUSION_SSH_USER",
-			Name:   "vmwarefusion-ssh-user",
+			EnvVar: "WORKSTATION_SSH_USER",
+			Name:   "vmwareworkstation-ssh-user",
 			Usage:  "SSH user",
 			Value:  defaultSSHUser,
 		},
 		mcnflag.StringFlag{
-			EnvVar: "FUSION_SSH_PASSWORD",
-			Name:   "vmwarefusion-ssh-password",
+			EnvVar: "WORKSTATION_SSH_PASSWORD",
+			Name:   "vmwareworkstation-ssh-password",
 			Usage:  "SSH password",
 			Value:  defaultSSHPass,
 		},
@@ -133,22 +133,22 @@ func (d *Driver) GetSSHUsername() string {
 
 // DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
-	return "vmwarefusion"
+	return "vmwareworkstation"
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Memory = flags.Int("vmwarefusion-memory-size")
-	d.CPU = flags.Int("vmwarefusion-cpu-count")
-	d.DiskSize = flags.Int("vmwarefusion-disk-size")
-	d.Boot2DockerURL = flags.String("vmwarefusion-boot2docker-url")
-	d.ConfigDriveURL = flags.String("vmwarefusion-configdrive-url")
+	d.Memory = flags.Int("vmwareworkstation-memory-size")
+	d.CPU = flags.Int("vmwareworkstation-cpu-count")
+	d.DiskSize = flags.Int("vmwareworkstation-disk-size")
+	d.Boot2DockerURL = flags.String("vmwareworkstation-boot2docker-url")
+	d.ConfigDriveURL = flags.String("vmwareworkstation-configdrive-url")
 	d.ISO = d.ResolveStorePath(isoFilename)
 	d.ConfigDriveISO = d.ResolveStorePath(isoConfigDrive)
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = flags.String("vmwarefusion-ssh-user")
-	d.SSHPassword = flags.String("vmwarefusion-ssh-password")
+	d.SSHUser = flags.String("vmwareworkstation-ssh-user")
+	d.SSHPassword = flags.String("vmwareworkstation-ssh-password")
 	d.SSHPort = 22
 
 	// We support a maximum of 16 cpu to be consistent with Virtual Hardware 10
@@ -421,7 +421,7 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("VMware Fusion does not currently support the upgrade operation")
+	return fmt.Errorf("VMware Workstation does not currently support the upgrade operation")
 }
 
 func (d *Driver) vmxPath() string {
@@ -445,7 +445,7 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 	var currentleadeendtime time.Time
 
 	// DHCP lease table for NAT vmnet interface
-	var dhcpfile = "/var/db/vmware/vmnet-dhcpd-vmnet8.leases"
+	var dhcpfile = "C:/ProgramData/VMware/vmnetdhcp.leases"
 
 	if vmxfh, err = os.Open(d.vmxPath()); err != nil {
 		return "", err
@@ -487,7 +487,7 @@ func (d *Driver) getIPfromDHCPLease() (string, error) {
 	// Get the MAC address associated.
 	leasemac := regexp.MustCompile(`^\s*hardware ethernet (.+?);$`)
 
-	for _, line := range strings.Split(string(dhcpcontent), "\n") {
+	for _, line := range strings.Split(string(dhcpcontent), "\r\n") {
 
 		if matches := leaseip.FindStringSubmatch(line); matches != nil {
 			lastipmatch = matches[1]

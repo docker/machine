@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	vmrunbin    = setVmwareCmd("vmrun")
-	vdiskmanbin = setVmwareCmd("vmware-vdiskmanager")
+	vmrunbin    = setVmwareCmd("vmrun.exe")
+	vdiskmanbin = setVmwareCmd("vmware-vdiskmanager.exe")
 )
 
 var (
@@ -129,10 +129,10 @@ func findFile(file string, paths []string) string {
 	for _, path := range paths {
 		path = filepath.Join(path, file)
 		path = normalizePath(path)
-		log.Printf("Searching for file '%s'", path)
+		log.Debugf("Searching for file '%s'", path)
 
 		if _, err := os.Stat(path); err == nil {
-			log.Printf("Found file '%s'", path)
+			log.Debugf("Found file '%s'", path)
 			return path
 		}
 	}
