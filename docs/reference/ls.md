@@ -38,14 +38,14 @@ The currently supported filters are:
 ```
 $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL
-dev             virtualbox   Stopped
-foo0            virtualbox   Running   tcp://192.168.99.105:2376
-foo1            virtualbox   Running   tcp://192.168.99.106:2376
+dev    -        virtualbox   Stopped
+foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
+foo1   -        virtualbox   Running   tcp://192.168.99.106:2376
 foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
 ```
 
 ```
 $ docker-machine ls --filter driver=virtualbox --filter state=Stopped
 NAME   ACTIVE   DRIVER       STATE     URL   SWARM
-dev             virtualbox   Stopped
+dev    -        virtualbox   Stopped
 ```
