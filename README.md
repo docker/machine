@@ -42,7 +42,7 @@ To see how to connect Docker to this machine, run: docker-machine env staging
 
 $ docker-machine ls
 NAME      ACTIVE   DRIVER         STATE     URL                          SWARM
-dev                virtualbox     Running   tcp://192.168.99.127:2376
+dev       -        virtualbox     Running   tcp://192.168.99.127:2376
 staging   *        digitalocean   Running   tcp://104.236.253.181:2376
 ```
 
