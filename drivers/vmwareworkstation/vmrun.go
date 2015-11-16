@@ -42,6 +42,30 @@ func workstationVMwareRoot() (s string, err error) {
 	return normalizePath(s), nil
 }
 
+// // This reads the VMware DHCP leases path from the Windows registry.
+// func workstationDhcpLeasesPathRegistry() (s string, err error) {
+// 	key := "SYSTEM\\CurrentControlSet\\services\\VMnetDHCP\\Parameters"
+// 	subkey := "LeaseFile"
+// 	s, err = readRegString(syscall.HKEY_LOCAL_MACHINE, key, subkey)
+// 	if err != nil {
+// 		log.Printf(`Unable to read registry key %s\%s`, key, subkey)
+// 		return
+// 	}
+
+// 	return normalizePath(s), nil
+// }
+
+// func workstationDhcpLeasesPath(device string) string {
+// 	path, err := workstationDhcpLeasesPathRegistry()
+// 	if err != nil {
+// 		log.Printf("Error finding leases in registry: %s", err)
+// 	} else if _, err := os.Stat(path); err == nil {
+// 		return path
+// 	}
+
+// 	return findFile("vmnetdhcp.leases", workstationDataFilePaths())
+// }
+
 // workstationProgramFilesPaths returns a list of paths that are eligible
 // to contain program files we may want just as vmware.exe.
 func workstationProgramFilePaths() []string {
