@@ -26,7 +26,7 @@ func NewArchProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/systemd/system/docker.service",
-			OsReleaseId:       "arch",
+			OsReleaseID:       "arch",
 			Packages:          []string{},
 			Driver:            d,
 		},
@@ -38,7 +38,7 @@ type ArchProvisioner struct {
 }
 
 func (provisioner *ArchProvisioner) CompatibleWithHost() bool {
-	return provisioner.OsReleaseInfo.Id == provisioner.OsReleaseId || provisioner.OsReleaseInfo.IdLike == provisioner.OsReleaseId
+	return provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID || provisioner.OsReleaseInfo.IDLike == provisioner.OsReleaseID
 }
 
 func (provisioner *ArchProvisioner) Service(name string, action serviceaction.ServiceAction) error {
@@ -104,10 +104,11 @@ func (provisioner *ArchProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *ArchProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *ArchProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
+	swarmOptions.Env = engineOptions.Env
 
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "overlay"

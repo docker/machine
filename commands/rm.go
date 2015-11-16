@@ -4,13 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/docker/machine/cli"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdRm(c *cli.Context) error {
+func cmdRm(c CommandLine) error {
 	if len(c.Args()) == 0 {
-		cli.ShowCommandHelp(c, "rm")
+		c.ShowHelp()
 		return errors.New("You must specify a machine name")
 	}
 

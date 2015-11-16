@@ -147,6 +147,7 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "virtualbox"
 }
@@ -184,21 +185,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 func (d *Driver) PreCreateCheck() error {
 	// Check that VBoxManage exists and works
 	return d.vbm()
-}
-
-// cmdOutput runs a shell command and returns its output.
-func cmdOutput(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	log.Debugf("COMMAND: %v %v", name, strings.Join(args, " "))
-
-	stdout, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	log.Debugf("STDOUT:\n{\n%v}", string(stdout))
-
-	return string(stdout), nil
 }
 
 // IsVTXDisabledInTheVM checks if VT-X is disabled in the started vm.
@@ -249,7 +235,7 @@ func (d *Driver) Create() error {
 		// make sure vm is stopped
 		_ = d.vbm("controlvm", name, "poweroff")
 
-		diskInfo, err := d.getVMDiskInfo()
+		diskInfo, err := d.getVMDiskInfo(name)
 		if err != nil {
 			return err
 		}
@@ -263,7 +249,7 @@ func (d *Driver) Create() error {
 		}
 
 		log.Debugf("Importing VM settings...")
-		vmInfo, err := d.getVMInfo()
+		vmInfo, err := d.getVMInfo(name)
 		if err != nil {
 			return err
 		}
@@ -416,7 +402,7 @@ func (d *Driver) Create() error {
 	return d.Start()
 }
 
-func (d *Driver) hostOnlyIpAvailable() bool {
+func (d *Driver) hostOnlyIPAvailable() bool {
 	ip, err := d.GetIP()
 	if err != nil {
 		log.Debugf("ERROR getting IP: %s", err)
@@ -479,7 +465,7 @@ func (d *Driver) Start() error {
 	}
 
 	// Bail if we don't get an IP from DHCP after a given number of seconds.
-	if err := mcnutils.WaitForSpecific(d.hostOnlyIpAvailable, 5, 4*time.Second); err != nil {
+	if err := mcnutils.WaitForSpecific(d.hostOnlyIPAvailable, 5, 4*time.Second); err != nil {
 		return err
 	}
 
@@ -672,7 +658,7 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 		return err
 	}
 
-	dhcpAddr, err := getRandomIPinSubnet(network.IP)
+	dhcpAddr, err := getRandomIPinSubnet(ip)
 	if err != nil {
 		return err
 	}
@@ -844,4 +830,12 @@ func getRandomIPinSubnet(baseIP net.IP) (net.IP, error) {
 	}
 
 	return dhcpAddr, nil
+}
+
+func detectVBoxManageCmdInPath() string {
+	cmd := "VBoxManage"
+	if path, err := exec.LookPath(cmd); err == nil {
+		return path
+	}
+	return cmd
 }

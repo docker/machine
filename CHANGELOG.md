@@ -11,7 +11,7 @@ Changelog
 
 ## Drivers
 - Google:
-  - Preemptiple instances
+  - Preemptible instances
   - Static IP support
 
 ## Fixes

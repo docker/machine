@@ -14,6 +14,7 @@ import (
 
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
@@ -117,7 +118,7 @@ var (
 	}
 )
 
-func cmdCreateInner(c *cli.Context) error {
+func cmdCreateInner(c CommandLine) error {
 	if len(c.Args()) > 1 {
 		return fmt.Errorf("Invalid command line. Found extra arguments %v", c.Args()[1:])
 	}
@@ -135,7 +136,7 @@ func cmdCreateInner(c *cli.Context) error {
 	}
 
 	if name == "" {
-		cli.ShowCommandHelp(c, "create")
+		c.ShowHelp()
 		return errNoMachineName
 	}
 
@@ -167,8 +168,8 @@ func cmdCreateInner(c *cli.Context) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
-	h.HostOptions = &host.HostOptions{
-		AuthOptions: &auth.AuthOptions{
+	h.HostOptions = &host.Options{
+		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
 			CaCertPath:       certInfo.CaCertPath,
 			CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
@@ -178,17 +179,17 @@ func cmdCreateInner(c *cli.Context) error {
 			ServerKeyPath:    filepath.Join(mcndirs.GetMachineDir(), name, "server-key.pem"),
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
 		},
-		EngineOptions: &engine.EngineOptions{
+		EngineOptions: &engine.Options{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),
 			Env:              c.StringSlice("engine-env"),
 			InsecureRegistry: c.StringSlice("engine-insecure-registry"),
 			Labels:           c.StringSlice("engine-label"),
 			RegistryMirror:   c.StringSlice("engine-registry-mirror"),
 			StorageDriver:    c.String("engine-storage-driver"),
-			TlsVerify:        true,
+			TLSVerify:        true,
 			InstallURL:       c.String("engine-install-url"),
 		},
-		SwarmOptions: &swarm.SwarmOptions{
+		SwarmOptions: &swarm.Options{
 			IsSwarm:        c.Bool("swarm"),
 			Image:          c.String("swarm-image"),
 			Master:         c.Bool("swarm-master"),
@@ -269,20 +270,21 @@ func flagHackLookup(flagName string) string {
 	return ""
 }
 
-func cmdCreateOuter(c *cli.Context) error {
+func cmdCreateOuter(c CommandLine) error {
+	const (
+		flagLookupMachineName = "flag-lookup"
+	)
 	driverName := flagHackLookup("--driver")
 
 	// We didn't recognize the driver name.
 	if driverName == "" {
-		cli.ShowCommandHelp(c, "create")
+		c.ShowHelp()
 		return nil // ?
 	}
 
-	name := c.Args().First()
-
 	// TODO: Fix hacky JSON solution
 	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
-		MachineName: name,
+		MachineName: flagLookupMachineName,
 	})
 	if err != nil {
 		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
@@ -291,6 +293,10 @@ func cmdCreateOuter(c *cli.Context) error {
 	driver, err := newPluginDriver(driverName, bareDriverData)
 	if err != nil {
 		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
+	}
+
+	if _, ok := driver.(*errdriver.Driver); ok {
+		return errdriver.NotLoadable{driverName}
 	}
 
 	// TODO: So much flag manipulation and voodoo here, it seems to be
@@ -307,28 +313,34 @@ func cmdCreateOuter(c *cli.Context) error {
 		return fmt.Errorf("Error trying to convert provided driver flags to cli flags: %s", err)
 	}
 
-	for i := range c.App.Commands {
-		cmd := &c.App.Commands[i]
+	for i := range c.Application().Commands {
+		cmd := &c.Application().Commands[i]
 		if cmd.HasName("create") {
 			cmd = addDriverFlagsToCommand(cliFlags, cmd)
 		}
 	}
 
-	if err := driver.Close(); err != nil {
-		return err
+	if serialDriver, ok := driver.(*drivers.SerialDriver); ok {
+		driver = serialDriver.Driver
 	}
 
-	return c.App.Run(os.Args)
+	if rpcd, ok := driver.(*rpcdriver.RPCClientDriver); ok {
+		if err := rpcd.Close(); err != nil {
+			return err
+		}
+	}
+
+	return c.Application().Run(os.Args)
 }
 
-func getDriverOpts(c *cli.Context, mcnflags []mcnflag.Flag) drivers.DriverOptions {
+func getDriverOpts(c CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions {
 	// TODO: This function is pretty damn YOLO and would benefit from some
 	// sanity checking around types and assertions.
 	//
 	// But, we need it so that we can actually send the flags for creating
 	// a machine over the wire (cli.Context is a no go since there is so
 	// much stuff in it).
-	driverOpts := rpcdriver.RpcFlags{
+	driverOpts := rpcdriver.RPCFlags{
 		Values: make(map[string]interface{}),
 	}
 

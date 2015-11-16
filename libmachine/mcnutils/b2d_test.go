@@ -7,6 +7,10 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+
+	"bytes"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
@@ -17,15 +21,10 @@ func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
 	defer ts.Close()
 
 	b := NewB2dUtils("/tmp/isos")
-	isoUrl, err := b.GetLatestBoot2DockerReleaseURL(ts.URL + "/repos/org/repo/releases")
-	if err != nil {
-		t.Fatal(err)
-	}
+	isoURL, err := b.GetLatestBoot2DockerReleaseURL(ts.URL + "/repos/org/repo/releases")
 
-	expectedUrl := fmt.Sprintf("%s/org/repo/releases/download/0.1/boot2docker.iso", ts.URL)
-	if isoUrl != expectedUrl {
-		t.Fatalf("expected url %s; received %s", expectedUrl, isoUrl)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%s/org/repo/releases/download/0.1/boot2docker.iso", ts.URL), isoURL)
 }
 
 func TestDownloadIso(t *testing.T) {
@@ -38,49 +37,76 @@ func TestDownloadIso(t *testing.T) {
 	filename := "test"
 
 	tmpDir, err := ioutil.TempDir("", "machine-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	assert.NoError(t, err)
 
 	b := NewB2dUtils("/tmp/artifacts")
-	if err := b.DownloadISO(tmpDir, filename, ts.URL); err != nil {
-		t.Fatal(err)
-	}
+	err = b.DownloadISO(tmpDir, filename, ts.URL)
+
+	assert.NoError(t, err)
 
 	data, err := ioutil.ReadFile(filepath.Join(tmpDir, filename))
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	if string(data) != testData {
-		t.Fatalf("expected data \"%s\"; received \"%s\"", testData, string(data))
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, testData, string(data))
 }
 
 func TestGetReleasesRequestNoToken(t *testing.T) {
-	GithubApiToken = ""
+	GithubAPIToken = ""
+
 	b2d := NewB2dUtils("/tmp/store")
 	req, err := b2d.getReleasesRequest("http://some.github.api")
-	if err != nil {
-		t.Fatal("Expected err to be nil, got ", err)
-	}
 
-	if req.Header.Get("Authorization") != "" {
-		t.Fatal("Expected not to get an 'Authorization' header, but got one: ", req.Header.Get("Authorization"))
-	}
+	assert.NoError(t, err)
+	assert.Empty(t, req.Header.Get("Authorization"))
 }
 
 func TestGetReleasesRequest(t *testing.T) {
 	expectedToken := "CATBUG"
-	GithubApiToken = expectedToken
+	GithubAPIToken = expectedToken
+
 	b2d := NewB2dUtils("/tmp/store")
-
 	req, err := b2d.getReleasesRequest("http://some.github.api")
-	if err != nil {
-		t.Fatal("Expected err to be nil, got ", err)
+
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("token %s", expectedToken), req.Header.Get("Authorization"))
+}
+
+type MockReadCloser struct {
+	blockLengths []int
+	currentBlock int
+}
+
+func (r *MockReadCloser) Read(p []byte) (n int, err error) {
+	n = r.blockLengths[r.currentBlock]
+	r.currentBlock++
+	return
+}
+
+func (r *MockReadCloser) Close() error {
+	return nil
+}
+
+func TestReaderWithProgress(t *testing.T) {
+	readCloser := MockReadCloser{blockLengths: []int{5, 45, 50}}
+	output := new(bytes.Buffer)
+	buffer := make([]byte, 100)
+
+	readerWithProgress := ReaderWithProgress{
+		ReadCloser:     &readCloser,
+		out:            output,
+		expectedLength: 100,
 	}
 
-	if req.Header.Get("Authorization") != fmt.Sprintf("token %s", expectedToken) {
-		t.Fatal("Header was not set as expected: ", req.Header.Get("Authorization"))
-	}
+	readerWithProgress.Read(buffer)
+	assert.Equal(t, "0%..", output.String())
+
+	readerWithProgress.Read(buffer)
+	assert.Equal(t, "0%....10%....20%....30%....40%....50%", output.String())
+
+	readerWithProgress.Read(buffer)
+	assert.Equal(t, "0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%", output.String())
+
+	readerWithProgress.Close()
+	assert.Equal(t, "0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%\n", output.String())
 }

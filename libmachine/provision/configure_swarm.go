@@ -14,12 +14,13 @@ import (
 
 type SwarmCommandContext struct {
 	ContainerName string
+	Env           []string
 	DockerDir     string
 	DockerPort    int
-	Ip            string
+	IP            string
 	Port          string
-	AuthOptions   auth.AuthOptions
-	SwarmOptions  swarm.SwarmOptions
+	AuthOptions   auth.Options
+	SwarmOptions  swarm.Options
 	SwarmImage    string
 }
 
@@ -46,7 +47,7 @@ func runSwarmCommandFromTemplate(p Provisioner, cmdTmpl string, swarmCmdContext 
 	return nil
 }
 
-func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions) error {
+func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.Options) error {
 	if !swarmOptions.IsSwarm {
 		return nil
 	}
@@ -70,9 +71,10 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions 
 
 	swarmCmdContext := SwarmCommandContext{
 		ContainerName: "",
+		Env:           swarmOptions.Env,
 		DockerDir:     dockerDir,
 		DockerPort:    2376,
-		Ip:            ip,
+		IP:            ip,
 		Port:          port,
 		AuthOptions:   authOptions,
 		SwarmOptions:  swarmOptions,
@@ -86,6 +88,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.SwarmOptions, authOptions 
 
 	swarmMasterCmdTemplate := `sudo docker run -d \
 --restart=always \
+{{range .Env}} -e {{.}}{{end}} \
 --name swarm-agent-master \
 -p {{.Port}}:{{.Port}} \
 -v {{.DockerDir}}:{{.DockerDir}} \
@@ -101,9 +104,10 @@ manage \
 
 	swarmWorkerCmdTemplate := `sudo docker run -d \
 --restart=always \
+{{range .Env}} -e {{.}}{{end}} \
 --name swarm-agent \
 {{.SwarmImage}} \
-join --advertise {{.Ip}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
+join --advertise {{.IP}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
 `
 
 	if swarmOptions.Master {

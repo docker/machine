@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// Why the interface?  We may only want to print to STDOUT and STDERR for now,
+// Logger - Why the interface?  We may only want to print to STDOUT and STDERR for now,
 // but it won't neccessarily be that way forever.  This interface is intended
 // to provide a "framework" for a variety of different logging types in the
 // future (log to file, log to logstash, etc.) There could be a driver model
@@ -37,7 +37,7 @@ var (
 	l = StandardLogger{
 		mu: &sync.Mutex{},
 	}
-	IsDebug bool = false
+	IsDebug = false
 )
 
 type Fields map[string]interface{}

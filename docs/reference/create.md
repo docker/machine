@@ -11,7 +11,9 @@ parent="smn_machine_subcmds"
 
 # create
 
-Create a machine.
+Create a machine.  Requires the `--driver` flag to indicate which provider
+(VirtualBox, DigitalOcean, AWS, etc.) the machine should be created on, and an
+argument to indicate the name of the created machine.
 
 ```
 $ docker-machine create --driver virtualbox dev
@@ -27,47 +29,91 @@ Starting VM...
 To see how to connect Docker to this machine, run: docker-machine env dev
 ```
 
-## Filtering create flags by driver in the help text
+## Accessing driver-specific flags in the help text
 
-You may notice that the `docker-machine create` command has a lot of flags due
-to the huge plethora of provider-specific options which are available.
-
-```
-$ docker-machine create -h | wc -l
-145
-```
-
-While it is great to have access to all this information, sometimes you simply
-want to get a peek at the subset of flags which are applicable to the driver you
-are working with. To that extent, specifying an argument to the `-d` flag will
-filter the create flags displayed in the help text to only what is applicable to
-that provider:
+The `docker-machine create` command has some flags which are applicable to all
+drivers.  These largely control aspects of Machine's provisoning process
+(including the creation of Docker Swarm containers) that the user may wish to
+customize.
 
 ```
-$ docker-machine create -d virtualbox
+$ docker-machine create
+Docker Machine Version: 0.5.0 (45e3688)
 Usage: docker-machine create [OPTIONS] [arg...]
 
-Create a machine
+Create a machine.
+
+Run 'docker-machine create --driver name' to include the create flags for that driver in the help text.
 
 Options:
-   --virtualbox-boot2docker-url                                                                         The URL of the boot2docker image. Defaults to the latest available version [$VIRTUALBOX_BOOT2DOCKER_URL]
-   --virtualbox-cpu-count "1"                                                                           number of CPUs for the machine (-1 to use the number of CPUs available) [$VIRTUALBOX_CPU_COUNT]
-   --virtualbox-disk-size "20000"                                                                       Size of disk for host in MB [$VIRTUALBOX_DISK_SIZE]
-   --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
-   --virtualbox-memory "1024"                                                                           Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
-   --driver, -d "none"                                                                                  Driver to create machine with. Available drivers: amazonec2, azure, digitalocean, exoscale, google, none, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere
-   --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary opts to include with the created engine in the form opt=value
+
+   --driver, -d "none"                                                                                  Driver to create machine with.
+   --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
+   --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
    --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
    --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
    --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
-   --engine-storage-driver "aufs"                                                                       Specify a storage driver to use with the engine
-   --engine-env                                                                                         Specify environment variables to set in the engine
+   --engine-storage-driver                                                                              Specify a storage driver to use with the engine
+   --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
    --swarm                                                                                              Configure Machine with Swarm
+   --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
    --swarm-master                                                                                       Configure Machine to be a Swarm master
    --swarm-discovery                                                                                    Discovery service to use with Swarm
+   --swarm-strategy "spread"                                                                            Define a default scheduling strategy for Swarm
+   --swarm-opt [--swarm-opt option --swarm-opt option]                                                  Define arbitrary flags for swarm
    --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
    --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
 ```
+
+Additionally, drivers can specify flags that Machine can accept as part of their
+plugin code.  These allow users to customize the provider-specific parameters of
+the created machine, such as size (`--amazonec2-instance-type m1.medium`),
+geographical region (`--amazonec2-region us-west-1`), and so on.
+
+To see the provider-specific flags, simply pass a value for `--driver` when
+invoking the `create` help text.
+
+```
+$ docker-machine create --driver virtualbox --help
+Usage: docker-machine create [OPTIONS] [arg...]
+
+Create a machine.
+
+Run 'docker-machine create --driver name' to include the create flags for that driver in the help text.
+
+Options:
+
+   --driver, -d "none"                                                                                  Driver to create machine with.
+   --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
+   --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
+   --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
+   --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
+   --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
+   --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
+   --engine-storage-driver                                                                              Specify a storage driver to use with the engine
+   --swarm                                                                                              Configure Machine with Swarm
+   --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
+   --swarm-discovery                                                                                    Discovery service to use with Swarm
+   --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
+   --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
+   --swarm-master                                                                                       Configure Machine to be a Swarm master
+   --swarm-opt [--swarm-opt option --swarm-opt option]                                                  Define arbitrary flags for swarm
+   --swarm-strategy "spread"                                                                            Define a default scheduling strategy for Swarm
+   --virtualbox-boot2docker-url                                                                         The URL of the boot2docker image. Defaults to the latest available version [$VIRTUALBOX_BOOT2DOCKER_URL]
+   --virtualbox-cpu-count "1"                                                                           number of CPUs for the machine (-1 to use the number of CPUs available) [$VIRTUALBOX_CPU_COUNT]
+   --virtualbox-disk-size "20000"                                                                       Size of disk for host in MB [$VIRTUALBOX_DISK_SIZE]
+   --virtualbox-hostonly-cidr "192.168.99.1/24"                                                         Specify the Host Only CIDR [$VIRTUALBOX_HOSTONLY_CIDR]
+   --virtualbox-hostonly-nicpromisc "deny"                                                              Specify the Host Only Network Adapter Promiscuous Mode [$VIRTUALBOX_HOSTONLY_NIC_PROMISC]
+   --virtualbox-hostonly-nictype "82540EM"                                                              Specify the Host Only Network Adapter Type [$VIRTUALBOX_HOSTONLY_NIC_TYPE]
+   --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
+   --virtualbox-memory "1024"                                                                           Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
+   --virtualbox-no-share                                                                                Disable the mount of your home directory
+```
+
+You may notice that some flags specify environment variables that they are
+associated with as well (located to the far left hand side of the row).  If
+these environment variables are set when `docker-machine create` is invoked,
+Docker Machine will use them for the default value of the flag.
 
 ## Specifying configuration options for the created Docker engine
 
@@ -75,8 +121,8 @@ As part of the process of creation, Docker Machine installs Docker and
 configures it with some sensible defaults. For instance, it allows connection
 from the outside world over TCP with TLS-based encryption and defaults to AUFS
 as the [storage
-driver](https://docs.docker.com/reference/commandline/daemon/#daemon-storage-driver-option) when
-available.
+driver](https://docs.docker.com/reference/commandline/daemon/#daemon-storage-driver-option)
+when available.
 
 There are several cases where the user might want to set options for the created
 Docker engine (also known as the Docker _daemon_) themselves. For example, they
@@ -110,7 +156,7 @@ output of `docker info`:
 
 ```
 $ eval $(docker-machine env foobarmachine)
-$ docker version
+$ docker info
 Containers: 0
 Images: 0
 Storage Driver: overlay

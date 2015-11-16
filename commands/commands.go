@@ -10,7 +10,10 @@ import (
 
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -23,18 +26,59 @@ var (
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 )
 
-func newPluginDriver(driverName string, rawContent []byte) (*rpcdriver.RpcClientDriver, error) {
-	d, err := rpcdriver.NewRpcClientDriver(rawContent, driverName)
+// CommandLine contains all the information passed to the commands on the command line.
+type CommandLine interface {
+	ShowHelp()
+
+	Application() *cli.App
+
+	Args() cli.Args
+
+	Bool(name string) bool
+
+	String(name string) string
+
+	StringSlice(name string) []string
+
+	GlobalString(name string) string
+
+	FlagNames() (names []string)
+
+	Generic(name string) interface{}
+}
+
+type contextCommandLine struct {
+	*cli.Context
+}
+
+func (c *contextCommandLine) ShowHelp() {
+	cli.ShowCommandHelp(c.Context, c.Command.Name)
+}
+
+func (c *contextCommandLine) Application() *cli.App {
+	return c.App
+}
+
+func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, error) {
+	d, err := rpcdriver.NewRPCClientDriver(rawContent, driverName)
 	if err != nil {
+		// Not being able to find a driver binary is a "known error"
+		if _, ok := err.(localbinary.ErrPluginBinaryNotFound); ok {
+			return errdriver.NewDriver(driverName), nil
+		}
 		return nil, err
+	}
+
+	if driverName == "virtualbox" {
+		return drivers.NewSerialDriver(d), nil
 	}
 
 	return d, nil
 }
 
-func fatalOnError(command func(context *cli.Context) error) func(context *cli.Context) {
+func fatalOnError(command func(commandLine CommandLine) error) func(context *cli.Context) {
 	return func(context *cli.Context) {
-		if err := command(context); err != nil {
+		if err := command(&contextCommandLine{context}); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -53,7 +97,7 @@ func confirmInput(msg string) (bool, error) {
 	return confirmed, nil
 }
 
-func getStore(c *cli.Context) persist.Store {
+func getStore(c CommandLine) persist.Store {
 	certInfo := getCertPathInfoFromContext(c)
 	return &persist.Filestore{
 		Path:             c.GlobalString("storage-path"),
@@ -108,31 +152,19 @@ func saveHost(store persist.Store, h *host.Host) error {
 	return nil
 }
 
-func getFirstArgHost(c *cli.Context) (*host.Host, error) {
+func getFirstArgHost(c CommandLine) (*host.Host, error) {
 	store := getStore(c)
 	hostName := c.Args().First()
 
-	exists, err := store.Exists(hostName)
-	if err != nil {
-		return nil, fmt.Errorf("Error checking if host %q exists: %s", hostName, err)
-	}
-	if !exists {
-		return nil, fmt.Errorf("Host %q does not exist", hostName)
-	}
-
 	h, err := loadHost(store, hostName)
 	if err != nil {
-		// I guess I feel OK with bailing here since if we can't get
-		// the host reliably we're definitely not going to be able to
-		// do anything else interesting, but also this premature exit
-		// feels wrong to me.  Let's revisit it later.
 		return nil, fmt.Errorf("Error trying to get host %q: %s", hostName, err)
 	}
 
 	return h, nil
 }
 
-func getHostsFromContext(c *cli.Context) ([]*host.Host, error) {
+func getHostsFromContext(c CommandLine) ([]*host.Host, error) {
 	store := getStore(c)
 	hosts := []*host.Host{}
 
@@ -168,7 +200,7 @@ var Commands = []cli.Command{
 	{
 		Flags:           sharedCreateFlags,
 		Name:            "create",
-		Usage:           "Create a machine.\n\nSpecify a driver with --driver to include the create flags for that driver in the help text.",
+		Usage:           fmt.Sprintf("Create a machine.\n\nRun '%s create --driver name' to include the create flags for that driver in the help text.", os.Args[0]),
 		Action:          fatalOnError(cmdCreateOuter),
 		SkipFlagParsing: true,
 	},
@@ -213,7 +245,7 @@ var Commands = []cli.Command{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdIp),
+		Action:      fatalOnError(cmdIP),
 	},
 	{
 		Name:        "kill",
@@ -271,7 +303,7 @@ var Commands = []cli.Command{
 		Name:            "ssh",
 		Usage:           "Log into or run a command on a machine with SSH.",
 		Description:     "Arguments are [machine-name] [command]",
-		Action:          fatalOnError(cmdSsh),
+		Action:          fatalOnError(cmdSSH),
 		SkipFlagParsing: true,
 	},
 	{
@@ -314,7 +346,7 @@ var Commands = []cli.Command{
 		Name:        "url",
 		Usage:       "Get the URL of a machine",
 		Description: "Argument is a machine name.",
-		Action:      fatalOnError(cmdUrl),
+		Action:      fatalOnError(cmdURL),
 	},
 }
 
@@ -352,35 +384,13 @@ func machineCommand(actionName string, host *host.Host, errorChan chan<- error) 
 func runActionForeachMachine(actionName string, machines []*host.Host) []error {
 	var (
 		numConcurrentActions = 0
-		serialMachines       = []*host.Host{}
 		errorChan            = make(chan error)
 		errs                 = []error{}
 	)
 
 	for _, machine := range machines {
-		// Virtualbox is temperamental about doing things concurrently,
-		// so we schedule the actions in a "queue" to be executed serially
-		// after the concurrent actions are scheduled.
-		switch machine.DriverName {
-		case "virtualbox":
-			machine := machine
-			serialMachines = append(serialMachines, machine)
-		default:
-			numConcurrentActions++
-			go machineCommand(actionName, machine, errorChan)
-		}
-	}
-
-	// While the concurrent actions are running,
-	// do the serial actions.  As the name implies,
-	// these run one at a time.
-	for _, machine := range serialMachines {
-		serialChan := make(chan error)
-		go machineCommand(actionName, machine, serialChan)
-		if err := <-serialChan; err != nil {
-			errs = append(errs, err)
-		}
-		close(serialChan)
+		numConcurrentActions++
+		go machineCommand(actionName, machine, errorChan)
 	}
 
 	// TODO: We should probably only do 5-10 of these
@@ -406,7 +416,7 @@ func consolidateErrs(errs []error) error {
 	return errors.New(strings.TrimSpace(finalErr))
 }
 
-func runActionWithContext(actionName string, c *cli.Context) error {
+func runActionWithContext(actionName string, c CommandLine) error {
 	store := getStore(c)
 
 	hosts, err := getHostsFromContext(c)
@@ -435,7 +445,7 @@ func runActionWithContext(actionName string, c *cli.Context) error {
 // codegangsta/cli will not set the cert paths if the storage-path is set to
 // something different so we cannot use the paths in the global options. le
 // sigh.
-func getCertPathInfoFromContext(c *cli.Context) cert.CertPathInfo {
+func getCertPathInfoFromContext(c CommandLine) cert.PathInfo {
 	caCertPath := c.GlobalString("tls-ca-cert")
 	caKeyPath := c.GlobalString("tls-ca-key")
 	clientCertPath := c.GlobalString("tls-client-cert")
@@ -457,7 +467,7 @@ func getCertPathInfoFromContext(c *cli.Context) cert.CertPathInfo {
 		clientKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "key.pem")
 	}
 
-	return cert.CertPathInfo{
+	return cert.PathInfo{
 		CaCertPath:       caCertPath,
 		CaPrivateKeyPath: caKeyPath,
 		ClientCertPath:   clientCertPath,

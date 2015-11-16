@@ -42,6 +42,7 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return driverName
 }
@@ -71,7 +72,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	return state.None, nil
+	return state.Running, nil
 }
 
 func (d *Driver) Kill() error {

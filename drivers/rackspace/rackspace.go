@@ -18,7 +18,7 @@ type Driver struct {
 
 const (
 	defaultEndpointType  = "publicURL"
-	defaultFlavorId      = "general1-1"
+	defaultFlavorID      = "general1-1"
 	defaultSSHUser       = "root"
 	defaultSSHPort       = 22
 	defaultDockerInstall = "true"
@@ -59,7 +59,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   "rackspace-flavor-id",
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
-			Value:  defaultFlavorId,
+			Value:  defaultFlavorID,
 			EnvVar: "OS_FLAVOR_ID",
 		},
 		mcnflag.StringFlag{
@@ -87,13 +87,17 @@ func NewDriver(machineName, storePath string) drivers.Driver {
 	}).Debug("Instantiating Rackspace driver.")
 
 	inner := openstack.NewDerivedDriver(machineName, storePath)
-
-	return &Driver{
+	driver := &Driver{
 		Driver: inner,
 	}
+	inner.SetClient(&Client{
+		driver: driver,
+	})
+
+	return driver
 }
 
-// DriverName is the user-visible name of this driver.
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "rackspace"
 }

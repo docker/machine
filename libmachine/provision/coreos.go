@@ -34,7 +34,7 @@ func NewCoreOSProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/systemd/system/docker.service",
-			OsReleaseId:       "coreos",
+			OsReleaseID:       "coreos",
 			Driver:            d,
 		},
 	}
@@ -128,7 +128,7 @@ func (provisioner *CoreOSProvisioner) Package(name string, action pkgaction.Pack
 	return nil
 }
 
-func (provisioner *CoreOSProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *CoreOSProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions

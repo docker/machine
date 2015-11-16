@@ -53,7 +53,7 @@ func NewRedHatProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner: GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/systemd/system/docker.service",
-			OsReleaseId:       "rhel",
+			OsReleaseID:       "rhel",
 			Packages: []string{
 				"curl",
 			},
@@ -196,10 +196,11 @@ func (provisioner *RedHatProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
+	swarmOptions.Env = engineOptions.Env
 
 	// set default storage driver for redhat
 	if provisioner.EngineOptions.StorageDriver == "" {
@@ -288,7 +289,7 @@ func generateYumRepoList(provisioner Provisioner) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	switch releaseInfo.Id {
+	switch releaseInfo.ID {
 	case "rhel", "centos":
 		// rhel and centos both use the "centos" repo
 		packageListInfo.OsRelease = "centos"

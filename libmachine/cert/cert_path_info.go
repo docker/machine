@@ -1,6 +1,6 @@
 package cert
 
-type CertPathInfo struct {
+type PathInfo struct {
 	CaCertPath       string
 	CaPrivateKeyPath string
 	ClientCertPath   string

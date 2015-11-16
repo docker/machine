@@ -1,12 +1,59 @@
 {
 	"ImportPath": "github.com/docker/machine",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"github.com/docker/machine",
+		"github.com/docker/machine/cli",
+		"github.com/docker/machine/cmd",
+		"github.com/docker/machine/commands",
+		"github.com/docker/machine/commands/mcndirs",
+		"github.com/docker/machine/drivers/amazonec2",
+		"github.com/docker/machine/drivers/amazonec2/amz",
+		"github.com/docker/machine/drivers/azure",
+		"github.com/docker/machine/drivers/digitalocean",
+		"github.com/docker/machine/drivers/errdriver",
+		"github.com/docker/machine/drivers/exoscale",
+		"github.com/docker/machine/drivers/fakedriver",
+		"github.com/docker/machine/drivers/generic",
+		"github.com/docker/machine/drivers/google",
+		"github.com/docker/machine/drivers/hyperv",
+		"github.com/docker/machine/drivers/none",
+		"github.com/docker/machine/drivers/openstack",
+		"github.com/docker/machine/drivers/rackspace",
+		"github.com/docker/machine/drivers/softlayer",
+		"github.com/docker/machine/drivers/virtualbox",
+		"github.com/docker/machine/drivers/vmwarefusion",
+		"github.com/docker/machine/drivers/vmwarevcloudair",
+		"github.com/docker/machine/drivers/vmwarevsphere",
+		"github.com/docker/machine/drivers/vmwarevsphere/errors",
+		"github.com/docker/machine/libmachine",
+		"github.com/docker/machine/libmachine/auth",
+		"github.com/docker/machine/libmachine/cert",
+		"github.com/docker/machine/libmachine/drivers",
+		"github.com/docker/machine/libmachine/drivers/plugin",
+		"github.com/docker/machine/libmachine/drivers/plugin/localbinary",
+		"github.com/docker/machine/libmachine/drivers/rpc",
+		"github.com/docker/machine/libmachine/engine",
+		"github.com/docker/machine/libmachine/examples",
+		"github.com/docker/machine/libmachine/host",
+		"github.com/docker/machine/libmachine/hosttest",
+		"github.com/docker/machine/libmachine/log",
+		"github.com/docker/machine/libmachine/mcnerror",
+		"github.com/docker/machine/libmachine/mcnflag",
+		"github.com/docker/machine/libmachine/mcnutils",
+		"github.com/docker/machine/libmachine/persist",
+		"github.com/docker/machine/libmachine/persisttest",
+		"github.com/docker/machine/libmachine/provider",
+		"github.com/docker/machine/libmachine/provision",
+		"github.com/docker/machine/libmachine/provision/pkgaction",
+		"github.com/docker/machine/libmachine/provision/serviceaction",
+		"github.com/docker/machine/libmachine/ssh",
+		"github.com/docker/machine/libmachine/state",
+		"github.com/docker/machine/libmachine/swarm",
+		"github.com/docker/machine/libmachine/version",
+		"github.com/docker/machine/version"
+	],
 	"Deps": [
-		{
-			"ImportPath": "code.google.com/p/goauth2/oauth",
-			"Comment": "weekly-56",
-			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
-		},
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-17-g515f3ec",
@@ -17,93 +64,14 @@
 			"Rev": "9831e1e25c874e0a0601b6dc43641071414eec7a"
 		},
 		{
-			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-64-ge1712f3",
-			"Rev": "e1712f381785e32046927f64a7c86fe569203196"
-		},
-		{
 			"ImportPath": "github.com/digitalocean/godo",
 			"Comment": "v0.5.0",
 			"Rev": "5478aae80694de1d2d0e02c386bbedd201266234"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/dockerversion",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/engine",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/archive",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/fileutils",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/ioutils",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/mflag",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/parsers",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/pools",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/promise",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/system",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/term",
 			"Comment": "v1.5.0",
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/timeutils",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/units",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/version",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/vendor/src/code.google.com/p/go/src/pkg/archive/tar",
-			"Comment": "v1.5.0",
-			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
-		},
-		{
-			"ImportPath": "github.com/docker/libtrust",
-			"Rev": "c54fbb67c1f1e68d7d6f8d2ad7c9360404616a41"
 		},
 		{
 			"ImportPath": "github.com/google/go-querystring/query",
@@ -114,8 +82,12 @@
 			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
 		},
 		{
+			"ImportPath": "github.com/pyr/egoscale/src/egoscale",
+			"Rev": "bbaa67324aeeacc90430c1fe0a9c620d3929512e"
+		},
+		{
 			"ImportPath": "github.com/rackspace/gophercloud",
-			"Comment": "v1.0.0-558-ce0f487",
+			"Comment": "v1.0.0-558-gce0f487",
 			"Rev": "ce0f487f6747ab43c4e4404722df25349385bebd"
 		},
 		{
@@ -129,10 +101,6 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
 			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
-		},
-		{
-			"ImportPath": "github.com/pyr/egoscale/src/egoscale",
-			"Rev": "bbaa67324aeeacc90430c1fe0a9c620d3929512e"
 		},
 		{
 			"ImportPath": "github.com/tent/http-link-go",
@@ -152,6 +120,14 @@
 			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
 		},
 		{
+			"ImportPath": "golang.org/x/oauth2",
+			"Rev": "038cb4adce85ed41e285c2e7cc6221a92bfa44aa"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows/registry",
+			"Rev": "d9157a9621b69ad1d8d77a1933590c416593f24f"
+		},
+		{
 			"ImportPath": "google.golang.org/api/compute/v1",
 			"Rev": "a09229c13c2f13bbdedf7b31b506cad4c83ef3bf"
 		},
@@ -160,11 +136,11 @@
 			"Rev": "a09229c13c2f13bbdedf7b31b506cad4c83ef3bf"
 		},
 		{
-			"ImportPath": "golang.org/x/oauth2",
-			"Rev": "038cb4adce85ed41e285c2e7cc6221a92bfa44aa"
+			"ImportPath": "google.golang.org/cloud/compute/metadata",
+			"Rev": "2400193c85c3561d13880d34e0e10c4315bb02af"
 		},
 		{
-			"ImportPath": "google.golang.org/cloud/compute",
+			"ImportPath": "google.golang.org/cloud/internal",
 			"Rev": "2400193c85c3561d13880d34e0e10c4315bb02af"
 		}
 	]

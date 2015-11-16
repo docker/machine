@@ -1,7 +1,5 @@
 package commands
 
-import "github.com/docker/machine/cli"
-
-func cmdIp(c *cli.Context) error {
+func cmdIP(c CommandLine) error {
 	return runActionWithContext("ip", c)
 }

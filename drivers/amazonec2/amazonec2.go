@@ -150,7 +150,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage: "AWS spot instance bid price (in dollar)",
 			Value: defaultSpotPrice,
 		},
-		mcnflag.StringFlag{
+		mcnflag.BoolFlag{
 			Name:  "amazonec2-private-address-only",
 			Usage: "Only use a private IP address",
 		},
@@ -267,6 +267,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return driverName
 }

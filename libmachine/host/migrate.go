@@ -21,14 +21,14 @@ func (r *RawDataDriver) MarshalJSON() ([]byte, error) {
 	return r.data, nil
 }
 
-func getMigratedHostMetadata(data []byte) (*HostMetadata, error) {
+func getMigratedHostMetadata(data []byte) (*Metadata, error) {
 	// HostMetadata is for a "first pass" so we can then load the driver
 	var (
-		hostMetadata *HostMetadataV0
+		hostMetadata *MetadataV0
 	)
 
 	if err := json.Unmarshal(data, &hostMetadata); err != nil {
-		return &HostMetadata{}, err
+		return &Metadata{}, err
 	}
 
 	migratedHostMetadata := MigrateHostMetadataV0ToHostMetadataV1(hostMetadata)
@@ -40,8 +40,8 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 	var (
 		migrationNeeded    = false
 		migrationPerformed = false
-		hostV1             *HostV1
-		hostV2             *HostV2
+		hostV1             *V1
+		hostV2             *V2
 	)
 
 	migratedHostMetadata, err := getMigratedHostMetadata(data)
@@ -90,7 +90,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 			log.Debugf("Migrating to config v%d", h.ConfigVersion)
 			switch h.ConfigVersion {
 			case 0:
-				hostV0 := &HostV0{
+				hostV0 := &V0{
 					Driver: driver,
 				}
 				if err := json.Unmarshal(data, &hostV0); err != nil {
@@ -99,7 +99,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 				hostV1 = MigrateHostV0ToHostV1(hostV0)
 			case 1:
 				if hostV1 == nil {
-					hostV1 = &HostV1{
+					hostV1 = &V1{
 						Driver: driver,
 					}
 					if err := json.Unmarshal(data, &hostV1); err != nil {
@@ -109,7 +109,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 				hostV2 = MigrateHostV1ToHostV2(hostV1)
 			case 2:
 				if hostV2 == nil {
-					hostV2 = &HostV2{
+					hostV2 = &V2{
 						Driver: driver,
 					}
 					if err := json.Unmarshal(data, &hostV2); err != nil {

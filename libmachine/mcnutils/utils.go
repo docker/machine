@@ -14,6 +14,7 @@ import (
 	"github.com/docker/machine/libmachine/log"
 )
 
+// GetHomeDir returns the home directory
 // TODO: Having this here just strikes me as dangerous, but some of the drivers
 // depend on it ;_;
 func GetHomeDir() string {
@@ -104,6 +105,7 @@ func DumpVal(vals ...interface{}) {
 	}
 }
 
+// TruncateID returns a shorten id
 // Following two functions are from github.com/docker/docker/utils module. It
 // was way overkill to include the whole module, so we just have these bits
 // that we're using here.

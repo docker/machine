@@ -38,7 +38,7 @@ example of cloning and preparing the correct environment `GOPATH`:
     cd docker-machine
     export GOPATH="$PWD"
     go get github.com/docker/machine
-    cd docker-machine/src/github.com/docker/machine
+    cd src/github.com/docker/machine
 ```
 
 At this point, simply run:
@@ -144,6 +144,11 @@ Scrub build results:
     make vet
     make lint
     make dco
+
+### Save and restore dependencies
+
+    make dep-save
+    make dep-restore
 
 ## Integration Tests
 

@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	versionsUrl  = "http://releases.rancher.com/os/versions.yml"
-	isoUrl       = "https://github.com/rancherio/os/releases/download/%s/machine-rancheros.iso"
+	versionsURL  = "http://releases.rancher.com/os/versions.yml"
+	isoURL       = "https://github.com/rancherio/os/releases/download/%s/machine-rancheros.iso"
 	hostnameTmpl = `sudo mkdir -p /var/lib/rancher/conf/cloud-config.d/  
 sudo tee /var/lib/rancher/conf/cloud-config.d/machine-hostname.yml << EOF
 #cloud-config
@@ -41,7 +41,7 @@ func NewRancherProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/var/lib/rancher/conf",
 			DaemonOptionsFile: "/var/lib/rancher/conf/docker",
-			OsReleaseId:       "rancheros",
+			OsReleaseID:       "rancheros",
 			Driver:            d,
 		},
 	}
@@ -87,10 +87,11 @@ func (provisioner *RancherProvisioner) Package(name string, action pkgaction.Pac
 	return nil
 }
 
-func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
+	swarmOptions.Env = engineOptions.Env
 
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "overlay"
@@ -206,8 +207,8 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 }
 
 func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
-	log.Debugf("Reading %s", versionsUrl)
-	resp, err := http.Get(versionsUrl)
+	log.Debugf("Reading %s", versionsURL)
+	resp, err := http.Get(versionsURL)
 	if err != nil {
 		return "", err
 	}
@@ -219,7 +220,7 @@ func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "current: ") {
 			log.Debugf("Found %s", line)
-			return fmt.Sprintf(isoUrl, strings.Split(line, ":")[2]), err
+			return fmt.Sprintf(isoURL, strings.Split(line, ":")[2]), err
 		}
 	}
 

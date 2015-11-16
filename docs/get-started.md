@@ -15,9 +15,9 @@ weight=1
 Let's take a look at using `docker-machine` for creating, using, and managing a
 Docker host inside of [VirtualBox](https://www.virtualbox.org/).
 
-First, ensure that
-[VirtualBox 4.3.28](https://www.virtualbox.org/wiki/Downloads) is correctly
-installed on your system.
+First, ensure that [the latest
+VirtualBox](https://www.virtualbox.org/wiki/Downloads) is correctly installed on
+your system.
 
 If you run the `docker-machine ls` command to show all available machines, you will see
 that none have been created so far.
@@ -56,7 +56,7 @@ command again:
 ```
 $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
-dev             virtualbox   Running   tcp://192.168.99.100:2376
+dev    -        virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
 Next, as noted in the output of the `docker-machine create` command, we have to

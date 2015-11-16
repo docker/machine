@@ -24,7 +24,7 @@ func NewUbuntuProvisioner(d drivers.Driver) Provisioner {
 		GenericProvisioner{
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/default/docker",
-			OsReleaseId:       "ubuntu",
+			OsReleaseID:       "ubuntu",
 			Packages: []string{
 				"curl",
 			},
@@ -114,10 +114,11 @@ func (provisioner *UbuntuProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.SwarmOptions, authOptions auth.AuthOptions, engineOptions engine.EngineOptions) error {
+func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
+	swarmOptions.Env = engineOptions.Env
 
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "aufs"

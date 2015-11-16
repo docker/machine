@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"io/ioutil"
 	"math/big"
 	"net"
@@ -16,18 +15,41 @@ import (
 
 	"errors"
 
+	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/log"
 )
 
-type ErrValidatingCert struct {
-	wrappedErr error
+var defaultGenerator = NewX509CertGenerator()
+
+type Generator interface {
+	GenerateCACertificate(certFile, keyFile, org string, bits int) error
+	GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org string, bits int) error
+	ValidateCertificate(addr string, authOptions *auth.Options) (bool, error)
 }
 
-func (e ErrValidatingCert) Error() string {
-	return fmt.Sprintf("There was an error validating the cert: %s", e.wrappedErr)
+type X509CertGenerator struct{}
+
+func NewX509CertGenerator() Generator {
+	return &X509CertGenerator{}
 }
 
-func getTLSConfig(caCert, cert, key []byte, allowInsecure bool) (*tls.Config, error) {
+func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
+	return defaultGenerator.GenerateCACertificate(certFile, keyFile, org, bits)
+}
+
+func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org string, bits int) error {
+	return defaultGenerator.GenerateCert(hosts, certFile, keyFile, caFile, caKeyFile, org, bits)
+}
+
+func ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
+	return defaultGenerator.ValidateCertificate(addr, authOptions)
+}
+
+func SetCertGenerator(cg Generator) {
+	defaultGenerator = cg
+}
+
+func (xcg *X509CertGenerator) getTLSConfig(caCert, cert, key []byte, allowInsecure bool) (*tls.Config, error) {
 	// TLS config
 	var tlsConfig tls.Config
 	tlsConfig.InsecureSkipVerify = allowInsecure
@@ -48,7 +70,7 @@ func getTLSConfig(caCert, cert, key []byte, allowInsecure bool) (*tls.Config, er
 	return &tlsConfig, nil
 }
 
-func newCertificate(org string) (*x509.Certificate, error) {
+func (xcg *X509CertGenerator) newCertificate(org string) (*x509.Certificate, error) {
 	now := time.Now()
 	// need to set notBefore slightly in the past to account for time
 	// skew in the VMs otherwise the certs sometimes are not yet valid
@@ -78,8 +100,8 @@ func newCertificate(org string) (*x509.Certificate, error) {
 // GenerateCACertificate generates a new certificate authority from the specified org
 // and bit size and stores the resulting certificate and key file
 // in the arguments.
-func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
-	template, err := newCertificate(org)
+func (xcg *X509CertGenerator) GenerateCACertificate(certFile, keyFile, org string, bits int) error {
+	template, err := xcg.newCertificate(org)
 	if err != nil {
 		return err
 	}
@@ -123,8 +145,8 @@ func GenerateCACertificate(certFile, keyFile, org string, bits int) error {
 // certificate authority files and stores the result in the certificate
 // file and key provided.  The provided host names are set to the
 // appropriate certificate fields.
-func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org string, bits int) error {
-	template, err := newCertificate(org)
+func (xcg *X509CertGenerator) GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org string, bits int) error {
+	template, err := xcg.newCertificate(org)
 	if err != nil {
 		return err
 	}
@@ -183,28 +205,32 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 }
 
 // ValidateCertificate validate the certificate installed on the vm.
-func ValidateCertificate(addr, caCertPath, serverCertPath, serverKeyPath string) (bool, error) {
+func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
+	caCertPath := authOptions.CaCertPath
+	serverCertPath := authOptions.ServerCertPath
+	serverKeyPath := authOptions.ServerKeyPath
+
 	log.Debugf("Reading CA certificate from %s", caCertPath)
 	caCert, err := ioutil.ReadFile(caCertPath)
 	if err != nil {
-		return false, ErrValidatingCert{err}
+		return false, err
 	}
 
 	log.Debugf("Reading server certificate from %s", serverCertPath)
 	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
-		return false, ErrValidatingCert{err}
+		return false, err
 	}
 
 	log.Debugf("Reading server key from %s", serverKeyPath)
 	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
-		return false, ErrValidatingCert{err}
+		return false, err
 	}
 
-	tlsConfig, err := getTLSConfig(caCert, serverCert, serverKey, false)
+	tlsConfig, err := xcg.getTLSConfig(caCert, serverCert, serverKey, false)
 	if err != nil {
-		return false, ErrValidatingCert{err}
+		return false, err
 	}
 
 	dialer := &net.Dialer{
@@ -213,8 +239,7 @@ func ValidateCertificate(addr, caCertPath, serverCertPath, serverKeyPath string)
 
 	_, err = tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
 	if err != nil {
-		log.Debugf("Certificates are not valid: %s", err)
-		return false, nil
+		return false, err
 	}
 
 	return true, nil

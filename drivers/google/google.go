@@ -14,21 +14,24 @@ import (
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	*drivers.BaseDriver
-	Zone        string
-	MachineType string
-	DiskType    string
-	Address     string
-	Preemptible bool
-	Scopes      string
-	DiskSize    int
-	Project     string
-	Tags        string
+	Zone          string
+	MachineType   string
+	MachineImage  string
+	DiskType      string
+	Address       string
+	Preemptible   bool
+	UseInternalIP bool
+	Scopes        string
+	DiskSize      int
+	Project       string
+	Tags          string
 }
 
 const (
 	defaultZone        = "us-central1-a"
 	defaultUser        = "docker-user"
 	defaultMachineType = "n1-standard-1"
+	defaultImageName   = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150909a"
 	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write"
 	defaultDiskType    = "pd-standard"
 	defaultDiskSize    = 10
@@ -49,6 +52,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "GCE Machine Type",
 			Value:  defaultMachineType,
 			EnvVar: "GOOGLE_MACHINE_TYPE",
+		},
+		mcnflag.StringFlag{
+			Name:   "google-machine-image",
+			Usage:  "GCE Machine Image Absolute URL",
+			Value:  defaultImageName,
+			EnvVar: "GOOGLE_MACHINE_IMAGE",
 		},
 		mcnflag.StringFlag{
 			Name:   "google-username",
@@ -95,17 +104,23 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "GOOGLE_TAGS",
 			Value:  "",
 		},
+		mcnflag.BoolFlag{
+			Name:   "google-use-internal-ip",
+			Usage:  "Use internal GCE Instance IP rather than public one",
+			EnvVar: "GOOGLE_USE_INTERNAL_IP",
+		},
 	}
 }
 
 // NewDriver creates a Driver with the specified storePath.
 func NewDriver(machineName string, storePath string) *Driver {
 	return &Driver{
-		Zone:        defaultZone,
-		DiskType:    defaultDiskType,
-		DiskSize:    defaultDiskSize,
-		MachineType: defaultMachineType,
-		Scopes:      defaultScopes,
+		Zone:         defaultZone,
+		DiskType:     defaultDiskType,
+		DiskSize:     defaultDiskSize,
+		MachineType:  defaultMachineType,
+		MachineImage: defaultImageName,
+		Scopes:       defaultScopes,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultUser,
 			MachineName: machineName,
@@ -127,7 +142,7 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
-// DriverName returns the name of the driver.
+// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "google"
 }
@@ -141,10 +156,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.Zone = flags.String("google-zone")
 	d.MachineType = flags.String("google-machine-type")
+	d.MachineImage = flags.String("google-machine-image")
 	d.DiskSize = flags.Int("google-disk-size")
 	d.DiskType = flags.String("google-disk-type")
 	d.Address = flags.String("google-address")
 	d.Preemptible = flags.Bool("google-preemptible")
+	d.UseInternalIP = flags.Bool("google-use-internal-ip")
 	d.Scopes = flags.String("google-scopes")
 	d.Tags = flags.String("google-tags")
 	d.SwarmMaster = flags.Bool("swarm-master")
