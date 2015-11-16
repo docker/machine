@@ -56,7 +56,7 @@ command again:
 ```
 $ docker-machine ls
 NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
-dev             virtualbox   Running   tcp://192.168.99.100:2376
+dev    -        virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
 Next, as noted in the output of the `docker-machine create` command, we have to
