@@ -91,7 +91,7 @@ func cmdLs(c CommandLine) error {
 
 		swarmInfo := ""
 
-		if item.SwarmOptions.Discovery != "" {
+		if item.SwarmOptions != nil && item.SwarmOptions.Discovery != "" {
 			swarmInfo = swarmMasters[item.SwarmOptions.Discovery]
 			if item.SwarmOptions.Master {
 				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
