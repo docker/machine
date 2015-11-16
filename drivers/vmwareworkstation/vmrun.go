@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"unsafe"
 
 	"github.com/docker/machine/libmachine/log"
 )
@@ -114,4 +116,65 @@ func vdiskmanager(dest string, size int) error {
 		}
 	}
 	return nil
+}
+
+func normalizePath(path string) string {
+	path = strings.Replace(path, "\\", "/", -1)
+	path = strings.Replace(path, "//", "/", -1)
+	path = strings.TrimRight(path, "/")
+	return path
+}
+
+func findFile(file string, paths []string) string {
+	for _, path := range paths {
+		path = filepath.Join(path, file)
+		path = normalizePath(path)
+		log.Printf("Searching for file '%s'", path)
+
+		if _, err := os.Stat(path); err == nil {
+			log.Printf("Found file '%s'", path)
+			return path
+		}
+	}
+
+	log.Printf("File not found: '%s'", file)
+	return ""
+}
+
+// See http://blog.natefinch.com/2012/11/go-win-stuff.html
+//
+func readRegString(hive syscall.Handle, subKeyPath, valueName string) (value string, err error) {
+	var h syscall.Handle
+	err = syscall.RegOpenKeyEx(hive, syscall.StringToUTF16Ptr(subKeyPath), 0, syscall.KEY_READ, &h)
+	if err != nil {
+		return
+	}
+	defer syscall.RegCloseKey(h)
+
+	var typ uint32
+	var bufSize uint32
+	err = syscall.RegQueryValueEx(
+		h,
+		syscall.StringToUTF16Ptr(valueName),
+		nil,
+		&typ,
+		nil,
+		&bufSize)
+	if err != nil {
+		return
+	}
+
+	data := make([]uint16, bufSize/2+1)
+	err = syscall.RegQueryValueEx(
+		h,
+		syscall.StringToUTF16Ptr(valueName),
+		nil,
+		&typ,
+		(*byte)(unsafe.Pointer(&data[0])),
+		&bufSize)
+	if err != nil {
+		return
+	}
+
+	return syscall.UTF16ToString(data), nil
 }
