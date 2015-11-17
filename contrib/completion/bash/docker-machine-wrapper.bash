@@ -19,7 +19,7 @@
 
 : ${DOCKER_MACHINE_WRAPPED:=true}
 
-__docker-machine-wrapper () {
+__docker_machine_wrapper () {
     if [[ "$1" == use ]]; then
         # Special use wrapper
         shift 1
@@ -52,5 +52,5 @@ EOF
 }
 
 if [[ ${DOCKER_MACHINE_WRAPPED} = true ]]; then
-    alias docker-machine=__docker-machine-wrapper
+    alias docker-machine=__docker_machine_wrapper
 fi
