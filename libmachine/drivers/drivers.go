@@ -18,6 +18,9 @@ type Driver interface {
 	// DriverName returns the name of the driver
 	DriverName() string
 
+	// SerialDriver returns whether RPC calls to this driver should be limited to one at a time
+	SerialDriver() bool
+
 	// GetCreateFlags returns the mcnflag.Flag slice representing the flags
 	// that can be set, their descriptions and defaults.
 	GetCreateFlags() []mcnflag.Flag

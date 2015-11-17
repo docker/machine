@@ -117,6 +117,11 @@ func (r *RPCServerDriver) DriverName(_ *struct{}, reply *string) error {
 	return nil
 }
 
+func (r *RPCServerDriver) SerialDriver(_ *struct{}, reply *bool) error {
+	*reply = r.ActualDriver.SerialDriver()
+	return nil
+}
+
 func (r *RPCServerDriver) GetIP(_ *struct{}, reply *string) error {
 	ip, err := r.ActualDriver.GetIP()
 	*reply = ip

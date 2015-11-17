@@ -31,6 +31,12 @@ func (d *BaseDriver) DriverName() string {
 	return "unknown"
 }
 
+// SerialDriver returns whether RPC calls to this
+// driver should be limited to one at a time
+func (d *BaseDriver) SerialDriver() bool {
+	return false
+}
+
 // GetMachineName returns the machine name
 func (d *BaseDriver) GetMachineName() string {
 	return d.MachineName

@@ -152,6 +152,11 @@ func (d *Driver) DriverName() string {
 	return "virtualbox"
 }
 
+// Virtualbox needs the RCP SerialDriver so that actions are run one at a time.
+func (d *Driver) SerialDriver() bool {
+	return true
+}
+
 func (d *Driver) GetURL() (string, error) {
 	ip, err := d.GetIP()
 	if err != nil {

@@ -31,6 +31,10 @@ func (d *Driver) DriverName() string {
 	return "not-found"
 }
 
+func (d *Driver) SerialDriver() bool {
+	return false
+}
+
 func (d *Driver) PreCreateCheck() error {
 	return nil
 }
