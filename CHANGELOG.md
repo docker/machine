@@ -1,6 +1,59 @@
 Changelog
 ==========
 
+# 0.5.1 (2015-11-16)
+
+- Fixed boot2docker VM import regression
+- Fix regression breaking `docker-machine env -u` to unset environment variables
+- Enhanced virtualization capability detection and `VBoxManage` path detection
+- Properly lock VirtualBox access when running several commands concurrently
+- Allow plugins to write to STDOUT without `--debug` enabled
+- Fix Rackspace driver regression
+- Support colons in `docker-machine scp` filepaths
+- Pass environment variables for provisioned Engines to Swarm as well
+- Various enhancements around boot2docker ISO upgrade (progress bar, increased timeout)
+
+# 0.5.0 (2015-11-1)
+
+- General
+  - Add pluggable driver model
+  - Clean up code to be more modular and reusable in `libmachine`
+  - Add `--github-api-token` for situations where users are getting rate limited 
+    by GitHub attempting to get the current `boot2docker.iso` version
+  - Various enhancements around the Makefile and build toolchain (still an active WIP)
+  - Disable SSH multiplex explicitly in commands run with the "External" client
+  - Show "-" for "inactive" machines instead of nothing
+  - Make daemon status detection more robust
+- Provisioners
+  - New CoreOS, SUSE, and Arch Linux provisioners
+  - Fixes around package installation / upgrade code on Debian and Ubuntu
+- CLI
+  - Support for regular expression pattern matching and matching by names in `ls --filter`
+  - `--no-proxy` flag for `env` (sets `NO_PROXY` in addition to other environment variables)
+- Drivers
+  - `openstack`
+    - `--openstack-ip-version` parameter
+    - `--openstack-active-timeout` parameter
+  - `google`
+    - fix destructive behavior of `start` / `stop`
+  - `hyperv`
+    - fix issues with PowerShell
+  - `vmwarefusion`
+    - some issues with shared folders fixed
+    - `--vmwarefusion-configdrive-url` option for configuration via `cloud-init`
+  - `amazonec2`
+    - `--amazonec2-use-private-address` option to use private networking
+  - `virtualbox`
+    - Enhancements around robustness of the created host-only network
+    - Fix IPv6 network mask prefix parsing
+    - `--virtualbox-no-share` option to disable the automatic home directory mount
+    - `--virtualbox-hostonly-nictype` and `--virtualbox-hostonly-nicpromisc` for controlling settings around the created hostonly NIC
+
+# 0.4.1 (2015-08)
+
+- Fixes `upgrade` functionality on Debian based systems
+- Fixes `upgrade` functionality on Ubuntu based systems
+
 # 0.4.0 (2015-08-11)
 
 ## Updates
