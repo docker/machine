@@ -191,6 +191,16 @@ func (c *RPCClientDriver) DriverName() string {
 	return driverName
 }
 
+func (c *RPCClientDriver) SerialDriver() bool {
+	var res bool
+
+	if err := c.Client.Call("RPCServerDriver.SerialDriver", struct{}{}, &res); err != nil {
+		log.Warnf("Error attempting call to get SerialDriver value: %s", err)
+	}
+
+	return res
+}
+
 func (c *RPCClientDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return c.Client.Call("RPCServerDriver.SetConfigFromFlags", &flags, nil)
 }
