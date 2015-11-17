@@ -2,6 +2,7 @@ package provision
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
@@ -14,7 +15,7 @@ import (
 )
 
 func init() {
-	Register("Ubuntu", &RegisteredProvisioner{
+	Register("Ubuntu-UpStart", &RegisteredProvisioner{
 		New: NewUbuntuProvisioner,
 	})
 }
@@ -35,6 +36,21 @@ func NewUbuntuProvisioner(d drivers.Driver) Provisioner {
 
 type UbuntuProvisioner struct {
 	GenericProvisioner
+}
+
+func (provisioner *UbuntuProvisioner) CompatibleWithHost() bool {
+	const FirstUbuntuSystemdVersion = 15.04
+	isUbuntu := provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID
+	if !isUbuntu {
+		return false
+	}
+	versionNumber, err := strconv.ParseFloat(provisioner.OsReleaseInfo.VersionID, 64)
+	if err != nil {
+		return false
+	}
+
+	return versionNumber < FirstUbuntuSystemdVersion
+
 }
 
 func (provisioner *UbuntuProvisioner) Service(name string, action serviceaction.ServiceAction) error {
