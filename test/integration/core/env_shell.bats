@@ -44,11 +44,11 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: test fish notation" {
   run machine env --shell fish --no-proxy $NAME
-  [[ ${lines[0]} == "set -x DOCKER_TLS_VERIFY \"1\";" ]]
-  [[ ${lines[1]} == "set -x DOCKER_HOST \"$(machine url $NAME)\";" ]]
-  [[ ${lines[2]} == "set -x DOCKER_CERT_PATH \"$MACHINE_STORAGE_PATH/machines/$NAME\";" ]]
-  [[ ${lines[3]} == "set -x DOCKER_MACHINE_NAME \"$NAME\";" ]]
-  [[ ${lines[4]} == "set -x NO_PROXY \"$(machine ip $NAME)\";" ]]
+  [[ ${lines[0]} == "set -gx DOCKER_TLS_VERIFY \"1\";" ]]
+  [[ ${lines[1]} == "set -gx DOCKER_HOST \"$(machine url $NAME)\";" ]]
+  [[ ${lines[2]} == "set -gx DOCKER_CERT_PATH \"$MACHINE_STORAGE_PATH/machines/$NAME\";" ]]
+  [[ ${lines[3]} == "set -gx DOCKER_MACHINE_NAME \"$NAME\";" ]]
+  [[ ${lines[4]} == "set -gx NO_PROXY \"$(machine ip $NAME)\";" ]]
 }
 
 @test "$DRIVER: test no proxy with NO_PROXY already set" {
