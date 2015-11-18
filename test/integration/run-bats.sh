@@ -73,6 +73,11 @@ export -f machine
 touch "$BATS_LOG"
 rm "$BATS_LOG"
 
+cleanup_machines
+if [[ -d "$MACHINE_STORAGE_PATH" ]]; then
+    rm -r "$MACHINE_STORAGE_PATH"
+fi
+
 run_bats "$BATS_FILE"
 
 if [[ -d "$MACHINE_STORAGE_PATH" ]]; then
