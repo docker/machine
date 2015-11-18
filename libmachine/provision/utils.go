@@ -206,10 +206,27 @@ func matchNetstatOut(reDaemonListening, netstatOut string) bool {
 }
 
 func checkDaemonUp(p Provisioner, dockerPort int) func() bool {
-	reDaemonListening := fmt.Sprintf(":%d.*LISTEN", dockerPort)
+	var (
+		reDaemonListening string
+		command           string
+	)
+	// Detect if "ss" is available, otherwise fall back on netstat
+	nettoolOut, err := p.SSHCommand("command -v ss || command -v netstat")
+	if err != nil {
+		log.Warnf("Error running SSH command: %s", err)
+		return nil
+	}
+	if strings.Contains(nettoolOut, "netstat") {
+		reDaemonListening = fmt.Sprintf(":%d.*LISTEN", dockerPort)
+		command = fmt.Sprintf("%s -an", strings.TrimSpace(nettoolOut))
+	} else {
+		reDaemonListening = fmt.Sprintf("LISTEN.*:%d", dockerPort)
+		command = fmt.Sprintf("%s -ln", strings.TrimSpace(nettoolOut))
+	}
+
 	return func() bool {
 		// HACK: Check netstat's output to see if anyone's listening on the Docker API port.
-		netstatOut, err := p.SSHCommand("netstat -an")
+		netstatOut, err := p.SSHCommand(command)
 		if err != nil {
 			log.Warnf("Error running SSH command: %s", err)
 			return false
