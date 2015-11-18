@@ -3,6 +3,7 @@ package softlayer
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"regexp"
 	"time"
@@ -265,7 +266,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return "tcp://" + ip + ":2376", nil
+	return "tcp://" + net.JoinHostPort(ip, "2376"), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
