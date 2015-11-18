@@ -370,7 +370,9 @@ func (d *Driver) Create() error {
 	case "darwin":
 		shareName = "Users"
 		shareDir = "/Users"
-		// TODO "linux"
+	case "linux":
+		shareName = "hosthome"
+		shareDir = "/home"
 	}
 
 	if shareDir != "" && !d.NoShare {
