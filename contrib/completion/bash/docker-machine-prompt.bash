@@ -8,7 +8,7 @@
 #      source /some/where/docker-machine-prompt.bash
 #  1b. Alternatively, just copy this file into into /etc/bash_completion.d
 #  2. Change your PS1 to call __docker-machine-ps1 as command-substitution
-#     PS1='[\u@\h \W$(__docker-machine-ps1 " [%s]")]\$ '
+#     PS1='[\u@\h \W$(__docker_machine_ps1 " [%s]")]\$ '
 #
 # Configuration:
 #
@@ -17,7 +17,7 @@
 #   so use with care.
 #
 
-__docker-machine-ps1 () {
+__docker_machine_ps1 () {
     local format=${1:- [%s]}
     if test ${DOCKER_MACHINE_NAME}; then
         local status
