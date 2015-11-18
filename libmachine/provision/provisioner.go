@@ -14,8 +14,15 @@ import (
 
 var provisioners = make(map[string]*RegisteredProvisioner)
 
+type SSHCommander interface {
+	// Short-hand for accessing an SSH command from the driver.
+	SSHCommand(args string) (string, error)
+}
+
 // Provisioner defines distribution specific actions
 type Provisioner interface {
+	SSHCommander
+
 	// Create the files for the daemon to consume configuration settings (return struct of content and path)
 	GenerateDockerOptions(dockerPort int) (*DockerOptions, error)
 
@@ -50,9 +57,6 @@ type Provisioner interface {
 
 	// Get the driver which is contained in the provisioner.
 	GetDriver() drivers.Driver
-
-	// Short-hand for accessing an SSH command from the driver.
-	SSHCommand(args string) (string, error)
 
 	// Set the OS Release info depending on how it's represented
 	// internally
