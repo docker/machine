@@ -45,7 +45,6 @@ type CoreOSProvisioner struct {
 }
 
 func (provisioner *CoreOSProvisioner) Service(name string, action serviceaction.ServiceAction) error {
-	// daemon-reload to catch config updates; systemd -- ugh
 	if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
 		return err
 	}
