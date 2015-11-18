@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,6 +12,18 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
+
+var (
+	stdout *os.File
+)
+
+func init() {
+	stdout = os.Stdout
+}
+
+func cleanup() {
+	os.Stdout = stdout
+}
 
 func TestRunActionForeachMachine(t *testing.T) {
 	// Assume a bunch of machines in randomly started or
