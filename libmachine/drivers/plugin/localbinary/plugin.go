@@ -19,7 +19,7 @@ var (
 )
 
 const (
-	pluginOutPrefix = "(%s) OUT | "
+	pluginOutPrefix = "(%s) "
 	pluginErrPrefix = "(%s) DBG | "
 	PluginEnvKey    = "MACHINE_PLUGIN_TOKEN"
 	PluginEnvVal    = "42"
