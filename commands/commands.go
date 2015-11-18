@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/docker/machine/cli"
@@ -447,22 +446,21 @@ func runActionWithContext(actionName string, c CommandLine) error {
 // sigh.
 func getCertPathInfoFromContext(c CommandLine) cert.PathInfo {
 	caCertPath := c.GlobalString("tls-ca-cert")
-	caKeyPath := c.GlobalString("tls-ca-key")
-	clientCertPath := c.GlobalString("tls-client-cert")
-	clientKeyPath := c.GlobalString("tls-client-key")
-
 	if caCertPath == "" {
 		caCertPath = filepath.Join(mcndirs.GetMachineCertDir(), "ca.pem")
 	}
 
+	caKeyPath := c.GlobalString("tls-ca-key")
 	if caKeyPath == "" {
 		caKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "ca-key.pem")
 	}
 
+	clientCertPath := c.GlobalString("tls-client-cert")
 	if clientCertPath == "" {
 		clientCertPath = filepath.Join(mcndirs.GetMachineCertDir(), "cert.pem")
 	}
 
+	clientKeyPath := c.GlobalString("tls-client-key")
 	if clientKeyPath == "" {
 		clientKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "key.pem")
 	}
@@ -473,21 +471,4 @@ func getCertPathInfoFromContext(c CommandLine) cert.PathInfo {
 		ClientCertPath:   clientCertPath,
 		ClientKeyPath:    clientKeyPath,
 	}
-}
-
-func detectShell() (string, error) {
-	// attempt to get the SHELL env var
-	shell := filepath.Base(os.Getenv("SHELL"))
-
-	log.Debugf("shell: %s", shell)
-	if shell == "" {
-		// check for windows env and not bash (i.e. msysgit, etc)
-		if runtime.GOOS == "windows" {
-			log.Printf("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
-		}
-
-		return "", ErrUnknownShell
-	}
-
-	return shell, nil
 }
