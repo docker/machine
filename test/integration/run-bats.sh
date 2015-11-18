@@ -66,6 +66,7 @@ export NAME="bats-$DRIVER-test"
 export MACHINE_STORAGE_PATH="/tmp/machine-bats-test-$DRIVER"
 export MACHINE_BIN_NAME=docker-machine
 export BATS_LOG="$MACHINE_ROOT/bats.log"
+B2D_LOCATION=~/.docker/machine/cache/boot2docker.iso
 
 # This function gets used in the integration tests, so export it.
 export -f machine
@@ -76,6 +77,11 @@ rm "$BATS_LOG"
 cleanup_machines
 if [[ -d "$MACHINE_STORAGE_PATH" ]]; then
     rm -r "$MACHINE_STORAGE_PATH"
+fi
+
+if [[ "$b2dcache" == "1" ]] && [[ -f $B2D_LOCATION ]]; then
+    mkdir -p "${MACHINE_STORAGE_PATH}/cache"
+    cp $B2D_LOCATION "${MACHINE_STORAGE_PATH}/cache/boot2docker.iso"
 fi
 
 run_bats "$BATS_FILE"
