@@ -54,6 +54,14 @@ Full documentation [is available here](https://docs.docker.com/machine/).
 
 Want to hack on Machine? Please start with the [Contributing Guide](https://github.com/docker/machine/blob/master/CONTRIBUTING.md).
 
+## Driver Plugins
+
+In addition to the core driver plugins bundled alongside Docker Machine, users
+can make and distribute their own plugin for any virtualization technology or
+cloud provider.  To browse the list of known Docker Machine plugins, please [see
+this document in our
+repo](https://github.com/docker/machine/blob/master/docs/AVAILABLE_DRIVER_PLUGINS.md).
+
 ## Troubleshooting
 
 Docker Machine tries to do the right thing in a variety of scenarios but

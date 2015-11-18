@@ -36,11 +36,6 @@ The provider must offer SSH access to control the instance.  This does not
 have to be public, but must offer it as Machine relies on SSH for system
 level maintenance.
 
-## Maintainer
-To be supported as an official driver, it will need to be maintained.  There
-can be multiple driver maintainers and they will be identified in the
-maintainers file.
-
 # Provider Operations
 The following instance operations should be supported by the provider.
 
@@ -84,16 +79,8 @@ Testing is strongly recommended for drivers.  Unit tests are preferred as well
 as inclusion into the [integration tests](https://github.com/docker/machine#integration-tests).
 
 # Maintaining
-Driver contributors are strongly encouraged to maintain the driver to keep
-it supported.  We recommend and encourage contributors to join in the weekly
-meetings to give feedback and participate in the development around Machine.
-Driver maintainers will be notified and consulted for issues regarding their
-driver.
-
-# Third Party Libraries
-If you want to use a third party library to interact with the provider, you
-will need to make sure it is compliant with the Docker license terms (non-GPL).
-For more information, contact a project maintainer.
+Driver plugin maintainers are encouraged to host their own repo and distribute
+the driver plugins as executables.
 
 # Implementation
 The following describes what is needed to create a Machine Driver.  The driver
