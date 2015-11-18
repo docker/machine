@@ -12,6 +12,7 @@ import (
 )
 
 type GenericProvisioner struct {
+	SSHCommander
 	OsReleaseID       string
 	DockerOptionsDir  string
 	DaemonOptionsFile string
@@ -21,6 +22,14 @@ type GenericProvisioner struct {
 	AuthOptions       auth.Options
 	EngineOptions     engine.Options
 	SwarmOptions      swarm.Options
+}
+
+type GenericSSHCommander struct {
+	Driver drivers.Driver
+}
+
+func (sshCmder GenericSSHCommander) SSHCommand(args string) (string, error) {
+	return drivers.RunSSHCommandFromDriver(sshCmder.Driver, args)
 }
 
 func (provisioner *GenericProvisioner) Hostname() (string, error) {
@@ -50,10 +59,6 @@ func (provisioner *GenericProvisioner) SetHostname(hostname string) error {
 
 func (provisioner *GenericProvisioner) GetDockerOptionsDir() string {
 	return provisioner.DockerOptionsDir
-}
-
-func (provisioner *GenericProvisioner) SSHCommand(args string) (string, error) {
-	return drivers.RunSSHCommandFromDriver(provisioner.Driver, args)
 }
 
 func (provisioner *GenericProvisioner) CompatibleWithHost() bool {

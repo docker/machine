@@ -39,6 +39,7 @@ func init() {
 func NewRancherProvisioner(d drivers.Driver) Provisioner {
 	return &RancherProvisioner{
 		GenericProvisioner{
+			SSHCommander:      GenericSSHCommander{Driver: d},
 			DockerOptionsDir:  "/var/lib/rancher/conf",
 			DaemonOptionsFile: "/var/lib/rancher/conf/docker",
 			OsReleaseID:       "rancheros",

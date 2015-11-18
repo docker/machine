@@ -30,6 +30,7 @@ func init() {
 func NewOpenSUSEProvisioner(d drivers.Driver) Provisioner {
 	return &SUSEProvisioner{
 		GenericProvisioner{
+			SSHCommander:      GenericSSHCommander{Driver: d},
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/sysconfig/docker",
 			OsReleaseID:       "opensuse",
@@ -44,6 +45,7 @@ func NewOpenSUSEProvisioner(d drivers.Driver) Provisioner {
 func NewSLEDProvisioner(d drivers.Driver) Provisioner {
 	return &SUSEProvisioner{
 		GenericProvisioner{
+			SSHCommander:      GenericSSHCommander{Driver: d},
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/sysconfig/docker",
 			OsReleaseID:       "sled",
@@ -58,6 +60,7 @@ func NewSLEDProvisioner(d drivers.Driver) Provisioner {
 func NewSLESProvisioner(d drivers.Driver) Provisioner {
 	return &SUSEProvisioner{
 		GenericProvisioner{
+			SSHCommander:      GenericSSHCommander{Driver: d},
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/sysconfig/docker",
 			OsReleaseID:       "sles",
