@@ -3,8 +3,10 @@
 load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
+  if [[ -z "$RECYCLE_MACHINE" ]]; then
+    run machine create -d $DRIVER $NAME
+    [ "$status" -eq 0  ]
+  fi
 }
 
 @test "$DRIVER: test basic bash / zsh notation" {
