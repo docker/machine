@@ -1,124 +1,76 @@
 package log
 
-import (
-	"io"
-	"os"
-	"sync"
-)
+var logger Logger
 
-// Logger - Why the interface?  We may only want to print to STDOUT and STDERR for now,
-// but it won't neccessarily be that way forever.  This interface is intended
-// to provide a "framework" for a variety of different logging types in the
-// future (log to file, log to logstash, etc.) There could be a driver model
-// similar to what is done with OS or machine providers.
-type Logger interface {
-	Debug(...interface{})
-	Debugf(string, ...interface{})
-
-	Error(...interface{})
-	Errorf(string, ...interface{})
-
-	Info(...interface{})
-	Infof(string, ...interface{})
-
-	Fatal(...interface{})
-	Fatalf(string, ...interface{})
-
-	Print(...interface{})
-	Printf(string, ...interface{})
-
-	Warn(...interface{})
-	Warnf(string, ...interface{})
-
-	WithFields(Fields) Logger
+// SetLogger sets the logger for libmachine, must implement the Logger interface
+func SetLogger(lgr Logger) {
+	logger = lgr
 }
 
-var (
-	l = StandardLogger{
-		mu: &sync.Mutex{},
+// GetLogger gets the currently set logger for libmachine
+func GetLogger() Logger {
+	if logger == nil {
+		logger = newDefaultLogger()
 	}
-	IsDebug = false
-)
-
-type Fields map[string]interface{}
-
-func init() {
-	// TODO: Is this really the best approach?  I worry that it will create
-	// implicit behavior which may be problmatic for users of the lib.
-	SetOutWriter(os.Stdout)
-	SetErrWriter(os.Stderr)
+	return logger
 }
 
-func SetOutWriter(w io.Writer) {
-	l.OutWriter = w
-}
-
-func SetErrWriter(w io.Writer) {
-	l.ErrWriter = w
-}
-
+// Debug logs a message at level Debug
 func Debug(args ...interface{}) {
-	l.Debug(args...)
+	GetLogger().Debug(args...)
 }
 
+// Debugf logs a formatted message at level Debug
 func Debugf(fmtString string, args ...interface{}) {
-	l.Debugf(fmtString, args...)
+	GetLogger().Debugf(fmtString, args...)
 }
 
+// Error logs a message at level Error
 func Error(args ...interface{}) {
-	l.Error(args...)
+	GetLogger().Error(args...)
 }
 
+// Errorf logs a formatted message at level Error
 func Errorf(fmtString string, args ...interface{}) {
-	l.Errorf(fmtString, args...)
+	GetLogger().Errorf(fmtString, args...)
 }
 
-func Errorln(args ...interface{}) {
-	l.Errorln(args...)
-}
-
+// Info logs a message at level Info
 func Info(args ...interface{}) {
-	l.Info(args...)
+	GetLogger().Info(args...)
 }
 
+// Infof logs a formatted message at level Info
 func Infof(fmtString string, args ...interface{}) {
-	l.Infof(fmtString, args...)
+	GetLogger().Infof(fmtString, args...)
 }
 
-func Infoln(args ...interface{}) {
-	l.Infoln(args...)
-}
-
+// Fatal logs a message at level Fatal
 func Fatal(args ...interface{}) {
-	l.Fatal(args...)
+	GetLogger().Fatal(args...)
 }
 
+// Fatalf logs a formatted message at level Fatal
 func Fatalf(fmtString string, args ...interface{}) {
-	l.Fatalf(fmtString, args...)
+	GetLogger().Fatalf(fmtString, args...)
 }
 
+// Print logs a message at level Info
 func Print(args ...interface{}) {
-	l.Print(args...)
+	GetLogger().Print(args...)
 }
 
+// Printf logs a formatted message at level Info
 func Printf(fmtString string, args ...interface{}) {
-	l.Printf(fmtString, args...)
+	GetLogger().Printf(fmtString, args...)
 }
 
+// Warn logs a message at level Warn
 func Warn(args ...interface{}) {
-	l.Warn(args...)
+	GetLogger().Warn(args...)
 }
 
+// Warnf logs a formatted message at level Warn
 func Warnf(fmtString string, args ...interface{}) {
-	l.Warnf(fmtString, args...)
-}
-
-func WithField(fieldName string, field interface{}) Logger {
-	return l.WithFields(Fields{
-		fieldName: field,
-	})
-}
-
-func WithFields(fields Fields) Logger {
-	return l.WithFields(fields)
+	GetLogger().Warnf(fmtString, args...)
 }

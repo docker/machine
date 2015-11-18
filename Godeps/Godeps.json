@@ -51,6 +51,8 @@
 		"github.com/docker/machine/libmachine/state",
 		"github.com/docker/machine/libmachine/swarm",
 		"github.com/docker/machine/libmachine/version",
+		"github.com/docker/machine/log",
+		"github.com/docker/machine/log/bugsnag",
 		"github.com/docker/machine/version"
 	],
 	"Deps": [
@@ -58,6 +60,24 @@
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-17-g515f3ec",
 			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.7-35-gfe6f2b0",
+			"Rev": "fe6f2b03125e4fcafb21406381010e363a072c80"
+		},
+		{
+			"ImportPath": "github.com/bugsnag/bugsnag-go",
+			"Comment": "v1.0.5-2-g72ff9e1",
+			"Rev": "72ff9e15e8c5ae52e8db1dd5dd1f77a9f2f1a895"
+		},
+		{
+			"ImportPath": "github.com/bugsnag/osext",
+			"Rev": "0dd3f918b21bec95ace9dc86c7e70266cfc5c702"
+		},
+		{
+			"ImportPath": "github.com/bugsnag/panicwrap",
+			"Rev": "e5f9854865b9778a45169fc249e99e338d4d6f27"
 		},
 		{
 			"ImportPath": "github.com/cenkalti/backoff",

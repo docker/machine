@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
+	machinelogger "github.com/docker/machine/log"
 )
 
 const (
@@ -38,7 +39,7 @@ type ShellConfig struct {
 func cmdEnv(c CommandLine) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
-	log.SetOutWriter(os.Stderr)
+	machinelogger.GetStd().Out = os.Stderr
 
 	if c.Bool("unset") {
 		return unset(c)

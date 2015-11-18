@@ -3,18 +3,18 @@ package main
 // Sample Virtualbox create independent of Machine CLI.
 import (
 	"fmt"
-	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/machine/drivers/virtualbox"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
 )
 
 func main() {
-	libmachine.SetDebug(true)
-
-	log.SetOutWriter(os.Stdout)
-	log.SetErrWriter(os.Stderr)
+	// Configure a logger
+	logger := logrus.New()
+	logger.Level = logrus.DebugLevel
+	log.SetLogger(logger)
 
 	// returns the familiar store at $HOME/.docker/machine
 	store := libmachine.GetDefaultStore()

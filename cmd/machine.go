@@ -6,12 +6,14 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/machine/cli"
 	"github.com/docker/machine/commands"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
+	machinelogger "github.com/docker/machine/log"
 	"github.com/docker/machine/version"
 )
 
@@ -46,28 +48,43 @@ Options:
    {{.}}{{end}}{{ end }}
 `
 
-func setDebugOutputLevel() {
+func setLogger() {
 	// TODO: I'm not really a fan of this method and really would rather
 	// use -v / --verbose TBQH
+	var showDebug = false
 	for _, f := range os.Args {
 		if f == "-D" || f == "--debug" || f == "-debug" {
-			log.IsDebug = true
+			showDebug = true
+			break
 		}
 	}
 
 	debugEnv := os.Getenv("MACHINE_DEBUG")
 	if debugEnv != "" {
-		showDebug, err := strconv.ParseBool(debugEnv)
+		var err error
+		showDebug, err = strconv.ParseBool(debugEnv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error parsing boolean value from MACHINE_DEBUG: %s\n", err)
 			os.Exit(1)
 		}
-		log.IsDebug = showDebug
+	}
+
+	// If we are not debugging, reduce the output level to Info
+	if !showDebug {
+		machinelogger.GetStd().Level = logrus.InfoLevel
+		machinelogger.GetErr().Level = logrus.InfoLevel
+	}
+	log.Errorf("erroring to %", machinelogger.GetStd().Level)
+
+	// Enable bugsnag if we are passed a token
+	bugsnagEnv := os.Getenv("MACHINE_BUGSNAG")
+	if bugsnagEnv != "" {
+		machinelogger.SetBugsnag(bugsnagEnv)
 	}
 }
 
 func main() {
-	setDebugOutputLevel()
+	setLogger()
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
 	app := cli.NewApp()

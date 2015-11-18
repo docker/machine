@@ -11,6 +11,7 @@ import (
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/state"
+	machinelogger "github.com/docker/machine/log"
 )
 
 // ErrCertInvalid for when the cert is computed to be invalid.
@@ -29,7 +30,7 @@ Be advised that this will trigger a Docker daemon restart which will stop runnin
 func cmdConfig(c CommandLine) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
-	log.SetOutWriter(os.Stderr)
+	machinelogger.GetStd().Out = os.Stderr
 
 	if len(c.Args()) != 1 {
 		return ErrExpectedOneMachine
