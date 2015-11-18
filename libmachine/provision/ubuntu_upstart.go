@@ -23,6 +23,7 @@ func init() {
 func NewUbuntuProvisioner(d drivers.Driver) Provisioner {
 	return &UbuntuProvisioner{
 		GenericProvisioner{
+			SSHCommander:      GenericSSHCommander{Driver: d},
 			DockerOptionsDir:  "/etc/docker",
 			DaemonOptionsFile: "/etc/default/docker",
 			OsReleaseID:       "ubuntu",

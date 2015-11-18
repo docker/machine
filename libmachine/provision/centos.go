@@ -11,21 +11,11 @@ func init() {
 }
 
 func NewCentosProvisioner(d drivers.Driver) Provisioner {
-	g := GenericProvisioner{
-		DockerOptionsDir:  "/etc/docker",
-		DaemonOptionsFile: "/etc/systemd/system/docker.service",
-		OsReleaseID:       "centos",
-		Packages:          []string{},
-		Driver:            d,
+	return &CentosProvisioner{
+		NewRedHatProvisioner("centos", d),
 	}
-	p := &CentosProvisioner{
-		RedHatProvisioner{
-			GenericProvisioner: g,
-		},
-	}
-	return p
 }
 
 type CentosProvisioner struct {
-	RedHatProvisioner
+	*RedHatProvisioner
 }
