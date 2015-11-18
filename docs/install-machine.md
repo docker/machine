@@ -78,6 +78,6 @@ You can find additional documentation in the comments at the
 
 ## Where to go next
 
-* [Docker Machine overview](/)
+* [Docker Machine overview](index.md)
 * [Docker Machine driver reference](drivers/index.md)
 * [Docker Machine subcommand reference](reference/index.md)
