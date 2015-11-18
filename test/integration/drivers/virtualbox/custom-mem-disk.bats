@@ -36,21 +36,21 @@ function findCPUCount() {
 
 @test "$DRIVER: check custom machine memory size" {
   findMemorySize
-  [[ ${output} == "$CUSTOM_MEMSIZE"  ]]
+  [ ${output} == "$CUSTOM_MEMSIZE"  ]
 }
 
 @test "$DRIVER: check custom machine disksize" {
   findDiskSize
-  [[ ${output} == *"$CUSTOM_DISKSIZE"* ]]
+  [[ ${output} == *"$CUSTOM_DISKSIZE"* ]] || false
 }
 
 @test "$DRIVER: check custom machine cpucount" {
   findCPUCount
-  [[ ${output} == "$CUSTOM_CPUCOUNT" ]]
+  [ ${output} == "$CUSTOM_CPUCOUNT" ]
 }
 
 @test "$DRIVER: machine should show running after create" {
   run machine ls
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Running"*  ]]
+  [[ ${lines[1]} == *"Running"*  ]] || false
 }

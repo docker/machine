@@ -17,7 +17,7 @@ force_env DRIVER virtualbox
 @test "$DRIVER: machine should show paused after VBoxManage pause" {
   run machine ls
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Paused"*  ]]
+  [[ ${lines[1]} == *"Paused"*  ]] || false
 }
 
 @test "$DRIVER: start after paused" {
@@ -28,7 +28,7 @@ force_env DRIVER virtualbox
 @test "$DRIVER: machine should show running after start" {
   run machine ls
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Running"*  ]]
+  [[ ${lines[1]} == *"Running"*  ]] || false
 }
 
 @test "$DRIVER: VBoxManage savestate" {
@@ -39,8 +39,8 @@ force_env DRIVER virtualbox
 @test "$DRIVER: machine should show saved after VBoxManage savestate" {
   run machine ls
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"$NAME"*  ]]
-  [[ ${lines[1]} == *"Saved"*  ]]
+  [[ ${lines[1]} == *"$NAME"*  ]] || false
+  [[ ${lines[1]} == *"Saved"*  ]] || false
 }
 
 @test "$DRIVER: start after saved" {
@@ -51,5 +51,5 @@ force_env DRIVER virtualbox
 @test "$DRIVER: machine should show running after start" {
   run machine ls
   [ "$status" -eq 0  ]
-  [[ ${lines[1]} == *"Running"*  ]]
+  [[ ${lines[1]} == *"Running"*  ]] || false
 }

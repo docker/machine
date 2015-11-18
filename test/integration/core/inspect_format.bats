@@ -9,15 +9,15 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: inspect format template" {
   run machine inspect -f '{{.DriverName}}' $NAME
-  [[ "$output" == "$DRIVER" ]]
+  [ "$output" == "$DRIVER" ]
 }
 
 @test "$DRIVER: inspect format template json directive" {
   run machine inspect -f '{{json .DriverName}}' $NAME
-  [[ "$output" == "\"$DRIVER\"" ]]
+  [ "$output" == "\"$DRIVER\"" ]
 }
 
 @test "$DRIVER: inspect format template pretty json directive" {
   linecount=$(machine inspect -f '{{prettyjson .Driver}}' $NAME | wc -l)
-  [[ "$linecount" -gt 1 ]]
+  [ "$linecount" -gt 1 ]
 }
