@@ -6,7 +6,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine inspect $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Host \"$NAME\" does not exist" ]]
+  [[ ${lines[0]} =~ "Host does not exist: \"$NAME\"" ]]
 }
 
 @test "$DRIVER: create" {
