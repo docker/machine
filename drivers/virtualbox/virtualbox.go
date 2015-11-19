@@ -80,28 +80,28 @@ func NewDriver(hostName, storePath string) *Driver {
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
-			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
 			Name:   "virtualbox-memory",
 			Usage:  "Size of memory for host in MB",
 			Value:  defaultMemory,
+			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
 		},
 		mcnflag.IntFlag{
-			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  defaultCPU,
+			EnvVar: "VIRTUALBOX_CPU_COUNT",
 		},
 		mcnflag.IntFlag{
-			EnvVar: "VIRTUALBOX_DISK_SIZE",
 			Name:   "virtualbox-disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  defaultDiskSize,
+			EnvVar: "VIRTUALBOX_DISK_SIZE",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
 			Name:   "virtualbox-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  defaultBoot2DockerURL,
+			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
 		},
 		mcnflag.StringFlag{
 			Name:   "virtualbox-import-boot2docker-vm",
