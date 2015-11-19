@@ -11,21 +11,11 @@ func init() {
 }
 
 func NewFedoraProvisioner(d drivers.Driver) Provisioner {
-	g := GenericProvisioner{
-		DockerOptionsDir:  "/etc/docker",
-		DaemonOptionsFile: "/etc/systemd/system/docker.service",
-		OsReleaseID:       "fedora",
-		Packages:          []string{},
-		Driver:            d,
+	return &FedoraProvisioner{
+		NewRedHatProvisioner("fedora", d),
 	}
-	p := &FedoraProvisioner{
-		RedHatProvisioner{
-			GenericProvisioner: g,
-		},
-	}
-	return p
 }
 
 type FedoraProvisioner struct {
-	RedHatProvisioner
+	*RedHatProvisioner
 }

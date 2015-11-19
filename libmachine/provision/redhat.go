@@ -13,7 +13,6 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
-	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -44,47 +43,22 @@ type PackageListInfo struct {
 
 func init() {
 	Register("RedHat", &RegisteredProvisioner{
-		New: NewRedHatProvisioner,
+		New: func(d drivers.Driver) Provisioner {
+			return NewRedHatProvisioner("rhel", d)
+		},
 	})
 }
 
-func NewRedHatProvisioner(d drivers.Driver) Provisioner {
+func NewRedHatProvisioner(osReleaseID string, d drivers.Driver) *RedHatProvisioner {
+	systemdProvisioner := NewSystemdProvisioner(osReleaseID, d)
+	systemdProvisioner.SSHCommander = RedHatSSHCommander{Driver: d}
 	return &RedHatProvisioner{
-		GenericProvisioner: GenericProvisioner{
-			DockerOptionsDir:  "/etc/docker",
-			DaemonOptionsFile: "/etc/systemd/system/docker.service",
-			OsReleaseID:       "rhel",
-			Packages: []string{
-				"curl",
-			},
-			Driver: d,
-		},
+		systemdProvisioner,
 	}
 }
 
 type RedHatProvisioner struct {
-	GenericProvisioner
-}
-
-func (provisioner *RedHatProvisioner) SSHCommand(args string) (string, error) {
-	client, err := drivers.GetSSHClientFromDriver(provisioner.Driver)
-	if err != nil {
-		return "", err
-	}
-
-	// redhat needs "-t" for tty allocation on ssh therefore we check for the
-	// external client and add as needed.
-	// Note: CentOS 7.0 needs multiple "-tt" to force tty allocation when ssh has
-	// no local tty.
-	switch c := client.(type) {
-	case ssh.ExternalClient:
-		c.BaseArgs = append(c.BaseArgs, "-tt")
-		client = c
-	case ssh.NativeClient:
-		return c.OutputWithPty(args)
-	}
-
-	return client.Output(args)
+	SystemdProvisioner
 }
 
 func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
@@ -104,31 +78,6 @@ func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
 		hostname,
 		hostname,
 	)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (provisioner *RedHatProvisioner) Service(name string, action serviceaction.ServiceAction) error {
-	reloadDaemon := false
-	switch action {
-	case serviceaction.Start, serviceaction.Restart:
-		reloadDaemon = true
-	}
-
-	// systemd needs reloaded when config changes on disk; we cannot
-	// be sure exactly when it changes from the provisioner so
-	// we call a reload on every restart to be safe
-	if reloadDaemon {
-		if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
-			return err
-		}
-	}
-
-	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
-
-	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
 	}
 
