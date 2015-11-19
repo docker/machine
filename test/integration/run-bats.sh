@@ -19,6 +19,12 @@ function cleanup_machines() {
     fi
 }
 
+function cleanup_store() {
+    if [[ -d "$MACHINE_STORAGE_PATH" ]]; then
+        rm -r "$MACHINE_STORAGE_PATH"
+    fi
+}
+
 function machine() {
     export PATH="$MACHINE_ROOT"/bin:$PATH
     "$MACHINE_ROOT"/bin/"$MACHINE_BIN_NAME" "$@"
@@ -30,13 +36,15 @@ function run_bats() {
 
         # BATS returns non-zero to indicate the tests have failed, we shouldn't
         # neccesarily bail in this case, so that's the reason for the e toggle.
-        set +e
         echo "=> $bats_file"
+
+        set +e
         bats "$bats_file"
         if [[ $? -ne 0 ]]; then
             EXIT_STATUS=1
         fi
         set -e
+
         echo
         cleanup_machines
     done
@@ -67,28 +75,23 @@ export MACHINE_ROOT="$BASE_TEST_DIR/../.."
 export MACHINE_STORAGE_PATH="/tmp/machine-bats-test-$DRIVER"
 export MACHINE_BIN_NAME=docker-machine
 export BATS_LOG="$MACHINE_ROOT/bats.log"
-B2D_LOCATION=~/.docker/machine/cache/boot2docker.iso
+export B2D_LOCATION=~/.docker/machine/cache/boot2docker.iso
 
 # This function gets used in the integration tests, so export it.
 export -f machine
 
-touch "$BATS_LOG"
-rm "$BATS_LOG"
+> "$BATS_LOG"
 
 cleanup_machines
-if [[ -d "$MACHINE_STORAGE_PATH" ]]; then
-    rm -r "$MACHINE_STORAGE_PATH"
-fi
+cleanup_store
 
-if [[ "$b2dcache" == "1" ]] && [[ -f $B2D_LOCATION ]]; then
+if [[ "$B2D_CACHE" == "1" ]] && [[ -f $B2D_LOCATION ]]; then
     mkdir -p "${MACHINE_STORAGE_PATH}/cache"
     cp $B2D_LOCATION "${MACHINE_STORAGE_PATH}/cache/boot2docker.iso"
 fi
 
 run_bats "$BATS_FILE"
 
-if [[ -d "$MACHINE_STORAGE_PATH" ]]; then
-    rm -r "$MACHINE_STORAGE_PATH"
-fi
+cleanup_store
 
 exit ${EXIT_STATUS}
