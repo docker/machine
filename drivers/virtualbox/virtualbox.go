@@ -28,7 +28,6 @@ import (
 )
 
 const (
-	isoFilename                = "boot2docker.iso"
 	defaultCPU                 = 1
 	defaultMemory              = 1024
 	defaultBoot2DockerURL      = ""
@@ -36,7 +35,6 @@ const (
 	defaultHostOnlyCIDR        = "192.168.99.1/24"
 	defaultHostOnlyNictype     = "82540EM"
 	defaultHostOnlyPromiscMode = "deny"
-	defaultNoShare             = false
 	defaultDiskSize            = 20000
 )
 
