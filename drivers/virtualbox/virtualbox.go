@@ -104,9 +104,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultBoot2DockerURL,
 		},
 		mcnflag.StringFlag{
-			Name:  "virtualbox-import-boot2docker-vm",
-			Usage: "The name of a Boot2Docker VM to import",
-			Value: defaultBoot2DockerImportVM,
+			Name:   "virtualbox-import-boot2docker-vm",
+			Usage:  "The name of a Boot2Docker VM to import",
+			Value:  defaultBoot2DockerImportVM,
+			EnvVar: "VIRTUALBOX_BOOT2DOCKER_IMPORT_VM",
 		},
 		mcnflag.StringFlag{
 			Name:   "virtualbox-hostonly-cidr",
