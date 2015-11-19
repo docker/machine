@@ -12,7 +12,8 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 @test "$DRIVER: test docker process envs" {
   # get pid of docker process, check process envs for set Environment Variable from above test
-  run machine ssh $NAME 'pgrep -f "docker daemon" | xargs -I % sudo cat /proc/%/environ | grep -q "TEST=VALUE"'
+  run machine ssh $NAME 'sudo cat /proc/$(pgrep -f "docker [d]aemon")/environ'
   echo ${output}
   [ $status -eq 0 ]
+  [[ "${output}" =~ "TEST=VALUE" ]]
 }
