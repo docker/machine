@@ -184,7 +184,13 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 // PreCreateCheck checks that VBoxManage exists and works
 func (d *Driver) PreCreateCheck() error {
 	// Check that VBoxManage exists and works
-	if err := d.vbm(); err != nil {
+	version, err := d.vbmOut("--version")
+	if err != nil {
+		return err
+	}
+
+	// Check that VBoxManage is of a supported version
+	if err = checkVBoxManageVersion(version); err != nil {
 		return err
 	}
 

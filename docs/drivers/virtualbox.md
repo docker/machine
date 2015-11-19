@@ -10,7 +10,7 @@ parent="smn_machine_drivers"
 
 # Oracle VirtualBox
 Create machines locally using [VirtualBox](https://www.virtualbox.org/).
-This driver requires VirtualBox to be installed on your host.
+This driver requires VirtualBox 4+ to be installed on your host.
 
     $ docker-machine create --driver=virtualbox vbox-test
 
