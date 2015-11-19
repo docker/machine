@@ -10,7 +10,6 @@ import (
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
-	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -31,39 +30,12 @@ func init() {
 
 func NewCoreOSProvisioner(d drivers.Driver) Provisioner {
 	return &CoreOSProvisioner{
-		GenericProvisioner{
-			DockerOptionsDir:  "/etc/docker",
-			DaemonOptionsFile: "/etc/systemd/system/docker.service",
-			OsReleaseID:       "coreos",
-			Driver:            d,
-		},
+		NewSystemdProvisioner("coreos", d),
 	}
 }
 
 type CoreOSProvisioner struct {
-	GenericProvisioner
-}
-
-func (provisioner *CoreOSProvisioner) Service(name string, action serviceaction.ServiceAction) error {
-	// daemon-reload to catch config updates; systemd -- ugh
-	if _, err := provisioner.SSHCommand("sudo systemctl daemon-reload"); err != nil {
-		return err
-	}
-
-	command := fmt.Sprintf("sudo systemctl %s %s", action.String(), name)
-
-	if _, err := provisioner.SSHCommand(command); err != nil {
-		return err
-	}
-
-	// wait until docker is running
-	if (name == "docker") && (action.String() == "start") {
-		if err := waitForDocker(provisioner, 2376); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	SystemdProvisioner
 }
 
 func (provisioner *CoreOSProvisioner) SetHostname(hostname string) error {
