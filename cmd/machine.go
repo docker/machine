@@ -88,7 +88,7 @@ func main() {
 	app.Commands = commands.Commands
 	app.CommandNotFound = cmdNotFound
 	app.Usage = "Create and manage machines running Docker."
-	app.Version = version.Version + " (" + version.GitCommit + ")"
+	app.Version = version.FullVersion()
 
 	log.Debug("Docker Machine Version: ", app.Version)
 

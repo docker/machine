@@ -29,6 +29,8 @@ var (
 type CommandLine interface {
 	ShowHelp()
 
+	ShowVersion()
+
 	Application() *cli.App
 
 	Args() cli.Args
@@ -52,6 +54,10 @@ type contextCommandLine struct {
 
 func (c *contextCommandLine) ShowHelp() {
 	cli.ShowCommandHelp(c.Context, c.Command.Name)
+}
+
+func (c *contextCommandLine) ShowVersion() {
+	cli.ShowVersion(c.Context)
 }
 
 func (c *contextCommandLine) Application() *cli.App {
@@ -346,6 +352,11 @@ var Commands = []cli.Command{
 		Usage:       "Get the URL of a machine",
 		Description: "Argument is a machine name.",
 		Action:      fatalOnError(cmdURL),
+	},
+	{
+		Name:   "version",
+		Usage:  "Show the Docker Machine version information",
+		Action: fatalOnError(cmdVersion),
 	},
 }
 
