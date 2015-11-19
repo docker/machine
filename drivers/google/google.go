@@ -229,10 +229,19 @@ func (d *Driver) GetURL() (string, error) {
 
 // GetIP returns the IP address of the GCE instance.
 func (d *Driver) GetIP() (string, error) {
+	machineState, err := d.GetState()
+	if err != nil {
+		return "", err
+	}
+	if machineState != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
 	c, err := newComputeUtil(d)
 	if err != nil {
 		return "", err
 	}
+
 	return c.ip()
 }
 
