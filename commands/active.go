@@ -4,20 +4,18 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
-	"github.com/docker/machine/libmachine/persist"
 )
 
 var (
 	errTooManyArguments = errors.New("Error: Too many arguments given")
 )
 
-func cmdActive(c CommandLine) error {
-	if len(c.Args()) > 0 {
+func cmdActive(cli CommandLine, store rpcdriver.Store) error {
+	if len(cli.Args()) > 0 {
 		return errTooManyArguments
 	}
-
-	store := getStore(c)
 
 	host, err := getActiveHost(store)
 	if err != nil {
@@ -31,8 +29,8 @@ func cmdActive(c CommandLine) error {
 	return nil
 }
 
-func getActiveHost(store persist.Store) (*host.Host, error) {
-	hosts, err := listHosts(store)
+func getActiveHost(store rpcdriver.Store) (*host.Host, error) {
+	hosts, err := store.List()
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +39,7 @@ func getActiveHost(store persist.Store) (*host.Host, error) {
 
 	for _, item := range hostListItems {
 		if item.Active {
-			return loadHost(store, item.Name)
+			return store.Load(item.Name)
 		}
 	}
 

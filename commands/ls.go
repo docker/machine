@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/state"
@@ -39,15 +40,14 @@ type HostListItem struct {
 	SwarmOptions *swarm.Options
 }
 
-func cmdLs(c CommandLine) error {
-	quiet := c.Bool("quiet")
-	filters, err := parseFilters(c.StringSlice("filter"))
+func cmdLs(cli CommandLine, store rpcdriver.Store) error {
+	quiet := cli.Bool("quiet")
+	filters, err := parseFilters(cli.StringSlice("filter"))
 	if err != nil {
 		return err
 	}
 
-	store := getStore(c)
-	hostList, err := listHosts(store)
+	hostList, err := store.List()
 	if err != nil {
 		return err
 	}

@@ -1,11 +1,13 @@
 package commands
 
 import (
+	"github.com/docker/machine/libmachine/drivers/rpc"
+	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdRegenerateCerts(c CommandLine) error {
-	if !c.Bool("force") {
+func cmdRegenerateCerts(cli CommandLine, store rpcdriver.Store) error {
+	if !cli.Bool("force") {
 		ok, err := confirmInput("Regenerate TLS machine certs?  Warning: this is irreversible.")
 		if err != nil {
 			return err
@@ -18,5 +20,7 @@ func cmdRegenerateCerts(c CommandLine) error {
 
 	log.Infof("Regenerating TLS certificates")
 
-	return runActionWithContext("configureAuth", c)
+	return runActionOnHosts(func(h *host.Host) error {
+		return h.ConfigureAuth()
+	}, store, cli.Args())
 }
