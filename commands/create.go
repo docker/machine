@@ -118,23 +118,12 @@ var (
 	}
 )
 
-func cmdCreateInner(c CommandLine) error {
+func cmdCreateInner(c CommandLine, store persist.Store) error {
 	if len(c.Args()) > 1 {
 		return fmt.Errorf("Invalid command line. Found extra arguments %v", c.Args()[1:])
 	}
 
 	name := c.Args().First()
-	driverName := c.String("driver")
-	certInfo := getCertPathInfoFromContext(c)
-
-	storePath := c.GlobalString("storage-path")
-
-	store := &persist.Filestore{
-		Path:             storePath,
-		CaCertPath:       certInfo.CaCertPath,
-		CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
-	}
-
 	if name == "" {
 		c.ShowHelp()
 		return errNoMachineName
@@ -158,6 +147,7 @@ func cmdCreateInner(c CommandLine) error {
 		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
 	}
 
+	driverName := c.String("driver")
 	driver, err := newPluginDriver(driverName, bareDriverData)
 	if err != nil {
 		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
@@ -168,6 +158,7 @@ func cmdCreateInner(c CommandLine) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
+	certInfo := getCertPathInfoFromContext(c)
 	h.HostOptions = &host.Options{
 		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
@@ -225,7 +216,7 @@ func cmdCreateInner(c CommandLine) error {
 		return fmt.Errorf("Error creating machine: %s", err)
 	}
 
-	if err := saveHost(store, h); err != nil {
+	if err := store.Save(h); err != nil {
 		return fmt.Errorf("Error attempting to save store: %s", err)
 	}
 
@@ -270,7 +261,7 @@ func flagHackLookup(flagName string) string {
 	return ""
 }
 
-func cmdCreateOuter(c CommandLine) error {
+func cmdCreateOuter(c CommandLine, store persist.Store) error {
 	const (
 		flagLookupMachineName = "flag-lookup"
 	)

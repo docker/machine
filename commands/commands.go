@@ -81,9 +81,12 @@ func newPluginDriver(driverName string, rawContent []byte) (drivers.Driver, erro
 	return d, nil
 }
 
-func fatalOnError(command func(commandLine CommandLine) error) func(context *cli.Context) {
+func fatalOnError(command func(commandLine CommandLine, store persist.Store) error) func(context *cli.Context) {
 	return func(context *cli.Context) {
-		if err := command(&contextCommandLine{context}); err != nil {
+		cli := &contextCommandLine{context}
+		store := getStore(cli)
+
+		if err := command(cli, store); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -147,41 +150,6 @@ func loadHost(store persist.Store, hostName string) (*host.Host, error) {
 	h.Driver = d
 
 	return h, nil
-}
-
-func saveHost(store persist.Store, h *host.Host) error {
-	if err := store.Save(h); err != nil {
-		return fmt.Errorf("Error attempting to save host to store: %s", err)
-	}
-
-	return nil
-}
-
-func getFirstArgHost(c CommandLine) (*host.Host, error) {
-	store := getStore(c)
-	hostName := c.Args().First()
-
-	h, err := loadHost(store, hostName)
-	if err != nil {
-		return nil, fmt.Errorf("Error trying to get host %q: %s", hostName, err)
-	}
-
-	return h, nil
-}
-
-func getHostsFromContext(c CommandLine) ([]*host.Host, error) {
-	store := getStore(c)
-	hosts := []*host.Host{}
-
-	for _, hostName := range c.Args() {
-		h, err := loadHost(store, hostName)
-		if err != nil {
-			return nil, fmt.Errorf("Could not load host %q: %s", hostName, err)
-		}
-		hosts = append(hosts, h)
-	}
-
-	return hosts, nil
 }
 
 var Commands = []cli.Command{
@@ -361,53 +329,22 @@ var Commands = []cli.Command{
 	},
 }
 
-func printIP(h *host.Host) func() error {
-	return func() error {
-		ip, err := h.Driver.GetIP()
-		if err != nil {
-			return fmt.Errorf("Error getting IP address: %s", err)
-		}
-		fmt.Println(ip)
-		return nil
-	}
-}
-
-// machineCommand maps the command name to the corresponding machine command.
-// We run commands concurrently and communicate back an error if there was one.
-func machineCommand(actionName string, host *host.Host, errorChan chan<- error) {
-	// TODO: These actions should have their own type.
-	commands := map[string](func() error){
-		"configureAuth": host.ConfigureAuth,
-		"start":         host.Start,
-		"stop":          host.Stop,
-		"restart":       host.Restart,
-		"kill":          host.Kill,
-		"upgrade":       host.Upgrade,
-		"ip":            printIP(host),
-	}
-
-	log.Debugf("command=%s machine=%s", actionName, host.Name)
-
-	errorChan <- commands[actionName]()
-}
-
 // runActionForeachMachine will run the command across multiple machines
-func runActionForeachMachine(actionName string, machines []*host.Host) []error {
-	var (
-		numConcurrentActions = 0
-		errorChan            = make(chan error)
-		errs                 = []error{}
-	)
-
+func runActionForeachMachine(action func(h *host.Host) error, machines []*host.Host) []error {
+	errorChan := make(chan error)
 	for _, machine := range machines {
-		numConcurrentActions++
-		go machineCommand(actionName, machine, errorChan)
+		theMachine := machine
+
+		go func() {
+			errorChan <- action(theMachine)
+		}()
 	}
 
 	// TODO: We should probably only do 5-10 of these
 	// at a time, since otherwise cloud providers might
 	// rate limit us.
-	for i := 0; i < numConcurrentActions; i++ {
+	errs := []error{}
+	for range machines {
 		if err := <-errorChan; err != nil {
 			errs = append(errs, err)
 		}
@@ -427,29 +364,41 @@ func consolidateErrs(errs []error) error {
 	return errors.New(strings.TrimSpace(finalErr))
 }
 
-func runActionWithContext(actionName string, c CommandLine) error {
-	store := getStore(c)
+func runActionOnHosts(action func(h *host.Host) error, store persist.Store, hostNames []string) error {
+	if len(hostNames) == 0 {
+		return ErrNoMachineSpecified
+	}
 
-	hosts, err := getHostsFromContext(c)
+	hosts, err := getHostsByName(store, hostNames)
 	if err != nil {
 		return err
 	}
 
-	if len(hosts) == 0 {
-		return ErrNoMachineSpecified
-	}
-
-	if errs := runActionForeachMachine(actionName, hosts); len(errs) > 0 {
+	if errs := runActionForeachMachine(action, hosts); len(errs) > 0 {
 		return consolidateErrs(errs)
 	}
 
 	for _, h := range hosts {
-		if err := saveHost(store, h); err != nil {
+		if err := store.Save(h); err != nil {
 			return fmt.Errorf("Error saving host to store: %s", err)
 		}
 	}
 
 	return nil
+}
+
+func getHostsByName(store persist.Store, hostNames []string) ([]*host.Host, error) {
+	hosts := []*host.Host{}
+
+	for _, hostName := range hostNames {
+		h, err := loadHost(store, hostName)
+		if err != nil {
+			return nil, fmt.Errorf("Could not load host %q: %s", hostName, err)
+		}
+		hosts = append(hosts, h)
+	}
+
+	return hosts, nil
 }
 
 // Returns the cert paths.
