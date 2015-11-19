@@ -32,7 +32,7 @@ const (
 	defaultZone        = "us-central1-a"
 	defaultUser        = "docker-user"
 	defaultMachineType = "n1-standard-1"
-	defaultImageName   = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150909a"
+	defaultImageName   = "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20151113"
 	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write"
 	defaultDiskType    = "pd-standard"
 	defaultDiskSize    = 10
@@ -181,7 +181,7 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	// Check that the project exists. It will also check that credentials
+	// Check that the project exists. It will also check the credentials
 	// at the same time.
 	log.Infof("Check that the project exists")
 
@@ -229,10 +229,19 @@ func (d *Driver) GetURL() (string, error) {
 
 // GetIP returns the IP address of the GCE instance.
 func (d *Driver) GetIP() (string, error) {
+	machineState, err := d.GetState()
+	if err != nil {
+		return "", err
+	}
+	if machineState != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
 	c, err := newComputeUtil(d)
 	if err != nil {
 		return "", err
 	}
+
 	return c.ip()
 }
 
