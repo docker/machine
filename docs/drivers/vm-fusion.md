@@ -17,6 +17,7 @@ Options:
  - `--vmwarefusion-cpu-count`: Number of CPUs for the machine (-1 to use the number of CPUs available)
  - `--vmwarefusion-disk-size`: Size of disk for host VM (in MB).
  - `--vmwarefusion-memory-size`: Size of memory for host VM (in MB).
+ - `--vmwarefusion-no-share`: Disable the mount of your home directory.
 
 The VMware Fusion driver uses the latest boot2docker image.
 See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
@@ -29,3 +30,4 @@ Environment variables and default values:
 | `--vmwarefusion-cpu-count`       | `FUSION_CPU_COUNT`       | `1`                      |
 | `--vmwarefusion-disk-size`       | `FUSION_DISK_SIZE`       | `20000`                  |
 | `--vmwarefusion-memory-size`     | `FUSION_MEMORY_SIZE`     | `1024`                   |
+| `--vmwarefusion-no-share`        | `FUSION_NO_SHARE`        | `false`                  |
