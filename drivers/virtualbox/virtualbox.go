@@ -28,7 +28,6 @@ import (
 )
 
 const (
-	isoFilename                = "boot2docker.iso"
 	defaultCPU                 = 1
 	defaultMemory              = 1024
 	defaultBoot2DockerURL      = ""
@@ -36,7 +35,6 @@ const (
 	defaultHostOnlyCIDR        = "192.168.99.1/24"
 	defaultHostOnlyNictype     = "82540EM"
 	defaultHostOnlyPromiscMode = "deny"
-	defaultNoShare             = false
 	defaultDiskSize            = 20000
 )
 
@@ -82,33 +80,34 @@ func NewDriver(hostName, storePath string) *Driver {
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
-			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
 			Name:   "virtualbox-memory",
 			Usage:  "Size of memory for host in MB",
 			Value:  defaultMemory,
+			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
 		},
 		mcnflag.IntFlag{
-			EnvVar: "VIRTUALBOX_CPU_COUNT",
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  defaultCPU,
+			EnvVar: "VIRTUALBOX_CPU_COUNT",
 		},
 		mcnflag.IntFlag{
-			EnvVar: "VIRTUALBOX_DISK_SIZE",
 			Name:   "virtualbox-disk-size",
 			Usage:  "Size of disk for host in MB",
 			Value:  defaultDiskSize,
+			EnvVar: "VIRTUALBOX_DISK_SIZE",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
 			Name:   "virtualbox-boot2docker-url",
 			Usage:  "The URL of the boot2docker image. Defaults to the latest available version",
 			Value:  defaultBoot2DockerURL,
+			EnvVar: "VIRTUALBOX_BOOT2DOCKER_URL",
 		},
 		mcnflag.StringFlag{
-			Name:  "virtualbox-import-boot2docker-vm",
-			Usage: "The name of a Boot2Docker VM to import",
-			Value: defaultBoot2DockerImportVM,
+			Name:   "virtualbox-import-boot2docker-vm",
+			Usage:  "The name of a Boot2Docker VM to import",
+			Value:  defaultBoot2DockerImportVM,
+			EnvVar: "VIRTUALBOX_BOOT2DOCKER_IMPORT_VM",
 		},
 		mcnflag.StringFlag{
 			Name:   "virtualbox-hostonly-cidr",
@@ -129,8 +128,9 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_PROMISC",
 		},
 		mcnflag.BoolFlag{
-			Name:  "virtualbox-no-share",
-			Usage: "Disable the mount of your home directory",
+			Name:   "virtualbox-no-share",
+			Usage:  "Disable the mount of your home directory",
+			EnvVar: "VIRTUALBOX_NO_SHARE",
 		},
 	}
 }
@@ -184,7 +184,19 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 // PreCreateCheck checks that VBoxManage exists and works
 func (d *Driver) PreCreateCheck() error {
 	// Check that VBoxManage exists and works
-	return d.vbm()
+	if err := d.vbm(); err != nil {
+		return err
+	}
+
+	if d.IsVTXDisabled() {
+		// Let's log a warning to warn the user. When the vm is started, logs
+		// will be checked for an error anyway.
+		// We could fail right here but the method to check didn't prove being
+		// bulletproof.
+		log.Warn("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
+	}
+
+	return nil
 }
 
 // IsVTXDisabledInTheVM checks if VT-X is disabled in the started vm.
@@ -216,14 +228,6 @@ func (d *Driver) Create() error {
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
-	}
-
-	if d.IsVTXDisabled() {
-		// Let's log a warning to warn the user. When the vm is started, logs
-		// will be checked for an error anyway.
-		// We could fail right here but the method to check didn't prove being
-		// bulletproof.
-		log.Warn("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
 	}
 
 	log.Infof("Creating VirtualBox VM...")
