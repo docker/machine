@@ -98,7 +98,7 @@ func set(c CommandLine) error {
 
 	switch userShell {
 	case "fish":
-		shellCfg.Prefix = "set -x "
+		shellCfg.Prefix = "set -gx "
 		shellCfg.Suffix = "\";\n"
 		shellCfg.Delimiter = " \""
 	case "powershell":
