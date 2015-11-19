@@ -181,7 +181,7 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	// Check that the project exists. It will also check that credentials
+	// Check that the project exists. It will also check the credentials
 	// at the same time.
 	log.Infof("Check that the project exists")
 
