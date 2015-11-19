@@ -127,8 +127,9 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "VIRTUALBOX_HOSTONLY_NIC_PROMISC",
 		},
 		mcnflag.BoolFlag{
-			Name:  "virtualbox-no-share",
-			Usage: "Disable the mount of your home directory",
+			Name:   "virtualbox-no-share",
+			Usage:  "Disable the mount of your home directory",
+			EnvVar: "VIRTUALBOX_NO_SHARE",
 		},
 	}
 }
