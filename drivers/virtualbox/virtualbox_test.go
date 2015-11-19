@@ -31,11 +31,20 @@ func TestDefaultSSHUsername(t *testing.T) {
 }
 
 type VBoxManagerMock struct {
-	VBoxCmdManager
 	args   string
 	stdOut string
 	stdErr string
 	err    error
+}
+
+func (v *VBoxManagerMock) vbm(args ...string) error {
+	_, _, err := v.vbmOutErr(args...)
+	return err
+}
+
+func (v *VBoxManagerMock) vbmOut(args ...string) (string, error) {
+	stdout, _, err := v.vbmOutErr(args...)
+	return stdout, err
 }
 
 func (v *VBoxManagerMock) vbmOutErr(args ...string) (string, string, error) {
