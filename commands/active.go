@@ -12,12 +12,10 @@ var (
 	errTooManyArguments = errors.New("Error: Too many arguments given")
 )
 
-func cmdActive(c CommandLine) error {
-	if len(c.Args()) > 0 {
+func cmdActive(cli CommandLine, store persist.Store) error {
+	if len(cli.Args()) > 0 {
 		return errTooManyArguments
 	}
-
-	store := getStore(c)
 
 	host, err := getActiveHost(store)
 	if err != nil {

@@ -3,24 +3,24 @@ package commands
 import (
 	"fmt"
 
+	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 )
 
-func cmdSSH(c CommandLine) error {
+func cmdSSH(cli CommandLine, store persist.Store) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
-	for _, arg := range c.Args() {
+	for _, arg := range cli.Args() {
 		if arg == "-help" || arg == "--help" || arg == "-h" {
-			c.ShowHelp()
+			cli.ShowHelp()
 			return nil
 		}
 	}
 
-	name := c.Args().First()
+	name := cli.Args().First()
 	if name == "" {
 		return ErrExpectedOneMachine
 	}
 
-	store := getStore(c)
 	host, err := loadHost(store, name)
 	if err != nil {
 		return err
@@ -40,5 +40,5 @@ func cmdSSH(c CommandLine) error {
 		return err
 	}
 
-	return client.Shell(c.Args().Tail()...)
+	return client.Shell(cli.Args().Tail()...)
 }

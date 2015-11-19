@@ -5,18 +5,18 @@ import (
 	"fmt"
 
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdRm(c CommandLine) error {
-	if len(c.Args()) == 0 {
-		c.ShowHelp()
+func cmdRm(cli CommandLine, store persist.Store) error {
+	if len(cli.Args()) == 0 {
+		cli.ShowHelp()
 		return errors.New("You must specify a machine name")
 	}
 
-	force := c.Bool("force")
-	store := getStore(c)
+	force := cli.Bool("force")
 
-	for _, hostName := range c.Args() {
+	for _, hostName := range cli.Args() {
 		h, err := loadHost(store, hostName)
 		if err != nil {
 			return fmt.Errorf("Error removing host %q: %s", hostName, err)

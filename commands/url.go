@@ -2,14 +2,16 @@ package commands
 
 import (
 	"fmt"
+
+	"github.com/docker/machine/libmachine/persist"
 )
 
-func cmdURL(c CommandLine) error {
-	if len(c.Args()) != 1 {
+func cmdURL(cli CommandLine, store persist.Store) error {
+	if len(cli.Args()) != 1 {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := loadHost(store, cli.Args().First())
 	if err != nil {
 		return err
 	}

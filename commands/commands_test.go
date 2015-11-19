@@ -77,7 +77,9 @@ func TestRunActionForeachMachine(t *testing.T) {
 		},
 	}
 
-	runActionForeachMachine("start", machines)
+	runActionForeachMachine(func(h *host.Host) error {
+		return h.Start()
+	}, machines)
 
 	for _, machine := range machines {
 		machineState, _ := machine.Driver.GetState()
@@ -85,7 +87,9 @@ func TestRunActionForeachMachine(t *testing.T) {
 		assert.Equal(t, state.Running, machineState)
 	}
 
-	runActionForeachMachine("stop", machines)
+	runActionForeachMachine(func(h *host.Host) error {
+		return h.Stop()
+	}, machines)
 
 	for _, machine := range machines {
 		machineState, _ := machine.Driver.GetState()
@@ -100,7 +104,7 @@ func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
 
 	out, w := captureStdout()
 
-	assert.Nil(t, printIP(host)())
+	assert.Nil(t, host.PrintIP())
 	w.Close()
 
 	assert.Equal(t, "", strings.TrimSpace(<-out))
@@ -113,8 +117,7 @@ func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
 
 	out, w := captureStdout()
 
-	assert.Nil(t, printIP(host)())
-
+	assert.Nil(t, host.PrintIP())
 	w.Close()
 
 	assert.Equal(t, "1.2.3.4", strings.TrimSpace(<-out))
