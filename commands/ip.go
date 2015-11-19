@@ -1,5 +1,7 @@
 package commands
 
-func cmdIP(c CommandLine) error {
-	return runActionWithContext("ip", c)
+import "github.com/docker/machine/libmachine/persist"
+
+func cmdIP(c CommandLine, store persist.Store) error {
+	return runActionOnHosts("ip", store, c.Args())
 }

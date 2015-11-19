@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/persist"
 )
 
 const (
@@ -35,7 +36,7 @@ type ShellConfig struct {
 	NoProxyValue    string
 }
 
-func cmdEnv(c CommandLine) error {
+func cmdEnv(c CommandLine, store persist.Store) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
@@ -43,15 +44,16 @@ func cmdEnv(c CommandLine) error {
 	if c.Bool("unset") {
 		return unset(c)
 	}
-	return set(c)
+
+	return set(c, store)
 }
 
-func set(c CommandLine) error {
+func set(c CommandLine, store persist.Store) error {
 	if len(c.Args()) != 1 {
 		return errImproperEnvArgs
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := loadHost(store, c.Args().First())
 	if err != nil {
 		return err
 	}
