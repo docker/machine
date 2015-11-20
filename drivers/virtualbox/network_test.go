@@ -172,3 +172,26 @@ VBoxNetworkName: HostInterfaceNetworking-vboxnet1
 	assert.Equal(t, "Up", net.Status)
 	assert.Equal(t, "HostInterfaceNetworking-vboxnet1", net.NetworkName)
 }
+
+func TestListHostOnlyNetworksDontRelyOnEmptyLinesForParsing(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args: "list hostonlyifs",
+		stdOut: `Name:            vboxnet0
+VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+Name:            vboxnet1
+VBoxNetworkName: HostInterfaceNetworking-vboxnet1`,
+	}
+
+	nets, err := listHostOnlyNetworks(vbox)
+
+	assert.Equal(t, 2, len(nets))
+	assert.NoError(t, err)
+
+	net, present := nets["HostInterfaceNetworking-vboxnet1"]
+	assert.True(t, present)
+	assert.Equal(t, "vboxnet1", net.Name)
+
+	net, present = nets["HostInterfaceNetworking-vboxnet0"]
+	assert.True(t, present)
+	assert.Equal(t, "vboxnet0", net.Name)
+}
