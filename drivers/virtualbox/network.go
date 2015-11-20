@@ -15,7 +15,8 @@ const (
 )
 
 var (
-	reHostonlyInterfaceCreated = regexp.MustCompile(`Interface '(.+)' was successfully created`)
+	reHostonlyInterfaceCreated            = regexp.MustCompile(`Interface '(.+)' was successfully created`)
+	errDuplicateHostOnlyInterfaceNetworks = errors.New("VirtualBox is configured with multiple host-only interfaces with the same IP. Please remove all of them but one.")
 )
 
 // Host-only network.
@@ -152,6 +153,10 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP
 		return nil, err
 	}
 
+	if len(nets) != countUniqueIps(nets) {
+		return nil, errDuplicateHostOnlyInterfaceNetworks
+	}
+
 	hostOnlyNet := getHostOnlyNetwork(nets, hostIP, netmask)
 	if hostOnlyNet != nil {
 		return hostOnlyNet, nil
@@ -180,6 +185,16 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP
 	}
 
 	return hostOnlyNet, nil
+}
+
+func countUniqueIps(nets map[string]*hostOnlyNetwork) int {
+	ips := map[string]bool{}
+
+	for _, n := range nets {
+		ips[n.IPv4.IP.String()] = true
+	}
+
+	return len(ips)
 }
 
 // DHCP server info.
