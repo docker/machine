@@ -481,6 +481,18 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
+	currentState, err := d.GetState()
+	if err != nil {
+		return err
+	}
+
+	if currentState == state.Paused {
+		if err := d.vbm("controlvm", d.MachineName, "resume"); err != nil { // , "--type", "headless"
+			return err
+		}
+		log.Infof("Resuming VM ...")
+	}
+
 	if err := d.vbm("controlvm", d.MachineName, "acpipowerbutton"); err != nil {
 		return err
 	}
@@ -495,6 +507,7 @@ func (d *Driver) Stop() error {
 			break
 		}
 	}
+	log.Infof("Stopping VM...")
 
 	d.IPAddress = ""
 
