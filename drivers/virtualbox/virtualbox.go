@@ -514,6 +514,10 @@ func (d *Driver) Remove() error {
 		if err := d.Stop(); err != nil {
 			return err
 		}
+	} else if s != state.Stopped {
+		if err := d.Kill(); err != nil {
+			return err
+		}
 	}
 	// vbox will not release it's lock immediately after the stop
 	time.Sleep(1 * time.Second)
