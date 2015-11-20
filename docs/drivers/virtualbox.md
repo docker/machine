@@ -61,14 +61,14 @@ upper bound of `192.168.24.254`.
 
 Environment variables and default values:
 
-| CLI option                           | Environment variable              | Default                  |
-|--------------------------------------|-----------------------------------|--------------------------|
-| `--virtualbox-memory`                | `VIRTUALBOX_MEMORY_SIZE`          | `1024`                   |
-| `--virtualbox-cpu-count`             | `VIRTUALBOX_CPU_COUNT`            | `1`                      |
-| `--virtualbox-disk-size`             | `VIRTUALBOX_DISK_SIZE`            | `20000`                  |
-| `--virtualbox-boot2docker-url`       | `VIRTUALBOX_BOOT2DOCKER_URL`      | *Latest boot2docker url* |
-| `--virtualbox-import-boot2docker-vm` | -                                 | `boot2docker-vm`         |
-| `--virtualbox-hostonly-cidr`         | `VIRTUALBOX_HOSTONLY_CIDR`        | `192.168.99.1/24`        |
-| `--virtualbox-hostonly-nictype`      | `VIRTUALBOX_HOSTONLY_NIC_TYPE`    | `82540EM`                |
-| `--virtualbox-hostonly-nicpromisc`   | `VIRTUALBOX_HOSTONLY_NIC_PROMISC` | `deny`                   |
-| `--virtualbox-no-share`              | -                                 | `false`                  |
+| CLI option                           | Environment variable               | Default                  |
+|--------------------------------------|------------------------------------|--------------------------|
+| `--virtualbox-memory`                | `VIRTUALBOX_MEMORY_SIZE`           | `1024`                   |
+| `--virtualbox-cpu-count`             | `VIRTUALBOX_CPU_COUNT`             | `1`                      |
+| `--virtualbox-disk-size`             | `VIRTUALBOX_DISK_SIZE`             | `20000`                  |
+| `--virtualbox-boot2docker-url`       | `VIRTUALBOX_BOOT2DOCKER_URL`       | *Latest boot2docker url* |
+| `--virtualbox-import-boot2docker-vm` | `VIRTUALBOX_BOOT2DOCKER_IMPORT_VM` | `boot2docker-vm`         |
+| `--virtualbox-hostonly-cidr`         | `VIRTUALBOX_HOSTONLY_CIDR`         | `192.168.99.1/24`        |
+| `--virtualbox-hostonly-nictype`      | `VIRTUALBOX_HOSTONLY_NIC_TYPE`     | `82540EM`                |
+| `--virtualbox-hostonly-nicpromisc`   | `VIRTUALBOX_HOSTONLY_NIC_PROMISC`  | `deny`                   |
+| `--virtualbox-no-share`              | `VIRTUALBOX_NO_SHARE`              | `false`                  |
