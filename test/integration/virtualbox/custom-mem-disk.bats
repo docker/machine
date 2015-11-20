@@ -2,7 +2,9 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-force_env DRIVER virtualbox
+if [[ "$DRIVER" != "virtualbox" ]]; then
+    exit 0
+fi
 
 # Default memsize is 1024MB and disksize is 20000MB
 # These values are defined in drivers/virtualbox/virtualbox.go
