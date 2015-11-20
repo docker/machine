@@ -6,14 +6,14 @@ const (
 
 type Options struct {
 	IsSwarm        bool
-	Address        string
-	Discovery      string
-	Master         bool
-	Host           string
-	Image          string
-	Strategy       string
+	Address        string `yaml:"addr"`
+	Discovery      string `yaml:"discovery"`
+	Master         bool   `yaml:"master"`
+	Host           string `yaml:"host"`
+	Image          string `yaml:"image"`
+	Strategy       string `yaml:"strategy"`
 	Heartbeat      int
 	Overcommit     float64
-	ArbitraryFlags []string
+	ArbitraryFlags []string `yaml:"opt"`
 	Env            []string
 }
