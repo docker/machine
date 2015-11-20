@@ -146,35 +146,37 @@ func getHostOnlyNetwork(nets map[string]*hostOnlyNetwork, hostIP net.IP, netmask
 	return nil
 }
 
-func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP, dhcpUpperIP net.IP, dhcpLowerIP net.IP, vbox VBoxManager) (*hostOnlyNetwork, error) {
+func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP, dhcpLowerIP net.IP, dhcpUpperIP net.IP, vbox VBoxManager) (*hostOnlyNetwork, error) {
 	nets, err := listHostOnlyNetworks(vbox)
 	if err != nil {
 		return nil, err
 	}
 
 	hostOnlyNet := getHostOnlyNetwork(nets, hostIP, netmask)
+	if hostOnlyNet != nil {
+		return hostOnlyNet, nil
+	}
 
-	if hostOnlyNet == nil {
-		// No existing host-only interface found. Create a new one.
-		hostOnlyNet, err = createHostonlyNet(vbox)
-		if err != nil {
-			return nil, err
-		}
-		hostOnlyNet.IPv4.IP = hostIP
-		hostOnlyNet.IPv4.Mask = netmask
-		if err := hostOnlyNet.Save(vbox); err != nil {
-			return nil, err
-		}
+	// No existing host-only interface found. Create a new one.
+	hostOnlyNet, err = createHostonlyNet(vbox)
+	if err != nil {
+		return nil, err
+	}
 
-		dhcp := dhcpServer{}
-		dhcp.IPv4.IP = dhcpIP
-		dhcp.IPv4.Mask = netmask
-		dhcp.LowerIP = dhcpUpperIP
-		dhcp.UpperIP = dhcpLowerIP
-		dhcp.Enabled = true
-		if err := addHostonlyDHCP(hostOnlyNet.Name, dhcp, vbox); err != nil {
-			return nil, err
-		}
+	hostOnlyNet.IPv4.IP = hostIP
+	hostOnlyNet.IPv4.Mask = netmask
+	if err := hostOnlyNet.Save(vbox); err != nil {
+		return nil, err
+	}
+
+	dhcp := dhcpServer{}
+	dhcp.IPv4.IP = dhcpIP
+	dhcp.IPv4.Mask = netmask
+	dhcp.LowerIP = dhcpLowerIP
+	dhcp.UpperIP = dhcpUpperIP
+	dhcp.Enabled = true
+	if err := addHostonlyDHCP(hostOnlyNet.Name, dhcp, vbox); err != nil {
+		return nil, err
 	}
 
 	return hostOnlyNet, nil

@@ -8,6 +8,45 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const stdOutOneHostOnlyNetwork = `Name:            vboxnet0
+GUID:            786f6276-656e-4074-8000-0a0027000000
+DHCP:            Disabled
+IPAddress:       192.168.99.1
+NetworkMask:     255.255.255.0
+IPV6Address:
+IPV6NetworkMaskPrefixLength: 0
+HardwareAddress: 0a:00:27:00:00:00
+MediumType:      Ethernet
+Status:          Up
+VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+
+`
+const stdOutTwoHostOnlyNetwork = `Name:            vboxnet0
+GUID:            786f6276-656e-4074-8000-0a0027000000
+DHCP:            Disabled
+IPAddress:       192.168.99.1
+NetworkMask:     255.255.255.0
+IPV6Address:
+IPV6NetworkMaskPrefixLength: 0
+HardwareAddress: 0a:00:27:00:00:00
+MediumType:      Ethernet
+Status:          Up
+VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+
+Name:            vboxnet1
+GUID:            786f6276-656e-4174-8000-0a0027000001
+DHCP:            Disabled
+IPAddress:       192.168.99.1
+NetworkMask:     255.255.255.0
+IPV6Address:
+IPV6NetworkMaskPrefixLength: 0
+HardwareAddress: 0a:00:27:00:00:01
+MediumType:      Ethernet
+Status:          Up
+VBoxNetworkName: HostInterfaceNetworking-vboxnet1
+
+`
+
 // Tests that when we have a host only network which matches our expectations,
 // it gets returned correctly.
 func TestGetHostOnlyNetworkHappy(t *testing.T) {
@@ -87,20 +126,8 @@ func TestGetHostOnlyNetworkWindows10Bug(t *testing.T) {
 
 func TestListHostOnlyNetworks(t *testing.T) {
 	vbox := &VBoxManagerMock{
-		args: "list hostonlyifs",
-		stdOut: `Name:            vboxnet0
-GUID:            786f6276-656e-4074-8000-0a0027000000
-DHCP:            Disabled
-IPAddress:       192.168.99.1
-NetworkMask:     255.255.255.0
-IPV6Address:
-IPV6NetworkMaskPrefixLength: 0
-HardwareAddress: 0a:00:27:00:00:00
-MediumType:      Ethernet
-Status:          Up
-VBoxNetworkName: HostInterfaceNetworking-vboxnet0
-
-`,
+		args:   "list hostonlyifs",
+		stdOut: stdOutOneHostOnlyNetwork,
 	}
 
 	nets, err := listHostOnlyNetworks(vbox)
@@ -125,32 +152,8 @@ VBoxNetworkName: HostInterfaceNetworking-vboxnet0
 
 func TestListTwoHostOnlyNetworks(t *testing.T) {
 	vbox := &VBoxManagerMock{
-		args: "list hostonlyifs",
-		stdOut: `Name:            vboxnet0
-GUID:            786f6276-656e-4074-8000-0a0027000000
-DHCP:            Disabled
-IPAddress:       192.168.99.1
-NetworkMask:     255.255.255.0
-IPV6Address:
-IPV6NetworkMaskPrefixLength: 0
-HardwareAddress: 0a:00:27:00:00:00
-MediumType:      Ethernet
-Status:          Up
-VBoxNetworkName: HostInterfaceNetworking-vboxnet0
-
-Name:            vboxnet1
-GUID:            786f6276-656e-4174-8000-0a0027000001
-DHCP:            Disabled
-IPAddress:       192.168.99.1
-NetworkMask:     255.255.255.0
-IPV6Address:
-IPV6NetworkMaskPrefixLength: 0
-HardwareAddress: 0a:00:27:00:00:01
-MediumType:      Ethernet
-Status:          Up
-VBoxNetworkName: HostInterfaceNetworking-vboxnet1
-
-`,
+		args:   "list hostonlyifs",
+		stdOut: stdOutTwoHostOnlyNetwork,
 	}
 
 	nets, err := listHostOnlyNetworks(vbox)
@@ -194,4 +197,17 @@ VBoxNetworkName: HostInterfaceNetworking-vboxnet1`,
 	net, present = nets["HostInterfaceNetworking-vboxnet0"]
 	assert.True(t, present)
 	assert.Equal(t, "vboxnet0", net.Name)
+}
+
+func TestGetHostOnlyNetwork(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args:   "list hostonlyifs",
+		stdOut: stdOutOneHostOnlyNetwork,
+	}
+
+	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nil, nil, nil, vbox)
+
+	assert.NotNil(t, net)
+	assert.Equal(t, "HostInterfaceNetworking-vboxnet0", net.NetworkName)
+	assert.NoError(t, err)
 }
