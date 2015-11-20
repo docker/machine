@@ -2,7 +2,6 @@ package virtualbox
 
 import (
 	"bufio"
-	"io"
 	"strings"
 )
 
@@ -11,28 +10,31 @@ type VirtualDisk struct {
 	Path string
 }
 
-func (d *Driver) getVMDiskInfo(name string) (*VirtualDisk, error) {
-	out, err := d.vbmOut("showvminfo", name, "--machinereadable")
+func getVMDiskInfo(name string, vbox VBoxManager) (*VirtualDisk, error) {
+	out, err := vbox.vbmOut("showvminfo", name, "--machinereadable")
 	if err != nil {
 		return nil, err
 	}
 
-	r := strings.NewReader(out)
-	return parseDiskInfo(r)
+	return parseDiskInfo(out)
 }
 
-func parseDiskInfo(r io.Reader) (*VirtualDisk, error) {
-	s := bufio.NewScanner(r)
+func parseDiskInfo(out string) (*VirtualDisk, error) {
 	disk := &VirtualDisk{}
+
+	r := strings.NewReader(out)
+	s := bufio.NewScanner(r)
 	for s.Scan() {
 		line := s.Text()
 		if line == "" {
 			continue
 		}
+
 		res := reEqualQuoteLine.FindStringSubmatch(line)
 		if res == nil {
 			continue
 		}
+
 		key, val := res[1], res[2]
 		switch key {
 		case "SATA-1-0":
@@ -44,5 +46,6 @@ func parseDiskInfo(r io.Reader) (*VirtualDisk, error) {
 	if err := s.Err(); err != nil {
 		return nil, err
 	}
+
 	return disk, nil
 }
