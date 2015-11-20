@@ -225,11 +225,6 @@ func addDHCPServer(kind, name string, d dhcpServer) error {
 	return vbm(args...)
 }
 
-// addInternalDHCP adds a DHCP server to an internal network.
-func addInternalDHCP(netname string, d dhcpServer) error {
-	return addDHCPServer("--netname", netname, d)
-}
-
 // addHostonlyDHCP adds a DHCP server to a host-only network.
 func addHostonlyDHCP(ifname string, d dhcpServer) error {
 	return addDHCPServer("--netname", "HostInterfaceNetworking-"+ifname, d)
