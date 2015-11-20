@@ -211,3 +211,15 @@ func TestGetHostOnlyNetwork(t *testing.T) {
 	assert.Equal(t, "HostInterfaceNetworking-vboxnet0", net.NetworkName)
 	assert.NoError(t, err)
 }
+
+func TestFailWithDuplicateHostOnlyNetworks(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args:   "list hostonlyifs",
+		stdOut: stdOutTwoHostOnlyNetwork,
+	}
+
+	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nil, nil, nil, vbox)
+
+	assert.Nil(t, net)
+	assert.Equal(t, errDuplicateHostOnlyInterfaceNetworks, err)
+}
