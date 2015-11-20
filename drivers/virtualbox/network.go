@@ -82,8 +82,6 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 	for s.Scan() {
 		line := s.Text()
 		if line == "" {
-			m[n.NetworkName] = n
-			n = &hostOnlyNetwork{}
 			continue
 		}
 
@@ -123,6 +121,8 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 			n.Status = val
 		case "VBoxNetworkName":
 			n.NetworkName = val
+			m[val] = n
+			n = &hostOnlyNetwork{}
 		}
 	}
 
