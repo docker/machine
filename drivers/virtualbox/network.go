@@ -75,9 +75,10 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 		return nil, err
 	}
 
-	s := bufio.NewScanner(strings.NewReader(out))
 	m := map[string]*hostOnlyNetwork{}
 	n := &hostOnlyNetwork{}
+
+	s := bufio.NewScanner(strings.NewReader(out))
 	for s.Scan() {
 		line := s.Text()
 		if line == "" {
@@ -85,10 +86,12 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 			n = &hostOnlyNetwork{}
 			continue
 		}
+
 		res := reColonLine.FindStringSubmatch(line)
 		if res == nil {
 			continue
 		}
+
 		switch key, val := res[1], res[2]; key {
 		case "Name":
 			n.Name = val
@@ -122,6 +125,7 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 			n.NetworkName = val
 		}
 	}
+
 	if err := s.Err(); err != nil {
 		return nil, err
 	}
