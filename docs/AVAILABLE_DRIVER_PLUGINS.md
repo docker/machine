@@ -25,3 +25,4 @@ with Docker Inc.  Use 3rd party plugins at your own risk.
 | Docker-In-Docker | https://github.com/nathanleclaire/docker-machine-driver-dind | [nathanleclaire](https://github.com/nathanleclaire) | nathan.leclaire@gmail.com |
 | Parallels for OSX | https://github.com/Parallels/docker-machine-parallels | [legal90](https://github.com/legal90) | legal90@gmail.com |
 | SAKURA CLOUD | https://github.com/yamamoto-febc/docker-machine-sakuracloud | [yamamoto-febc](https://github.com/yamamoto-febc) | yamamoto.febc@gmail.com |
+| xhyve | https://github.com/zchee/docker-machine-xhyve | [zchee](https://github.com/zchee) | zchee.io@gmail.com |
