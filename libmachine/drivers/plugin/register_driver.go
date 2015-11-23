@@ -32,7 +32,8 @@ Please use this plugin through the main 'docker-machine' binary.
 	libmachine.SetDebug(true)
 
 	rpcd := rpcdriver.NewRPCServerDriver(d)
-	rpc.Register(rpcd)
+	rpc.RegisterName(rpcdriver.RPCServiceNameV0, rpcd)
+	rpc.RegisterName(rpcdriver.RPCServiceNameV1, rpcd)
 	rpc.HandleHTTP()
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
