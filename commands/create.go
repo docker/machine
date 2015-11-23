@@ -115,6 +115,11 @@ var (
 			Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
 			Value: "",
 		},
+		cli.StringSliceFlag{
+			Name:  "tls-san",
+			Usage: "Support extra SANs for TLS certs",
+			Value: &cli.StringSlice{},
+		},
 	}
 )
 
@@ -178,7 +183,7 @@ func cmdCreateInner(c CommandLine) error {
 			ServerCertPath:   filepath.Join(mcndirs.GetMachineDir(), name, "server.pem"),
 			ServerKeyPath:    filepath.Join(mcndirs.GetMachineDir(), name, "server-key.pem"),
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
-			ServerCertSANs: c.GlobalStringSlice("tls-san"),
+			ServerCertSANs:   c.StringSlice("tls-san"),
 		},
 		EngineOptions: &engine.Options{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),

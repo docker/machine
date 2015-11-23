@@ -133,12 +133,6 @@ func main() {
 			Usage:  "Token to use for requests to the Github API",
 			Value:  "",
 		},
-		cli.StringSliceFlag{
-			EnvVar: "MACHINE_TLS_SAN",
-			Name:   "tls-san",
-			Usage:  "Support extra SANs for TLS certs",
-			Value:  &cli.StringSlice{},
-		},
 		cli.BoolFlag{
 			EnvVar: "MACHINE_NATIVE_SSH",
 			Name:   "native-ssh",
