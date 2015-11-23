@@ -56,6 +56,8 @@ You may call:
 to clean-up build results.
 
 ## Tests and validation
+We use the usual `go` tools for this, to run those commands you need at least the linter which you can
+install with `go get -u github.com/golang/lint/golint`
 
 To run basic validation (dco, fmt), and the project unit tests, call:
 
@@ -64,6 +66,7 @@ To run basic validation (dco, fmt), and the project unit tests, call:
 If you want more indepth validation (vet, lint), and all tests with race detection, call:
 
     $ make validate
+
 
 If you make a pull request, it is highly encouraged that you submit tests for
 the code that you have added or modified in the same pull request.
