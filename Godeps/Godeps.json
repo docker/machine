@@ -3,7 +3,6 @@
 	"GoVersion": "go1.5.1",
 	"Packages": [
 		"github.com/docker/machine",
-		"github.com/docker/machine/cli",
 		"github.com/docker/machine/cmd",
 		"github.com/docker/machine/commands",
 		"github.com/docker/machine/commands/mcndirs",
@@ -42,7 +41,6 @@
 		"github.com/docker/machine/libmachine/mcnflag",
 		"github.com/docker/machine/libmachine/mcnutils",
 		"github.com/docker/machine/libmachine/persist",
-		"github.com/docker/machine/libmachine/persisttest",
 		"github.com/docker/machine/libmachine/provider",
 		"github.com/docker/machine/libmachine/provision",
 		"github.com/docker/machine/libmachine/provision/pkgaction",
@@ -62,6 +60,11 @@
 		{
 			"ImportPath": "github.com/cenkalti/backoff",
 			"Rev": "9831e1e25c874e0a0601b6dc43641071414eec7a"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-179-g0302d39",
+			"Rev": "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
 		},
 		{
 			"ImportPath": "github.com/digitalocean/godo",
