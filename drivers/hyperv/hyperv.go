@@ -61,7 +61,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.IntFlag{
 			Name:  "hyperv-disk-size",
-			Usage: "Hyper-V disk size for host in MB.",
+			Usage: "Hyper-V maximum size of dynamically expanding disk in MB.",
 			Value: defaultDiskSize,
 		},
 		mcnflag.IntFlag{
