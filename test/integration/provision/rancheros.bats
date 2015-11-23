@@ -2,7 +2,12 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-force_env DRIVER virtualbox
+
+# this should move to the makefile
+
+if [[ "$DRIVER" != "virtualbox" ]]; then
+    exit 0
+fi
 
 export RANCHEROS_VERSION="v0.3.1"
 export RANCHEROS_ISO="https://github.com/rancherio/os/releases/download/$RANCHEROS_VERSION/machine-rancheros.iso"
