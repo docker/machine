@@ -2,7 +2,9 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-force_env DRIVER virtualbox
+if [[ "$DRIVER" != "virtualbox" ]]; then
+    exit 0
+fi
 
 @test "$DRIVER: create" {
   run machine create -d $DRIVER $NAME
