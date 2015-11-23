@@ -6,7 +6,7 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/docker/machine/cli"
+	"github.com/codegangsta/cli"
 	"github.com/docker/machine/commands"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"

@@ -12,7 +12,7 @@ import (
 
 	"errors"
 
-	"github.com/docker/machine/cli"
+	"github.com/codegangsta/cli"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine"

@@ -1,6 +1,6 @@
 package commands
 
-import "github.com/docker/machine/cli"
+import "github.com/codegangsta/cli"
 
 type ByFlagName []cli.Flag
 
