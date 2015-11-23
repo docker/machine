@@ -115,6 +115,11 @@ var (
 			Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
 			Value: "",
 		},
+		cli.StringSliceFlag{
+			Name:  "tls-san",
+			Usage: "Support extra SANs for TLS certs",
+			Value: &cli.StringSlice{},
+		},
 	}
 )
 
@@ -178,6 +183,7 @@ func cmdCreateInner(c CommandLine) error {
 			ServerCertPath:   filepath.Join(mcndirs.GetMachineDir(), name, "server.pem"),
 			ServerKeyPath:    filepath.Join(mcndirs.GetMachineDir(), name, "server-key.pem"),
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
+			ServerCertSANs:   c.StringSlice("tls-san"),
 		},
 		EngineOptions: &engine.Options{
 			ArbitraryFlags:   c.StringSlice("engine-opt"),
@@ -355,14 +361,14 @@ func getDriverOpts(c CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions
 
 	for _, name := range c.FlagNames() {
 		getter, ok := c.Generic(name).(flag.Getter)
-		if !ok {
+		if ok {
+			driverOpts.Values[name] = getter.Get()
+		} else {
 			// TODO: This is pretty hacky.  StringSlice is the only
 			// type so far we have to worry about which is not a
 			// Getter, though.
 			driverOpts.Values[name] = c.StringSlice(name)
-			continue
 		}
-		driverOpts.Values[name] = getter.Get()
 	}
 
 	return driverOpts
