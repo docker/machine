@@ -2,7 +2,11 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-force_env DRIVER amazonec2
+# this should move to the makefile
+
+if [[ "$DRIVER" != "amazonec2" ]]; then
+    exit 0
+fi
 
 require_env AWS_VPC_ID
 require_env AWS_ACCESS_KEY_ID
