@@ -23,6 +23,7 @@ with Docker Inc.  Use 3rd party plugins at your own risk.
 | ---- | ---------- | ------------------------- | ---------------- |
 | BrightBox | https://github.com/brightbox/docker-machine-driver-brightbox | [NeilW](https://github.com/NeilW) | neil@aldur.co.uk |
 | Docker-In-Docker | https://github.com/nathanleclaire/docker-machine-driver-dind | [nathanleclaire](https://github.com/nathanleclaire) | nathan.leclaire@gmail.com |
+| HPE OneView  | https://github.com/HewlettPackard/docker-machine-oneview | [wenlock](https://github.com/wenlock) | wenlock@hpe.com |
 | Parallels for OSX | https://github.com/Parallels/docker-machine-parallels | [legal90](https://github.com/legal90) | legal90@gmail.com |
 | SAKURA CLOUD | https://github.com/yamamoto-febc/docker-machine-sakuracloud | [yamamoto-febc](https://github.com/yamamoto-febc) | yamamoto.febc@gmail.com |
 | VULTR | https://github.com/janeczku/docker-machine-vultr | [janeczku](https://github.com/janeczku) | jb@festplatte.eu.org |
