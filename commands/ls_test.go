@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"time"
+
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/state"
@@ -429,4 +431,27 @@ func TestIsActive(t *testing.T) {
 
 		assert.Equal(t, c.expected, actual, "IsActive(%s, \"%s\") should return %v, but didn't", c.state, c.dockerHost, c.expected)
 	}
+}
+
+func TestGetHostStateTimeout(t *testing.T) {
+	originalTimeout := stateTimeoutDuration
+
+	hosts := []*host.Host{
+		{
+			Name: "foo",
+			Driver: &fakedriver.Driver{
+				MockState: state.Timeout,
+			},
+		},
+	}
+
+	stateTimeoutDuration = 1 * time.Second
+	hostItems := getHostListItems(hosts)
+	hostItem := hostItems[0]
+
+	assert.Equal(t, "foo", hostItem.Name)
+	assert.Equal(t, state.Timeout, hostItem.State)
+	assert.Equal(t, "Driver", hostItem.DriverName)
+
+	stateTimeoutDuration = originalTimeout
 }

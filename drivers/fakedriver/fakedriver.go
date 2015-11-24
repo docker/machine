@@ -47,6 +47,9 @@ func (d *Driver) GetIP() (string, error) {
 	if d.MockState == state.Error {
 		return "", fmt.Errorf("Unable to get ip")
 	}
+	if d.MockState == state.Timeout {
+		select {} // Loop forever
+	}
 	if d.MockState != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
