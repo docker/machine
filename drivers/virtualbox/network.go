@@ -1,13 +1,11 @@
 package virtualbox
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"net"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -79,19 +77,8 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 	m := map[string]*hostOnlyNetwork{}
 	n := &hostOnlyNetwork{}
 
-	s := bufio.NewScanner(strings.NewReader(out))
-	for s.Scan() {
-		line := s.Text()
-		if line == "" {
-			continue
-		}
-
-		res := reColonLine.FindStringSubmatch(line)
-		if res == nil {
-			continue
-		}
-
-		switch key, val := res[1], res[2]; key {
+	err = parseKeyValues(out, reColonLine, func(key, val string) error {
+		switch key {
 		case "Name":
 			n.Name = val
 		case "GUID":
@@ -107,13 +94,13 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 		case "IPV6NetworkMaskPrefixLength":
 			l, err := strconv.ParseUint(val, 10, 8)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			n.IPv6.Mask = net.CIDRMask(int(l), net.IPv6len*8)
 		case "HardwareAddress":
 			mac, err := net.ParseMAC(val)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			n.HwAddr = mac
 		case "MediumType":
@@ -125,11 +112,13 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 			m[val] = n
 			n = &hostOnlyNetwork{}
 		}
-	}
 
-	if err := s.Err(); err != nil {
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
+
 	return m, nil
 }
 
@@ -247,22 +236,15 @@ func getDHCPServers(vbox VBoxManager) (map[string]*dhcpServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := bufio.NewScanner(strings.NewReader(out))
+
 	m := map[string]*dhcpServer{}
 	dhcp := &dhcpServer{}
-	for s.Scan() {
-		line := s.Text()
-		if line == "" {
-			m[dhcp.NetworkName] = dhcp
-			dhcp = &dhcpServer{}
-			continue
-		}
-		res := reColonLine.FindStringSubmatch(line)
-		if res == nil {
-			continue
-		}
-		switch key, val := res[1], res[2]; key {
+
+	err = parseKeyValues(out, reColonLine, func(key, val string) error {
+		switch key {
 		case "NetworkName":
+			dhcp = &dhcpServer{}
+			m[val] = dhcp
 			dhcp.NetworkName = val
 		case "IP":
 			dhcp.IPv4.IP = net.ParseIP(val)
@@ -275,10 +257,13 @@ func getDHCPServers(vbox VBoxManager) (map[string]*dhcpServer, error) {
 		case "Enabled":
 			dhcp.Enabled = (val == "Yes")
 		}
-	}
-	if err := s.Err(); err != nil {
+
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
+
 	return m, nil
 }
 
