@@ -4,20 +4,20 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdRm(c CommandLine) error {
+func cmdRm(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) == 0 {
 		c.ShowHelp()
 		return errors.New("You must specify a machine name")
 	}
 
 	force := c.Bool("force")
-	store := getStore(c)
 
 	for _, hostName := range c.Args() {
-		h, err := loadHost(store, hostName)
+		h, err := api.Load(hostName)
 		if err != nil {
 			return fmt.Errorf("Error removing host %q: %s", hostName, err)
 		}
@@ -29,7 +29,7 @@ func cmdRm(c CommandLine) error {
 			}
 		}
 
-		if err := store.Remove(hostName); err != nil {
+		if err := api.Remove(hostName); err != nil {
 			log.Errorf("Error removing machine %q from store: %s", hostName, err)
 		} else {
 			log.Infof("Successfully removed %s", hostName)

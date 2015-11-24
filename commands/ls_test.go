@@ -467,9 +467,8 @@ func TestIsActive(t *testing.T) {
 			os.Setenv("DOCKER_HOST", c.dockerHost)
 		}
 
-		actual, err := isActive(c.state, "tcp://1.2.3.4:2376")
+		actual := isActive(c.state, "tcp://1.2.3.4:2376")
 
 		assert.Equal(t, c.expected, actual, "IsActive(%s, \"%s\") should return %v, but didn't", c.state, c.dockerHost, c.expected)
-		assert.NoError(t, err)
 	}
 }

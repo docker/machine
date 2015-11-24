@@ -1,6 +1,8 @@
 package commands
 
-func cmdVersion(c CommandLine) error {
+import "github.com/docker/machine/libmachine"
+
+func cmdVersion(c CommandLine, api libmachine.API) error {
 	c.ShowVersion()
 	return nil
 }

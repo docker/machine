@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/drivers/rpc"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/version"
 )
 
@@ -29,7 +29,7 @@ Please use this plugin through the main 'docker-machine' binary.
 		os.Exit(1)
 	}
 
-	libmachine.SetDebug(true)
+	log.IsDebug = true
 
 	rpcd := rpcdriver.NewRPCServerDriver(d)
 	rpc.Register(rpcd)

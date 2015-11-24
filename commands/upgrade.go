@@ -1,5 +1,7 @@
 package commands
 
-func cmdUpgrade(c CommandLine) error {
-	return runActionWithContext("upgrade", c)
+import "github.com/docker/machine/libmachine"
+
+func cmdUpgrade(c CommandLine, api libmachine.API) error {
+	return runAction("upgrade", c, api)
 }

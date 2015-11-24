@@ -73,7 +73,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 @test "none: rm non existent machine fails 'machine rm ∞'" {
   run machine rm ∞
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Error removing host \"∞\": Loading host from store failed: Host does not exist: \"∞\"" ]]
+  [[ ${lines[0]} == "Error removing host \"∞\": Host does not exist: \"∞\"" ]]
 }
 
 @test "none: rm is successful 'machine rm 0'" {
