@@ -47,7 +47,7 @@ func TestStoreSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(store.getMachinesDir(), h.Name)
+	path := filepath.Join(store.GetMachinesDir(), h.Name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -67,7 +67,7 @@ func TestStoreRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(store.getMachinesDir(), h.Name)
+	path := filepath.Join(store.GetMachinesDir(), h.Name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -101,8 +101,8 @@ func TestStoreList(t *testing.T) {
 		t.Fatalf("List returned %d items, expected 1", len(hosts))
 	}
 
-	if hosts[0].Name != h.Name {
-		t.Fatalf("hosts[0] name is incorrect, got: %s", hosts[0].Name)
+	if hosts[0] != h.Name {
+		t.Fatalf("hosts[0] name is incorrect, got: %s", hosts[0])
 	}
 }
 

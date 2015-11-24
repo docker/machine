@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/host"
@@ -26,7 +27,7 @@ Be advised that this will trigger a Docker daemon restart which will stop runnin
 `, e.hostURL, e.wrappedErr)
 }
 
-func cmdConfig(c CommandLine) error {
+func cmdConfig(c CommandLine, api libmachine.API) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
@@ -35,7 +36,7 @@ func cmdConfig(c CommandLine) error {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := api.Load(c.Args().First())
 	if err != nil {
 		return err
 	}

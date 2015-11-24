@@ -1,5 +1,7 @@
 package commands
 
-func cmdKill(c CommandLine) error {
-	return runActionWithContext("kill", c)
+import "github.com/docker/machine/libmachine"
+
+func cmdKill(c CommandLine, api libmachine.API) error {
+	return runAction("kill", c, api)
 }

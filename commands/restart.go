@@ -1,11 +1,12 @@
 package commands
 
 import (
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
 )
 
-func cmdRestart(c CommandLine) error {
-	if err := runActionWithContext("restart", c); err != nil {
+func cmdRestart(c CommandLine, api libmachine.API) error {
+	if err := runAction("restart", c, api); err != nil {
 		return err
 	}
 

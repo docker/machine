@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -35,23 +36,23 @@ type ShellConfig struct {
 	NoProxyValue    string
 }
 
-func cmdEnv(c CommandLine) error {
+func cmdEnv(c CommandLine, api libmachine.API) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
 	if c.Bool("unset") {
-		return unset(c)
+		return unset(c, api)
 	}
-	return set(c)
+	return set(c, api)
 }
 
-func set(c CommandLine) error {
+func set(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) != 1 {
 		return errImproperEnvArgs
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := api.Load(c.Args().First())
 	if err != nil {
 		return err
 	}
@@ -118,7 +119,7 @@ func set(c CommandLine) error {
 	return executeTemplateStdout(shellCfg)
 }
 
-func unset(c CommandLine) error {
+func unset(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) != 0 {
 		return errImproperUnsetEnvArgs
 	}

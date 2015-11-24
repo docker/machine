@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"text/template"
+
+	"github.com/docker/machine/libmachine"
 )
 
 var funcMap = template.FuncMap{
@@ -18,13 +20,13 @@ var funcMap = template.FuncMap{
 	},
 }
 
-func cmdInspect(c CommandLine) error {
+func cmdInspect(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) == 0 {
 		c.ShowHelp()
 		return ErrExpectedOneMachine
 	}
 
-	host, err := getFirstArgHost(c)
+	host, err := api.Load(c.Args().First())
 	if err != nil {
 		return err
 	}
