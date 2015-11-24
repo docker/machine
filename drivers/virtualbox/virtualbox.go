@@ -372,18 +372,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "windows":
-		shareName = "c/Users"
-		shareDir = "c:\\Users"
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-	case "linux":
-		shareName = "hosthome"
-		shareDir = "/home"
-	}
+	shareName, shareDir := getShareDriveAndName()
 
 	if shareDir != "" && !d.NoShare {
 		log.Debugf("setting up shareDir")
