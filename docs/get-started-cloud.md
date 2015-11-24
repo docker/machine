@@ -82,6 +82,11 @@ the last section. If we look at `docker-machine ls`, we'll see it is now the
 To remove a host and all of its containers and images, use `docker-machine rm`:
 
     $ docker-machine rm dev staging
+    Do you really want to remove "dev"? (y/n): y
+    Successfully removed dev
+    Do you really want to remove "staging"? (y/n): y
+    Successfully removed staging
+
     $ docker-machine ls
     NAME      ACTIVE   DRIVER       STATE     URL
 

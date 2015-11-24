@@ -239,6 +239,10 @@ var Commands = []cli.Command{
 				Name:  "force, f",
 				Usage: "Remove local configuration even if machine cannot be removed",
 			},
+			cli.BoolFlag{
+				Name:  "y",
+				Usage: "Assumes automatic yes to proceed with remove, without prompting further user confirmation",
+			},
 		},
 		Name:        "rm",
 		Usage:       "Remove a machine",
