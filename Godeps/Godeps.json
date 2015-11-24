@@ -95,7 +95,7 @@
 		},
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",
-			"Rev": "983d4d86054d80f91fd04dd62ec52c1d078ce403"
+			"Rev": "69a5d87bef620f77ee8508db30c846b3b84b111e"
 		},
 		{
 			"ImportPath": "github.com/smartystreets/go-aws-auth",
