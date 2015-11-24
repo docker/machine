@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
@@ -53,6 +53,18 @@ function run_bats() {
 # Set this ourselves in case bats call fails
 EXIT_STATUS=0
 export BATS_FILE="$1"
+
+# Check we're not running bash 3.x
+if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    echo "Bash 4.1 or later is required to run these tests"
+    exit 1
+fi
+
+# If bash 4.x, check the minor version is 1 or later
+if [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -lt 1 ]; then
+    echo "Bash 4.1 or later is required to run these tests"
+    exit 1
+fi
 
 if [[ -z "$DRIVER" ]]; then
     echo "You must specify the DRIVER environment variable."
