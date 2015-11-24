@@ -24,3 +24,7 @@ func (d *Driver) IsVTXDisabled() bool {
 func detectVBoxManageCmd() string {
 	return detectVBoxManageCmdInPath()
 }
+
+func getShareDriveAndName() (string, string) {
+	return "Users", "/Users"
+}
