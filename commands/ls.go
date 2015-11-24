@@ -39,6 +39,7 @@ type HostListItem struct {
 	State        state.State
 	URL          string
 	SwarmOptions *swarm.Options
+	Error        string
 }
 
 func cmdLs(c CommandLine, api libmachine.API) error {
@@ -67,7 +68,7 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	swarmInfo := make(map[string]string)
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
-	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM")
+	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM\tERRORS")
 
 	for _, host := range hostList {
 		swarmOptions := host.HostOptions.SwarmOptions
@@ -98,8 +99,8 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
 			}
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo, item.Error)
 	}
 
 	w.Flush()
@@ -231,36 +232,19 @@ func matchesName(host *host.Host, names []string) bool {
 }
 
 func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
-	stateCh := make(chan state.State)
-	urlCh := make(chan string)
+	url := ""
+	hostError := ""
 
-	go func() {
-		currentState, err := h.Driver.GetState()
-		if err != nil {
-			log.Errorf("error getting state for host %s: %s", h.Name, err)
-		}
-
-		stateCh <- currentState
-	}()
-
-	go func() {
-		url, err := h.GetURL()
-		if err != nil {
-			if err.Error() == drivers.ErrHostIsNotRunning.Error() {
-				url = ""
-			} else {
-				log.Errorf("error getting URL for host %s: %s", h.Name, err)
-			}
-		}
-
-		urlCh <- url
-	}()
-
-	currentState := <-stateCh
-	url := <-urlCh
-
-	close(stateCh)
-	close(urlCh)
+	currentState, err := h.Driver.GetState()
+	if err == nil {
+		url, err = h.GetURL()
+	}
+	if err != nil {
+		hostError = err.Error()
+	}
+	if hostError == drivers.ErrHostIsNotRunning.Error() {
+		hostError = ""
+	}
 
 	stateQueryChan <- HostListItem{
 		Name:         h.Name,
@@ -269,6 +253,7 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 		State:        currentState,
 		URL:          url,
 		SwarmOptions: h.HostOptions.SwarmOptions,
+		Error:        hostError,
 	}
 }
 
