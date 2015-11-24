@@ -244,13 +244,18 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 		hostError = ""
 	}
 
+	var swarmOptions *swarm.Options
+	if h.HostOptions != nil {
+		swarmOptions = h.HostOptions.SwarmOptions
+	}
+
 	stateQueryChan <- HostListItem{
 		Name:         h.Name,
 		Active:       isActive(currentState, url),
 		DriverName:   h.Driver.DriverName(),
 		State:        currentState,
 		URL:          url,
-		SwarmOptions: h.HostOptions.SwarmOptions,
+		SwarmOptions: swarmOptions,
 		Error:        hostError,
 	}
 }

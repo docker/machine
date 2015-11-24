@@ -455,3 +455,24 @@ func TestGetHostStateTimeout(t *testing.T) {
 
 	stateTimeoutDuration = originalTimeout
 }
+
+func TestGetHostStateError(t *testing.T) {
+	hosts := []*host.Host{
+		{
+			Name: "foo",
+			Driver: &fakedriver.Driver{
+				MockState: state.Error,
+			},
+		},
+	}
+
+	hostItems := getHostListItems(hosts)
+	hostItem := hostItems[0]
+
+	assert.Equal(t, "foo", hostItem.Name)
+	assert.Equal(t, state.Error, hostItem.State)
+	assert.Equal(t, "Driver", hostItem.DriverName)
+	assert.Empty(t, hostItem.URL)
+	assert.Equal(t, "Unable to get ip", hostItem.Error)
+	assert.Nil(t, hostItem.SwarmOptions)
+}
