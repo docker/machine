@@ -1,6 +1,8 @@
 package fakedriver
 
 import (
+	"fmt"
+
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
@@ -27,6 +29,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) GetURL() (string, error) {
+	if d.MockState == state.Error {
+		return "", fmt.Errorf("Unable to get url")
+	}
+	if d.MockState != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
 	return d.MockURL, nil
 }
 
