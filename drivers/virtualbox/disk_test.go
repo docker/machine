@@ -7,22 +7,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	validDiskInfoText = `
+const stdOutDiskInfo = `
 storagecontrollerbootable0="on"
 "SATA-0-0"="/home/ehazlett/.boot2docker/boot2docker.iso"
 "SATA-IsEjected"="off"
 "SATA-1-0"="/home/ehazlett/vm/test/disk.vmdk"
 "SATA-ImageUUID-1-0"="12345-abcdefg"
 "SATA-2-0"="none"
-nic1="nat"
-    `
-)
+nic1="nat"`
 
 func TestVMDiskInfo(t *testing.T) {
 	vbox := &VBoxManagerMock{
 		args:   "showvminfo default --machinereadable",
-		stdOut: validDiskInfoText,
+		stdOut: stdOutDiskInfo,
 	}
 
 	disk, err := getVMDiskInfo("default", vbox)
