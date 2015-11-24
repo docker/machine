@@ -89,3 +89,7 @@ func findVBoxInstallDirInRegistry() (string, error) {
 
 	return installDir, nil
 }
+
+func getShareDriveAndName() (string, string) {
+	return "c/Users", "c:\\Users"
+}
