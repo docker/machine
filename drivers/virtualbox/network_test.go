@@ -8,7 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const stdOutOneHostOnlyNetwork = `Name:            vboxnet0
+const (
+	stdOutOneHostOnlyNetwork = `
+Name:            vboxnet0
 GUID:            786f6276-656e-4074-8000-0a0027000000
 DHCP:            Disabled
 IPAddress:       192.168.99.1
@@ -21,7 +23,8 @@ Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-vboxnet0
 
 `
-const stdOutTwoHostOnlyNetwork = `Name:            vboxnet0
+	stdOutTwoHostOnlyNetwork = `
+Name:            vboxnet0
 GUID:            786f6276-656e-4074-8000-0a0027000000
 DHCP:            Disabled
 IPAddress:       192.168.99.1
@@ -44,8 +47,23 @@ HardwareAddress: 0a:00:27:00:00:01
 MediumType:      Ethernet
 Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-vboxnet1
-
 `
+	stdOutListTwoDHCPServers = `
+NetworkName:    HostInterfaceNetworking-vboxnet0
+IP:             192.168.99.6
+NetworkMask:    255.255.255.0
+lowerIPAddress: 192.168.99.100
+upperIPAddress: 192.168.99.254
+Enabled:        Yes
+
+NetworkName:    HostInterfaceNetworking-vboxnet1
+IP:             192.168.99.7
+NetworkMask:    255.255.255.0
+lowerIPAddress: 192.168.99.100
+upperIPAddress: 192.168.99.254
+Enabled:        No
+`
+)
 
 // Tests that when we have a host only network which matches our expectations,
 // it gets returned correctly.
@@ -222,4 +240,34 @@ func TestFailWithDuplicateHostOnlyNetworks(t *testing.T) {
 
 	assert.Nil(t, net)
 	assert.Equal(t, errDuplicateHostOnlyInterfaceNetworks, err)
+}
+
+func TestGetDHCPServers(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args:   "list dhcpservers",
+		stdOut: stdOutListTwoDHCPServers,
+	}
+
+	servers, err := getDHCPServers(vbox)
+
+	assert.Equal(t, 2, len(servers))
+	assert.NoError(t, err)
+
+	server, present := servers["HostInterfaceNetworking-vboxnet0"]
+	assert.True(t, present)
+	assert.Equal(t, "HostInterfaceNetworking-vboxnet0", server.NetworkName)
+	assert.Equal(t, "192.168.99.6", server.IPv4.IP.String())
+	assert.Equal(t, "192.168.99.100", server.LowerIP.String())
+	assert.Equal(t, "192.168.99.254", server.UpperIP.String())
+	assert.Equal(t, "ffffff00", server.IPv4.Mask.String())
+	assert.True(t, server.Enabled)
+
+	server, present = servers["HostInterfaceNetworking-vboxnet1"]
+	assert.True(t, present)
+	assert.Equal(t, "HostInterfaceNetworking-vboxnet1", server.NetworkName)
+	assert.Equal(t, "192.168.99.7", server.IPv4.IP.String())
+	assert.Equal(t, "192.168.99.100", server.LowerIP.String())
+	assert.Equal(t, "192.168.99.254", server.UpperIP.String())
+	assert.Equal(t, "ffffff00", server.IPv4.Mask.String())
+	assert.False(t, server.Enabled)
 }
