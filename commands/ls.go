@@ -83,8 +83,6 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 
 	items := getHostListItems(hostList)
 
-	sortHostListItemsByName(items)
-
 	for _, item := range items {
 		activeString := "-"
 		if item.Active {
@@ -293,6 +291,8 @@ func getHostListItems(hostList []*host.Host) []HostListItem {
 	}
 
 	close(hostListItemsChan)
+
+	sortHostListItemsByName(hostListItems)
 	return hostListItems
 }
 

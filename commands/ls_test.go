@@ -276,8 +276,8 @@ func TestFilterHostsDifferentFlagsProduceAND(t *testing.T) {
 }
 
 func TestGetHostListItems(t *testing.T) {
-	hostListItemsChan := make(chan HostListItem)
-	activeHostURL := "tcp://active.host.com:2376"
+	// TODO: Ideally this would mockable via interface instead.
+	os.Setenv("DOCKER_HOST", "tcp://active.host.com:2376")
 
 	hosts := []*host.Host{
 		{
@@ -291,7 +291,7 @@ func TestGetHostListItems(t *testing.T) {
 			},
 		},
 		{
-			Name: "bar",
+			Name: "bar100",
 			Driver: &fakedriver.Driver{
 				MockState: state.Stopped,
 			},
@@ -300,7 +300,7 @@ func TestGetHostListItems(t *testing.T) {
 			},
 		},
 		{
-			Name: "baz",
+			Name: "bar10",
 			Driver: &fakedriver.Driver{
 				MockState: state.Error,
 			},
@@ -310,33 +310,24 @@ func TestGetHostListItems(t *testing.T) {
 		},
 	}
 
-	expected := map[string]struct {
+	expected := []struct {
+		name   string
 		state  state.State
 		active bool
 		error  string
 	}{
-		"foo": {state.Running, true, ""},
-		"bar": {state.Stopped, false, ""},
-		"baz": {state.Error, false, "Unable to get ip"},
+		{"bar10", state.Error, false, "Unable to get ip"},
+		{"bar100", state.Stopped, false, ""},
+		{"foo", state.Running, true, ""},
 	}
 
-	// TODO: Ideally this would mockable via interface instead.
-	os.Setenv("DOCKER_HOST", activeHostURL)
+	items := getHostListItems(hosts)
 
-	items := []HostListItem{}
-	for _, host := range hosts {
-		go getHostState(host, hostListItemsChan)
-	}
-	for i := 0; i < len(hosts); i++ {
-		items = append(items, <-hostListItemsChan)
-	}
-
-	for _, item := range items {
-		expected := expected[item.Name]
-
-		assert.Equal(t, expected.state, item.State)
-		assert.Equal(t, expected.active, item.Active)
-		assert.Equal(t, expected.error, item.Error)
+	for i := range expected {
+		assert.Equal(t, expected[i].name, items[i].Name)
+		assert.Equal(t, expected[i].state, items[i].State)
+		assert.Equal(t, expected[i].active, items[i].Active)
+		assert.Equal(t, expected[i].error, items[i].Error)
 	}
 
 	os.Unsetenv("DOCKER_HOST")
@@ -352,8 +343,6 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 
 	// unset DOCKER_HOST
 	os.Unsetenv("DOCKER_HOST")
-
-	hostListItemsChan := make(chan HostListItem)
 
 	hosts := []*host.Host{
 		{
@@ -407,13 +396,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		"baz": {state.Saved, false},
 	}
 
-	items := []HostListItem{}
-	for _, host := range hosts {
-		go getHostState(host, hostListItemsChan)
-	}
-	for i := 0; i < len(hosts); i++ {
-		items = append(items, <-hostListItemsChan)
-	}
+	items := getHostListItems(hosts)
 
 	for _, item := range items {
 		expected := expected[item.Name]
