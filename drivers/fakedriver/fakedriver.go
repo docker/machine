@@ -43,6 +43,8 @@ func (d *Driver) GetMachineName() string {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	// TODO: Expose this and other similar values as configurable instead
+	// of hardcoded.
 	return "1.2.3.4", nil
 }
 
