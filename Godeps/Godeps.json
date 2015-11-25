@@ -8,7 +8,6 @@
 		"github.com/docker/machine/commands/commandstest",
 		"github.com/docker/machine/commands/mcndirs",
 		"github.com/docker/machine/drivers/amazonec2",
-		"github.com/docker/machine/drivers/amazonec2/amz",
 		"github.com/docker/machine/drivers/azure",
 		"github.com/docker/machine/drivers/digitalocean",
 		"github.com/docker/machine/drivers/errdriver",
