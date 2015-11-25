@@ -55,6 +55,9 @@ func (fcli *FakeCommandLine) Int(key string) int {
 }
 
 func (fcli *FakeCommandLine) Bool(key string) bool {
+	if fcli.LocalFlags == nil {
+		return false
+	}
 	return fcli.LocalFlags.Bool(key)
 }
 

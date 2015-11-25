@@ -2,28 +2,15 @@ package commands
 
 import (
 	"errors"
-	"os"
-	"strings"
 	"testing"
 
+	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/hosttest"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
-
-var (
-	stdout *os.File
-)
-
-func init() {
-	stdout = os.Stdout
-}
-
-func cleanup() {
-	os.Stdout = stdout
-}
 
 func TestRunActionForeachMachine(t *testing.T) {
 	// Assume a bunch of machines in randomly started or
@@ -95,29 +82,29 @@ func TestRunActionForeachMachine(t *testing.T) {
 }
 
 func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
-	defer cleanup()
+	stdoutGetter := commandstest.NewStdoutGetter()
+	defer stdoutGetter.Stop()
+
 	host, _ := hosttest.GetDefaultTestHost()
+	err := printIP(host)()
 
-	out, w := captureStdout()
-
-	assert.Nil(t, printIP(host)())
-	w.Close()
-
-	assert.Equal(t, "", strings.TrimSpace(<-out))
+	assert.NoError(t, err)
+	assert.Equal(t, "\n", stdoutGetter.Output())
 }
 
 func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
-	defer cleanup()
+	stdoutGetter := commandstest.NewStdoutGetter()
+	defer stdoutGetter.Stop()
+
 	host, _ := hosttest.GetDefaultTestHost()
-	host.Driver = &fakedriver.Driver{}
+	host.Driver = &fakedriver.Driver{
+		MockState: state.Running,
+		MockIP:    "1.2.3.4",
+	}
+	err := printIP(host)()
 
-	out, w := captureStdout()
-
-	assert.Nil(t, printIP(host)())
-
-	w.Close()
-
-	assert.Equal(t, "1.2.3.4", strings.TrimSpace(<-out))
+	assert.NoError(t, err)
+	assert.Equal(t, "1.2.3.4\n", stdoutGetter.Output())
 }
 
 func TestConsolidateError(t *testing.T) {
