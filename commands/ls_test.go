@@ -294,12 +294,14 @@ func captureStdout() (chan string, *os.File) {
 
 func TestGetHostListItems(t *testing.T) {
 	hostListItemsChan := make(chan HostListItem)
+	activeHostURL := "tcp://active.host.com:2376"
 
 	hosts := []*host.Host{
 		{
 			Name: "foo",
 			Driver: &fakedriver.Driver{
 				MockState: state.Running,
+				MockURL:   activeHostURL,
 			},
 			HostOptions: &host.Options{
 				SwarmOptions: &swarm.Options{},
@@ -335,6 +337,9 @@ func TestGetHostListItems(t *testing.T) {
 		"baz": {state.Error, false, "Unable to get url"},
 	}
 
+	// TODO: Ideally this would mockable via interface instead.
+	os.Setenv("DOCKER_HOST", activeHostURL)
+
 	items := []HostListItem{}
 	for _, host := range hosts {
 		go getHostState(host, hostListItemsChan)
@@ -350,6 +355,8 @@ func TestGetHostListItems(t *testing.T) {
 		assert.Equal(t, expected.active, item.Active)
 		assert.Equal(t, expected.error, item.Error)
 	}
+
+	os.Unsetenv("DOCKER_HOST")
 }
 
 // issue #1908

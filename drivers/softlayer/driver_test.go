@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/stretchr/testify/assert"
@@ -16,38 +17,6 @@ const (
 	machineTestCaCert     = "test-cert"
 	machineTestPrivateKey = "test-key"
 )
-
-type DriverOptionsMock struct {
-	Data map[string]interface{}
-}
-
-func (d DriverOptionsMock) String(key string) string {
-	if value, ok := d.Data[key]; ok {
-		return value.(string)
-	}
-	return ""
-}
-
-func (d DriverOptionsMock) StringSlice(key string) []string {
-	if value, ok := d.Data[key]; ok {
-		return value.([]string)
-	}
-	return []string{}
-}
-
-func (d DriverOptionsMock) Int(key string) int {
-	if value, ok := d.Data[key]; ok {
-		return value.(int)
-	}
-	return 0
-}
-
-func (d DriverOptionsMock) Bool(key string) bool {
-	if value, ok := d.Data[key]; ok {
-		return value.(bool)
-	}
-	return false
-}
 
 func cleanup() error {
 	return os.RemoveAll(testStoreDir)
@@ -62,8 +31,8 @@ func getTestStorePath() (string, error) {
 	return tmpDir, nil
 }
 
-func getDefaultTestDriverFlags() *DriverOptionsMock {
-	return &DriverOptionsMock{
+func getDefaultTestDriverFlags() *commandstest.FakeFlagger {
+	return &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
 			"name":                   "test",
 			"url":                    "unix:///var/run/docker.sock",
