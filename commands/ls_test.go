@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"bytes"
-	"io"
 	"os"
 	"testing"
 
@@ -277,21 +275,6 @@ func TestFilterHostsDifferentFlagsProduceAND(t *testing.T) {
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
 
-func captureStdout() (chan string, *os.File) {
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	out := make(chan string)
-
-	go func() {
-		var testOutput bytes.Buffer
-		io.Copy(&testOutput, r)
-		out <- testOutput.String()
-	}()
-
-	return out, w
-}
-
 func TestGetHostListItems(t *testing.T) {
 	hostListItemsChan := make(chan HostListItem)
 	activeHostURL := "tcp://active.host.com:2376"
@@ -301,7 +284,7 @@ func TestGetHostListItems(t *testing.T) {
 			Name: "foo",
 			Driver: &fakedriver.Driver{
 				MockState: state.Running,
-				MockURL:   activeHostURL,
+				MockIP:    "active.host.com",
 			},
 			HostOptions: &host.Options{
 				SwarmOptions: &swarm.Options{},
@@ -334,7 +317,7 @@ func TestGetHostListItems(t *testing.T) {
 	}{
 		"foo": {state.Running, true, ""},
 		"bar": {state.Stopped, false, ""},
-		"baz": {state.Error, false, "Unable to get url"},
+		"baz": {state.Error, false, "Unable to get ip"},
 	}
 
 	// TODO: Ideally this would mockable via interface instead.
@@ -377,7 +360,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 			Name: "foo",
 			Driver: &fakedriver.Driver{
 				MockState: state.Running,
-				MockURL:   "tcp://120.0.0.1:2376",
+				MockIP:    "120.0.0.1",
 			},
 			HostOptions: &host.Options{
 				SwarmOptions: &swarm.Options{
