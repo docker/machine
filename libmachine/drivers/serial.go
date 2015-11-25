@@ -3,6 +3,8 @@ package drivers
 import (
 	"sync"
 
+	"encoding/json"
+
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 )
@@ -163,4 +165,8 @@ func (d *SerialDriver) Stop() error {
 	d.Lock()
 	defer d.Unlock()
 	return d.Driver.Stop()
+}
+
+func (d *SerialDriver) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Driver)
 }
