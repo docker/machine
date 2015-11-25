@@ -3,6 +3,8 @@ package persist
 import (
 	"fmt"
 
+	"encoding/json"
+
 	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
@@ -46,24 +48,12 @@ func NewPluginStore(path, caCertPath, caPrivateKeyPath string) *PluginStore {
 }
 
 func (ps PluginStore) Save(host *host.Host) error {
-	if serialDriver, ok := host.Driver.(*drivers.SerialDriver); ok {
-		// Unwrap Driver
-		host.Driver = serialDriver.Driver
-
-		// Re-wrap Driver when done
-		defer func() {
-			host.Driver = serialDriver
-		}()
+	data, err := json.Marshal(host.Driver)
+	if err != nil {
+		return fmt.Errorf("Error getting raw config for driver: %s", err)
 	}
 
-	// TODO: Does this belong here?
-	if rpcClientDriver, ok := host.Driver.(*rpcdriver.RPCClientDriver); ok {
-		data, err := rpcClientDriver.GetConfigRaw()
-		if err != nil {
-			return fmt.Errorf("Error getting raw config for driver: %s", err)
-		}
-		host.RawDriver = data
-	}
+	host.RawDriver = data
 
 	return ps.Filestore.Save(host)
 }
