@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/docker/machine/libmachine"
@@ -11,7 +10,7 @@ import (
 func cmdRm(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) == 0 {
 		c.ShowHelp()
-		return errors.New("You must specify a machine name")
+		return ErrNoMachineSpecified
 	}
 
 	force := c.Bool("force")

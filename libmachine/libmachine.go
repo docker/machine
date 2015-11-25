@@ -21,7 +21,7 @@ import (
 
 type API interface {
 	persist.Store
-	NewPluginDriver(string, []byte) (drivers.Driver, error)
+	persist.PluginDriverFactory
 	NewHost(drivers.Driver) (*host.Host, error)
 	Create(h *host.Host) error
 }
