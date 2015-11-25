@@ -67,7 +67,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   run machine rm
   last=$(expr ${#lines[@]} - 1)
   [ "$status" -eq 1 ]
-  [[ ${lines[$last]} == "You must specify a machine name" ]]
+  [[ ${lines[$last]} == "Error: Expected to get one or more machine names as arguments" ]]
 }
 
 @test "none: rm non existent machine fails 'machine rm ∞'" {

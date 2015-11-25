@@ -11,7 +11,7 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	MockState state.State
-	MockURL   string
+	MockIP    string
 	MockName  string
 }
 
@@ -29,13 +29,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) GetURL() (string, error) {
-	if d.MockState == state.Error {
-		return "", fmt.Errorf("Unable to get url")
+	ip, err := d.GetIP()
+	if err != nil {
+		return "", err
 	}
-	if d.MockState != state.Running {
-		return "", drivers.ErrHostIsNotRunning
+	if ip == "" {
+		return "", nil
 	}
-	return d.MockURL, nil
+	return fmt.Sprintf("tcp://%s:2376", ip), nil
 }
 
 func (d *Driver) GetMachineName() string {
@@ -43,9 +44,13 @@ func (d *Driver) GetMachineName() string {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	// TODO: Expose this and other similar values as configurable instead
-	// of hardcoded.
-	return "1.2.3.4", nil
+	if d.MockState == state.Error {
+		return "", fmt.Errorf("Unable to get ip")
+	}
+	if d.MockState != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+	return d.MockIP, nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
@@ -87,10 +92,12 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Restart() error {
+	d.MockState = state.Running
 	return nil
 }
 
 func (d *Driver) Kill() error {
+	d.MockState = state.Stopped
 	return nil
 }
 

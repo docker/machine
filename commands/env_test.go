@@ -14,6 +14,7 @@ import (
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/libmachinetest"
 	"github.com/docker/machine/libmachine/persist/persisttest"
+	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -272,8 +273,11 @@ func TestShellCfgSet(t *testing.T) {
 				FakeStore: &persisttest.FakeStore{
 					Hosts: []*host.Host{
 						{
-							Name:   "quux",
-							Driver: &fakedriver.Driver{},
+							Name: "quux",
+							Driver: &fakedriver.Driver{
+								MockState: state.Running,
+								MockIP:    "1.2.3.4",
+							},
 						},
 					},
 				},
@@ -315,8 +319,11 @@ func TestShellCfgSet(t *testing.T) {
 				FakeStore: &persisttest.FakeStore{
 					Hosts: []*host.Host{
 						{
-							Name:   "quux",
-							Driver: &fakedriver.Driver{},
+							Name: "quux",
+							Driver: &fakedriver.Driver{
+								MockState: state.Running,
+								MockIP:    "1.2.3.4",
+							},
 						},
 					},
 				},
