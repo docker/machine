@@ -21,3 +21,9 @@ load ${BASE_TEST_DIR}/helpers.bash
   linecount=$(machine inspect -f '{{prettyjson .Driver}}' $NAME | wc -l)
   [[ "$linecount" -gt 1 ]]
 }
+
+@test "$DRIVER: check .Driver output is not flawed" {
+  run docker-machine inspect -f '{{.Driver.SSHUser}}' $NAME
+  [ "$status" -eq 0 ]
+  [[ ${output} == "docker" ]]
+}
