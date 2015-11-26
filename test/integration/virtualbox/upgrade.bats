@@ -2,9 +2,7 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-if [[ "$DRIVER" != "virtualbox" ]]; then
-    exit 0
-fi
+only_if_env DRIVER virtualbox
 
 export OLD_ISO_URL="https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso"
 
