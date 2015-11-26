@@ -13,6 +13,10 @@ type SystemdProvisioner struct {
 	GenericProvisioner
 }
 
+func (p *SystemdProvisioner) String() string {
+	return "redhat"
+}
+
 func NewSystemdProvisioner(osReleaseID string, d drivers.Driver) SystemdProvisioner {
 	return SystemdProvisioner{
 		GenericProvisioner{

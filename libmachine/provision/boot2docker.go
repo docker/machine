@@ -41,6 +41,10 @@ type Boot2DockerProvisioner struct {
 	SwarmOptions  swarm.Options
 }
 
+func (provisioner *Boot2DockerProvisioner) String() string {
+	return "boot2docker"
+}
+
 func (provisioner *Boot2DockerProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	_, err := provisioner.SSHCommand(fmt.Sprintf("sudo /etc/init.d/%s %s", name, action.String()))
 	return err

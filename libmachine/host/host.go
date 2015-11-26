@@ -9,6 +9,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
@@ -135,14 +136,13 @@ func (h *Host) Upgrade() error {
 		return err
 	}
 
+	log.Info("Upgrading docker...")
 	if err := provisioner.Package("docker", pkgaction.Upgrade); err != nil {
 		return err
 	}
 
-	if err := provisioner.Service("docker", serviceaction.Restart); err != nil {
-		return err
-	}
-	return nil
+	log.Info("Restarting docker...")
+	return provisioner.Service("docker", serviceaction.Restart)
 }
 
 func (h *Host) GetURL() (string, error) {
