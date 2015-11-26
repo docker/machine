@@ -1,10 +1,6 @@
 package persist
 
 import (
-	"fmt"
-
-	"encoding/json"
-
 	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
@@ -45,17 +41,6 @@ func NewPluginStore(path, caCertPath, caPrivateKeyPath string) *PluginStore {
 		Filestore:           NewFilestore(path, caCertPath, caPrivateKeyPath),
 		PluginDriverFactory: RPCPluginDriverFactory{},
 	}
-}
-
-func (ps PluginStore) Save(host *host.Host) error {
-	data, err := json.Marshal(host.Driver)
-	if err != nil {
-		return fmt.Errorf("Error getting raw config for driver: %s", err)
-	}
-
-	host.RawDriver = data
-
-	return ps.Filestore.Save(host)
 }
 
 func (ps PluginStore) Load(name string) (*host.Host, error) {
