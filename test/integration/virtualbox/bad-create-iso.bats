@@ -2,9 +2,7 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-if [[ "$DRIVER" != "virtualbox" ]]; then
-    exit 0
-fi
+only_if_env DRIVER virtualbox
 
 export BAD_URL="http://dev.null:9111/bad.iso"
 
