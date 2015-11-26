@@ -145,7 +145,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	}
 
 	// TODO: Fix hacky JSON solution
-	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
+	rawDriver, err := json.Marshal(&drivers.BaseDriver{
 		MachineName: name,
 		StorePath:   c.GlobalString("storage-path"),
 	})
@@ -153,7 +153,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
 	}
 
-	driver, err := api.NewPluginDriver(driverName, bareDriverData)
+	driver, err := api.NewPluginDriver(driverName, rawDriver)
 	if err != nil {
 		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
 	}
@@ -281,14 +281,14 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 	}
 
 	// TODO: Fix hacky JSON solution
-	bareDriverData, err := json.Marshal(&drivers.BaseDriver{
+	rawDriver, err := json.Marshal(&drivers.BaseDriver{
 		MachineName: flagLookupMachineName,
 	})
 	if err != nil {
 		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
 	}
 
-	driver, err := api.NewPluginDriver(driverName, bareDriverData)
+	driver, err := api.NewPluginDriver(driverName, rawDriver)
 	if err != nil {
 		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
 	}
