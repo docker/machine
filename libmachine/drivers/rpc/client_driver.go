@@ -34,11 +34,43 @@ type InternalClient struct {
 	RPCClient   *rpc.Client
 }
 
+const (
+	RPCServiceNameV0 = `RpcServerDriver`
+	RPCServiceNameV1 = `RPCServerDriver`
+
+	HeartbeatMethod          = `.Heartbeat`
+	GetVersionMethod         = `.GetVersion`
+	CloseMethod              = `.Close`
+	GetCreateFlagsMethod     = `.GetCreateFlags`
+	SetConfigRawMethod       = `.SetConfigRaw`
+	GetConfigRawMethod       = `.GetConfigRaw`
+	DriverNameMethod         = `.DriverName`
+	SetConfigFromFlagsMethod = `.SetConfigFromFlags`
+	GetURLMethod             = `.GetURL`
+	GetMachineNameMethod     = `.GetMachineName`
+	GetIPMethod              = `.GetIP`
+	GetSSHHostnameMethod     = `.GetSSHHostname`
+	GetSSHKeyPathMethod      = `.GetSSHKeyPath`
+	GetSSHPortMethod         = `.GetSSHPort`
+	GetSSHUsernameMethod     = `.GetSSHUsername`
+	GetStateMethod           = `.GetState`
+	PreCreateCheckMethod     = `.PreCreateCheck`
+	CreateMethod             = `.Create`
+	RemoveMethod             = `.Remove`
+	StartMethod              = `.Start`
+	StopMethod               = `.Stop`
+	RestartMethod            = `.Restart`
+	KillMethod               = `.Kill`
+	UpgradeMethod            = `.Upgrade`
+	LocalArtifactPathMethod  = `.LocalArtifactPath`
+	GlobalArtifactPathMethod = `.GlobalArtifactPath`
+)
+
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
-	if serviceMethod != "RPCServerDriver.Heartbeat" {
+	if serviceMethod != HeartbeatMethod {
 		log.Debugf("(%s) Calling %+v", ic.MachineName, serviceMethod)
 	}
-	return ic.RPCClient.Call(serviceMethod, args, reply)
+	return ic.RPCClient.Call(RPCServiceNameV1+serviceMethod, args, reply)
 }
 
 func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
@@ -84,7 +116,7 @@ func NewRPCClientDriver(rawDriverData []byte, driverName string) (*RPCClientDriv
 			case <-c.heartbeatDoneCh:
 				return
 			default:
-				if err := c.Client.Call("RPCServerDriver.Heartbeat", struct{}{}, nil); err != nil {
+				if err := c.Client.Call(HeartbeatMethod, struct{}{}, nil); err != nil {
 					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
 					c.Close()
 					return
@@ -95,7 +127,7 @@ func NewRPCClientDriver(rawDriverData []byte, driverName string) (*RPCClientDriv
 	}(c)
 
 	var serverVersion int
-	if err := c.Client.Call("RPCServerDriver.GetVersion", struct{}{}, &serverVersion); err != nil {
+	if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {
 		return nil, err
 	}
 
@@ -136,7 +168,7 @@ func (c *RPCClientDriver) Close() error {
 
 	log.Debug("Making call to close driver server")
 
-	if err := c.Client.Call("RPCServerDriver.Close", struct{}{}, nil); err != nil {
+	if err := c.Client.Call(CloseMethod, struct{}{}, nil); err != nil {
 		return err
 	}
 
@@ -160,7 +192,7 @@ func (c *RPCClientDriver) rpcStringCall(method string) (string, error) {
 func (c *RPCClientDriver) GetCreateFlags() []mcnflag.Flag {
 	var flags []mcnflag.Flag
 
-	if err := c.Client.Call("RPCServerDriver.GetCreateFlags", struct{}{}, &flags); err != nil {
+	if err := c.Client.Call(GetCreateFlagsMethod, struct{}{}, &flags); err != nil {
 		log.Warnf("Error attempting call to get create flags: %s", err)
 	}
 
@@ -168,13 +200,13 @@ func (c *RPCClientDriver) GetCreateFlags() []mcnflag.Flag {
 }
 
 func (c *RPCClientDriver) SetConfigRaw(data []byte) error {
-	return c.Client.Call("RPCServerDriver.SetConfigRaw", data, nil)
+	return c.Client.Call(SetConfigRawMethod, data, nil)
 }
 
 func (c *RPCClientDriver) GetConfigRaw() ([]byte, error) {
 	var data []byte
 
-	if err := c.Client.Call("RPCServerDriver.GetConfigRaw", struct{}{}, &data); err != nil {
+	if err := c.Client.Call(GetConfigRawMethod, struct{}{}, &data); err != nil {
 		return nil, err
 	}
 
@@ -183,7 +215,7 @@ func (c *RPCClientDriver) GetConfigRaw() ([]byte, error) {
 
 // DriverName returns the name of the driver
 func (c *RPCClientDriver) DriverName() string {
-	driverName, err := c.rpcStringCall("RPCServerDriver.DriverName")
+	driverName, err := c.rpcStringCall(DriverNameMethod)
 	if err != nil {
 		log.Warnf("Error attempting call to get driver name: %s", err)
 	}
@@ -192,15 +224,15 @@ func (c *RPCClientDriver) DriverName() string {
 }
 
 func (c *RPCClientDriver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	return c.Client.Call("RPCServerDriver.SetConfigFromFlags", &flags, nil)
+	return c.Client.Call(SetConfigFromFlagsMethod, &flags, nil)
 }
 
 func (c *RPCClientDriver) GetURL() (string, error) {
-	return c.rpcStringCall("RPCServerDriver.GetURL")
+	return c.rpcStringCall(GetURLMethod)
 }
 
 func (c *RPCClientDriver) GetMachineName() string {
-	name, err := c.rpcStringCall("RPCServerDriver.GetMachineName")
+	name, err := c.rpcStringCall(GetMachineNameMethod)
 	if err != nil {
 		log.Warnf("Error attempting call to get machine name: %s", err)
 	}
@@ -209,17 +241,17 @@ func (c *RPCClientDriver) GetMachineName() string {
 }
 
 func (c *RPCClientDriver) GetIP() (string, error) {
-	return c.rpcStringCall("RPCServerDriver.GetIP")
+	return c.rpcStringCall(GetIPMethod)
 }
 
 func (c *RPCClientDriver) GetSSHHostname() (string, error) {
-	return c.rpcStringCall("RPCServerDriver.GetSSHHostname")
+	return c.rpcStringCall(GetSSHHostnameMethod)
 }
 
 // GetSSHKeyPath returns the key path
 // TODO:  This method doesn't even make sense to have with RPC.
 func (c *RPCClientDriver) GetSSHKeyPath() string {
-	path, err := c.rpcStringCall("RPCServerDriver.GetSSHKeyPath")
+	path, err := c.rpcStringCall(GetSSHKeyPathMethod)
 	if err != nil {
 		log.Warnf("Error attempting call to get SSH key path: %s", err)
 	}
@@ -230,7 +262,7 @@ func (c *RPCClientDriver) GetSSHKeyPath() string {
 func (c *RPCClientDriver) GetSSHPort() (int, error) {
 	var port int
 
-	if err := c.Client.Call("RPCServerDriver.GetSSHPort", struct{}{}, &port); err != nil {
+	if err := c.Client.Call(GetSSHPortMethod, struct{}{}, &port); err != nil {
 		return 0, err
 	}
 
@@ -238,7 +270,7 @@ func (c *RPCClientDriver) GetSSHPort() (int, error) {
 }
 
 func (c *RPCClientDriver) GetSSHUsername() string {
-	username, err := c.rpcStringCall("RPCServerDriver.GetSSHUsername")
+	username, err := c.rpcStringCall(GetSSHUsernameMethod)
 	if err != nil {
 		log.Warnf("Error attempting call to get SSH username: %s", err)
 	}
@@ -249,7 +281,7 @@ func (c *RPCClientDriver) GetSSHUsername() string {
 func (c *RPCClientDriver) GetState() (state.State, error) {
 	var s state.State
 
-	if err := c.Client.Call("RPCServerDriver.GetState", struct{}{}, &s); err != nil {
+	if err := c.Client.Call(GetStateMethod, struct{}{}, &s); err != nil {
 		return state.Error, err
 	}
 
@@ -257,37 +289,37 @@ func (c *RPCClientDriver) GetState() (state.State, error) {
 }
 
 func (c *RPCClientDriver) PreCreateCheck() error {
-	return c.Client.Call("RPCServerDriver.PreCreateCheck", struct{}{}, nil)
+	return c.Client.Call(PreCreateCheckMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) Create() error {
-	return c.Client.Call("RPCServerDriver.Create", struct{}{}, nil)
+	return c.Client.Call(CreateMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) Remove() error {
-	return c.Client.Call("RPCServerDriver.Remove", struct{}{}, nil)
+	return c.Client.Call(RemoveMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) Start() error {
-	return c.Client.Call("RPCServerDriver.Start", struct{}{}, nil)
+	return c.Client.Call(StartMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) Stop() error {
-	return c.Client.Call("RPCServerDriver.Stop", struct{}{}, nil)
+	return c.Client.Call(StopMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) Restart() error {
-	return c.Client.Call("RPCServerDriver.Restart", struct{}{}, nil)
+	return c.Client.Call(RestartMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) Kill() error {
-	return c.Client.Call("RPCServerDriver.Kill", struct{}{}, nil)
+	return c.Client.Call(KillMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) LocalArtifactPath(file string) string {
 	var path string
 
-	if err := c.Client.Call("RPCServerDriver.LocalArtifactPath", file, &path); err != nil {
+	if err := c.Client.Call(LocalArtifactPathMethod, file, &path); err != nil {
 		log.Warnf("Error attempting call to get LocalArtifactPath: %s", err)
 	}
 
@@ -295,7 +327,7 @@ func (c *RPCClientDriver) LocalArtifactPath(file string) string {
 }
 
 func (c *RPCClientDriver) GlobalArtifactPath() string {
-	globalArtifactPath, err := c.rpcStringCall("RPCServerDriver.GlobalArtifactPath")
+	globalArtifactPath, err := c.rpcStringCall(GlobalArtifactPathMethod)
 	if err != nil {
 		log.Warnf("Error attempting call to get GlobalArtifactPath: %s", err)
 	}
@@ -304,5 +336,5 @@ func (c *RPCClientDriver) GlobalArtifactPath() string {
 }
 
 func (c *RPCClientDriver) Upgrade() error {
-	return c.Client.Call("RPCServerDriver.Upgrade", struct{}{}, nil)
+	return c.Client.Call(UpgradeMethod, struct{}{}, nil)
 }
