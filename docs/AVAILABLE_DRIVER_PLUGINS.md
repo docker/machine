@@ -21,6 +21,7 @@ with Docker Inc.  Use 3rd party plugins at your own risk.
 
 | Name | Repository | Maintainer GitHub Handle  | Maintainer Email |
 | ---- | ---------- | ------------------------- | ---------------- |
+| Amazon Cloud Formation | https://github.com/jeffellin/machine-cloudformation |[Jeff Ellin](https://github.com/jeffellin) | acf@ellin.com |
 | BrightBox | https://github.com/brightbox/docker-machine-driver-brightbox | [NeilW](https://github.com/NeilW) | neil@aldur.co.uk |
 | Docker-In-Docker | https://github.com/nathanleclaire/docker-machine-driver-dind | [nathanleclaire](https://github.com/nathanleclaire) | nathan.leclaire@gmail.com |
 | HPE OneView  | https://github.com/HewlettPackard/docker-machine-oneview | [wenlock](https://github.com/wenlock) | wenlock@hpe.com |
