@@ -83,8 +83,6 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 
 	items := getHostListItems(hostList)
 
-	sortHostListItemsByName(items)
-
 	for _, item := range items {
 		activeString := "-"
 		if item.Active {
@@ -246,13 +244,18 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 		hostError = ""
 	}
 
+	var swarmOptions *swarm.Options
+	if h.HostOptions != nil {
+		swarmOptions = h.HostOptions.SwarmOptions
+	}
+
 	stateQueryChan <- HostListItem{
 		Name:         h.Name,
 		Active:       isActive(currentState, url),
 		DriverName:   h.Driver.DriverName(),
 		State:        currentState,
 		URL:          url,
-		SwarmOptions: h.HostOptions.SwarmOptions,
+		SwarmOptions: swarmOptions,
 		Error:        hostError,
 	}
 }
@@ -293,6 +296,8 @@ func getHostListItems(hostList []*host.Host) []HostListItem {
 	}
 
 	close(hostListItemsChan)
+
+	sortHostListItemsByName(hostListItems)
 	return hostListItems
 }
 
