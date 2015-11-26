@@ -19,3 +19,7 @@ func NewFedoraProvisioner(d drivers.Driver) Provisioner {
 type FedoraProvisioner struct {
 	*RedHatProvisioner
 }
+
+func (provisioner *FedoraProvisioner) String() string {
+	return "fedora"
+}

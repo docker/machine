@@ -38,6 +38,10 @@ type CoreOSProvisioner struct {
 	SystemdProvisioner
 }
 
+func (provisioner *CoreOSProvisioner) String() string {
+	return "coreOS"
+}
+
 func (provisioner *CoreOSProvisioner) SetHostname(hostname string) error {
 	log.Debugf("SetHostname: %s", hostname)
 
