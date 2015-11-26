@@ -17,10 +17,10 @@ function errecho () {
     >&2 echo "$@"
 }
 
-function force_env () {
+function only_if_env () {
     if [[ ${!1} != "$2" ]]; then
-        errecho "This test requires the $1 environment variable to be set to $2 in order to run properly."
-        exit 1
+        errecho "This test requires the $1 environment variable to be set to $2. Skipping..."
+        skip
     fi
 }
 
