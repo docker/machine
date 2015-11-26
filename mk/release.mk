@@ -6,6 +6,7 @@ release-checksum:
 	@:
 
 release-pack:
+	find ./bin -name docker-machine-driver-test* -exec rm {} \;
 	find ./bin -type d -mindepth 1 -exec zip -r -j {}.zip {} \;
 
 release: clean dco fmt test test-long build-x release-pack release-checksum

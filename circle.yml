@@ -33,7 +33,7 @@ test:
         pwd: $BASE_STABLE
 
   override:
-    - DRIVER=none test/integration/run-bats.sh test/integration/cli:
+    - DRIVER=test test/integration/run-bats.sh test/integration/cli:
         pwd: $BASE_STABLE
         timeout: 600
     # - DRIVER=virtualbox test/integration/run-bats.sh test/integration/core:

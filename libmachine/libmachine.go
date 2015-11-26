@@ -103,8 +103,8 @@ func (api *Client) Create(h *host.Host) error {
 		return fmt.Errorf("Error saving host to store after attempting creation: %s", err)
 	}
 
-	// TODO: Not really a fan of just checking "none" here.
-	if h.Driver.DriverName() != "none" {
+	// TODO: Not really a fan of just checking "test" here.
+	if h.Driver.DriverName() != "test" {
 		log.Info("Waiting for machine to be running, this may take a few minutes...")
 		if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
 			return fmt.Errorf("Error waiting for machine to be running: %s", err)

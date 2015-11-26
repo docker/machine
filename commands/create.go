@@ -38,7 +38,7 @@ var (
 			Usage: fmt.Sprintf(
 				"Driver to create machine with.",
 			),
-			Value: "none",
+			Value: "generic",
 		},
 		cli.StringFlag{
 			Name:   "engine-install-url",
