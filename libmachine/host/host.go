@@ -30,7 +30,7 @@ type Host struct {
 	DriverName    string
 	HostOptions   *Options
 	Name          string
-	RawDriver     []byte
+	RawDriver     []byte `json:"-"`
 }
 
 type Options struct {

@@ -11,14 +11,22 @@ import (
 	"github.com/docker/machine/libmachine/version"
 )
 
+var (
+	errConfigFromFuture = errors.New("Config version is from the future, please upgrade your Docker Machine client.")
+)
+
 type RawDataDriver struct {
 	*none.Driver
-	data []byte // passed directly back when invoking json.Marshal on this type
+	Data []byte // passed directly back when invoking json.Marshal on this type
 }
 
 func (r *RawDataDriver) MarshalJSON() ([]byte, error) {
-	// now marshal it back up
-	return r.data, nil
+	return r.Data, nil
+}
+
+func (r *RawDataDriver) UnmarshalJSON(data []byte) error {
+	r.Data = data
+	return nil
 }
 
 func getMigratedHostMetadata(data []byte) (*Metadata, error) {
@@ -51,34 +59,16 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 
 	globalStorePath := filepath.Dir(filepath.Dir(migratedHostMetadata.HostOptions.AuthOptions.StorePath))
 
-	driver := none.NewDriver(h.Name, globalStorePath)
+	driver := &RawDataDriver{none.NewDriver(h.Name, globalStorePath), nil}
 
 	if migratedHostMetadata.ConfigVersion > version.ConfigVersion {
-		return nil, false, errors.New("Config version is from the future, please upgrade your Docker Machine client.")
+		return nil, false, errConfigFromFuture
 	}
 
 	if migratedHostMetadata.ConfigVersion == version.ConfigVersion {
 		h.Driver = driver
 		if err := json.Unmarshal(data, &h); err != nil {
 			return nil, migrationPerformed, fmt.Errorf("Error unmarshalling most recent host version: %s", err)
-		}
-
-		// We are config version 3, so we definitely should have a
-		// RawDriver field.  However, it's possible some might use
-		// older clients after already migrating, so check if it exists
-		// and create one if not.  The following code is an (admittedly
-		// fragile) attempt to account for the fact that the above code
-		// to forbid loading from future clients was not introduced
-		// sooner.
-		if h.RawDriver == nil {
-			log.Warn("It looks like you have used an older Docker Machine binary to interact with hosts after using a 0.5.0 binary.")
-			log.Warn("Please be advised that doing so can result in erratic behavior due to migrated configuration settings.")
-			log.Warn("Machine will attempt to re-migrate the configuration settings, but safety is not guaranteed.")
-			migrationNeeded = true
-
-			// Treat the data as config version 1, even though it
-			// says "latest".
-			migratedHostMetadata.ConfigVersion = 1
 		}
 	} else {
 		migrationNeeded = true
@@ -117,11 +107,14 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 					}
 				}
 				h = MigrateHostV2ToHostV3(hostV2, data, globalStorePath)
-				h.Driver = RawDataDriver{driver, nil}
+				driver.Data = h.RawDriver
+				h.Driver = driver
 			case 3:
 			}
 		}
 	}
+
+	h.RawDriver = driver.Data
 
 	return h, migrationPerformed, nil
 }
