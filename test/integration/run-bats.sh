@@ -97,9 +97,13 @@ export -f machine
 cleanup_machines
 cleanup_store
 
-if [[ "$B2D_CACHE" == "1" ]] && [[ -f $B2D_LOCATION ]]; then
-    mkdir -p "${MACHINE_STORAGE_PATH}/cache"
-    cp $B2D_LOCATION "${MACHINE_STORAGE_PATH}/cache/boot2docker.iso"
+if [[ -f "$B2D_LOCATION" ]]; then
+    if [[ "$B2D_CACHE" == "1" ]]; then
+        mkdir -p "${MACHINE_STORAGE_PATH}/cache"
+        cp $B2D_LOCATION "${MACHINE_STORAGE_PATH}/cache/boot2docker.iso"
+    else
+        echo "INFO: Run the tests with B2D_CACHE=1 to avoid downloading the boot2docker iso each time."
+    fi
 fi
 
 run_bats "$BATS_FILE"
