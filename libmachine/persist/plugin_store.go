@@ -9,7 +9,7 @@ import (
 )
 
 type PluginDriverFactory interface {
-	NewPluginDriver(string, []byte) (drivers.Driver, error)
+	NewPluginDriver(driverName string, rawDriver []byte) (drivers.Driver, error)
 }
 
 type RPCPluginDriverFactory struct{}
@@ -19,8 +19,8 @@ type PluginStore struct {
 	PluginDriverFactory
 }
 
-func (factory RPCPluginDriverFactory) NewPluginDriver(driverName string, rawContent []byte) (drivers.Driver, error) {
-	d, err := rpcdriver.NewRPCClientDriver(rawContent, driverName)
+func (factory RPCPluginDriverFactory) NewPluginDriver(driverName string, rawDriver []byte) (drivers.Driver, error) {
+	d, err := rpcdriver.NewRPCClientDriver(driverName, rawDriver)
 	if err != nil {
 		// Not being able to find a driver binary is a "known error"
 		if _, ok := err.(localbinary.ErrPluginBinaryNotFound); ok {

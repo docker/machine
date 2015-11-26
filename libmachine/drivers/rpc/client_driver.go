@@ -79,7 +79,7 @@ func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 	}
 }
 
-func NewRPCClientDriver(rawDriverData []byte, driverName string) (*RPCClientDriver, error) {
+func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
 	mcnName := ""
 
 	p, err := localbinary.NewPlugin(driverName)
@@ -136,7 +136,7 @@ func NewRPCClientDriver(rawDriverData []byte, driverName string) (*RPCClientDriv
 	}
 	log.Debug("Using API Version ", serverVersion)
 
-	if err := c.SetConfigRaw(rawDriverData); err != nil {
+	if err := c.SetConfigRaw(rawDriver); err != nil {
 		return nil, err
 	}
 
