@@ -10,7 +10,7 @@ type FakeFlagger struct {
 
 type FakeCommandLine struct {
 	LocalFlags, GlobalFlags *FakeFlagger
-	HelpShown               bool
+	HelpShown, VersionShown bool
 	CliArgs                 []string
 }
 
@@ -91,5 +91,5 @@ func (fcli *FakeCommandLine) Args() cli.Args {
 }
 
 func (fcli *FakeCommandLine) ShowVersion() {
-	return
+	fcli.VersionShown = true
 }

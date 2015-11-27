@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"crypto/tls"
+
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +30,10 @@ func (fcg FakeCertGenerator) GenerateCert(hosts []string, certFile, keyFile, caF
 
 func (fcg FakeCertGenerator) ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
 	return fcg.fakeValidateCertificate.IsValid, fcg.fakeValidateCertificate.Err
+}
+
+func (fcg FakeCertGenerator) ReadTLSConfig(addr string, authOptions *auth.Options) (*tls.Config, error) {
+	return nil, nil
 }
 
 func TestCheckCert(t *testing.T) {

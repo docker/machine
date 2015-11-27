@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/stretchr/testify/assert"
@@ -296,6 +297,9 @@ func TestFilterHostsDifferentFlagsProduceAND(t *testing.T) {
 }
 
 func TestGetHostListItems(t *testing.T) {
+	mcndockerclient.CurrentDockerVersioner = &mcndockerclient.FakeDockerVersioner{Version: "1.9"}
+	defer mcndockerclient.CleanupDockerVersioner()
+
 	// TODO: Ideally this would mockable via interface instead.
 	os.Setenv("DOCKER_HOST", "tcp://active.host.com:2376")
 
@@ -331,14 +335,15 @@ func TestGetHostListItems(t *testing.T) {
 	}
 
 	expected := []struct {
-		name   string
-		state  state.State
-		active bool
-		error  string
+		name    string
+		state   state.State
+		active  bool
+		version string
+		error   string
 	}{
-		{"bar10", state.Error, false, "Unable to get ip"},
-		{"bar100", state.Stopped, false, ""},
-		{"foo", state.Running, true, ""},
+		{"bar10", state.Error, false, "Unknown", "Unable to get ip"},
+		{"bar100", state.Stopped, false, "Unknown", ""},
+		{"foo", state.Running, true, "v1.9", ""},
 	}
 
 	items := getHostListItems(hosts, map[string]error{})
@@ -347,6 +352,7 @@ func TestGetHostListItems(t *testing.T) {
 		assert.Equal(t, expected[i].name, items[i].Name)
 		assert.Equal(t, expected[i].state, items[i].State)
 		assert.Equal(t, expected[i].active, items[i].Active)
+		assert.Equal(t, expected[i].version, items[i].DockerVersion)
 		assert.Equal(t, expected[i].error, items[i].Error)
 	}
 
@@ -355,6 +361,9 @@ func TestGetHostListItems(t *testing.T) {
 
 // issue #1908
 func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
+	mcndockerclient.CurrentDockerVersioner = &mcndockerclient.FakeDockerVersioner{Version: "1.9"}
+	defer mcndockerclient.CleanupDockerVersioner()
+
 	orgDockerHost := os.Getenv("DOCKER_HOST")
 	defer func() {
 		// revert DOCKER_HOST
@@ -408,12 +417,13 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 	}
 
 	expected := map[string]struct {
-		state  state.State
-		active bool
+		state   state.State
+		active  bool
+		version string
 	}{
-		"foo": {state.Running, false},
-		"bar": {state.Stopped, false},
-		"baz": {state.Saved, false},
+		"foo": {state.Running, false, "v1.9"},
+		"bar": {state.Stopped, false, "Unknown"},
+		"baz": {state.Saved, false, "Unknown"},
 	}
 
 	items := getHostListItems(hosts, map[string]error{})
@@ -423,6 +433,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 
 		assert.Equal(t, expected.state, item.State)
 		assert.Equal(t, expected.active, item.Active)
+		assert.Equal(t, expected.version, item.DockerVersion)
 	}
 }
 
@@ -463,7 +474,7 @@ func TestGetHostStateTimeout(t *testing.T) {
 		},
 	}
 
-	stateTimeoutDuration = 1 * time.Second
+	stateTimeoutDuration = 1 * time.Millisecond
 	hostItems := getHostListItems(hosts, map[string]error{})
 	hostItem := hostItems[0]
 
@@ -496,6 +507,9 @@ func TestGetHostStateError(t *testing.T) {
 }
 
 func TestGetSomeHostInEror(t *testing.T) {
+	mcndockerclient.CurrentDockerVersioner = &mcndockerclient.FakeDockerVersioner{Version: "1.9"}
+	defer mcndockerclient.CleanupDockerVersioner()
+
 	hosts := []*host.Host{
 		{
 			Name: "foo",

@@ -9,13 +9,12 @@ import (
 )
 
 var (
-	errTooManyArguments = errors.New("Error: Too many arguments given")
-	errNoActiveHost     = errors.New("No active host found")
+	errNoActiveHost = errors.New("No active host found")
 )
 
 func cmdActive(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) > 0 {
-		return errTooManyArguments
+		return ErrTooManyArguments
 	}
 
 	hosts, hostsInError, err := persist.LoadAllHosts(api)
