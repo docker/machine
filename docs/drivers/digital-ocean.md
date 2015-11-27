@@ -9,6 +9,7 @@ parent="smn_machine_drivers"
 <![end-metadata]-->
 
 # Digital Ocean
+
 Create Docker machines on [Digital Ocean](https://www.digitalocean.com/).
 
 You need to create a personal access token under "Apps & API" in the Digital Ocean
@@ -18,20 +19,20 @@ Control Panel and pass that to `docker-machine create` with the `--digitalocean-
 
 Options:
 
- - `--digitalocean-access-token`: **required** Your personal access token for the Digital Ocean API.
- - `--digitalocean-image`: The name of the Digital Ocean image to use.
- - `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list.
- - `--digitalocean-size`: The size of the Digital Ocean droplet (larger than default options are of the form `2gb`).
- - `--digitalocean-ipv6`: Enable IPv6 support for the droplet.
- - `--digitalocean-private-networking`: Enable private networking support for the droplet.
- - `--digitalocean-backups`: Enable Digital Oceans backups for the droplet.
+-   `--digitalocean-access-token`: **required** Your personal access token for the Digital Ocean API.
+-   `--digitalocean-image`: The name of the Digital Ocean image to use.
+-   `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list.
+-   `--digitalocean-size`: The size of the Digital Ocean droplet (larger than default options are of the form `2gb`).
+-   `--digitalocean-ipv6`: Enable IPv6 support for the droplet.
+-   `--digitalocean-private-networking`: Enable private networking support for the droplet.
+-   `--digitalocean-backups`: Enable Digital Oceans backups for the droplet.
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
 Environment variables and default values:
 
 | CLI option                          | Environment variable              | Default  |
-|-------------------------------------|-----------------------------------|----------|
+| ----------------------------------- | --------------------------------- | -------- |
 | **`--digitalocean-access-token`**   | `DIGITALOCEAN_ACCESS_TOKEN`       | -        |
 | `--digitalocean-image`              | `DIGITALOCEAN_IMAGE`              | `docker` |
 | `--digitalocean-region`             | `DIGITALOCEAN_REGION`             | `nyc3`   |

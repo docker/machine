@@ -36,15 +36,15 @@ remote providers. For local providers such as VirtualBox, Fusion, Hyper-V, and
 so forth, the default base operating system is Boot2Docker. For cloud providers,
 the base operating system is the latest Ubuntu LTS the provider supports.
 
-| Operating System           | Version          | Notes                   |
-|----------------------------|------------------|-------------------------|
-| Boot2Docker                | 1.5+             | default for local       |
-| Ubuntu                     | 12.04+           | default for remote      |
-| RancherOS                  | 0.3+             |                         |
-| Debian                     | 8.0+             | experimental            |
-| RedHat Enterprise Linux    | 7.0+             | experimental            |
-| CentOS                     | 7+               | experimental            |
-| Fedora                     | 21+              | experimental            |
+| Operating System        | Version | Notes              |
+| ----------------------- | ------- | ------------------ |
+| Boot2Docker             | 1.5+    | default for local  |
+| Ubuntu                  | 12.04+  | default for remote |
+| RancherOS               | 0.3+    |                    |
+| Debian                  | 8.0+    | experimental       |
+| RedHat Enterprise Linux | 7.0+    | experimental       |
+| CentOS                  | 7+      | experimental       |
+| Fedora                  | 21+     | experimental       |
 
 To use a different base operating system on a remote provider, specify the
 provider's image flag and one of its available images. For example, to select a

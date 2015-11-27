@@ -9,31 +9,32 @@ parent="smn_machine_drivers"
 <![end-metadata]-->
 
 # VMware vCloud Air
+
 Creates machines on [vCloud Air](http://vcloud.vmware.com) subscription service. You need an account within an existing subscription of vCloud Air VPC or Dedicated Cloud.
 
 Options:
 
- - `--vmwarevcloudair-username`: **required** vCloud Air Username.
- - `--vmwarevcloudair-password`: **required** vCloud Air Password.
- - `--vmwarevcloudair-computeid`: Compute ID (if using Dedicated Cloud).
- - `--vmwarevcloudair-vdcid`: Virtual Data Center ID.
- - `--vmwarevcloudair-orgvdcnetwork`: Organization VDC Network to attach.
- - `--vmwarevcloudair-edgegateway`: Organization Edge Gateway.
- - `--vmwarevcloudair-publicip`: Org Public IP to use.
- - `--vmwarevcloudair-catalog`: Catalog.
- - `--vmwarevcloudair-catalogitem`: Catalog Item.
- - `--vmwarevcloudair-provision`: Install Docker binaries.
- - `--vmwarevcloudair-cpu-count`: VM CPU Count.
- - `--vmwarevcloudair-memory-size`: VM Memory Size in MB.
- - `--vmwarevcloudair-ssh-port`: SSH port.
- - `--vmwarevcloudair-docker-port`: Docker port.
+-   `--vmwarevcloudair-username`: **required** vCloud Air Username.
+-   `--vmwarevcloudair-password`: **required** vCloud Air Password.
+-   `--vmwarevcloudair-computeid`: Compute ID (if using Dedicated Cloud).
+-   `--vmwarevcloudair-vdcid`: Virtual Data Center ID.
+-   `--vmwarevcloudair-orgvdcnetwork`: Organization VDC Network to attach.
+-   `--vmwarevcloudair-edgegateway`: Organization Edge Gateway.
+-   `--vmwarevcloudair-publicip`: Org Public IP to use.
+-   `--vmwarevcloudair-catalog`: Catalog.
+-   `--vmwarevcloudair-catalogitem`: Catalog Item.
+-   `--vmwarevcloudair-provision`: Install Docker binaries.
+-   `--vmwarevcloudair-cpu-count`: VM CPU Count.
+-   `--vmwarevcloudair-memory-size`: VM Memory Size in MB.
+-   `--vmwarevcloudair-ssh-port`: SSH port.
+-   `--vmwarevcloudair-docker-port`: Docker port.
 
 The VMware vCloud Air driver will use the `Ubuntu Server 12.04 LTS (amd64 20140927)` image by default.
 
 Environment variables and default values:
 
 | CLI option                        | Environment variable      | Default                                    |
-|-----------------------------------|---------------------------|--------------------------------------------|
+| --------------------------------- | ------------------------- | ------------------------------------------ |
 | **`--vmwarevcloudair-username`**  | `VCLOUDAIR_USERNAME`      | -                                          |
 | **`--vmwarevcloudair-password`**  | `VCLOUDAIR_PASSWORD`      | -                                          |
 | `--vmwarevcloudair-computeid`     | `VCLOUDAIR_COMPUTEID`     | -                                          |

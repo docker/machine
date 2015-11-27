@@ -9,6 +9,7 @@ parent="smn_machine_drivers"
 <![end-metadata]-->
 
 # Microsoft Azure
+
 Create machines on [Microsoft Azure](http://azure.microsoft.com/).
 
 You need to create a subscription with a cert. Run these commands and answer the questions:
@@ -32,28 +33,28 @@ You may need to `machine ssh` in to the virtual machine and reboot to ensure tha
 
 Options:
 
- - `--azure-docker-port`: Port for Docker daemon.
- - `--azure-image`: Azure image name. See [How to: Get the Windows Azure Image Name](https://msdn.microsoft.com/en-us/library/dn135249%28v=nav.70%29.aspx)
- - `--azure-location`: Machine instance location.
- - `--azure-password`: Your Azure password.
- - `--azure-publish-settings-file`: Azure setting file. See [How to: Download and Import Publish Settings and Subscription Information](https://msdn.microsoft.com/en-us/library/dn385850%28v=nav.70%29.aspx)
- - `--azure-size`: Azure disk size.
- - `--azure-ssh-port`: Azure SSH port.
- - `--azure-subscription-id`: **required** Your Azure subscription ID (A GUID like `d255d8d7-5af0-4f5c-8a3e-1545044b861e`).
- - `--azure-subscription-cert`: **required** Your Azure subscription cert.
- - `--azure-username`: Azure login user name.
+-   `--azure-docker-port`: Port for Docker daemon.
+-   `--azure-image`: Azure image name. See [How to: Get the Windows Azure Image Name](https://msdn.microsoft.com/en-us/library/dn135249%28v=nav.70%29.aspx)
+-   `--azure-location`: Machine instance location.
+-   `--azure-password`: Your Azure password.
+-   `--azure-publish-settings-file`: Azure setting file. See [How to: Download and Import Publish Settings and Subscription Information](https://msdn.microsoft.com/en-us/library/dn385850%28v=nav.70%29.aspx)
+-   `--azure-size`: Azure disk size.
+-   `--azure-ssh-port`: Azure SSH port.
+-   `--azure-subscription-id`: **required** Your Azure subscription ID (A GUID like `d255d8d7-5af0-4f5c-8a3e-1545044b861e`).
+-   `--azure-subscription-cert`: **required** Your Azure subscription cert.
+-   `--azure-username`: Azure login user name.
 
 Environment variables and default values:
 
-| CLI option                      | Environment variable          | Default               |
-|---------------------------------|-------------------------------| ----------------------|
-| `--azure-docker-port`           | -                             | `2376`                |
-| `--azure-image`                 | `AZURE_IMAGE`                 | *Ubuntu 14.04 LTS x64*|
-| `--azure-location`              | `AZURE_LOCATION`              | `West US`             |
-| `--azure-password`              | -                             | -                     |
-| `--azure-publish-settings-file` | `AZURE_PUBLISH_SETTINGS_FILE` | -                     |
-| `--azure-size`                  | `AZURE_SIZE`                  | `Small`               |
-| `--azure-ssh-port`              | -                             | `22`                  |
-| **`--azure-subscription-cert`** | `AZURE_SUBSCRIPTION_CERT`     | -                     |
-| **`--azure-subscription-id`**   | `AZURE_SUBSCRIPTION_ID`       | -                     |
-| `--azure-username`              | -                             | `ubuntu`              |
+| CLI option                      | Environment variable          | Default                |
+| ------------------------------- | ----------------------------- | ---------------------- |
+| `--azure-docker-port`           | -                             | `2376`                 |
+| `--azure-image`                 | `AZURE_IMAGE`                 | _Ubuntu 14.04 LTS x64_ |
+| `--azure-location`              | `AZURE_LOCATION`              | `West US`              |
+| `--azure-password`              | -                             | -                      |
+| `--azure-publish-settings-file` | `AZURE_PUBLISH_SETTINGS_FILE` | -                      |
+| `--azure-size`                  | `AZURE_SIZE`                  | `Small`                |
+| `--azure-ssh-port`              | -                             | `22`                   |
+| **`--azure-subscription-cert`** | `AZURE_SUBSCRIPTION_CERT`     | -                      |
+| **`--azure-subscription-id`**   | `AZURE_SUBSCRIPTION_ID`       | -                      |
+| `--azure-username`              | -                             | `ubuntu`               |

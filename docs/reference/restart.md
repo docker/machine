@@ -14,7 +14,5 @@ parent="smn_machine_subcmds"
 Restart a machine. Oftentimes this is equivalent to
 `docker-machine stop; docker-machine start`.
 
-```
-$ docker-machine restart dev
-Waiting for VM to start...
-```
+    $ docker-machine restart dev
+    Waiting for VM to start...
