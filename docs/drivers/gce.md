@@ -12,7 +12,7 @@ parent="smn_machine_drivers"
 
 Create machines on [Google Compute Engine](https://cloud.google.com/compute/).
 You will need a Google account and a project id.
-See https://cloud.google.com/compute/docs/projects for details on projects.
+See <https://cloud.google.com/compute/docs/projects> for details on projects.
 
 ### Credentials
 
@@ -28,41 +28,38 @@ through the oauth2 process with `gcloud auth login`.
 
 To create a machine instance, specify `--driver google`, the project id and the machine name.
 
-```
-$ gcloud auth login
-$ docker-machine create --driver google --google-project PROJECT_ID vm01
-$ docker-machine create --driver google \
-  --google-project PROJECT_ID \
-  --google-zone us-central1-a \
-  --google-machine-type f1-micro \
-  vm02
-```
+    $ gcloud auth login
+    $ docker-machine create --driver google --google-project PROJECT_ID vm01
+    $ docker-machine create --driver google \
+      --google-project PROJECT_ID \
+      --google-zone us-central1-a \
+      --google-machine-type f1-micro \
+      vm02
 
 ### Options
 
-- `--google-project`: **required** The id of your project to use when launching the instance.
- - `--google-zone`: The zone to launch the instance.
- - `--google-machine-type`: The type of instance.
- - `--google-machine-image`: The absolute URL to a base VM image to instantiate.
- - `--google-username`: The username to use for the instance.
- - `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
- - `--google-disk-size`: The disk size of instance.
- - `--google-disk-type`: The disk type of instance.
- - `--google-address`: Instance's static external IP (name or IP).
- - `--google-preemptible`: Instance preemptibility.
- - `--google-tags`: Instance tags (comma-separated).
- - `--google-use-internal-ip`: When this option is used during create it will make docker-machine use internal rather than public NATed IPs. The flag is persistent in the sense that a machine created with it retains the IP. It's useful for managing docker machines from another machine on the same network e.g. while deploying swarm.
+-   `--google-project`: **required** The id of your project to use when launching the instance.
+    -   `--google-zone`: The zone to launch the instance.
+    -   `--google-machine-type`: The type of instance.
+    -   `--google-machine-image`: The absolute URL to a base VM image to instantiate.
+    -   `--google-username`: The username to use for the instance.
+    -   `--google-scopes`: The scopes for OAuth 2.0 to Access Google APIs. See [Google Compute Engine Doc](https://cloud.google.com/storage/docs/authentication).
+    -   `--google-disk-size`: The disk size of instance.
+    -   `--google-disk-type`: The disk type of instance.
+    -   `--google-address`: Instance's static external IP (name or IP).
+    -   `--google-preemptible`: Instance preemptibility.
+    -   `--google-tags`: Instance tags (comma-separated).
+    -   `--google-use-internal-ip`: When this option is used during create it will make docker-machine use internal rather than public NATed IPs. The flag is persistent in the sense that a machine created with it retains the IP. It's useful for managing docker machines from another machine on the same network e.g. while deploying swarm.
 
 The GCE driver will use the `ubuntu-1404-trusty-v20151113` instance image unless otherwise specified. To obtain a
 list of image URLs run:
-```
-gcloud compute images list --uri
-```
+
+    gcloud compute images list --uri
 
 Environment variables and default values:
 
 | CLI option                 | Environment variable     | Default                              |
-|----------------------------|--------------------------|--------------------------------------|
+| -------------------------- | ------------------------ | ------------------------------------ |
 | **`--google-project`**     | `GOOGLE_PROJECT`         | -                                    |
 | `--google-zone`            | `GOOGLE_ZONE`            | `us-central1-a`                      |
 | `--google-machine-type`    | `GOOGLE_MACHINE_TYPE`    | `f1-standard-1`                      |

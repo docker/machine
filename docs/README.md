@@ -17,17 +17,17 @@ If you want to add a new file or change the location of the document in the menu
 
 ## Documentation contributing workflow
 
-1. Edit a Markdown file in the tree.
+1.  Edit a Markdown file in the tree.
 
-2. Save your changes.
+2.  Save your changes.
 
-3. Make sure all your changes maintain an 80 character line wrap.
+3.  Make sure all your changes maintain an 80 character line wrap.
 
-  All check lines you've written. Don't wrap content you didn't change material.
+    All check lines you've written. Don't wrap content you didn't change material.
 
-3. Make sure you are in the `docs` subdirectory.
+4.  Make sure you are in the `docs` subdirectory.
 
-4. Build the documentation.
+5.  Build the documentation.
 
         $ make docs
          ---> ffcf3f6c4e97
@@ -46,7 +46,7 @@ If you want to add a new file or change the location of the document in the menu
         Web Server is available at http://0.0.0.0:8000/
         Press Ctrl+C to stop
 
-5. Open the available server in your browser.
+6.  Open the available server in your browser.
 
     The documentation server has the complete menu but only the Docker machine
     documentation resolves.  You can't access the other project docs from this
@@ -78,10 +78,9 @@ The metadata alone has this structure:
     weight=2
     +++
 
-The `[menu.main]` section refers to navigation defined [in the main Docker menu](https://github.com/docker/docs-base/blob/hugo/config.toml). This metadata says *add a menu item called* Extending services in machine *to the menu with the* `smn_workdw_machine` *identifier*.  If you locate the menu in the configuration, you'll find *Create multi-container applications* is the menu title.
+The `[menu.main]` section refers to navigation defined [in the main Docker menu](https://github.com/docker/docs-base/blob/hugo/config.toml). This metadata says _add a menu item called_ Extending services in machine _to the menu with the_ `smn_workdw_machine` _identifier_.  If you locate the menu in the configuration, you'll find _Create multi-container applications_ is the menu title.
 
 You can move an article in the tree by specifying a new parent. You can shift the location of the item by changing its weight.  Higher numbers are heavier and shift the item to the bottom of menu. Low or no numbers shift it up.
-
 
 ## Other key documentation repositories
 

@@ -12,7 +12,5 @@ parent="smn_machine_subcmds"
 
 Get the URL of a host
 
-```
-$ docker-machine url dev
-tcp://192.168.99.109:2376
-```
+    $ docker-machine url dev
+    tcp://192.168.99.109:2376

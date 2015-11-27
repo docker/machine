@@ -12,7 +12,5 @@ parent="smn_machine_subcmds"
 
 Get the status of a machine.
 
-```
-$ docker-machine status dev
-Running
-```
+    $ docker-machine status dev
+    Running
