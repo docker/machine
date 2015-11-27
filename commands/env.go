@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/check"
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -76,7 +77,7 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		return nil, err
 	}
 
-	dockerHost, _, err := defaultConnChecker.Check(host, c.Bool("swarm"))
+	dockerHost, _, err := check.DefaultConnChecker.Check(host, c.Bool("swarm"))
 	if err != nil {
 		return nil, fmt.Errorf("Error checking TLS connection: %s", err)
 	}
