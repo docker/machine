@@ -76,6 +76,10 @@ type SUSEProvisioner struct {
 	GenericProvisioner
 }
 
+func (provisioner *SUSEProvisioner) String() string {
+	return "suse"
+}
+
 func (provisioner *SUSEProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	reloadDaemon := false
 	switch action {

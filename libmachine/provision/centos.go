@@ -19,3 +19,7 @@ func NewCentosProvisioner(d drivers.Driver) Provisioner {
 type CentosProvisioner struct {
 	*RedHatProvisioner
 }
+
+func (provisioner *CentosProvisioner) String() string {
+	return "centos"
+}

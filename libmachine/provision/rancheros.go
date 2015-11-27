@@ -52,6 +52,10 @@ type RancherProvisioner struct {
 	GenericProvisioner
 }
 
+func (provisioner *RancherProvisioner) String() string {
+	return "rancheros"
+}
+
 func (provisioner *RancherProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	command := fmt.Sprintf("sudo system-docker %s %s", action.String(), name)
 

@@ -39,6 +39,10 @@ type UbuntuProvisioner struct {
 	GenericProvisioner
 }
 
+func (provisioner *UbuntuProvisioner) String() string {
+	return "ubuntu(upstart)"
+}
+
 func (provisioner *UbuntuProvisioner) CompatibleWithHost() bool {
 	const FirstUbuntuSystemdVersion = 15.04
 	isUbuntu := provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID
@@ -151,6 +155,7 @@ func (provisioner *UbuntuProvisioner) Provision(swarmOptions swarm.Options, auth
 		}
 	}
 
+	log.Info("Installing Docker...")
 	if err := installDockerGeneric(provisioner, engineOptions.InstallURL); err != nil {
 		return err
 	}

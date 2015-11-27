@@ -29,6 +29,10 @@ type ArchProvisioner struct {
 	SystemdProvisioner
 }
 
+func (provisioner *ArchProvisioner) String() string {
+	return "arch"
+}
+
 func (provisioner *ArchProvisioner) CompatibleWithHost() bool {
 	return provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID || provisioner.OsReleaseInfo.IDLike == provisioner.OsReleaseID
 }
