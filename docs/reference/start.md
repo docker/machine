@@ -13,7 +13,5 @@ parent="smn_machine_subcmds"
 
 Start a machine.
 
-```
-$ docker-machine start dev
-Starting VM...
-```
+    $ docker-machine start dev
+    Starting VM...

@@ -83,16 +83,16 @@ process, `create` is often where these types of errors show up.
 A hang could be due to a variety of factors, but the most common suspect is
 networking.  Consider the following:
 
-- Are you using a VPN?  If so, try disconnecting and see if creation will
-  succeed without the VPN.  Some VPN software aggressively controls routes and
-  you may need to [manually add the route](https://github.com/docker/machine/issues/1500#issuecomment-121134958).
-- Are you connected to a proxy server, corporate or otherwise?  If so, take a
-  look at the `--no-proxy` flag for `env` and at [setting environment variables
-  for the created Docker Engine](https://docs.docker.com/machine/reference/create/#specifying-configuration-options-for-the-created-docker-engine).
-- Are there a lot of host-only interfaces listed by the command `VBoxManage list
-  hostonlyifs`?  If so, this has sometimes been known to cause bugs.  Consider
-  removing the ones you are not using (`VBoxManage hostonlyif remove name`) and
-  trying machine creation again.
+-   Are you using a VPN?  If so, try disconnecting and see if creation will
+    succeed without the VPN.  Some VPN software aggressively controls routes and
+    you may need to [manually add the route](https://github.com/docker/machine/issues/1500#issuecomment-121134958).
+-   Are you connected to a proxy server, corporate or otherwise?  If so, take a
+    look at the `--no-proxy` flag for `env` and at [setting environment variables
+    for the created Docker Engine](https://docs.docker.com/machine/reference/create/#specifying-configuration-options-for-the-created-docker-engine).
+-   Are there a lot of host-only interfaces listed by the command `VBoxManage list
+    hostonlyifs`?  If so, this has sometimes been known to cause bugs.  Consider
+    removing the ones you are not using (`VBoxManage hostonlyif remove name`) and
+    trying machine creation again.
 
 We are keenly aware of this as an issue and working towards a set of solutions
 which is robust for all users, so please give us feedback and/or report issues,

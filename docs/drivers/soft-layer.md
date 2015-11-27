@@ -9,6 +9,7 @@ parent="smn_machine_drivers"
 <![end-metadata]-->
 
 # IBM Softlayer
+
 Create machines on [Softlayer](http://softlayer.com).
 
 You need to generate an API key in the softlayer control panel.
@@ -16,28 +17,28 @@ You need to generate an API key in the softlayer control panel.
 
 Options:
 
-  - `--softlayer-memory`: Memory for host in MB.
-  - `--softlayer-disk-size`: A value of `0` will set the SoftLayer default.
-  - `--softlayer-user`: **required** Username for your SoftLayer account, api key needs to match this user.
-  - `--softlayer-api-key`: **required** API key for your user account.
-  - `--softlayer-region`: SoftLayer region.
-  - `--softlayer-cpu`: Number of CPUs for the machine.
-  - `--softlayer-hostname`: Hostname for the machine.
-  - `--softlayer-domain`: **required** Domain name for the machine.
-  - `--softlayer-api-endpoint`: Change SoftLayer API endpoint.
-  - `--softlayer-hourly-billing`: Specifies that hourly billing should be used (default), otherwise monthly billing is used.
-  - `--softlayer-local-disk`: Use local machine disk instead of SoftLayer SAN.
-  - `--softlayer-private-net-only`: Disable public networking.
-  - `--softlayer-image`: OS Image to use.
-  - `--softlayer-public-vlan-id`: Your public VLAN ID.
-  - `--softlayer-private-vlan-id`: Your private VLAN ID.
+-   `--softlayer-memory`: Memory for host in MB.
+-   `--softlayer-disk-size`: A value of `0` will set the SoftLayer default.
+-   `--softlayer-user`: **required** Username for your SoftLayer account, api key needs to match this user.
+-   `--softlayer-api-key`: **required** API key for your user account.
+-   `--softlayer-region`: SoftLayer region.
+-   `--softlayer-cpu`: Number of CPUs for the machine.
+-   `--softlayer-hostname`: Hostname for the machine.
+-   `--softlayer-domain`: **required** Domain name for the machine.
+-   `--softlayer-api-endpoint`: Change SoftLayer API endpoint.
+-   `--softlayer-hourly-billing`: Specifies that hourly billing should be used (default), otherwise monthly billing is used.
+-   `--softlayer-local-disk`: Use local machine disk instead of SoftLayer SAN.
+-   `--softlayer-private-net-only`: Disable public networking.
+-   `--softlayer-image`: OS Image to use.
+-   `--softlayer-public-vlan-id`: Your public VLAN ID.
+-   `--softlayer-private-vlan-id`: Your private VLAN ID.
 
 The SoftLayer driver will use `UBUNTU_LATEST` as the image type by default.
 
 Environment variables and default values:
 
 | CLI option                     | Environment variable        | Default                     |
-|--------------------------------|-----------------------------|-----------------------------|
+| ------------------------------ | --------------------------- | --------------------------- |
 | `--softlayer-memory`           | `SOFTLAYER_MEMORY`          | `1024`                      |
 | `--softlayer-disk-size`        | `SOFTLAYER_DISK_SIZE`       | `0`                         |
 | **`--softlayer-user`**         | `SOFTLAYER_USER`            | -                           |

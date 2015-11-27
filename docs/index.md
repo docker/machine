@@ -8,7 +8,6 @@ parent="smn_workw_machine"
 +++
 <![end-metadata]-->
 
-
 # Docker Machine
 
 Machine lets you create Docker hosts on your computer, on cloud providers, and
@@ -19,14 +18,14 @@ combination of a Docker host and a configured client.
 Once you create one or more Docker hosts, Docker Machine supplies a number of
 commands for managing them. Using these commands you can
 
- - start, inspect, stop, and restart a host
- - upgrade the Docker client and daemon
- - configure a Docker client to talk to your host
+-   start, inspect, stop, and restart a host
+-   upgrade the Docker client and daemon
+-   configure a Docker client to talk to your host
 
 ### Looking for the installation docs?
 
 For Windows or Mac, you can obtain Docker Machine by installing the [Docker
-Toolbox](https://www.docker.com/toolbox ). To read instructions for installing
+Toolbox](https://www.docker.com/toolbox). To read instructions for installing
 Machine on Linux or for installing Machine alone without Docker Toolbox, see the
 [Machine installation instructions](install-machine.md).
 
@@ -56,19 +55,19 @@ Docker Machine is still in its infancy and under active development. If you need
 help, would like to contribute, or simply want to talk about the project with
 like-minded individuals, we have a number of open channels for communication.
 
-- To report bugs or file feature requests: please use the [issue tracker on
-  Github](https://github.com/docker/machine/issues).
-- To talk about the project with people in real time: please join the
-  `#docker-machine` channel on IRC.
-- To contribute code or documentation changes: please [submit a pull request on
-  Github](https://github.com/docker/machine/pulls).
+-   To report bugs or file feature requests: please use the [issue tracker on
+    Github](https://github.com/docker/machine/issues).
+-   To talk about the project with people in real time: please join the
+    `#docker-machine` channel on IRC.
+-   To contribute code or documentation changes: please [submit a pull request on
+    Github](https://github.com/docker/machine/pulls).
 
 For more information and resources, please visit
 [our help page](https://docs.docker.com/project/get-help/).
 
 ## Where to go next
 
-* Install a machine on your [local system using VirtualBox](get-started.md).
-* Install multiple machines [on your cloud provider](get-started-cloud.md).
-* [Docker Machine driver reference](drivers/index.md)
-* [Docker Machine subcommand reference](reference/index.md)
+-   Install a machine on your [local system using VirtualBox](get-started.md).
+-   Install multiple machines [on your cloud provider](get-started-cloud.md).
+-   [Docker Machine driver reference](drivers/index.md)
+-   [Docker Machine subcommand reference](reference/index.md)

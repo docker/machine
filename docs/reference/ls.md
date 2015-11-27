@@ -10,16 +10,14 @@ parent="smn_machine_subcmds"
 
 # ls
 
-```
-Usage: docker-machine ls [OPTIONS] [arg...]
+    Usage: docker-machine ls [OPTIONS] [arg...]
 
-List machines
+    List machines
 
-Options:
+    Options:
 
-   --quiet, -q					Enable quiet mode
-   --filter [--filter option --filter option]	Filter output based on conditions provided
-```
+       --quiet, -q					Enable quiet mode
+       --filter [--filter option --filter option]	Filter output based on conditions provided
 
 ## Filtering
 
@@ -28,24 +26,20 @@ than one filter, then pass multiple flags (e.g. `--filter "foo=bar" --filter "bi
 
 The currently supported filters are:
 
-* driver (driver name)
-* swarm (swarm master's name)
-* state (`Running|Paused|Saved|Stopped|Stopping|Starting|Error`)
-* name (Machine name returned by driver, supports [golang style](https://github.com/google/re2/wiki/Syntax) regular expressions)
+-   driver (driver name)
+-   swarm (swarm master's name)
+-   state (`Running|Paused|Saved|Stopped|Stopping|Starting|Error`)
+-   name (Machine name returned by driver, supports [golang style](https://github.com/google/re2/wiki/Syntax) regular expressions)
 
 ## Examples
 
-```
-$ docker-machine ls
-NAME   ACTIVE   DRIVER       STATE     URL
-dev    -        virtualbox   Stopped
-foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
-foo1   -        virtualbox   Running   tcp://192.168.99.106:2376
-foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
-```
+    $ docker-machine ls
+    NAME   ACTIVE   DRIVER       STATE     URL
+    dev    -        virtualbox   Stopped
+    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
+    foo1   -        virtualbox   Running   tcp://192.168.99.106:2376
+    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
 
-```
-$ docker-machine ls --filter driver=virtualbox --filter state=Stopped
-NAME   ACTIVE   DRIVER       STATE     URL   SWARM
-dev    -        virtualbox   Stopped
-```
+    $ docker-machine ls --filter driver=virtualbox --filter state=Stopped
+    NAME   ACTIVE   DRIVER       STATE     URL   SWARM
+    dev    -        virtualbox   Stopped

@@ -10,7 +10,7 @@ parent="smn_machine_subcmds"
 
 # help
 
-Usage: docker-machine help *subcommand*
+Usage: docker-machine help _subcommand_
 
 Show help text, for example:
 

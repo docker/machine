@@ -29,27 +29,25 @@ Let's take a look at how to do this.
 
 To generate your access token:
 
-1. Go to the Digital Ocean administrator console and click on "API" in the header.
-2. Click on "Generate New Token".
-3. Give the token a clever name (e.g. "machine"), make sure the "Write" checkbox
-is checked, and click on "Generate Token".
-4. Grab the big long hex string that is generated (this is your token) and store
-it somewhere safe.
+1.  Go to the Digital Ocean administrator console and click on "API" in the header.
+2.  Click on "Generate New Token".
+3.  Give the token a clever name (e.g. "machine"), make sure the "Write" checkbox
+    is checked, and click on "Generate Token".
+4.  Grab the big long hex string that is generated (this is your token) and store
+    it somewhere safe.
 
 Now, run `docker-machine create` with the `digitalocean` driver and pass your key to
 the `--digitalocean-access-token` flag.
 
 Example:
 
-```
-$ docker-machine create \
-    --driver digitalocean \
-    --digitalocean-access-token 0ab77166d407f479c6701652cee3a46830fef88b8199722b87821621736ab2d4 \
-    staging
-Creating SSH key...
-Creating Digital Ocean droplet...
-To see how to connect Docker to this machine, run: docker-machine env staging
-```
+    $ docker-machine create \
+        --driver digitalocean \
+        --digitalocean-access-token 0ab77166d407f479c6701652cee3a46830fef88b8199722b87821621736ab2d4 \
+        staging
+    Creating SSH key...
+    Creating Digital Ocean droplet...
+    To see how to connect Docker to this machine, run: docker-machine env staging
 
 For convenience, `docker-machine` will use sensible defaults for choosing
 settings such as the image that the VPS is based on, but they can also be
@@ -70,28 +68,22 @@ is finished, the host is ready for connection.
 To prepare the Docker client to send commands to the remote server we have
 created, we can use the subshell method again:
 
-```
-$ eval "$(docker-machine env staging)"
-```
+    $ eval "$(docker-machine env staging)"
 
 From this point, the remote host behaves much like the local host we created in
 the last section. If we look at `docker-machine ls`, we'll see it is now the
 "active" host, indicated by an asterisk (`*`) in that column:
 
-```
-$ docker-machine ls
-NAME      ACTIVE   DRIVER         STATE     URL
-dev       -        virtualbox     Running   tcp://192.168.99.103:2376
-staging   *        digitalocean   Running   tcp://104.236.50.118:2376
-```
+    $ docker-machine ls
+    NAME      ACTIVE   DRIVER         STATE     URL
+    dev       -        virtualbox     Running   tcp://192.168.99.103:2376
+    staging   *        digitalocean   Running   tcp://104.236.50.118:2376
 
 To remove a host and all of its containers and images, use `docker-machine rm`:
 
-```
-$ docker-machine rm dev staging
-$ docker-machine ls
-NAME      ACTIVE   DRIVER       STATE     URL
-```
+    $ docker-machine rm dev staging
+    $ docker-machine ls
+    NAME      ACTIVE   DRIVER       STATE     URL
 
 ## Adding a host without a driver
 
@@ -99,14 +91,13 @@ You can add a host to Docker which only has a URL and no driver. Therefore it
 can be used an alias for an existing host so you don’t have to type out the URL
 every time you run a Docker command.
 
-```
-$ docker-machine create --url=tcp://50.134.234.20:2376 custombox
-$ docker-machine ls
-NAME        ACTIVE   DRIVER    STATE     URL
-custombox   *        none      Running   tcp://50.134.234.20:2376
-```
+    $ docker-machine create --url=tcp://50.134.234.20:2376 custombox
+    $ docker-machine ls
+    NAME        ACTIVE   DRIVER    STATE     URL
+    custombox   *        none      Running   tcp://50.134.234.20:2376
 
 ## Using Docker Machine with Docker Swarm
+
 Docker Machine can also provision [Swarm](https://github.com/docker/swarm)
 clusters. This can be used with any driver and will be secured with TLS.
 
@@ -115,36 +106,29 @@ See the Swarm docs for details.
 
 To create the token, first create a Machine. This example will use VirtualBox.
 
-```
-$ docker-machine create -d virtualbox local
-```
+    $ docker-machine create -d virtualbox local
 
 Load the Machine configuration into your shell:
 
-```
-$ eval "$(docker-machine env local)"
-```
+    $ eval "$(docker-machine env local)"
 
 Then run generate the token using the Swarm Docker image:
 
-```
-$ docker run swarm create
-1257e0f0bbb499b5cd04b4c9bdb2dab3
-```
+    $ docker run swarm create
+    1257e0f0bbb499b5cd04b4c9bdb2dab3
+
 Once you have the token, you can create the cluster.
 
 ### Swarm master
 
 Create the Swarm master:
 
-```
-docker-machine create \
-    -d virtualbox \
-    --swarm \
-    --swarm-master \
-    --swarm-discovery token://<TOKEN-FROM-ABOVE> \
-    swarm-master
-```
+    docker-machine create \
+        -d virtualbox \
+        --swarm \
+        --swarm-master \
+        --swarm-discovery token://<TOKEN-FROM-ABOVE> \
+        swarm-master
 
 Replace `<TOKEN-FROM-ABOVE>` with your random token.
 This will create the Swarm master and add itself as a Swarm node.
@@ -153,37 +137,31 @@ This will create the Swarm master and add itself as a Swarm node.
 
 Now, create more Swarm nodes:
 
-```
-docker-machine create \
-    -d virtualbox \
-    --swarm \
-    --swarm-discovery token://<TOKEN-FROM-ABOVE> \
-    swarm-node-00
-```
+    docker-machine create \
+        -d virtualbox \
+        --swarm \
+        --swarm-discovery token://<TOKEN-FROM-ABOVE> \
+        swarm-node-00
 
 You now have a Swarm cluster across two nodes.
 To connect to the Swarm master, use `eval $(docker-machine env --swarm swarm-master)`
 
 For example:
 
-```
-$ docker-machine env --swarm swarm-master
-export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH="/home/ehazlett/.docker/machines/.client"
-export DOCKER_HOST=tcp://192.168.99.100:3376
-```
+    $ docker-machine env --swarm swarm-master
+    export DOCKER_TLS_VERIFY=1
+    export DOCKER_CERT_PATH="/home/ehazlett/.docker/machines/.client"
+    export DOCKER_HOST=tcp://192.168.99.100:3376
 
 You can load this into your environment using
 `eval "$(docker-machine env --swarm swarm-master)"`.
 
 Now you can use the Docker CLI to query:
 
-```
-$ docker info
-Containers: 1
-Nodes: 1
- swarm-master: 192.168.99.100:2376
-  └ Containers: 2
-  └ Reserved CPUs: 0 / 4
-  └ Reserved Memory: 0 B / 999.9 MiB
-```
+    $ docker info
+    Containers: 1
+    Nodes: 1
+     swarm-master: 192.168.99.100:2376
+      └ Containers: 2
+      └ Reserved CPUs: 0 / 4
+      └ Reserved Memory: 0 B / 999.9 MiB
