@@ -1,51 +1,15 @@
 package provision
 
 import (
-	"bytes"
 	"fmt"
 	"net/url"
 	"strings"
-	"text/template"
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/samalba/dockerclient"
 )
-
-type SwarmCommandContext struct {
-	ContainerName string
-	Env           []string
-	DockerDir     string
-	DockerPort    int
-	IP            string
-	Port          string
-	AuthOptions   auth.Options
-	SwarmOptions  swarm.Options
-	SwarmImage    string
-}
-
-// Wrapper function to generate a docker run swarm command (manage or join)
-// from a template/context and execute it.
-func runSwarmCommandFromTemplate(p Provisioner, cmdTmpl string, swarmCmdContext SwarmCommandContext) error {
-	var (
-		executedCmdTmpl bytes.Buffer
-	)
-
-	parsedMasterCmdTemplate, err := template.New("swarmMasterCmd").Parse(cmdTmpl)
-	if err != nil {
-		return err
-	}
-
-	parsedMasterCmdTemplate.Execute(&executedCmdTmpl, swarmCmdContext)
-
-	log.Debugf("The swarm command being run is: %s", executedCmdTmpl.String())
-
-	if _, err := p.SSHCommand(executedCmdTmpl.String()); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.Options) error {
 	if !swarmOptions.IsSwarm {
@@ -67,60 +31,81 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 	parts := strings.Split(u.Host, ":")
 	port := parts[1]
 
+	dockerPort := "2376"
 	dockerDir := p.GetDockerOptionsDir()
-
-	swarmCmdContext := SwarmCommandContext{
-		ContainerName: "",
-		Env:           swarmOptions.Env,
-		DockerDir:     dockerDir,
-		DockerPort:    2376,
-		IP:            ip,
-		Port:          port,
-		AuthOptions:   authOptions,
-		SwarmOptions:  swarmOptions,
-		SwarmImage:    swarmOptions.Image,
-	}
-
-	// First things first, get the swarm image.
-	if _, err := p.SSHCommand(fmt.Sprintf("sudo docker pull %s", swarmOptions.Image)); err != nil {
-		return err
-	}
-
-	swarmMasterCmdTemplate := `sudo docker run -d \
---restart=always \
---net=host \
-{{range .Env}} -e {{.}}{{end}} \
---name swarm-agent-master \
--p {{.Port}}:{{.Port}} \
--v {{.DockerDir}}:{{.DockerDir}} \
-{{.SwarmImage}} \
-manage \
---tlsverify \
---tlscacert={{.AuthOptions.CaCertRemotePath}} \
---tlscert={{.AuthOptions.ServerCertRemotePath}} \
---tlskey={{.AuthOptions.ServerKeyRemotePath}} \
--H {{.SwarmOptions.Host}} \
---strategy {{.SwarmOptions.Strategy}} --advertise {{.IP}}:{{.DockerPort}} {{range .SwarmOptions.ArbitraryFlags}} --{{.}}{{end}} {{.SwarmOptions.Discovery}}
-`
-
-	swarmWorkerCmdTemplate := `sudo docker run -d \
---restart=always \
---net=host \
-{{range .Env}} -e {{.}}{{end}} \
---name swarm-agent \
-{{.SwarmImage}} \
-join --advertise {{.IP}}:{{.DockerPort}} {{.SwarmOptions.Discovery}}
-`
+	dockerHost := fmt.Sprintf("tcp://%s:%s", ip, dockerPort)
+	dockerClient := DockerClient{dockerHost, authOptions}
+	advertiseInfo := fmt.Sprintf("%s:%s", ip, dockerPort)
 
 	if swarmOptions.Master {
-		log.Debug("Launching swarm master")
-		if err := runSwarmCommandFromTemplate(p, swarmMasterCmdTemplate, swarmCmdContext); err != nil {
+
+		cmd := fmt.Sprintf("manage --tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy %s --advertise %s",
+			authOptions.CaCertRemotePath,
+			authOptions.ServerCertRemotePath,
+			authOptions.ServerKeyRemotePath,
+			swarmOptions.Host,
+			swarmOptions.Strategy,
+			advertiseInfo,
+		)
+
+		cmdMaster := strings.Fields(cmd)
+		for _, option := range swarmOptions.ArbitraryFlags {
+			cmdMaster = append(cmdMaster, "--"+option)
+		}
+
+		//Discovery must be at end of command
+		cmdMaster = append(cmdMaster, swarmOptions.Discovery)
+
+		hostBind := fmt.Sprintf("%s:%s", dockerDir, dockerDir)
+		masterHostConfig := dockerclient.HostConfig{
+			RestartPolicy: dockerclient.RestartPolicy{
+				Name:              "Always",
+				MaximumRetryCount: 0,
+			},
+			Binds:        []string{hostBind},
+			PortBindings: map[string][]dockerclient.PortBinding{"3376/tcp": {{"", port}}},
+			NetworkMode:  "host",
+		}
+
+		swarmMasterConfig := &dockerclient.ContainerConfig{
+			Image: swarmOptions.Image,
+			Env:   swarmOptions.Env,
+			ExposedPorts: map[string]struct{}{
+				"2375/tcp": {},
+				"3376/tcp": {},
+			},
+			Cmd:        cmdMaster,
+			HostConfig: masterHostConfig,
+		}
+
+		err = CreateContainer(dockerClient, swarmMasterConfig, "swarm-agent-master")
+		if err != nil {
 			return err
 		}
+
 	}
 
-	log.Debug("Launch swarm worker")
-	if err := runSwarmCommandFromTemplate(p, swarmWorkerCmdTemplate, swarmCmdContext); err != nil {
+	workerHostConfig := dockerclient.HostConfig{
+		RestartPolicy: dockerclient.RestartPolicy{
+			Name:              "Always",
+			MaximumRetryCount: 0,
+		},
+		NetworkMode: "host",
+	}
+
+	swarmWorkerConfig := &dockerclient.ContainerConfig{
+		Image: swarmOptions.Image,
+		Env:   swarmOptions.Env,
+		Cmd: []string{
+			"join",
+			"--advertise",
+			advertiseInfo,
+			swarmOptions.Discovery,
+		},
+		HostConfig: workerHostConfig,
+	}
+
+	if err = CreateContainer(dockerClient, swarmWorkerConfig, "swarm-agent"); err != nil {
 		return err
 	}
 
