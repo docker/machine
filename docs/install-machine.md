@@ -54,8 +54,8 @@ instructions in the next section.
 
 3.  Check the installation by displaying the Machine version:
 
-        $ docker-machine -v
-        machine version 0.5.0 (3e06852)
+        $ docker-machine version
+        docker-machine version 0.5.2 (0456b9f)
 
 ## Installing bash completion scripts
 

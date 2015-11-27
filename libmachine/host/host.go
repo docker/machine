@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
@@ -145,8 +146,16 @@ func (h *Host) Upgrade() error {
 	return provisioner.Service("docker", serviceaction.Restart)
 }
 
-func (h *Host) GetURL() (string, error) {
+func (h *Host) URL() (string, error) {
 	return h.Driver.GetURL()
+}
+
+func (h *Host) AuthOptions() *auth.Options {
+	return h.HostOptions.AuthOptions
+}
+
+func (h *Host) DockerVersion() (string, error) {
+	return mcndockerclient.DockerVersion(h)
 }
 
 func (h *Host) ConfigureAuth() error {

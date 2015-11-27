@@ -185,6 +185,14 @@ _docker_machine_url() {
     fi
 }
 
+_docker_machine_version() {
+    if [[ "${cur}" == -* ]]; then
+        COMPREPLY=($(compgen -W "--help" -- "${cur}"))
+    else
+        COMPREPLY=($(compgen -W "$(docker-machine ls -q)" -- "${cur}"))
+    fi
+}
+
 _docker_machine_help() {
     if [[ "${cur}" == -* ]]; then
         COMPREPLY=($(compgen -W "--help" -- "${cur}"))

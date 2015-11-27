@@ -22,6 +22,7 @@ var (
 	ErrUnknownShell       = errors.New("Error: Unknown shell")
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
+	ErrTooManyArguments   = errors.New("Error: Too many arguments given")
 )
 
 // CommandLine contains all the information passed to the commands on the command line.
@@ -305,7 +306,7 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:   "version",
-		Usage:  "Show the Docker Machine version information",
+		Usage:  "Show the Docker Machine version or a machine docker version",
 		Action: fatalOnError(cmdVersion),
 	},
 }
@@ -316,7 +317,9 @@ func printIP(h *host.Host) func() error {
 		if err != nil {
 			return fmt.Errorf("Error getting IP address: %s", err)
 		}
+
 		fmt.Println(ip)
+
 		return nil
 	}
 }

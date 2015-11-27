@@ -61,6 +61,12 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[0]} =~ "total"  ]]
 }
 
+@test "$DRIVER: version" {
+  run machine version $NAME
+  echo ${output}
+  [ "$status" -eq 0  ]
+}
+
 @test "$DRIVER: docker commands with the socket should work" {
   run machine ssh $NAME -- sudo docker version
   echo ${output}
@@ -92,6 +98,14 @@ load ${BASE_TEST_DIR}/helpers.bash
   [ "$status" -eq 1 ]
   [[ ${output} == *"not running. Please start"* ]]
 }
+
+@test "$DRIVER: version should show an error when machine is stopped" {
+  run machine version $NAME
+  echo ${output}
+  [ "$status" -eq 1 ]
+  [[ ${output} == *"not running"* ]]
+}
+
 
 @test "$DRIVER: machine should not allow upgrade when stopped" {
   run machine upgrade $NAME
