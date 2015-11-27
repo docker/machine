@@ -61,6 +61,10 @@ type RedHatProvisioner struct {
 	SystemdProvisioner
 }
 
+func (provisioner *RedHatProvisioner) String() string {
+	return "redhat"
+}
+
 func (provisioner *RedHatProvisioner) SetHostname(hostname string) error {
 	// we have to have SetHostname here as well to use the RedHat provisioner
 	// SSHCommand to add the tty allocation

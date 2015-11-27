@@ -30,6 +30,10 @@ type UbuntuSystemdProvisioner struct {
 	SystemdProvisioner
 }
 
+func (provisioner *UbuntuSystemdProvisioner) String() string {
+	return "ubuntu(systemd)"
+}
+
 func (provisioner *UbuntuSystemdProvisioner) CompatibleWithHost() bool {
 	const FirstUbuntuSystemdVersion = 15.04
 

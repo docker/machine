@@ -21,6 +21,7 @@ type SSHCommander interface {
 
 // Provisioner defines distribution specific actions
 type Provisioner interface {
+	fmt.Stringer
 	SSHCommander
 
 	// Create the files for the daemon to consume configuration settings (return struct of content and path)

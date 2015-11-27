@@ -29,6 +29,10 @@ type DebianProvisioner struct {
 	SystemdProvisioner
 }
 
+func (provisioner *DebianProvisioner) String() string {
+	return "debian"
+}
+
 func (provisioner *DebianProvisioner) Package(name string, action pkgaction.PackageAction) error {
 	var packageAction string
 
