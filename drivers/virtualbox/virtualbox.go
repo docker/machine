@@ -398,8 +398,6 @@ func (d *Driver) Create() error {
 		}
 	}
 
-	log.Infof("Starting VirtualBox VM...")
-
 	return d.Start()
 }
 
