@@ -34,23 +34,27 @@ var (
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
-			Name:  "generic-ip-address",
-			Usage: "IP Address of machine",
+			Name:   "generic-ip-address",
+			Usage:  "IP Address of machine",
+			EnvVar: "GENERIC_IP_ADDRESS",
 		},
 		mcnflag.StringFlag{
-			Name:  "generic-ssh-user",
-			Usage: "SSH user",
-			Value: drivers.DefaultSSHUser,
+			Name:   "generic-ssh-user",
+			Usage:  "SSH user",
+			Value:  drivers.DefaultSSHUser,
+			EnvVar: "GENERIC_SSH_USER",
 		},
 		mcnflag.StringFlag{
-			Name:  "generic-ssh-key",
-			Usage: "SSH private key path",
-			Value: defaultSourceSSHKey,
+			Name:   "generic-ssh-key",
+			Usage:  "SSH private key path",
+			Value:  defaultSourceSSHKey,
+			EnvVar: "GENERIC_SSH_KEY",
 		},
 		mcnflag.IntFlag{
-			Name:  "generic-ssh-port",
-			Usage: "SSH port",
-			Value: drivers.DefaultSSHPort,
+			Name:   "generic-ssh-port",
+			Usage:  "SSH port",
+			Value:  drivers.DefaultSSHPort,
+			EnvVar: "GENERIC_SSH_PORT",
 		},
 	}
 }
