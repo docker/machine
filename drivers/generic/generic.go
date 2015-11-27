@@ -96,6 +96,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+func (d *Driver) PreCreateCheck() error {
+	if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
+		return fmt.Errorf("Ssh key does not exist: %q", d.SSHKey)
+	}
+
+	return nil
+}
+
 func (d *Driver) Create() error {
 	log.Info("Importing SSH key...")
 
