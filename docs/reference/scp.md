@@ -18,17 +18,15 @@ machine's case, you don't have to specify the name, just the path.
 
 Consider the following example:
 
-```
-$ cat foo.txt
-cat: foo.txt: No such file or directory
-$ docker-machine ssh dev pwd
-/home/docker
-$ docker-machine ssh dev 'echo A file created remotely! >foo.txt'
-$ docker-machine scp dev:/home/docker/foo.txt .
-foo.txt                                                           100%   28     0.0KB/s   00:00
-$ cat foo.txt
-A file created remotely!
-```
+    $ cat foo.txt
+    cat: foo.txt: No such file or directory
+    $ docker-machine ssh dev pwd
+    /home/docker
+    $ docker-machine ssh dev 'echo A file created remotely! >foo.txt'
+    $ docker-machine scp dev:/home/docker/foo.txt .
+    foo.txt                                                           100%   28     0.0KB/s   00:00
+    $ cat foo.txt
+    A file created remotely!
 
 Just like how `scp` has a `-r` flag for copying files recursively,
 `docker-machine` has a `-r` flag for this feature.

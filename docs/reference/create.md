@@ -15,19 +15,17 @@ Create a machine.  Requires the `--driver` flag to indicate which provider
 (VirtualBox, DigitalOcean, AWS, etc.) the machine should be created on, and an
 argument to indicate the name of the created machine.
 
-```
-$ docker-machine create --driver virtualbox dev
-Creating CA: /home/username/.docker/machine/certs/ca.pem
-Creating client certificate: /home/username/.docker/machine/certs/cert.pem
-Image cache does not exist, creating it at /home/username/.docker/machine/cache...
-No default boot2docker iso found locally, downloading the latest release...
-Downloading https://github.com/boot2docker/boot2docker/releases/download/v1.6.2/boot2docker.iso to /home/username/.docker/machine/cache/boot2docker.iso...
-Creating VirtualBox VM...
-Creating SSH key...
-Starting VirtualBox VM...
-Starting VM...
-To see how to connect Docker to this machine, run: docker-machine env dev
-```
+    $ docker-machine create --driver virtualbox dev
+    Creating CA: /home/username/.docker/machine/certs/ca.pem
+    Creating client certificate: /home/username/.docker/machine/certs/cert.pem
+    Image cache does not exist, creating it at /home/username/.docker/machine/cache...
+    No default boot2docker iso found locally, downloading the latest release...
+    Downloading https://github.com/boot2docker/boot2docker/releases/download/v1.6.2/boot2docker.iso to /home/username/.docker/machine/cache/boot2docker.iso...
+    Creating VirtualBox VM...
+    Creating SSH key...
+    Starting VirtualBox VM...
+    Starting VM...
+    To see how to connect Docker to this machine, run: docker-machine env dev
 
 ## Accessing driver-specific flags in the help text
 
@@ -36,34 +34,32 @@ drivers.  These largely control aspects of Machine's provisoning process
 (including the creation of Docker Swarm containers) that the user may wish to
 customize.
 
-```
-$ docker-machine create
-Docker Machine Version: 0.5.0 (45e3688)
-Usage: docker-machine create [OPTIONS] [arg...]
+    $ docker-machine create
+    Docker Machine Version: 0.5.0 (45e3688)
+    Usage: docker-machine create [OPTIONS] [arg...]
 
-Create a machine.
+    Create a machine.
 
-Run 'docker-machine create --driver name' to include the create flags for that driver in the help text.
+    Run 'docker-machine create --driver name' to include the create flags for that driver in the help text.
 
-Options:
+    Options:
 
-   --driver, -d "none"                                                                                  Driver to create machine with.
-   --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
-   --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
-   --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
-   --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
-   --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
-   --engine-storage-driver                                                                              Specify a storage driver to use with the engine
-   --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
-   --swarm                                                                                              Configure Machine with Swarm
-   --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
-   --swarm-master                                                                                       Configure Machine to be a Swarm master
-   --swarm-discovery                                                                                    Discovery service to use with Swarm
-   --swarm-strategy "spread"                                                                            Define a default scheduling strategy for Swarm
-   --swarm-opt [--swarm-opt option --swarm-opt option]                                                  Define arbitrary flags for swarm
-   --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
-   --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
-```
+       --driver, -d "none"                                                                                  Driver to create machine with.
+       --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
+       --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
+       --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
+       --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
+       --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
+       --engine-storage-driver                                                                              Specify a storage driver to use with the engine
+       --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
+       --swarm                                                                                              Configure Machine with Swarm
+       --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
+       --swarm-master                                                                                       Configure Machine to be a Swarm master
+       --swarm-discovery                                                                                    Discovery service to use with Swarm
+       --swarm-strategy "spread"                                                                            Define a default scheduling strategy for Swarm
+       --swarm-opt [--swarm-opt option --swarm-opt option]                                                  Define arbitrary flags for swarm
+       --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
+       --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
 
 Additionally, drivers can specify flags that Machine can accept as part of their
 plugin code.  These allow users to customize the provider-specific parameters of
@@ -73,42 +69,40 @@ geographical region (`--amazonec2-region us-west-1`), and so on.
 To see the provider-specific flags, simply pass a value for `--driver` when
 invoking the `create` help text.
 
-```
-$ docker-machine create --driver virtualbox --help
-Usage: docker-machine create [OPTIONS] [arg...]
+    $ docker-machine create --driver virtualbox --help
+    Usage: docker-machine create [OPTIONS] [arg...]
 
-Create a machine.
+    Create a machine.
 
-Run 'docker-machine create --driver name' to include the create flags for that driver in the help text.
+    Run 'docker-machine create --driver name' to include the create flags for that driver in the help text.
 
-Options:
+    Options:
 
-   --driver, -d "none"                                                                                  Driver to create machine with.
-   --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
-   --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
-   --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
-   --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
-   --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
-   --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
-   --engine-storage-driver                                                                              Specify a storage driver to use with the engine
-   --swarm                                                                                              Configure Machine with Swarm
-   --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
-   --swarm-discovery                                                                                    Discovery service to use with Swarm
-   --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
-   --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
-   --swarm-master                                                                                       Configure Machine to be a Swarm master
-   --swarm-opt [--swarm-opt option --swarm-opt option]                                                  Define arbitrary flags for swarm
-   --swarm-strategy "spread"                                                                            Define a default scheduling strategy for Swarm
-   --virtualbox-boot2docker-url                                                                         The URL of the boot2docker image. Defaults to the latest available version [$VIRTUALBOX_BOOT2DOCKER_URL]
-   --virtualbox-cpu-count "1"                                                                           number of CPUs for the machine (-1 to use the number of CPUs available) [$VIRTUALBOX_CPU_COUNT]
-   --virtualbox-disk-size "20000"                                                                       Size of disk for host in MB [$VIRTUALBOX_DISK_SIZE]
-   --virtualbox-hostonly-cidr "192.168.99.1/24"                                                         Specify the Host Only CIDR [$VIRTUALBOX_HOSTONLY_CIDR]
-   --virtualbox-hostonly-nicpromisc "deny"                                                              Specify the Host Only Network Adapter Promiscuous Mode [$VIRTUALBOX_HOSTONLY_NIC_PROMISC]
-   --virtualbox-hostonly-nictype "82540EM"                                                              Specify the Host Only Network Adapter Type [$VIRTUALBOX_HOSTONLY_NIC_TYPE]
-   --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
-   --virtualbox-memory "1024"                                                                           Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
-   --virtualbox-no-share                                                                                Disable the mount of your home directory
-```
+       --driver, -d "none"                                                                                  Driver to create machine with.
+       --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
+       --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
+       --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
+       --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
+       --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
+       --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
+       --engine-storage-driver                                                                              Specify a storage driver to use with the engine
+       --swarm                                                                                              Configure Machine with Swarm
+       --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
+       --swarm-discovery                                                                                    Discovery service to use with Swarm
+       --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
+       --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
+       --swarm-master                                                                                       Configure Machine to be a Swarm master
+       --swarm-opt [--swarm-opt option --swarm-opt option]                                                  Define arbitrary flags for swarm
+       --swarm-strategy "spread"                                                                            Define a default scheduling strategy for Swarm
+       --virtualbox-boot2docker-url                                                                         The URL of the boot2docker image. Defaults to the latest available version [$VIRTUALBOX_BOOT2DOCKER_URL]
+       --virtualbox-cpu-count "1"                                                                           number of CPUs for the machine (-1 to use the number of CPUs available) [$VIRTUALBOX_CPU_COUNT]
+       --virtualbox-disk-size "20000"                                                                       Size of disk for host in MB [$VIRTUALBOX_DISK_SIZE]
+       --virtualbox-hostonly-cidr "192.168.99.1/24"                                                         Specify the Host Only CIDR [$VIRTUALBOX_HOSTONLY_CIDR]
+       --virtualbox-hostonly-nicpromisc "deny"                                                              Specify the Host Only Network Adapter Promiscuous Mode [$VIRTUALBOX_HOSTONLY_NIC_PROMISC]
+       --virtualbox-hostonly-nictype "82540EM"                                                              Specify the Host Only Network Adapter Type [$VIRTUALBOX_HOSTONLY_NIC_TYPE]
+       --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
+       --virtualbox-memory "1024"                                                                           Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
+       --virtualbox-no-share                                                                                Disable the mount of your home directory
 
 You may notice that some flags specify environment variables that they are
 associated with as well (located to the far left hand side of the row).  If
@@ -139,14 +133,12 @@ filesystem has been created, and so on.
 
 The following is an example usage:
 
-```
-$ docker-machine create -d virtualbox \
-    --engine-label foo=bar \
-    --engine-label spam=eggs \
-    --engine-storage-driver overlay \
-    --engine-insecure-registry registry.myco.com \
-    foobarmachine
-```
+    $ docker-machine create -d virtualbox \
+        --engine-label foo=bar \
+        --engine-label spam=eggs \
+        --engine-storage-driver overlay \
+        --engine-insecure-registry registry.myco.com \
+        foobarmachine
 
 This will create a virtual machine running locally in Virtualbox which uses the
 `overlay` storage backend, has the key-value pairs `foo=bar` and `spam=eggs` as
@@ -154,27 +146,25 @@ labels on the engine, and allows pushing / pulling from the insecure registry
 located at `registry.myco.com`. You can verify much of this by inspecting the
 output of `docker info`:
 
-```
-$ eval $(docker-machine env foobarmachine)
-$ docker info
-Containers: 0
-Images: 0
-Storage Driver: overlay
-...
-Name: foobarmachine
-...
-Labels:
- foo=bar
- spam=eggs
- provider=virtualbox
-```
+    $ eval $(docker-machine env foobarmachine)
+    $ docker info
+    Containers: 0
+    Images: 0
+    Storage Driver: overlay
+    ...
+    Name: foobarmachine
+    ...
+    Labels:
+     foo=bar
+     spam=eggs
+     provider=virtualbox
 
 The supported flags are as follows:
 
-- `--engine-insecure-registry`: Specify [insecure registries](https://docs.docker.com/reference/commandline/cli/#insecure-registries) to allow with the created engine
-- `--engine-registry-mirror`: Specify [registry mirrors](https://github.com/docker/distribution/blob/master/docs/mirror.md) to use
-- `--engine-label`: Specify [labels](https://docs.docker.com/userguide/labels-custom-metadata/#daemon-labels) for the created engine
-- `--engine-storage-driver`: Specify a [storage driver](https://docs.docker.com/reference/commandline/cli/#daemon-storage-driver-option) to use with the engine
+-   `--engine-insecure-registry`: Specify [insecure registries](https://docs.docker.com/reference/commandline/cli/#insecure-registries) to allow with the created engine
+-   `--engine-registry-mirror`: Specify [registry mirrors](https://github.com/docker/distribution/blob/master/docs/mirror.md) to use
+-   `--engine-label`: Specify [labels](https://docs.docker.com/userguide/labels-custom-metadata/#daemon-labels) for the created engine
+-   `--engine-storage-driver`: Specify a [storage driver](https://docs.docker.com/reference/commandline/cli/#daemon-storage-driver-option) to use with the engine
 
 If the engine supports specifying the flag multiple times (such as with
 `--label`), then so does Docker Machine.
@@ -187,23 +177,19 @@ for all containers, and always use the `syslog` [log
 driver](https://docs.docker.com/reference/run/#logging-drivers-log-driver) you
 could run the following create command:
 
-```
-$ docker-machine create -d virtualbox \
-    --engine-opt dns=8.8.8.8 \
-    --engine-opt log-driver=syslog \
-    gdns
-```
+    $ docker-machine create -d virtualbox \
+        --engine-opt dns=8.8.8.8 \
+        --engine-opt log-driver=syslog \
+        gdns
 
 Additionally, Docker Machine supports a flag, `--engine-env`, which can be used to
 specify arbitrary environment variables to be set within the engine with the syntax `--engine-env name=value`. For example, to specify that the engine should use `example.com` as the proxy server, you could run the following create command:
 
-```
-$ docker-machine create -d virtualbox \
-    --engine-env HTTP_PROXY=http://example.com:8080 \
-    --engine-env HTTPS_PROXY=https://example.com:8080 \
-    --engine-env NO_PROXY=example2.com \
-    proxbox
-```
+    $ docker-machine create -d virtualbox \
+        --engine-env HTTP_PROXY=http://example.com:8080 \
+        --engine-env HTTPS_PROXY=https://example.com:8080 \
+        --engine-env NO_PROXY=example2.com \
+        proxbox
 
 ## Specifying Docker Swarm options for the created machine
 
@@ -225,15 +211,13 @@ you won't have to worry about it.
 
 Example create:
 
-```
-$ docker-machine create -d virtualbox \
-    --swarm \
-    --swarm-master \
-    --swarm-discovery token://<token> \
-    --swarm-strategy binpack \
-    --swarm-opt heartbeat=5 \
-    upbeat
-```
+    $ docker-machine create -d virtualbox \
+        --swarm \
+        --swarm-master \
+        --swarm-discovery token://<token> \
+        --swarm-strategy binpack \
+        --swarm-opt heartbeat=5 \
+        upbeat
 
 This will set the swarm scheduling strategy to "binpack" (pack in containers as
 tightly as possible per host instead of spreading them out), and the "heartbeat"

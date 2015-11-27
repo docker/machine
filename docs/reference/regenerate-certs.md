@@ -12,8 +12,6 @@ parent="smn_machine_subcmds"
 
 Regenerate TLS certificates and update the machine with new certs.
 
-```
-$ docker-machine regenerate-certs dev
-Regenerate TLS machine certs?  Warning: this is irreversible. (y/n): y
-Regenerating TLS certificates
-```
+    $ docker-machine regenerate-certs dev
+    Regenerate TLS machine certs?  Warning: this is irreversible. (y/n): y
+    Regenerating TLS certificates

@@ -20,39 +20,39 @@ installation</a> instructions.
 
 If you only want Docker Machine, you can install the Machine binaries (the
 latest versions of which are located at
-https://github.com/docker/machine/releases/ ) directly by following the
+<https://github.com/docker/machine/releases/> ) directly by following the
 instructions in the next section.
 
 ## Installing Machine Directly
 
-1. Install <a href="https://docs.docker.com/installation/"
-target="_blank">the Docker binary</a>.
+1.  Install <a href="https://docs.docker.com/installation/"
+    target="_blank">the Docker binary</a>.
 
-2. Download the archive containing the Docker Machine binaries and extract them
-to your PATH.
+2.  Download the archive containing the Docker Machine binaries and extract them
+    to your PATH.
 
-    Linux:
+        Linux:
 
-        $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip >machine.zip && \
-        unzip machine.zip && \
-        rm machine.zip && \
-        mv docker-machine* /usr/local/bin
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip >machine.zip && \
+            unzip machine.zip && \
+            rm machine.zip && \
+            mv docker-machine* /usr/local/bin
 
-    OSX:
+        OSX:
 
-        $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip >machine.zip && \
-        unzip machine.zip && \
-        rm machine.zip && \
-        mv docker-machine* /usr/local/bin
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip >machine.zip && \
+            unzip machine.zip && \
+            rm machine.zip && \
+            mv docker-machine* /usr/local/bin
 
-    Windows (using Git Bash):
+        Windows (using Git Bash):
 
-        $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_windows-amd64.zip >machine.zip && \
-        unzip machine.zip && \
-        rm machine.zip && \
-        mv docker-machine* /usr/local/bin
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_windows-amd64.zip >machine.zip && \
+            unzip machine.zip && \
+            rm machine.zip && \
+            mv docker-machine* /usr/local/bin
 
-3. Check the installation by displaying the Machine version:
+3.  Check the installation by displaying the Machine version:
 
         $ docker-machine -v
         machine version 0.5.0 (3e06852)
@@ -62,10 +62,10 @@ to your PATH.
 The Machine repository supplies several `bash` scripts that add features such
 as:
 
-* command completion
-* a function that displays the active machine in your shell prompt
-* a function wrapper that adds a `docker-machine use` subcommand to switch the
-  active machine
+-   command completion
+-   a function that displays the active machine in your shell prompt
+-   a function wrapper that adds a `docker-machine use` subcommand to switch the
+    active machine
 
 To install the scripts, copy or link them into your `/etc/bash_completion.d` or
 `/usr/local/etc/bash_completion.d` file. To enable the `docker-machine` shell
@@ -78,6 +78,6 @@ You can find additional documentation in the comments at the
 
 ## Where to go next
 
-* [Docker Machine overview](index.md)
-* [Docker Machine driver reference](drivers/index.md)
-* [Docker Machine subcommand reference](reference/index.md)
+-   [Docker Machine overview](index.md)
+-   [Docker Machine driver reference](drivers/index.md)
+-   [Docker Machine subcommand reference](reference/index.md)
