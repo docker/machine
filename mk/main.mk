@@ -44,24 +44,16 @@ include mk/release.mk
 include mk/test.mk
 include mk/validate.mk
 
-.all_build: build build-clean build-x build-machine build-plugins
+.all_build: build build-clean build-x
 .all_coverage: coverage-generate coverage-html coverage-send coverage-serve coverage-clean
 .all_release: release-checksum release
 .all_test: test-short test-long test-integration
 .all_validate: dco fmt vet lint
 
 default: build
-# Build native machine and all drivers
-build: build-machine build-plugins
-# Just build native machine itself
-machine: build-machine
-# Just build the native plugins
-plugins: build-plugins
-# Build all, cross platform
-cross: build-x
 
 install:
-	cp $(PREFIX)/bin/docker-machine $(PREFIX)/bin/docker-machine-driver* /usr/local/bin
+	cp $(PREFIX)/bin/docker-machine /usr/local/bin
 
 clean: coverage-clean build-clean
 test: dco fmt test-short lint vet
