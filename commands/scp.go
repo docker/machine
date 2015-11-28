@@ -70,10 +70,6 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 		return err
 	}
 
-	if err := runCmdWithStdIo(*cmd); err != nil {
-		return err
-	}
-
 	return runCmdWithStdIo(*cmd)
 }
 
