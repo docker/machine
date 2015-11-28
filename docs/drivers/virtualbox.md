@@ -26,6 +26,7 @@ Options:
 -   `--virtualbox-memory`: Size of memory for the host in MB.
 -   `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
 -   `--virtualbox-disk-size`: Size of disk for the host in MB.
+-   `--virtualbox-host-dns-resolver`: Use the host DNS resolver. (Boolean value, defaults to false)
 -   `--virtualbox-boot2docker-url`: The URL of the boot2docker image. Defaults to the latest available version.
 -   `--virtualbox-import-boot2docker-vm`: The name of a Boot2Docker VM to import.
 -   `--virtualbox-hostonly-cidr`: The CIDR of the host only adapter.
@@ -67,6 +68,7 @@ Environment variables and default values:
 | `--virtualbox-memory`                | `VIRTUALBOX_MEMORY_SIZE`           | `1024`                   |
 | `--virtualbox-cpu-count`             | `VIRTUALBOX_CPU_COUNT`             | `1`                      |
 | `--virtualbox-disk-size`             | `VIRTUALBOX_DISK_SIZE`             | `20000`                  |
+| `--virtualbox-host-dns-resolver`     | `VIRTUALBOX_HOST_DNS_RESOLVER`     | `false`                  |
 | `--virtualbox-boot2docker-url`       | `VIRTUALBOX_BOOT2DOCKER_URL`       | _Latest boot2docker url_ |
 | `--virtualbox-import-boot2docker-vm` | `VIRTUALBOX_BOOT2DOCKER_IMPORT_VM` | `boot2docker-vm`         |
 | `--virtualbox-hostonly-cidr`         | `VIRTUALBOX_HOSTONLY_CIDR`         | `192.168.99.1/24`        |
