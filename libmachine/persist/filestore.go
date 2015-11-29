@@ -31,7 +31,31 @@ func (s Filestore) GetMachinesDir() string {
 }
 
 func (s Filestore) saveToFile(data []byte, file string) error {
-	return ioutil.WriteFile(file, data, 0600)
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return ioutil.WriteFile(file, data, 0600)
+	}
+
+	tmpfi, err := ioutil.TempFile(filepath.Dir(file), "config.json.tmp")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpfi.Name())
+
+	err = ioutil.WriteFile(tmpfi.Name(), data, 0600)
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(file)
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(tmpfi.Name(), file)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s Filestore) Save(host *host.Host) error {
