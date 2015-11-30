@@ -12,8 +12,11 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	raw "google.golang.org/api/compute/v1"
 
+	"errors"
+
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/googleapi"
 )
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
@@ -380,7 +383,7 @@ func (c *ComputeUtil) waitForGlobalOp(name string) error {
 func (c *ComputeUtil) ip() (string, error) {
 	instance, err := c.service.Instances.Get(c.project, c.zone, c.instanceName).Do()
 	if err != nil {
-		return "", err
+		return "", unwrapGoogleError(err)
 	}
 
 	nic := instance.NetworkInterfaces[0]
@@ -388,4 +391,12 @@ func (c *ComputeUtil) ip() (string, error) {
 		return nic.NetworkIP, nil
 	}
 	return nic.AccessConfigs[0].NatIP, nil
+}
+
+func unwrapGoogleError(err error) error {
+	if googleErr, ok := err.(*googleapi.Error); ok {
+		return errors.New(googleErr.Message)
+	}
+
+	return err
 }
