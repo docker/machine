@@ -13,7 +13,6 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/libmachinetest"
-	"github.com/docker/machine/libmachine/persist/persisttest"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
@@ -118,11 +117,9 @@ func TestShellCfgSet(t *testing.T) {
 				},
 			},
 			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{
-					Hosts: []*host.Host{
-						{
-							Name: "quux",
-						},
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
 					},
 				},
 			},
@@ -156,11 +153,9 @@ func TestShellCfgSet(t *testing.T) {
 				},
 			},
 			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{
-					Hosts: []*host.Host{
-						{
-							Name: "quux",
-						},
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
 					},
 				},
 			},
@@ -194,11 +189,9 @@ func TestShellCfgSet(t *testing.T) {
 				},
 			},
 			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{
-					Hosts: []*host.Host{
-						{
-							Name: "quux",
-						},
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
 					},
 				},
 			},
@@ -232,11 +225,9 @@ func TestShellCfgSet(t *testing.T) {
 				},
 			},
 			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{
-					Hosts: []*host.Host{
-						{
-							Name: "quux",
-						},
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
 					},
 				},
 			},
@@ -270,14 +261,12 @@ func TestShellCfgSet(t *testing.T) {
 				},
 			},
 			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{
-					Hosts: []*host.Host{
-						{
-							Name: "quux",
-							Driver: &fakedriver.Driver{
-								MockState: state.Running,
-								MockIP:    "1.2.3.4",
-							},
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
+						Driver: &fakedriver.Driver{
+							MockState: state.Running,
+							MockIP:    "1.2.3.4",
 						},
 					},
 				},
@@ -316,14 +305,12 @@ func TestShellCfgSet(t *testing.T) {
 				},
 			},
 			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{
-					Hosts: []*host.Host{
-						{
-							Name: "quux",
-							Driver: &fakedriver.Driver{
-								MockState: state.Running,
-								MockIP:    "1.2.3.4",
-							},
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
+						Driver: &fakedriver.Driver{
+							MockState: state.Running,
+							MockIP:    "1.2.3.4",
 						},
 					},
 				},
@@ -431,9 +418,7 @@ func TestShellCfgUnset(t *testing.T) {
 					},
 				},
 			},
-			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{},
-			},
+			api: &libmachinetest.FakeAPI{},
 			connChecker: &FakeConnChecker{
 				DockerHost:  "tcp://1.2.3.4:2376",
 				AuthOptions: nil,
@@ -485,9 +470,7 @@ func TestShellCfgUnset(t *testing.T) {
 					},
 				},
 			},
-			api: &libmachinetest.FakeAPI{
-				FakeStore: &persisttest.FakeStore{},
-			},
+			api: &libmachinetest.FakeAPI{},
 			connChecker: &FakeConnChecker{
 				DockerHost:  "tcp://1.2.3.4:2376",
 				AuthOptions: nil,
