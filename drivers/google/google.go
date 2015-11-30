@@ -224,6 +224,7 @@ func (d *Driver) GetURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
@@ -328,6 +329,7 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
+
 	s, err := d.GetState()
 	if err != nil {
 		return err

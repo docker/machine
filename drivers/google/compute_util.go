@@ -57,7 +57,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		return nil, err
 	}
 
-	c := ComputeUtil{
+	return &ComputeUtil{
 		zone:          driver.Zone,
 		instanceName:  driver.MachineName,
 		userName:      driver.SSHUser,
@@ -71,8 +71,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		globalURL:     apiURL + driver.Project + "/global",
 		SwarmMaster:   driver.SwarmMaster,
 		SwarmHost:     driver.SwarmHost,
-	}
-	return &c, nil
+	}, nil
 }
 
 func (c *ComputeUtil) diskName() string {
