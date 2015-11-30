@@ -91,8 +91,11 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 }
 
 func (provisioner *DebianProvisioner) dockerDaemonResponding() bool {
-	if _, err := provisioner.SSHCommand("sudo docker version"); err != nil {
+	log.Debug("checking docker daemon")
+
+	if out, err := provisioner.SSHCommand("sudo docker version"); err != nil {
 		log.Warnf("Error getting SSH command to check if the daemon is up: %s", err)
+		log.Debugf("'sudo docker version' output:\n%s", out)
 		return false
 	}
 
