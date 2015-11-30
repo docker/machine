@@ -6,13 +6,14 @@ import (
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/libmachinetest"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCmdStopMissingMachineName(t *testing.T) {
 	commandLine := &commandstest.FakeCommandLine{}
-	api := &commandstest.FakeLibmachineAPI{}
+	api := &libmachinetest.FakeAPI{}
 
 	err := cmdStop(commandLine, api)
 
@@ -23,7 +24,7 @@ func TestCmdStop(t *testing.T) {
 	commandLine := &commandstest.FakeCommandLine{
 		CliArgs: []string{"machineToStop1", "machineToStop2"},
 	}
-	api := &commandstest.FakeLibmachineAPI{
+	api := &libmachinetest.FakeAPI{
 		Hosts: []*host.Host{
 			{
 				Name: "machineToStop1",
@@ -49,7 +50,7 @@ func TestCmdStop(t *testing.T) {
 	err := cmdStop(commandLine, api)
 	assert.NoError(t, err)
 
-	assert.Equal(t, state.Stopped, commandstest.State(api, "machineToStop1"))
-	assert.Equal(t, state.Stopped, commandstest.State(api, "machineToStop2"))
-	assert.Equal(t, state.Running, commandstest.State(api, "machine"))
+	assert.Equal(t, state.Stopped, libmachinetest.State(api, "machineToStop1"))
+	assert.Equal(t, state.Stopped, libmachinetest.State(api, "machineToStop2"))
+	assert.Equal(t, state.Running, libmachinetest.State(api, "machine"))
 }
