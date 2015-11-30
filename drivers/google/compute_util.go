@@ -29,7 +29,6 @@ type ComputeUtil struct {
 	service       *raw.Service
 	zoneURL       string
 	globalURL     string
-	ipAddress     string
 	SwarmMaster   bool
 	SwarmHost     string
 }
@@ -379,16 +378,14 @@ func (c *ComputeUtil) waitForGlobalOp(name string) error {
 
 // ip retrieves and returns the external IP address of the instance.
 func (c *ComputeUtil) ip() (string, error) {
-	if c.ipAddress == "" {
-		instance, err := c.service.Instances.Get(c.project, c.zone, c.instanceName).Do()
-		if err != nil {
-			return "", err
-		}
-		if c.useInternalIP {
-			c.ipAddress = instance.NetworkInterfaces[0].NetworkIP
-		} else {
-			c.ipAddress = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
-		}
+	instance, err := c.service.Instances.Get(c.project, c.zone, c.instanceName).Do()
+	if err != nil {
+		return "", err
 	}
-	return c.ipAddress, nil
+
+	nic := instance.NetworkInterfaces[0]
+	if c.useInternalIP {
+		return nic.NetworkIP, nil
+	}
+	return nic.AccessConfigs[0].NatIP, nil
 }
