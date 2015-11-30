@@ -43,6 +43,11 @@ func TestParseFiltersAll(t *testing.T) {
 	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}, Name: []string{"dev"}})
 }
 
+func TestParseFiltersAllCase(t *testing.T) {
+	actual, _ := parseFilters([]string{"sWarM=foo", "DrIver=bar", "StaTe=Stopped", "NAMe=dev"})
+	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}, Name: []string{"dev"}})
+}
+
 func TestParseFiltersDuplicates(t *testing.T) {
 	actual, _ := parseFilters([]string{"swarm=foo", "driver=bar", "name=mark", "swarm=baz", "driver=qux", "state=Running", "state=Starting", "name=time"})
 	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo", "baz"}, DriverName: []string{"bar", "qux"}, State: []string{"Running", "Starting"}, Name: []string{"mark", "time"}})
@@ -53,6 +58,16 @@ func TestParseFiltersValueWithEqual(t *testing.T) {
 	assert.Equal(t, actual, FilterOptions{DriverName: []string{"bar=baz"}})
 }
 
+func TestFilterHostsReturnsFiltersValuesCaseInsensitive(t *testing.T) {
+	opts := FilterOptions{
+		SwarmName:  []string{"fOo"},
+		DriverName: []string{"ViRtUaLboX"},
+		State:      []string{"StOPpeD"},
+	}
+	hosts := []*host.Host{}
+	actual := filterHosts(hosts, opts)
+	assert.EqualValues(t, actual, hosts)
+}
 func TestFilterHostsReturnsSameGivenNoFilters(t *testing.T) {
 	opts := FilterOptions{}
 	hosts := []*host.Host{
