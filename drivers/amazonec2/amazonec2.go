@@ -138,7 +138,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-ssh-user",
-			Usage:  "set the name of the ssh user",
+			Usage:  "Set the name of the ssh user",
 			Value:  defaultSSHUser,
 			EnvVar: "AWS_SSH_USER",
 		},
