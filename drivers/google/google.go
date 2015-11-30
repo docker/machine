@@ -229,20 +229,20 @@ func (d *Driver) GetURL() (string, error) {
 
 // GetIP returns the IP address of the GCE instance.
 func (d *Driver) GetIP() (string, error) {
-	machineState, err := d.GetState()
-	if err != nil {
-		return "", err
-	}
-	if machineState != state.Running {
-		return "", drivers.ErrHostIsNotRunning
-	}
-
 	c, err := newComputeUtil(d)
 	if err != nil {
 		return "", err
 	}
 
-	return c.ip()
+	ip, err := c.ip()
+	if err != nil {
+		return "", err
+	}
+	if ip == "" {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
+	return ip, nil
 }
 
 // GetState returns a docker.hosts.state.State value representing the current state of the host.
@@ -254,12 +254,12 @@ func (d *Driver) GetState() (state.State, error) {
 
 	// All we care about is whether the disk exists, so we just check disk for a nil value.
 	// There will be no error if disk is not nil.
-	disk, _ := c.disk()
 	instance, _ := c.instance()
-	if instance == nil && disk == nil {
-		return state.None, nil
-	}
-	if instance == nil && disk != nil {
+	if instance == nil {
+		disk, _ := c.disk()
+		if disk == nil {
+			return state.None, nil
+		}
 		return state.Stopped, nil
 	}
 
