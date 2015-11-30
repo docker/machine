@@ -12,8 +12,11 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	raw "google.golang.org/api/compute/v1"
 
+	"errors"
+
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/googleapi"
 )
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
@@ -29,7 +32,6 @@ type ComputeUtil struct {
 	service       *raw.Service
 	zoneURL       string
 	globalURL     string
-	ipAddress     string
 	SwarmMaster   bool
 	SwarmHost     string
 }
@@ -55,7 +57,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		return nil, err
 	}
 
-	c := ComputeUtil{
+	return &ComputeUtil{
 		zone:          driver.Zone,
 		instanceName:  driver.MachineName,
 		userName:      driver.SSHUser,
@@ -69,8 +71,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		globalURL:     apiURL + driver.Project + "/global",
 		SwarmMaster:   driver.SwarmMaster,
 		SwarmHost:     driver.SwarmHost,
-	}
-	return &c, nil
+	}, nil
 }
 
 func (c *ComputeUtil) diskName() string {
@@ -379,16 +380,22 @@ func (c *ComputeUtil) waitForGlobalOp(name string) error {
 
 // ip retrieves and returns the external IP address of the instance.
 func (c *ComputeUtil) ip() (string, error) {
-	if c.ipAddress == "" {
-		instance, err := c.service.Instances.Get(c.project, c.zone, c.instanceName).Do()
-		if err != nil {
-			return "", err
-		}
-		if c.useInternalIP {
-			c.ipAddress = instance.NetworkInterfaces[0].NetworkIP
-		} else {
-			c.ipAddress = instance.NetworkInterfaces[0].AccessConfigs[0].NatIP
-		}
+	instance, err := c.service.Instances.Get(c.project, c.zone, c.instanceName).Do()
+	if err != nil {
+		return "", unwrapGoogleError(err)
 	}
-	return c.ipAddress, nil
+
+	nic := instance.NetworkInterfaces[0]
+	if c.useInternalIP {
+		return nic.NetworkIP, nil
+	}
+	return nic.AccessConfigs[0].NatIP, nil
+}
+
+func unwrapGoogleError(err error) error {
+	if googleErr, ok := err.(*googleapi.Error); ok {
+		return errors.New(googleErr.Message)
+	}
+
+	return err
 }
