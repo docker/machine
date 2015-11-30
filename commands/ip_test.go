@@ -6,13 +6,14 @@ import (
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/libmachinetest"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCmdIPMissingMachineName(t *testing.T) {
 	commandLine := &commandstest.FakeCommandLine{}
-	api := &commandstest.FakeLibmachineAPI{}
+	api := &libmachinetest.FakeAPI{}
 
 	err := cmdURL(commandLine, api)
 
@@ -23,7 +24,7 @@ func TestCmdIP(t *testing.T) {
 	commandLine := &commandstest.FakeCommandLine{
 		CliArgs: []string{"machine"},
 	}
-	api := &commandstest.FakeLibmachineAPI{
+	api := &libmachinetest.FakeAPI{
 		Hosts: []*host.Host{
 			{
 				Name: "machine",
