@@ -11,6 +11,7 @@ import (
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/check"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/libmachinetest"
 	"github.com/docker/machine/libmachine/state"
@@ -90,7 +91,7 @@ func TestShellCfgSet(t *testing.T) {
 		description      string
 		commandLine      CommandLine
 		api              libmachine.API
-		connChecker      ConnChecker
+		connChecker      check.ConnChecker
 		noProxyVar       string
 		noProxyValue     string
 		expectedShellCfg *ShellConfig
@@ -345,7 +346,7 @@ func TestShellCfgSet(t *testing.T) {
 
 		t.Log(test.description)
 
-		defaultConnChecker = test.connChecker
+		check.DefaultConnChecker = test.connChecker
 		shellCfg, err := shellCfgSet(test.commandLine, test.api)
 		assert.Equal(t, test.expectedShellCfg, shellCfg)
 		assert.Equal(t, test.expectedErr, err)
@@ -366,7 +367,7 @@ func TestShellCfgUnset(t *testing.T) {
 		description      string
 		commandLine      CommandLine
 		api              libmachine.API
-		connChecker      ConnChecker
+		connChecker      check.ConnChecker
 		noProxyVar       string
 		noProxyValue     string
 		expectedShellCfg *ShellConfig
@@ -496,7 +497,7 @@ func TestShellCfgUnset(t *testing.T) {
 
 		t.Log(test.description)
 
-		defaultConnChecker = test.connChecker
+		check.DefaultConnChecker = test.connChecker
 		shellCfg, err := shellCfgUnset(test.commandLine, test.api)
 		assert.Equal(t, test.expectedShellCfg, shellCfg)
 		assert.Equal(t, test.expectedErr, err)
