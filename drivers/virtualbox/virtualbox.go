@@ -56,6 +56,7 @@ type Driver struct {
 	HostOnlyNicType     string
 	HostOnlyPromiscMode string
 	NoShare             bool
+	DNSProxy            bool
 }
 
 // NewDriver creates a new VirtualBox driver with default settings.
@@ -132,6 +133,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Disable the mount of your home directory",
 			EnvVar: "VIRTUALBOX_NO_SHARE",
 		},
+		mcnflag.BoolFlag{
+			Name:   "virtualbox-dns-proxy",
+			Usage:  "Proxy all DNS requests to the host",
+			EnvVar: "VIRTUALBOX_DNS_PROXY",
+		},
 	}
 }
 
@@ -177,6 +183,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostOnlyNicType = flags.String("virtualbox-hostonly-nictype")
 	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
 	d.NoShare = flags.Bool("virtualbox-no-share")
+	d.DNSProxy = flags.Bool("virtualbox-dns-proxy")
 
 	return nil
 }
@@ -302,6 +309,11 @@ func (d *Driver) Create() error {
 		cpus = 32
 	}
 
+	dnsProxy := "off"
+	if d.DNSProxy {
+		dnsProxy = "on"
+	}
+
 	if err := d.vbm("modifyvm", d.MachineName,
 		"--firmware", "bios",
 		"--bioslogofadein", "off",
@@ -315,7 +327,7 @@ func (d *Driver) Create() error {
 		"--ioapic", "on",
 		"--rtcuseutc", "on",
 		"--natdnshostresolver1", "off",
-		"--natdnsproxy1", "off",
+		"--natdnsproxy1", dnsProxy,
 		"--cpuhotplug", "off",
 		"--pae", "on",
 		"--hpet", "on",
