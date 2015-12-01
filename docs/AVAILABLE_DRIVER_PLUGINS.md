@@ -29,5 +29,6 @@ with Docker Inc.  Use 3rd party plugins at your own risk.
 | Packet                 | <https://github.com/packethost/docker-machine-driver-packet>   | [betawaffle](https://github.com/betawaffle)         | andy@packet.net           |
 | Parallels for OSX      | <https://github.com/Parallels/docker-machine-parallels>        | [legal90](https://github.com/legal90)               | legal90@gmail.com         |
 | SAKURA CLOUD           | <https://github.com/yamamoto-febc/docker-machine-sakuracloud>  | [yamamoto-febc](https://github.com/yamamoto-febc)   | yamamoto.febc@gmail.com   |
+| UCloud                 | <https://github.com/ucloud/docker-machine-ucloud>              | [xiaohui](https://github.com/xiaohui)               | xiaohui.zju@gmail.com     |
 | VULTR                  | <https://github.com/janeczku/docker-machine-vultr>             | [janeczku](https://github.com/janeczku)             | jb@festplatte.eu.org      |
 | xhyve                  | <https://github.com/zchee/docker-machine-xhyve>                | [zchee](https://github.com/zchee)                   | zchee.io@gmail.com        |
