@@ -30,7 +30,7 @@ func cmdConfig(c CommandLine, api libmachine.API) error {
 
 	log.Debug(dockerHost)
 
-	fmt.Printf("--tlsverify --tlscacert=%q --tlscert=%q --tlskey=%q -H=%s",
+	fmt.Printf("--tlsverify\n--tlscacert=%q\n--tlscert=%q\n--tlskey=%q\n-H=%s\n",
 		authOptions.CaCertPath, authOptions.ClientCertPath, authOptions.ClientKeyPath, dockerHost)
 
 	return nil
