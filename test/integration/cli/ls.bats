@@ -9,7 +9,7 @@ setup () {
 }
 
 teardown () {
-  machine rm $(machine ls -q)
+  machine rm -y $(machine ls -q)
   echo_to_log
 }
 
