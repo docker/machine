@@ -1,6 +1,8 @@
 package persist
 
-import "github.com/docker/machine/libmachine/host"
+import (
+	"github.com/docker/machine/libmachine/host"
+)
 
 type Store interface {
 	// Exists returns whether a machine exists or not
@@ -19,27 +21,27 @@ type Store interface {
 	Save(host *host.Host) error
 }
 
-func LoadHosts(s Store, hostNames []string) ([]*host.Host, error) {
+func LoadHosts(s Store, hostNames []string) ([]*host.Host, map[string]error) {
 	loadedHosts := []*host.Host{}
+	errors := map[string]error{}
 
 	for _, hostName := range hostNames {
 		h, err := s.Load(hostName)
 		if err != nil {
-			// TODO: (nathanleclaire) Should these be bundled up
-			// into one error instead of exiting?
-			return nil, err
+			errors[hostName] = err
+		} else {
+			loadedHosts = append(loadedHosts, h)
 		}
-		loadedHosts = append(loadedHosts, h)
 	}
 
-	return loadedHosts, nil
+	return loadedHosts, errors
 }
 
-func LoadAllHosts(s Store) ([]*host.Host, error) {
+func LoadAllHosts(s Store) ([]*host.Host, map[string]error, error) {
 	hostNames, err := s.List()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	return LoadHosts(s, hostNames)
+	loadedHosts, hostInError := LoadHosts(s, hostNames)
+	return loadedHosts, hostInError, nil
 }

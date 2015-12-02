@@ -49,7 +49,7 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 		return err
 	}
 
-	hostList, err := persist.LoadAllHosts(api)
+	hostList, hostInError, err := persist.LoadAllHosts(api)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 		}
 	}
 
-	items := getHostListItems(hostList)
+	items := getHostListItems(hostList, hostInError)
 
 	for _, item := range items {
 		activeString := "-"
@@ -283,7 +283,7 @@ func getHostState(h *host.Host, hostListItemsChan chan<- HostListItem) {
 	}
 }
 
-func getHostListItems(hostList []*host.Host) []HostListItem {
+func getHostListItems(hostList []*host.Host, hostsInError map[string]error) []HostListItem {
 	hostListItems := []HostListItem{}
 	hostListItemsChan := make(chan HostListItem)
 
@@ -296,6 +296,15 @@ func getHostListItems(hostList []*host.Host) []HostListItem {
 	}
 
 	close(hostListItemsChan)
+
+	for name, err := range hostsInError {
+		itemInError := HostListItem{}
+		itemInError.Name = name
+		itemInError.DriverName = "not found"
+		itemInError.State = state.Error
+		itemInError.Error = err.Error()
+		hostListItems = append(hostListItems, itemInError)
+	}
 
 	sortHostListItemsByName(hostListItems)
 	return hostListItems

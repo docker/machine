@@ -18,12 +18,12 @@ func cmdActive(c CommandLine, api libmachine.API) error {
 		return errTooManyArguments
 	}
 
-	hosts, err := persist.LoadAllHosts(api)
+	hosts, hostsInError, err := persist.LoadAllHosts(api)
 	if err != nil {
 		return fmt.Errorf("Error getting active host: %s", err)
 	}
 
-	items := getHostListItems(hosts)
+	items := getHostListItems(hosts, hostsInError)
 
 	for _, item := range items {
 		if item.Active {
