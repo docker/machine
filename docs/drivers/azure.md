@@ -25,9 +25,9 @@ Grab your subscription ID from the portal, then run `docker-machine create` with
 
     $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscription-cert="mycert.pem" A-VERY-UNIQUE-NAME
 
-The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`
+The Azure driver uses the `b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-15_10-amd64-server-20151116.1-en-us-30GB`
 image by default. Note, this image is not available in the Chinese regions. In China you should
- specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04_1-LTS-amd64-server-20140927-en-us-30GB`.
+ specify `b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-15_10-amd64-server-20151116.1-en-us-30GB`.
 
 You may need to `machine ssh` in to the virtual machine and reboot to ensure that the OS is updated.
 
@@ -49,7 +49,7 @@ Environment variables and default values:
 | CLI option                      | Environment variable          | Default                |
 | ------------------------------- | ----------------------------- | ---------------------- |
 | `--azure-docker-port`           | -                             | `2376`                 |
-| `--azure-image`                 | `AZURE_IMAGE`                 | _Ubuntu 14.04 LTS x64_ |
+| `--azure-image`                 | `AZURE_IMAGE`                 | _Ubuntu 15.10 x64_     |
 | `--azure-location`              | `AZURE_LOCATION`              | `West US`              |
 | `--azure-password`              | -                             | -                      |
 | `--azure-publish-settings-file` | `AZURE_PUBLISH_SETTINGS_FILE` | -                      |
