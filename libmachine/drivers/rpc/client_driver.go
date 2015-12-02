@@ -30,8 +30,9 @@ type RPCCall struct {
 }
 
 type InternalClient struct {
-	MachineName string
-	RPCClient   *rpc.Client
+	MachineName    string
+	RPCClient      *rpc.Client
+	rpcServiceName string
 }
 
 const (
@@ -70,12 +71,17 @@ func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply int
 	if serviceMethod != HeartbeatMethod {
 		log.Debugf("(%s) Calling %+v", ic.MachineName, serviceMethod)
 	}
-	return ic.RPCClient.Call(RPCServiceNameV1+serviceMethod, args, reply)
+	return ic.RPCClient.Call(ic.rpcServiceName+serviceMethod, args, reply)
+}
+
+func (ic *InternalClient) switchToV0() {
+	ic.rpcServiceName = RPCServiceNameV0
 }
 
 func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 	return &InternalClient{
-		RPCClient: rpcclient,
+		RPCClient:      rpcclient,
+		rpcServiceName: RPCServiceNameV1,
 	}
 }
 
@@ -110,6 +116,23 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 		heartbeatDoneCh: make(chan bool),
 	}
 
+	var serverVersion int
+	if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {
+		// this is the first call we make to the server. We try to play nice with old pre 0.5.1 client,
+		// by gracefully trying old RPCServiceName, we do this only once, and keep the result for future calls.
+		log.Debugf(err.Error())
+		log.Debugf("Client (%s) with %s does not work, re-attempting with %s", c.Client.MachineName, RPCServiceNameV1, RPCServiceNameV0)
+		c.Client.switchToV0()
+		if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {
+			return nil, err
+		}
+	}
+
+	if serverVersion != version.APIVersion {
+		return nil, fmt.Errorf("Driver binary uses an incompatible API version (%d)", serverVersion)
+	}
+	log.Debug("Using API Version ", serverVersion)
+
 	go func(c *RPCClientDriver) {
 		for {
 			select {
@@ -125,16 +148,6 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 			}
 		}
 	}(c)
-
-	var serverVersion int
-	if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {
-		return nil, err
-	}
-
-	if serverVersion != version.APIVersion {
-		return nil, fmt.Errorf("Driver binary uses an incompatible API version (%d)", serverVersion)
-	}
-	log.Debug("Using API Version ", serverVersion)
 
 	if err := c.SetConfigRaw(rawDriver); err != nil {
 		return nil, err
