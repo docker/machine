@@ -52,6 +52,7 @@ type Driver struct {
 	DiskSize            int
 	Boot2DockerURL      string
 	Boot2DockerImportVM string
+	HostDNSResolver     bool
 	HostOnlyCIDR        string
 	HostOnlyNicType     string
 	HostOnlyPromiscMode string
@@ -109,6 +110,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "The name of a Boot2Docker VM to import",
 			Value:  defaultBoot2DockerImportVM,
 			EnvVar: "VIRTUALBOX_BOOT2DOCKER_IMPORT_VM",
+		},
+		mcnflag.BoolFlag{
+			Name:   "virtualbox-host-dns-resolver",
+			Usage:  "Use the host DNS resolver",
+			EnvVar: "VIRTUALBOX_HOST_DNS_RESOLVER",
 		},
 		mcnflag.StringFlag{
 			Name:   "virtualbox-hostonly-cidr",
@@ -179,6 +185,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
 	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
+	d.HostDNSResolver = flags.Bool("virtualbox-host-dns-resolver")
 	d.HostOnlyCIDR = flags.String("virtualbox-hostonly-cidr")
 	d.HostOnlyNicType = flags.String("virtualbox-hostonly-nictype")
 	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
@@ -309,6 +316,11 @@ func (d *Driver) Create() error {
 		cpus = 32
 	}
 
+	hostDNSResolver := "off"
+	if d.HostDNSResolver {
+		hostDNSResolver = "on"
+	}
+
 	dnsProxy := "off"
 	if d.DNSProxy {
 		dnsProxy = "on"
@@ -326,7 +338,7 @@ func (d *Driver) Create() error {
 		"--acpi", "on",
 		"--ioapic", "on",
 		"--rtcuseutc", "on",
-		"--natdnshostresolver1", "off",
+		"--natdnshostresolver1", hostDNSResolver,
 		"--natdnsproxy1", dnsProxy,
 		"--cpuhotplug", "off",
 		"--pae", "on",
