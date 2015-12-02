@@ -23,6 +23,11 @@ func TestCmdRmMissingMachineName(t *testing.T) {
 func TestCmdRm(t *testing.T) {
 	commandLine := &commandstest.FakeCommandLine{
 		CliArgs: []string{"machineToRemove1", "machineToRemove2"},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"y": true,
+			},
+		},
 	}
 	api := &libmachinetest.FakeAPI{
 		Hosts: []*host.Host{

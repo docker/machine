@@ -64,31 +64,53 @@ load ${BASE_TEST_DIR}/helpers.bash
 }
 
 @test "none: rm with no name fails 'machine rm'" {
-  run machine rm
+  run machine rm -y
   last=$(expr ${#lines[@]} - 1)
   [ "$status" -eq 1 ]
   [[ ${lines[$last]} == "Error: Expected to get one or more machine names as arguments" ]]
 }
 
 @test "none: rm non existent machine fails 'machine rm ∞'" {
-  run machine rm ∞
+  run machine rm ∞ -y
   [ "$status" -eq 1 ]
   [[ ${lines[0]} == "Error removing host \"∞\": Host does not exist: \"∞\"" ]]
 }
 
 @test "none: rm is successful 'machine rm 0'" {
-  run machine rm 0
+  run machine rm 0 -y
   [ "$status" -eq 0 ]
+}
+
+@test "none: rm ask user confirmation when -y is not provided 'echo y | machine rm ba'" {
+  run machine create -d none --url none ba
+  [ "$status" -eq 0 ]
+  run bash -c "echo y | machine rm ba"
+  [ "$status" -eq 0 ]
+}
+
+@test "none: rm deny user confirmation when -y is not provided 'echo n | machine rm ab'" {
+  run machine create -d none --url none ab
+  [ "$status" -eq 0 ]
+  run bash -c "echo n | machine rm ab"
+  [ "$status" -eq 0 ]
+}
+
+@test "none: rm never prompt user confirmation with -f is provided 'echo n | machine rm -f ab'" {
+  run machine create -d none --url none c
+  [ "$status" -eq 0 ]
+  run bash -c "machine rm -f c"
+  [ "$status" -eq 0 ]
+  [[ ${lines[0]} == "Successfully removed c" ]]
 }
 
 # Should be replaced by the test below
 @test "none: rm is successful 'machine rm a'" {
-  run machine rm a
+  run machine rm a -y
   [ "$status" -eq 0 ]
 }
 
 @test "none: rm is case insensitive 'machine rm A'" {
   skip
-  run machine rm A
+  run machine rm A -y
   [ "$status" -eq 0 ]
 }
