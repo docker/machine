@@ -113,7 +113,7 @@ func parseFilters(filters []string) (FilterOptions, error) {
 		if len(kv) != 2 {
 			return options, errors.New("Unsupported filter syntax.")
 		}
-		key, value := kv[0], kv[1]
+		key, value := strings.ToLower(kv[0]), kv[1]
 
 		switch key {
 		case "swarm":
@@ -176,7 +176,7 @@ func matchesSwarmName(host *host.Host, swarmNames []string, swarmMasters map[str
 	}
 	for _, n := range swarmNames {
 		if host.HostOptions.SwarmOptions != nil {
-			if n == swarmMasters[host.HostOptions.SwarmOptions.Discovery] {
+			if strings.EqualFold(n, swarmMasters[host.HostOptions.SwarmOptions.Discovery]) {
 				return true
 			}
 		}
@@ -189,7 +189,7 @@ func matchesDriverName(host *host.Host, driverNames []string) bool {
 		return true
 	}
 	for _, n := range driverNames {
-		if host.DriverName == n {
+		if strings.EqualFold(host.DriverName, n) {
 			return true
 		}
 	}
@@ -205,7 +205,7 @@ func matchesState(host *host.Host, states []string) bool {
 		if err != nil {
 			log.Warn(err)
 		}
-		if n == s.String() {
+		if strings.EqualFold(n, s.String()) {
 			return true
 		}
 	}
