@@ -32,4 +32,4 @@ with Docker Inc.  Use 3rd party plugins at your own risk.
 | Ubiquity Hosting       | <https://github.com/ubiquityhosting/docker-machine-driver-ubiquity> | [Justin Canington](https://github.com/justacan)<br>[Andrew Ayers](https://github.com/andrew-ayers) | justin.canington@nobistech.net<br>andrew.ayers@nobistech.net |
 | UCloud                 | <https://github.com/ucloud/docker-machine-ucloud>              | [xiaohui](https://github.com/xiaohui)               | xiaohui.zju@gmail.com     |
 | VULTR                  | <https://github.com/janeczku/docker-machine-vultr>             | [janeczku](https://github.com/janeczku)             | jb@festplatte.eu.org      |
-| xhyve                  | <https://github.com/zchee/docker-machine-xhyve>                | [zchee](https://github.com/zchee)                   | zchee.io@gmail.com        |
+| xhyve                  | <https://github.com/zchee/docker-machine-driver-xhyve>         | [zchee](https://github.com/zchee)                   | zchee.io@gmail.com        |
