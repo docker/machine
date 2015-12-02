@@ -64,9 +64,14 @@ func (c *contextCommandLine) Application() *cli.App {
 }
 
 func runAction(actionName string, c CommandLine, api libmachine.API) error {
-	hosts, err := persist.LoadHosts(api, c.Args())
-	if err != nil {
-		return err
+	hosts, hostsInError := persist.LoadHosts(api, c.Args())
+
+	if len(hostsInError) > 0 {
+		errs := []error{}
+		for _, err := range hostsInError {
+			errs = append(errs, err)
+		}
+		return consolidateErrs(errs)
 	}
 
 	if len(hosts) == 0 {

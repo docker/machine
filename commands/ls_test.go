@@ -6,6 +6,7 @@ import (
 
 	"time"
 
+	"errors"
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/state"
@@ -323,7 +324,7 @@ func TestGetHostListItems(t *testing.T) {
 		{"foo", state.Running, true, ""},
 	}
 
-	items := getHostListItems(hosts)
+	items := getHostListItems(hosts, map[string]error{})
 
 	for i := range expected {
 		assert.Equal(t, expected[i].name, items[i].Name)
@@ -398,7 +399,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		"baz": {state.Saved, false},
 	}
 
-	items := getHostListItems(hosts)
+	items := getHostListItems(hosts, map[string]error{})
 
 	for _, item := range items {
 		expected := expected[item.Name]
@@ -446,7 +447,7 @@ func TestGetHostStateTimeout(t *testing.T) {
 	}
 
 	stateTimeoutDuration = 1 * time.Second
-	hostItems := getHostListItems(hosts)
+	hostItems := getHostListItems(hosts, map[string]error{})
 	hostItem := hostItems[0]
 
 	assert.Equal(t, "foo", hostItem.Name)
@@ -466,7 +467,7 @@ func TestGetHostStateError(t *testing.T) {
 		},
 	}
 
-	hostItems := getHostListItems(hosts)
+	hostItems := getHostListItems(hosts, map[string]error{})
 	hostItem := hostItems[0]
 
 	assert.Equal(t, "foo", hostItem.Name)
@@ -475,4 +476,35 @@ func TestGetHostStateError(t *testing.T) {
 	assert.Empty(t, hostItem.URL)
 	assert.Equal(t, "Unable to get ip", hostItem.Error)
 	assert.Nil(t, hostItem.SwarmOptions)
+}
+
+func TestGetSomeHostInEror(t *testing.T) {
+	hosts := []*host.Host{
+		{
+			Name: "foo",
+			Driver: &fakedriver.Driver{
+				MockState: state.Running,
+			},
+		},
+	}
+	hostsInError := map[string]error{
+		"bar": errors.New("invalid memory address or nil pointer dereference"),
+	}
+
+	hostItems := getHostListItems(hosts, hostsInError)
+	assert.Equal(t, 2, len(hostItems))
+
+	hostItem := hostItems[0]
+
+	assert.Equal(t, "bar", hostItem.Name)
+	assert.Equal(t, state.Error, hostItem.State)
+	assert.Equal(t, "not found", hostItem.DriverName)
+	assert.Empty(t, hostItem.URL)
+	assert.Equal(t, "invalid memory address or nil pointer dereference", hostItem.Error)
+	assert.Nil(t, hostItem.SwarmOptions)
+
+	hostItem = hostItems[1]
+
+	assert.Equal(t, "foo", hostItem.Name)
+	assert.Equal(t, state.Running, hostItem.State)
 }
