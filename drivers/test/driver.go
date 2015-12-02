@@ -1,4 +1,4 @@
-package none
+package test
 
 import (
 	"fmt"
@@ -9,11 +9,10 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
-const driverName = "none"
+const driverName = "test"
 
-// Driver is the driver used when no driver is selected. It is used to
-// connect to existing Docker hosts by specifying the URL of the host as
-// an option.
+// Driver test is a driver solely used during docker-machine development.
+// It is not meant to be used for installing or registering docker machines.
 type Driver struct {
 	*drivers.BaseDriver
 	URL string

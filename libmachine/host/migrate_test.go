@@ -3,7 +3,7 @@ package host
 import (
 	"testing"
 
-	"github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/drivers/test"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/stretchr/testify/assert"
 )
@@ -62,7 +62,7 @@ func TestMigrateHost(t *testing.T) {
 					//
 					// These default StorePath settings get over-written when we
 					// instantiate the plugin driver, but this seems entirely incidental.
-					Driver: none.NewDriver("default", "."),
+					Driver: test.NewDriver("default", "."),
 				},
 			},
 			expectedMigrationPerformed: false,
@@ -124,7 +124,7 @@ func TestMigrateHost(t *testing.T) {
 					Data: []byte(`{"MachineName": "default"}`),
 
 					// TODO: See note above.
-					Driver: none.NewDriver("default", "."),
+					Driver: test.NewDriver("default", "."),
 				},
 			},
 			expectedMigrationPerformed: false,
@@ -162,7 +162,7 @@ func TestMigrateHost(t *testing.T) {
 				RawDriver:  []byte(`{"MachineName":"default","StorePath":"/Users/nathanleclaire/.docker/machine"}`),
 				Driver: &RawDataDriver{
 					Data:   []byte(`{"MachineName":"default","StorePath":"/Users/nathanleclaire/.docker/machine"}`),
-					Driver: none.NewDriver("default", "/Users/nathanleclaire/.docker/machine"),
+					Driver: test.NewDriver("default", "/Users/nathanleclaire/.docker/machine"),
 				},
 			},
 			expectedMigrationPerformed: true,

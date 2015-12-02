@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/docker/machine/drivers/none"
+	"github.com/docker/machine/drivers/test"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/version"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 type RawDataDriver struct {
-	*none.Driver
+	*test.Driver
 	Data []byte // passed directly back when invoking json.Marshal on this type
 }
 
@@ -59,7 +59,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 
 	globalStorePath := filepath.Dir(filepath.Dir(migratedHostMetadata.HostOptions.AuthOptions.StorePath))
 
-	driver := &RawDataDriver{none.NewDriver(h.Name, globalStorePath), nil}
+	driver := &RawDataDriver{test.NewDriver(h.Name, globalStorePath), nil}
 
 	if migratedHostMetadata.ConfigVersion > version.ConfigVersion {
 		return nil, false, errConfigFromFuture

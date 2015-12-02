@@ -85,16 +85,19 @@ To remove a host and all of its containers and images, use `docker-machine rm`:
     $ docker-machine ls
     NAME      ACTIVE   DRIVER       STATE     URL
 
-## Adding a host without a driver
 
-You can add a host to Docker which only has a URL and no driver. Therefore it
-can be used an alias for an existing host so you don’t have to type out the URL
-every time you run a Docker command.
+## Adding an existing host
 
-    $ docker-machine create --url=tcp://50.134.234.20:2376 custombox
+You can add a host (already running Docker or not) with the `generic` driver.
+If the Docker daemon is not running on your host, it will be installed.
+If the Docker daemon already exist, new certificates will be installed and thus
+will trigger a daemon restart.
+
+
+    $ docker-machine create -d generic --generic-ip-address=50.134.234.20 custombox
     $ docker-machine ls
     NAME        ACTIVE   DRIVER    STATE     URL
-    custombox   *        none      Running   tcp://50.134.234.20:2376
+    custombox   *        generic   Running   tcp://50.134.234.20:2376
 
 ## Using Docker Machine with Docker Swarm
 

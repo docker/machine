@@ -44,7 +44,7 @@ customize.
 
     Options:
 
-       --driver, -d "none"                                                                                  Driver to create machine with.
+       --driver, -d "generic"                                                                               Driver to create machine with.
        --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
        --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
        --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
@@ -78,7 +78,7 @@ invoking the `create` help text.
 
     Options:
 
-       --driver, -d "none"                                                                                  Driver to create machine with.
+       --driver, -d "generic"                                                                               Driver to create machine with.
        --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
        --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
        --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]

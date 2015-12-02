@@ -3,9 +3,9 @@
 load ${BASE_TEST_DIR}/helpers.bash
 
 setup () {
-  machine create -d none --url none testmachine3
-  machine create -d none --url none testmachine2
-  machine create -d none --url none testmachine
+  machine create -d test --url none testmachine3
+  machine create -d test --url none testmachine2
+  machine create -d test --url none testmachine
 }
 
 teardown () {
@@ -14,13 +14,13 @@ teardown () {
 }
 
 bootstrap_swarm () {
-  machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-master --swarm-discovery token://deadbeef testswarm
-  machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testswarm2
-  machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testswarm3
+  machine create -d test --url tcp://127.0.0.1:2375 --swarm --swarm-master --swarm-discovery token://deadbeef testswarm
+  machine create -d test --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testswarm2
+  machine create -d test --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testswarm3
 }
 
-@test "ls: filter on driver 'machine ls --filter driver=none'" {
-  run machine ls --filter driver=none
+@test "ls: filter on driver 'machine ls --filter driver=test'" {
+  run machine ls --filter driver=test
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 4 ]]
   [[ ${lines[1]} =~ "testmachine" ]]
@@ -28,8 +28,8 @@ bootstrap_swarm () {
   [[ ${lines[3]} =~ "testmachine3" ]]
 }
 
-@test "ls: filter on driver 'machine ls -q --filter driver=none'" {
-  run machine ls -q --filter driver=none
+@test "ls: filter on driver 'machine ls -q --filter driver=test'" {
+  run machine ls -q --filter driver=test
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
   [[ ${lines[0]} == "testmachine" ]]
@@ -131,9 +131,9 @@ bootstrap_swarm () {
   [[ ${lines[2]} == "testswarm3" ]]
 }
 
-@test "ls: multi filter 'machine ls -q --filter swarm=testswarm --filter name=\"^t.*e\" --filter driver=none --filter state=\"Running\"'" {
+@test "ls: multi filter 'machine ls -q --filter swarm=testswarm --filter name=\"^t.*e\" --filter driver=test --filter state=\"Running\"'" {
   bootstrap_swarm
-  run machine ls -q --filter swarm=testswarm --filter name="^t.*e" --filter driver=none --filter state="Running"
+  run machine ls -q --filter swarm=testswarm --filter name="^t.*e" --filter driver=test --filter state="Running"
   [ "$status" -eq 0 ]
   [[ ${#lines[@]} == 3 ]]
   [[ ${lines[0]} == "testswarm" ]]
