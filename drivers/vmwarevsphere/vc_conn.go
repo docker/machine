@@ -63,7 +63,7 @@ func (conn VcConn) DatastoreMkdir(dirName string) error {
 
 func (conn VcConn) DatastoreUpload(localPath, destination string) error {
 	stdout, err := conn.DatastoreLs(destination)
-	if err == nil && strings.Contains(stdout, B2DISOName) {
+	if err == nil && strings.Contains(stdout, isoFilename) {
 		log.Infof("boot2docker ISO already uploaded, skipping upload... ")
 		return nil
 	}
@@ -71,7 +71,7 @@ func (conn VcConn) DatastoreUpload(localPath, destination string) error {
 	log.Infof("Uploading %s to %s on datastore %s of vCenter %s... ",
 		localPath, destination, conn.driver.Datastore, conn.driver.IP)
 
-	dsPath := fmt.Sprintf("%s/%s", destination, B2DISOName)
+	dsPath := fmt.Sprintf("%s/%s", destination, isoFilename)
 	args := []string{"datastore.upload"}
 	args = conn.AppendConnectionString(args)
 	args = append(args, fmt.Sprintf("--ds=%s", conn.driver.Datastore))
