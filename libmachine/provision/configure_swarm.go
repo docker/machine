@@ -88,6 +88,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 
 	swarmMasterCmdTemplate := `sudo docker run -d \
 --restart=always \
+--net=host \
 {{range .Env}} -e {{.}}{{end}} \
 --name swarm-agent-master \
 -p {{.Port}}:{{.Port}} \
@@ -104,6 +105,7 @@ manage \
 
 	swarmWorkerCmdTemplate := `sudo docker run -d \
 --restart=always \
+--net=host \
 {{range .Env}} -e {{.}}{{end}} \
 --name swarm-agent \
 {{.SwarmImage}} \
