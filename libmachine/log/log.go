@@ -46,10 +46,6 @@ func Errorf(fmtString string, args ...interface{}) {
 	l.Errorf(fmtString, args...)
 }
 
-func Errorln(args ...interface{}) {
-	l.Errorln(args...)
-}
-
 func Info(args ...interface{}) {
 	l.Info(args...)
 }
@@ -58,9 +54,6 @@ func Infof(fmtString string, args ...interface{}) {
 	l.Infof(fmtString, args...)
 }
 
-func Infoln(args ...interface{}) {
-	l.Infoln(args...)
-}
 
 func Fatal(args ...interface{}) {
 	l.Fatal(args...)
