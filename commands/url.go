@@ -16,7 +16,7 @@ func cmdURL(c CommandLine, api libmachine.API) error {
 		return err
 	}
 
-	url, err := host.GetURL()
+	url, err := host.URL()
 	if err != nil {
 		return err
 	}

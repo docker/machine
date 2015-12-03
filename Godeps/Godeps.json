@@ -5,6 +5,7 @@
 		"github.com/docker/machine",
 		"github.com/docker/machine/cmd",
 		"github.com/docker/machine/commands",
+		"github.com/docker/machine/commands/commandstest",
 		"github.com/docker/machine/commands/mcndirs",
 		"github.com/docker/machine/drivers/amazonec2",
 		"github.com/docker/machine/drivers/amazonec2/amz",
@@ -36,11 +37,13 @@
 		"github.com/docker/machine/libmachine/examples",
 		"github.com/docker/machine/libmachine/host",
 		"github.com/docker/machine/libmachine/hosttest",
+		"github.com/docker/machine/libmachine/libmachinetest",
 		"github.com/docker/machine/libmachine/log",
 		"github.com/docker/machine/libmachine/mcnerror",
 		"github.com/docker/machine/libmachine/mcnflag",
 		"github.com/docker/machine/libmachine/mcnutils",
 		"github.com/docker/machine/libmachine/persist",
+		"github.com/docker/machine/libmachine/persist/persisttest",
 		"github.com/docker/machine/libmachine/provider",
 		"github.com/docker/machine/libmachine/provision",
 		"github.com/docker/machine/libmachine/provision/pkgaction",
@@ -77,6 +80,11 @@
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/units",
+			"Comment": "v1.5.0",
+			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
+		},
+		{
 			"ImportPath": "github.com/google/go-querystring/query",
 			"Rev": "30f7a39f4a218feb5325f3aebc60c32a572a8274"
 		},
@@ -92,6 +100,10 @@
 			"ImportPath": "github.com/rackspace/gophercloud",
 			"Comment": "v1.0.0-558-gce0f487",
 			"Rev": "ce0f487f6747ab43c4e4404722df25349385bebd"
+		},
+		{
+			"ImportPath": "github.com/samalba/dockerclient",
+			"Rev": "82381805d3533c97cec74e1cc79b00ef45774571"
 		},
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",
