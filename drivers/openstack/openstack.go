@@ -278,7 +278,7 @@ func (d *Driver) GetIP() (string, error) {
 		return d.IPAddress, nil
 	}
 
-	log.WithField("MachineId", d.MachineId).Debug("Looking for the IP address...")
+	log.Debug("Looking for the IP address...", map[string]string{"MachineId": d.MachineId})
 
 	if err := d.initCompute(); err != nil {
 		return "", err
@@ -306,7 +306,7 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	log.WithField("MachineId", d.MachineId).Debug("Get status for OpenStack instance...")
+	log.Debug("Get status for OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return state.None, err
 	}
@@ -316,10 +316,10 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.None, err
 	}
 
-	log.WithFields(log.Fields{
+	log.Debug("State for OpenStack instance", map[string]string{
 		"MachineId": d.MachineId,
 		"State":     s,
-	}).Debug("State for OpenStack instance")
+	})
 
 	switch s {
 	case "ACTIVE":
@@ -365,7 +365,7 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.WithField("MachineId", d.MachineId).Info("Starting OpenStack instance...")
+	log.Debug("Starting OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -376,7 +376,7 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	log.WithField("MachineId", d.MachineId).Info("Stopping OpenStack instance...")
+	log.Debug("Stopping OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -388,7 +388,7 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Remove() error {
-	log.WithField("MachineId", d.MachineId).Debug("deleting instance...")
+	log.Debug("deleting instance...", map[string]string{"MachineId": d.MachineId})
 	log.Info("Deleting OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
@@ -396,7 +396,7 @@ func (d *Driver) Remove() error {
 	if err := d.client.DeleteInstance(d); err != nil {
 		return err
 	}
-	log.WithField("Name", d.KeyPairName).Debug("deleting key pair...")
+	log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
 	if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
 		return err
 	}
@@ -404,7 +404,7 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Restart() error {
-	log.WithField("MachineId", d.MachineId).Info("Restarting OpenStack instance...")
+	log.Info("Restarting OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -483,10 +483,10 @@ func (d *Driver) resolveIds() error {
 		}
 
 		d.NetworkId = networkID
-		log.WithFields(log.Fields{
+		log.Debug("Found network id using its name", map[string]string{
 			"Name": d.NetworkName,
 			"ID":   d.NetworkId,
-		}).Debug("Found network id using its name")
+		})
 	}
 
 	if d.FlavorName != "" {
@@ -504,10 +504,10 @@ func (d *Driver) resolveIds() error {
 		}
 
 		d.FlavorId = flavorID
-		log.WithFields(log.Fields{
+		log.Debug("Found flavor id using its name", map[string]string{
 			"Name": d.FlavorName,
 			"ID":   d.FlavorId,
-		}).Debug("Found flavor id using its name")
+		})
 	}
 
 	if d.ImageName != "" {
@@ -525,10 +525,10 @@ func (d *Driver) resolveIds() error {
 		}
 
 		d.ImageId = imageID
-		log.WithFields(log.Fields{
+		log.Debug("Found image id using its name", map[string]string{
 			"Name": d.ImageName,
 			"ID":   d.ImageId,
-		}).Debug("Found image id using its name")
+		})
 	}
 
 	if d.FloatingIpPool != "" && !d.ComputeNetwork {
@@ -546,10 +546,10 @@ func (d *Driver) resolveIds() error {
 		}
 
 		d.FloatingIpPoolId = f
-		log.WithFields(log.Fields{
+		log.Debug("Found floating IP pool id using its name", map[string]string{
 			"Name": d.FloatingIpPool,
 			"ID":   d.FloatingIpPoolId,
-		}).Debug("Found floating IP pool id using its name")
+		})
 	}
 
 	return nil
@@ -577,7 +577,7 @@ func (d *Driver) initNetwork() error {
 
 func (d *Driver) createSSHKey() error {
 	sanitizeKeyPairName(&d.KeyPairName)
-	log.WithField("Name", d.KeyPairName).Debug("Creating Key Pair...")
+	log.Debug("Creating Key Pair...", map[string]string{"Name": d.KeyPairName})
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
@@ -596,10 +596,10 @@ func (d *Driver) createSSHKey() error {
 }
 
 func (d *Driver) createMachine() error {
-	log.WithFields(log.Fields{
+	log.Debug("Creating OpenStack instance...", map[string]string{
 		"FlavorId": d.FlavorId,
 		"ImageId":  d.ImageId,
-	}).Debug("Creating OpenStack instance...")
+	})
 
 	if err := d.initCompute(); err != nil {
 		return err
@@ -632,17 +632,17 @@ func (d *Driver) assignFloatingIP() error {
 
 	var floatingIP *FloatingIP
 
-	log.WithFields(log.Fields{
+	log.Debugf("Looking for an available floating IP", map[string]string{
 		"MachineId": d.MachineId,
 		"Pool":      d.FloatingIpPool,
-	}).Debugf("Looking for an available floating IP")
+	})
 
 	for _, ip := range ips {
 		if ip.PortId == "" {
-			log.WithFields(log.Fields{
+			log.Debug("Available floating IP found", map[string]string{
 				"MachineId": d.MachineId,
 				"IP":        ip.Ip,
-			}).Debugf("Available floating IP found")
+			})
 			floatingIP = &ip
 			break
 		}
@@ -650,9 +650,9 @@ func (d *Driver) assignFloatingIP() error {
 
 	if floatingIP == nil {
 		floatingIP = &FloatingIP{}
-		log.WithField("MachineId", d.MachineId).Debugf("No available floating IP found. Allocating a new one...")
+		log.Debug("No available floating IP found. Allocating a new one...", map[string]string{"MachineId": d.MachineId})
 	} else {
-		log.WithField("MachineId", d.MachineId).Debugf("Assigning floating IP to the instance")
+		log.Debug("Assigning floating IP to the instance", map[string]string{"MachineId": d.MachineId})
 	}
 
 	if err := d.client.AssignFloatingIP(d, floatingIP); err != nil {
@@ -663,7 +663,7 @@ func (d *Driver) assignFloatingIP() error {
 }
 
 func (d *Driver) waitForInstanceActive() error {
-	log.WithField("MachineId", d.MachineId).Debug("Waiting for the OpenStack instance to be ACTIVE...")
+	log.Debug("Waiting for the OpenStack instance to be ACTIVE...", map[string]string{"MachineId": d.MachineId})
 	if err := d.client.WaitForInstanceStatus(d, "ACTIVE"); err != nil {
 		return err
 	}
@@ -676,10 +676,10 @@ func (d *Driver) lookForIPAddress() error {
 		return err
 	}
 	d.IPAddress = ip
-	log.WithFields(log.Fields{
+	log.Debug("IP address found", map[string]string{
 		"IP":        ip,
 		"MachineId": d.MachineId,
-	}).Debug("IP address found")
+	})
 	return nil
 }
 

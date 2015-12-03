@@ -15,6 +15,4 @@ type Logger interface {
 
 	Fatal(...interface{})
 	Fatalf(string, ...interface{})
-
-	WithFields(Fields) Logger
 }
