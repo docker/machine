@@ -55,17 +55,17 @@ By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 
 | Region         | AMI ID       |
 | -------------- | ------------ |
-| ap-northeast-1 | ami-f4b06cf4 |
-| ap-southeast-1 | ami-b899a2ea |
-| ap-southeast-2 | ami-b59ce48f |
-| cn-north-1     | ami-da930ee3 |
-| eu-west-1      | ami-45d8a532 |
-| eu-central-1   | ami-b6e0d9ab |
-| sa-east-1      | ami-1199190c |
-| us-east-1      | ami-5f709f34 |
-| us-west-1      | ami-615cb725 |
-| us-west-2      | ami-7f675e4f |
-| us-gov-west-1  | ami-99a9c9ba |
+| ap-northeast-1 | ami-b36d4edd |
+| ap-southeast-1 | ami-1069af73 |
+| ap-southeast-2 | ami-1d336a7e |
+| cn-north-1     | ami-79eb2214 |
+| eu-west-1      | ami-8aa67cf9 |
+| eu-central-1   | ami-ab0210c7 |
+| sa-east-1      | ami-185de774 |
+| us-east-1      | ami-26d5af4c |
+| us-west-1      | ami-9cbcd2fc |
+| us-west-2      | ami-16b1a077 |
+| us-gov-west-1  | ami-b0bad893 |
 
 Environment variables and default values:
 
