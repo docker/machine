@@ -3,16 +3,15 @@ package digitalocean
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"time"
 
+	"code.google.com/p/goauth2/oauth"
 	"github.com/digitalocean/godo"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-	"golang.org/x/oauth2"
 )
 
 type Driver struct {
@@ -68,6 +67,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Digital Ocean size",
 			Value:  defaultSize,
 		},
+		mcnflag.IntFlag{
+			EnvVar: "DIGITALOCEAN_SSHKEY",
+			Name:   "digitalocean-sshkey-id",
+			Usage:  "Digital Ocean Ssh Key ID",
+			Value:  0,
+		},
 		mcnflag.BoolFlag{
 			EnvVar: "DIGITALOCEAN_IPV6",
 			Name:   "digitalocean-ipv6",
@@ -102,7 +107,6 @@ func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
 
-// DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "digitalocean"
 }
@@ -120,6 +124,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = flags.String("digitalocean-ssh-user")
 	d.SSHPort = 22
+	d.SSHKeyID = flags.Int("digitalocean-sshkey-id")
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
@@ -144,28 +149,33 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	log.Infof("Creating SSH key...")
-
-	key, err := d.createSSHKey()
-	if err != nil {
-		return err
+	if d.SSHKeyID == 0 {
+		log.Infof("Creating SSH key...")
+		key, err := d.createSSHKey()
+		if err != nil {
+			return err
+		}
+		d.SSHKeyID = key.ID
+	} else {
+		log.Infof("Using Key ID: %d", d.SSHKeyID)
+		if _, err := d.validateSSHKey(d.SSHKeyID); err != nil {
+			return err
+		}
 	}
-
-	d.SSHKeyID = key.ID
 
 	log.Infof("Creating Digital Ocean droplet...")
 
 	client := d.getClient()
 
 	createRequest := &godo.DropletCreateRequest{
-		Image:             godo.DropletCreateImage{Slug: d.Image},
+		Image:             d.Image,
 		Name:              d.MachineName,
 		Region:            d.Region,
 		Size:              d.Size,
 		IPv6:              d.IPv6,
 		PrivateNetworking: d.PrivateNetworking,
 		Backups:           d.Backups,
-		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID}},
+		SSHKeys:           []interface{}{d.SSHKeyID},
 	}
 
 	newDroplet, _, err := client.Droplets.Create(createRequest)
@@ -173,7 +183,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	d.DropletID = newDroplet.ID
+	d.DropletID = newDroplet.Droplet.ID
 
 	log.Info("Waiting for IP address to be assigned to the Droplet...")
 	for {
@@ -181,7 +191,7 @@ func (d *Driver) Create() error {
 		if err != nil {
 			return err
 		}
-		for _, network := range newDroplet.Networks.V4 {
+		for _, network := range newDroplet.Droplet.Networks.V4 {
 			if network.Type == "public" {
 				d.IPAddress = network.IPAddress
 			}
@@ -195,10 +205,23 @@ func (d *Driver) Create() error {
 	}
 
 	log.Debugf("Created droplet ID %d, IP address %s",
-		newDroplet.ID,
+		newDroplet.Droplet.ID,
 		d.IPAddress)
 
 	return nil
+}
+
+func (d *Driver) validateSSHKey(keyId int) (*godo.Key, error) {
+	key, resp, err := d.getClient().Keys.GetByID(keyId)
+	if err != nil {
+		if resp.StatusCode == 404 {
+			return nil, fmt.Errorf("Unable to find ssh key with ID %d", keyId)
+		} else {
+			return nil, err
+		}
+	}
+
+	return key, nil
 }
 
 func (d *Driver) createSSHKey() (*godo.Key, error) {
@@ -229,7 +252,14 @@ func (d *Driver) GetURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
+	return fmt.Sprintf("tcp://%s:2376", ip), nil
+}
+
+func (d *Driver) GetIP() (string, error) {
+	if d.IPAddress == "" {
+		return "", fmt.Errorf("IP address is not set")
+	}
+	return d.IPAddress, nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -237,7 +267,7 @@ func (d *Driver) GetState() (state.State, error) {
 	if err != nil {
 		return state.Error, err
 	}
-	switch droplet.Status {
+	switch droplet.Droplet.Status {
 	case "new":
 		return state.Starting, nil
 	case "active":
@@ -288,11 +318,11 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) getClient() *godo.Client {
-	token := &oauth2.Token{AccessToken: d.AccessToken}
-	tokenSource := oauth2.StaticTokenSource(token)
-	client := oauth2.NewClient(oauth2.NoContext, tokenSource)
+	t := &oauth.Transport{
+		Token: &oauth.Token{AccessToken: d.AccessToken},
+	}
 
-	return godo.NewClient(client)
+	return godo.NewClient(t.Client())
 }
 
 func (d *Driver) publicSSHKeyPath() string {

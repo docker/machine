@@ -15,17 +15,19 @@ Create Docker machines on [Digital Ocean](https://www.digitalocean.com/).
 You need to create a personal access token under "Apps & API" in the Digital Ocean
 Control Panel and pass that to `docker-machine create` with the `--digitalocean-access-token` option.
 
-    $ docker-machine create --driver digitalocean --digitalocean-access-token=aa9399a2175a93b17b1c86c807e08d3fc4b79876545432a629602f61cf6ccd6b test-this
+    $ docker-machine create --driver digitalocean --digitalocean-access-token=aa9399a2175a93b17b1c86c807e08d3fc4b79876545432a629602f61cf6ccd6b --digitalocean-sshkey-id 512189 test-this
 
 Options:
 
--   `--digitalocean-access-token`: **required** Your personal access token for the Digital Ocean API.
--   `--digitalocean-image`: The name of the Digital Ocean image to use.
--   `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list.
--   `--digitalocean-size`: The size of the Digital Ocean droplet (larger than default options are of the form `2gb`).
--   `--digitalocean-ipv6`: Enable IPv6 support for the droplet.
--   `--digitalocean-private-networking`: Enable private networking support for the droplet.
--   `--digitalocean-backups`: Enable Digital Oceans backups for the droplet.
+ - `--digitalocean-access-token`: **required** Your personal access token for the Digital Ocean API.
+ - `--digitalocean-image`: The name of the Digital Ocean image to use.
+ - `--digitalocean-region`: The region to create the droplet in, see [Regions API](https://developers.digitalocean.com/documentation/v2/#regions) for how to get a list.
+ - `--digitalocean-size`: The size of the Digital Ocean droplet (larger than default options are of the form `2gb`).
+ - `--digitalocean-ipv6`: Enable IPv6 support for the droplet.
+ - `--digitalocean-private-networking`: Enable private networking support for the droplet.
+ - `--digitalocean-backups`: Enable Digital Oceans backups for the droplet.
+ - `--digitalocean-sshkey-id`: Enable use of a predefined key rather than creating a new one See [SSHKeys API](https://developers.digitalocean.com/documentation/v2/#ssh-keys).
+
 
 The DigitalOcean driver will use `ubuntu-14-04-x64` as the default image.
 
@@ -40,3 +42,4 @@ Environment variables and default values:
 | `--digitalocean-ipv6`               | `DIGITALOCEAN_IPV6`               | `false`  |
 | `--digitalocean-private-networking` | `DIGITALOCEAN_PRIVATE_NETWORKING` | `false`  |
 | `--digitalocean-backups`            | `DIGITALOCEAN_BACKUPS`            | `false`  |
+| `--digitalocean-sshkey-id`          | `DIGITALOCEAN_SSHKEY`             | `0`      |
