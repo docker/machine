@@ -238,7 +238,7 @@ func TestStoreLoad(t *testing.T) {
 
 	h.Driver = realDriver
 
-	actualURL, err := h.GetURL()
+	actualURL, err := h.URL()
 	if err != nil {
 		t.Fatal(err)
 	}

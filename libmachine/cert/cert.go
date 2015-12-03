@@ -24,6 +24,7 @@ var defaultGenerator = NewX509CertGenerator()
 type Generator interface {
 	GenerateCACertificate(certFile, keyFile, org string, bits int) error
 	GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org string, bits int) error
+	ReadTLSConfig(addr string, authOptions *auth.Options) (*tls.Config, error)
 	ValidateCertificate(addr string, authOptions *auth.Options) (bool, error)
 }
 
@@ -43,6 +44,10 @@ func GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org stri
 
 func ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
 	return defaultGenerator.ValidateCertificate(addr, authOptions)
+}
+
+func ReadTLSConfig(addr string, authOptions *auth.Options) (*tls.Config, error) {
+	return defaultGenerator.ReadTLSConfig(addr, authOptions)
 }
 
 func SetCertGenerator(cg Generator) {
@@ -204,8 +209,8 @@ func (xcg *X509CertGenerator) GenerateCert(hosts []string, certFile, keyFile, ca
 	return nil
 }
 
-// ValidateCertificate validate the certificate installed on the vm.
-func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
+// ReadTLSConfig reads the tls config for a machine.
+func (xcg *X509CertGenerator) ReadTLSConfig(addr string, authOptions *auth.Options) (*tls.Config, error) {
 	caCertPath := authOptions.CaCertPath
 	serverCertPath := authOptions.ServerCertPath
 	serverKeyPath := authOptions.ServerKeyPath
@@ -213,22 +218,27 @@ func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth
 	log.Debugf("Reading CA certificate from %s", caCertPath)
 	caCert, err := ioutil.ReadFile(caCertPath)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	log.Debugf("Reading server certificate from %s", serverCertPath)
 	serverCert, err := ioutil.ReadFile(serverCertPath)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	log.Debugf("Reading server key from %s", serverKeyPath)
 	serverKey, err := ioutil.ReadFile(serverKeyPath)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	tlsConfig, err := xcg.getTLSConfig(caCert, serverCert, serverKey, false)
+	return xcg.getTLSConfig(caCert, serverCert, serverKey, false)
+}
+
+// ValidateCertificate validate the certificate installed on the vm.
+func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth.Options) (bool, error) {
+	tlsConfig, err := xcg.ReadTLSConfig(addr, authOptions)
 	if err != nil {
 		return false, err
 	}

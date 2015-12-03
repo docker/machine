@@ -33,13 +33,14 @@ type FilterOptions struct {
 }
 
 type HostListItem struct {
-	Name         string
-	Active       bool
-	DriverName   string
-	State        state.State
-	URL          string
-	SwarmOptions *swarm.Options
-	Error        string
+	Name          string
+	Active        bool
+	DriverName    string
+	State         state.State
+	URL           string
+	SwarmOptions  *swarm.Options
+	Error         string
+	DockerVersion string
 }
 
 func cmdLs(c CommandLine, api libmachine.API) error {
@@ -68,7 +69,7 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	swarmInfo := make(map[string]string)
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
-	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM\tERRORS")
+	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM\tDOCKER\tERRORS")
 
 	for _, host := range hostList {
 		swarmOptions := host.HostOptions.SwarmOptions
@@ -97,8 +98,8 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
 			}
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo, item.Error)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo, item.DockerVersion, item.Error)
 	}
 
 	w.Flush()
@@ -232,11 +233,21 @@ func matchesName(host *host.Host, names []string) bool {
 func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	url := ""
 	hostError := ""
+	dockerVersion := "Unknown"
 
 	currentState, err := h.Driver.GetState()
 	if err == nil {
-		url, err = h.GetURL()
+		url, err = h.URL()
 	}
+	if err == nil {
+		dockerVersion, err = h.DockerVersion()
+		if err != nil {
+			dockerVersion = "Unknown"
+		} else {
+			dockerVersion = fmt.Sprintf("v%s", dockerVersion)
+		}
+	}
+
 	if err != nil {
 		hostError = err.Error()
 	}
@@ -250,13 +261,14 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	}
 
 	stateQueryChan <- HostListItem{
-		Name:         h.Name,
-		Active:       isActive(currentState, url),
-		DriverName:   h.Driver.DriverName(),
-		State:        currentState,
-		URL:          url,
-		SwarmOptions: swarmOptions,
-		Error:        hostError,
+		Name:          h.Name,
+		Active:        isActive(currentState, url),
+		DriverName:    h.Driver.DriverName(),
+		State:         currentState,
+		URL:           url,
+		SwarmOptions:  swarmOptions,
+		DockerVersion: dockerVersion,
+		Error:         hostError,
 	}
 }
 
