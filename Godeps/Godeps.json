@@ -5,9 +5,9 @@
 		"github.com/docker/machine",
 		"github.com/docker/machine/cmd",
 		"github.com/docker/machine/commands",
+		"github.com/docker/machine/commands/commandstest",
 		"github.com/docker/machine/commands/mcndirs",
 		"github.com/docker/machine/drivers/amazonec2",
-		"github.com/docker/machine/drivers/amazonec2/amz",
 		"github.com/docker/machine/drivers/azure",
 		"github.com/docker/machine/drivers/digitalocean",
 		"github.com/docker/machine/drivers/errdriver",
@@ -36,11 +36,13 @@
 		"github.com/docker/machine/libmachine/examples",
 		"github.com/docker/machine/libmachine/host",
 		"github.com/docker/machine/libmachine/hosttest",
+		"github.com/docker/machine/libmachine/libmachinetest",
 		"github.com/docker/machine/libmachine/log",
 		"github.com/docker/machine/libmachine/mcnerror",
 		"github.com/docker/machine/libmachine/mcnflag",
 		"github.com/docker/machine/libmachine/mcnutils",
 		"github.com/docker/machine/libmachine/persist",
+		"github.com/docker/machine/libmachine/persist/persisttest",
 		"github.com/docker/machine/libmachine/provider",
 		"github.com/docker/machine/libmachine/provision",
 		"github.com/docker/machine/libmachine/provision/pkgaction",
@@ -56,6 +58,51 @@
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-17-g515f3ec",
 			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/endpoints",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/ec2query",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/query/queryutil",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/rest",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/signer/v4",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/waiter",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/ec2",
+			"Comment": "v1.0.2",
+			"Rev": "9d7bc2d6ca2ada0468f705f0e9725ca97f8550c8"
 		},
 		{
 			"ImportPath": "github.com/cenkalti/backoff",
@@ -77,8 +124,18 @@
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
 		{
+			"ImportPath": "github.com/go-ini/ini",
+			"Comment": "v0-56-g03e0e7d",
+			"Rev": "03e0e7d51a13a91c765d8d0161246bc14a38001a"
+		},
+		{
 			"ImportPath": "github.com/google/go-querystring/query",
 			"Rev": "30f7a39f4a218feb5325f3aebc60c32a572a8274"
+		},
+		{
+			"ImportPath": "github.com/jmespath/go-jmespath",
+			"Comment": "0.2.2",
+			"Rev": "3433f3ea46d9f8019119e7dd41274e112a2359a9"
 		},
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
@@ -96,10 +153,6 @@
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",
 			"Rev": "69a5d87bef620f77ee8508db30c846b3b84b111e"
-		},
-		{
-			"ImportPath": "github.com/smartystreets/go-aws-auth",
-			"Rev": "1f0db8c0ee6362470abe06a94e3385927ed72a4b"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
