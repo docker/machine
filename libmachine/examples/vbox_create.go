@@ -4,17 +4,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/docker/machine/drivers/virtualbox"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
+	"os"
 )
 
 func main() {
 	log.IsDebug = true
-	log.SetOutWriter(os.Stdout)
-	log.SetErrWriter(os.Stderr)
+	log.GetStandardLogger().OutWriter = os.Stdout
+	log.GetStandardLogger().ErrWriter = os.Stderr
 
 	client := libmachine.NewClient("/tmp/automatic")
 

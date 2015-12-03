@@ -82,13 +82,13 @@ func TestExecServer(t *testing.T) {
 
 	logReader, logWriter := io.Pipe()
 
-	log.SetOutWriter(logWriter)
-	log.SetErrWriter(logWriter)
+	log.GetStandardLogger().OutWriter = logWriter
+	log.GetStandardLogger().ErrWriter = logWriter
 
 	defer func() {
 		log.IsDebug = false
-		log.SetOutWriter(os.Stdout)
-		log.SetErrWriter(os.Stderr)
+		log.GetStandardLogger().OutWriter = os.Stdout
+		log.GetStandardLogger().ErrWriter = os.Stderr
 	}()
 
 	stdoutReader, stdoutWriter := io.Pipe()
