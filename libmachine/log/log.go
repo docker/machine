@@ -6,33 +6,6 @@ import (
 	"sync"
 )
 
-// Logger - Why the interface?  We may only want to print to STDOUT and STDERR for now,
-// but it won't neccessarily be that way forever.  This interface is intended
-// to provide a "framework" for a variety of different logging types in the
-// future (log to file, log to logstash, etc.) There could be a driver model
-// similar to what is done with OS or machine providers.
-type Logger interface {
-	Debug(...interface{})
-	Debugf(string, ...interface{})
-
-	Error(...interface{})
-	Errorf(string, ...interface{})
-
-	Info(...interface{})
-	Infof(string, ...interface{})
-
-	Fatal(...interface{})
-	Fatalf(string, ...interface{})
-
-	Print(...interface{})
-	Printf(string, ...interface{})
-
-	Warn(...interface{})
-	Warnf(string, ...interface{})
-
-	WithFields(Fields) Logger
-}
-
 var (
 	l = StandardLogger{
 		mu: &sync.Mutex{},
@@ -95,14 +68,6 @@ func Fatal(args ...interface{}) {
 
 func Fatalf(fmtString string, args ...interface{}) {
 	l.Fatalf(fmtString, args...)
-}
-
-func Print(args ...interface{}) {
-	l.Print(args...)
-}
-
-func Printf(fmtString string, args ...interface{}) {
-	l.Printf(fmtString, args...)
 }
 
 func Warn(args ...interface{}) {

@@ -94,14 +94,6 @@ func (t StandardLogger) Fatalf(fmtString string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func (t StandardLogger) Print(args ...interface{}) {
-	t.log(args...)
-}
-
-func (t StandardLogger) Printf(fmtString string, args ...interface{}) {
-	t.logf(fmtString, args...)
-}
-
 func (t StandardLogger) Warn(args ...interface{}) {
 	fmt.Print("WARNING >>> ")
 	t.log(args...)
