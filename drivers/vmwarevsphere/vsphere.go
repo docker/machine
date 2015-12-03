@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -26,7 +25,6 @@ import (
 
 const (
 	isoFilename = "boot2docker.iso"
-	B2DISOName  = isoFilename
 	B2DUser     = "docker"
 	B2DPass     = "tcuser"
 )
@@ -172,7 +170,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 
-	d.ISO = filepath.Join(d.StorePath, isoFilename)
+	d.ISO = d.ResolveStorePath(isoFilename)
 
 	return nil
 }
