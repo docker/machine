@@ -14,8 +14,6 @@ var (
 	IsDebug = false
 )
 
-type Fields map[string]interface{}
-
 // RedirectStdOutToStdErr prevents any log from corrupting the output
 func RedirectStdOutToStdErr() {
 	l.OutWriter = l.ErrWriter
@@ -61,14 +59,6 @@ func Warnf(fmtString string, args ...interface{}) {
 	l.Warnf(fmtString, args...)
 }
 
-func WithField(fieldName string, field interface{}) Logger {
-	return l.WithFields(Fields{
-		fieldName: field,
-	})
-}
-
-func WithFields(fields Fields) Logger {
-	return l.WithFields(fields)
 func GetStandardLogger() *StandardLogger {
 	return &l
 }
