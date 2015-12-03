@@ -1,33 +1,24 @@
 package log
 
 import (
-	"io"
 	"os"
 	"sync"
 )
 
 var (
 	l = StandardLogger{
-		mu: &sync.Mutex{},
+		OutWriter: os.Stdout,
+		ErrWriter: os.Stderr,
+		mu:        &sync.Mutex{},
 	}
 	IsDebug = false
 )
 
 type Fields map[string]interface{}
 
-func init() {
-	// TODO: Is this really the best approach?  I worry that it will create
-	// implicit behavior which may be problmatic for users of the lib.
-	SetOutWriter(os.Stdout)
-	SetErrWriter(os.Stderr)
-}
-
-func SetOutWriter(w io.Writer) {
-	l.OutWriter = w
-}
-
-func SetErrWriter(w io.Writer) {
-	l.ErrWriter = w
+// RedirectStdOutToStdErr prevents any log from corrupting the output
+func RedirectStdOutToStdErr() {
+	l.OutWriter = l.ErrWriter
 }
 
 func Debug(args ...interface{}) {
@@ -54,7 +45,6 @@ func Infof(fmtString string, args ...interface{}) {
 	l.Infof(fmtString, args...)
 }
 
-
 func Fatal(args ...interface{}) {
 	l.Fatal(args...)
 }
@@ -79,4 +69,6 @@ func WithField(fieldName string, field interface{}) Logger {
 
 func WithFields(fields Fields) Logger {
 	return l.WithFields(fields)
+func GetStandardLogger() *StandardLogger {
+	return &l
 }
