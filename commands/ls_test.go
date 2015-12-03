@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"errors"
+
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/state"
@@ -45,8 +46,9 @@ func TestParseFiltersAll(t *testing.T) {
 }
 
 func TestParseFiltersAllCase(t *testing.T) {
-	actual, _ := parseFilters([]string{"sWarM=foo", "DrIver=bar", "StaTe=Stopped", "NAMe=dev"})
+	actual, err := parseFilters([]string{"sWarM=foo", "DrIver=bar", "StaTe=Stopped", "NAMe=dev"})
 	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}, Name: []string{"dev"}})
+	assert.Nil(t, err, "err should be nil")
 }
 
 func TestParseFiltersDuplicates(t *testing.T) {
