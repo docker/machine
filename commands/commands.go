@@ -243,7 +243,7 @@ var Commands = []cli.Command{
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "force, f",
-				Usage: "Remove local configuration even if machine cannot be removed",
+				Usage: "Remove local configuration even if machine cannot be removed, also implies an automatic yes (`-y`)",
 			},
 			cli.BoolFlag{
 				Name:  "y",
