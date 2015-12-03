@@ -32,7 +32,7 @@ type Driver struct {
 }
 
 const (
-	defaultImage  = "ubuntu-14-04-x64"
+	defaultImage  = "ubuntu-15-10-x64"
 	defaultRegion = "nyc3"
 	defaultSize   = "512mb"
 )
