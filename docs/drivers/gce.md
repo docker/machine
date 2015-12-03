@@ -51,7 +51,7 @@ To create a machine instance, specify `--driver google`, the project id and the 
     -   `--google-tags`: Instance tags (comma-separated).
     -   `--google-use-internal-ip`: When this option is used during create it will make docker-machine use internal rather than public NATed IPs. The flag is persistent in the sense that a machine created with it retains the IP. It's useful for managing docker machines from another machine on the same network e.g. while deploying swarm.
 
-The GCE driver will use the `ubuntu-1404-trusty-v20151113` instance image unless otherwise specified. To obtain a
+The GCE driver will use the `ubuntu-1510-wily-v20151114` instance image unless otherwise specified. To obtain a
 list of image URLs run:
 
     gcloud compute images list --uri
@@ -63,7 +63,7 @@ Environment variables and default values:
 | **`--google-project`**     | `GOOGLE_PROJECT`         | -                                    |
 | `--google-zone`            | `GOOGLE_ZONE`            | `us-central1-a`                      |
 | `--google-machine-type`    | `GOOGLE_MACHINE_TYPE`    | `f1-standard-1`                      |
-| `--google-machine-image`   | `GOOGLE_MACHINE_IMAGE`   | `ubuntu-1404-trusty-v20151113`       |
+| `--google-machine-image`   | `GOOGLE_MACHINE_IMAGE`   | `ubuntu-1510-wily-v20151114`         |
 | `--google-username`        | `GOOGLE_USERNAME`        | `docker-user`                        |
 | `--google-scopes`          | `GOOGLE_SCOPES`          | `devstorage.read_only,logging.write` |
 | `--google-disk-size`       | `GOOGLE_DISK_SIZE`       | `10`                                 |
