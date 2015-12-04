@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"testing"
 	"time"
+
+	"os"
 
 	"github.com/docker/machine/libmachine/log"
 )
@@ -77,18 +78,16 @@ func TestLocalBinaryPluginClose(t *testing.T) {
 }
 
 func TestExecServer(t *testing.T) {
-	log.IsDebug = true
+	log.SetDebug(true)
 	machineName := "test"
 
 	logReader, logWriter := io.Pipe()
 
-	log.GetStandardLogger().OutWriter = logWriter
-	log.GetStandardLogger().ErrWriter = logWriter
+	log.GetStandardLogger().Out = logWriter
 
 	defer func() {
-		log.IsDebug = false
-		log.GetStandardLogger().OutWriter = os.Stdout
-		log.GetStandardLogger().ErrWriter = os.Stderr
+		log.SetDebug(false)
+		log.GetStandardLogger().Out = os.Stderr
 	}()
 
 	stdoutReader, stdoutWriter := io.Pipe()

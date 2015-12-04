@@ -8,13 +8,10 @@ import (
 	"github.com/docker/machine/drivers/virtualbox"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
-	"os"
 )
 
 func main() {
-	log.IsDebug = true
-	log.GetStandardLogger().OutWriter = os.Stdout
-	log.GetStandardLogger().ErrWriter = os.Stderr
+	log.SetDebug(true)
 
 	client := libmachine.NewClient("/tmp/automatic")
 

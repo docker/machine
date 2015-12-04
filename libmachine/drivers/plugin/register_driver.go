@@ -29,7 +29,7 @@ Please use this plugin through the main 'docker-machine' binary.
 		os.Exit(1)
 	}
 
-	log.IsDebug = true
+	log.SetDebug(true)
 
 	rpcd := rpcdriver.NewRPCServerDriver(d)
 	rpc.RegisterName(rpcdriver.RPCServiceNameV0, rpcd)
