@@ -1,6 +1,6 @@
 package log
 
-type Logger interface {
+type MachineLogger interface {
 	Debug(...interface{})
 	Debugf(string, ...interface{})
 
