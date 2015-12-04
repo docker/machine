@@ -136,10 +136,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	if d.ImageId == "" {
-		// Default to the Ubuntu 14.04 image.
+		// Default to the Ubuntu 15.10 image.
 		// This is done here, rather than in the option registration, to keep the default value
 		// from making "machine create --help" ugly.
-		d.ImageId = "598a4282-f14b-4e50-af4c-b3e52749d9f9"
+		d.ImageId = "59a3fadd-93e7-4674-886a-64883e17115f"
 	}
 
 	if d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL" {

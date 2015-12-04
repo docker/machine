@@ -35,7 +35,7 @@ type Driver struct {
 const (
 	defaultInstanceProfile  = "small"
 	defaultDiskSize         = 50
-	defaultImage            = "ubuntu-14.04"
+	defaultImage            = "ubuntu-15.10"
 	defaultAvailabilityZone = "ch-gva-2"
 )
 
