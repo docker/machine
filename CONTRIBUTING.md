@@ -99,21 +99,13 @@ This will generate and open the report file:
 
 ### Advanced build targets
 
-Just build the machine binary itself (native):
+Build for all supported OSes and architectures (binaries will be in the `bin` project subfolder):
 
-    make machine
+    make build-x
 
-Just build the plugins (native):
+Build for a specific list of OSes and architectures:
 
-    make plugins
-
-Build for all supported oses and architectures (binaries will be in the `bin` project subfolder):
-
-    make cross
-
-Build for a specific list of oses and architectures:
-
-    TARGET_OS=linux TARGET_ARCH="amd64 arm" make cross
+    TARGET_OS=linux TARGET_ARCH="amd64 arm" make build-x
 
 You can further control build options through the following environment variables:
 

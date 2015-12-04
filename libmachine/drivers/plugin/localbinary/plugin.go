@@ -16,13 +16,18 @@ var (
 	// Timeout where we will bail if we're not able to properly contact the
 	// plugin server.
 	defaultTimeout = 10 * time.Second
+	CoreDrivers    = [...]string{"amazonec2", "azure", "digitalocean",
+		"exoscale", "generic", "google", "hyperv", "none", "openstack",
+		"rackspace", "softlayer", "virtualbox", "vmwarefusion",
+		"vmwarevcloudair", "vmwarevsphere"}
 )
 
 const (
-	pluginOutPrefix = "(%s) "
-	pluginErrPrefix = "(%s) DBG | "
-	PluginEnvKey    = "MACHINE_PLUGIN_TOKEN"
-	PluginEnvVal    = "42"
+	pluginOutPrefix     = "(%s) "
+	pluginErrPrefix     = "(%s) DBG | "
+	PluginEnvKey        = "MACHINE_PLUGIN_TOKEN"
+	PluginEnvVal        = "42"
+	PluginEnvDriverName = "MACHINE_PLUGIN_DRIVER_NAME"
 )
 
 type PluginStreamer interface {
@@ -84,8 +89,19 @@ func (e ErrPluginBinaryNotFound) Error() string {
 	return fmt.Sprintf("Driver %q not found. Do you have the plugin binary accessible in your PATH?", e.driverName)
 }
 
+func driverPath(driverName string) string {
+	for _, coreDriver := range CoreDrivers {
+		if coreDriver == driverName {
+			return os.Args[0] // "docker-machine"
+		}
+	}
+
+	return fmt.Sprintf("docker-machine-driver-%s", driverName)
+}
+
 func NewPlugin(driverName string) (*Plugin, error) {
-	binaryPath, err := exec.LookPath(fmt.Sprintf("docker-machine-driver-%s", driverName))
+	driverPath := driverPath(driverName)
+	binaryPath, err := exec.LookPath(driverPath)
 	if err != nil {
 		return nil, ErrPluginBinaryNotFound{driverName}
 	}
@@ -123,6 +139,7 @@ func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 	errScanner := bufio.NewScanner(lbe.pluginStderr)
 
 	os.Setenv(PluginEnvKey, PluginEnvVal)
+	os.Setenv(PluginEnvDriverName, lbe.DriverName)
 
 	if err := cmd.Start(); err != nil {
 		return nil, nil, fmt.Errorf("Error starting plugin binary: %s", err)
