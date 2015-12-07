@@ -4,9 +4,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
-if [[ -z "$NAME" ]]; then
-  export NAME="$(unique_machine_name)"
-fi
+use_disposable_machine
 
 export OLD_ISO_URL="https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso"
 

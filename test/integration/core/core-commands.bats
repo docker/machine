@@ -2,9 +2,7 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-if [[ -z "$NAME" ]]; then
-  export NAME="$(shared_machine_name)"
-fi
+use_shared_machine
 
 @test "$DRIVER: machine should not exist" {
   run machine inspect UNKNOWN

@@ -4,9 +4,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
-if [[ -z "$NAME" ]]; then
-  export NAME="$(shared_machine_name)"
-fi
+use_shared_machine
 
 @test "$DRIVER: VBoxManage pause" {
   run VBoxManage controlvm $NAME pause
