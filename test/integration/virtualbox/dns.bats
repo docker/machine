@@ -4,9 +4,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
-if [[ -z "$NAME" ]]; then
-  export NAME="$(unique_machine_name)"
-fi
+use_disposable_machine
 
 @test "$DRIVER: Create a vm with a dns proxy set" {
   run machine create -d $DRIVER --virtualbox-dns-proxy=true $NAME

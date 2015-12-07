@@ -2,9 +2,7 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-if [[ -z "$NAME" ]]; then
-  export NAME="$(unique_machine_name)"
-fi
+use_disposable_machine
 
 @test "$DRIVER: create with supported engine options" {
   run machine create -d $DRIVER \

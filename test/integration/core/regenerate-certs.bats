@@ -2,9 +2,7 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-if [[ -z "$NAME" ]]; then
-  export NAME="$(shared_machine_name)"
-fi
+use_shared_machine
 
 @test "$DRIVER: regenerate the certs" {
   run machine regenerate-certs -f $NAME

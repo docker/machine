@@ -31,15 +31,19 @@ function require_env {
     fi
 }
 
-function unique_machine_name {
-    echo "bats-$DRIVER-test-$(date +%s)"
+function use_disposable_machine {
+    if [[ -z "$NAME" ]]; then
+        export NAME="bats-$DRIVER-test-$(date +%s)"
+    fi
 }
 
-function shared_machine_name {
-    if [[ $(machine ls -q --filter name=$SHARED_NAME | wc -l) -eq 0 ]]; then
-        machine create -d $DRIVER $SHARED_NAME &>/dev/null
+function use_shared_machine {
+    if [[ -z "$NAME" ]]; then
+      export NAME="$SHARED_NAME"
+      if [[ $(machine ls -q --filter name=$NAME | wc -l) -eq 0 ]]; then
+          machine create -d $DRIVER $NAME &>/dev/null
+      fi
     fi
-    echo "$SHARED_NAME"
 }
 
 # Make sure these aren't set while tests run (can cause confusing behavior)

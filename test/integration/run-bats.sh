@@ -45,7 +45,12 @@ function run_bats() {
         set -e
 
         echo
-        cleanup_machines
+
+        if [[ "$NO_SHARE_MACHINES" == "1" ]]; then
+            cleanup_machines "ALL"
+        else
+            cleanup_machines "NON-SHARED"
+        fi
     done
 }
 
