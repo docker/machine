@@ -1,20 +1,16 @@
 package log
 
-import (
-	"github.com/Sirupsen/logrus"
-)
+import "io"
 
-var logger *logrus.Logger
+var logger MachineLogger
 
 func init() {
-	logger = logrus.New()
-	logger.Level = logrus.InfoLevel
-	logger.Formatter = new(machineFormatter)
+	logger = NewMachineLogger()
 }
 
 // RedirectStdOutToStdErr prevents any log from corrupting the output
 func RedirectStdOutToStdErr() {
-	logger.Level = logrus.ErrorLevel
+	logger.RedirectStdOutToStdErr()
 }
 
 func Debug(args ...interface{}) {
@@ -57,14 +53,14 @@ func Warnf(fmtString string, args ...interface{}) {
 	logger.Warnf(fmtString, args...)
 }
 
-func GetStandardLogger() *logrus.Logger {
+func Logger() interface{} {
 	return logger
 }
 
 func SetDebug(debug bool) {
-	if debug {
-		logger.Level = logrus.DebugLevel
-	} else {
-		logger.Level = logrus.InfoLevel
-	}
+	logger.SetDebug(debug)
+}
+
+func SetOutput(out io.Writer) {
+	logger.SetOutput(out)
 }

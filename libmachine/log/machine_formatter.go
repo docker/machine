@@ -6,10 +6,10 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-type machineFormatter struct {
+type MachineFormatter struct {
 }
 
-func (d *machineFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+func (d *MachineFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	b := &bytes.Buffer{}
 
 	b.WriteString(entry.Message)

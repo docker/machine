@@ -83,11 +83,11 @@ func TestExecServer(t *testing.T) {
 
 	logReader, logWriter := io.Pipe()
 
-	log.GetStandardLogger().Out = logWriter
+	log.SetOutput(logWriter)
 
 	defer func() {
 		log.SetDebug(false)
-		log.GetStandardLogger().Out = os.Stderr
+		log.SetOutput(os.Stderr)
 	}()
 
 	stdoutReader, stdoutWriter := io.Pipe()
