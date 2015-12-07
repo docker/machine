@@ -6,9 +6,7 @@ import (
 )
 
 var (
-	ErrDetectionFailed  = errors.New("OS type not recognized")
-	ErrSSHCommandFailed = errors.New("SSH command failure")
-	ErrNotImplemented   = errors.New("Runtime not implemented")
+	ErrDetectionFailed = errors.New("OS type not recognized")
 )
 
 type ErrDaemonAvailable struct {
