@@ -99,7 +99,7 @@ manage \
 --tlscert={{.AuthOptions.ServerCertRemotePath}} \
 --tlskey={{.AuthOptions.ServerKeyRemotePath}} \
 -H {{.SwarmOptions.Host}} \
---strategy {{.SwarmOptions.Strategy}} {{range .SwarmOptions.ArbitraryFlags}} --{{.}}{{end}} {{.SwarmOptions.Discovery}}
+--strategy {{.SwarmOptions.Strategy}} --advertise {{.IP}}:{{.DockerPort}} {{range .SwarmOptions.ArbitraryFlags}} --{{.}}{{end}} {{.SwarmOptions.Discovery}}
 `
 
 	swarmWorkerCmdTemplate := `sudo docker run -d \
