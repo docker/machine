@@ -4,9 +4,9 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
-@test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-}
+if [[ -z "$NAME" ]]; then
+  export NAME="$(shared_machine_name)"
+fi
 
 @test "$DRIVER: verify that server cert checksum matches local checksum" {
   # TODO: This test is tightly coupled to VirtualBox right now, but should be

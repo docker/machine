@@ -2,6 +2,9 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
+if [[ -z "$NAME" ]]; then
+  export NAME="$(unique_machine_name)"
+fi
 
 @test "$DRIVER: create" {
   run machine create --tls-san foo.bar.tld --tls-san 10.42.42.42  -d $DRIVER $NAME

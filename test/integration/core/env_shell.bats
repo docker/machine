@@ -2,10 +2,9 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-@test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
+if [[ -z "$NAME" ]]; then
+  export NAME="$(shared_machine_name)"
+fi
 
 @test "$DRIVER: test basic bash / zsh notation" {
   run machine env $NAME

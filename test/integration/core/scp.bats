@@ -2,12 +2,10 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-export SECOND_MACHINE="$NAME-2"
-
-@test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-  [[ ${status} -eq 0 ]]
-}
+if [[ -z "$NAME" ]]; then
+  export NAME="$(shared_machine_name)"
+  export SECOND_MACHINE="$NAME-2"
+fi
 
 @test "$DRIVER: test machine scp command from remote to host" {
   machine ssh $NAME 'echo A file created remotely! >/tmp/foo.txt'

@@ -2,17 +2,15 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
+if [[ -z "$NAME" ]]; then
+  export NAME="$(shared_machine_name)"
+fi
+
 @test "$DRIVER: machine should not exist" {
-  run machine inspect $NAME
+  run machine inspect UNKNOWN
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} =~ "Host does not exist: \"$NAME\"" ]]
-}
-
-@test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-  echo ${output}
-  [ "$status" -eq 0  ]
+  [[ ${lines[0]} =~ "Host does not exist: \"UNKNOWN\"" ]]
 }
 
 @test "$DRIVER: appears with ls" {
