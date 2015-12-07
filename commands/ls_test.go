@@ -9,6 +9,7 @@ import (
 	"errors"
 
 	"github.com/docker/machine/drivers/fakedriver"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/state"
@@ -41,14 +42,20 @@ func TestParseFiltersName(t *testing.T) {
 	assert.Equal(t, actual, FilterOptions{Name: []string{"dev"}})
 }
 
+func TestParseFiltersLabel(t *testing.T) {
+	actual, err := parseFilters([]string{"label=com.example.foo=bar"})
+	assert.EqualValues(t, actual, FilterOptions{Labels: []string{"com.example.foo=bar"}})
+	assert.Nil(t, err, "returned err value must be Nil")
+}
+
 func TestParseFiltersAll(t *testing.T) {
 	actual, _ := parseFilters([]string{"swarm=foo", "driver=bar", "state=Stopped", "name=dev"})
 	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}, Name: []string{"dev"}})
 }
 
 func TestParseFiltersAllCase(t *testing.T) {
-	actual, err := parseFilters([]string{"sWarM=foo", "DrIver=bar", "StaTe=Stopped", "NAMe=dev"})
-	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}, Name: []string{"dev"}})
+	actual, err := parseFilters([]string{"sWarM=foo", "DrIver=bar", "StaTe=Stopped", "NAMe=dev", "LABEL=com=foo"})
+	assert.Equal(t, actual, FilterOptions{SwarmName: []string{"foo"}, DriverName: []string{"bar"}, State: []string{"Stopped"}, Name: []string{"dev"}, Labels: []string{"com=foo"}})
 	assert.Nil(t, err, "err should be nil")
 }
 
@@ -67,6 +74,7 @@ func TestFilterHostsReturnsFiltersValuesCaseInsensitive(t *testing.T) {
 		SwarmName:  []string{"fOo"},
 		DriverName: []string{"ViRtUaLboX"},
 		State:      []string{"StOPpeD"},
+		Labels:     []string{"com.EXAMPLE.app=FOO"},
 	}
 	hosts := []*host.Host{}
 	actual := filterHosts(hosts, opts)
@@ -79,6 +87,25 @@ func TestFilterHostsReturnsSameGivenNoFilters(t *testing.T) {
 			Name:        "testhost",
 			DriverName:  "fakedriver",
 			HostOptions: &host.Options{},
+		},
+	}
+	actual := filterHosts(hosts, opts)
+	assert.EqualValues(t, actual, hosts)
+}
+
+func TestFilterHostsReturnSetLabel(t *testing.T) {
+	opts := FilterOptions{
+		Labels: []string{"com.class.foo=bar"},
+	}
+	hosts := []*host.Host{
+		{
+			Name:       "testhost",
+			DriverName: "fakedriver",
+			HostOptions: &host.Options{
+				EngineOptions: &engine.Options{
+					Labels: []string{"com.class.foo=bar"},
+				},
+			},
 		},
 	}
 	actual := filterHosts(hosts, opts)
