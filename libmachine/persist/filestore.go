@@ -41,18 +41,19 @@ func (s Filestore) saveToFile(data []byte, file string) error {
 	}
 	defer os.Remove(tmpfi.Name())
 
-	err = ioutil.WriteFile(tmpfi.Name(), data, 0600)
-	if err != nil {
+	if err = ioutil.WriteFile(tmpfi.Name(), data, 0600); err != nil {
 		return err
 	}
 
-	err = os.Remove(file)
-	if err != nil {
+	if err = tmpfi.Close(); err != nil {
 		return err
 	}
 
-	err = os.Rename(tmpfi.Name(), file)
-	if err != nil {
+	if err = os.Remove(file); err != nil {
+		return err
+	}
+
+	if err = os.Rename(tmpfi.Name(), file); err != nil {
 		return err
 	}
 	return nil
