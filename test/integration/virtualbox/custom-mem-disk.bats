@@ -4,6 +4,10 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
+if [[ -z "$NAME" ]]; then
+  export NAME="$(unique_machine_name)"
+fi
+
 # Default memsize is 1024MB and disksize is 20000MB
 # These values are defined in drivers/virtualbox/virtualbox.go
 export DEFAULT_MEMSIZE=1024

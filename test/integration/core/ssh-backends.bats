@@ -2,12 +2,9 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-# Basic smoke test for SSH backends
-
-@test "$DRIVER: create SSH test box" {
-  run machine create -d $DRIVER $NAME
-  [[ "$status" -eq 0  ]]
-}
+if [[ -z "$NAME" ]]; then
+  export NAME="$(shared_machine_name)"
+fi
 
 @test "$DRIVER: test external ssh backend" {
   run machine ssh $NAME df -h

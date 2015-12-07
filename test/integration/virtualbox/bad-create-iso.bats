@@ -4,6 +4,10 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
+if [[ -z "$NAME" ]]; then
+  export NAME="$(unique_machine_name)"
+fi
+
 export BAD_URL="http://dev.null:9111/bad.iso"
 
 @test "$DRIVER: Should not allow machine creation with bad ISO" {

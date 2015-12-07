@@ -14,9 +14,11 @@ function quiet_run () {
 }
 
 function cleanup_machines() {
-    if [[ $(machine ls -q | wc -l) -ne 0 ]]; then
-        quiet_run machine rm -f $(machine ls -q)
-    fi
+    for MACHINE_NAME in $(machine ls -q); do
+        if [[ "$MACHINE_NAME" != "$SHARED_NAME" ]] || [[ "$1" == "ALL" ]]; then
+            quiet_run machine rm -f $MACHINE_NAME
+        fi
+    done
 }
 
 function cleanup_store() {
@@ -26,18 +28,15 @@ function cleanup_store() {
 }
 
 function machine() {
-    export PATH="$MACHINE_ROOT"/bin:$PATH
     "$MACHINE_ROOT"/bin/"$MACHINE_BIN_NAME" "$@"
 }
 
 function run_bats() {
     for bats_file in $(find "$1" -name \*.bats); do
-        export NAME="bats-$DRIVER-test-$(date +%s)"
-
-        # BATS returns non-zero to indicate the tests have failed, we shouldn't
-        # neccesarily bail in this case, so that's the reason for the e toggle.
         echo "=> $bats_file"
 
+        # BATS returns non-zero to indicate the tests have failed, we shouldn't
+        # necessarily bail in this case, so that's the reason for the e toggle.
         set +e
         bats "$bats_file"
         if [[ $? -ne 0 ]]; then
@@ -88,13 +87,14 @@ export MACHINE_STORAGE_PATH="/tmp/machine-bats-test-$DRIVER"
 export MACHINE_BIN_NAME=docker-machine
 export BATS_LOG="$MACHINE_ROOT/bats.log"
 export B2D_LOCATION=~/.docker/machine/cache/boot2docker.iso
+export SHARED_NAME="bats-$DRIVER-test-shared-$(date +%s)"
 
 # This function gets used in the integration tests, so export it.
 export -f machine
 
 > "$BATS_LOG"
 
-cleanup_machines
+cleanup_machines "ALL"
 cleanup_store
 
 if [[ -f "$B2D_LOCATION" ]]; then
@@ -108,6 +108,7 @@ fi
 
 run_bats "$BATS_FILE"
 
+cleanup_machines "ALL"
 cleanup_store
 
 exit ${EXIT_STATUS}
