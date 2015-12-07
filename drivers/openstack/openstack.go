@@ -576,6 +576,7 @@ func (d *Driver) initNetwork() error {
 }
 
 func (d *Driver) createSSHKey() error {
+	sanitizeKeyPairName(&d.KeyPairName)
 	log.WithField("Name", d.KeyPairName).Debug("Creating Key Pair...")
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
@@ -684,4 +685,8 @@ func (d *Driver) lookForIPAddress() error {
 
 func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
+}
+
+func sanitizeKeyPairName(s *string) {
+	*s = strings.Replace(*s, ".", "_", -1)
 }
