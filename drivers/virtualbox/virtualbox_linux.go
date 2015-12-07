@@ -9,7 +9,7 @@ import (
 
 // IsVTXDisabled checks if VT-X is disabled in the BIOS. If it is, the vm will fail to start.
 // If we can't be sure it is disabled, we carry on and will check the vm logs after it's started.
-// We want to check that either vmx or smd flags are present in /proc/cpuinfo.
+// We want to check that either vmx or svm flags are present in /proc/cpuinfo.
 func (d *Driver) IsVTXDisabled() bool {
 	cpuinfo, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {
@@ -22,7 +22,7 @@ func (d *Driver) IsVTXDisabled() bool {
 func isVTXDisabled(cpuinfo []byte) bool {
 	features := [2][]byte{
 		{'v', 'm', 'x'},
-		{'s', 'm', 'd'},
+		{'s', 'v', 'm'},
 	}
 	for _, v := range features {
 		if bytes.Contains(cpuinfo, v) {
