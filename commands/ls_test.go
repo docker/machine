@@ -296,7 +296,7 @@ func TestFilterHostsDifferentFlagsProduceAND(t *testing.T) {
 	assert.EqualValues(t, filterHosts(hosts, opts), expected)
 }
 
-func TestGetHostListItems(t *testing.T) {
+func TestGetHostListItemsVerbose(t *testing.T) {
 	mcndockerclient.CurrentDockerVersioner = &mcndockerclient.FakeDockerVersioner{Version: "1.9"}
 	defer mcndockerclient.CleanupDockerVersioner()
 
@@ -346,7 +346,70 @@ func TestGetHostListItems(t *testing.T) {
 		{"foo", state.Running, true, "v1.9", ""},
 	}
 
-	items := getHostListItems(hosts, map[string]error{})
+	items := getHostListItems(hosts, map[string]error{}, true)
+
+	for i := range expected {
+		assert.Equal(t, expected[i].name, items[i].Name)
+		assert.Equal(t, expected[i].state, items[i].State)
+		assert.Equal(t, expected[i].active, items[i].Active)
+		assert.Equal(t, expected[i].version, items[i].DockerVersion)
+		assert.Equal(t, expected[i].error, items[i].Error)
+	}
+
+	os.Unsetenv("DOCKER_HOST")
+}
+
+func TestGetHostListItems(t *testing.T) {
+	mcndockerclient.CurrentDockerVersioner = &mcndockerclient.FakeDockerVersioner{Version: "1.9"}
+	defer mcndockerclient.CleanupDockerVersioner()
+
+	// TODO: Ideally this would mockable via interface instead.
+	os.Setenv("DOCKER_HOST", "tcp://active.host.com:2376")
+
+	hosts := []*host.Host{
+		{
+			Name: "foo",
+			Driver: &fakedriver.Driver{
+				MockState: state.Running,
+				MockIP:    "active.host.com",
+			},
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{},
+			},
+		},
+		{
+			Name: "bar100",
+			Driver: &fakedriver.Driver{
+				MockState: state.Stopped,
+			},
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{},
+			},
+		},
+		{
+			Name: "bar10",
+			Driver: &fakedriver.Driver{
+				MockState: state.Error,
+			},
+			HostOptions: &host.Options{
+				SwarmOptions: &swarm.Options{},
+			},
+		},
+	}
+
+	expected := []struct {
+		name    string
+		state   state.State
+		active  bool
+		version string
+		error   string
+	}{
+		{"bar10", state.Error, false, "Unknown", ""},
+		{"bar100", state.Stopped, false, "Unknown", ""},
+		{"foo", state.Running, true, "Unknown", ""},
+	}
+
+	items := getHostListItems(hosts, map[string]error{}, false)
 
 	for i := range expected {
 		assert.Equal(t, expected[i].name, items[i].Name)
@@ -426,7 +489,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		"baz": {state.Saved, false, "Unknown"},
 	}
 
-	items := getHostListItems(hosts, map[string]error{})
+	items := getHostListItems(hosts, map[string]error{}, true)
 
 	for _, item := range items {
 		expected := expected[item.Name]
@@ -475,7 +538,7 @@ func TestGetHostStateTimeout(t *testing.T) {
 	}
 
 	stateTimeoutDuration = 1 * time.Millisecond
-	hostItems := getHostListItems(hosts, map[string]error{})
+	hostItems := getHostListItems(hosts, map[string]error{}, true)
 	hostItem := hostItems[0]
 
 	assert.Equal(t, "foo", hostItem.Name)
@@ -495,7 +558,7 @@ func TestGetHostStateError(t *testing.T) {
 		},
 	}
 
-	hostItems := getHostListItems(hosts, map[string]error{})
+	hostItems := getHostListItems(hosts, map[string]error{}, true)
 	hostItem := hostItems[0]
 
 	assert.Equal(t, "foo", hostItem.Name)
@@ -522,7 +585,7 @@ func TestGetSomeHostInEror(t *testing.T) {
 		"bar": errors.New("invalid memory address or nil pointer dereference"),
 	}
 
-	hostItems := getHostListItems(hosts, hostsInError)
+	hostItems := getHostListItems(hosts, hostsInError, true)
 	assert.Equal(t, 2, len(hostItems))
 
 	hostItem := hostItems[0]

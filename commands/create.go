@@ -293,7 +293,7 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 	}
 
 	if _, ok := driver.(*errdriver.Driver); ok {
-		return errdriver.NotLoadable{driverName}
+		return errdriver.NotLoadable{Name: driverName}
 	}
 
 	// TODO: So much flag manipulation and voodoo here, it seems to be

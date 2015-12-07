@@ -211,6 +211,10 @@ var Commands = []cli.Command{
 				Name:  "quiet, q",
 				Usage: "Enable quiet mode",
 			},
+			cli.BoolFlag{
+				Name:  "verbose, v",
+				Usage: "Enable verbose mode",
+			},
 			cli.StringSliceFlag{
 				Name:  "filter",
 				Usage: "Filter output based on conditions provided",

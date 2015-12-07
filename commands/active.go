@@ -22,7 +22,7 @@ func cmdActive(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error getting active host: %s", err)
 	}
 
-	items := getHostListItems(hosts, hostsInError)
+	items := getHostListItems(hosts, hostsInError, false)
 
 	for _, item := range items {
 		if item.Active {

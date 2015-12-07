@@ -44,7 +44,6 @@ type HostListItem struct {
 }
 
 func cmdLs(c CommandLine, api libmachine.API) error {
-	quiet := c.Bool("quiet")
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {
 		return err
@@ -58,6 +57,7 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	hostList = filterHosts(hostList, filters)
 
 	// Just print out the names if we're being quiet
+	quiet := c.Bool("quiet")
 	if quiet {
 		for _, host := range hostList {
 			fmt.Println(host.Name)
@@ -69,7 +69,13 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	swarmInfo := make(map[string]string)
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
-	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM\tDOCKER\tERRORS")
+
+	verbose := c.Bool("verbose")
+	header := "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM"
+	if verbose {
+		header += "\tDOCKER\tERRORS"
+	}
+	fmt.Fprintln(w, header)
 
 	for _, host := range hostList {
 		swarmOptions := host.HostOptions.SwarmOptions
@@ -82,7 +88,7 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 		}
 	}
 
-	items := getHostListItems(hostList, hostInError)
+	items := getHostListItems(hostList, hostInError, verbose)
 
 	for _, item := range items {
 		activeString := "-"
@@ -98,8 +104,15 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
 			}
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo, item.DockerVersion, item.Error)
+
+		standardFields := fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
+			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo)
+
+		if verbose {
+			fmt.Fprintf(w, "%s\t%s\t%s\n", standardFields, item.DockerVersion, item.Error)
+		} else {
+			fmt.Fprintf(w, "%s\n", standardFields)
+		}
 	}
 
 	w.Flush()
@@ -230,7 +243,7 @@ func matchesName(host *host.Host, names []string) bool {
 	return false
 }
 
-func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
+func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem, verbose bool) {
 	url := ""
 	hostError := ""
 	dockerVersion := "Unknown"
@@ -239,20 +252,23 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	if err == nil {
 		url, err = h.URL()
 	}
-	if err == nil {
-		dockerVersion, err = h.DockerVersion()
-		if err != nil {
-			dockerVersion = "Unknown"
-		} else {
-			dockerVersion = fmt.Sprintf("v%s", dockerVersion)
-		}
-	}
 
-	if err != nil {
-		hostError = err.Error()
-	}
-	if hostError == drivers.ErrHostIsNotRunning.Error() {
-		hostError = ""
+	if verbose {
+		if err == nil {
+			dockerVersion, err = h.DockerVersion()
+			if err != nil {
+				dockerVersion = "Unknown"
+			} else {
+				dockerVersion = fmt.Sprintf("v%s", dockerVersion)
+			}
+		}
+
+		if err != nil {
+			hostError = err.Error()
+		}
+		if hostError == drivers.ErrHostIsNotRunning.Error() {
+			hostError = ""
+		}
 	}
 
 	var swarmOptions *swarm.Options
@@ -272,12 +288,12 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	}
 }
 
-func getHostState(h *host.Host, hostListItemsChan chan<- HostListItem) {
+func getHostState(h *host.Host, hostListItemsChan chan<- HostListItem, verbose bool) {
 	// This channel is used to communicate the properties we are querying
 	// about the host in the case of a successful read.
 	stateQueryChan := make(chan HostListItem)
 
-	go attemptGetHostState(h, stateQueryChan)
+	go attemptGetHostState(h, stateQueryChan, verbose)
 
 	select {
 	// If we get back useful information, great.  Forward it straight to
@@ -295,12 +311,12 @@ func getHostState(h *host.Host, hostListItemsChan chan<- HostListItem) {
 	}
 }
 
-func getHostListItems(hostList []*host.Host, hostsInError map[string]error) []HostListItem {
+func getHostListItems(hostList []*host.Host, hostsInError map[string]error, verbose bool) []HostListItem {
 	hostListItems := []HostListItem{}
 	hostListItemsChan := make(chan HostListItem)
 
 	for _, h := range hostList {
-		go getHostState(h, hostListItemsChan)
+		go getHostState(h, hostListItemsChan, verbose)
 	}
 
 	for range hostList {
