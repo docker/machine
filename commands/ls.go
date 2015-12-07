@@ -167,9 +167,11 @@ func filterHosts(hosts []*host.Host, filters FilterOptions) []*host.Host {
 func getSwarmMasters(hosts []*host.Host) map[string]string {
 	swarmMasters := make(map[string]string)
 	for _, h := range hosts {
-		swarmOptions := h.HostOptions.SwarmOptions
-		if swarmOptions != nil && swarmOptions.Master {
-			swarmMasters[swarmOptions.Discovery] = h.Name
+		if h.HostOptions != nil {
+			swarmOptions := h.HostOptions.SwarmOptions
+			if swarmOptions != nil && swarmOptions.Master {
+				swarmMasters[swarmOptions.Discovery] = h.Name
+			}
 		}
 	}
 	return swarmMasters
@@ -189,7 +191,7 @@ func matchesSwarmName(host *host.Host, swarmNames []string, swarmMasters map[str
 		return true
 	}
 	for _, n := range swarmNames {
-		if host.HostOptions.SwarmOptions != nil {
+		if host.HostOptions != nil && host.HostOptions.SwarmOptions != nil {
 			if strings.EqualFold(n, swarmMasters[host.HostOptions.SwarmOptions.Discovery]) {
 				return true
 			}
