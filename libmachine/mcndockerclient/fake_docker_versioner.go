@@ -1,11 +1,5 @@
 package mcndockerclient
 
-var originalDockerVersioner = CurrentDockerVersioner
-
-func CleanupDockerVersioner() {
-	CurrentDockerVersioner = originalDockerVersioner
-}
-
 type FakeDockerVersioner struct {
 	Version string
 	Err     error
