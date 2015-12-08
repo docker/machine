@@ -66,7 +66,7 @@ func setDebugOutputLevel() {
 	// use -v / --verbose TBQH
 	for _, f := range os.Args {
 		if f == "-D" || f == "--debug" || f == "-debug" {
-			log.IsDebug = true
+			log.SetDebug(true)
 		}
 	}
 
@@ -77,7 +77,7 @@ func setDebugOutputLevel() {
 			fmt.Fprintf(os.Stderr, "Error parsing boolean value from MACHINE_DEBUG: %s\n", err)
 			os.Exit(1)
 		}
-		log.IsDebug = showDebug
+		log.SetDebug(showDebug)
 	}
 }
 

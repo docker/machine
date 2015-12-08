@@ -56,6 +56,11 @@
 	],
 	"Deps": [
 		{
+		  "ImportPath": "github.com/Sirupsen/logrus",
+		  "Comment": "v0.8.7-49-gcdaedc6",
+		  "Rev": "cdaedc68f2894175ac2b3221869685602c759e71"
+		},
+		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
 			"Comment": "v1.1-17-g515f3ec",
 			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
