@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/persist"
@@ -30,6 +31,7 @@ type FilterOptions struct {
 	DriverName []string
 	State      []string
 	Name       []string
+	Labels     []string
 }
 
 type HostListItem struct {
@@ -39,6 +41,7 @@ type HostListItem struct {
 	State         state.State
 	URL           string
 	SwarmOptions  *swarm.Options
+	EngineOptions *engine.Options
 	Error         string
 	DockerVersion string
 }
@@ -125,6 +128,8 @@ func parseFilters(filters []string) (FilterOptions, error) {
 			options.State = append(options.State, value)
 		case "name":
 			options.Name = append(options.Name, value)
+		case "label":
+			options.Labels = append(options.Labels, value)
 		default:
 			return options, fmt.Errorf("Unsupported filter key '%s'", key)
 		}
@@ -136,7 +141,8 @@ func filterHosts(hosts []*host.Host, filters FilterOptions) []*host.Host {
 	if len(filters.SwarmName) == 0 &&
 		len(filters.DriverName) == 0 &&
 		len(filters.State) == 0 &&
-		len(filters.Name) == 0 {
+		len(filters.Name) == 0 &&
+		len(filters.Labels) == 0 {
 		return hosts
 	}
 
@@ -167,8 +173,9 @@ func filterHost(host *host.Host, filters FilterOptions, swarmMasters map[string]
 	driverMatches := matchesDriverName(host, filters.DriverName)
 	stateMatches := matchesState(host, filters.State)
 	nameMatches := matchesName(host, filters.Name)
+	labelMatches := matchesLabel(host, filters.Labels)
 
-	return swarmMatches && driverMatches && stateMatches && nameMatches
+	return swarmMatches && driverMatches && stateMatches && nameMatches && labelMatches
 }
 
 func matchesSwarmName(host *host.Host, swarmNames []string, swarmMasters map[string]string) bool {
@@ -230,6 +237,29 @@ func matchesName(host *host.Host, names []string) bool {
 	return false
 }
 
+func matchesLabel(host *host.Host, labels []string) bool {
+	if len(labels) == 0 {
+		return true
+	}
+
+	var englabels = make(map[string]string, len(host.HostOptions.EngineOptions.Labels))
+
+	if host.HostOptions != nil && host.HostOptions.EngineOptions.Labels != nil {
+		for _, s := range host.HostOptions.EngineOptions.Labels {
+			kv := strings.SplitN(s, "=", 2)
+			englabels[kv[0]] = kv[1]
+		}
+	}
+
+	for _, l := range labels {
+		kv := strings.SplitN(l, "=", 2)
+		if val, exists := englabels[kv[0]]; exists && strings.EqualFold(val, kv[1]) {
+			return true
+		}
+	}
+	return false
+}
+
 func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	url := ""
 	hostError := ""
@@ -256,8 +286,10 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	}
 
 	var swarmOptions *swarm.Options
+	var engineOptions *engine.Options
 	if h.HostOptions != nil {
 		swarmOptions = h.HostOptions.SwarmOptions
+		engineOptions = h.HostOptions.EngineOptions
 	}
 
 	stateQueryChan <- HostListItem{
@@ -267,6 +299,7 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 		State:         currentState,
 		URL:           url,
 		SwarmOptions:  swarmOptions,
+		EngineOptions: engineOptions,
 		DockerVersion: dockerVersion,
 		Error:         hostError,
 	}
