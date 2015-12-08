@@ -28,34 +28,34 @@ instructions in the next section.
 1.  Install <a href="https://docs.docker.com/installation/"
     target="_blank">the Docker binary</a>.
 
-2.  Download the archive containing the Docker Machine binaries and extract them
+2.  Download the archive containing the Docker Machine binary and extract it
     to your PATH.
 
         Linux:
 
-            $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip >machine.zip && \
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.3/docker-machine_linux-amd64.zip >machine.zip && \
             unzip machine.zip && \
             rm machine.zip && \
-            mv docker-machine* /usr/local/bin
+            mv docker-machine /usr/local/bin
 
         OSX:
 
-            $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip >machine.zip && \
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.3/docker-machine_darwin-amd64.zip >machine.zip && \
             unzip machine.zip && \
             rm machine.zip && \
-            mv docker-machine* /usr/local/bin
+            mv docker-machine /usr/local/bin
 
         Windows (using Git Bash):
 
-            $ curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_windows-amd64.zip >machine.zip && \
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.3/docker-machine_windows-amd64.zip >machine.zip && \
             unzip machine.zip && \
             rm machine.zip && \
-            mv docker-machine* /usr/local/bin
+            mv docker-machine /usr/local/bin
 
 3.  Check the installation by displaying the Machine version:
 
         $ docker-machine version
-        docker-machine version 0.5.2 (0456b9f)
+        docker-machine version 0.5.3
 
 ## Installing bash completion scripts
 
