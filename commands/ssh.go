@@ -9,14 +9,13 @@ import (
 
 func cmdSSH(c CommandLine, api libmachine.API) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
-	for _, arg := range c.Args() {
-		if arg == "-help" || arg == "--help" || arg == "-h" {
-			c.ShowHelp()
-			return nil
-		}
+	firstArg := c.Args().First()
+	if firstArg == "-help" || firstArg == "--help" || firstArg == "-h" {
+		c.ShowHelp()
+		return nil
 	}
 
-	name := c.Args().First()
+	name := firstArg
 	if name == "" {
 		return ErrExpectedOneMachine
 	}
