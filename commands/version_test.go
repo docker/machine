@@ -46,8 +46,8 @@ func TestCmdVersionNotFound(t *testing.T) {
 }
 
 func TestCmdVersionOnHost(t *testing.T) {
+	defer func(versioner mcndockerclient.DockerVersioner) { mcndockerclient.CurrentDockerVersioner = versioner }(mcndockerclient.CurrentDockerVersioner)
 	mcndockerclient.CurrentDockerVersioner = &mcndockerclient.FakeDockerVersioner{Version: "1.9.1"}
-	defer mcndockerclient.CleanupDockerVersioner()
 
 	commandLine := &commandstest.FakeCommandLine{
 		CliArgs: []string{"machine"},
@@ -68,8 +68,8 @@ func TestCmdVersionOnHost(t *testing.T) {
 }
 
 func TestCmdVersionFailure(t *testing.T) {
+	defer func(versioner mcndockerclient.DockerVersioner) { mcndockerclient.CurrentDockerVersioner = versioner }(mcndockerclient.CurrentDockerVersioner)
 	mcndockerclient.CurrentDockerVersioner = &mcndockerclient.FakeDockerVersioner{Err: errors.New("connection failure")}
-	defer mcndockerclient.CleanupDockerVersioner()
 
 	commandLine := &commandstest.FakeCommandLine{
 		CliArgs: []string{"machine"},
