@@ -3,6 +3,8 @@
 load ${BASE_TEST_DIR}/helpers.bash
 
 setup () {
+  machine create -d none --url none --engine-label app=1 testmachine5
+  machine create -d none --url none --engine-label foo=bar --engine-label app=1 testmachine4
   machine create -d none --url none testmachine3
   machine create -d none --url none testmachine2
   machine create -d none --url none testmachine
@@ -19,19 +21,42 @@ bootstrap_swarm () {
   machine create -d none --url tcp://127.0.0.1:2375 --swarm --swarm-discovery token://deadbeef testswarm3
 }
 
+@test "ls: filter on label 'machine ls --filter label=foo=bar'" {
+  run machine ls --filter label=foo=bar
+  [ "$status" -eq 0 ]
+  [[ ${#lines[@]} == 2 ]]
+  [[ ${lines[1]} =~ "testmachine4" ]]
+}
+
+@test "ls: mutiple filters on label 'machine ls --filter label=foo=bar --filter label=app=1'" {
+  run machine ls --filter label=foo=bar --filter label=app=1
+  [ "$status" -eq 0 ]
+  [[ ${#lines[@]} == 3 ]]
+  [[ ${lines[1]} =~ "testmachine4" ]]
+  [[ ${lines[2]} =~ "testmachine5" ]]
+}
+
+@test "ls: non-existing filter on label 'machine ls --filter label=invalid=filter'" {
+  run machine ls --filter label=invalid=filter
+  [ "$status" -eq 0 ]
+  [[ ${#lines[@]} == 1 ]]
+}
+
 @test "ls: filter on driver 'machine ls --filter driver=none'" {
   run machine ls --filter driver=none
   [ "$status" -eq 0 ]
-  [[ ${#lines[@]} == 4 ]]
+  [[ ${#lines[@]} == 6 ]]
   [[ ${lines[1]} =~ "testmachine" ]]
   [[ ${lines[2]} =~ "testmachine2" ]]
   [[ ${lines[3]} =~ "testmachine3" ]]
+  [[ ${lines[4]} =~ "testmachine4" ]]
+  [[ ${lines[5]} =~ "testmachine5" ]]
 }
 
 @test "ls: filter on driver 'machine ls -q --filter driver=none'" {
   run machine ls -q --filter driver=none
   [ "$status" -eq 0 ]
-  [[ ${#lines[@]} == 3 ]]
+  [[ ${#lines[@]} == 5 ]]
   [[ ${lines[0]} == "testmachine" ]]
   [[ ${lines[1]} == "testmachine2" ]]
   [[ ${lines[2]} == "testmachine3" ]]
@@ -41,7 +66,7 @@ bootstrap_swarm () {
   # Default state for 'none' driver is "Running"
   run machine ls --filter state="Running"
   [ "$status" -eq 0  ]
-  [[ ${#lines[@]} == 4 ]]
+  [[ ${#lines[@]} == 6 ]]
   [[ ${lines[1]} =~ "testmachine" ]]
   [[ ${lines[2]} =~ "testmachine2" ]]
   [[ ${lines[3]} =~ "testmachine3" ]]
@@ -73,7 +98,7 @@ bootstrap_swarm () {
 @test "ls: filter on state 'machine ls -q --filter state=\"Running\"'" {
   run machine ls -q --filter state="Running"
   [ "$status" -eq 0 ]
-  [[ ${#lines[@]} == 3 ]]
+  [[ ${#lines[@]} == 5 ]]
   [[ ${lines[0]} == "testmachine" ]]
   [[ ${lines[1]} == "testmachine2" ]]
   [[ ${lines[2]} == "testmachine3" ]]
@@ -96,7 +121,7 @@ bootstrap_swarm () {
 @test "ls: filter on name with regex 'machine ls --filter name=\"^t.*e\"'" {
   run machine ls --filter name="^t.*e"
   [ "$status" -eq 0 ]
-  [[ ${#lines[@]} == 4 ]]
+  [[ ${#lines[@]} == 6 ]]
   [[ ${lines[1]} =~ "testmachine" ]]
   [[ ${lines[2]} =~ "testmachine2" ]]
   [[ ${lines[3]} =~ "testmachine3" ]]
@@ -105,7 +130,7 @@ bootstrap_swarm () {
 @test "ls: filter on name with regex 'machine ls -q --filter name=\"^t.*e\"'" {
   run machine ls -q --filter name="^t.*e"
   [ "$status" -eq 0 ]
-  [[ ${#lines[@]} == 3 ]]
+  [[ ${#lines[@]} == 5 ]]
   [[ ${lines[0]} == "testmachine" ]]
   [[ ${lines[1]} == "testmachine2" ]]
   [[ ${lines[2]} == "testmachine3" ]]
