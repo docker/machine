@@ -23,8 +23,8 @@ var (
 )
 
 const (
-	pluginOutPrefix     = "(%s) "
-	pluginErrPrefix     = "(%s) DBG | "
+	pluginOut           = "(%s) %s"
+	pluginErr           = "(%s) DBG | %s"
 	PluginEnvKey        = "MACHINE_PLUGIN_TOKEN"
 	PluginEnvVal        = "42"
 	PluginEnvDriverName = "MACHINE_PLUGIN_DRIVER_NAME"
@@ -210,9 +210,9 @@ func (lbp *Plugin) execServer() error {
 	for {
 		select {
 		case out := <-stdOutCh:
-			log.Info(fmt.Sprintf(pluginOutPrefix, lbp.MachineName), out)
+			log.Infof(pluginOut, lbp.MachineName, out)
 		case err := <-stdErrCh:
-			log.Debug(fmt.Sprintf(pluginErrPrefix, lbp.MachineName), err)
+			log.Debugf(pluginErr, lbp.MachineName, err)
 		case _ = <-lbp.stopCh:
 			stopStdoutCh <- true
 			stopStderrCh <- true

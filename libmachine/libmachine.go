@@ -7,6 +7,7 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/check"
+	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
@@ -96,6 +97,18 @@ func (api *Client) Create(h *host.Host) error {
 
 	log.Info("Creating machine...")
 
+	if err := api.performCreate(h); err != nil {
+		crashreport.Send(err)
+		return err
+	}
+
+	log.Debug("Reticulating splines...")
+
+	return nil
+}
+
+func (api *Client) performCreate(h *host.Host) error {
+
 	if err := h.Driver.Create(); err != nil {
 		return fmt.Errorf("Error in driver during machine creation: %s", err)
 	}
@@ -136,7 +149,6 @@ func (api *Client) Create(h *host.Host) error {
 		log.Info("Docker is up and running!")
 	}
 
-	log.Debug("Reticulating splines...")
-
 	return nil
+
 }

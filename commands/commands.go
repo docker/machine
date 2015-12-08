@@ -11,6 +11,7 @@ import (
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
@@ -101,6 +102,8 @@ func fatalOnError(command func(commandLine CommandLine, api libmachine.API) erro
 		}
 		api.GithubAPIToken = context.GlobalString("github-api-token")
 		api.Filestore.Path = context.GlobalString("storage-path")
+
+		crashreport.Configure(context.GlobalString("bugsnag-api-token"))
 
 		// TODO (nathanleclaire): These should ultimately be accessed
 		// through the libmachine client by the rest of the code and
