@@ -31,7 +31,7 @@ Options:
 -   `--virtualbox-import-boot2docker-vm`: The name of a Boot2Docker VM to import.
 -   `--virtualbox-hostonly-cidr`: The CIDR of the host only adapter.
 -   `--virtualbox-hostonly-nictype`: Host Only Network Adapter Type. Possible values are are '82540EM' (Intel PRO/1000), 'Am79C973' (PCnet-FAST III) and 'virtio-net' Paravirtualized network adapter.
--   `--virtualbox-hostonly-nicpromisc`: Host Only Network Adapter Promiscuous Mode. Possible options are deny , allow-vms, allow-all 
+-   `--virtualbox-hostonly-nicpromisc`: Host Only Network Adapter Promiscuous Mode. Possible options are deny , allow-vms, allow-all
 -   `--virtualbox-no-share`: Disable the mount of your home directory
 -   `--virtualbox-dns-proxy`: Proxy all DNS requests to the host (Boolean value, default to false)
 
@@ -75,4 +75,4 @@ Environment variables and default values:
 | `--virtualbox-hostonly-nictype`      | `VIRTUALBOX_HOSTONLY_NIC_TYPE`     | `82540EM`                |
 | `--virtualbox-hostonly-nicpromisc`   | `VIRTUALBOX_HOSTONLY_NIC_PROMISC`  | `deny`                   |
 | `--virtualbox-no-share`              | `VIRTUALBOX_NO_SHARE`              | `false`                  |
-| `--virtualbox-dns-proxy`             | `VIRTUALBOX_DNS_PROXY              | `false`                  |
+| `--virtualbox-dns-proxy`             | `VIRTUALBOX_DNS_PROXY`             | `false`                  |
