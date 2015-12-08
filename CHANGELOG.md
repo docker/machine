@@ -3,31 +3,34 @@
 # 0.5.2 (2015-11-30)
 
 General
-  - Bash autocompletion and helpers fixed
-  - Remove `RawDriver` from `config.json` - Driver parameters can now be edited
+
+-   Bash autocompletion and helpers fixed
+-   Remove `RawDriver` from `config.json` - Driver parameters can now be edited
     directly again in this file.
-  - Change fish `env` variable setting to be global
-  - Add `docker-machine version` command
-  - Move back to normal `codegangsta/cli` upstream
-  - `--tls-san` flag for extra SANs
+-   Change fish `env` variable setting to be global
+-   Add `docker-machine version` command
+-   Move back to normal `codegangsta/cli` upstream
+-   `--tls-san` flag for extra SANs
 
 Drivers
-  - Fix `GetURL` IPv6 compatibility
-  - Add documentation page for available 3rd party drivers
-  - VirtualBox
-    - Support for shared folders and virtualization detection on Linux hosts
-    - Improved detection of invalid host-only interface settings
-  - Google
-    - Update default images
-  - VMware Fusion
-    - Add option to disable shared folder
-  - Generic
-    - New environment variables for flags
+
+-   Fix `GetURL` IPv6 compatibility
+-   Add documentation page for available 3rd party drivers
+-   VirtualBox
+    -   Support for shared folders and virtualization detection on Linux hosts
+    -   Improved detection of invalid host-only interface settings
+-   Google
+    -   Update default images
+-   VMware Fusion
+    -   Add option to disable shared folder
+-   Generic
+    -   New environment variables for flags
 
 Provisioners
-  - Support for Ubuntu >=15.04.  This means Ubuntu machines can be created which
+
+-   Support for Ubuntu >=15.04.  This means Ubuntu machines can be created which
     work with `overlay` driver of lib network.
-  - Fix issue with current netstat / daemon availability checking
+-   Fix issue with current netstat / daemon availability checking
 
 # 0.5.1 (2015-11-16)
 

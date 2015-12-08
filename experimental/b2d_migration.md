@@ -16,48 +16,44 @@ To migrate a Boot2Docker VM, run the following command where `<boot2docker-vm-na
 
 > To get the name of your Boot2Docker VM, use the `boot2docker config` command.  Default: `boot2docker-vm`.
 
-```
-docker-machine create -d virtualbox --virtualbox-import-boot2docker-vm <boot2docker-vm-name> <new-machine-name>
-```
+    docker-machine create -d virtualbox --virtualbox-import-boot2docker-vm <boot2docker-vm-name> <new-machine-name>
 
 > Note: this will stop the Boot2Docker VM in order to safely copy the virtual disk
 
 You should see output similar to the following:
 
-```
-$> docker-machine create -d virtualbox --virtualbox-import-boot2docker-vm boot2docker-vm dev
-INFO[0000] Creating VirtualBox VM...                    
-INFO[0001] Starting VirtualBox VM...                    
-INFO[0001] Waiting for VM to start...                   
-INFO[0035] "dev" has been created and is now the active machine. 
-INFO[0035] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
-```
+    $> docker-machine create -d virtualbox --virtualbox-import-boot2docker-vm boot2docker-vm dev
+    INFO[0000] Creating VirtualBox VM...
+    INFO[0001] Starting VirtualBox VM...
+    INFO[0001] Waiting for VM to start...
+    INFO[0035] "dev" has been created and is now the active machine.
+    INFO[0035] To point your Docker client at it, run this in your shell: eval "$(docker-machine env dev)"
 
 You now should have a Machine that contains all of the Docker data from the Boot2Docker VM.  See the Docker Machine [usage docs](http://docs.docker.com/machine/#getting-started-with-docker-machine-using-a-local-vm) for details on working with Machine.
 
 # Cleanup
+
 When migrating a Boot2Docker VM to Docker Machine the Boot2Docker VM is left intact.  Once you have verified that all of your Docker data (containers, images, etc) are in the new Machine, you can remove the Boot2Docker VM using `boot2docker delete`.
 
 # Command Comparison
 
-|  boot2docker cli | machine | machine description |
-|----|----|----|
-| init | create | creates a new docker host |
-| up | start | starts a stopped machine |
-| ssh | ssh | runs a command or interactive ssh session on the machine |
-| save | - | n/a |
-| down | stop | stops a running machine |
-| poweroff | stop | stops a running machine |
-| reset | restart | restarts a running machine |
-| config | inspect (*) | shows details about machine |
-| status | ls (**) | shows a list of all machines |
-| info | inspect (*) | shows details about machine |
-| ip | url (***) | shows the Docker URL for the machine |
-| shellinit | env | shows the environment configuration needed to configure the Docker CLI for the machine |
-| delete | rm | removes a machine |
-| download | - | |
-| upgrade | upgrade | upgrades Docker on the machine to the latest stable release |
-
+| boot2docker cli | machine     | machine description                                                                    |
+| --------------- | ----------- | -------------------------------------------------------------------------------------- |
+| init            | create      | creates a new docker host                                                              |
+| up              | start       | starts a stopped machine                                                               |
+| ssh             | ssh         | runs a command or interactive ssh session on the machine                               |
+| save            | -           | n/a                                                                                    |
+| down            | stop        | stops a running machine                                                                |
+| poweroff        | stop        | stops a running machine                                                                |
+| reset           | restart     | restarts a running machine                                                             |
+| config          | inspect (*) | shows details about machine                                                            |
+| status          | ls (**)     | shows a list of all machines                                                           |
+| info            | inspect (*) | shows details about machine                                                            |
+| ip              | url (***)   | shows the Docker URL for the machine                                                   |
+| shellinit       | env         | shows the environment configuration needed to configure the Docker CLI for the machine |
+| delete          | rm          | removes a machine                                                                      |
+| download        | -           |                                                                                        |
+| upgrade         | upgrade     | upgrades Docker on the machine to the latest stable release                            |
 
 \* provides similar functionality but not exact
 
