@@ -239,6 +239,9 @@ func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
 		if strings.Contains(scanner.Text(), "the host CPU does NOT support HW virtualization") {
 			return true, nil
 		}
+		if strings.Contains(scanner.Text(), "VERR_VMX_UNABLE_TO_START_VM") {
+			return true, nil
+		}
 	}
 
 	return false, nil
