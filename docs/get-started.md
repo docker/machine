@@ -139,3 +139,21 @@ Make sure to specify the machine name as an argument:
 
     $ docker-machine stop dev
     $ docker-machine start dev
+
+# Crash Reporting
+
+Provisioning a host is a complex matter that can fail for a lot of reasons.
+Some of those reasons lies in your very workstation that can have a wide
+variety of shell, network configuration, vpn, proxy and firewalls or from reasons
+on the other end of the chain: your cloud provider or the network in between.
+
+To help `docker-machine` be as stable as possible, we added a monitoring of crashes
+whenever you try to `create` or `upgrade` a host. This will send over https to bugsnag
+a couple of information : your docker-machine version, build, OS, ARCH, the path to your
+ current shell and the history of the last command as you could see it with a `-D` option.
+Those data are only there to help us pinpoint recurring issue with docker-machine and will only
+be transmitted in the case of a crash of docker-machine.
+
+If you're worried about thatm you can create a `no-error-report` in the `$HOME/.docker/machine`
+directory, and we will not gather nor send any data.
+

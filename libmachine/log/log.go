@@ -2,65 +2,65 @@ package log
 
 import "io"
 
-var logger MachineLogger
+var Logger MachineLogger
 
 func init() {
-	logger = NewMachineLogger()
+	Logger = NewFmtMachineLogger()
 }
 
 // RedirectStdOutToStdErr prevents any log from corrupting the output
 func RedirectStdOutToStdErr() {
-	logger.RedirectStdOutToStdErr()
+	Logger.RedirectStdOutToStdErr()
 }
 
 func Debug(args ...interface{}) {
-	logger.Debug(args...)
+	Logger.Debug(args...)
 }
 
 func Debugf(fmtString string, args ...interface{}) {
-	logger.Debugf(fmtString, args...)
+	Logger.Debugf(fmtString, args...)
 }
 
 func Error(args ...interface{}) {
-	logger.Error(args...)
+	Logger.Error(args...)
 }
 
 func Errorf(fmtString string, args ...interface{}) {
-	logger.Errorf(fmtString, args...)
+	Logger.Errorf(fmtString, args...)
 }
 
 func Info(args ...interface{}) {
-	logger.Info(args...)
+	Logger.Info(args...)
 }
 
 func Infof(fmtString string, args ...interface{}) {
-	logger.Infof(fmtString, args...)
+	Logger.Infof(fmtString, args...)
 }
 
 func Fatal(args ...interface{}) {
-	logger.Fatal(args...)
+	Logger.Fatal(args...)
 }
 
 func Fatalf(fmtString string, args ...interface{}) {
-	logger.Fatalf(fmtString, args...)
+	Logger.Fatalf(fmtString, args...)
 }
 
 func Warn(args ...interface{}) {
-	logger.Warn(args...)
+	Logger.Warn(args...)
 }
 
 func Warnf(fmtString string, args ...interface{}) {
-	logger.Warnf(fmtString, args...)
-}
-
-func Logger() interface{} {
-	return logger
+	Logger.Warnf(fmtString, args...)
 }
 
 func SetDebug(debug bool) {
-	logger.SetDebug(debug)
+	Logger.SetDebug(debug)
 }
 
 func SetOutput(out io.Writer) {
-	logger.SetOutput(out)
+	Logger.SetOutput(out)
+}
+
+func History() []string {
+	return Logger.History()
 }
