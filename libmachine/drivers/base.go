@@ -2,8 +2,6 @@ package drivers
 
 import (
 	"errors"
-	"fmt"
-	"net"
 	"path/filepath"
 )
 
@@ -40,10 +38,6 @@ func (d *BaseDriver) GetMachineName() string {
 func (d *BaseDriver) GetIP() (string, error) {
 	if d.IPAddress == "" {
 		return "", errors.New("IP address is not set")
-	}
-	ip := net.ParseIP(d.IPAddress)
-	if ip == nil {
-		return "", fmt.Errorf("IP address is invalid: %s", d.IPAddress)
 	}
 	return d.IPAddress, nil
 }
