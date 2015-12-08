@@ -27,9 +27,10 @@ than one filter, then pass multiple flags (e.g. `--filter "foo=bar" --filter "bi
 The currently supported filters are:
 
 -   driver (driver name)
--   swarm (swarm master's name)
--   state (`Running|Paused|Saved|Stopped|Stopping|Starting|Error`)
--   name (Machine name returned by driver, supports [golang style](https://github.com/google/re2/wiki/Syntax) regular expressions)
+-   swarm  (swarm master's name)
+-   state  (`Running|Paused|Saved|Stopped|Stopping|Starting|Error`)
+-   name   (Machine name returned by driver, supports [golang style](https://github.com/google/re2/wiki/Syntax) regular expressions)
+-   label  (Machine created with `--engine-label` option, can be filtered with `label=<key>[=<value>]`)
 
 ## Examples
 
@@ -43,3 +44,8 @@ The currently supported filters are:
     $ docker-machine ls --filter driver=virtualbox --filter state=Stopped
     NAME   ACTIVE   DRIVER       STATE     URL   SWARM
     dev    -        virtualbox   Stopped
+
+    $ docker-machine ls --filter label=com.class.app=foo1 --filter label=com.class.app=foo2
+    NAME   ACTIVE   DRIVER       STATE     URL
+    foo1   -        virtualbox   Running   tcp://192.168.99.105:2376
+    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
