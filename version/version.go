@@ -12,5 +12,5 @@ var (
 
 // FullVersion formats the version to be printed
 func FullVersion() string {
-	return fmt.Sprintf("%s ( %s )", Version, GitCommit)
+	return fmt.Sprintf("%s, build %s", Version, GitCommit)
 }
