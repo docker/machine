@@ -60,7 +60,7 @@ env` command. For example,
 
 > **Note**: If you are using `fish`, or a Windows shell such as
 > Powershell/`cmd.exe` the above method will not work as described. Instead,
-> see [the `env` command's documentation](https://docs.docker.com/machine/#env)
+> see [the `env` command's documentation](reference/env.md)
 > to learn how to set the environment variables for your shell.
 
 This will set environment variables that the Docker client will read which specify
