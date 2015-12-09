@@ -51,6 +51,15 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[4]} == "set -gx NO_PROXY \"$(machine ip $NAME)\";" ]]
 }
 
+@test "$DRIVER: test emacs notation" {
+  run machine env --shell emacs --no-proxy $NAME
+  [[ ${lines[0]} == "(setenv \"DOCKER_TLS_VERIFY\" \"1\")" ]]
+  [[ ${lines[1]} == "(setenv \"DOCKER_HOST\" \"$(machine url $NAME)\")" ]]
+  [[ ${lines[2]} == "(setenv \"DOCKER_CERT_PATH\" \"$MACHINE_STORAGE_PATH/machines/$NAME\")" ]]
+  [[ ${lines[3]} == "(setenv \"DOCKER_MACHINE_NAME\" \"$NAME\")" ]]
+  [[ ${lines[4]} == "(setenv \"NO_PROXY\" \"$(machine ip $NAME)\")" ]]
+}
+
 @test "$DRIVER: test no proxy with NO_PROXY already set" {
   export NO_PROXY=localhost
   run machine env --no-proxy $NAME
@@ -103,4 +112,12 @@ load ${BASE_TEST_DIR}/helpers.bash
   [[ ${lines[1]} == "SET DOCKER_HOST=" ]]
   [[ ${lines[2]} == "SET DOCKER_CERT_PATH=" ]]
   [[ ${lines[3]} == "SET DOCKER_MACHINE_NAME=" ]]
+}
+
+@test "$DRIVER: unset with emacs shell" {
+  run machine env --shell emacs -u
+  [[ ${lines[0]} == "(setenv \"DOCKER_TLS_VERIFY\" nil)" ]]
+  [[ ${lines[1]} == "(setenv \"DOCKER_HOST\" nil)" ]]
+  [[ ${lines[2]} == "(setenv \"DOCKER_CERT_PATH\" nil)" ]]
+  [[ ${lines[3]} == "(setenv \"DOCKER_MACHINE_NAME\" nil)" ]]
 }
