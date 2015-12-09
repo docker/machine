@@ -99,26 +99,32 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		MachineName:     host.Name,
 	}
 
-	if c.Bool("no-proxy") {
-		ip, err := host.Driver.GetIP()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting host IP: %s", err)
+	// Wether we use a socks proxy or a direct IP for docker engine access
+	// Never both can be used
+	if c.Bool("use-socks-proxy") {
+		socksProxyValue := c.String("socks-proxy-url")
+	} else {
+		if c.Bool("no-proxy") {
+			ip, err := host.Driver.GetIP()
+			if err != nil {
+				return nil, fmt.Errorf("Error getting host IP: %s", err)
+			}
+
+			noProxyVar, noProxyValue := findNoProxyFromEnv()
+
+			// add the docker host to the no_proxy list idempotently
+			switch {
+			case noProxyValue == "":
+				noProxyValue = ip
+			case strings.Contains(noProxyValue, ip):
+			//ip already in no_proxy list, nothing to do
+			default:
+				noProxyValue = fmt.Sprintf("%s,%s", noProxyValue, ip)
+			}
+
+			shellCfg.NoProxyVar = noProxyVar
+			shellCfg.NoProxyValue = noProxyValue
 		}
-
-		noProxyVar, noProxyValue := findNoProxyFromEnv()
-
-		// add the docker host to the no_proxy list idempotently
-		switch {
-		case noProxyValue == "":
-			noProxyValue = ip
-		case strings.Contains(noProxyValue, ip):
-		//ip already in no_proxy list, nothing to do
-		default:
-			noProxyValue = fmt.Sprintf("%s,%s", noProxyValue, ip)
-		}
-
-		shellCfg.NoProxyVar = noProxyVar
-		shellCfg.NoProxyValue = noProxyValue
 	}
 
 	switch userShell {

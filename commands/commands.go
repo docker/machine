@@ -257,6 +257,17 @@ var Commands = []cli.Command{
 				Name:  "no-proxy",
 				Usage: "Add machine IP to NO_PROXY environment variable",
 			},
+			cli.BoolFlag{
+				Name:  "use-socks-proxy",
+				Usage: "Configure environment to use a socks proxy",
+				EnvVar: "MACHINE_ENV_USE_SOCKSPROXY",
+			},
+			cli.StringFlag{
+				Name:   "socks-proxy-url",
+				Usage:  "Use the provided URL for the socks proxy",
+				Value:  "127.0.0.1:5000",
+				EnvVar: "MACHINE_ENV_SOCKSPROXY_URL",
+			},
 		},
 	},
 	{
