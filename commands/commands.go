@@ -168,7 +168,7 @@ var Commands = []cli.Command{
 			},
 			cli.StringFlag{
 				Name:  "shell",
-				Usage: "Force environment to be configured for specified shell",
+				Usage: "Force environment to be configured for a specified shell: [fish, cmd, powershell], default is sh/bash",
 			},
 			cli.BoolFlag{
 				Name:  "unset, u",
