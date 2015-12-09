@@ -65,6 +65,12 @@ func TestHints(t *testing.T) {
 		{"cmd", "./machine env --shell=cmd --swarm default", "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('./machine env --shell=cmd --swarm default') DO %i\n"},
 		{"cmd", "./machine env --shell=cmd --no-proxy --swarm default", "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('./machine env --shell=cmd --no-proxy --swarm default') DO %i\n"},
 		{"cmd", "./machine env --shell=cmd --unset", "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('./machine env --shell=cmd --unset') DO %i\n"},
+
+		{"emacs", "./machine env --shell=emacs default", ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs default\" (current-buffer)) (eval-buffer))\n"},
+		{"emacs", "./machine env --shell=emacs --no-proxy default", ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --no-proxy default\" (current-buffer)) (eval-buffer))\n"},
+		{"emacs", "./machine env --shell=emacs --swarm default", ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --swarm default\" (current-buffer)) (eval-buffer))\n"},
+		{"emacs", "./machine env --shell=emacs --no-proxy --swarm default", ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --no-proxy --swarm default\" (current-buffer)) (eval-buffer))\n"},
+		{"emacs", "./machine env --shell=emacs --unset", ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --unset\" (current-buffer)) (eval-buffer))\n"},
 	}
 
 	for _, test := range tests {
@@ -205,6 +211,42 @@ func TestShellCfgSet(t *testing.T) {
 				Prefix:          "$Env:",
 				Suffix:          "\"\n",
 				Delimiter:       " = \"",
+				DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), "quux"),
+				DockerHost:      "tcp://1.2.3.4:2376",
+				DockerTLSVerify: "1",
+				UsageHint:       usageHint,
+				MachineName:     "quux",
+			},
+			expectedErr: nil,
+		},
+		{
+			description: "emacs set happy path",
+			commandLine: &commandstest.FakeCommandLine{
+				CliArgs: []string{"quux"},
+				LocalFlags: &commandstest.FakeFlagger{
+					Data: map[string]interface{}{
+						"shell":    "emacs",
+						"swarm":    false,
+						"no-proxy": false,
+					},
+				},
+			},
+			api: &libmachinetest.FakeAPI{
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
+					},
+				},
+			},
+			connChecker: &FakeConnChecker{
+				DockerHost:  "tcp://1.2.3.4:2376",
+				AuthOptions: nil,
+				Err:         nil,
+			},
+			expectedShellCfg: &ShellConfig{
+				Prefix:          "(setenv \"",
+				Suffix:          "\")\n",
+				Delimiter:       "\" \"",
 				DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), "quux"),
 				DockerHost:      "tcp://1.2.3.4:2376",
 				DockerTLSVerify: "1",
