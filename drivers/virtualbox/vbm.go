@@ -79,7 +79,11 @@ func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
 
 func checkVBoxManageVersion(version string) error {
 	if !strings.HasPrefix(version, "5.") && !strings.HasPrefix(version, "4.") {
-		return fmt.Errorf("We support Virtualbox starting with version 4. Your VirtualBox install is %q. Please upgrade at https://www.virtualbox.org", version)
+		return fmt.Errorf("We support Virtualbox starting with version 5. Your VirtualBox install is %q. Please upgrade at https://www.virtualbox.org", version)
+	}
+
+	if !strings.HasPrefix(version, "5.") {
+		log.Warnf("You are using version %s of VirtualBox. If you encouter issues, you might want to upgrade to version 5 at https://www.virtualbox.org", version)
 	}
 
 	return nil
