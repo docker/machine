@@ -2,10 +2,7 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-@test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
+use_shared_machine
 
 @test "$DRIVER: test basic bash / zsh notation" {
   run machine env $NAME
