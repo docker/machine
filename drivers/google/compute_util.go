@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/ssh"
 	raw "google.golang.org/api/compute/v1"
 
 	"errors"
@@ -82,7 +81,7 @@ func (c *ComputeUtil) diskType() string {
 	return apiURL + c.project + "/zones/" + c.zone + "/diskTypes/" + c.diskTypeURL
 }
 
-// disk returns the gce Disk.
+// disk returns the persistent disk attached to the vm.
 func (c *ComputeUtil) disk() (*raw.Disk, error) {
 	return c.service.Disks.Get(c.project, c.zone, c.diskName()).Do()
 }
@@ -94,6 +93,7 @@ func (c *ComputeUtil) deleteDisk() error {
 	if err != nil {
 		return err
 	}
+
 	log.Infof("Waiting for disk to delete.")
 	return c.waitForRegionalOp(op.Name)
 }
@@ -130,12 +130,9 @@ func (c *ComputeUtil) firewallRule() (*raw.Firewall, error) {
 func (c *ComputeUtil) createFirewallRule() error {
 	log.Infof("Creating firewall rule.")
 	allowed := []*raw.FirewallAllowed{
-
 		{
 			IPProtocol: "tcp",
-			Ports: []string{
-				port,
-			},
+			Ports:      []string{port},
 		},
 	}
 
@@ -149,25 +146,22 @@ func (c *ComputeUtil) createFirewallRule() error {
 		swarmPort := parts[1]
 		allowed = append(allowed, &raw.FirewallAllowed{
 			IPProtocol: "tcp",
-			Ports: []string{
-				swarmPort,
-			},
+			Ports:      []string{swarmPort},
 		})
 	}
+
 	rule := &raw.Firewall{
-		Allowed: allowed,
-		SourceRanges: []string{
-			"0.0.0.0/0",
-		},
-		TargetTags: []string{
-			firewallTargetTag,
-		},
-		Name: firewallRule,
+		Allowed:      allowed,
+		SourceRanges: []string{"0.0.0.0/0"},
+		TargetTags:   []string{firewallTargetTag},
+		Name:         firewallRule,
 	}
+
 	op, err := c.service.Firewalls.Insert(c.project, rule).Do()
 	if err != nil {
 		return err
 	}
+
 	return c.waitForGlobalOp(op.Name)
 }
 
@@ -179,6 +173,7 @@ func (c *ComputeUtil) instance() (*raw.Instance, error) {
 // createInstance creates a GCE VM instance.
 func (c *ComputeUtil) createInstance(d *Driver) error {
 	log.Infof("Creating instance.")
+
 	// The rule will either exist or be nil in case of an error.
 	if rule, _ := c.firewallRule(); rule == nil {
 		if err := c.createFirewallRule(); err != nil {
@@ -329,30 +324,13 @@ func (c *ComputeUtil) startInstance() error {
 	return c.waitForRegionalOp(op.Name)
 }
 
-func (c *ComputeUtil) executeCommands(commands []string, ip, sshKeyPath string) error {
-	for _, command := range commands {
-		auth := &ssh.Auth{
-			Keys: []string{sshKeyPath},
-		}
-
-		client, err := ssh.NewClient(c.userName, ip, 22, auth)
-		if err != nil {
-			return err
-		}
-
-		if _, err := client.Output(command); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 	for {
 		op, err := opGetter()
 		if err != nil {
 			return err
 		}
+
 		log.Debugf("operation %q status: %s", op.Name, op.Status)
 		if op.Status == "DONE" {
 			if op.Error != nil {
@@ -365,13 +343,14 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 	return nil
 }
 
-// waitForOp waits for the GCE Operation to finish.
+// waitForOp waits for the operation to finish.
 func (c *ComputeUtil) waitForRegionalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
 		return c.service.ZoneOperations.Get(c.project, c.zone, name).Do()
 	})
 }
 
+// waitForGlobalOp waits for the global operation to finish.
 func (c *ComputeUtil) waitForGlobalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
 		return c.service.GlobalOperations.Get(c.project, name).Do()

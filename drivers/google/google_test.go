@@ -8,7 +8,7 @@ import (
 )
 
 func TestSetConfigFromFlags(t *testing.T) {
-	driver := NewDriver("default", "path")
+	driver := NewDriver("", "")
 
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
