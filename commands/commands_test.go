@@ -7,7 +7,6 @@ import (
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
-	"github.com/docker/machine/libmachine/hosttest"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
@@ -81,26 +80,17 @@ func TestRunActionForeachMachine(t *testing.T) {
 	}
 }
 
-func TestPrintIPEmptyGivenLocalEngine(t *testing.T) {
+func TestPrintIP(t *testing.T) {
 	stdoutGetter := commandstest.NewStdoutGetter()
 	defer stdoutGetter.Stop()
 
-	host, _ := hosttest.GetDefaultTestHost()
-	err := printIP(host)()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "\n", stdoutGetter.Output())
-}
-
-func TestPrintIPPrintsGivenRemoteEngine(t *testing.T) {
-	stdoutGetter := commandstest.NewStdoutGetter()
-	defer stdoutGetter.Stop()
-
-	host, _ := hosttest.GetDefaultTestHost()
-	host.Driver = &fakedriver.Driver{
-		MockState: state.Running,
-		MockIP:    "1.2.3.4",
+	host := &host.Host{
+		Driver: &fakedriver.Driver{
+			MockState: state.Running,
+			MockIP:    "1.2.3.4",
+		},
 	}
+
 	err := printIP(host)()
 
 	assert.NoError(t, err)
