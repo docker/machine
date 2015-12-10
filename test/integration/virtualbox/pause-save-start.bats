@@ -4,10 +4,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
-@test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-  [ "$status" -eq 0  ]
-}
+use_shared_machine
 
 @test "$DRIVER: VBoxManage pause" {
   run VBoxManage controlvm $NAME pause

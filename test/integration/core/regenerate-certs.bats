@@ -2,9 +2,7 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-@test "$DRIVER: create" {
-  run machine create -d $DRIVER $NAME
-}
+use_shared_machine
 
 @test "$DRIVER: regenerate the certs" {
   run machine regenerate-certs -f $NAME

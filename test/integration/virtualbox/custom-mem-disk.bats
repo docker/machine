@@ -4,6 +4,8 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
+use_disposable_machine
+
 # Default memsize is 1024MB and disksize is 20000MB
 # These values are defined in drivers/virtualbox/virtualbox.go
 export DEFAULT_MEMSIZE=1024
