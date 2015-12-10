@@ -6,13 +6,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/hosttest"
+	"github.com/stretchr/testify/assert"
 )
 
 func cleanup() {
@@ -41,29 +41,20 @@ func TestStoreSave(t *testing.T) {
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if err := store.Save(h); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Save(h)
+	assert.NoError(t, err)
 
 	path := store.hostPath(h.Name)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Fatalf("Host path doesn't exist: %s", path)
-	}
+
+	_, err = os.Stat(path)
+	assert.NoError(t, err)
 
 	files, _ := ioutil.ReadDir(path)
-	for _, f := range files {
-		r, err := regexp.Compile("config.json.tmp*")
-		if err != nil {
-			t.Fatalf("Failed to compile regexp string")
-		}
-		if r.MatchString(f.Name()) {
-			t.Fatalf("Failed to remove temp filestore:%s", f.Name())
-		}
-	}
+
+	assert.Len(t, files, 1)
+	assert.Equal(t, "config.json", files[0].Name())
 }
 
 func TestStoreSaveOmitRawDriver(t *testing.T) {
@@ -72,30 +63,22 @@ func TestStoreSaveOmitRawDriver(t *testing.T) {
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if err := store.Save(h); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Save(h)
+	assert.NoError(t, err)
 
 	configJSONPath := store.hostConfigPath(h.Name)
 	f, err := os.Open(configJSONPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	configData, err := ioutil.ReadAll(f)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	fakeHost := make(map[string]interface{})
 
-	if err := json.Unmarshal(configData, &fakeHost); err != nil {
-		t.Fatal(err)
-	}
+	err = json.Unmarshal(configData, &fakeHost)
+	assert.NoError(t, err)
 
 	if rawDriver, ok := fakeHost["RawDriver"]; ok {
 		t.Fatal("Should not have gotten a value for RawDriver reading host from disk but got one: ", rawDriver)
@@ -108,23 +91,17 @@ func TestStoreRemove(t *testing.T) {
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if err := store.Save(h); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Save(h)
+	assert.NoError(t, err)
 
 	path := store.hostPath(h.Name)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Fatalf("Host path doesn't exist: %s", path)
-	}
+	_, err = os.Stat(path)
+	assert.NoError(t, err)
 
 	err = store.Remove(h.Name)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	if _, err := os.Stat(path); err == nil {
 		t.Fatalf("Host path still exists after remove: %s", path)
@@ -137,22 +114,14 @@ func TestStoreList(t *testing.T) {
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if err := store.Save(h); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Save(h)
+	assert.NoError(t, err)
 
 	hosts, err := store.List()
-	if len(hosts) != 1 {
-		t.Fatalf("List returned %d items, expected 1", len(hosts))
-	}
-
-	if hosts[0] != h.Name {
-		t.Fatalf("hosts[0] name is incorrect, got: %s", hosts[0])
-	}
+	assert.Len(t, hosts, 1)
+	assert.Equal(t, h.Name, hosts[0])
 }
 
 func TestStoreExists(t *testing.T) {
@@ -161,40 +130,26 @@ func TestStoreExists(t *testing.T) {
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	exists, err := store.Exists(h.Name)
-	if exists {
-		t.Fatal("Host should not exist before saving")
-	}
+	assert.False(t, exists)
 
-	if err := store.Save(h); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Save(h)
+	assert.NoError(t, err)
 
 	exists, err = store.Exists(h.Name)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	if !exists {
-		t.Fatal("Host should exist after saving")
-	}
+	assert.True(t, exists)
+	assert.NoError(t, err)
 
-	if err := store.Remove(h.Name); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Remove(h.Name)
+	assert.NoError(t, err)
 
 	exists, err = store.Exists(h.Name)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	if exists {
-		t.Fatal("Host should not exist after removing")
-	}
+	assert.False(t, exists)
+	assert.NoError(t, err)
 }
 
 func TestStoreLoad(t *testing.T) {
@@ -207,42 +162,29 @@ func TestStoreLoad(t *testing.T) {
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if err := h.Driver.SetConfigFromFlags(flags); err != nil {
-		t.Fatal(err)
-	}
+	err = h.Driver.SetConfigFromFlags(flags)
+	assert.NoError(t, err)
 
-	if err := store.Save(h); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Save(h)
+	assert.NoError(t, err)
 
 	h, err = store.Load(h.Name)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	rawDataDriver, ok := h.Driver.(*host.RawDataDriver)
-	if !ok {
-		t.Fatal("Expected driver loaded from store to be of type *host.RawDataDriver and it was not")
-	}
+	assert.True(t, ok)
 
 	realDriver := none.NewDriver(h.Name, store.Path)
 
-	if err := json.Unmarshal(rawDataDriver.Data, &realDriver); err != nil {
-		t.Fatalf("Error unmarshaling rawDataDriver data into concrete 'none' driver: %s", err)
-	}
+	err = json.Unmarshal(rawDataDriver.Data, &realDriver)
+	assert.NoError(t, err)
 
 	h.Driver = realDriver
 
 	actualURL, err := h.URL()
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	if actualURL != expectedURL {
-		t.Fatalf("GetURL is not %q, got %q", expectedURL, actualURL)
-	}
+	assert.Equal(t, expectedURL, actualURL)
+	assert.NoError(t, err)
 }
