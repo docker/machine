@@ -127,37 +127,78 @@ func (c *ComputeUtil) firewallRule() (*raw.Firewall, error) {
 	return c.service.Firewalls.Get(c.project, firewallRule).Do()
 }
 
-func (c *ComputeUtil) createFirewallRule() error {
-	log.Infof("Creating firewall rule.")
-	allowed := []*raw.FirewallAllowed{
-		{
-			IPProtocol: "tcp",
-			Ports:      []string{port},
-		},
+func missingOpenedPorts(rule *raw.Firewall, ports []string) []string {
+	missing := []string{}
+	opened := map[string]bool{}
+
+	for _, allowed := range rule.Allowed {
+		for _, allowedPort := range allowed.Ports {
+			opened[allowedPort] = true
+		}
 	}
+
+	for _, port := range ports {
+		if !opened[port] {
+			missing = append(missing, port)
+		}
+	}
+
+	return missing
+}
+
+func (c *ComputeUtil) portsUsed() ([]string, error) {
+	ports := []string{port}
 
 	if c.SwarmMaster {
 		u, err := url.Parse(c.SwarmHost)
 		if err != nil {
-			return fmt.Errorf("error authorizing port for swarm: %s", err)
+			return nil, fmt.Errorf("error authorizing port for swarm: %s", err)
 		}
 
-		parts := strings.Split(u.Host, ":")
-		swarmPort := parts[1]
-		allowed = append(allowed, &raw.FirewallAllowed{
-			IPProtocol: "tcp",
-			Ports:      []string{swarmPort},
-		})
+		swarmPort := strings.Split(u.Host, ":")[1]
+		ports = append(ports, swarmPort)
 	}
 
-	rule := &raw.Firewall{
-		Allowed:      allowed,
-		SourceRanges: []string{"0.0.0.0/0"},
-		TargetTags:   []string{firewallTargetTag},
-		Name:         firewallRule,
+	return ports, nil
+}
+
+func (c *ComputeUtil) createFirewallRule() error {
+	log.Infof("Opening firewall ports.")
+
+	create := false
+	rule, _ := c.firewallRule()
+	if rule == nil {
+		create = true
+		rule = &raw.Firewall{
+			Name:         firewallRule,
+			Allowed:      []*raw.FirewallAllowed{},
+			SourceRanges: []string{"0.0.0.0/0"},
+			TargetTags:   []string{firewallTargetTag},
+		}
 	}
 
-	op, err := c.service.Firewalls.Insert(c.project, rule).Do()
+	portsUsed, err := c.portsUsed()
+	if err != nil {
+		return err
+	}
+
+	missingPorts := missingOpenedPorts(rule, portsUsed)
+	if len(missingPorts) == 0 {
+		return nil
+	}
+
+	rule.Allowed = append(rule.Allowed, &raw.FirewallAllowed{
+		IPProtocol: "tcp",
+		Ports:      missingPorts,
+	})
+
+	var op *raw.Operation
+	if create {
+		op, err = c.service.Firewalls.Insert(c.project, rule).Do()
+	} else {
+		op, err = c.service.Firewalls.Update(c.project, firewallRule, rule).Do()
+	}
+
 	if err != nil {
 		return err
 	}
@@ -174,11 +215,8 @@ func (c *ComputeUtil) instance() (*raw.Instance, error) {
 func (c *ComputeUtil) createInstance(d *Driver) error {
 	log.Infof("Creating instance.")
 
-	// The rule will either exist or be nil in case of an error.
-	if rule, _ := c.firewallRule(); rule == nil {
-		if err := c.createFirewallRule(); err != nil {
-			return err
-		}
+	if err := c.createFirewallRule(); err != nil {
+		return err
 	}
 
 	instance := &raw.Instance{
