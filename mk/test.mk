@@ -9,6 +9,3 @@ test-long:
 test-integration: build
 	$(eval TESTSUITE=$(filter-out $@,$(MAKECMDGOALS)))
 	test/integration/run-bats.sh $(TESTSUITE)
-
-%:
-	@:
