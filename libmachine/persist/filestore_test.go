@@ -8,37 +8,29 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/hosttest"
 	"github.com/stretchr/testify/assert"
 )
 
-func cleanup() {
-	os.RemoveAll(os.Getenv("MACHINE_STORAGE_PATH"))
+func cleanup(store *Filestore) {
+	os.RemoveAll(store.Path)
 }
 
-func getTestStore() Filestore {
+func testStore() *Filestore {
 	tmpDir, err := ioutil.TempDir("", "machine-test-")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	mcndirs.BaseDir = tmpDir
-
-	return Filestore{
-		Path:             tmpDir,
-		CaCertPath:       filepath.Join(tmpDir, "certs", "ca-cert.pem"),
-		CaPrivateKeyPath: filepath.Join(tmpDir, "certs", "ca-key.pem"),
-	}
+	return NewFilestore(tmpDir, filepath.Join(tmpDir, "certs", "ca-cert.pem"), filepath.Join(tmpDir, "certs", "ca-key.pem"))
 }
 
 func TestStoreSave(t *testing.T) {
-	defer cleanup()
-
-	store := getTestStore()
+	store := testStore()
+	defer cleanup(store)
 
 	h, err := hosttest.GetDefaultTestHost()
 	assert.NoError(t, err)
@@ -58,9 +50,8 @@ func TestStoreSave(t *testing.T) {
 }
 
 func TestStoreSaveOmitRawDriver(t *testing.T) {
-	defer cleanup()
-
-	store := getTestStore()
+	store := testStore()
+	defer cleanup(store)
 
 	h, err := hosttest.GetDefaultTestHost()
 	assert.NoError(t, err)
@@ -86,9 +77,8 @@ func TestStoreSaveOmitRawDriver(t *testing.T) {
 }
 
 func TestStoreRemove(t *testing.T) {
-	defer cleanup()
-
-	store := getTestStore()
+	store := testStore()
+	defer cleanup(store)
 
 	h, err := hosttest.GetDefaultTestHost()
 	assert.NoError(t, err)
@@ -109,9 +99,8 @@ func TestStoreRemove(t *testing.T) {
 }
 
 func TestStoreList(t *testing.T) {
-	defer cleanup()
-
-	store := getTestStore()
+	store := testStore()
+	defer cleanup(store)
 
 	h, err := hosttest.GetDefaultTestHost()
 	assert.NoError(t, err)
@@ -125,9 +114,8 @@ func TestStoreList(t *testing.T) {
 }
 
 func TestStoreExists(t *testing.T) {
-	defer cleanup()
-
-	store := getTestStore()
+	store := testStore()
+	defer cleanup(store)
 
 	h, err := hosttest.GetDefaultTestHost()
 	assert.NoError(t, err)
@@ -153,13 +141,12 @@ func TestStoreExists(t *testing.T) {
 }
 
 func TestStoreLoad(t *testing.T) {
-	defer cleanup()
+	store := testStore()
+	defer cleanup(store)
 
 	expectedURL := "unix:///foo/baz"
 	flags := hosttest.GetTestDriverFlags()
 	flags.Data["url"] = expectedURL
-
-	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()
 	assert.NoError(t, err)
