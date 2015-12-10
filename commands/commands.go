@@ -37,6 +37,8 @@ type CommandLine interface {
 
 	Bool(name string) bool
 
+	Int(name string) int
+
 	String(name string) string
 
 	StringSlice(name string) []string
@@ -215,6 +217,11 @@ var Commands = []cli.Command{
 				Name:  "filter",
 				Usage: "Filter output based on conditions provided",
 				Value: &cli.StringSlice{},
+			},
+			cli.IntFlag{
+				Name:  "timeout, t",
+				Usage: fmt.Sprintf("Timeout in seconds, default to %ds", DefaultTimeoutDuration),
+				Value: DefaultTimeoutDuration,
 			},
 		},
 		Name:   "ls",
