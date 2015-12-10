@@ -7,8 +7,7 @@ var (
 )
 
 func TestMigrateHostV0ToHostV3(t *testing.T) {
-	h := &Host{}
-	migratedHost, migrationPerformed, err := MigrateHost(h, v0conf)
+	migratedHost, migrationPerformed, err := MigrateHost("", v0conf)
 	if err != nil {
 		t.Fatalf("Error attempting to migrate host: %s", err)
 	}
