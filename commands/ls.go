@@ -21,8 +21,10 @@ import (
 	"github.com/skarademir/naturalsort"
 )
 
+const DefaultTimeoutDuration = 10
+
 var (
-	stateTimeoutDuration = 10 * time.Second
+	stateTimeoutDuration = DefaultTimeoutDuration * time.Second
 )
 
 // FilterOptions -
@@ -47,6 +49,9 @@ type HostListItem struct {
 }
 
 func cmdLs(c CommandLine, api libmachine.API) error {
+	stateTimeoutDuration = time.Duration(c.Int("timeout")) * time.Second
+	log.Debugf("ls timeout set to %d seconds", stateTimeoutDuration/time.Second)
+
 	quiet := c.Bool("quiet")
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {
