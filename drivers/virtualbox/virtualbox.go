@@ -204,7 +204,7 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	// Check that VBoxManage is of a supported version
-	if err = checkVBoxManageVersion(version); err != nil {
+	if err = checkVBoxManageVersion(strings.TrimSpace(version)); err != nil {
 		return err
 	}
 
