@@ -49,7 +49,7 @@ func TestStoreSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(store.GetMachinesDir(), h.Name)
+	path := store.hostPath(h.Name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -80,8 +80,7 @@ func TestStoreSaveOmitRawDriver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	configJSONPath := filepath.Join(store.GetMachinesDir(), h.Name, "config.json")
-
+	configJSONPath := store.hostConfigPath(h.Name)
 	f, err := os.Open(configJSONPath)
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +100,6 @@ func TestStoreSaveOmitRawDriver(t *testing.T) {
 	if rawDriver, ok := fakeHost["RawDriver"]; ok {
 		t.Fatal("Should not have gotten a value for RawDriver reading host from disk but got one: ", rawDriver)
 	}
-
 }
 
 func TestStoreRemove(t *testing.T) {
@@ -118,7 +116,7 @@ func TestStoreRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(store.GetMachinesDir(), h.Name)
+	path := store.hostPath(h.Name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("Host path doesn't exist: %s", path)
 	}
@@ -159,6 +157,7 @@ func TestStoreList(t *testing.T) {
 
 func TestStoreExists(t *testing.T) {
 	defer cleanup()
+
 	store := getTestStore()
 
 	h, err := hosttest.GetDefaultTestHost()

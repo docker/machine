@@ -30,6 +30,14 @@ func (s Filestore) GetMachinesDir() string {
 	return filepath.Join(s.Path, "machines")
 }
 
+func (s Filestore) hostPath(name string) string {
+	return filepath.Join(s.GetMachinesDir(), strings.ToLower(name))
+}
+
+func (s Filestore) hostConfigPath(name string) string {
+	return filepath.Join(s.hostPath(name), "config.json")
+}
+
 func (s Filestore) saveToFile(data []byte, file string) error {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return ioutil.WriteFile(file, data, 0600)
@@ -65,19 +73,18 @@ func (s Filestore) Save(host *host.Host) error {
 		return err
 	}
 
-	hostPath := filepath.Join(s.GetMachinesDir(), host.Name)
+	hostPath := s.hostPath(host.Name)
 
 	// Ensure that the directory we want to save to exists.
 	if err := os.MkdirAll(hostPath, 0700); err != nil {
 		return err
 	}
 
-	return s.saveToFile(data, filepath.Join(hostPath, "config.json"))
+	return s.saveToFile(data, s.hostConfigPath(host.Name))
 }
 
 func (s Filestore) Remove(name string) error {
-	hostPath := filepath.Join(s.GetMachinesDir(), name)
-	return os.RemoveAll(hostPath)
+	return os.RemoveAll(s.hostPath(name))
 }
 
 func (s Filestore) List() ([]string, error) {
@@ -98,7 +105,7 @@ func (s Filestore) List() ([]string, error) {
 }
 
 func (s Filestore) Exists(name string) (bool, error) {
-	_, err := os.Stat(filepath.Join(s.GetMachinesDir(), name))
+	_, err := os.Stat(s.hostPath(name))
 
 	if os.IsNotExist(err) {
 		return false, nil
@@ -109,41 +116,8 @@ func (s Filestore) Exists(name string) (bool, error) {
 	return false, err
 }
 
-func (s Filestore) loadConfig(h *host.Host) error {
-	data, err := ioutil.ReadFile(filepath.Join(s.GetMachinesDir(), h.Name, "config.json"))
-	if err != nil {
-		return err
-	}
-
-	// Remember the machine name so we don't have to pass it through each
-	// struct in the migration.
-	name := h.Name
-
-	migratedHost, migrationPerformed, err := host.MigrateHost(h, data)
-	if err != nil {
-		return fmt.Errorf("Error getting migrated host: %s", err)
-	}
-
-	*h = *migratedHost
-
-	h.Name = name
-
-	// If we end up performing a migration, we should save afterwards so we don't have to do it again on subsequent invocations.
-	if migrationPerformed {
-		if err := s.saveToFile(data, filepath.Join(s.GetMachinesDir(), h.Name, "config.json.bak")); err != nil {
-			return fmt.Errorf("Error attempting to save backup after migration: %s", err)
-		}
-
-		if err := s.Save(h); err != nil {
-			return fmt.Errorf("Error saving config after migration was performed: %s", err)
-		}
-	}
-
-	return nil
-}
-
 func (s Filestore) Load(name string) (*host.Host, error) {
-	hostPath := filepath.Join(s.GetMachinesDir(), name)
+	hostPath := s.hostPath(name)
 
 	if _, err := os.Stat(hostPath); os.IsNotExist(err) {
 		return nil, mcnerror.ErrHostDoesNotExist{
@@ -151,13 +125,33 @@ func (s Filestore) Load(name string) (*host.Host, error) {
 		}
 	}
 
-	host := &host.Host{
-		Name: name,
-	}
-
-	if err := s.loadConfig(host); err != nil {
+	data, err := ioutil.ReadFile(s.hostConfigPath(name))
+	if err != nil {
 		return nil, err
 	}
 
-	return host, nil
+	h := &host.Host{
+		Name: name,
+	}
+
+	migratedHost, migrationPerformed, err := host.MigrateHost(h, data)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting migrated host: %s", err)
+	}
+
+	*h = *migratedHost
+	h.Name = name
+
+	// If we end up performing a migration, we should save afterwards so we don't have to do it again on subsequent invocations.
+	if migrationPerformed {
+		if err := s.saveToFile(data, s.hostConfigPath(h.Name)+".bak"); err != nil {
+			return nil, fmt.Errorf("Error attempting to save backup after migration: %s", err)
+		}
+
+		if err := s.Save(h); err != nil {
+			return nil, fmt.Errorf("Error saving config after migration was performed: %s", err)
+		}
+	}
+
+	return h, nil
 }
