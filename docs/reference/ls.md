@@ -16,8 +16,21 @@ parent="smn_machine_subcmds"
 
     Options:
 
-       --quiet, -q					Enable quiet mode
+       --quiet, -q					                Enable quiet mode
        --filter [--filter option --filter option]	Filter output based on conditions provided
+       --timeout, -t				                Timeout in seconds, default to 10s
+
+## Timeout
+
+The `ls` command tries to reach each host in parallel. If a given host does not answer in less than 10 seconds, the `ls` command
+will state that this host is in `timeout`. In some circumstances (poor connection, high load or while troubleshooting) you may want to
+increase or decrease this value. You can use the `-t` flag for this purpose with a numerical value in seconds.
+
+### Example
+
+    $ docker-machine ls -t 12
+    NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+    default   -        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.0
 
 ## Filtering
 
