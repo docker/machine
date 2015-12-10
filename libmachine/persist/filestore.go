@@ -134,13 +134,10 @@ func (s Filestore) Load(name string) (*host.Host, error) {
 		Name: name,
 	}
 
-	migratedHost, migrationPerformed, err := host.MigrateHost(h, data)
+	h, migrationPerformed, err := host.MigrateHost(h, data)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting migrated host: %s", err)
 	}
-
-	*h = *migratedHost
-	h.Name = name
 
 	// If we end up performing a migration, we should save afterwards so we don't have to do it again on subsequent invocations.
 	if migrationPerformed {

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"strings"
+
 	"github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
@@ -72,6 +74,36 @@ func TestStoreSave(t *testing.T) {
 
 	assert.Len(t, files, 1)
 	assert.Equal(t, "config.json", files[0].Name())
+}
+
+func TestStoreIsCaseInsensitive(t *testing.T) {
+	store := testStore()
+	defer cleanup(store)
+
+	h := testHost()
+	h.Name = "CamelCase"
+
+	err := store.Save(h)
+	assert.NoError(t, err)
+
+	path := store.hostPath(h.Name)
+	assert.True(t, strings.HasSuffix(path, "/machines/camelcase"))
+
+	exists, err := store.Exists("CamelCase")
+	assert.True(t, exists)
+	assert.NoError(t, err)
+
+	exists, err = store.Exists("camelcase")
+	assert.True(t, exists)
+	assert.NoError(t, err)
+
+	loadedHost, err := store.Load("CamelCase")
+	assert.Equal(t, "CamelCase", loadedHost.Name)
+	assert.NoError(t, err)
+
+	loadedHost, err = store.Load("camelcase")
+	assert.Equal(t, "CamelCase", loadedHost.Name)
+	assert.NoError(t, err)
 }
 
 func TestStoreSaveOmitRawDriver(t *testing.T) {
