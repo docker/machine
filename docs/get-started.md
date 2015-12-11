@@ -143,17 +143,19 @@ Make sure to specify the machine name as an argument:
 # Crash Reporting
 
 Provisioning a host is a complex matter that can fail for a lot of reasons.
-Some of those reasons lies in your very workstation that can have a wide
-variety of shell, network configuration, vpn, proxy and firewalls or from reasons
-on the other end of the chain: your cloud provider or the network in between.
+Your workstation may have a wide variety of shell, network configuration, VPN,
+proxy or firewall issues.  There are also reasons from the other end of the
+chain: your cloud provider or the network in between.
 
-To help `docker-machine` be as stable as possible, we added a monitoring of crashes
-whenever you try to `create` or `upgrade` a host. This will send over https to bugsnag
-a couple of information : your docker-machine version, build, OS, ARCH, the path to your
- current shell and the history of the last command as you could see it with a `-D` option.
-Those data are only there to help us pinpoint recurring issue with docker-machine and will only
-be transmitted in the case of a crash of docker-machine.
+To help `docker-machine` be as stable as possible, we added a monitoring of
+crashes whenever you try to `create` or `upgrade` a host. This will send, over
+HTTPS, to Bugsnag some information about your `docker-machine` version, build,
+OS, ARCH, the path to your current shell and, the history of the last command as
+you could see it with a `--debug` option.  This data is sent to help us pinpoint
+recurring issues with `docker-machine` and will only be transmitted in the case
+of a crash of `docker-machine`.
 
-If you're worried about thatm you can create a `no-error-report` in the `$HOME/.docker/machine`
-directory, and we will not gather nor send any data.
-
+If you wish to opt out of error reporting, you can create a `no-error-report`
+file in your `$HOME/.docker/machine` directory, and Docker Machine will disable
+this behavior.  Leaving the file empty is fine -- Docker Machine just checks for
+its presence.
