@@ -22,9 +22,11 @@ parent="smn_machine_subcmds"
 
 ## Timeout
 
-The `ls` command tries to reach each host in parallel. If a given host does not answer in less than 10 seconds, the `ls` command
-will state that this host is in `timeout`. In some circumstances (poor connection, high load or while troubleshooting) you may want to
-increase or decrease this value. You can use the `-t` flag for this purpose with a numerical value in seconds.
+The `ls` command tries to reach each host in parallel. If a given host does not
+answer in less than 10 seconds, the `ls` command will state that this host is in
+`Timeout` state. In some circumstances (poor connection, high load, or while
+troubleshooting), you may want to increase or decrease this value. You can use
+the -t flag for this purpose with a numerical value in seconds.
 
 ### Example
 
