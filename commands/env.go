@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
+	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ if .SocksProxyVar }}{{ .Prefix }}{{ .SocksProxyVar }}{{ .Delimiter }}{{ .SocksProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
 )
 
 var (
@@ -39,6 +39,8 @@ type ShellConfig struct {
 	MachineName     string
 	NoProxyVar      string
 	NoProxyValue    string
+	SocksProxyVar		string
+	SocksProxyValue	string
 }
 
 func cmdEnv(c CommandLine, api libmachine.API) error {
@@ -102,7 +104,19 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 	// Wether we use a socks proxy or a direct IP for docker engine access
 	// Never both can be used
 	if c.Bool("use-socks-proxy") {
-		socksProxyValue := c.String("socks-proxy-url")
+
+		socksProxyVar, socksProxyValue := findProxyEnvVarFromEnv("all_proxy")
+		socksProxyValue = c.String("socks-proxy-url")
+
+		shellCfg.SocksProxyVar = socksProxyVar
+		shellCfg.SocksProxyValue = socksProxyValue
+
+		// Empty the other proxy variables to ensure coherency for end user minds
+		shellCfg.NoProxyVar, _ = findProxyEnvVarFromEnv("no_proxy")
+		shellCfg.NoProxyValue = ""
+
+
+
 	} else {
 		if c.Bool("no-proxy") {
 			ip, err := host.Driver.GetIP()
@@ -110,7 +124,7 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 				return nil, fmt.Errorf("Error getting host IP: %s", err)
 			}
 
-			noProxyVar, noProxyValue := findNoProxyFromEnv()
+			noProxyVar, noProxyValue := findProxyEnvVarFromEnv("no_proxy")
 
 			// add the docker host to the no_proxy list idempotently
 			switch {
@@ -168,7 +182,7 @@ func shellCfgUnset(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 	}
 
 	if c.Bool("no-proxy") {
-		shellCfg.NoProxyVar, shellCfg.NoProxyValue = findNoProxyFromEnv()
+		shellCfg.NoProxyVar, shellCfg.NoProxyValue = findProxyEnvVarFromEnv("no_proxy")
 	}
 
 	switch userShell {
@@ -214,17 +228,19 @@ func getShell(userShell string) (string, error) {
 	return shell.Detect()
 }
 
-func findNoProxyFromEnv() (string, string) {
-	// first check for an existing lower case no_proxy var
-	noProxyVar := "no_proxy"
-	noProxyValue := os.Getenv("no_proxy")
+func findProxyEnvVarFromEnv(proxyEnvVar string) (string, string) {
+	// first check for an existing lower for proxyEnvVarKey
+	proxyEnvVarKey := strings.ToLower(proxyEnvVar)
+	proxyEnvVarValue := os.Getenv(proxyEnvVarKey)
 
-	// otherwise default to allcaps HTTP_PROXY
-	if noProxyValue == "" {
-		noProxyVar = "NO_PROXY"
-		noProxyValue = os.Getenv("NO_PROXY")
+	// otherwise default to allcaps
+	if proxyEnvVarValue == "" {
+		proxyEnvVarKey = strings.ToUpper(proxyEnvVar)
+		proxyEnvVarValue = os.Getenv(proxyEnvVarKey)
 	}
-	return noProxyVar, noProxyValue
+
+	return proxyEnvVarKey, proxyEnvVarValue
+
 }
 
 type UsageHintGenerator interface {
