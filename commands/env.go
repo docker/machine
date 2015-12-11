@@ -39,8 +39,8 @@ type ShellConfig struct {
 	MachineName     string
 	NoProxyVar      string
 	NoProxyValue    string
-	SocksProxyVar		string
-	SocksProxyValue	string
+	SocksProxyVar   string
+	SocksProxyValue string
 }
 
 func cmdEnv(c CommandLine, api libmachine.API) error {
@@ -114,8 +114,6 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		// Empty the other proxy variables to ensure coherency for end user minds
 		shellCfg.NoProxyVar, _ = findProxyEnvVarFromEnv("no_proxy")
 		shellCfg.NoProxyValue = ""
-
-
 
 	} else {
 		if c.Bool("no-proxy") {

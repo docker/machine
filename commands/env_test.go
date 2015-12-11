@@ -126,10 +126,10 @@ func TestShellCfgSet(t *testing.T) {
 				CliArgs: []string{"quux"},
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"bash",
-						"swarm":    				false,
-						"no-proxy": 				false,
-						"use-socks-proxy": 	false,
+						"shell":           "bash",
+						"swarm":           false,
+						"no-proxy":        false,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -199,10 +199,10 @@ func TestShellCfgSet(t *testing.T) {
 				CliArgs: []string{"quux"},
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"fish",
-						"swarm":    				false,
-						"no-proxy": 				false,
-						"use-socks-proxy": 	false,
+						"shell":           "fish",
+						"swarm":           false,
+						"no-proxy":        false,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -236,10 +236,10 @@ func TestShellCfgSet(t *testing.T) {
 				CliArgs: []string{"quux"},
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"powershell",
-						"swarm":    				false,
-						"no-proxy": 				false,
-						"use-socks-proxy": 	false,
+						"shell":           "powershell",
+						"swarm":           false,
+						"no-proxy":        false,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -309,10 +309,10 @@ func TestShellCfgSet(t *testing.T) {
 				CliArgs: []string{"quux"},
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"cmd",
-						"swarm":    				false,
-						"no-proxy": 				false,
-						"use-socks-proxy": 	false,
+						"shell":           "cmd",
+						"swarm":           false,
+						"no-proxy":        false,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -346,10 +346,10 @@ func TestShellCfgSet(t *testing.T) {
 				CliArgs: []string{"quux"},
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"bash",
-						"swarm":    				false,
-						"no-proxy": 				true,
-						"use-socks-proxy": 	false,
+						"shell":           "bash",
+						"swarm":           false,
+						"no-proxy":        true,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -391,10 +391,10 @@ func TestShellCfgSet(t *testing.T) {
 				CliArgs: []string{"quux"},
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"bash",
-						"swarm":    				false,
-						"no-proxy": 				true,
-						"use-socks-proxy": 	false,
+						"shell":           "bash",
+						"swarm":           false,
+						"no-proxy":        true,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -480,10 +480,10 @@ func TestShellCfgUnset(t *testing.T) {
 				CliArgs: nil,
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"bash",
-						"swarm":    				false,
-						"no-proxy": 				false,
-						"use-socks-proxy": 	false,
+						"shell":           "bash",
+						"swarm":           false,
+						"no-proxy":        false,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -507,10 +507,10 @@ func TestShellCfgUnset(t *testing.T) {
 				CliArgs: nil,
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"fish",
-						"swarm":    				false,
-						"no-proxy": 				true,
-						"use-socks-proxy": 	false,
+						"shell":           "fish",
+						"swarm":           false,
+						"no-proxy":        true,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -534,10 +534,10 @@ func TestShellCfgUnset(t *testing.T) {
 				CliArgs: nil,
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"powershell",
-						"swarm":    				false,
-						"no-proxy": 				true,
-						"use-socks-proxy": 	false,
+						"shell":           "powershell",
+						"swarm":           false,
+						"no-proxy":        true,
+						"use-socks-proxy": false,
 					},
 				},
 			},
@@ -561,10 +561,10 @@ func TestShellCfgUnset(t *testing.T) {
 				CliArgs: nil,
 				LocalFlags: &commandstest.FakeFlagger{
 					Data: map[string]interface{}{
-						"shell":    				"cmd",
-						"swarm":    				false,
-						"no-proxy": 				true,
-						"use-socks-proxy": 	false,
+						"shell":           "cmd",
+						"swarm":           false,
+						"no-proxy":        true,
+						"use-socks-proxy": false,
 					},
 				},
 			},
