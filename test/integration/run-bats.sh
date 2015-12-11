@@ -93,6 +93,7 @@ export MACHINE_BIN_NAME=docker-machine
 export BATS_LOG="$MACHINE_ROOT/bats.log"
 export B2D_LOCATION=~/.docker/machine/cache/boot2docker.iso
 export SHARED_NAME="bats-$DRIVER-test-shared-$(date +%s)"
+export MACHINE_BUGSNAG_API_TOKEN=no-report
 
 # This function gets used in the integration tests, so export it.
 export -f machine
