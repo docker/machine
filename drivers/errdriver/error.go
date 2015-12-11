@@ -32,7 +32,7 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) PreCreateCheck() error {
-	return nil
+	return NotLoadable{d.Name}
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -48,7 +48,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetMachineName() string {
-	return ""
+	return d.Name
 }
 
 func (d *Driver) GetIP() (string, error) {
