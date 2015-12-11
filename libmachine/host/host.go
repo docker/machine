@@ -135,13 +135,13 @@ func (h *Host) Upgrade() error {
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)
 	if err != nil {
-		crashreport.Send(err)
+		crashreport.Send(err, "provision.DetectProvisioner", h.Driver.DriverName(), "Upgrade")
 		return err
 	}
 
 	log.Info("Upgrading docker...")
 	if err := provisioner.Package("docker", pkgaction.Upgrade); err != nil {
-		crashreport.Send(err)
+		crashreport.Send(err, "provisioner.Package", h.Driver.DriverName(), "Upgrade")
 		return err
 	}
 
