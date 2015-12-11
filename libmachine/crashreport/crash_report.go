@@ -40,7 +40,7 @@ func Configure(key string) {
 }
 
 // Send through http the crash report to bugsnag need a call to Configure(apiKey) before
-func Send(error error) error {
+func Send(err error, context string, driverName string, command string) error {
 	if noReportFileExist() {
 		err := errors.New("Not sending report since the optout file exist.")
 		log.Debug(err)
@@ -79,7 +79,7 @@ func Send(error error) error {
 		buffer.WriteString(message + "\n")
 	}
 	metaData.Add("history", "trace", buffer.String())
-	return bugsnag.Notify(error, metaData)
+	return bugsnag.Notify(err, metaData, bugsnag.SeverityError, bugsnag.Context{String: context}, bugsnag.ErrorClass{Name: fmt.Sprintf("%s/%s", driverName, command)})
 }
 
 func noReportFileExist() bool {
