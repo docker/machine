@@ -19,38 +19,30 @@ import (
 	"github.com/docker/machine/version"
 )
 
-// We bundle a bugnsag key, but we disable its usage for now
-// this ease testing just set useDefaultKey to true
-// and yet we bundle the code without activating it by default.
-var useDefaultKey = false
-
-const defaultAPIKey = "a9697f9a010c33ee218a65e5b1f3b0c1"
+const (
+	defaultAPIKey  = "a9697f9a010c33ee218a65e5b1f3b0c1"
+	noreportAPIKey = "no-report"
+)
 
 var apiKey string
 
 // Configure the apikey for bugnag
 func Configure(key string) {
+	apiKey = defaultAPIKey
 	if key != "" {
 		apiKey = key
-		return
-	}
-	if useDefaultKey {
-		apiKey = defaultAPIKey
 	}
 }
 
 // Send through http the crash report to bugsnag need a call to Configure(apiKey) before
 func Send(err error, context string, driverName string, command string) error {
-	if noReportFileExist() {
-		err := errors.New("Not sending report since the optout file exist.")
-		log.Debug(err)
-		return err
+	if noReportFileExist() || apiKey == noreportAPIKey {
+		log.Debug("Opting out of crash reporting.")
+		return nil
 	}
 
 	if apiKey == "" {
-		err := errors.New("Not sending report since no api key has been set.")
-		log.Debug(err)
-		return err
+		return errors.New("Not sending report since no api key has been set.")
 	}
 
 	bugsnag.Configure(bugsnag.Configuration{
