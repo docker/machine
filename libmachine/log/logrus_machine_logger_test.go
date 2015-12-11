@@ -11,31 +11,31 @@ import (
 )
 
 func TestDefaultLevelIsInfo(t *testing.T) {
-	testLogger := NewMachineLogger()
-	assert.Equal(t, testLogger.Logger().(*logrus.Logger).Level, logrus.InfoLevel)
+	testLogger := NewLogrusMachineLogger().(*LogrusMachineLogger)
+	assert.Equal(t, testLogger.Logger().Level, logrus.InfoLevel)
 }
 
 func TestSetDebugToTrue(t *testing.T) {
-	testLogger := NewMachineLogger()
+	testLogger := NewLogrusMachineLogger().(*LogrusMachineLogger)
 	testLogger.SetDebug(true)
-	assert.Equal(t, testLogger.Logger().(*logrus.Logger).Level, logrus.DebugLevel)
+	assert.Equal(t, testLogger.Logger().Level, logrus.DebugLevel)
 }
 
 func TestSetDebugToFalse(t *testing.T) {
-	testLogger := NewMachineLogger()
+	testLogger := NewLogrusMachineLogger().(*LogrusMachineLogger)
 	testLogger.SetDebug(true)
 	testLogger.SetDebug(false)
-	assert.Equal(t, testLogger.Logger().(*logrus.Logger).Level, logrus.InfoLevel)
+	assert.Equal(t, testLogger.Logger().Level, logrus.InfoLevel)
 }
 
 func TestSetSilenceOutput(t *testing.T) {
-	testLogger := NewMachineLogger()
+	testLogger := NewLogrusMachineLogger().(*LogrusMachineLogger)
 	testLogger.RedirectStdOutToStdErr()
-	assert.Equal(t, testLogger.Logger().(*logrus.Logger).Level, logrus.ErrorLevel)
+	assert.Equal(t, testLogger.Logger().Level, logrus.ErrorLevel)
 }
 
-func TestDebug(t *testing.T) {
-	testLogger := NewMachineLogger()
+func TestDebugOutput(t *testing.T) {
+	testLogger := NewLogrusMachineLogger()
 	testLogger.SetDebug(true)
 
 	result := captureOutput(testLogger, func() { testLogger.Debug("debug") })
@@ -43,28 +43,40 @@ func TestDebug(t *testing.T) {
 	assert.Equal(t, result, "debug")
 }
 
-func TestInfo(t *testing.T) {
-	testLogger := NewMachineLogger()
+func TestInfoOutput(t *testing.T) {
+	testLogger := NewLogrusMachineLogger()
 
 	result := captureOutput(testLogger, func() { testLogger.Info("info") })
 
 	assert.Equal(t, result, "info")
 }
 
-func TestWarn(t *testing.T) {
-	testLogger := NewMachineLogger()
+func TestWarnOutput(t *testing.T) {
+	testLogger := NewLogrusMachineLogger()
 
 	result := captureOutput(testLogger, func() { testLogger.Warn("warn") })
 
 	assert.Equal(t, result, "warn")
 }
 
-func TestError(t *testing.T) {
-	testLogger := NewMachineLogger()
+func TestErrorOutput(t *testing.T) {
+	testLogger := NewLogrusMachineLogger()
 
 	result := captureOutput(testLogger, func() { testLogger.Error("error") })
 
 	assert.Equal(t, result, "error")
+}
+
+func TestEntriesAreCollected(t *testing.T) {
+	testLogger := NewLogrusMachineLogger()
+	testLogger.RedirectStdOutToStdErr()
+	testLogger.Debug("debug")
+	testLogger.Info("info")
+	testLogger.Error("error")
+	assert.Equal(t, 3, len(testLogger.History()))
+	assert.Equal(t, "debug", testLogger.History()[0])
+	assert.Equal(t, "info", testLogger.History()[1])
+	assert.Equal(t, "error", testLogger.History()[2])
 }
 
 func captureOutput(testLogger MachineLogger, lambda func()) string {

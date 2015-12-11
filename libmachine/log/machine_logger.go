@@ -24,5 +24,5 @@ type MachineLogger interface {
 	Warn(args ...interface{})
 	Warnf(fmtString string, args ...interface{})
 
-	Logger() interface{}
+	History() []string
 }

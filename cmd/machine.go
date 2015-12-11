@@ -88,6 +88,7 @@ func main() {
 		return
 	}
 
+	log.Logger = log.NewLogrusMachineLogger()
 	setDebugOutputLevel()
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
@@ -148,6 +149,12 @@ func main() {
 			EnvVar: "MACHINE_NATIVE_SSH",
 			Name:   "native-ssh",
 			Usage:  "Use the native (Go-based) SSH implementation.",
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_BUGSNAG_API_TOKEN",
+			Name:   "bugsnag-api-token",
+			Usage:  "BugSnag API token for crash reporting",
+			Value:  "",
 		},
 	}
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
@@ -134,11 +135,13 @@ func (h *Host) Upgrade() error {
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)
 	if err != nil {
+		crashreport.Send(err)
 		return err
 	}
 
 	log.Info("Upgrading docker...")
 	if err := provisioner.Package("docker", pkgaction.Upgrade); err != nil {
+		crashreport.Send(err)
 		return err
 	}
 
