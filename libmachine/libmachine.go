@@ -98,7 +98,7 @@ func (api *Client) Create(h *host.Host) error {
 	log.Info("Creating machine...")
 
 	if err := api.performCreate(h); err != nil {
-		crashreport.Send(err)
+		crashreport.Send(err, "api.performCreate", h.DriverName, "Create")
 		return err
 	}
 
