@@ -223,8 +223,8 @@ var Commands = []cli.Command{
 			},
 			cli.IntFlag{
 				Name:  "timeout, t",
-				Usage: fmt.Sprintf("Timeout in seconds, default to %ds", DefaultTimeoutDuration),
-				Value: DefaultTimeoutDuration,
+				Usage: fmt.Sprintf("Timeout in seconds, default to %s", stateTimeoutDuration),
+				Value: lsDefaultTimeout,
 			},
 		},
 		Name:   "ls",
