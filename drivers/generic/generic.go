@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -25,10 +24,6 @@ const (
 	defaultTimeout = 1 * time.Second
 )
 
-var (
-	defaultSourceSSHKey = filepath.Join(mcnutils.GetHomeDir(), ".ssh", "id_rsa")
-)
-
 // GetCreateFlags registers the flags this driver adds to
 // "docker hosts create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -46,8 +41,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   "generic-ssh-key",
-			Usage:  "SSH private key path",
-			Value:  defaultSourceSSHKey,
+			Usage:  "SSH private key path (if not provided, identities in ssh-agent will be used)",
+			Value:  "",
 			EnvVar: "GENERIC_SSH_KEY",
 		},
 		mcnflag.IntFlag{
@@ -66,7 +61,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
-		SSHKey: defaultSourceSSHKey,
 	}
 }
 
@@ -83,6 +77,17 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+func (d *Driver) GetSSHKeyPath() string {
+	if d.SSHKey == "" {
+		return ""
+	}
+
+	if d.SSHKeyPath == "" {
+		d.SSHKeyPath = d.ResolveStorePath("id_rsa")
+	}
+	return d.SSHKeyPath
+}
+
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IPAddress = flags.String("generic-ip-address")
 	d.SSHUser = flags.String("generic-ssh-user")
@@ -93,31 +98,33 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return errors.New("generic driver requires the --generic-ip-address option")
 	}
 
-	if d.SSHKey == "" {
-		return errors.New("generic driver requires the --generic-ssh-key option")
-	}
-
 	return nil
 }
 
 func (d *Driver) PreCreateCheck() error {
-	if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
-		return fmt.Errorf("Ssh key does not exist: %q", d.SSHKey)
+	if d.SSHKey != "" {
+		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
+			return fmt.Errorf("Ssh key does not exist: %q", d.SSHKey)
+		}
 	}
 
 	return nil
 }
 
 func (d *Driver) Create() error {
-	log.Info("Importing SSH key...")
+	if d.SSHKey == "" {
+		log.Info("No SSH key specified. Connecting to this machine now and in the" +
+			" future will require the ssh agent to contain the appropriate key.")
+	} else {
+		log.Info("Importing SSH key...")
+		// TODO: validate the key is a valid key
+		if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
+			return fmt.Errorf("unable to copy ssh key: %s", err)
+		}
 
-	// TODO: validate the key is a valid key
-	if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
-		return fmt.Errorf("unable to copy ssh key: %s", err)
-	}
-
-	if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
-		return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
+			return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+		}
 	}
 
 	log.Debugf("IP: %s", d.IPAddress)

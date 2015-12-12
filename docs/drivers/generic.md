@@ -33,9 +33,20 @@ Options:
 
 Environment variables and default values:
 
-| CLI option                 | Environment variable | Default             |
-| -------------------------- | -------------------- | ------------------- |
-| **`--generic-ip-address`** | `GENERIC_IP_ADDRESS` | -                   |
-| `--generic-ssh-key`        | `GENERIC_SSH_KEY`    | `$HOME/.ssh/id_rsa` |
-| `--generic-ssh-user`       | `GENERIC_SSH_USER`   | `root`              |
-| `--generic-ssh-port`       | `GENERIC_SSH_PORT`   | `22`                |
+| CLI option                 | Environment variable | Default                   |
+|----------------------------|----------------------|---------------------------|
+| **`--generic-ip-address`** | `GENERIC_IP_ADDRESS` | -                         |
+| `--generic-ssh-key`        | `GENERIC_SSH_KEY`    | _(defers to `ssh-agent`)_ |
+| `--generic-ssh-user`       | `GENERIC_SSH_USER`   | `root`                    |
+| `--generic-ssh-port`       | `GENERIC_SSH_PORT`   | `22`                      |
+
+##### Interaction with SSH Agents
+
+When an SSH identity is not provided (with the `--generic-ssh-key` flag),
+the SSH agent (if running) will be consulted. This makes it possible to
+easily use password-protected SSH keys.
+
+Note that this usage is _only_ supported if you're using the external SSH client,
+which is the default behaviour when the `ssh` binary is available. If you're
+using the native client (with `--native-ssh`), using the SSH agent is not yet
+supported.
