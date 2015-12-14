@@ -38,6 +38,12 @@ use_shared_machine
   [ "$status" -eq 0  ]
 }
 
+@test "$DRIVER: run busybox container through a Docker in Docker client" {
+  run docker $(machine config $NAME) run $(machine config --dind $NAME) busybox echo hello world
+  echo ${output}
+  [ "$status" -eq 0  ]
+}
+
 @test "$DRIVER: url" {
   run machine url $NAME
   echo ${output}
