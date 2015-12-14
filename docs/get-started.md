@@ -15,41 +15,48 @@ Let's take a look at using `docker-machine` for creating, using, and managing a
 Docker host inside of [VirtualBox](https://www.virtualbox.org/).
 
 First, ensure that [the latest
-VirtualBox](https://www.virtualbox.org/wiki/Downloads) is correctly installed on
-your system.
+VirtualBox](https://www.virtualbox.org/wiki/Downloads) is correctly installed
+on your system.
 
-If you run the `docker-machine ls` command to show all available machines, you will see
-that none have been created so far.
+If you run the `docker-machine ls` command to show all available machines, you
+will see that none have been created so far.
 
     $ docker-machine ls
-    NAME   ACTIVE   DRIVER   STATE   URL
+    NAME   ACTIVE   DRIVER   STATE   URL   SWARM   DOCKER   ERRORS
 
 To create one, we run the `docker-machine create` command, passing the string
 `virtualbox` to the `--driver` flag. The final argument we pass is the name of
-the machine - in this case, we will name our machine "dev".
+the machine - in this case, we will name our machine "default".
 
 This command will download a lightweight Linux distribution
 ([boot2docker](https://github.com/boot2docker/boot2docker)) with the Docker
-daemon installed, and will create and start a VirtualBox VM with Docker running.
+daemon installed, and will create and start a VirtualBox VM with Docker
+running.
 
-    $ docker-machine create --driver virtualbox dev
-    Creating CA: /home/username/.docker/machine/certs/ca.pem
-    Creating client certificate: /home/username/.docker/machine/certs/cert.pem
-    Image cache does not exist, creating it at /home/username/.docker/machine/cache...
-    No default boot2docker iso found locally, downloading the latest release...
-    Downloading https://github.com/boot2docker/boot2docker/releases/download/v1.6.2/boot2docker.iso to /home/username/.docker/machine/cache/boot2docker.iso...
-    Creating VirtualBox VM...
-    Creating SSH key...
-    Starting VirtualBox VM...
-    Starting VM...
-    To see how to connect Docker to this machine, run: docker-machine env dev
+    $ docker-machine create --driver virtualbox default
+    Running pre-create checks...
+    Creating machine...
+    (default) Creating VirtualBox VM...
+    (default) Creating SSH key...
+    (default) Starting VM...
+    Waiting for machine to be running, this may take a few minutes...
+    Machine is running, waiting for SSH to be available...
+    Detecting operating system of created instance...
+    Detecting the provisioner...
+    Provisioning with boot2docker...
+    Copying certs to the local machine directory...
+    Copying certs to the remote machine...
+    Setting Docker configuration on the remote daemon...
+    Checking connection to Docker...
+    Docker is up and running!
+    To see how to connect Docker to this machine, run: docker-machine env default
 
 You can see the machine you have created by running the `docker-machine ls`
 command again:
 
     $ docker-machine ls
-    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
-    dev    -        virtualbox   Running   tcp://192.168.99.100:2376
+    NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+    default   *        virtualbox   Running   tcp://192.168.99.187:2376           v1.9.1
 
 Next, as noted in the output of the `docker-machine create` command, we have to
 tell Docker to talk to that machine. You can do this with the `docker-machine
@@ -63,9 +70,9 @@ env` command. For example,
 > see [the `env` command's documentation](reference/env.md)
 > to learn how to set the environment variables for your shell.
 
-This will set environment variables that the Docker client will read which specify
-the TLS settings. Note that you will need to do that every time you open a new tab or
-restart your machine.
+This will set environment variables that the Docker client will read which
+specify the TLS settings. Note that you will need to do that every time you
+open a new tab or restart your machine.
 
 To see what will be set, run `docker-machine env dev`.
 
@@ -94,8 +101,8 @@ get using the `docker-machine ip` command:
     $ docker-machine ip dev
     192.168.99.100
 
-For instance, you can try running a webserver ([nginx](https://www.nginx.com/) in a
-container with the following command:
+For instance, you can try running a webserver ([nginx](https://www.nginx.com/)
+in a container with the following command:
 
     $ docker run -d -p 8000:80 nginx
 
@@ -139,23 +146,3 @@ Make sure to specify the machine name as an argument:
 
     $ docker-machine stop dev
     $ docker-machine start dev
-
-# Crash Reporting
-
-Provisioning a host is a complex matter that can fail for a lot of reasons.
-Your workstation may have a wide variety of shell, network configuration, VPN,
-proxy or firewall issues.  There are also reasons from the other end of the
-chain: your cloud provider or the network in between.
-
-To help `docker-machine` be as stable as possible, we added a monitoring of
-crashes whenever you try to `create` or `upgrade` a host. This will send, over
-HTTPS, to Bugsnag some information about your `docker-machine` version, build,
-OS, ARCH, the path to your current shell and, the history of the last command as
-you could see it with a `--debug` option.  This data is sent to help us pinpoint
-recurring issues with `docker-machine` and will only be transmitted in the case
-of a crash of `docker-machine`.
-
-If you wish to opt out of error reporting, you can create a `no-error-report`
-file in your `$HOME/.docker/machine` directory, and Docker Machine will disable
-this behavior.  Leaving the file empty is fine -- Docker Machine just checks for
-its presence.
