@@ -1,11 +1,32 @@
 package log
 
-import "io"
+import (
+	"io"
+	"regexp"
+)
 
-var Logger MachineLogger
+const redactedText = "<REDACTED>"
+
+var (
+	Logger MachineLogger
+
+	// (?s) enables '.' to match '\n' -- see https://golang.org/pkg/regexp/syntax/
+	certRegex = regexp.MustCompile("(?s)-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----")
+	keyRegex  = regexp.MustCompile("(?s)-----BEGIN RSA PRIVATE KEY-----.*-----END RSA PRIVATE KEY-----")
+)
 
 func init() {
 	Logger = NewFmtMachineLogger()
+}
+
+func stripSecrets(original []string) []string {
+	stripped := []string{}
+	for _, line := range original {
+		line = certRegex.ReplaceAllString(line, redactedText)
+		line = keyRegex.ReplaceAllString(line, redactedText)
+		stripped = append(stripped, line)
+	}
+	return stripped
 }
 
 // RedirectStdOutToStdErr prevents any log from corrupting the output
@@ -62,5 +83,5 @@ func SetOutput(out io.Writer) {
 }
 
 func History() []string {
-	return Logger.History()
+	return stripSecrets(Logger.History())
 }
