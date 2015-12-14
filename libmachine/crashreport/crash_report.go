@@ -16,6 +16,7 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/version"
 )
 
@@ -65,6 +66,7 @@ func Send(err error, context string, driverName string, command string) error {
 
 	detectRunningShell(&metaData)
 	detectUname(&metaData)
+	detectOSVersion(&metaData)
 
 	var buffer bytes.Buffer
 	for _, message := range log.History() {
@@ -100,4 +102,8 @@ func detectUname(metaData *bugsnag.MetaData) {
 		return
 	}
 	metaData.Add("device", "uname", string(output))
+}
+
+func detectOSVersion(metaData *bugsnag.MetaData) {
+	metaData.Add("device", "os version", mcnutils.LocalOSVersion())
 }
