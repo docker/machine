@@ -116,7 +116,7 @@ use_shared_machine
 }
 
 @test "$DRIVER: machine should show running after start" {
-  run machine ls
+  run machine ls --timeout 20
   echo ${output}
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
@@ -142,7 +142,7 @@ use_shared_machine
 }
 
 @test "$DRIVER: machine should show running after restart" {
-  run machine ls
+  run machine ls --timeout 20
   echo ${output}
   [ "$status" -eq 0  ]
   [[ ${lines[1]} == *"Running"*  ]]
