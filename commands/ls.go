@@ -80,13 +80,15 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM\tDOCKER\tERRORS")
 
 	for _, host := range hostList {
-		swarmOptions := host.HostOptions.SwarmOptions
-		if swarmOptions.Master {
-			swarmMasters[swarmOptions.Discovery] = host.Name
-		}
+		if host.HostOptions != nil {
+			swarmOptions := host.HostOptions.SwarmOptions
+			if swarmOptions.Master {
+				swarmMasters[swarmOptions.Discovery] = host.Name
+			}
 
-		if swarmOptions.Discovery != "" {
-			swarmInfo[host.Name] = swarmOptions.Discovery
+			if swarmOptions.Discovery != "" {
+				swarmInfo[host.Name] = swarmOptions.Discovery
+			}
 		}
 	}
 
