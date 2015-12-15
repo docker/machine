@@ -151,6 +151,10 @@ var Commands = []cli.Command{
 				Name:  "swarm",
 				Usage: "Display the Swarm config instead of the Docker daemon",
 			},
+			cli.BoolFlag{
+				Name:  "dind",
+				Usage: "Generate CLI arguments to forward the config to a Docker in Docker client",
+			},
 		},
 	},
 	{
