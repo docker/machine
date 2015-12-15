@@ -297,7 +297,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	}
 
 	log.Infof("Uploading SSH Key")
-	metaDataValue := c.userName + ":" + string(sshKey) + "\n"
+	metaDataValue := fmt.Sprintf("%s:%s %s\n", c.userName, strings.TrimSpace(string(sshKey)), c.userName)
 	op, err = c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
 		Fingerprint: instance.Metadata.Fingerprint,
 		Items: []*raw.MetadataItems{
