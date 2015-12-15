@@ -28,11 +28,9 @@ Machine core maintainers who might find themselves performing a release.
     to upload the released binaries.  At the time of writing the `release` target in
     the `Makefile` does not work correctly for this step but it should eventually be
     split into a separate target and fixed.
-5.  **Generate Checksums** -- [This
-    script](https://gist.github.com/nathanleclaire/c506ad3736d33bd42c2f) will spit
-    out the checksums for the `.zip` files, which you should copy and paste into the
-    end of the release notes for anyone who wants to verify the checksums of the
-    downloaded artifacts.
+5.  **Generate Checksums** -- `make release-checksum` will spit out the checksums
+    for the binaries, which you should copy and paste into the end of the release
+    notes for anyone who wants to verify the checksums of the downloaded artifacts.
 6.  **Add Installation Instructions** -- At the top of the release notes, copy and
     paste the installation instructions from the previous release, taking care to
     update the referenced download URLs to the new version.
