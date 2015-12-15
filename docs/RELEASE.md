@@ -22,20 +22,15 @@ Machine core maintainers who might find themselves performing a release.
     long time so you may want to use a script like [this one for cross-compiling
     them on DigitalOcean in
     parallel](https://gist.github.com/nathanleclaire/7f62fc5aa3df19a50f4e).
-3.  **Archive Binaries** -- The binaries are distributed in `.zip` files so you
-    need to run the `make release-pack` target to generate the distributed
-    artifacts.
-4.  **Upload Archives** -- Use a script or sequence of commands such as [this
+4.  **Upload Binaries** -- Use a script or sequence of commands such as [this
     one](https://gist.github.com/nathanleclaire/a9bc1f8d60070aeda361) to create a
     git tag for the released version, a GitHub release for the released version, and
     to upload the released binaries.  At the time of writing the `release` target in
     the `Makefile` does not work correctly for this step but it should eventually be
     split into a separate target and fixed.
-5.  **Generate Checksums** -- [This
-    script](https://gist.github.com/nathanleclaire/c506ad3736d33bd42c2f) will spit
-    out the checksums for the `.zip` files, which you should copy and paste into the
-    end of the release notes for anyone who wants to verify the checksums of the
-    downloaded artifacts.
+5.  **Generate Checksums** -- `make release-checksum` will spit out the checksums
+    for the binaries, which you should copy and paste into the end of the release
+    notes for anyone who wants to verify the checksums of the downloaded artifacts.
 6.  **Add Installation Instructions** -- At the top of the release notes, copy and
     paste the installation instructions from the previous release, taking care to
     update the referenced download URLs to the new version.

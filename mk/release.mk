@@ -1,14 +1,11 @@
 release-checksum:
-	$(foreach MACHINE_FILE, $(wildcard $(PREFIX)/bin/*.zip), \
-		$(shell openssl dgst -sha256 < "$(MACHINE_FILE)" > "$(MACHINE_FILE).sha256" && \
-						openssl dgst -md5 < "$(MACHINE_FILE)" > "$(MACHINE_FILE).md5" \
-		))
+	$(foreach MACHINE_FILE, $(wildcard $(PREFIX)/bin/*), \
+		$(shell printf "%-50s %-50s\n" "sha256 $(shell basename $(MACHINE_FILE))" "$(shell openssl dgst -sha256 < $(MACHINE_FILE))" > /dev/stderr) \
+		$(shell printf "%-50s %-50s\n" "md5 $(shell basename $(MACHINE_FILE))" "$(shell openssl dgst -md5 < $(MACHINE_FILE))" > /dev/stderr) \
+		)
 	@:
 
-release-pack:
-	find ./bin -type d -mindepth 1 -exec zip -r -j {}.zip {} \;
-
-release: clean dco fmt test test-long build-x release-pack release-checksum
+release: clean validate build-x release-checksum
 	# Github infos
 	GH_USER ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\1/')
 	GH_REPO ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\2/')
@@ -41,6 +38,3 @@ release: clean dco fmt test test-long build-x release-pack release-checksum
 					--file $(MACHINE_FILE) \
 			) \
 		)
-
-%:
-	@:
