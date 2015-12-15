@@ -5,7 +5,7 @@ release-checksum:
 		)
 	@:
 
-release: clean dco fmt test test-long build-x release-checksum
+release: clean validate build-x release-checksum
 	# Github infos
 	GH_USER ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\1/')
 	GH_REPO ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\2/')
