@@ -11,21 +11,21 @@ weight=2
 
 ## Using Docker Machine with a cloud provider
 
-Creating a local virtual machine running Docker is useful and fun, but it is not
-the only thing Docker Machine is capable of. Docker Machine supports several
+Creating a local virtual machine running Docker is useful and fun, but it isn't the only thing Docker Machine can do. Docker Machine supports several
 “drivers” which let you use the same interface to create hosts on many different
-cloud or local virtualization platforms. This is accomplished by using the
-`docker-machine create` command with the `--driver` flag. Here we will be
-demonstrating the [Digital Ocean](https://digitalocean.com) driver (called
-`digitalocean`), but there are drivers included for several providers including
+cloud or local virtualization platforms.
+
+To provision hosts, you use the
+`docker-machine create` command with the `--driver` flag. Here is example of using the [Digital Ocean](https://digitalocean.com) driver (`digitalocean`) to provision a host on that platform, but there are drivers included for several providers including
 Amazon Web Services, Google Compute Engine, and Microsoft Azure.
 
-Usually it is required that you pass account verification credentials for these
-providers as flags to `docker-machine create`. These flags are unique for each
+Typically, you provide account verification and security credentials for these providers as flags to `docker-machine create`. These flags are unique for each
 driver.  For instance, to pass a Digital Ocean access token you use the
 `--digitalocean-access-token` flag.
 
-Let's take a look at how to do this.
+Let's take a look at how to do this on Digital Ocean.
+
+## Digital Ocean example
 
 To generate your access token:
 
@@ -70,8 +70,7 @@ created, we can use the subshell method again:
 
     $ eval "$(docker-machine env staging)"
 
-From this point, the remote host behaves much like the local host we created in
-the last section. If we look at `docker-machine ls`, we'll see it is now the
+From this point, the remote host behaves much like the local host we created in the last section. If we look at `docker-machine ls`, we'll see it is now the
 "active" host, indicated by an asterisk (`*`) in that column:
 
     $ docker-machine ls
@@ -90,11 +89,23 @@ To remove a host and all of its containers and images, use `docker-machine rm`:
     $ docker-machine ls
     NAME      ACTIVE   DRIVER       STATE     URL
 
+### Docker supported drivers
+
+Docker Machine drivers are available for several other cloud providers. For a full list, see [Supported Drivers](https://docs.docker.com/machine/drivers/).
+
+### Docker Machine command and driver reference
+
+  * `docker-machine` [create](https://docs.docker.com/machine/reference/create/) command
+  * [Driver options and operating system defaults](https://docs.docker.com/machine/drivers/os-base/)
+
+### 3rd-party driver plugins
+  Several Docker Machine driver plugins for use with other cloud platforms are available from 3rd party contributors. These are use-at-your-own-risk plugins, not maintained by or formally associated with Docker.
+
+  See [Available driver plugins](https://github.com/docker/machine/blob/master/docs/AVAILABLE_DRIVER_PLUGINS.md) in the docker/machine repo on GitHub.
+
 ## Adding a host without a driver
 
-You can add a host to Docker which only has a URL and no driver. Therefore it
-can be used an alias for an existing host so you don’t have to type out the URL
-every time you run a Docker command.
+You can add a host to Docker which only has a URL and no driver. Therefore it can be used an alias for an existing host so you don’t have to type out the URL every time you run a Docker command.
 
     $ docker-machine create --url=tcp://50.134.234.20:2376 custombox
     $ docker-machine ls
