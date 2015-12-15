@@ -22,10 +22,7 @@ Machine core maintainers who might find themselves performing a release.
     long time so you may want to use a script like [this one for cross-compiling
     them on DigitalOcean in
     parallel](https://gist.github.com/nathanleclaire/7f62fc5aa3df19a50f4e).
-3.  **Archive Binaries** -- The binaries are distributed in `.zip` files so you
-    need to run the `make release-pack` target to generate the distributed
-    artifacts.
-4.  **Upload Archives** -- Use a script or sequence of commands such as [this
+4.  **Upload Binaries** -- Use a script or sequence of commands such as [this
     one](https://gist.github.com/nathanleclaire/a9bc1f8d60070aeda361) to create a
     git tag for the released version, a GitHub release for the released version, and
     to upload the released binaries.  At the time of writing the `release` target in

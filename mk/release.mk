@@ -5,10 +5,7 @@ release-checksum:
 		))
 	@:
 
-release-pack:
-	find ./bin -type d -mindepth 1 -exec zip -r -j {}.zip {} \;
-
-release: clean dco fmt test test-long build-x release-pack release-checksum
+release: clean dco fmt test test-long build-x release-checksum
 	# Github infos
 	GH_USER ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\1/')
 	GH_REPO ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\2/')
@@ -41,6 +38,3 @@ release: clean dco fmt test test-long build-x release-pack release-checksum
 					--file $(MACHINE_FILE) \
 			) \
 		)
-
-%:
-	@:
