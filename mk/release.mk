@@ -1,8 +1,8 @@
 release-checksum:
-	$(foreach MACHINE_FILE, $(wildcard $(PREFIX)/bin/*.zip), \
-		$(shell openssl dgst -sha256 < "$(MACHINE_FILE)" > "$(MACHINE_FILE).sha256" && \
-						openssl dgst -md5 < "$(MACHINE_FILE)" > "$(MACHINE_FILE).md5" \
-		))
+	$(foreach MACHINE_FILE, $(wildcard $(PREFIX)/bin/*), \
+		$(shell printf "%-50s %-50s\n" "sha256 $(shell basename $(MACHINE_FILE))" "$(shell openssl dgst -sha256 < $(MACHINE_FILE))" > /dev/stderr) \
+		$(shell printf "%-50s %-50s\n" "md5 $(shell basename $(MACHINE_FILE))" "$(shell openssl dgst -md5 < $(MACHINE_FILE))" > /dev/stderr) \
+		)
 	@:
 
 release: clean dco fmt test test-long build-x release-checksum
