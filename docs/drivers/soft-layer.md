@@ -26,7 +26,7 @@ Options:
 -   `--softlayer-hostname`: Hostname for the machine.
 -   `--softlayer-domain`: **required** Domain name for the machine.
 -   `--softlayer-api-endpoint`: Change SoftLayer API endpoint.
--   `--softlayer-hourly-billing`: Specifies that hourly billing should be used (default), otherwise monthly billing is used.
+-   `--softlayer-hourly-billing`: Specifies that hourly billing should be used, otherwise monthly billing is used.
 -   `--softlayer-local-disk`: Use local machine disk instead of SoftLayer SAN.
 -   `--softlayer-private-net-only`: Disable public networking.
 -   `--softlayer-image`: OS Image to use.
