@@ -12,7 +12,7 @@ import (
 func captureOutput(testLogger MachineLogger, lambda func()) string {
 	pipeReader, pipeWriter := io.Pipe()
 	scanner := bufio.NewScanner(pipeReader)
-	testLogger.SetOut(pipeWriter)
+	testLogger.SetOutWriter(pipeWriter)
 	go lambda()
 	scanner.Scan()
 	return scanner.Text()
@@ -21,7 +21,7 @@ func captureOutput(testLogger MachineLogger, lambda func()) string {
 func captureError(testLogger MachineLogger, lambda func()) string {
 	pipeReader, pipeWriter := io.Pipe()
 	scanner := bufio.NewScanner(pipeReader)
-	testLogger.SetErr(pipeWriter)
+	testLogger.SetErrWriter(pipeWriter)
 	go lambda()
 	scanner.Scan()
 	return scanner.Text()
@@ -42,14 +42,14 @@ func TestSetDebugToFalse(t *testing.T) {
 
 func TestSetOut(t *testing.T) {
 	testLogger := NewFmtMachineLogger().(*FmtMachineLogger)
-	testLogger.SetOut(ioutil.Discard)
-	assert.Equal(t, ioutil.Discard, testLogger.out)
+	testLogger.SetOutWriter(ioutil.Discard)
+	assert.Equal(t, ioutil.Discard, testLogger.outWriter)
 }
 
 func TestSetErr(t *testing.T) {
 	testLogger := NewFmtMachineLogger().(*FmtMachineLogger)
-	testLogger.SetErr(ioutil.Discard)
-	assert.Equal(t, ioutil.Discard, testLogger.err)
+	testLogger.SetErrWriter(ioutil.Discard)
+	assert.Equal(t, ioutil.Discard, testLogger.errWriter)
 }
 
 func TestDebug(t *testing.T) {

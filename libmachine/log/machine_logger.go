@@ -5,8 +5,8 @@ import "io"
 type MachineLogger interface {
 	SetDebug(debug bool)
 
-	SetOut(io.Writer)
-	SetErr(io.Writer)
+	SetOutWriter(io.Writer)
+	SetErrWriter(io.Writer)
 
 	Debug(args ...interface{})
 	Debugf(fmtString string, args ...interface{})
