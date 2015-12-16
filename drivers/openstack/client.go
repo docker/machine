@@ -38,6 +38,7 @@ type Client interface {
 	DeleteInstance(d *Driver) error
 	WaitForInstanceStatus(d *Driver, status string) error
 	GetInstanceIPAddresses(d *Driver) ([]IPAddress, error)
+	GetPublicKey(keyPairName string) ([]byte, error)
 	CreateKeyPair(d *Driver, name string, publicKey string) error
 	DeleteKeyPair(d *Driver, name string) error
 	GetNetworkID(d *Driver) (string, error)
@@ -298,6 +299,14 @@ func (c *GenericClient) GetTenantID(d *Driver) (string, error) {
 	})
 
 	return tenantId, err
+}
+
+func (c *GenericClient) GetPublicKey(keyPairName string) ([]byte, error) {
+	kp, err := keypairs.Get(c.Compute, keyPairName).Extract()
+	if err != nil {
+		return nil, err
+	}
+	return []byte(kp.PublicKey), nil
 }
 
 func (c *GenericClient) CreateKeyPair(d *Driver, name string, publicKey string) error {
