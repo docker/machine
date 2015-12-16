@@ -3,11 +3,10 @@ package log
 import "io"
 
 type MachineLogger interface {
-	RedirectStdOutToStdErr()
-
 	SetDebug(debug bool)
 
-	SetOutput(io.Writer)
+	SetOut(io.Writer)
+	SetErr(io.Writer)
 
 	Debug(args ...interface{})
 	Debugf(fmtString string, args ...interface{})

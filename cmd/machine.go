@@ -88,7 +88,6 @@ func main() {
 		return
 	}
 
-	log.Logger = log.NewLogrusMachineLogger()
 	setDebugOutputLevel()
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
