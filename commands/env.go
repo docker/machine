@@ -50,7 +50,7 @@ func cmdEnv(c CommandLine, api libmachine.API) error {
 
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
-	log.SetOut(os.Stderr)
+	log.SetOutWriter(os.Stderr)
 
 	if c.Bool("unset") {
 		shellCfg, err = shellCfgUnset(c, api)
