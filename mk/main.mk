@@ -40,7 +40,6 @@ endif
 include mk/build.mk
 include mk/coverage.mk
 include mk/dev.mk
-include mk/release.mk
 include mk/test.mk
 include mk/validate.mk
 
