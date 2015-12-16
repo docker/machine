@@ -78,16 +78,17 @@ func TestLocalBinaryPluginClose(t *testing.T) {
 }
 
 func TestExecServer(t *testing.T) {
-	logReader, logWriter := io.Pipe()
+	logOutReader, logOutWriter := io.Pipe()
+	logErrReader, logErrWriter := io.Pipe()
 
 	log.SetDebug(true)
-	log.SetOut(logWriter)
-	log.SetErr(logWriter)
+	log.SetOutWriter(logOutWriter)
+	log.SetErrWriter(logErrWriter)
 
 	defer func() {
 		log.SetDebug(false)
-		log.SetOut(os.Stdout)
-		log.SetErr(os.Stderr)
+		log.SetOutWriter(os.Stdout)
+		log.SetErrWriter(os.Stderr)
 	}()
 
 	stdoutReader, stdoutWriter := io.Pipe()
@@ -113,7 +114,8 @@ func TestExecServer(t *testing.T) {
 		finalErr <- lbp.execServer()
 	}()
 
-	logScanner := bufio.NewScanner(logReader)
+	logOutScanner := bufio.NewScanner(logOutReader)
+	logErrScanner := bufio.NewScanner(logErrReader)
 
 	// Write the ip address
 	expectedAddr := "127.0.0.1:12345"
@@ -132,8 +134,8 @@ func TestExecServer(t *testing.T) {
 	}
 
 	expectedOut := fmt.Sprintf(pluginOut, machineName, expectedPluginOut)
-	if logScanner.Scan(); logScanner.Text() != expectedOut {
-		t.Fatalf("Output written to log was not what we expected\nexpected: %s\nactual:   %s", expectedOut, logScanner.Text())
+	if logOutScanner.Scan(); logOutScanner.Text() != expectedOut {
+		t.Fatalf("Output written to log was not what we expected\nexpected: %s\nactual:   %s", expectedOut, logOutScanner.Text())
 	}
 
 	// Write a log in stderr
@@ -143,8 +145,8 @@ func TestExecServer(t *testing.T) {
 	}
 
 	expectedErr := fmt.Sprintf(pluginErr, machineName, expectedPluginErr)
-	if logScanner.Scan(); logScanner.Text() != expectedErr {
-		t.Fatalf("Error written to log was not what we expected\nexpected: %s\nactual:   %s", expectedErr, logScanner.Text())
+	if logErrScanner.Scan(); logErrScanner.Text() != expectedErr {
+		t.Fatalf("Error written to log was not what we expected\nexpected: %s\nactual:   %s", expectedErr, logErrScanner.Text())
 	}
 
 	lbp.Close()
