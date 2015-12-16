@@ -78,3 +78,13 @@ Environment variables and default values:
 | `--virtualbox-hostonly-nicpromisc`   | `VIRTUALBOX_HOSTONLY_NIC_PROMISC`  | `deny`                   |
 | `--virtualbox-no-share`              | `VIRTUALBOX_NO_SHARE`              | `false`                  |
 | `--virtualbox-dns-proxy`             | `VIRTUALBOX_DNS_PROXY`             | `false`                  |
+
+## Known Issues
+
+Vboxfs suffers from a [longstanding bug](https://www.virtualbox.org/ticket/9069)
+causing [sendfile(2)](http://linux.die.net/man/2/sendfile) to serve cached file
+contents.
+
+This will often cause problems when using a web server such as nginx to serve
+static files from a shared volume. For development environments, a good
+workaround is to disable sendfile in your server configuration.
