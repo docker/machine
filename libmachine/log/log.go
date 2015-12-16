@@ -69,12 +69,12 @@ func SetDebug(debug bool) {
 	logger.SetDebug(debug)
 }
 
-func SetOut(out io.Writer) {
-	logger.SetOut(out)
+func SetOutWriter(out io.Writer) {
+	logger.SetOutWriter(out)
 }
 
-func SetErr(err io.Writer) {
-	logger.SetErr(err)
+func SetErrWriter(err io.Writer) {
+	logger.SetErrWriter(err)
 }
 
 func History() []string {
