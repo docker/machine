@@ -4,7 +4,7 @@ import "fmt"
 
 var (
 	// Version should be updated by hand at each release
-	Version = "0.6.0-dev"
+	Version = "0.5.4"
 
 	// GitCommit will be overwritten automatically by the build system
 	GitCommit = "HEAD"
