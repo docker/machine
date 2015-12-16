@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/check"
@@ -11,7 +12,7 @@ import (
 func cmdConfig(c CommandLine, api libmachine.API) error {
 	// Ensure that log messages always go to stderr when this command is
 	// being run (it is intended to be run in a subshell)
-	log.RedirectStdOutToStdErr()
+	log.SetOut(os.Stderr)
 
 	if len(c.Args()) != 1 {
 		return ErrExpectedOneMachine
