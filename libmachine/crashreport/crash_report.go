@@ -13,6 +13,8 @@ import (
 
 	"errors"
 
+	"io/ioutil"
+
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
@@ -35,8 +37,7 @@ func Configure(key string) {
 	}
 }
 
-// Send through http the crash report to bugsnag need a call to Configure(apiKey) before
-func Send(err error, context string, driverName string, command string) error {
+func SendWithFile(err error, context string, driverName string, command string, path string) error {
 	if noReportFileExist() || apiKey == noreportAPIKey {
 		log.Debug("Opting out of crash reporting.")
 		return nil
@@ -67,6 +68,7 @@ func Send(err error, context string, driverName string, command string) error {
 	detectRunningShell(&metaData)
 	detectUname(&metaData)
 	detectOSVersion(&metaData)
+	addFile(path, &metaData)
 
 	var buffer bytes.Buffer
 	for _, message := range log.History() {
@@ -74,6 +76,25 @@ func Send(err error, context string, driverName string, command string) error {
 	}
 	metaData.Add("history", "trace", buffer.String())
 	return bugsnag.Notify(err, metaData, bugsnag.SeverityError, bugsnag.Context{String: context}, bugsnag.ErrorClass{Name: fmt.Sprintf("%s/%s", driverName, command)})
+}
+
+// Send through http the crash report to bugsnag need a call to Configure(apiKey) before
+func Send(err error, context string, driverName string, command string) error {
+	return SendWithFile(err, context, driverName, command, "")
+}
+
+func addFile(path string, metaData *bugsnag.MetaData) {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+	metaData.Add("logfile", filepath.Base(path), string(data))
 }
 
 func noReportFileExist() bool {
