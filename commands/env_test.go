@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"fmt"
+
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/drivers/fakedriver"
@@ -549,20 +551,32 @@ func TestShellCfgUnset(t *testing.T) {
 }
 
 func TestDetectBash(t *testing.T) {
-	original_shell := os.Getenv("SHELL")
+	originalShell := os.Getenv("SHELL")
 	os.Setenv("SHELL", "/bin/bash")
-	defer os.Setenv("SHELL", original_shell)
-	shell, _ := detectShell()
+	defer os.Setenv("SHELL", originalShell)
+	shell, err := detectShell()
+	assert.Nil(t, err)
 	assert.Equal(t, "bash", shell)
 }
 
 func TestDetectFish(t *testing.T) {
-	original_shell := os.Getenv("SHELL")
+	originalShell := os.Getenv("SHELL")
 	os.Setenv("SHELL", "/bin/bash")
-	defer os.Setenv("SHELL", original_shell)
-	original_fishdir := os.Getenv("__fish_bin_dir")
+	defer os.Setenv("SHELL", originalShell)
+	originalFishdir := os.Getenv("__fish_bin_dir")
 	os.Setenv("__fish_bin_dir", "/usr/local/Cellar/fish/2.2.0/bin")
-	defer os.Setenv("__fish_bin_dir", original_fishdir)
-	shell, _ := detectShell()
+	defer os.Setenv("__fish_bin_dir", originalFishdir)
+	shell, err := detectShell()
+	assert.Nil(t, err)
 	assert.Equal(t, "fish", shell)
+}
+
+func TestUnknowShell(t *testing.T) {
+	originalShell := os.Getenv("SHELL")
+	os.Setenv("SHELL", "")
+	defer os.Setenv("SHELL", originalShell)
+	shell, err := detectShell()
+	fmt.Println(shell)
+	assert.Equal(t, err, ErrUnknownShell)
+	assert.Equal(t, "", shell)
 }

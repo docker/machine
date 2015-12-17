@@ -248,16 +248,14 @@ func (g *EnvUsageHintGenerator) GenerateUsageHint(userShell string, args []strin
 }
 
 func detectShell() (string, error) {
-	// attempt to get the SHELL env var
-	shell := filepath.Base(os.Getenv("SHELL"))
+	shell := os.Getenv("SHELL")
 
-	log.Debugf("shell: %s", shell)
 	if shell == "" {
-		// check for windows env and not bash (i.e. msysgit, etc)
 		if runtime.GOOS == "windows" {
-			log.Info("On Windows, please specify either 'cmd' or 'powershell' with the --shell flag.\n\n")
+			fmt.Printf("You can further specify your shell with either 'cmd' or 'powershell' with the --shell flag.\n\n")
+			return "cmd", nil // this could be either powershell or cmd, defaulting to cmd
 		}
-
+		fmt.Printf("The default lines below are for a sh/bash shell, you can specify the shell you're using, with the --shell flag.\n\n")
 		return "", ErrUnknownShell
 	}
 
@@ -265,5 +263,5 @@ func detectShell() (string, error) {
 		return "fish", nil
 	}
 
-	return shell, nil
+	return filepath.Base(shell), nil
 }
