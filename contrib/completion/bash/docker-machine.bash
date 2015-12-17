@@ -43,7 +43,7 @@ _docker_machine_env() {
             ;;
         *)
             if [[ "${cur}" == -* ]]; then
-                COMPREPLY=($(compgen -W "--swarm --shell --unset --help" -- "${cur}"))
+                COMPREPLY=($(compgen -W "--swarm --shell --unset --no-proxy --help" -- "${cur}"))
             else
                 COMPREPLY=($(compgen -W "$(docker-machine ls -q)" -- "${cur}"))
             fi
@@ -96,7 +96,7 @@ _docker_machine_ls() {
             COMPREPLY=()
             ;;
         *)
-            COMPREPLY=($(compgen -W "--quiet --filter --help" -- "${cur}"))
+            COMPREPLY=($(compgen -W "--quiet --filter --timeout --help" -- "${cur}"))
             ;;
     esac
 }
@@ -217,7 +217,7 @@ _docker_machine() {
     COMPREPLY=()
     local commands=(active config create env inspect ip kill ls regenerate-certs restart rm ssh scp start status stop upgrade url help)
 
-    local flags=(--debug --native-ssh --help --version)
+    local flags=(--debug --native-ssh --github-api-token --bugsnag-api-token --help --version)
     local wants_dir=(--storage-path)
     local wants_file=(--tls-ca-cert --tls-ca-key --tls-client-cert --tls-client-key)
 
