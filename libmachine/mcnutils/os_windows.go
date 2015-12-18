@@ -6,7 +6,7 @@ import (
 )
 
 func LocalOSVersion() string {
-	command := exec.Command(`systeminfo`)
+	command := exec.Command(`ver`)
 	output, err := command.Output()
 	if err != nil {
 		return ""
@@ -15,11 +15,5 @@ func LocalOSVersion() string {
 }
 
 func parseOutput(output string) string {
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "OS Version") {
-			return strings.TrimSpace(line[len("OS Version:"):])
-		}
-	}
-	return ""
+	return strings.TrimSpace(output)
 }
