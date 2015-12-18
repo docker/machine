@@ -50,6 +50,8 @@ var (
 	baseSSHArgs = []string{
 		"-o", "PasswordAuthentication=no",
 		"-o", "StrictHostKeyChecking=no",
+		"-o", "ControlMaster=no",
+		"-o", "ControlPath=none",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
