@@ -261,13 +261,14 @@ func TestCopyDefaultISOToMachine(t *testing.T) {
 			imgCachePath: imgCachePath,
 		}
 
-		dir := filepath.Join(storePath, tt.machineName)
+		dir := filepath.Join(storePath, "machines", tt.machineName)
 		err = os.MkdirAll(dir, 0700)
-
 		assert.NoError(t, err, "machine: %s", tt.machineName)
 
+		err = b.CopyIsoToMachineDir("", tt.machineName)
+		assert.NoError(t, err)
+
 		dest := filepath.Join(dir, b.filename())
-		err = b.copyDefaultISOToMachine(dest)
 		_, pathErr := os.Stat(dest)
 
 		assert.NoError(t, err, "machine: %s", tt.machineName)
