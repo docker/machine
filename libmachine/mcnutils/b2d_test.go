@@ -1,37 +1,84 @@
 package mcnutils
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
-	"bytes"
-
+	"github.com/docker/machine/libmachine/log"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetLatestBoot2DockerReleaseUrl(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		respText := `[{"tag_name": "0.1"}]`
-		w.Write([]byte(respText))
-	}))
+func TestGetReleaseURL(t *testing.T) {
+	ts := newTestServer(`{"tag_name": "v0.1"}`)
 	defer ts.Close()
 
-	b := NewB2dUtils("/tmp/isos")
-	isoURL, err := b.GetLatestBoot2DockerReleaseURL(ts.URL + "/repos/org/repo/releases")
+	testCases := []struct {
+		apiURL string
+		isoURL string
+	}{
+		{ts.URL + "/repos/org/repo/releases/latest", ts.URL + "/org/repo/releases/download/v0.1/boot2docker.iso"},
+		{"http://dummy.com/boot2docker.iso", "http://dummy.com/boot2docker.iso"},
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s/org/repo/releases/download/0.1/boot2docker.iso", ts.URL), isoURL)
+	for _, tt := range testCases {
+		b := NewB2dUtils("/tmp/isos")
+		isoURL, err := b.getReleaseURL(tt.apiURL)
+
+		assert.NoError(t, err)
+		assert.Equal(t, isoURL, tt.isoURL)
+	}
 }
 
-func TestDownloadIso(t *testing.T) {
+func TestGetReleaseURLError(t *testing.T) {
+	// GitHub API error response in case of rate limit
+	ts := newTestServer(`{"message": "API rate limit exceeded for 127.0.0.1.",
+		"documentation_url": "https://developer.github.com/v3/#rate-limiting"}`)
+	defer ts.Close()
+
+	testCases := []struct {
+		apiURL string
+	}{
+		{ts.URL + "/repos/org/repo/releases/latest"},
+		{"http://127.0.0.1/repos/org/repo/releases/latest"}, // dummy API URL. cannot connect it.
+	}
+
+	for _, tt := range testCases {
+		b := NewB2dUtils("/tmp/isos")
+		_, err := b.getReleaseURL(tt.apiURL)
+
+		assert.Error(t, err)
+	}
+}
+
+func TestVersion(t *testing.T) {
+	want := "v0.1.0"
+	isopath, off, err := newDummyISO("", defaultISOFilename, want)
+	defer removeFileIfExists(isopath)
+
+	assert.NoError(t, err)
+
+	b := &b2dISO{
+		commonIsoPath:  isopath,
+		volumeIDOffset: off,
+		volumeIDLength: defaultVolumeIDLength,
+	}
+
+	got, err := b.version()
+
+	assert.NoError(t, err)
+	assert.Equal(t, want, string(got))
+}
+
+func TestDownloadISO(t *testing.T) {
 	testData := "test-download"
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(testData))
-	}))
+	ts := newTestServer(testData)
 	defer ts.Close()
 
 	filename := "test"
@@ -51,25 +98,23 @@ func TestDownloadIso(t *testing.T) {
 	assert.Equal(t, testData, string(data))
 }
 
-func TestGetReleasesRequestNoToken(t *testing.T) {
-	GithubAPIToken = ""
+func TestGetRequest(t *testing.T) {
+	testCases := []struct {
+		token string
+		want  string
+	}{
+		{"", ""},
+		{"CATBUG", "token CATBUG"},
+	}
 
-	b2d := NewB2dUtils("/tmp/store")
-	req, err := b2d.getReleasesRequest("http://some.github.api")
+	for _, tt := range testCases {
+		GithubAPIToken = tt.token
 
-	assert.NoError(t, err)
-	assert.Empty(t, req.Header.Get("Authorization"))
-}
+		req, err := getRequest("http://some.github.api")
 
-func TestGetReleasesRequest(t *testing.T) {
-	expectedToken := "CATBUG"
-	GithubAPIToken = expectedToken
-
-	b2d := NewB2dUtils("/tmp/store")
-	req, err := b2d.getReleasesRequest("http://some.github.api")
-
-	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("token %s", expectedToken), req.Header.Get("Authorization"))
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, req.Header.Get("Authorization"))
+	}
 }
 
 type MockReadCloser struct {
@@ -109,4 +154,165 @@ func TestReaderWithProgress(t *testing.T) {
 
 	readerWithProgress.Close()
 	assert.Equal(t, "0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%\n", output.String())
+}
+
+type mockReleaseGetter struct {
+	ver    string
+	apiErr error
+	verCh  chan<- string
+}
+
+func (m *mockReleaseGetter) filename() string {
+	return defaultISOFilename
+}
+
+func (m *mockReleaseGetter) getReleaseTag(apiURL string) (string, error) {
+	return m.ver, m.apiErr
+}
+
+func (m *mockReleaseGetter) getReleaseURL(apiURL string) (string, error) {
+	return "http://127.0.0.1/dummy", m.apiErr
+}
+
+func (m *mockReleaseGetter) download(dir, file, isoURL string) error {
+	path := filepath.Join(dir, file)
+	var err error
+	if _, e := os.Stat(path); os.IsNotExist(e) {
+		err = ioutil.WriteFile(path, dummyISOData("  ", m.ver), 0644)
+	}
+
+	// send a signal of downloading the latest version
+	m.verCh <- m.ver
+	return err
+}
+
+type mockISO struct {
+	isopath string
+	exist   bool
+	ver     string
+	verCh   <-chan string
+}
+
+func (m *mockISO) path() string {
+	return m.isopath
+}
+
+func (m *mockISO) exists() bool {
+	return m.exist
+}
+
+func (m *mockISO) version() (string, error) {
+	select {
+	// receive version of a downloaded iso
+	case ver := <-m.verCh:
+		return ver, nil
+	default:
+		return m.ver, nil
+	}
+}
+
+func TestCopyDefaultISOToMachine(t *testing.T) {
+	apiErr := errors.New("api error")
+
+	testCases := []struct {
+		machineName string
+		create      bool
+		localVer    string
+		latestVer   string
+		apiErr      error
+		wantVer     string
+	}{
+		{"none", false, "", "v1.0.0", nil, "v1.0.0"},         // none => downloading
+		{"latest", true, "v1.0.0", "v1.0.0", nil, "v1.0.0"},  // latest iso => as is
+		{"old-badurl", true, "v0.1.0", "", apiErr, "v0.1.0"}, // old iso with bad api => as is
+		{"old", true, "v0.1.0", "v1.0.0", nil, "v1.0.0"},     // old iso => updating
+	}
+
+	var isopath string
+	var err error
+	verCh := make(chan string, 1)
+	for _, tt := range testCases {
+		if tt.create {
+			isopath, _, err = newDummyISO("cache", defaultISOFilename, tt.localVer)
+		} else {
+			if dir, e := ioutil.TempDir("", "machine-test"); e == nil {
+				isopath = filepath.Join(dir, "cache", defaultISOFilename)
+			}
+		}
+
+		// isopath: "$TMPDIR/machine-test-xxxxxx/cache/boot2docker.iso"
+		// tmpDir: "$TMPDIR/machine-test-xxxxxx"
+		imgCachePath := filepath.Dir(isopath)
+		storePath := filepath.Dir(imgCachePath)
+
+		b := &B2dUtils{
+			releaseGetter: &mockReleaseGetter{
+				ver:    tt.latestVer,
+				apiErr: tt.apiErr,
+				verCh:  verCh,
+			},
+			iso: &mockISO{
+				isopath: isopath,
+				exist:   tt.create,
+				ver:     tt.localVer,
+				verCh:   verCh,
+			},
+			storePath:    storePath,
+			imgCachePath: imgCachePath,
+		}
+
+		dir := filepath.Join(storePath, tt.machineName)
+		err = os.MkdirAll(dir, 0700)
+
+		assert.NoError(t, err, "machine: %s", tt.machineName)
+
+		dest := filepath.Join(dir, b.filename())
+		err = b.copyDefaultISOToMachine(dest)
+		_, pathErr := os.Stat(dest)
+
+		assert.NoError(t, err, "machine: %s", tt.machineName)
+		assert.True(t, !os.IsNotExist(pathErr), "machine: %s", tt.machineName)
+
+		ver, err := b.version()
+
+		assert.NoError(t, err, "machine: %s", tt.machineName)
+		assert.Equal(t, tt.wantVer, ver, "machine: %s", tt.machineName)
+
+		err = removeFileIfExists(isopath)
+		assert.NoError(t, err, "machine: %s", tt.machineName)
+	}
+}
+
+// newTestServer creates a new httptest.Server that returns respText as a response body.
+func newTestServer(respText string) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(respText))
+	}))
+}
+
+// newDummyISO creates a dummy ISO file that contains the given version info,
+// and returns its path and offset value to fetch the version info.
+func newDummyISO(dir, name, version string) (string, int64, error) {
+	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	if err != nil {
+		return "", 0, err
+	}
+
+	tmpDir = filepath.Join(tmpDir, dir)
+	if e := os.MkdirAll(tmpDir, 755); e != nil {
+		return "", 0, err
+	}
+
+	isopath := filepath.Join(tmpDir, name)
+	log.Info("TEST: dummy ISO created at ", isopath)
+
+	// dummy ISO data mimicking the real byte data of a Boot2Docker ISO image
+	padding := "     "
+	data := dummyISOData(padding, version)
+	return isopath, int64(len(padding)), ioutil.WriteFile(isopath, data, 0644)
+}
+
+// dummyISOData returns mock data that contains given padding and version.
+func dummyISOData(padding, version string) []byte {
+	return []byte(fmt.Sprintf("%sBoot2Docker-%s                    ", padding, version))
 }
