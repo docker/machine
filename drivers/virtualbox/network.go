@@ -15,6 +15,7 @@ const (
 var (
 	reHostonlyInterfaceCreated            = regexp.MustCompile(`Interface '(.+)' was successfully created`)
 	errDuplicateHostOnlyInterfaceNetworks = errors.New("VirtualBox is configured with multiple host-only interfaces with the same IP. Please remove all of them but one.")
+	errNewHostOnlyInterfaceNotVisible     = errors.New("The host-only interface we just created is not visible. This is a well known bug of VirtualBox. You might want to uninstall it and reinstall the version listed here: https://www.virtualbox.org/ticket/14437?cversion=0&cnum_hist=42")
 )
 
 // Host-only network.
@@ -171,6 +172,17 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP
 	dhcp.Enabled = true
 	if err := addHostonlyDHCP(hostOnlyNet.Name, dhcp, vbox); err != nil {
 		return nil, err
+	}
+
+	// Check that the interface really exists.
+	// Sometimes, Vbox says it created the interface but then it cannot be found...
+	nets, err = listHostOnlyNetworks(vbox)
+	if err != nil {
+		return nil, err
+	}
+	hostOnlyNet = getHostOnlyNetwork(nets, hostIP, netmask)
+	if hostOnlyNet == nil {
+		return nil, errNewHostOnlyInterfaceNotVisible
 	}
 
 	return hostOnlyNet, nil
