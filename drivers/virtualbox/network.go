@@ -13,9 +13,8 @@ const (
 )
 
 var (
-	reHostonlyInterfaceCreated            = regexp.MustCompile(`Interface '(.+)' was successfully created`)
-	errDuplicateHostOnlyInterfaceNetworks = errors.New("VirtualBox is configured with multiple host-only interfaces with the same IP. Please remove all of them but one.")
-	errNewHostOnlyInterfaceNotVisible     = errors.New("The host-only interface we just created is not visible. This is a well known bug of VirtualBox. You might want to uninstall it and reinstall the version listed here: https://www.virtualbox.org/ticket/14437?cversion=0&cnum_hist=42")
+	reHostonlyInterfaceCreated        = regexp.MustCompile(`Interface '(.+)' was successfully created`)
+	errNewHostOnlyInterfaceNotVisible = errors.New("The host-only interface we just created is not visible. This is a well known bug of VirtualBox. You might want to uninstall it and reinstall the version listed here: https://www.virtualbox.org/ticket/14437?cversion=0&cnum_hist=42")
 )
 
 // Host-only network.
@@ -75,7 +74,8 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 		return nil, err
 	}
 
-	m := map[string]*hostOnlyNetwork{}
+	byName := map[string]*hostOnlyNetwork{}
+	byIP := map[string]*hostOnlyNetwork{}
 	n := &hostOnlyNetwork{}
 
 	err = parseKeyValues(out, reColonLine, func(key, val string) error {
@@ -110,7 +110,19 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 			n.Status = val
 		case "VBoxNetworkName":
 			n.NetworkName = val
-			m[val] = n
+
+			if _, present := byName[n.NetworkName]; present {
+				return fmt.Errorf("VirtualBox is configured with multiple host-only interfaces with the same name %q. Please remove one.", n.NetworkName)
+			}
+			byName[n.NetworkName] = n
+
+			if len(n.IPv4.IP) != 0 {
+				if _, present := byIP[n.IPv4.IP.String()]; present {
+					return fmt.Errorf("VirtualBox is configured with multiple host-only interfaces with the same IP %q. Please remove one.", n.IPv4.IP)
+				}
+				byIP[n.IPv4.IP.String()] = n
+			}
+
 			n = &hostOnlyNetwork{}
 		}
 
@@ -120,7 +132,7 @@ func listHostOnlyNetworks(vbox VBoxManager) (map[string]*hostOnlyNetwork, error)
 		return nil, err
 	}
 
-	return m, nil
+	return byName, nil
 }
 
 func getHostOnlyNetwork(nets map[string]*hostOnlyNetwork, hostIP net.IP, netmask net.IPMask) *hostOnlyNetwork {
@@ -141,10 +153,6 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP
 	nets, err := listHostOnlyNetworks(vbox)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(nets) != countUniqueIps(nets) {
-		return nil, errDuplicateHostOnlyInterfaceNetworks
 	}
 
 	hostOnlyNet := getHostOnlyNetwork(nets, hostIP, netmask)
@@ -186,16 +194,6 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, dhcpIP net.IP
 	}
 
 	return hostOnlyNet, nil
-}
-
-func countUniqueIps(nets map[string]*hostOnlyNetwork) int {
-	ips := map[string]bool{}
-
-	for _, n := range nets {
-		ips[n.IPv4.IP.String()] = true
-	}
-
-	return len(ips)
 }
 
 // DHCP server info.

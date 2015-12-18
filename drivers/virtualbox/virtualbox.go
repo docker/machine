@@ -223,6 +223,11 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
+	// Check that Host-only interfaces are ok
+	if _, err = listHostOnlyNetworks(d.VBoxManager); err != nil {
+		return err
+	}
+
 	return nil
 }
 
