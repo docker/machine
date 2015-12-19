@@ -43,11 +43,9 @@ func getClient() *http.Client {
 		Dial:              defaultTimeout,
 	}
 
-	client := http.Client{
+	return &http.Client{
 		Transport: &transport,
 	}
-
-	return &client
 }
 
 func getRequest(apiURL string) (*http.Request, error) {
@@ -204,11 +202,7 @@ func (*b2dReleaseGetter) download(dir, file, isoURL string) error {
 		return err
 	}
 
-	if err := os.Rename(f.Name(), dest); err != nil {
-		return err
-	}
-
-	return nil
+	return os.Rename(f.Name(), dest)
 }
 
 // iso is an ISO volume.
@@ -305,6 +299,7 @@ func NewB2dUtils(storePath string) *B2dUtils {
 
 // DownloadISO downloads boot2docker ISO image for the given tag and save it at dest.
 func (b *B2dUtils) DownloadISO(dir, file, isoURL string) error {
+	log.Infof("Downloading %s from %s...", b.path(), isoURL)
 	return b.download(dir, file, isoURL)
 }
 
@@ -351,31 +346,51 @@ func (b *B2dUtils) DownloadLatestBoot2Docker(apiURL string) error {
 }
 
 func (b *B2dUtils) DownloadISOFromURL(latestReleaseURL string) error {
-	log.Infof("Downloading %s to %s...", latestReleaseURL, b.path())
-	if err := b.DownloadISO(b.imgCachePath, b.filename(), latestReleaseURL); err != nil {
-		return err
+	return b.DownloadISO(b.imgCachePath, b.filename(), latestReleaseURL)
+}
+
+func (b *B2dUtils) UpdateISOCache(isoURL string) error {
+	// recreate the cache dir if it has been manually deleted
+	if _, err := os.Stat(b.imgCachePath); os.IsNotExist(err) {
+		log.Infof("Image cache directory does not exist, creating it at %s...", b.imgCachePath)
+		if err := os.Mkdir(b.imgCachePath, 0700); err != nil {
+			return err
+		}
+	}
+
+	if isoURL != "" {
+		// Non-default B2D are not cached
+		return nil
+	}
+
+	exists := b.exists()
+	if !exists {
+		log.Info("No default Boot2Docker ISO found locally, downloading the latest release...")
+		return b.DownloadLatestBoot2Docker("")
+	}
+
+	latest := b.isLatest()
+	if !latest {
+		log.Info("Default Boot2Docker ISO is out-of-date, downloading the latest release...")
+		return b.DownloadLatestBoot2Docker("")
 	}
 
 	return nil
 }
 
 func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
+	if err := b.UpdateISOCache(isoURL); err != nil {
+		return err
+	}
+
 	// TODO: This is a bit off-color.
 	machineDir := filepath.Join(b.storePath, "machines", machineName)
 	machineIsoPath := filepath.Join(machineDir, b.filename())
 
-	// just in case the cache dir has been manually deleted,
-	// check for it and recreate it if it's gone
-	if _, err := os.Stat(b.imgCachePath); os.IsNotExist(err) {
-		log.Infof("Image cache does not exist, creating it at %s...", b.imgCachePath)
-		if err := os.Mkdir(b.imgCachePath, 0700); err != nil {
-			return err
-		}
-	}
-
 	// By default just copy the existing "cached" iso to the machine's directory...
 	if isoURL == "" {
-		return b.copyDefaultISOToMachine(machineIsoPath)
+		log.Infof("Copying %s to %s...", b.path(), machineIsoPath)
+		return CopyFile(b.path(), machineIsoPath)
 	}
 
 	// if ISO is specified, check if it matches a github releases url or fallback to a direct download
@@ -384,39 +399,7 @@ func (b *B2dUtils) CopyIsoToMachineDir(isoURL, machineName string) error {
 		return err
 	}
 
-	log.Infof("Downloading %s from %s...", b.filename(), downloadURL)
 	return b.DownloadISO(machineDir, b.filename(), downloadURL)
-}
-
-func (b *B2dUtils) copyDefaultISOToMachine(machineIsoPath string) error {
-	// just in case the cache dir has been manually deleted,
-	// check for it and recreate it if it's gone
-	if _, err := os.Stat(b.imgCachePath); os.IsNotExist(err) {
-		log.Infof("Image cache directory does not exist, creating it at %s...", b.imgCachePath)
-		if err := os.Mkdir(b.imgCachePath, 0700); err != nil {
-			return err
-		}
-	}
-
-	exists := b.exists()
-	latest := b.isLatest()
-
-	if exists && latest {
-		log.Infof("Latest Boot2Docker ISO found locally, copying it to %s...", machineIsoPath)
-		return CopyFile(b.path(), machineIsoPath)
-	}
-
-	if !exists {
-		log.Info("No default Boot2Docker ISO found locally, downloading the latest release...")
-	} else if !latest {
-		log.Info("Default Boot2Docker ISO is out-of-date, downloading the latest release...")
-	}
-	if err := b.DownloadLatestBoot2Docker(""); err != nil {
-		return err
-	}
-
-	log.Infof("Copying %s to %s...", b.path(), machineIsoPath)
-	return CopyFile(b.path(), machineIsoPath)
 }
 
 // isLatest checks the latest release tag and

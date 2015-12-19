@@ -19,7 +19,7 @@ import (
 
 type Driver struct {
 	*drivers.BaseDriver
-	boot2DockerURL string
+	Boot2DockerURL string
 	boot2DockerLoc string
 	vSwitch        string
 	diskImage      string
@@ -73,7 +73,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.boot2DockerURL = flags.String("hyperv-boot2docker-url")
+	d.Boot2DockerURL = flags.String("hyperv-boot2docker-url")
 	d.boot2DockerLoc = flags.String("hyperv-boot2docker-location")
 	d.vSwitch = flags.String("hyperv-virtual-switch")
 	d.DiskSize = flags.Int("hyperv-disk-size")
@@ -139,16 +139,27 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
-func (d *Driver) Create() error {
-	err := hypervAvailable()
-	if err != nil {
+// PreCreateCheck checks that the machine creation process can be started safely.
+func (d *Driver) PreCreateCheck() error {
+	if err := hypervAvailable(); err != nil {
 		return err
 	}
 
+	// Downloading boot2docker to cache should be done here to make sure
+	// that a download failure will not leave a machine half created.
+	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
+	if err := b2dutils.UpdateISOCache(d.Boot2DockerURL); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Driver) Create() error {
 	d.setMachineNameIfNotSet()
 
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
-	if err := b2dutils.CopyIsoToMachineDir(d.boot2DockerURL, d.MachineName); err != nil {
+	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
 
