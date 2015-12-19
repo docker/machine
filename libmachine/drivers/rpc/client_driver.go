@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	heartbeatInterval = 200 * time.Millisecond
+	heartbeatInterval = 5 * time.Second
 )
 
 type RPCClientDriver struct {
@@ -138,13 +138,12 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 			select {
 			case <-c.heartbeatDoneCh:
 				return
-			default:
+			case <-time.After(heartbeatInterval):
 				if err := c.Client.Call(HeartbeatMethod, struct{}{}, nil); err != nil {
 					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
 					c.Close()
 					return
 				}
-				time.Sleep(heartbeatInterval)
 			}
 		}
 	}(c)
