@@ -27,6 +27,7 @@ func printVersion(c CommandLine, api libmachine.API, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	defer api.Close(host)
 
 	version, err := host.DockerVersion()
 	if err != nil {

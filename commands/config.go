@@ -22,6 +22,7 @@ func cmdConfig(c CommandLine, api libmachine.API) error {
 	if err != nil {
 		return err
 	}
+	defer api.Close(host)
 
 	dockerHost, authOptions, err := check.DefaultConnChecker.Check(host, c.Bool("swarm"))
 	if err != nil {

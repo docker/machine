@@ -21,6 +21,7 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 		if err != nil {
 			return fmt.Errorf("Error removing host %q: %s", hostName, err)
 		}
+		defer api.Close(h)
 
 		if !confirm && !force {
 			userinput, err := confirmInput(fmt.Sprintf("Do you really want to remove %q?", hostName))

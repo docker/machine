@@ -78,6 +78,8 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 		return consolidateErrs(errs)
 	}
 
+	defer libmachine.CloseHosts(api, hosts)
+
 	if len(hosts) == 0 {
 		return ErrNoMachineSpecified
 	}

@@ -98,12 +98,13 @@ func TestShellCfgSet(t *testing.T) {
 	var tests = []struct {
 		description      string
 		commandLine      CommandLine
-		api              libmachine.API
+		api              *libmachinetest.FakeAPI
 		connChecker      check.ConnChecker
 		noProxyVar       string
 		noProxyValue     string
 		expectedShellCfg *ShellConfig
 		expectedErr      error
+		closedHosts      []string
 	}{
 		{
 			description: "no host name specified",
@@ -148,6 +149,7 @@ func TestShellCfgSet(t *testing.T) {
 				MachineName:     "quux",
 			},
 			expectedErr: nil,
+			closedHosts: []string{"quux"},
 		},
 		{
 			description: "fish shell set happy path",
@@ -184,6 +186,7 @@ func TestShellCfgSet(t *testing.T) {
 				MachineName:     "quux",
 			},
 			expectedErr: nil,
+			closedHosts: []string{"quux"},
 		},
 		{
 			description: "powershell set happy path",
@@ -220,6 +223,7 @@ func TestShellCfgSet(t *testing.T) {
 				MachineName:     "quux",
 			},
 			expectedErr: nil,
+			closedHosts: []string{"quux"},
 		},
 		{
 			description: "emacs set happy path",
@@ -256,6 +260,7 @@ func TestShellCfgSet(t *testing.T) {
 				MachineName:     "quux",
 			},
 			expectedErr: nil,
+			closedHosts: []string{"quux"},
 		},
 		{
 			description: "cmd.exe happy path",
@@ -292,6 +297,7 @@ func TestShellCfgSet(t *testing.T) {
 				MachineName:     "quux",
 			},
 			expectedErr: nil,
+			closedHosts: []string{"quux"},
 		},
 		{
 			description: "bash shell set happy path with --no-proxy flag; no existing environment variable set",
@@ -336,6 +342,7 @@ func TestShellCfgSet(t *testing.T) {
 			noProxyVar:   "NO_PROXY",
 			noProxyValue: "",
 			expectedErr:  nil,
+			closedHosts:  []string{"quux"},
 		},
 		{
 			description: "bash shell set happy path with --no-proxy flag; existing environment variable _is_ set",
@@ -380,6 +387,7 @@ func TestShellCfgSet(t *testing.T) {
 			noProxyVar:   "no_proxy",
 			noProxyValue: "192.168.59.1",
 			expectedErr:  nil,
+			closedHosts:  []string{"quux"},
 		},
 	}
 
@@ -394,6 +402,7 @@ func TestShellCfgSet(t *testing.T) {
 		shellCfg, err := shellCfgSet(test.commandLine, test.api)
 		assert.Equal(t, test.expectedShellCfg, shellCfg)
 		assert.Equal(t, test.expectedErr, err)
+		test.api.AssertClosed(t, test.closedHosts)
 
 		os.Unsetenv(test.noProxyVar)
 	}

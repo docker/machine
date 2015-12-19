@@ -9,6 +9,7 @@ import (
 	"github.com/docker/machine/libmachine/check"
 	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -26,6 +27,7 @@ type API interface {
 	persist.PluginDriverFactory
 	NewHost(drivers.Driver) (*host.Host, error)
 	Create(h *host.Host) error
+	Close(h *host.Host) error
 }
 
 type Client struct {
@@ -160,4 +162,31 @@ func sendCrashReport(err error, api *Client, host *host.Host) {
 	} else {
 		crashreport.Send(err, "api.performCreate", host.DriverName, "Create")
 	}
+}
+
+func (api *Client) Close(h *host.Host) error {
+	log.Debugf("Closing host %s", h.Name)
+	if serial, ok := h.Driver.(*drivers.SerialDriver); ok {
+		return CloseIfRPCDriver(serial.Driver)
+	}
+	return CloseIfRPCDriver(h.Driver)
+}
+
+func CloseHosts(api API, hosts []*host.Host) {
+	for _, h := range hosts {
+		if err := api.Close(h); err != nil {
+			log.Warn(err)
+		}
+	}
+}
+
+func CloseIfRPCDriver(driver drivers.Driver) error {
+	if rpcd, ok := driver.(*rpcdriver.RPCClientDriver); ok {
+		log.Debug("Cast went successfully")
+		if err := rpcd.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

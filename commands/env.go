@@ -76,6 +76,7 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer api.Close(host)
 
 	dockerHost, _, err := check.DefaultConnChecker.Check(host, c.Bool("swarm"))
 	if err != nil {

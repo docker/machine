@@ -30,6 +30,7 @@ func cmdInspect(c CommandLine, api libmachine.API) error {
 	if err != nil {
 		return err
 	}
+	defer api.Close(host)
 
 	tmplString := c.String("format")
 	if tmplString != "" {
