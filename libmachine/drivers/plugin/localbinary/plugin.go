@@ -79,6 +79,7 @@ type Plugin struct {
 type Executor struct {
 	pluginStdout, pluginStderr io.ReadCloser
 	DriverName                 string
+	cmd                        *exec.Cmd
 	binaryPath                 string
 }
 
@@ -124,14 +125,14 @@ func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 
 	log.Debugf("Launching plugin server for driver %s", lbe.DriverName)
 
-	cmd := exec.Command(lbe.binaryPath)
+	lbe.cmd = exec.Command(lbe.binaryPath)
 
-	lbe.pluginStdout, err = cmd.StdoutPipe()
+	lbe.pluginStdout, err = lbe.cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil, fmt.Errorf("Error getting cmd stdout pipe: %s", err)
 	}
 
-	lbe.pluginStderr, err = cmd.StderrPipe()
+	lbe.pluginStderr, err = lbe.cmd.StderrPipe()
 	if err != nil {
 		return nil, nil, fmt.Errorf("Error getting cmd stderr pipe: %s", err)
 	}
@@ -142,7 +143,7 @@ func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 	os.Setenv(PluginEnvKey, PluginEnvVal)
 	os.Setenv(PluginEnvDriverName, lbe.DriverName)
 
-	if err := cmd.Start(); err != nil {
+	if err := lbe.cmd.Start(); err != nil {
 		return nil, nil, fmt.Errorf("Error starting plugin binary: %s", err)
 	}
 
@@ -150,34 +151,34 @@ func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 }
 
 func (lbe *Executor) Close() error {
+	if err := lbe.cmd.Wait(); err != nil {
+		return fmt.Errorf("Error waiting for binary close: %s", err)
+	}
+
 	if err := lbe.pluginStdout.Close(); err != nil {
-		return err
+		return fmt.Errorf("Error closing plugin stdout: %s", err)
 	}
 
 	if err := lbe.pluginStderr.Close(); err != nil {
-		return err
+		return fmt.Errorf("Error closing plugin stderr: %s", err)
 	}
 
 	return nil
 }
 
 func stream(scanner *bufio.Scanner, streamOutCh chan<- string, stopCh <-chan bool) {
-	lines := make(chan string)
-	go func() {
-		for scanner.Scan() {
-			lines <- scanner.Text()
-		}
-	}()
 	for {
 		select {
 		case <-stopCh:
 			close(streamOutCh)
 			return
-		case line := <-lines:
-			streamOutCh <- strings.Trim(line, "\n")
+		default:
+			scanner.Scan()
+			line := scanner.Text()
 			if err := scanner.Err(); err != nil {
 				log.Warnf("Scanning stream: %s", err)
 			}
+			streamOutCh <- strings.Trim(line, "\n")
 		}
 	}
 }
