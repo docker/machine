@@ -206,6 +206,18 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.Stopped, nil
 }
 
+// PreCreateCheck checks that the machine creation process can be started safely.
+func (d *Driver) PreCreateCheck() error {
+	// Downloading boot2docker to cache should be done here to make sure
+	// that a download failure will not leave a machine half created.
+	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
+	if err := b2dutils.UpdateISOCache(d.Boot2DockerURL); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d *Driver) Create() error {
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
@@ -214,7 +226,6 @@ func (d *Driver) Create() error {
 
 	// download cloud-init config drive
 	if d.ConfigDriveURL != "" {
-		log.Infof("Downloading %s from %s", isoConfigDrive, d.ConfigDriveURL)
 		if err := b2dutils.DownloadISO(d.ResolveStorePath("."), isoConfigDrive, d.ConfigDriveURL); err != nil {
 			return err
 		}

@@ -212,16 +212,28 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+// PreCreateCheck checks that the machine creation process can be started safely.
+func (d *Driver) PreCreateCheck() error {
+	if err := d.checkVsphereConfig(); err != nil {
+		return err
+	}
+
+	// Downloading boot2docker to cache should be done here to make sure
+	// that a download failure will not leave a machine half created.
+	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
+	if err := b2dutils.UpdateISOCache(d.Boot2DockerURL); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Create has the following implementation:
 // 1. check whether the docker directory contains the boot2docker ISO
 // 2. generate an SSH keypair and bundle it in a tar.
 // 3. create a virtual machine with the boot2docker ISO mounted;
 // 4. reconfigure the virtual machine network and disk size;
 func (d *Driver) Create() error {
-	if err := d.checkVsphereConfig(); err != nil {
-		return err
-	}
-
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err

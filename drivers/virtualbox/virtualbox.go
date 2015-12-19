@@ -216,6 +216,13 @@ func (d *Driver) PreCreateCheck() error {
 		log.Warn("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
 	}
 
+	// Downloading boot2docker to cache should be done here to make sure
+	// that a download failure will not leave a machine half created.
+	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
+	if err := b2dutils.UpdateISOCache(d.Boot2DockerURL); err != nil {
+		return err
+	}
+
 	return nil
 }
 
