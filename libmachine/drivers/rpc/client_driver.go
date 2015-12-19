@@ -173,12 +173,6 @@ func (c *RPCClientDriver) Close() error {
 	c.heartbeatDoneCh <- true
 	close(c.heartbeatDoneCh)
 
-	log.Debug("Making call to close connection to plugin binary")
-
-	if err := c.plugin.Close(); err != nil {
-		return err
-	}
-
 	log.Debug("Making call to close driver server")
 
 	if err := c.Client.Call(CloseMethod, struct{}{}, nil); err != nil {
@@ -186,6 +180,12 @@ func (c *RPCClientDriver) Close() error {
 	}
 
 	log.Debug("Successfully made call to close driver server")
+
+	log.Debug("Making call to close connection to plugin binary")
+
+	if err := c.plugin.Close(); err != nil {
+		return err
+	}
 
 	return nil
 }
