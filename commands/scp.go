@@ -139,10 +139,11 @@ func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (HostIn
 		return nil, "", nil, fmt.Errorf("Error loading host: %s", err)
 	}
 
-	args := []string{
-		"-i",
-		hostInfo.GetSSHKeyPath(),
+	args := []string{}
+	if hostInfo.GetSSHKeyPath() != "" {
+		args = append(args, "-i", hostInfo.GetSSHKeyPath())
 	}
+
 	return hostInfo, path, args, nil
 }
 
