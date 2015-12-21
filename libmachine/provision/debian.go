@@ -62,13 +62,10 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 	if action == pkgaction.Upgrade && name == "docker-engine" {
 		// run the force remove on the existing lxc-docker package
 		// and remove the existing apt source list
-		// also re-run the get.docker.com script to properly setup
-		// the system again
 
 		commands := []string{
 			"rm /etc/apt/sources.list.d/docker.list || true",
 			"apt-get remove -y lxc-docker || true",
-			"curl -sSL https://get.docker.com | sh",
 		}
 
 		for _, cmd := range commands {
