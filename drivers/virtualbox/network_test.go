@@ -39,7 +39,7 @@ VBoxNetworkName: HostInterfaceNetworking-vboxnet0
 Name:            vboxnet1
 GUID:            786f6276-656e-4174-8000-0a0027000001
 DHCP:            Disabled
-IPAddress:       192.168.99.1
+IPAddress:       169.254.37.187
 NetworkMask:     255.255.255.0
 IPV6Address:
 IPV6NetworkMaskPrefixLength: 0
@@ -185,7 +185,7 @@ func TestListTwoHostOnlyNetworks(t *testing.T) {
 	assert.Equal(t, "vboxnet1", net.Name)
 	assert.Equal(t, "786f6276-656e-4174-8000-0a0027000001", net.GUID)
 	assert.False(t, net.DHCP)
-	assert.Equal(t, "192.168.99.1", net.IPv4.IP.String())
+	assert.Equal(t, "169.254.37.187", net.IPv4.IP.String())
 	assert.Equal(t, "ffffff00", net.IPv4.Mask.String())
 	assert.Empty(t, net.IPv6.IP)
 	assert.Equal(t, "0a:00:27:00:00:01", net.HwAddr.String())
@@ -230,16 +230,38 @@ func TestGetHostOnlyNetwork(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestFailWithDuplicateHostOnlyNetworks(t *testing.T) {
+func TestFailIfTwoNetworksHaveSameIP(t *testing.T) {
 	vbox := &VBoxManagerMock{
-		args:   "list hostonlyifs",
-		stdOut: stdOutTwoHostOnlyNetwork,
+		args: "list hostonlyifs",
+		stdOut: `Name:            vboxnet0
+IPAddress:       192.168.99.1
+NetworkMask:     255.255.255.0
+VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+Name:            vboxnet1
+IPAddress:       192.168.99.1
+NetworkMask:     255.255.255.0
+VBoxNetworkName: HostInterfaceNetworking-vboxnet1`,
 	}
 
 	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nil, nil, nil, vbox)
 
 	assert.Nil(t, net)
-	assert.Equal(t, errDuplicateHostOnlyInterfaceNetworks, err)
+	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only interfaces with the same IP "192.168.99.1". Please remove one.`)
+}
+
+func TestFailIfTwoNetworksHaveSameName(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args: "list hostonlyifs",
+		stdOut: `Name:            vboxnet0
+VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+Name:            vboxnet0
+VBoxNetworkName: HostInterfaceNetworking-vboxnet0`,
+	}
+
+	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nil, nil, nil, vbox)
+
+	assert.Nil(t, net)
+	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only interfaces with the same name "HostInterfaceNetworking-vboxnet0". Please remove one.`)
 }
 
 func TestGetDHCPServers(t *testing.T) {
