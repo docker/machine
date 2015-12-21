@@ -113,3 +113,24 @@ func TestGetScpCmd(t *testing.T) {
 	assert.Equal(t, expectedCmd, cmd)
 	assert.NoError(t, err)
 }
+
+func TestGetScpCmdWithoutSshKey(t *testing.T) {
+	hostInfoLoader := MockHostInfoLoader{MockHostInfo{
+		ip:          "1.2.3.4",
+		sshUsername: "user",
+	}}
+
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, &hostInfoLoader)
+
+	expectedArgs := append(
+		baseSSHArgs,
+		"-3",
+		"-r",
+		"/tmp/foo",
+		"user@1.2.3.4:/home/docker/foo",
+	)
+	expectedCmd := exec.Command("/usr/bin/scp", expectedArgs...)
+
+	assert.Equal(t, expectedCmd, cmd)
+	assert.NoError(t, err)
+}
