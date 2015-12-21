@@ -27,6 +27,8 @@ Options:
 -   `--digitalocean-private-networking`: Enable private networking support for the droplet.
 -   `--digitalocean-backups`: Enable Digital Oceans backups for the droplet.
 -   `--digitalocean-userdata`: Path to file containing User Data for the droplet.
+-   `--digitalocean-ssh-user`: SSH username.
+-   `--digitalocean-ssh-port`: SSH port.
 
 The DigitalOcean driver will use `ubuntu-15-10-x64` as the default image.
 
@@ -42,3 +44,5 @@ Environment variables and default values:
 | `--digitalocean-private-networking` | `DIGITALOCEAN_PRIVATE_NETWORKING` | `false`            |
 | `--digitalocean-backups`            | `DIGITALOCEAN_BACKUPS`            | `false`            |
 | `--digitalocean-userdata`           | `DIGITALOCEAN_USERDATA`           | -                  |
+| `--digitalocean-ssh-user`           | `DIGITALOCEAN_SSH_USER`           | `root`             |
+| `--digitalocean-ssh-port`           | `DIGITALOCEAN_SSH_PORT`           | 22                 |

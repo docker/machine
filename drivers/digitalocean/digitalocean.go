@@ -32,9 +32,11 @@ type Driver struct {
 }
 
 const (
-	defaultImage  = "ubuntu-15-10-x64"
-	defaultRegion = "nyc3"
-	defaultSize   = "512mb"
+	defaultSSHPort = 22
+	defaultSSHUSer = "root"
+	defaultImage   = "ubuntu-15-10-x64"
+	defaultRegion  = "nyc3"
+	defaultSize    = "512mb"
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -49,8 +51,14 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_SSH_USER",
 			Name:   "digitalocean-ssh-user",
-			Usage:  "Digital Ocean SSH username",
-			Value:  "root",
+			Usage:  "SSH username",
+			Value:  defaultSSHUSer,
+		},
+		mcnflag.IntFlag{
+			EnvVar: "DIGITALOCEAN_SSH_PORT",
+			Name:   "digitalocean-ssh-port",
+			Usage:  "SSH port",
+			Value:  defaultSSHPort,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_IMAGE",
@@ -127,7 +135,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = flags.String("digitalocean-ssh-user")
-	d.SSHPort = 22
+	d.SSHPort = flags.Int("digitalocean-ssh-port")
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
