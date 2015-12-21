@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	heartbeatTimeout = 500 * time.Millisecond
+	heartbeatTimeout = 10 * time.Second
 )
 
 func RegisterDriver(d drivers.Driver) {
