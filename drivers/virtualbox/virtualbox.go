@@ -666,6 +666,9 @@ func (d *Driver) generateDiskImage(size int) error {
 
 	// magicString first so the automount script knows to format the disk
 	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
+
+	log.Debug("Writing magic tar header")
+
 	if err := tw.WriteHeader(file); err != nil {
 		return err
 	}
@@ -677,6 +680,9 @@ func (d *Driver) generateDiskImage(size int) error {
 	if err := tw.WriteHeader(file); err != nil {
 		return err
 	}
+
+	log.Debug("Writing SSH key tar header")
+
 	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return err
@@ -699,6 +705,9 @@ func (d *Driver) generateDiskImage(size int) error {
 		return err
 	}
 	raw := bytes.NewReader(buf.Bytes())
+
+	log.Debug("Calling inner createDiskImage")
+
 	return createDiskImage(d.diskPath(), size, raw)
 }
 
@@ -770,6 +779,8 @@ func createDiskImage(dest string, size int, r io.Reader) error {
 	cmd := exec.Command(vboxManageCmd, "convertfromraw", "stdin", dest,
 		fmt.Sprintf("%d", sizeBytes), "--format", "VMDK")
 
+	log.Debug(cmd)
+
 	if os.Getenv("MACHINE_DEBUG") != "" {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -779,14 +790,21 @@ func createDiskImage(dest string, size int, r io.Reader) error {
 	if err != nil {
 		return err
 	}
+
+	log.Debug("Starting command")
+
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+
+	log.Debug("Copying to stdin")
 
 	n, err := io.Copy(stdin, r)
 	if err != nil {
 		return err
 	}
+
+	log.Debug("Filling zeroes")
 
 	// The total number of bytes written to stdin must match sizeBytes, or
 	// VBoxManage.exe on Windows will fail. Fill remaining with zeros.
@@ -796,10 +814,14 @@ func createDiskImage(dest string, size int, r io.Reader) error {
 		}
 	}
 
+	log.Debug("Closing STDIN")
+
 	// cmd won't exit until the stdin is closed.
 	if err := stdin.Close(); err != nil {
 		return err
 	}
+
+	log.Debug("Waiting on cmd")
 
 	return cmd.Wait()
 }
