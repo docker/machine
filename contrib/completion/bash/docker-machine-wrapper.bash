@@ -47,7 +47,7 @@ EOF
         esac
     else
         # Just call the actual docker-machine app
-        $(which docker-machine) "$@"
+        command docker-machine "$@"
     fi
 }
 
