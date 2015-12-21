@@ -53,3 +53,87 @@ func TestCmdRm(t *testing.T) {
 	assert.False(t, libmachinetest.Exists(api, "machineToRemove2"))
 	assert.True(t, libmachinetest.Exists(api, "machine"))
 }
+
+func TestCmdRmforcefully(t *testing.T) {
+	commandLine := &commandstest.FakeCommandLine{
+		CliArgs: []string{"machineToRemove1", "machineToRemove2"},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"force": true,
+			},
+		},
+	}
+	api := &libmachinetest.FakeAPI{
+		Hosts: []*host.Host{
+			{
+				Name:   "machineToRemove1",
+				Driver: &fakedriver.Driver{},
+			},
+			{
+				Name:   "machineToRemove2",
+				Driver: &fakedriver.Driver{},
+			},
+		},
+	}
+
+	err := cmdRm(commandLine, api)
+	assert.NoError(t, err)
+
+	assert.False(t, libmachinetest.Exists(api, "machineToRemove1"))
+	assert.False(t, libmachinetest.Exists(api, "machineToRemove2"))
+}
+
+func TestCmdRmforceDoesAutoConfirm(t *testing.T) {
+	commandLine := &commandstest.FakeCommandLine{
+		CliArgs: []string{"machineToRemove1", "machineToRemove2"},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"y":     false,
+				"force": true,
+			},
+		},
+	}
+	api := &libmachinetest.FakeAPI{
+		Hosts: []*host.Host{
+			{
+				Name:   "machineToRemove1",
+				Driver: &fakedriver.Driver{},
+			},
+			{
+				Name:   "machineToRemove2",
+				Driver: &fakedriver.Driver{},
+			},
+		},
+	}
+
+	err := cmdRm(commandLine, api)
+	assert.NoError(t, err)
+
+	assert.False(t, libmachinetest.Exists(api, "machineToRemove1"))
+	assert.False(t, libmachinetest.Exists(api, "machineToRemove2"))
+}
+
+func TestCmdRmforceConfirmUnset(t *testing.T) {
+	commandLine := &commandstest.FakeCommandLine{
+		CliArgs: []string{"machineToRemove1"},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"y":     false,
+				"force": false,
+			},
+		},
+	}
+	api := &libmachinetest.FakeAPI{
+		Hosts: []*host.Host{
+			{
+				Name:   "machineToRemove1",
+				Driver: &fakedriver.Driver{},
+			},
+		},
+	}
+
+	err := cmdRm(commandLine, api)
+	assert.EqualError(t, err, "EOF")
+
+	assert.True(t, libmachinetest.Exists(api, "machineToRemove1"))
+}
