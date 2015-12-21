@@ -17,9 +17,13 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 	confirm := c.Bool("y")
 
 	for _, hostName := range c.Args() {
-		h, err := api.Load(hostName)
-		if err != nil {
-			return fmt.Errorf("Error removing host %q: %s", hostName, err)
+		h, loaderr := api.Load(hostName)
+		if loaderr != nil {
+			// On --force, continue to remove on-disk files/dir
+			if !force {
+				return fmt.Errorf("Error removing host %q: %s", hostName, loaderr)
+			}
+			log.Errorf("Error removing host %q: %s. Continuing on `-f`, host instance may by running", hostName, loaderr)
 		}
 
 		if !confirm && !force {
@@ -29,10 +33,12 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 			}
 		}
 
-		if err := h.Driver.Remove(); err != nil {
-			if !force {
-				log.Errorf("Provider error removing machine %q: %s", hostName, err)
-				continue
+		if loaderr == nil {
+			if err := h.Driver.Remove(); err != nil {
+				if !force {
+					log.Errorf("Provider error removing machine %q: %s", hostName, err)
+					continue
+				}
 			}
 		}
 
