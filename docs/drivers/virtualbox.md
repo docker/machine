@@ -36,6 +36,7 @@ Options:
 -   `--virtualbox-hostonly-nicpromisc`: Host Only Network Adapter Promiscuous Mode. Possible options are deny , allow-vms, allow-all
 -   `--virtualbox-no-share`: Disable the mount of your home directory
 -   `--virtualbox-dns-proxy`: Proxy all DNS requests to the host (Boolean value, default to false)
+-   `--virtualbox-no-vtx-check`: Disable checking for the availability of hardware virtualization before the vm is started
 
 The `--virtualbox-boot2docker-url` flag takes a few different forms. By
 default, if no value is specified for this flag, Machine will check locally for
@@ -78,6 +79,7 @@ Environment variables and default values:
 | `--virtualbox-hostonly-nicpromisc`   | `VIRTUALBOX_HOSTONLY_NIC_PROMISC`  | `deny`                   |
 | `--virtualbox-no-share`              | `VIRTUALBOX_NO_SHARE`              | `false`                  |
 | `--virtualbox-dns-proxy`             | `VIRTUALBOX_DNS_PROXY`             | `false`                  |
+| `--virtualbox-no-vtx-check`          | `VIRTUALBOX_NO_VTX_CHECK`          | `false`                  |
 
 ## Known Issues
 

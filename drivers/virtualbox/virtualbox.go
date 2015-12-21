@@ -58,6 +58,7 @@ type Driver struct {
 	HostOnlyPromiscMode string
 	NoShare             bool
 	DNSProxy            bool
+	NoVTXCheck          bool
 }
 
 // NewDriver creates a new VirtualBox driver with default settings.
@@ -144,6 +145,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Proxy all DNS requests to the host",
 			EnvVar: "VIRTUALBOX_DNS_PROXY",
 		},
+		mcnflag.BoolFlag{
+			Name:   "virtualbox-no-vtx-check",
+			Usage:  "Disable checking for the availability of hardware virtualization before the vm is started",
+			EnvVar: "VIRTUALBOX_NO_VTX_CHECK",
+		},
 	}
 }
 
@@ -191,6 +197,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
 	d.NoShare = flags.Bool("virtualbox-no-share")
 	d.DNSProxy = flags.Bool("virtualbox-dns-proxy")
+	d.NoVTXCheck = flags.Bool("virtualbox-no-vtx-check")
 
 	return nil
 }
@@ -208,12 +215,8 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	if d.IsVTXDisabled() {
-		// Let's log a warning to warn the user. When the vm is started, logs
-		// will be checked for an error anyway.
-		// We could fail right here but the method to check didn't prove being
-		// bulletproof.
-		log.Warn("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory.")
+	if !d.NoVTXCheck && d.IsVTXDisabled() {
+		return ErrMustEnableVTX
 	}
 
 	// Downloading boot2docker to cache should be done here to make sure
