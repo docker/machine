@@ -76,16 +76,22 @@ func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
 		log.Debug("SSH binary not found, using native Go implementation")
-		return NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, auth)
+		log.Debug(client)
+		return client, err
 	}
 
 	if defaultClientType == Native {
 		log.Debug("Using SSH client type: native")
-		return NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, auth)
+		log.Debug(client)
+		return client, err
 	}
 
 	log.Debug("Using SSH client type: external")
-	return NewExternalClient(sshBinaryPath, user, host, port, auth)
+	client, err := NewExternalClient(sshBinaryPath, user, host, port, auth)
+	log.Debug(client)
+	return client, err
 }
 
 func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
