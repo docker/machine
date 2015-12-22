@@ -82,20 +82,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
-	d.SSHPort = 22
 	return nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "docker"
-	}
-
-	return d.SSHUser
 }
 
 // DriverName returns the name of the driver
@@ -156,8 +147,6 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	d.setMachineNameIfNotSet()
-
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
@@ -345,12 +334,6 @@ func (d *Driver) Kill() error {
 	}
 	d.IPAddress = ""
 	return nil
-}
-
-func (d *Driver) setMachineNameIfNotSet() {
-	if d.MachineName == "" {
-		d.MachineName = fmt.Sprintf("docker-machine-unknown")
-	}
 }
 
 func (d *Driver) GetIP() (string, error) {
