@@ -128,6 +128,12 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
+	// Check that there is a virtual switch already configured
+	_, err := d.chooseVirtualSwitch()
+	if err != nil {
+		return err
+	}
+
 	// Downloading boot2docker to cache should be done here to make sure
 	// that a download failure will not leave a machine half created.
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
@@ -155,6 +161,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	log.Infof("Using switch %q", virtualSwitch)
+
 	err = d.generateDiskImage()
 	if err != nil {
 		return err
@@ -181,23 +189,34 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) chooseVirtualSwitch() (string, error) {
-	if d.vSwitch != "" {
-		return d.vSwitch, nil
-	}
-
 	stdout, err := cmdOut("@(Get-VMSwitch).Name")
 	if err != nil {
 		return "", err
 	}
 
 	switches := parseLines(stdout)
-	if len(switches) < 1 {
-		return "", fmt.Errorf("no vswitch found")
+
+	if d.vSwitch == "" {
+		if len(switches) < 1 {
+			return "", fmt.Errorf("no vswitch found")
+		}
+
+		return switches[0], nil
 	}
 
-	log.Infof("Using switch %s", switches[0])
+	found := false
+	for _, name := range switches {
+		if name == d.vSwitch {
+			found = true
+			break
+		}
+	}
 
-	return switches[0], nil
+	if !found {
+		return "", fmt.Errorf("vswitch %q not found", d.vSwitch)
+	}
+
+	return d.vSwitch, nil
 }
 
 func (d *Driver) wait() error {
