@@ -99,14 +99,15 @@ func (d *Driver) GetURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if ip == "" {
 		return "", nil
 	}
+
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
-
 	command := []string{
 		"(",
 		"Get-VM",
@@ -116,18 +117,20 @@ func (d *Driver) GetState() (state.State, error) {
 	if err != nil {
 		return state.None, fmt.Errorf("Failed to find the VM status")
 	}
-	resp := parseStdout(stdout)
 
+	resp := parseStdout(stdout)
 	if len(resp) < 1 {
 		return state.None, nil
 	}
+
 	switch resp[0] {
 	case "Running":
 		return state.Running, nil
 	case "Off":
 		return state.Stopped, nil
+	default:
+		return state.None, nil
 	}
-	return state.None, nil
 }
 
 // PreCreateCheck checks that the machine creation process can be started safely.
@@ -153,13 +156,11 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Creating SSH key...")
-
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
 	log.Infof("Creating VM...")
-
 	virtualSwitch, err := d.chooseVirtualSwitch()
 	if err != nil {
 		return err
@@ -207,41 +208,44 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Starting  VM...")
-	if err := d.Start(); err != nil {
-		return err
-	}
-
-	return nil
+	log.Infof("Starting VM...")
+	return d.Start()
 }
 
 func (d *Driver) chooseVirtualSwitch() (string, error) {
 	if d.vSwitch != "" {
 		return d.vSwitch, nil
 	}
+
 	command := []string{
 		"@(Get-VMSwitch).Name"}
 	stdout, err := execute(command)
 	if err != nil {
 		return "", err
 	}
+
 	switches := parseStdout(stdout)
-	if len(switches) > 0 {
-		log.Infof("Using switch %s", switches[0])
-		return switches[0], nil
+	if len(switches) < 1 {
+		return "", fmt.Errorf("no vswitch found")
 	}
-	return "", fmt.Errorf("no vswitch found")
+
+	log.Infof("Using switch %s", switches[0])
+
+	return switches[0], nil
 }
 
 func (d *Driver) wait() error {
 	log.Infof("Waiting for host to start...")
+
 	for {
 		ip, _ := d.GetIP()
 		if ip != "" {
 			break
 		}
+
 		time.Sleep(1 * time.Second)
 	}
+
 	return nil
 }
 
@@ -259,6 +263,7 @@ func (d *Driver) Start() error {
 	}
 
 	d.IPAddress, err = d.GetIP()
+
 	return err
 }
 
@@ -270,18 +275,22 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
+
 	for {
 		s, err := d.GetState()
 		if err != nil {
 			return err
 		}
-		if s == state.Running {
-			time.Sleep(1 * time.Second)
-		} else {
+
+		if s != state.Running {
 			break
 		}
+
+		time.Sleep(1 * time.Second)
 	}
+
 	d.IPAddress = ""
+
 	return nil
 }
 
@@ -290,11 +299,13 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
+
 	if s == state.Running {
 		if err := d.Kill(); err != nil {
 			return err
 		}
 	}
+
 	command := []string{
 		"Remove-VM",
 		"-Name", d.MachineName,
@@ -321,18 +332,22 @@ func (d *Driver) Kill() error {
 	if err != nil {
 		return err
 	}
+
 	for {
 		s, err := d.GetState()
 		if err != nil {
 			return err
 		}
-		if s == state.Running {
-			time.Sleep(1 * time.Second)
-		} else {
+
+		if s != state.Running {
 			break
 		}
+
+		time.Sleep(1 * time.Second)
 	}
+
 	d.IPAddress = ""
+
 	return nil
 }
 
@@ -346,10 +361,12 @@ func (d *Driver) GetIP() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	resp := parseStdout(stdout)
 	if len(resp) < 1 {
 		return "", fmt.Errorf("IP not found")
 	}
+
 	return resp[0], nil
 }
 
@@ -357,12 +374,11 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
+// generateDiskImage creates a small fixed vhd, put the tar in, convert to dynamic, then resize
 func (d *Driver) generateDiskImage() error {
-	// Create a small fixed vhd, put the tar in,
-	// convert to dynamic, then resize
-
 	d.diskImage = d.ResolveStorePath("disk.vhd")
 	fixed := d.ResolveStorePath("fixed.vhd")
+
 	log.Infof("Creating VHD")
 	command := []string{
 		"New-VHD",
@@ -384,6 +400,7 @@ func (d *Driver) generateDiskImage() error {
 		return err
 	}
 	defer file.Close()
+
 	file.Seek(0, os.SEEK_SET)
 	_, err = file.Write(tarBuf.Bytes())
 	if err != nil {
@@ -400,6 +417,7 @@ func (d *Driver) generateDiskImage() error {
 	if err != nil {
 		return err
 	}
+
 	command = []string{
 		"Resize-VHD",
 		"-Path", fmt.Sprintf("'%s'", d.diskImage),
@@ -425,34 +443,43 @@ func (d *Driver) generateTar() (*bytes.Buffer, error) {
 	if err := tw.WriteHeader(file); err != nil {
 		return nil, err
 	}
+
 	if _, err := tw.Write([]byte(magicString)); err != nil {
 		return nil, err
 	}
+
 	// .ssh/key.pub => authorized_keys
 	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
 	if err := tw.WriteHeader(file); err != nil {
 		return nil, err
 	}
+
 	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return nil, err
 	}
+
 	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
 	if err := tw.WriteHeader(file); err != nil {
 		return nil, err
 	}
+
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
 		return nil, err
 	}
+
 	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
 	if err := tw.WriteHeader(file); err != nil {
 		return nil, err
 	}
+
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
 		return nil, err
 	}
+
 	if err := tw.Close(); err != nil {
 		return nil, err
 	}
+
 	return buf, nil
 }
