@@ -171,8 +171,5 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	log.Debug("Killing...")
-
-	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now")
-	return err
+	return errors.New("generic driver does not support kill")
 }
