@@ -3,7 +3,7 @@ package hyperv
 import (
 	"bufio"
 	"bytes"
-	"fmt"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +13,11 @@ import (
 )
 
 var powershell string
+
+var (
+	ErrNotAdministrator = errors.New("Hyper-v commands have to be run as an Administrator")
+	ErrNotInstalled     = errors.New("Hyper-V PowerShell Module is not available")
+)
 
 func init() {
 	systemPath := strings.Split(os.Getenv("PATH"), ";")
@@ -61,8 +66,18 @@ func hypervAvailable() error {
 
 	resp := parseLines(stdout)
 	if resp[0] != "Hyper-V" {
-		return fmt.Errorf("Hyper-V PowerShell Module is not available")
+		return ErrNotInstalled
 	}
 
 	return nil
+}
+
+func isAdministrator() (bool, error) {
+	stdout, err := cmdOut(`@([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")`)
+	if err != nil {
+		return false, err
+	}
+
+	resp := parseLines(stdout)
+	return resp[0] == "True", nil
 }

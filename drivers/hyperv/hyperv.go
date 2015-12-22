@@ -124,13 +124,22 @@ func (d *Driver) GetState() (state.State, error) {
 
 // PreCreateCheck checks that the machine creation process can be started safely.
 func (d *Driver) PreCreateCheck() error {
+	// Check that hyperv is installed
 	if err := hypervAvailable(); err != nil {
 		return err
 	}
 
-	// Check that there is a virtual switch already configured
-	_, err := d.chooseVirtualSwitch()
+	// Check that the user is an Administrator
+	isAdmin, err := isAdministrator()
 	if err != nil {
+		return err
+	}
+	if !isAdmin {
+		return ErrNotAdministrator
+	}
+
+	// Check that there is a virtual switch already configured
+	if _, err := d.chooseVirtualSwitch(); err != nil {
 		return err
 	}
 
