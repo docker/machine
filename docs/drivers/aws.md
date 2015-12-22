@@ -48,6 +48,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-ssh-user`: SSH Login user name.
 -   `--amazonec2-request-spot-instance`: Use spot instances.
 -   `--amazonec2-spot-price`: Spot instance bid price (in dollars). Require the `--amazonec2-request-spot-instance` flag.
+-   `--amazonec2-use-private-address`: Use the private IP address for docker-machine, but still create a public IP address.
 -   `--amazonec2-private-address-only`: Use the private IP address only.
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 
@@ -86,5 +87,6 @@ Environment variables and default values:
 | `--amazonec2-ssh-user`              | `AWS_SSH_USER`          | `ubuntu`         |
 | `--amazonec2-request-spot-instance` | -                       | `false`          |
 | `--amazonec2-spot-price`            | -                       | `0.50`           |
+| `--amazonec2-use-private-address`   | -                       | `false`          |
 | `--amazonec2-private-address-only`  | -                       | `false`          |
 | `--amazonec2-monitoring`            | -                       | `false`          |
