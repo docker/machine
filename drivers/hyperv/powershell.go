@@ -38,11 +38,13 @@ func execute(args []string) (string, error) {
 }
 
 func parseStdout(stdout string) []string {
-	s := bufio.NewScanner(strings.NewReader(stdout))
 	resp := []string{}
+
+	s := bufio.NewScanner(strings.NewReader(stdout))
 	for s.Scan() {
 		resp = append(resp, s.Text())
 	}
+
 	return resp
 }
 
@@ -53,10 +55,11 @@ func hypervAvailable() error {
 	if err != nil {
 		return err
 	}
-	resp := parseStdout(stdout)
 
-	if resp[0] == "Hyper-V" {
-		return nil
+	resp := parseStdout(stdout)
+	if resp[0] != "Hyper-V" {
+		return fmt.Errorf("Hyper-V PowerShell Module is not available")
 	}
-	return fmt.Errorf("Hyper-V PowerShell Module is not available")
+
+	return nil
 }
