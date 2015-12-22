@@ -17,6 +17,7 @@ import (
 	"github.com/rackspace/gophercloud/openstack/compute/v2/flavors"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/images"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
+	"github.com/rackspace/gophercloud/openstack/identity/v2/tenants"
 	"github.com/rackspace/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	"github.com/rackspace/gophercloud/openstack/networking/v2/networks"
 	"github.com/rackspace/gophercloud/openstack/networking/v2/ports"
@@ -26,6 +27,7 @@ import (
 type Client interface {
 	Authenticate(d *Driver) error
 	InitComputeClient(d *Driver) error
+	InitIdentityClient(d *Driver) error
 	InitNetworkClient(d *Driver) error
 
 	CreateInstance(d *Driver) (string, error)
@@ -45,11 +47,13 @@ type Client interface {
 	GetFloatingIPs(d *Driver) ([]FloatingIP, error)
 	GetFloatingIPPoolID(d *Driver) (string, error)
 	GetInstancePortID(d *Driver) (string, error)
+	GetTenantID(d *Driver) (string, error)
 }
 
 type GenericClient struct {
 	Provider *gophercloud.ProviderClient
 	Compute  *gophercloud.ServiceClient
+	Identity *gophercloud.ServiceClient
 	Network  *gophercloud.ServiceClient
 }
 
@@ -273,6 +277,29 @@ func (c *GenericClient) GetImageID(d *Driver) (string, error) {
 	return imageID, err
 }
 
+func (c *GenericClient) GetTenantID(d *Driver) (string, error) {
+	pager := tenants.List(c.Identity, nil)
+	tenantId := ""
+
+	err := pager.EachPage(func(page pagination.Page) (bool, error) {
+		tenantList, err := tenants.ExtractTenants(page)
+		if err != nil {
+			return false, err
+		}
+
+		for _, i := range tenantList {
+			if i.Name == d.TenantName {
+				tenantId = i.ID
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+
+	return tenantId, err
+}
+
 func (c *GenericClient) CreateKeyPair(d *Driver, name string, publicKey string) error {
 	opts := keypairs.CreateOpts{
 		Name:      name,
@@ -378,8 +405,13 @@ func (c *GenericClient) getNovaNetworkFloatingIPs(d *Driver) ([]FloatingIP, erro
 }
 
 func (c *GenericClient) getNeutronNetworkFloatingIPs(d *Driver) ([]FloatingIP, error) {
+	log.Debug("Listing floating IPs", map[string]string{
+		"FloatingNetworkId": d.FloatingIpPoolId,
+		"TenantID":          d.TenantId,
+	})
 	pager := floatingips.List(c.Network, floatingips.ListOpts{
 		FloatingNetworkID: d.FloatingIpPoolId,
+		TenantID:          d.TenantId,
 	})
 
 	ips := []FloatingIP{}
@@ -443,6 +475,16 @@ func (c *GenericClient) InitComputeClient(d *Driver) error {
 		return err
 	}
 	c.Compute = compute
+	return nil
+}
+
+func (c *GenericClient) InitIdentityClient(d *Driver) error {
+	if c.Identity != nil {
+		return nil
+	}
+
+	identity := openstack.NewIdentityV2(c.Provider)
+	c.Identity = identity
 	return nil
 }
 

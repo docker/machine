@@ -427,6 +427,7 @@ const (
 	errorUnknownFlavorName       string = "Unable to find flavor named %s"
 	errorUnknownImageName        string = "Unable to find image named %s"
 	errorUnknownNetworkName      string = "Unable to find network named %s"
+	errorUnknownTenantName       string = "Unable to find tenant named %s"
 )
 
 func (d *Driver) checkConfig() error {
@@ -552,6 +553,27 @@ func (d *Driver) resolveIds() error {
 		})
 	}
 
+	if d.TenantId == "" {
+		if err := d.initIdentity(); err != nil {
+			return err
+		}
+		tenantId, err := d.client.GetTenantID(d)
+
+		if err != nil {
+			return err
+		}
+
+		if tenantId == "" {
+			return fmt.Errorf(errorUnknownTenantName, d.TenantName)
+		}
+
+		d.TenantId = tenantId
+		log.Debug("Found tenant id using its name", map[string]string{
+			"Name": d.TenantName,
+			"ID":   d.TenantId,
+		})
+	}
+
 	return nil
 }
 
@@ -560,6 +582,16 @@ func (d *Driver) initCompute() error {
 		return err
 	}
 	if err := d.client.InitComputeClient(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Driver) initIdentity() error {
+	if err := d.client.Authenticate(d); err != nil {
+		return err
+	}
+	if err := d.client.InitIdentityClient(d); err != nil {
 		return err
 	}
 	return nil
