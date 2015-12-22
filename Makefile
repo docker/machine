@@ -2,7 +2,7 @@
 ifneq (,$(findstring test-integration,$(MAKECMDGOALS)))
 	include Makefile.inc
 	include mk/main.mk
-else ifeq ($(USE_CONTAINER),)
+else ifneq ($(USE_CONTAINER), true)
 	include Makefile.inc
 	include mk/main.mk
 else
