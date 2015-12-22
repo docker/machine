@@ -28,6 +28,7 @@ Options:
 -   `--hyperv-virtual-switch`: Name of the virtual switch to use.
 -   `--hyperv-disk-size`: Size of disk for the host in MB.
 -   `--hyperv-memory`: Size of memory for the host in MB.
+-   `--hyperv-cpu-count`: Number of CPUs for the host.
 
 Environment variables and default values:
 
@@ -37,3 +38,4 @@ Environment variables and default values:
 | `--hyperv-virtual-switch`       | -                    | _first found_            |
 | `--hyperv-disk-size`            | -                    | `20000`                  |
 | `--hyperv-memory`               | -                    | `1024`                   |
+| `--hyperv-cpu-count`            | -                    | `1`                      |
