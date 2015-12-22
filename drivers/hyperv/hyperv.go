@@ -24,17 +24,20 @@ type Driver struct {
 	diskImage      string
 	DiskSize       int
 	MemSize        int
+	CPU            int
 }
 
 const (
 	defaultDiskSize = 20000
 	defaultMemory   = 1024
+	defaultCPU      = 1
 )
 
-func NewDriver(hostName, storePath string) drivers.Driver {
+func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
 		DiskSize: defaultDiskSize,
 		MemSize:  defaultMemory,
+		CPU:      defaultCPU,
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -64,6 +67,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage: "Memory size for host in MB.",
 			Value: defaultMemory,
 		},
+		mcnflag.IntFlag{
+			Name:  "hyperv-cpu-count",
+			Usage: "number of CPUs for the machine",
+			Value: defaultCPU,
+		},
 	}
 }
 
@@ -72,6 +80,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.vSwitch = flags.String("hyperv-virtual-switch")
 	d.DiskSize = flags.Int("hyperv-disk-size")
 	d.MemSize = flags.Int("hyperv-memory")
+	d.CPU = flags.Int("hyperv-cpu-count")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
@@ -179,6 +188,12 @@ func (d *Driver) Create() error {
 
 	if err := cmd("New-VM", "-Name", d.MachineName, "-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(".")), "-MemoryStartupBytes", fmt.Sprintf("%dMB", d.MemSize)); err != nil {
 		return err
+	}
+
+	if d.CPU > 1 {
+		if err := cmd("SET-VMProcessor", "-Name", d.MachineName, "-Count", fmt.Sprintf("%d", d.CPU)); err != nil {
+			return err
+		}
 	}
 
 	if err := cmd("Set-VMDvdDrive", "-VMName", d.MachineName, "-Path", fmt.Sprintf("'%s'", d.ResolveStorePath("boot2docker.iso"))); err != nil {
