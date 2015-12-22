@@ -176,7 +176,3 @@ func (d *Driver) Kill() error {
 	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now")
 	return err
 }
-
-func (d *Driver) publicSSHKeyPath() string {
-	return d.GetSSHKeyPath() + ".pub"
-}
