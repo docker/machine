@@ -227,6 +227,11 @@ func (g *EnvUsageHintGenerator) GenerateUsageHint(userShell string, args []strin
 	cmd := ""
 	comment := "#"
 
+	dockerMachinePath := args[0]
+	if strings.Contains(dockerMachinePath, " ") {
+		args[0] = fmt.Sprintf("\"%s\"", dockerMachinePath)
+	}
+
 	commandLine := strings.Join(args, " ")
 
 	switch userShell {
@@ -241,7 +246,7 @@ func (g *EnvUsageHintGenerator) GenerateUsageHint(userShell string, args []strin
 		cmd = fmt.Sprintf("(with-temp-buffer (shell-command \"%s\" (current-buffer)) (eval-buffer))", commandLine)
 		comment = ";;"
 	default:
-		cmd = fmt.Sprintf("eval \"$(%s)\"", commandLine)
+		cmd = fmt.Sprintf("eval $(%s)", commandLine)
 	}
 
 	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
