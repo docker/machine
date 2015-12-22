@@ -23,7 +23,7 @@ func init() {
 	}
 }
 
-func execute(args []string) (string, error) {
+func cmdOut(args ...string) (string, error) {
 	args = append([]string{"-NoProfile"}, args...)
 	cmd := exec.Command(powershell, args...)
 	log.Debugf("[executing ==>] : %v %v", powershell, strings.Join(args, " "))
@@ -37,7 +37,12 @@ func execute(args []string) (string, error) {
 	return stdout.String(), err
 }
 
-func parseStdout(stdout string) []string {
+func cmd(args ...string) error {
+	_, err := cmdOut(args...)
+	return err
+}
+
+func parseLines(stdout string) []string {
 	resp := []string{}
 
 	s := bufio.NewScanner(strings.NewReader(stdout))
@@ -49,14 +54,12 @@ func parseStdout(stdout string) []string {
 }
 
 func hypervAvailable() error {
-	command := []string{
-		"@(Get-Command Get-VM).ModuleName"}
-	stdout, err := execute(command)
+	stdout, err := cmdOut("@(Get-Command Get-VM).ModuleName")
 	if err != nil {
 		return err
 	}
 
-	resp := parseStdout(stdout)
+	resp := parseLines(stdout)
 	if resp[0] != "Hyper-V" {
 		return fmt.Errorf("Hyper-V PowerShell Module is not available")
 	}
