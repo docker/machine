@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"fmt"
+
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -29,7 +31,7 @@ func init() {
 }
 
 func cmdOut(args ...string) (string, error) {
-	args = append([]string{"-NoProfile"}, args...)
+	args = append([]string{"-NoProfile", "-NonInteractive"}, args...)
 	cmd := exec.Command(powershell, args...)
 	log.Debugf("[executing ==>] : %v %v", powershell, strings.Join(args, " "))
 	var stdout bytes.Buffer
@@ -80,4 +82,12 @@ func isAdministrator() (bool, error) {
 
 	resp := parseLines(stdout)
 	return resp[0] == "True", nil
+}
+
+func quote(text string) string {
+	return fmt.Sprintf("'%s'", text)
+}
+
+func toMb(value int) string {
+	return fmt.Sprintf("%dMB", value)
 }
