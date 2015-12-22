@@ -16,7 +16,13 @@ func TestSetConfigFromFlags(t *testing.T) {
 	}
 
 	err := driver.SetConfigFromFlags(checkFlags)
-
 	assert.NoError(t, err)
 	assert.Empty(t, checkFlags.InvalidFlags)
+
+	sshUser := driver.GetSSHUsername()
+	assert.Equal(t, "docker", sshUser)
+
+	sshPort, err := driver.GetSSHPort()
+	assert.Equal(t, 22, sshPort)
+	assert.NoError(t, err)
 }
