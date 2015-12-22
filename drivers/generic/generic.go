@@ -142,14 +142,13 @@ func (d *Driver) GetURL() (string, error) {
 
 func (d *Driver) GetState() (state.State, error) {
 	address := net.JoinHostPort(d.IPAddress, strconv.Itoa(d.SSHPort))
+
 	_, err := net.DialTimeout("tcp", address, defaultTimeout)
-	var st state.State
 	if err != nil {
-		st = state.Stopped
-	} else {
-		st = state.Running
+		return state.Stopped, nil
 	}
-	return st, nil
+
+	return state.Running, nil
 }
 
 func (d *Driver) Start() error {
@@ -171,12 +170,5 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	log.Debug("Killing...")
-
-	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -P now")
-	return err
-}
-
-func (d *Driver) publicSSHKeyPath() string {
-	return d.GetSSHKeyPath() + ".pub"
+	return errors.New("generic driver does not support kill")
 }
