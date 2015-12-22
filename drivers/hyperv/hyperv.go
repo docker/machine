@@ -356,6 +356,14 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	s, err := d.GetState()
+	if err != nil {
+		return "", err
+	}
+	if s != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
 	stdout, err := cmdOut("((", "Get-VM", d.MachineName, ").networkadapters[0]).ipaddresses[0]")
 	if err != nil {
 		return "", err
