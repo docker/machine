@@ -342,6 +342,11 @@ func (d *Driver) Remove() error {
 	return c.deleteDisk()
 }
 
+// Restart restarts a machine which is known to be running.
 func (d *Driver) Restart() error {
-	return nil
+	if err := d.Stop(); err != nil {
+		return err
+	}
+
+	return d.Start()
 }

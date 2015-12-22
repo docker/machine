@@ -500,6 +500,10 @@ func (d *Driver) Start() error {
 		return ErrMustEnableVTX
 	}
 
+	return d.waitForIP()
+}
+
+func (d *Driver) waitForIP() error {
 	// Wait for SSH over NAT to be available before returning to user
 	if err := drivers.WaitForSSH(d); err != nil {
 		return err
@@ -510,6 +514,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 
+	var err error
 	d.IPAddress, err = d.GetIP()
 
 	return err
@@ -572,18 +577,16 @@ func (d *Driver) Remove() error {
 	return d.vbm("unregistervm", "--delete", d.MachineName)
 }
 
+// Restart restarts a machine which is known to be running.
 func (d *Driver) Restart() error {
-	s, err := d.GetState()
-	if err != nil {
+	log.Infof("Restarting VM...")
+	if err := d.vbm("controlvm", d.MachineName, "reset"); err != nil {
 		return err
 	}
 
-	if s == state.Running {
-		if err := d.Stop(); err != nil {
-			return err
-		}
-	}
-	return d.Start()
+	d.IPAddress = ""
+
+	return d.waitForIP()
 }
 
 func (d *Driver) Kill() error {
