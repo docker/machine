@@ -20,7 +20,6 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	Boot2DockerURL string
-	boot2DockerLoc string
 	vSwitch        string
 	diskImage      string
 	DiskSize       int
@@ -49,24 +48,20 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
 			Name:  "hyperv-boot2docker-url",
-			Usage: "Hyper-V URL of the boot2docker image. Defaults to the latest available version.",
-		},
-		mcnflag.StringFlag{
-			Name:  "hyperv-boot2docker-location",
-			Usage: "Hyper-V local boot2docker iso. Overrides URL.",
+			Usage: "URL of the boot2docker ISO. Defaults to the latest available version.",
 		},
 		mcnflag.StringFlag{
 			Name:  "hyperv-virtual-switch",
-			Usage: "Hyper-V virtual switch name. Defaults to first found.",
+			Usage: "Virtual switch name. Defaults to first found.",
 		},
 		mcnflag.IntFlag{
 			Name:  "hyperv-disk-size",
-			Usage: "Hyper-V maximum size of dynamically expanding disk in MB.",
+			Usage: "Maximum size of dynamically expanding disk in MB.",
 			Value: defaultDiskSize,
 		},
 		mcnflag.IntFlag{
 			Name:  "hyperv-memory",
-			Usage: "Hyper-V memory size for host in MB.",
+			Usage: "Memory size for host in MB.",
 			Value: defaultMemory,
 		},
 	}
@@ -74,7 +69,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("hyperv-boot2docker-url")
-	d.boot2DockerLoc = flags.String("hyperv-boot2docker-location")
 	d.vSwitch = flags.String("hyperv-virtual-switch")
 	d.DiskSize = flags.Int("hyperv-disk-size")
 	d.MemSize = flags.Int("hyperv-memory")
@@ -108,17 +102,12 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	command := []string{
-		"(",
-		"Get-VM",
-		"-Name", d.MachineName,
-		").state"}
-	stdout, err := execute(command)
+	stdout, err := cmdOut("(", "Get-VM", "-Name", d.MachineName, ").state")
 	if err != nil {
 		return state.None, fmt.Errorf("Failed to find the VM status")
 	}
 
-	resp := parseStdout(stdout)
+	resp := parseLines(stdout)
 	if len(resp) < 1 {
 		return state.None, nil
 	}
@@ -171,40 +160,19 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	command := []string{
-		"New-VM",
-		"-Name", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(".")),
-		"-MemoryStartupBytes", fmt.Sprintf("%dMB", d.MemSize)}
-	_, err = execute(command)
-	if err != nil {
+	if err := cmd("New-VM", "-Name", d.MachineName, "-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(".")), "-MemoryStartupBytes", fmt.Sprintf("%dMB", d.MemSize)); err != nil {
 		return err
 	}
 
-	command = []string{
-		"Set-VMDvdDrive",
-		"-VMName", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath("boot2docker.iso"))}
-	_, err = execute(command)
-	if err != nil {
+	if err := cmd("Set-VMDvdDrive", "-VMName", d.MachineName, "-Path", fmt.Sprintf("'%s'", d.ResolveStorePath("boot2docker.iso"))); err != nil {
 		return err
 	}
 
-	command = []string{
-		"Add-VMHardDiskDrive",
-		"-VMName", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", d.diskImage)}
-	_, err = execute(command)
-	if err != nil {
+	if err := cmd("Add-VMHardDiskDrive", "-VMName", d.MachineName, "-Path", fmt.Sprintf("'%s'", d.diskImage)); err != nil {
 		return err
 	}
 
-	command = []string{
-		"Connect-VMNetworkAdapter",
-		"-VMName", d.MachineName,
-		"-SwitchName", fmt.Sprintf("'%s'", virtualSwitch)}
-	_, err = execute(command)
-	if err != nil {
+	if err := cmd("Connect-VMNetworkAdapter", "-VMName", d.MachineName, "-SwitchName", fmt.Sprintf("'%s'", virtualSwitch)); err != nil {
 		return err
 	}
 
@@ -217,14 +185,12 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 		return d.vSwitch, nil
 	}
 
-	command := []string{
-		"@(Get-VMSwitch).Name"}
-	stdout, err := execute(command)
+	stdout, err := cmdOut("@(Get-VMSwitch).Name")
 	if err != nil {
 		return "", err
 	}
 
-	switches := parseStdout(stdout)
+	switches := parseLines(stdout)
 	if len(switches) < 1 {
 		return "", fmt.Errorf("no vswitch found")
 	}
@@ -250,11 +216,7 @@ func (d *Driver) wait() error {
 }
 
 func (d *Driver) Start() error {
-	command := []string{
-		"Start-VM",
-		"-Name", d.MachineName}
-	_, err := execute(command)
-	if err != nil {
+	if err := cmd("Start-VM", "-Name", d.MachineName); err != nil {
 		return err
 	}
 
@@ -262,17 +224,14 @@ func (d *Driver) Start() error {
 		return err
 	}
 
+	var err error
 	d.IPAddress, err = d.GetIP()
 
 	return err
 }
 
 func (d *Driver) Stop() error {
-	command := []string{
-		"Stop-VM",
-		"-Name", d.MachineName}
-	_, err := execute(command)
-	if err != nil {
+	if err := cmd("Stop-VM", "-Name", d.MachineName); err != nil {
 		return err
 	}
 
@@ -306,12 +265,7 @@ func (d *Driver) Remove() error {
 		}
 	}
 
-	command := []string{
-		"Remove-VM",
-		"-Name", d.MachineName,
-		"-Force"}
-	_, err = execute(command)
-	return err
+	return cmd("Remove-VM", "-Name", d.MachineName, "-Force")
 }
 
 func (d *Driver) Restart() error {
@@ -324,12 +278,7 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) Kill() error {
-	command := []string{
-		"Stop-VM",
-		"-Name", d.MachineName,
-		"-TurnOff"}
-	_, err := execute(command)
-	if err != nil {
+	if err := cmd("Stop-VM", "-Name", d.MachineName, "-TurnOff"); err != nil {
 		return err
 	}
 
@@ -352,17 +301,12 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) GetIP() (string, error) {
-	command := []string{
-		"((",
-		"Get-VM",
-		"-Name", d.MachineName,
-		").networkadapters[0]).ipaddresses[0]"}
-	stdout, err := execute(command)
+	stdout, err := cmdOut("((", "Get-VM", "-Name", d.MachineName, ").networkadapters[0]).ipaddresses[0]")
 	if err != nil {
 		return "", err
 	}
 
-	resp := parseStdout(stdout)
+	resp := parseLines(stdout)
 	if len(resp) < 1 {
 		return "", fmt.Errorf("IP not found")
 	}
@@ -380,13 +324,7 @@ func (d *Driver) generateDiskImage() error {
 	fixed := d.ResolveStorePath("fixed.vhd")
 
 	log.Infof("Creating VHD")
-	command := []string{
-		"New-VHD",
-		"-Path", fmt.Sprintf("'%s'", fixed),
-		"-SizeBytes", "10MB",
-		"-Fixed"}
-	_, err := execute(command)
-	if err != nil {
+	if err := cmd("New-VHD", "-Path", fmt.Sprintf("'%s'", fixed), "-SizeBytes", "10MB", "-Fixed"); err != nil {
 		return err
 	}
 
@@ -408,26 +346,11 @@ func (d *Driver) generateDiskImage() error {
 	}
 	file.Close()
 
-	command = []string{
-		"Convert-VHD",
-		"-Path", fmt.Sprintf("'%s'", fixed),
-		"-DestinationPath", fmt.Sprintf("'%s'", d.diskImage),
-		"-VHDType", "Dynamic"}
-	_, err = execute(command)
-	if err != nil {
+	if err := cmd("Convert-VHD", "-Path", fmt.Sprintf("'%s'", fixed), "-DestinationPath", fmt.Sprintf("'%s'", d.diskImage), "-VHDType", "Dynamic"); err != nil {
 		return err
 	}
 
-	command = []string{
-		"Resize-VHD",
-		"-Path", fmt.Sprintf("'%s'", d.diskImage),
-		"-SizeBytes", fmt.Sprintf("%dMB", d.DiskSize)}
-	_, err = execute(command)
-	if err != nil {
-		return err
-	}
-
-	return err
+	return cmd("Resize-VHD", "-Path", fmt.Sprintf("'%s'", d.diskImage), "-SizeBytes", fmt.Sprintf("%dMB", d.DiskSize))
 }
 
 // Make a boot2docker VM disk image.
