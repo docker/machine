@@ -8,7 +8,7 @@ machine:
     # - sudo apt-get install -y virtualbox
 
   post:
-    - gvm install go1.5.1 -B --name=stable
+    - gvm install go1.5.2 -B --name=stable
 
   environment:
   # Convenient shortcuts to "common" locations
