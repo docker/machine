@@ -1,10 +1,7 @@
 package hyperv
 
 import (
-	"archive/tar"
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"time"
@@ -21,7 +18,6 @@ type Driver struct {
 	*drivers.BaseDriver
 	Boot2DockerURL string
 	VSwitch        string
-	diskImage      string
 	DiskSize       int
 	MemSize        int
 	CPU            int
@@ -182,7 +178,7 @@ func (d *Driver) Create() error {
 
 	log.Infof("Using switch %q", virtualSwitch)
 
-	err = d.generateDiskImage()
+	diskImage, err := d.generateDiskImage()
 	if err != nil {
 		return err
 	}
@@ -211,7 +207,7 @@ func (d *Driver) Create() error {
 
 	if err := cmd("Add-VMHardDiskDrive",
 		"-VMName", d.MachineName,
-		"-Path", quote(d.diskImage)); err != nil {
+		"-Path", quote(diskImage)); err != nil {
 		return err
 	}
 
@@ -382,90 +378,40 @@ func (d *Driver) publicSSHKeyPath() string {
 }
 
 // generateDiskImage creates a small fixed vhd, put the tar in, convert to dynamic, then resize
-func (d *Driver) generateDiskImage() error {
-	d.diskImage = d.ResolveStorePath("disk.vhd")
+func (d *Driver) generateDiskImage() (string, error) {
+	diskImage := d.ResolveStorePath("disk.vhd")
 	fixed := d.ResolveStorePath("fixed.vhd")
 
 	log.Infof("Creating VHD")
 	if err := cmd("New-VHD", "-Path", quote(fixed), "-SizeBytes", "10MB", "-Fixed"); err != nil {
-		return err
+		return "", err
 	}
 
-	tarBuf, err := d.generateTar()
+	tarBuf, err := mcnutils.MakeDiskImage(d.publicSSHKeyPath())
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	file, err := os.OpenFile(fixed, os.O_WRONLY, 0644)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer file.Close()
 
 	file.Seek(0, os.SEEK_SET)
 	_, err = file.Write(tarBuf.Bytes())
 	if err != nil {
-		return err
+		return "", err
 	}
 	file.Close()
 
-	if err := cmd("Convert-VHD", "-Path", quote(fixed), "-DestinationPath", quote(d.diskImage), "-VHDType", "Dynamic"); err != nil {
-		return err
+	if err := cmd("Convert-VHD", "-Path", quote(fixed), "-DestinationPath", quote(diskImage), "-VHDType", "Dynamic"); err != nil {
+		return "", err
 	}
 
-	return cmd("Resize-VHD", "-Path", quote(d.diskImage), "-SizeBytes", toMb(d.DiskSize))
-}
-
-// Make a boot2docker VM disk image.
-// See https://github.com/boot2docker/boot2docker/blob/master/rootfs/rootfs/etc/rc.d/automount
-func (d *Driver) generateTar() (*bytes.Buffer, error) {
-	magicString := "boot2docker, please format-me"
-
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-
-	// magicString first so the automount script knows to format the disk
-	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
+	if err := cmd("Resize-VHD", "-Path", quote(diskImage), "-SizeBytes", toMb(d.DiskSize)); err != nil {
+		return "", err
 	}
 
-	if _, err := tw.Write([]byte(magicString)); err != nil {
-		return nil, err
-	}
-
-	// .ssh/key.pub => authorized_keys
-	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
-	}
-
-	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
-	if err != nil {
-		return nil, err
-	}
-
-	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
-	}
-
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return nil, err
-	}
-
-	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
-	}
-
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return nil, err
-	}
-
-	if err := tw.Close(); err != nil {
-		return nil, err
-	}
-
-	return buf, nil
+	return diskImage, nil
 }
