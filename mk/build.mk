@@ -1,11 +1,15 @@
 extension = $(patsubst windows,.exe,$(filter windows,$(1)))
 
+# Valid target combinations
+VALID_OS_ARCH := "[darwin/amd64][linux/amd64][windows/amd64][windows/386]"
+
 define gocross
+	$(if $(findstring [$(1)/$(2)],$(VALID_OS_ARCH)), \
 	GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 \
 		$(GO) build \
 		-o $(PREFIX)/bin/docker-machine_$(1)-$(2)$(call extension,$(GOOS)) \
 		-a $(VERBOSE_GO) -tags "static_build netgo $(BUILDTAGS)" -installsuffix netgo \
-		-ldflags "$(GO_LDFLAGS) -extldflags -static" $(GO_GCFLAGS) ./cmd/machine.go;
+		-ldflags "$(GO_LDFLAGS) -extldflags -static" $(GO_GCFLAGS) ./cmd/machine.go;)
 endef
 
 build-clean:
