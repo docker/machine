@@ -20,7 +20,7 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	Boot2DockerURL string
-	vSwitch        string
+	VSwitch        string
 	diskImage      string
 	DiskSize       int
 	MemSize        int
@@ -77,7 +77,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("hyperv-boot2docker-url")
-	d.vSwitch = flags.String("hyperv-virtual-switch")
+	d.VSwitch = flags.String("hyperv-virtual-switch")
 	d.DiskSize = flags.Int("hyperv-disk-size")
 	d.MemSize = flags.Int("hyperv-memory")
 	d.CPU = flags.Int("hyperv-cpu-count")
@@ -220,7 +220,7 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 
 	switches := parseLines(stdout)
 
-	if d.vSwitch == "" {
+	if d.VSwitch == "" {
 		if len(switches) < 1 {
 			return "", fmt.Errorf("no vswitch found")
 		}
@@ -230,17 +230,17 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 
 	found := false
 	for _, name := range switches {
-		if name == d.vSwitch {
+		if name == d.VSwitch {
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		return "", fmt.Errorf("vswitch %q not found", d.vSwitch)
+		return "", fmt.Errorf("vswitch %q not found", d.VSwitch)
 	}
 
-	return d.vSwitch, nil
+	return d.VSwitch, nil
 }
 
 func (d *Driver) wait() error {
