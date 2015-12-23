@@ -15,6 +15,7 @@ import (
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
@@ -269,17 +270,35 @@ func matchesLabel(host *host.Host, labels []string) bool {
 	return false
 }
 
+// PERFORMANCE: The code of this function is complicated because we try
+// to call the underlying drivers as less as possible to get the information
+// we need.
 func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	url := ""
-	hostError := ""
+	currentState := state.None
 	dockerVersion := "Unknown"
+	hostError := ""
 
-	currentState, err := h.Driver.GetState()
+	url, err := h.URL()
+
+	// PERFORMANCE: if we have the url, it's ok to assume the host is running
+	// This reduces the number of calls to the drivers
 	if err == nil {
-		url, err = h.URL()
+		if url != "" {
+			currentState = state.Running
+		} else {
+			currentState, err = h.Driver.GetState()
+		}
+	} else {
+		currentState, _ = h.Driver.GetState()
 	}
-	if err == nil {
-		dockerVersion, err = h.DockerVersion()
+
+	if err == nil && url != "" {
+		// PERFORMANCE: Reuse the url instead of asking the host again.
+		// This reduces the number of calls to the drivers
+		dockerHost := &mcndockerclient.RemoteDocker{url, h.AuthOptions()}
+		dockerVersion, err = mcndockerclient.DockerVersion(dockerHost)
+
 		if err != nil {
 			dockerVersion = "Unknown"
 		} else {

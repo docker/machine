@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/docker/machine/libmachine"
+	"github.com/docker/machine/libmachine/mcndockerclient"
 )
 
 func cmdVersion(c CommandLine, api libmachine.API) error {
@@ -28,7 +29,7 @@ func printVersion(c CommandLine, api libmachine.API, out io.Writer) error {
 		return err
 	}
 
-	version, err := host.DockerVersion()
+	version, err := mcndockerclient.DockerVersion(host)
 	if err != nil {
 		return err
 	}
