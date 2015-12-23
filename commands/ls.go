@@ -40,6 +40,7 @@ type FilterOptions struct {
 type HostListItem struct {
 	Name          string
 	Active        bool
+	SwarmActive   bool
 	DriverName    string
 	State         state.State
 	URL           string
@@ -78,6 +79,8 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	swarmInfo := make(map[string]string)
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 1, 3, ' ', 0)
+	defer w.Flush()
+
 	fmt.Fprintln(w, "NAME\tACTIVE\tDRIVER\tSTATE\tURL\tSWARM\tDOCKER\tERRORS")
 
 	for _, host := range hostList {
@@ -96,26 +99,32 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	items := getHostListItems(hostList, hostInError)
 
 	for _, item := range items {
-		activeString := "-"
-		if item.Active {
-			activeString = "*"
-		}
-
-		swarmInfo := ""
-
-		if item.SwarmOptions != nil && item.SwarmOptions.Discovery != "" {
-			swarmInfo = swarmMasters[item.SwarmOptions.Discovery]
-			if item.SwarmOptions.Master {
-				swarmInfo = fmt.Sprintf("%s (master)", swarmInfo)
-			}
-		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			item.Name, activeString, item.DriverName, item.State, item.URL, swarmInfo, item.DockerVersion, item.Error)
+		printItemToTabWriter(item, swarmInfo, swarmMasters, w)
 	}
 
-	w.Flush()
-
 	return nil
+}
+
+func printItemToTabWriter(item HostListItem, swarmInfo map[string]string, swarmMasters map[string]string, w *tabwriter.Writer) {
+	activeColumn := "-"
+	if item.Active {
+		activeColumn = "*"
+	}
+	if item.SwarmActive {
+		activeColumn = "* (swarm)"
+	}
+
+	swarmColumn := ""
+
+	if item.SwarmOptions != nil && item.SwarmOptions.Discovery != "" {
+		swarmColumn = swarmMasters[item.SwarmOptions.Discovery]
+		if item.SwarmOptions.Master {
+			swarmColumn = fmt.Sprintf("%s (master)", swarmColumn)
+		}
+	}
+
+	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		item.Name, activeColumn, item.DriverName, item.State, item.URL, swarmColumn, item.DockerVersion, item.Error)
 }
 
 func parseFilters(filters []string) (FilterOptions, error) {
@@ -320,9 +329,17 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 		engineOptions = h.HostOptions.EngineOptions
 	}
 
+	isMaster := false
+	swarmHost := ""
+	if swarmOptions != nil {
+		isMaster = swarmOptions.Master
+		swarmHost = swarmOptions.Host
+	}
+
 	stateQueryChan <- HostListItem{
 		Name:          h.Name,
 		Active:        isActive(currentState, url),
+		SwarmActive:   isSwarmActive(currentState, url, isMaster, swarmHost),
 		DriverName:    h.Driver.DriverName(),
 		State:         currentState,
 		URL:           url,
@@ -397,16 +414,21 @@ func sortHostListItemsByName(items []HostListItem) {
 	}
 }
 
-// IsActive provides a single function for determining if a host is active
-// based on both the url and if the host is stopped.
-func isActive(currentState state.State, url string) bool {
-	dockerHost := os.Getenv("DOCKER_HOST")
+func isActive(currentState state.State, hostURL string) bool {
+	return currentState == state.Running && hostURL == os.Getenv("DOCKER_HOST")
+}
 
-	// TODO: hard-coding the swarm port is a travesty...
-	deSwarmedHost := strings.Replace(dockerHost, ":3376", ":2376", 1)
-	if dockerHost == url || deSwarmedHost == url {
-		return currentState == state.Running
-	}
+func isSwarmActive(currentState state.State, hostURL string, isMaster bool, swarmHost string) bool {
+	return isMaster && currentState == state.Running && toSwarmURL(hostURL, swarmHost) == os.Getenv("DOCKER_HOST")
+}
 
-	return false
+func urlPort(urlWithPort string) string {
+	parts := strings.Split(urlWithPort, ":")
+	return parts[len(parts)-1]
+}
+
+func toSwarmURL(hostURL string, swarmHost string) string {
+	hostPort := urlPort(hostURL)
+	swarmPort := urlPort(swarmHost)
+	return strings.Replace(hostURL, ":"+hostPort, ":"+swarmPort, 1)
 }
