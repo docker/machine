@@ -11,7 +11,6 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
@@ -165,11 +164,10 @@ func (h *Host) URL() (string, error) {
 }
 
 func (h *Host) AuthOptions() *auth.Options {
+	if h.HostOptions == nil {
+		return nil
+	}
 	return h.HostOptions.AuthOptions
-}
-
-func (h *Host) DockerVersion() (string, error) {
-	return mcndockerclient.DockerVersion(h)
 }
 
 func (h *Host) ConfigureAuth() error {
