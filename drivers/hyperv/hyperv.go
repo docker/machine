@@ -33,6 +33,7 @@ const (
 	defaultCPU      = 1
 )
 
+// NewDriver creates a new Hyper-v driver with default settings.
 func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
 		DiskSize: defaultDiskSize,
@@ -258,6 +259,7 @@ func (d *Driver) wait() error {
 	return nil
 }
 
+// Start starts an host
 func (d *Driver) Start() error {
 	if err := cmd("Start-VM", "-Name", d.MachineName); err != nil {
 		return err
@@ -273,6 +275,7 @@ func (d *Driver) Start() error {
 	return err
 }
 
+// Stop stops an host
 func (d *Driver) Stop() error {
 	if err := cmd("Stop-VM", "-Name", d.MachineName); err != nil {
 		return err
@@ -296,6 +299,7 @@ func (d *Driver) Stop() error {
 	return nil
 }
 
+// Remove removes an host
 func (d *Driver) Remove() error {
 	s, err := d.GetState()
 	if err != nil {
@@ -311,6 +315,7 @@ func (d *Driver) Remove() error {
 	return cmd("Remove-VM", "-Name", d.MachineName, "-Force")
 }
 
+// Restart stops and starts an host
 func (d *Driver) Restart() error {
 	err := d.Stop()
 	if err != nil {
@@ -320,6 +325,7 @@ func (d *Driver) Restart() error {
 	return d.Start()
 }
 
+// Kill force stops an host
 func (d *Driver) Kill() error {
 	if err := cmd("Stop-VM", "-Name", d.MachineName, "-TurnOff"); err != nil {
 		return err
