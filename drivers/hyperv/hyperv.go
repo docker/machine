@@ -246,42 +246,23 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 	return d.VSwitch, nil
 }
 
-func (d *Driver) wait() error {
+// waitForIP waits until the host has a valid IP
+func (d *Driver) waitForIP() (string, error) {
 	log.Infof("Waiting for host to start...")
 
 	for {
 		ip, _ := d.GetIP()
 		if ip != "" {
-			break
+			return ip, nil
 		}
 
 		time.Sleep(1 * time.Second)
 	}
-
-	return nil
 }
 
-// Start starts an host
-func (d *Driver) Start() error {
-	if err := cmd("Start-VM", d.MachineName); err != nil {
-		return err
-	}
-
-	if err := d.wait(); err != nil {
-		return err
-	}
-
-	var err error
-	d.IPAddress, err = d.GetIP()
-
-	return err
-}
-
-// Stop stops an host
-func (d *Driver) Stop() error {
-	if err := cmd("Stop-VM", d.MachineName); err != nil {
-		return err
-	}
+// waitStopped waits until the host is stopped
+func (d *Driver) waitStopped() error {
+	log.Infof("Waiting for host to stop...")
 
 	for {
 		s, err := d.GetState()
@@ -290,10 +271,37 @@ func (d *Driver) Stop() error {
 		}
 
 		if s != state.Running {
-			break
+			return nil
 		}
 
 		time.Sleep(1 * time.Second)
+	}
+}
+
+// Start starts an host
+func (d *Driver) Start() error {
+	if err := cmd("Start-VM", d.MachineName); err != nil {
+		return err
+	}
+
+	ip, err := d.waitForIP()
+	if err != nil {
+		return err
+	}
+
+	d.IPAddress = ip
+
+	return nil
+}
+
+// Stop stops an host
+func (d *Driver) Stop() error {
+	if err := cmd("Stop-VM", d.MachineName); err != nil {
+		return err
+	}
+
+	if err := d.waitStopped(); err != nil {
+		return err
 	}
 
 	d.IPAddress = ""
@@ -333,17 +341,8 @@ func (d *Driver) Kill() error {
 		return err
 	}
 
-	for {
-		s, err := d.GetState()
-		if err != nil {
-			return err
-		}
-
-		if s != state.Running {
-			break
-		}
-
-		time.Sleep(1 * time.Second)
+	if err := d.waitStopped(); err != nil {
+		return err
 	}
 
 	d.IPAddress = ""
