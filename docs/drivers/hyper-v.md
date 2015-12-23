@@ -32,10 +32,10 @@ Options:
 
 Environment variables and default values:
 
-| CLI option                      | Environment variable | Default                  |
-| ------------------------------- | -------------------- | ------------------------ |
-| `--hyperv-boot2docker-url`      | -                    | _Latest boot2docker url_ |
-| `--hyperv-virtual-switch`       | -                    | _first found_            |
-| `--hyperv-disk-size`            | -                    | `20000`                  |
-| `--hyperv-memory`               | -                    | `1024`                   |
-| `--hyperv-cpu-count`            | -                    | `1`                      |
+| CLI option                 | Environment variable     | Default                  |
+| -------------------------- | ------------------------ | ------------------------ |
+| `--hyperv-boot2docker-url` | `HYPERV_BOOT2DOCKER_URL` | _Latest boot2docker url_ |
+| `--hyperv-virtual-switch`  | `HYPERV_VIRTUAL_SWITCH`  | _first found_            |
+| `--hyperv-disk-size`       | `HYPERV_DISK_SIZE`       | `20000`                  |
+| `--hyperv-memory`          | `HYPERV_MEMORY`          | `1024`                   |
+| `--hyperv-cpu-count`       | `HYPERV_CPU_COUNT`       | `1`                      |
