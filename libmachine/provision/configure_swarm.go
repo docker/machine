@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/samalba/dockerclient"
 )
@@ -34,11 +35,10 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 	dockerPort := "2376"
 	dockerDir := p.GetDockerOptionsDir()
 	dockerHost := fmt.Sprintf("tcp://%s:%s", ip, dockerPort)
-	dockerClient := DockerClient{dockerHost, authOptions}
+	dockerClient := mcndockerclient.RemoteDocker{dockerHost, &authOptions}
 	advertiseInfo := fmt.Sprintf("%s:%s", ip, dockerPort)
 
 	if swarmOptions.Master {
-
 		cmd := fmt.Sprintf("manage --tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy %s --advertise %s",
 			authOptions.CaCertRemotePath,
 			authOptions.ServerCertRemotePath,
@@ -78,11 +78,10 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			HostConfig: masterHostConfig,
 		}
 
-		err = CreateContainer(dockerClient, swarmMasterConfig, "swarm-agent-master")
+		err = mcndockerclient.CreateContainer(dockerClient, swarmMasterConfig, "swarm-agent-master")
 		if err != nil {
 			return err
 		}
-
 	}
 
 	workerHostConfig := dockerclient.HostConfig{
@@ -105,9 +104,5 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		HostConfig: workerHostConfig,
 	}
 
-	if err = CreateContainer(dockerClient, swarmWorkerConfig, "swarm-agent"); err != nil {
-		return err
-	}
-
-	return nil
+	return mcndockerclient.CreateContainer(dockerClient, swarmWorkerConfig, "swarm-agent")
 }
