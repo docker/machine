@@ -4,9 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"fmt"
@@ -17,17 +15,13 @@ import (
 var powershell string
 
 var (
-	ErrNotAdministrator = errors.New("Hyper-v commands have to be run as an Administrator")
-	ErrNotInstalled     = errors.New("Hyper-V PowerShell Module is not available")
+	ErrPowerShellNotFound = errors.New("Powershell was not found in the path")
+	ErrNotAdministrator   = errors.New("Hyper-v commands have to be run as an Administrator")
+	ErrNotInstalled       = errors.New("Hyper-V PowerShell Module is not available")
 )
 
 func init() {
-	systemPath := strings.Split(os.Getenv("PATH"), ";")
-	for _, path := range systemPath {
-		if strings.Index(path, "WindowsPowerShell") != -1 {
-			powershell = filepath.Join(path, "powershell.exe")
-		}
-	}
+	powershell, _ = exec.LookPath("powershell.exe")
 }
 
 func cmdOut(args ...string) (string, error) {
