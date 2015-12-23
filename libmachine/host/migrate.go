@@ -44,7 +44,7 @@ func getMigratedHostMetadata(data []byte) (*Metadata, error) {
 	return migratedHostMetadata, nil
 }
 
-func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
+func MigrateHost(name string, data []byte) (*Host, bool, error) {
 	var (
 		migrationNeeded    = false
 		migrationPerformed = false
@@ -57,13 +57,15 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 		return nil, false, err
 	}
 
-	globalStorePath := filepath.Dir(filepath.Dir(migratedHostMetadata.HostOptions.AuthOptions.StorePath))
-
-	driver := &RawDataDriver{none.NewDriver(h.Name, globalStorePath), nil}
-
 	if migratedHostMetadata.ConfigVersion > version.ConfigVersion {
 		return nil, false, errConfigFromFuture
 	}
+
+	globalStorePath := filepath.Dir(filepath.Dir(migratedHostMetadata.HostOptions.AuthOptions.StorePath))
+
+	driver := &RawDataDriver{none.NewDriver(name, globalStorePath), nil}
+
+	h := &Host{}
 
 	if migratedHostMetadata.ConfigVersion == version.ConfigVersion {
 		h.Driver = driver

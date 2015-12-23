@@ -82,10 +82,9 @@ var (
 )
 
 func TestMigrateHostV1ToHostV2(t *testing.T) {
-	h := &Host{}
 	expectedGlobalStorePath := "/Users/catbug/.docker/machine"
 	expectedCaPrivateKeyPath := "/Users/catbug/.docker/machine/certs/ca-key.pem"
-	migratedHost, migrationPerformed, err := MigrateHost(h, v1conf)
+	migratedHost, migrationPerformed, err := MigrateHost("", v1conf)
 	if err != nil {
 		t.Fatalf("Error attempting to migrate host: %s", err)
 	}
