@@ -24,7 +24,7 @@ func TestSetConfigFromDefaultFlags(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "", driver.Boot2DockerURL)
-	assert.Equal(t, "", driver.vSwitch)
+	assert.Equal(t, "", driver.VSwitch)
 	assert.Equal(t, defaultDiskSize, driver.DiskSize)
 	assert.Equal(t, defaultMemory, driver.MemSize)
 	assert.Equal(t, defaultCPU, driver.CPU)
@@ -54,7 +54,7 @@ func TestSetConfigFromCustomFlags(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "B2D_URL", driver.Boot2DockerURL)
-	assert.Equal(t, "TheSwitch", driver.vSwitch)
+	assert.Equal(t, "TheSwitch", driver.VSwitch)
 	assert.Equal(t, 100000, driver.DiskSize)
 	assert.Equal(t, 4096, driver.MemSize)
 	assert.Equal(t, 4, driver.CPU)
