@@ -1,6 +1,8 @@
 package mcnutils
 
 import (
+	"archive/tar"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -421,4 +423,63 @@ func (b *B2dUtils) isLatest() bool {
 	}
 
 	return localVer == latestVer
+}
+
+// MakeDiskImage makes a boot2docker VM disk image.
+// See https://github.com/boot2docker/boot2docker/blob/master/rootfs/rootfs/etc/rc.d/automount
+func MakeDiskImage(publicSSHKeyPath string) (*bytes.Buffer, error) {
+	magicString := "boot2docker, please format-me"
+
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+
+	// magicString first so the automount script knows to format the disk
+	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
+
+	log.Debug("Writing magic tar header")
+
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	if _, err := tw.Write([]byte(magicString)); err != nil {
+		return nil, err
+	}
+
+	// .ssh/key.pub => authorized_keys
+	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	log.Debug("Writing SSH key tar header")
+
+	pubKey, err := ioutil.ReadFile(publicSSHKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+
+	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
+	if err := tw.WriteHeader(file); err != nil {
+		return nil, err
+	}
+
+	if _, err := tw.Write([]byte(pubKey)); err != nil {
+		return nil, err
+	}
+
+	if err := tw.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
