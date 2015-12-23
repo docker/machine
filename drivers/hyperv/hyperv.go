@@ -47,27 +47,32 @@ func NewDriver(hostName, storePath string) *Driver {
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
-			Name:  "hyperv-boot2docker-url",
-			Usage: "URL of the boot2docker ISO. Defaults to the latest available version.",
+			Name:   "hyperv-boot2docker-url",
+			Usage:  "URL of the boot2docker ISO. Defaults to the latest available version.",
+			EnvVar: "HYPERV_BOOT2DOCKER_URL",
 		},
 		mcnflag.StringFlag{
-			Name:  "hyperv-virtual-switch",
-			Usage: "Virtual switch name. Defaults to first found.",
+			Name:   "hyperv-virtual-switch",
+			Usage:  "Virtual switch name. Defaults to first found.",
+			EnvVar: "HYPERV_VIRTUAL_SWITCH",
 		},
 		mcnflag.IntFlag{
-			Name:  "hyperv-disk-size",
-			Usage: "Maximum size of dynamically expanding disk in MB.",
-			Value: defaultDiskSize,
+			Name:   "hyperv-disk-size",
+			Usage:  "Maximum size of dynamically expanding disk in MB.",
+			Value:  defaultDiskSize,
+			EnvVar: "HYPERV_DISK_SIZE",
 		},
 		mcnflag.IntFlag{
-			Name:  "hyperv-memory",
-			Usage: "Memory size for host in MB.",
-			Value: defaultMemory,
+			Name:   "hyperv-memory",
+			Usage:  "Memory size for host in MB.",
+			Value:  defaultMemory,
+			EnvVar: "HYPERV_MEMORY",
 		},
 		mcnflag.IntFlag{
-			Name:  "hyperv-cpu-count",
-			Usage: "number of CPUs for the machine",
-			Value: defaultCPU,
+			Name:   "hyperv-cpu-count",
+			Usage:  "number of CPUs for the machine",
+			Value:  defaultCPU,
+			EnvVar: "HYPERV_CPU_COUNT",
 		},
 	}
 }
