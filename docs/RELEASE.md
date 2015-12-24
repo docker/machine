@@ -12,65 +12,29 @@ several "checklist items" which should be documented.  This document is intended
 to cover the current Docker Machine release process.  It is written for Docker
 Machine core maintainers who might find themselves performing a release.
 
-1.  **Version Bump** -- When all commits for the release have been merged into
-    master and/or the release branch, submit a pull request bumping the `Version`
-    variable in `version/version.go` to the release version.  Merge said pull
-    request.  
-2.  **Compile Binaries** -- Pull down the latest changes to master and
-    cross-compile the core binary and plugin binaries for each supported OS /
-    architecture combination.  As you may notice, this can potentially take a _very_
-    long time so you may want to use a script like [this one for cross-compiling
-    them on DigitalOcean in
-    parallel](https://gist.github.com/nathanleclaire/7f62fc5aa3df19a50f4e).
-4.  **Upload Binaries** -- Use a script or sequence of commands such as [this
-    one](https://gist.github.com/nathanleclaire/a9bc1f8d60070aeda361) to create a
-    git tag for the released version, a GitHub release for the released version, and
-    to upload the released binaries.  At the time of writing the `release` target in
-    the `Makefile` does not work correctly for this step but it should eventually be
-    split into a separate target and fixed.
-5.  **Generate Checksums** -- `make release-checksum` will spit out the checksums
-    for the binaries, which you should copy and paste into the end of the release
-    notes for anyone who wants to verify the checksums of the downloaded artifacts.
-6.  **Add Installation Instructions** -- At the top of the release notes, copy and
-    paste the installation instructions from the previous release, taking care to
-    update the referenced download URLs to the new version.
-7.  **Add Release Notes** -- If release notes are already prepared, copy and
-    paste them into the release notes section after the installation instructions.
-    If they are not, you can look through the commits since the previous release
-    using `git log` and summarize the changes in Markdown, preferably by category.
-8.  **Update the CHANGELOG.md** -- Add the same notes from the previous step to the
-    `CHANGELOG.md` file in the repository.
-9.  **Generate and Add Contributor List** -- It is important to thank our
-    contributors for their good work and persistence.  Usually I generate a list of
-    authors involved in the release as a Markdown ordered list using a series of
-    UNIX commands originating from `git` author information, and paste it into the
-    release notes..  For instance, to print out the list of all unique authors since
-    the v0.5.0 release:
-
-            $ git log v0.5.0.. --format="%aN" --reverse | sort | uniq | awk '{printf "- %s\n", $0 }'
-            - Amir Mohammad
-            - Anthony Dahanne
-            - David Gageot
-            - Jan Broer
-            - Jean-Laurent de Morlhon
-            - Kazumichi Yamamoto
-            - Kunal Kushwaha
-            - Mikhail Zholobov
-            - Nate McMaster
-            - Nathan LeClaire
-            - Olivier Gambier
-            - Soshi Katsuta
-            - aperepel
-            - jviide
-            - root
-
-10. **Update the Documentation** -- Ensure that the `docs` branch on GitHub (which
-    the Docker docs team uses to deploy from) is up to date with the changes to be
-    deployed from the release branch / master.
-11. **Verify the Installation** -- Copy and paste the suggested commands in the
+1. **Get a GITHUB_TOKEN** Check that you have a proper `GITHUB_TOKEN`. This
+   token needs only to have the `repo` scope. The token can be created on github
+   in the settings > Personal Access Token menu.
+1. **Run the release script** At the root of the project, run the following
+    command `GITHUB_TOKEN=XXXX script/release.sh X.Y.Z` where `XXXX` is the
+    value of the GITHUB_TOKEN generated, `X.Y.Z` the version to release
+    ( Explicitly excluding the 'v' prefix, the script takes care of it.). As of
+    now, this version number must match the content of `version/version.go`. The
+    script has been built to be as resilient as possible, cleaning everything
+    it does along its way if necessary. You can run it many times in a row,
+    fixing the various bits along the way.
+1. **Update the changelog on github** -- The script generated a list of all
+   commits since last release. You need to edit this manually, getting rid of
+   non critical details, and putting emphasis to what need our users attention.
+1.  **Update the CHANGELOG.md** -- Add the same notes from the previous step to
+    the `CHANGELOG.md` file in the repository.
+1. **Update the Documentation** -- Ensure that the `docs` branch on GitHub
+    (which the Docker docs team uses to deploy from) is up to date with the
+    changes to be deployed from the release branch / master.
+1. **Verify the Installation** -- Copy and paste the suggested commands in the
     installation notes to ensure that they work properly.  Best of all, grab an
-    (uninvolved) buddy and have them try it.  `docker-machine -v` should give them
-    the released version once they have run the install commands.
-12. (Optional) **Drink a Glass of Wine** -- You've worked hard on this release.
-    You deserve it.  For wine suggestions, please consult your friendly neighborhood
-    sommelier.
+    (uninvolved) buddy and have them try it.  `docker-machine -v` should give
+    them the released version once they have run the install commands.
+1. (Optional) **Drink a Glass of Wine** -- You've worked hard on this release.
+    You deserve it.  For wine suggestions, please consult your friendly
+    neighborhood sommelier.
