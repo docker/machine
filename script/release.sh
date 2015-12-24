@@ -64,15 +64,16 @@ checkError "You must have a docker-machine in your path" "showUsage"
 
 LAST_RELEASE_VERSION=$(git describe --abbrev=0 --tags)
 #TODO: ABORT if not found (very unlikely but could happen if two tags are on the same commits )
-# this is tag search is done on master not on the clone...
+# this tag search is done on master not on the clone...
 
 display "Starting release from ${LAST_RELEASE_VERSION} to ${GITHUB_VERSION} on ${PROJECT_URL} with token ${GITHUB_TOKEN}"
 while true; do
-    read -p "Do you want to proceed with this release? (y/n) > " yn
+    read -p "🐳  Do you want to proceed with this release? (y/n) > " yn
+    echo ""
     case $yn in
         [Yy]* ) break;;
         [Nn]* ) exit;;
-        * ) echo "Please answer yes or no.";;
+        * ) echo "😡   Please answer yes or no.";;
     esac
 done
 
@@ -126,10 +127,6 @@ display "Building in-container style"
 USE_CONTAINER=true make clean validate build-x
 checkError "Build error, aborting."
 
-# this is temporary -> Remove following two lines once merged
-mkdir -p script/release
-cp ../machine/script/release/github-release-template.md script/release/github-release-template.md
-
 display "Generating github release"
 cp -f script/release/github-release-template.md "${GITHUB_RELEASE_FILE}"
 checkError "Can't find github release template"
@@ -162,7 +159,6 @@ TEMPLATE=$(cat "${GITHUB_RELEASE_FILE}")
 echo "${TEMPLATE//\{\{CHECKSUM\}\}/$CHECKSUM}" > "${GITHUB_RELEASE_FILE}"
 checkError "Couldn't replace [ ${CHECKSUM} ]"
 
-
 RELEASE_DOCUMENTATION="$(cat ${GITHUB_RELEASE_FILE})"
 
 display "Tagging and pushing tags"
@@ -176,15 +172,15 @@ display "Checking if remote tag ${GITHUB_VERSION} already exists."
 git ls-remote --tags 2> /dev/null | grep -q "${GITHUB_VERSION}" # returns 0 if found, 1 if not
 if [[ "$?" -ne 1 ]]; then
   display "Deleting previous tag ${GITHUB_VERSION}"
-  git tag -d "${GITHUB_VERSION}"
-  git push origin :refs/tags/"${GITHUB_VERSION}"
+  git tag -d "${GITHUB_VERSION}" &> /dev/null
+  git push -q origin :refs/tags/"${GITHUB_VERSION}"
 else
   echo "Tag ${GITHUB_VERSION} does not exist... yet"
 fi
 
 display "Tagging release on github"
 git tag "${GITHUB_VERSION}"
-git push remote.prod.url "${GITHUB_VERSION}"
+git push -q remote.prod.url "${GITHUB_VERSION}"
 checkError "Could not push to remote url"
 
 display "Checking if release already exists"
@@ -237,9 +233,9 @@ git remote rm remote.prod.url
 
 rm ${GITHUB_RELEASE_FILE}
 
-echo "There is a couple of tasks your still need to do manually, either until this script if updated or because this is a manual thing."
-echo "  1 Head over to the release note created for you on github https://github.com/docker/machine/releases/tag/${GITHUB_VERSION}, you'll have a chance to enhance commit details a bit."
-echo "  2 Once you're happy with your release note on github, add the revelant part to the CHANGELOG.md"
+echo "There is a couple of tasks your still need to do manually."
+echo "  1 Open the release notes created for you on github https://github.com/docker/machine/releases/tag/${GITHUB_VERSION}, you'll have a chance to enhance commit details a bit."
+echo "  2 Once you're happy with your release notes on github, copy the list of changes to the CHANGELOG.md"
 echo "  3 Update the documentation branch"
 echo "  4 Test the binaries linked from the github release page"
 echo "  6 Change version/version.go to the next version"
