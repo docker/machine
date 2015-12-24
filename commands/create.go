@@ -321,12 +321,6 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 		driver = serialDriver.Driver
 	}
 
-	if rpcd, ok := driver.(*rpcdriver.RPCClientDriver); ok {
-		if err := rpcd.Close(); err != nil {
-			return err
-		}
-	}
-
 	return c.Application().Run(os.Args)
 }
 
