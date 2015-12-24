@@ -8,7 +8,6 @@ import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/host"
-	"github.com/docker/machine/libmachine/state"
 )
 
 var (
@@ -39,23 +38,12 @@ type ConnChecker interface {
 type MachineConnChecker struct{}
 
 func (mcc *MachineConnChecker) Check(h *host.Host, swarm bool) (string, *auth.Options, error) {
-	hostState, err := h.Driver.GetState()
-	if err != nil {
-		// TODO: This is a common operation and should have a commonly
-		// defined error.
-		return "", &auth.Options{}, fmt.Errorf("Error trying to get host state: %s", err)
-	}
-	if hostState != state.Running {
-		return "", &auth.Options{}, fmt.Errorf("%s is not running. Please start it in order to use the connection settings", h.Name)
-	}
-
 	dockerHost, err := h.Driver.GetURL()
 	if err != nil {
 		return "", &auth.Options{}, fmt.Errorf("Error getting driver URL: %s", err)
 	}
 
 	if swarm {
-		var err error
 		dockerHost, err = parseSwarm(dockerHost, h)
 		if err != nil {
 			return "", &auth.Options{}, fmt.Errorf("Error parsing swarm: %s", err)
