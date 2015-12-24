@@ -1,6 +1,7 @@
 package check
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 var (
 	DefaultConnChecker ConnChecker
+	ErrSwarmNotStarted = errors.New("Connection to Swarm cannot be checked but the certs are valid. Maybe swarm is not started")
 )
 
 func init() {
@@ -40,17 +42,18 @@ type MachineConnChecker struct{}
 func (mcc *MachineConnChecker) Check(h *host.Host, swarm bool) (string, *auth.Options, error) {
 	dockerHost, err := h.Driver.GetURL()
 	if err != nil {
-		return "", &auth.Options{}, fmt.Errorf("Error getting driver URL: %s", err)
+		return "", &auth.Options{}, err
 	}
 
+	dockerURL := dockerHost
 	if swarm {
-		dockerHost, err = parseSwarm(dockerHost, h)
+		dockerURL, err = parseSwarm(dockerHost, h)
 		if err != nil {
-			return "", &auth.Options{}, fmt.Errorf("Error parsing swarm: %s", err)
+			return "", &auth.Options{}, err
 		}
 	}
 
-	u, err := url.Parse(dockerHost)
+	u, err := url.Parse(dockerURL)
 	if err != nil {
 		return "", &auth.Options{}, fmt.Errorf("Error parsing URL: %s", err)
 	}
@@ -58,10 +61,19 @@ func (mcc *MachineConnChecker) Check(h *host.Host, swarm bool) (string, *auth.Op
 	authOptions := h.HostOptions.AuthOptions
 
 	if err := checkCert(u.Host, authOptions); err != nil {
+		if swarm {
+			// Connection to the swarm port cannot be checked. Maybe it's just the swarm containers that are down
+			// TODO: check the containers and restart them
+			// Let's check the non-swarm connection to give a better error message to the user.
+			if _, _, err := mcc.Check(h, false); err == nil {
+				return "", &auth.Options{}, ErrSwarmNotStarted
+			}
+		}
+
 		return "", &auth.Options{}, fmt.Errorf("Error checking and/or regenerating the certs: %s", err)
 	}
 
-	return dockerHost, authOptions, nil
+	return dockerURL, authOptions, nil
 }
 
 func checkCert(hostURL string, authOptions *auth.Options) error {
@@ -81,7 +93,7 @@ func parseSwarm(hostURL string, h *host.Host) (string, error) {
 	swarmOptions := h.HostOptions.SwarmOptions
 
 	if !swarmOptions.Master {
-		return "", fmt.Errorf("Error: %s is not a swarm master.  The --swarm flag is intended for use with swarm masters", h.Name)
+		return "", fmt.Errorf("%q is not a swarm master. The --swarm flag is intended for use with swarm masters", h.Name)
 	}
 
 	u, err := url.Parse(swarmOptions.Host)
