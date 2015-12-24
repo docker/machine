@@ -14,6 +14,7 @@ func cmdStatus(c CommandLine, api libmachine.API) error {
 	if err != nil {
 		return err
 	}
+	defer api.Close(host)
 
 	currentState, err := host.Driver.GetState()
 	if err != nil {

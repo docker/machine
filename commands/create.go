@@ -228,6 +228,10 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 
 	log.Infof("To see how to connect Docker to this machine, run: %s", fmt.Sprintf("%s env %s", os.Args[0], name))
 
+	if err := api.Close(h); err != nil {
+		return fmt.Errorf("Error closing plugin connection to driver: %s", err)
+	}
+
 	return nil
 }
 
@@ -321,10 +325,8 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 		driver = serialDriver.Driver
 	}
 
-	if rpcd, ok := driver.(*rpcdriver.RPCClientDriver); ok {
-		if err := rpcd.Close(); err != nil {
-			return err
-		}
+	if err := libmachine.CloseIfRPCDriver(driver); err != nil {
+		return err
 	}
 
 	return c.Application().Run(os.Args)

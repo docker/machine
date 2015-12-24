@@ -47,6 +47,8 @@ func TestCmdKill(t *testing.T) {
 		},
 	}
 
+	defer api.AssertClosed(t, []string{"machineToKill1", "machineToKill2"})
+
 	err := cmdKill(commandLine, api)
 	assert.NoError(t, err)
 

@@ -47,6 +47,8 @@ func TestCmdStop(t *testing.T) {
 		},
 	}
 
+	defer api.AssertClosed(t, []string{"machineToStop1", "machineToStop2"})
+
 	err := cmdStop(commandLine, api)
 	assert.NoError(t, err)
 

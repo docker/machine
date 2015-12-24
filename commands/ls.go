@@ -65,6 +65,8 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 		return err
 	}
 
+	defer libmachine.CloseHosts(api, hostList)
+
 	hostList = filterHosts(hostList, filters)
 
 	// Just print out the names if we're being quiet

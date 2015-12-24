@@ -46,6 +46,8 @@ func TestCmdRm(t *testing.T) {
 		},
 	}
 
+	defer api.AssertClosed(t, []string{"machineToRemove1", "machineToRemove2"})
+
 	err := cmdRm(commandLine, api)
 	assert.NoError(t, err)
 

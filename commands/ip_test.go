@@ -36,6 +36,8 @@ func TestCmdIP(t *testing.T) {
 		},
 	}
 
+	defer api.AssertClosed(t, []string{"machine"})
+
 	stdoutGetter := commandstest.NewStdoutGetter()
 	defer stdoutGetter.Stop()
 

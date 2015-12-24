@@ -25,6 +25,7 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 			}
 			log.Errorf("Error removing host %q: %s. Continuing on `-f`, host instance may by running", hostName, loaderr)
 		}
+		defer api.Close(h)
 
 		if !confirm && !force {
 			userinput, err := confirmInput(fmt.Sprintf("Do you really want to remove %q?", hostName))

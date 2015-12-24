@@ -1,15 +1,19 @@
 package libmachinetest
 
 import (
+	"testing"
+
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/stretchr/testify/assert"
 )
 
 type FakeAPI struct {
-	Hosts []*host.Host
+	Hosts       []*host.Host
+	closedHosts map[string]bool
 }
 
 func (api *FakeAPI) NewPluginDriver(string, []byte) (drivers.Driver, error) {
@@ -22,6 +26,22 @@ func (api *FakeAPI) NewHost(driver drivers.Driver) (*host.Host, error) {
 
 func (api *FakeAPI) Create(h *host.Host) error {
 	return nil
+}
+
+func (api *FakeAPI) Close(h *host.Host) error {
+	if api.closedHosts == nil {
+		api.closedHosts = make(map[string]bool)
+	}
+
+	api.closedHosts[h.Name] = true
+
+	return nil
+}
+
+func (api *FakeAPI) AssertClosed(t *testing.T, hostNames []string) {
+	for _, name := range hostNames {
+		assert.Equal(t, true, api.closedHosts[name])
+	}
 }
 
 func (api *FakeAPI) Exists(name string) (bool, error) {
