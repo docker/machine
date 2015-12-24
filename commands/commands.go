@@ -12,6 +12,7 @@ import (
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/crashreport"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
@@ -115,6 +116,8 @@ func fatalOnError(command func(commandLine CommandLine, api libmachine.API) erro
 		mcndirs.BaseDir = api.Filestore.Path
 		mcnutils.GithubAPIToken = api.GithubAPIToken
 		ssh.SetDefaultClient(api.SSHClientType)
+
+		defer rpcdriver.CloseDrivers()
 
 		if err := command(&contextCommandLine{context}, api); err != nil {
 			log.Fatal(err)

@@ -3,6 +3,7 @@ package rpcdriver
 import (
 	"fmt"
 	"net/rpc"
+	"sync"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -15,6 +16,8 @@ import (
 
 var (
 	heartbeatInterval = 5 * time.Second
+	openedDrivers     = []*RPCClientDriver{}
+	openedDriversLock = &sync.Mutex{}
 )
 
 type RPCClientDriver struct {
@@ -85,6 +88,17 @@ func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 	}
 }
 
+func CloseDrivers() {
+	openedDriversLock.Lock()
+
+	for _, openedDriver := range openedDrivers {
+		openedDriver.close()
+	}
+	openedDrivers = []*RPCClientDriver{}
+
+	openedDriversLock.Unlock()
+}
+
 func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
 	mcnName := ""
 
@@ -116,6 +130,10 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 		heartbeatDoneCh: make(chan bool),
 	}
 
+	openedDriversLock.Lock()
+	openedDrivers = append(openedDrivers, c)
+	openedDriversLock.Unlock()
+
 	var serverVersion int
 	if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {
 		// this is the first call we make to the server. We try to play nice with old pre 0.5.1 client,
@@ -141,7 +159,7 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 			case <-time.After(heartbeatInterval):
 				if err := c.Client.Call(HeartbeatMethod, struct{}{}, nil); err != nil {
 					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
-					c.Close()
+					c.close()
 					return
 				}
 			}
@@ -168,7 +186,7 @@ func (c *RPCClientDriver) UnmarshalJSON(data []byte) error {
 	return c.SetConfigRaw(data)
 }
 
-func (c *RPCClientDriver) Close() error {
+func (c *RPCClientDriver) close() error {
 	c.heartbeatDoneCh <- true
 	close(c.heartbeatDoneCh)
 
