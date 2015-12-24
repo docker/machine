@@ -575,7 +575,6 @@ func (d *Driver) GetState() (state.State, error) {
 	}
 }
 
-// GetSSHHostname -
 func (d *Driver) GetSSHHostname() (string, error) {
 	// TODO: use @nathanleclaire retry func here (ehazlett)
 	return d.GetIP()

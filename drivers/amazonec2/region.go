@@ -4,14 +4,6 @@ import (
 	"errors"
 )
 
-var (
-	errInvalidRegion  = errors.New("invalid region specified")
-	errNoVpcs         = errors.New("No VPCs found in region")
-	errMachineFailure = errors.New("Machine failed to start")
-	errNoIP           = errors.New("No IP Address associated with the instance")
-	errComplete       = errors.New("Complete")
-)
-
 type region struct {
 	AmiId string
 }
@@ -49,5 +41,5 @@ func validateAwsRegion(region string) (string, error) {
 		}
 	}
 
-	return "", errInvalidRegion
+	return "", errors.New("invalid region specified")
 }
