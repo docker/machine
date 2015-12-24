@@ -415,7 +415,7 @@ func TestIsActive(t *testing.T) {
 		{"tcp://5.6.7.8:2376", state.Running, false},
 		{"tcp://1.2.3.4:2376", state.Stopped, false},
 		{"tcp://1.2.3.4:2376", state.Running, true},
-		{"tcp://1.2.3.4:3376", state.Running, true},
+		{"tcp://1.2.3.4:3376", state.Running, false},
 	}
 
 	for _, c := range cases {
@@ -425,6 +425,33 @@ func TestIsActive(t *testing.T) {
 		}
 
 		actual := isActive(c.state, "tcp://1.2.3.4:2376")
+
+		assert.Equal(t, c.expected, actual)
+	}
+}
+
+func TestIsSwarmActive(t *testing.T) {
+	cases := []struct {
+		dockerHost string
+		state      state.State
+		isMaster   bool
+		expected   bool
+	}{
+		{"", state.Running, false, false},
+		{"tcp://5.6.7.8:3376", state.Running, true, false},
+		{"tcp://1.2.3.4:3376", state.Stopped, true, false},
+		{"tcp://1.2.3.4:3376", state.Running, true, true},
+		{"tcp://1.2.3.4:3376", state.Running, false, false},
+		{"tcp://1.2.3.4:2376", state.Running, true, false},
+	}
+
+	for _, c := range cases {
+		os.Unsetenv("DOCKER_HOST")
+		if c.dockerHost != "" {
+			os.Setenv("DOCKER_HOST", c.dockerHost)
+		}
+
+		actual := isSwarmActive(c.state, "tcp://1.2.3.4:2376", c.isMaster, "tcp://0.0.0.0:3376")
 
 		assert.Equal(t, c.expected, actual)
 	}
