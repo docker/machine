@@ -26,3 +26,17 @@ export TOKEN=$(curl -sS -X POST "https://discovery.hub.docker.com/v1/clusters")
     echo ${heartbeat_arg}
     [[ "$heartbeat_arg" =~ "--heartbeat=5s" ]]
 }
+
+@test "should not show as swarm active if normal active" {
+    eval $(machine env queenbee)
+    run machine ls
+    echo ${output}
+    [[ ${lines[1]} != *"* (swarm)"*  ]]
+}
+
+@test "should show as swarm active" {
+    eval $(machine env --swarm queenbee)
+    run machine ls
+    echo ${output}
+    [[ ${lines[1]} == *"* (swarm)"*  ]]
+}
