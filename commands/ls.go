@@ -305,7 +305,10 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	if err == nil && url != "" {
 		// PERFORMANCE: Reuse the url instead of asking the host again.
 		// This reduces the number of calls to the drivers
-		dockerHost := &mcndockerclient.RemoteDocker{url, h.AuthOptions()}
+		dockerHost := &mcndockerclient.RemoteDocker{
+			HostURL:    url,
+			AuthOption: h.AuthOptions(),
+		}
 		dockerVersion, err = mcndockerclient.DockerVersion(dockerHost)
 
 		if err != nil {
