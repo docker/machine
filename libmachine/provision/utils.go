@@ -115,7 +115,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if _, err := p.SSHCommand("sudo ip link delete docker0"); err != nil {
+	if _, err := p.SSHCommand(`if [ ! -z "$(ip link show docker0)" ]; then sudo ip link delete docker0; fi`); err != nil {
 		return err
 	}
 
