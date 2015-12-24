@@ -3,28 +3,29 @@ package hyperv
 import (
 	"bufio"
 	"bytes"
-	"fmt"
-	"os"
+	"errors"
 	"os/exec"
-	"path/filepath"
 	"strings"
+
+	"fmt"
 
 	"github.com/docker/machine/libmachine/log"
 )
 
 var powershell string
 
+var (
+	ErrPowerShellNotFound = errors.New("Powershell was not found in the path")
+	ErrNotAdministrator   = errors.New("Hyper-v commands have to be run as an Administrator")
+	ErrNotInstalled       = errors.New("Hyper-V PowerShell Module is not available")
+)
+
 func init() {
-	systemPath := strings.Split(os.Getenv("PATH"), ";")
-	for _, path := range systemPath {
-		if strings.Index(path, "WindowsPowerShell") != -1 {
-			powershell = filepath.Join(path, "powershell.exe")
-		}
-	}
+	powershell, _ = exec.LookPath("powershell.exe")
 }
 
-func execute(args []string) (string, error) {
-	args = append([]string{"-NoProfile"}, args...)
+func cmdOut(args ...string) (string, error) {
+	args = append([]string{"-NoProfile", "-NonInteractive"}, args...)
 	cmd := exec.Command(powershell, args...)
 	log.Debugf("[executing ==>] : %v %v", powershell, strings.Join(args, " "))
 	var stdout bytes.Buffer
@@ -37,26 +38,50 @@ func execute(args []string) (string, error) {
 	return stdout.String(), err
 }
 
-func parseStdout(stdout string) []string {
-	s := bufio.NewScanner(strings.NewReader(stdout))
+func cmd(args ...string) error {
+	_, err := cmdOut(args...)
+	return err
+}
+
+func parseLines(stdout string) []string {
 	resp := []string{}
+
+	s := bufio.NewScanner(strings.NewReader(stdout))
 	for s.Scan() {
 		resp = append(resp, s.Text())
 	}
+
 	return resp
 }
 
 func hypervAvailable() error {
-	command := []string{
-		"@(Get-Command Get-VM).ModuleName"}
-	stdout, err := execute(command)
+	stdout, err := cmdOut("@(Get-Command Get-VM).ModuleName")
 	if err != nil {
 		return err
 	}
-	resp := parseStdout(stdout)
 
-	if resp[0] == "Hyper-V" {
-		return nil
+	resp := parseLines(stdout)
+	if resp[0] != "Hyper-V" {
+		return ErrNotInstalled
 	}
-	return fmt.Errorf("Hyper-V PowerShell Module is not available")
+
+	return nil
+}
+
+func isAdministrator() (bool, error) {
+	stdout, err := cmdOut(`@([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")`)
+	if err != nil {
+		return false, err
+	}
+
+	resp := parseLines(stdout)
+	return resp[0] == "True", nil
+}
+
+func quote(text string) string {
+	return fmt.Sprintf("'%s'", text)
+}
+
+func toMb(value int) string {
+	return fmt.Sprintf("%dMB", value)
 }
