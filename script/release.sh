@@ -127,10 +127,6 @@ display "Building in-container style"
 USE_CONTAINER=true make clean validate build-x
 checkError "Build error, aborting."
 
-# this is temporary -> Remove following two lines once merged
-mkdir -p script/release
-cp ../machine/script/release/github-release-template.md script/release/github-release-template.md
-
 display "Generating github release"
 cp -f script/release/github-release-template.md "${GITHUB_RELEASE_FILE}"
 checkError "Can't find github release template"
