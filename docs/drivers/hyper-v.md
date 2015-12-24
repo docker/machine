@@ -24,18 +24,18 @@ Administrator level account to create and manage Hyper-V machines.
 
 Options:
 
--   `--hyperv-boot2docker-url`: The URL of the boot2docker ISO. Defaults to the latest available version.
--   `--hyperv-boot2docker-location`: Location of a local boot2docker iso to use. Overrides the URL option below.
--   `--hyperv-virtual-switch`: Name of the virtual switch to use. Defaults to first found.
+-   `--hyperv-boot2docker-url`: The URL of the boot2docker ISO.
+-   `--hyperv-virtual-switch`: Name of the virtual switch to use.
 -   `--hyperv-disk-size`: Size of disk for the host in MB.
--   `--hyperv-memory`: Size of memory for the host in MB. By default, the machine is setup to use dynamic memory.
+-   `--hyperv-memory`: Size of memory for the host in MB.
+-   `--hyperv-cpu-count`: Number of CPUs for the host.
 
 Environment variables and default values:
 
-| CLI option                      | Environment variable | Default                  |
-| ------------------------------- | -------------------- | ------------------------ |
-| `--hyperv-boot2docker-url`      | -                    | _Latest boot2docker url_ |
-| `--hyperv-boot2docker-location` | -                    | -                        |
-| `--hyperv-virtual-switch`       | -                    | _first found_            |
-| `--hyperv-disk-size`            | -                    | `20000`                  |
-| `--hyperv-memory`               | -                    | `1024`                   |
+| CLI option                 | Environment variable     | Default                  |
+| -------------------------- | ------------------------ | ------------------------ |
+| `--hyperv-boot2docker-url` | `HYPERV_BOOT2DOCKER_URL` | _Latest boot2docker url_ |
+| `--hyperv-virtual-switch`  | `HYPERV_VIRTUAL_SWITCH`  | _first found_            |
+| `--hyperv-disk-size`       | `HYPERV_DISK_SIZE`       | `20000`                  |
+| `--hyperv-memory`          | `HYPERV_MEMORY`          | `1024`                   |
+| `--hyperv-cpu-count`       | `HYPERV_CPU_COUNT`       | `1`                      |

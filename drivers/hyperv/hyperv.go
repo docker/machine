@@ -1,10 +1,7 @@
 package hyperv
 
 import (
-	"archive/tar"
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"time"
@@ -20,22 +17,24 @@ import (
 type Driver struct {
 	*drivers.BaseDriver
 	Boot2DockerURL string
-	boot2DockerLoc string
-	vSwitch        string
-	diskImage      string
+	VSwitch        string
 	DiskSize       int
 	MemSize        int
+	CPU            int
 }
 
 const (
 	defaultDiskSize = 20000
 	defaultMemory   = 1024
+	defaultCPU      = 1
 )
 
-func NewDriver(hostName, storePath string) drivers.Driver {
+// NewDriver creates a new Hyper-v driver with default settings.
+func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
 		DiskSize: defaultDiskSize,
 		MemSize:  defaultMemory,
+		CPU:      defaultCPU,
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -48,54 +47,51 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
-			Name:  "hyperv-boot2docker-url",
-			Usage: "Hyper-V URL of the boot2docker image. Defaults to the latest available version.",
+			Name:   "hyperv-boot2docker-url",
+			Usage:  "URL of the boot2docker ISO. Defaults to the latest available version.",
+			EnvVar: "HYPERV_BOOT2DOCKER_URL",
 		},
 		mcnflag.StringFlag{
-			Name:  "hyperv-boot2docker-location",
-			Usage: "Hyper-V local boot2docker iso. Overrides URL.",
-		},
-		mcnflag.StringFlag{
-			Name:  "hyperv-virtual-switch",
-			Usage: "Hyper-V virtual switch name. Defaults to first found.",
+			Name:   "hyperv-virtual-switch",
+			Usage:  "Virtual switch name. Defaults to first found.",
+			EnvVar: "HYPERV_VIRTUAL_SWITCH",
 		},
 		mcnflag.IntFlag{
-			Name:  "hyperv-disk-size",
-			Usage: "Hyper-V maximum size of dynamically expanding disk in MB.",
-			Value: defaultDiskSize,
+			Name:   "hyperv-disk-size",
+			Usage:  "Maximum size of dynamically expanding disk in MB.",
+			Value:  defaultDiskSize,
+			EnvVar: "HYPERV_DISK_SIZE",
 		},
 		mcnflag.IntFlag{
-			Name:  "hyperv-memory",
-			Usage: "Hyper-V memory size for host in MB.",
-			Value: defaultMemory,
+			Name:   "hyperv-memory",
+			Usage:  "Memory size for host in MB.",
+			Value:  defaultMemory,
+			EnvVar: "HYPERV_MEMORY",
+		},
+		mcnflag.IntFlag{
+			Name:   "hyperv-cpu-count",
+			Usage:  "number of CPUs for the machine",
+			Value:  defaultCPU,
+			EnvVar: "HYPERV_CPU_COUNT",
 		},
 	}
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("hyperv-boot2docker-url")
-	d.boot2DockerLoc = flags.String("hyperv-boot2docker-location")
-	d.vSwitch = flags.String("hyperv-virtual-switch")
+	d.VSwitch = flags.String("hyperv-virtual-switch")
 	d.DiskSize = flags.Int("hyperv-disk-size")
 	d.MemSize = flags.Int("hyperv-memory")
+	d.CPU = flags.Int("hyperv-cpu-count")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
-	d.SSHPort = 22
 	return nil
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
-}
-
-func (d *Driver) GetSSHUsername() string {
-	if d.SSHUser == "" {
-		d.SSHUser = "docker"
-	}
-
-	return d.SSHUser
 }
 
 // DriverName returns the name of the driver
@@ -108,40 +104,58 @@ func (d *Driver) GetURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if ip == "" {
 		return "", nil
 	}
+
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
-
-	command := []string{
-		"(",
-		"Get-VM",
-		"-Name", d.MachineName,
-		").state"}
-	stdout, err := execute(command)
+	stdout, err := cmdOut("(", "Get-VM", d.MachineName, ").state")
 	if err != nil {
 		return state.None, fmt.Errorf("Failed to find the VM status")
 	}
-	resp := parseStdout(stdout)
 
+	resp := parseLines(stdout)
 	if len(resp) < 1 {
 		return state.None, nil
 	}
+
 	switch resp[0] {
 	case "Running":
 		return state.Running, nil
 	case "Off":
 		return state.Stopped, nil
+	default:
+		return state.None, nil
 	}
-	return state.None, nil
 }
 
 // PreCreateCheck checks that the machine creation process can be started safely.
 func (d *Driver) PreCreateCheck() error {
+	// Check that powershell was found
+	if powershell == "" {
+		return ErrPowerShellNotFound
+	}
+
+	// Check that hyperv is installed
 	if err := hypervAvailable(); err != nil {
+		return err
+	}
+
+	// Check that the user is an Administrator
+	isAdmin, err := isAdministrator()
+	if err != nil {
+		return err
+	}
+	if !isAdmin {
+		return ErrNotAdministrator
+	}
+
+	// Check that there is a virtual switch already configured
+	if _, err := d.chooseVirtualSwitch(); err != nil {
 		return err
 	}
 
@@ -156,164 +170,172 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	d.setMachineNameIfNotSet()
-
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
 	if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 		return err
 	}
 
 	log.Infof("Creating SSH key...")
-
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return err
 	}
 
 	log.Infof("Creating VM...")
-
 	virtualSwitch, err := d.chooseVirtualSwitch()
 	if err != nil {
 		return err
 	}
 
-	err = d.generateDiskImage()
+	log.Infof("Using switch %q", virtualSwitch)
+
+	diskImage, err := d.generateDiskImage()
 	if err != nil {
 		return err
 	}
 
-	command := []string{
-		"New-VM",
-		"-Name", d.MachineName,
+	if err := cmd("New-VM",
+		d.MachineName,
 		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(".")),
-		"-MemoryStartupBytes", fmt.Sprintf("%dMB", d.MemSize)}
-	_, err = execute(command)
-	if err != nil {
+		"-SwitchName", quote(virtualSwitch),
+		"-MemoryStartupBytes", toMb(d.MemSize)); err != nil {
 		return err
 	}
 
-	command = []string{
-		"Set-VMDvdDrive",
+	if d.CPU > 1 {
+		if err := cmd("Set-VMProcessor",
+			d.MachineName,
+			"-Count", fmt.Sprintf("%d", d.CPU)); err != nil {
+			return err
+		}
+	}
+
+	if err := cmd("Set-VMDvdDrive",
 		"-VMName", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath("boot2docker.iso"))}
-	_, err = execute(command)
-	if err != nil {
+		"-Path", quote(d.ResolveStorePath("boot2docker.iso"))); err != nil {
 		return err
 	}
 
-	command = []string{
-		"Add-VMHardDiskDrive",
+	if err := cmd("Add-VMHardDiskDrive",
 		"-VMName", d.MachineName,
-		"-Path", fmt.Sprintf("'%s'", d.diskImage)}
-	_, err = execute(command)
-	if err != nil {
+		"-Path", quote(diskImage)); err != nil {
 		return err
 	}
 
-	command = []string{
-		"Connect-VMNetworkAdapter",
-		"-VMName", d.MachineName,
-		"-SwitchName", fmt.Sprintf("'%s'", virtualSwitch)}
-	_, err = execute(command)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Starting  VM...")
-	if err := d.Start(); err != nil {
-		return err
-	}
-
-	return nil
+	log.Infof("Starting VM...")
+	return d.Start()
 }
 
 func (d *Driver) chooseVirtualSwitch() (string, error) {
-	if d.vSwitch != "" {
-		return d.vSwitch, nil
-	}
-	command := []string{
-		"@(Get-VMSwitch).Name"}
-	stdout, err := execute(command)
+	stdout, err := cmdOut("(Get-VMSwitch).Name")
 	if err != nil {
 		return "", err
 	}
-	switches := parseStdout(stdout)
-	if len(switches) > 0 {
-		log.Infof("Using switch %s", switches[0])
+
+	switches := parseLines(stdout)
+
+	if d.VSwitch == "" {
+		if len(switches) < 1 {
+			return "", fmt.Errorf("no vswitch found")
+		}
+
 		return switches[0], nil
 	}
-	return "", fmt.Errorf("no vswitch found")
+
+	found := false
+	for _, name := range switches {
+		if name == d.VSwitch {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return "", fmt.Errorf("vswitch %q not found", d.VSwitch)
+	}
+
+	return d.VSwitch, nil
 }
 
-func (d *Driver) wait() error {
+// waitForIP waits until the host has a valid IP
+func (d *Driver) waitForIP() (string, error) {
 	log.Infof("Waiting for host to start...")
+
 	for {
 		ip, _ := d.GetIP()
 		if ip != "" {
-			break
+			return ip, nil
 		}
+
 		time.Sleep(1 * time.Second)
 	}
-	return nil
 }
 
-func (d *Driver) Start() error {
-	command := []string{
-		"Start-VM",
-		"-Name", d.MachineName}
-	_, err := execute(command)
-	if err != nil {
-		return err
-	}
+// waitStopped waits until the host is stopped
+func (d *Driver) waitStopped() error {
+	log.Infof("Waiting for host to stop...")
 
-	if err := d.wait(); err != nil {
-		return err
-	}
-
-	d.IPAddress, err = d.GetIP()
-	return err
-}
-
-func (d *Driver) Stop() error {
-	command := []string{
-		"Stop-VM",
-		"-Name", d.MachineName}
-	_, err := execute(command)
-	if err != nil {
-		return err
-	}
 	for {
 		s, err := d.GetState()
 		if err != nil {
 			return err
 		}
-		if s == state.Running {
-			time.Sleep(1 * time.Second)
-		} else {
-			break
+
+		if s != state.Running {
+			return nil
 		}
+
+		time.Sleep(1 * time.Second)
 	}
-	d.IPAddress = ""
+}
+
+// Start starts an host
+func (d *Driver) Start() error {
+	if err := cmd("Start-VM", d.MachineName); err != nil {
+		return err
+	}
+
+	ip, err := d.waitForIP()
+	if err != nil {
+		return err
+	}
+
+	d.IPAddress = ip
+
 	return nil
 }
 
+// Stop stops an host
+func (d *Driver) Stop() error {
+	if err := cmd("Stop-VM", d.MachineName); err != nil {
+		return err
+	}
+
+	if err := d.waitStopped(); err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+
+	return nil
+}
+
+// Remove removes an host
 func (d *Driver) Remove() error {
 	s, err := d.GetState()
 	if err != nil {
 		return err
 	}
+
 	if s == state.Running {
 		if err := d.Kill(); err != nil {
 			return err
 		}
 	}
-	command := []string{
-		"Remove-VM",
-		"-Name", d.MachineName,
-		"-Force"}
-	_, err = execute(command)
-	return err
+
+	return cmd("Remove-VM", d.MachineName, "-Force")
 }
 
+// Restart stops and starts an host
 func (d *Driver) Restart() error {
 	err := d.Stop()
 	if err != nil {
@@ -323,50 +345,40 @@ func (d *Driver) Restart() error {
 	return d.Start()
 }
 
+// Kill force stops an host
 func (d *Driver) Kill() error {
-	command := []string{
-		"Stop-VM",
-		"-Name", d.MachineName,
-		"-TurnOff"}
-	_, err := execute(command)
-	if err != nil {
+	if err := cmd("Stop-VM", d.MachineName, "-TurnOff"); err != nil {
 		return err
 	}
-	for {
-		s, err := d.GetState()
-		if err != nil {
-			return err
-		}
-		if s == state.Running {
-			time.Sleep(1 * time.Second)
-		} else {
-			break
-		}
+
+	if err := d.waitStopped(); err != nil {
+		return err
 	}
+
 	d.IPAddress = ""
+
 	return nil
 }
 
-func (d *Driver) setMachineNameIfNotSet() {
-	if d.MachineName == "" {
-		d.MachineName = fmt.Sprintf("docker-machine-unknown")
-	}
-}
-
 func (d *Driver) GetIP() (string, error) {
-	command := []string{
-		"((",
-		"Get-VM",
-		"-Name", d.MachineName,
-		").networkadapters[0]).ipaddresses[0]"}
-	stdout, err := execute(command)
+	s, err := d.GetState()
 	if err != nil {
 		return "", err
 	}
-	resp := parseStdout(stdout)
+	if s != state.Running {
+		return "", drivers.ErrHostIsNotRunning
+	}
+
+	stdout, err := cmdOut("((", "Get-VM", d.MachineName, ").networkadapters[0]).ipaddresses[0]")
+	if err != nil {
+		return "", err
+	}
+
+	resp := parseLines(stdout)
 	if len(resp) < 1 {
 		return "", fmt.Errorf("IP not found")
 	}
+
 	return resp[0], nil
 }
 
@@ -374,102 +386,41 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-func (d *Driver) generateDiskImage() error {
-	// Create a small fixed vhd, put the tar in,
-	// convert to dynamic, then resize
-
-	d.diskImage = d.ResolveStorePath("disk.vhd")
+// generateDiskImage creates a small fixed vhd, put the tar in, convert to dynamic, then resize
+func (d *Driver) generateDiskImage() (string, error) {
+	diskImage := d.ResolveStorePath("disk.vhd")
 	fixed := d.ResolveStorePath("fixed.vhd")
+
 	log.Infof("Creating VHD")
-	command := []string{
-		"New-VHD",
-		"-Path", fmt.Sprintf("'%s'", fixed),
-		"-SizeBytes", "10MB",
-		"-Fixed"}
-	_, err := execute(command)
-	if err != nil {
-		return err
+	if err := cmd("New-VHD", "-Path", quote(fixed), "-SizeBytes", "10MB", "-Fixed"); err != nil {
+		return "", err
 	}
 
-	tarBuf, err := d.generateTar()
+	tarBuf, err := mcnutils.MakeDiskImage(d.publicSSHKeyPath())
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	file, err := os.OpenFile(fixed, os.O_WRONLY, 0644)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer file.Close()
+
 	file.Seek(0, os.SEEK_SET)
 	_, err = file.Write(tarBuf.Bytes())
 	if err != nil {
-		return err
+		return "", err
 	}
 	file.Close()
 
-	command = []string{
-		"Convert-VHD",
-		"-Path", fmt.Sprintf("'%s'", fixed),
-		"-DestinationPath", fmt.Sprintf("'%s'", d.diskImage),
-		"-VHDType", "Dynamic"}
-	_, err = execute(command)
-	if err != nil {
-		return err
-	}
-	command = []string{
-		"Resize-VHD",
-		"-Path", fmt.Sprintf("'%s'", d.diskImage),
-		"-SizeBytes", fmt.Sprintf("%dMB", d.DiskSize)}
-	_, err = execute(command)
-	if err != nil {
-		return err
+	if err := cmd("Convert-VHD", "-Path", quote(fixed), "-DestinationPath", quote(diskImage), "-VHDType", "Dynamic"); err != nil {
+		return "", err
 	}
 
-	return err
-}
+	if err := cmd("Resize-VHD", "-Path", quote(diskImage), "-SizeBytes", toMb(d.DiskSize)); err != nil {
+		return "", err
+	}
 
-// Make a boot2docker VM disk image.
-// See https://github.com/boot2docker/boot2docker/blob/master/rootfs/rootfs/etc/rc.d/automount
-func (d *Driver) generateTar() (*bytes.Buffer, error) {
-	magicString := "boot2docker, please format-me"
-
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-
-	// magicString first so the automount script knows to format the disk
-	file := &tar.Header{Name: magicString, Size: int64(len(magicString))}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
-	}
-	if _, err := tw.Write([]byte(magicString)); err != nil {
-		return nil, err
-	}
-	// .ssh/key.pub => authorized_keys
-	file = &tar.Header{Name: ".ssh", Typeflag: tar.TypeDir, Mode: 0700}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
-	}
-	pubKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
-	if err != nil {
-		return nil, err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return nil, err
-	}
-	file = &tar.Header{Name: ".ssh/authorized_keys2", Size: int64(len(pubKey)), Mode: 0644}
-	if err := tw.WriteHeader(file); err != nil {
-		return nil, err
-	}
-	if _, err := tw.Write([]byte(pubKey)); err != nil {
-		return nil, err
-	}
-	if err := tw.Close(); err != nil {
-		return nil, err
-	}
-	return buf, nil
+	return diskImage, nil
 }
