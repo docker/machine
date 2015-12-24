@@ -68,11 +68,12 @@ LAST_RELEASE_VERSION=$(git describe --abbrev=0 --tags)
 
 display "Starting release from ${LAST_RELEASE_VERSION} to ${GITHUB_VERSION} on ${PROJECT_URL} with token ${GITHUB_TOKEN}"
 while true; do
-    read -p "Do you want to proceed with this release? (y/n) > " yn
+    read -p "🐳  Do you want to proceed with this release? (y/n) > " yn
+    echo ""
     case $yn in
         [Yy]* ) break;;
         [Nn]* ) exit;;
-        * ) echo "Please answer yes or no.";;
+        * ) echo "😡   Please answer yes or no.";;
     esac
 done
 
@@ -175,15 +176,15 @@ display "Checking if remote tag ${GITHUB_VERSION} already exists."
 git ls-remote --tags 2> /dev/null | grep -q "${GITHUB_VERSION}" # returns 0 if found, 1 if not
 if [[ "$?" -ne 1 ]]; then
   display "Deleting previous tag ${GITHUB_VERSION}"
-  git tag -d "${GITHUB_VERSION}"
-  git push origin :refs/tags/"${GITHUB_VERSION}"
+  git tag -d "${GITHUB_VERSION}" &> /dev/null
+  git push -q origin :refs/tags/"${GITHUB_VERSION}"
 else
   echo "Tag ${GITHUB_VERSION} does not exist... yet"
 fi
 
 display "Tagging release on github"
 git tag "${GITHUB_VERSION}"
-git push remote.prod.url "${GITHUB_VERSION}"
+git push -q remote.prod.url "${GITHUB_VERSION}"
 checkError "Could not push to remote url"
 
 display "Checking if release already exists"
