@@ -35,7 +35,10 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 	dockerPort := "2376"
 	dockerDir := p.GetDockerOptionsDir()
 	dockerHost := fmt.Sprintf("tcp://%s:%s", ip, dockerPort)
-	dockerClient := mcndockerclient.RemoteDocker{dockerHost, &authOptions}
+	dockerClient := mcndockerclient.RemoteDocker{
+		HostURL:    dockerHost,
+		AuthOption: &authOptions,
+	}
 	advertiseInfo := fmt.Sprintf("%s:%s", ip, dockerPort)
 
 	if swarmOptions.Master {
