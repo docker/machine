@@ -125,5 +125,10 @@ func (provisioner *CoreOSProvisioner) Provision(swarmOptions swarm.Options, auth
 		return err
 	}
 
+	log.Debug("Configuring swarm")
+	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
+		return err
+	}
+
 	return nil
 }
