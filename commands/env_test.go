@@ -509,8 +509,8 @@ func TestShellCfgUnset(t *testing.T) {
 					Data: map[string]interface{}{
 						"shell":           "fish",
 						"swarm":           false,
-						"no-proxy":        true,
-						"use-socks-proxy": false,
+						"no-proxy":        false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -536,8 +536,8 @@ func TestShellCfgUnset(t *testing.T) {
 					Data: map[string]interface{}{
 						"shell":           "powershell",
 						"swarm":           false,
-						"no-proxy":        true,
-						"use-socks-proxy": false,
+						"no-proxy":        false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -563,8 +563,8 @@ func TestShellCfgUnset(t *testing.T) {
 					Data: map[string]interface{}{
 						"shell":           "cmd",
 						"swarm":           false,
-						"no-proxy":        true,
-						"use-socks-proxy": false,
+						"no-proxy":        false,
+						"use-socks-proxy": "",
 					},
 				},
 			},

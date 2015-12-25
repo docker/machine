@@ -103,10 +103,9 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 
 	// Wether we use a socks proxy or a direct IP for docker engine access
 	// Never both can be used
-	if c.Bool("use-socks-proxy") {
+	if socksProxyValue := c.String("socks-proxy-url"); socksProxyValue != "" {
 
 		socksProxyVar, socksProxyValue := findProxyEnvVarFromEnv("all_proxy")
-		socksProxyValue = c.String("socks-proxy-url")
 
 		shellCfg.SocksProxyVar = socksProxyVar
 		shellCfg.SocksProxyValue = socksProxyValue
