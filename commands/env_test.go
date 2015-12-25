@@ -129,7 +129,7 @@ func TestShellCfgSet(t *testing.T) {
 						"shell":           "bash",
 						"swarm":           false,
 						"no-proxy":        false,
-						"use-socks-proxy": false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -202,7 +202,7 @@ func TestShellCfgSet(t *testing.T) {
 						"shell":           "fish",
 						"swarm":           false,
 						"no-proxy":        false,
-						"use-socks-proxy": false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -239,7 +239,7 @@ func TestShellCfgSet(t *testing.T) {
 						"shell":           "powershell",
 						"swarm":           false,
 						"no-proxy":        false,
-						"use-socks-proxy": false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -312,7 +312,7 @@ func TestShellCfgSet(t *testing.T) {
 						"shell":           "cmd",
 						"swarm":           false,
 						"no-proxy":        false,
-						"use-socks-proxy": false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -349,7 +349,7 @@ func TestShellCfgSet(t *testing.T) {
 						"shell":           "bash",
 						"swarm":           false,
 						"no-proxy":        true,
-						"use-socks-proxy": false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -394,7 +394,7 @@ func TestShellCfgSet(t *testing.T) {
 						"shell":           "bash",
 						"swarm":           false,
 						"no-proxy":        true,
-						"use-socks-proxy": false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -483,7 +483,7 @@ func TestShellCfgUnset(t *testing.T) {
 						"shell":           "bash",
 						"swarm":           false,
 						"no-proxy":        false,
-						"use-socks-proxy": false,
+						"use-socks-proxy": "",
 					},
 				},
 			},
@@ -583,7 +583,7 @@ func TestShellCfgUnset(t *testing.T) {
 			expectedErr: nil,
 		},
 		// TODO: There is kind of a funny bug (feature?) I discovered
-		// reasoning about unset() where if there was a NO_`PROXY` value
+		// reasoning about unset() where if there was a NO_PROXY value
 		// set _before_ the original docker-machine env, it won't be
 		// restored (NO_PROXY won't be unset at all, it will stay the
 		// same).  We should define expected behavior in this case.
