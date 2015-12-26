@@ -88,13 +88,14 @@ func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 
 func CloseDrivers() {
 	openedDriversLock.Lock()
+	defer openedDriversLock.Unlock()
 
 	for _, openedDriver := range openedDrivers {
-		openedDriver.close()
+		if err := openedDriver.close(); err != nil {
+			log.Warnf("Error closing a plugin driver: %s", err)
+		}
 	}
 	openedDrivers = []*RPCClientDriver{}
-
-	openedDriversLock.Unlock()
 }
 
 func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
