@@ -73,6 +73,7 @@ type Plugin struct {
 	MachineName string
 	addrCh      chan string
 	stopCh      chan bool
+	timeout     time.Duration
 }
 
 type Executor struct {
@@ -230,13 +231,17 @@ func (lbp *Plugin) Serve() error {
 
 func (lbp *Plugin) Address() (string, error) {
 	if lbp.Addr == "" {
+		if lbp.timeout == 0 {
+			lbp.timeout = defaultTimeout
+		}
+
 		select {
 		case lbp.Addr = <-lbp.addrCh:
 			log.Debugf("Plugin server listening at address %s", lbp.Addr)
 			close(lbp.addrCh)
 			return lbp.Addr, nil
-		case <-time.After(defaultTimeout):
-			return "", fmt.Errorf("Failed to dial the plugin server in %s", defaultTimeout)
+		case <-time.After(lbp.timeout):
+			return "", fmt.Errorf("Failed to dial the plugin server in %s", lbp.timeout)
 		}
 	}
 	return lbp.Addr, nil
