@@ -66,8 +66,6 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
-	LocalArtifactPathMethod  = `.LocalArtifactPath`
-	GlobalArtifactPathMethod = `.GlobalArtifactPath`
 )
 
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
@@ -344,25 +342,6 @@ func (c *RPCClientDriver) Restart() error {
 
 func (c *RPCClientDriver) Kill() error {
 	return c.Client.Call(KillMethod, struct{}{}, nil)
-}
-
-func (c *RPCClientDriver) LocalArtifactPath(file string) string {
-	var path string
-
-	if err := c.Client.Call(LocalArtifactPathMethod, file, &path); err != nil {
-		log.Warnf("Error attempting call to get LocalArtifactPath: %s", err)
-	}
-
-	return path
-}
-
-func (c *RPCClientDriver) GlobalArtifactPath() string {
-	globalArtifactPath, err := c.rpcStringCall(GlobalArtifactPathMethod)
-	if err != nil {
-		log.Warnf("Error attempting call to get GlobalArtifactPath: %s", err)
-	}
-
-	return globalArtifactPath
 }
 
 func (c *RPCClientDriver) Upgrade() error {
