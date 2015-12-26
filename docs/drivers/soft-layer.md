@@ -17,7 +17,7 @@ You need to generate an API key in the softlayer control panel.
 
 Options:
 
--   `--softlayer-memory`: Memory for host in MB.
+-   `--softlayer-memory-size`: Memory for host in MB.
 -   `--softlayer-disk-size`: A value of `0` will set the SoftLayer default.
 -   `--softlayer-user`: **required** Username for your SoftLayer account, api key needs to match this user.
 -   `--softlayer-api-key`: **required** API key for your user account.
@@ -39,7 +39,7 @@ Environment variables and default values:
 
 | CLI option                     | Environment variable        | Default                     |
 | ------------------------------ | --------------------------- | --------------------------- |
-| `--softlayer-memory`           | `SOFTLAYER_MEMORY`          | `1024`                      |
+| `--softlayer-memory-size`      | `SOFTLAYER_MEMORY`          | `1024`                      |
 | `--softlayer-disk-size`        | `SOFTLAYER_DISK_SIZE`       | `0`                         |
 | **`--softlayer-user`**         | `SOFTLAYER_USER`            | -                           |
 | **`--softlayer-api-key`**      | `SOFTLAYER_API_KEY`         | -                           |

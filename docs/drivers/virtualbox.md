@@ -25,7 +25,7 @@ command:
 
 Options:
 
--   `--virtualbox-memory`: Size of memory for the host in MB.
+-   `--virtualbox-memory-size`: Size of memory for the host in MB.
 -   `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
 -   `--virtualbox-disk-size`: Size of disk for the host in MB.
 -   `--virtualbox-host-dns-resolver`: Use the host DNS resolver. (Boolean value, defaults to false)
@@ -68,7 +68,7 @@ Environment variables and default values:
 
 | CLI option                           | Environment variable               | Default                  |
 | ------------------------------------ | ---------------------------------- | ------------------------ |
-| `--virtualbox-memory`                | `VIRTUALBOX_MEMORY_SIZE`           | `1024`                   |
+| `--virtualbox-memory-size`           | `VIRTUALBOX_MEMORY_SIZE`           | `1024`                   |
 | `--virtualbox-cpu-count`             | `VIRTUALBOX_CPU_COUNT`             | `1`                      |
 | `--virtualbox-disk-size`             | `VIRTUALBOX_DISK_SIZE`             | `20000`                  |
 | `--virtualbox-host-dns-resolver`     | `VIRTUALBOX_HOST_DNS_RESOLVER`     | `false`                  |

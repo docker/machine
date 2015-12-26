@@ -27,7 +27,7 @@ Options:
 -   `--hyperv-boot2docker-url`: The URL of the boot2docker ISO.
 -   `--hyperv-virtual-switch`: Name of the virtual switch to use.
 -   `--hyperv-disk-size`: Size of disk for the host in MB.
--   `--hyperv-memory`: Size of memory for the host in MB.
+-   `--hyperv-memory-size`: Size of memory for the host in MB.
 -   `--hyperv-cpu-count`: Number of CPUs for the host.
 
 Environment variables and default values:
@@ -37,5 +37,5 @@ Environment variables and default values:
 | `--hyperv-boot2docker-url` | `HYPERV_BOOT2DOCKER_URL` | _Latest boot2docker url_ |
 | `--hyperv-virtual-switch`  | `HYPERV_VIRTUAL_SWITCH`  | _first found_            |
 | `--hyperv-disk-size`       | `HYPERV_DISK_SIZE`       | `20000`                  |
-| `--hyperv-memory`          | `HYPERV_MEMORY`          | `1024`                   |
+| `--hyperv-memory-size`     | `HYPERV_MEMORY`          | `1024`                   |
 | `--hyperv-cpu-count`       | `HYPERV_CPU_COUNT`       | `1`                      |

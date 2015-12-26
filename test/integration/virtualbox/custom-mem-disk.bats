@@ -32,7 +32,7 @@ function findCPUCount() {
 }
 
 @test "$DRIVER: create with custom disk, cpu count and memory size flags" {
-  run machine create -d $DRIVER --virtualbox-cpu-count $CUSTOM_CPUCOUNT --virtualbox-disk-size $CUSTOM_DISKSIZE --virtualbox-memory $CUSTOM_MEMSIZE $NAME
+  run machine create -d $DRIVER --virtualbox-cpu-count $CUSTOM_CPUCOUNT --virtualbox-disk-size $CUSTOM_DISKSIZE --virtualbox-memory-size $CUSTOM_MEMSIZE $NAME
   [ "$status" -eq 0  ]
 }
 

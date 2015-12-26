@@ -69,6 +69,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "HYPERV_MEMORY",
 		},
 		mcnflag.IntFlag{
+			Name:   "hyperv-memory-size",
+			Usage:  "Memory size for host in MB.",
+			Value:  defaultMemory,
+			EnvVar: "HYPERV_MEMORY_SIZE",
+		},
+		mcnflag.IntFlag{
 			Name:   "hyperv-cpu-count",
 			Usage:  "number of CPUs for the machine",
 			Value:  defaultCPU,
@@ -81,7 +87,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("hyperv-boot2docker-url")
 	d.VSwitch = flags.String("hyperv-virtual-switch")
 	d.DiskSize = flags.Int("hyperv-disk-size")
-	d.MemSize = flags.Int("hyperv-memory")
+	if flags.Int("hyperv-memory-size") != defaultMemory {
+		d.MemSize = flags.Int("hyperv-memory-size")
+	} else {
+		d.MemSize = flags.Int("hyperv-memory")
+	}
 	d.CPU = flags.Int("hyperv-cpu-count")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
