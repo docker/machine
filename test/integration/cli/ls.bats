@@ -165,3 +165,27 @@ bootstrap_swarm () {
   [[ ${lines[1]} == "testswarm2" ]]
   [[ ${lines[2]} == "testswarm3" ]]
 }
+
+@test "ls: format on driver 'machine ls --format '{{ .DriverName }}'" {
+  run machine ls --format '{{ .DriverName }}'
+  [ "$status" -eq 0 ]
+  [[ ${#lines[@]} == 5 ]]
+  [[ ${lines[0]} =~ "none" ]]
+  [[ ${lines[1]} =~ "none" ]]
+  [[ ${lines[2]} =~ "none" ]]
+  [[ ${lines[3]} =~ "none" ]]
+  [[ ${lines[4]} =~ "none" ]]
+}
+
+
+@test "ls: format on name and driver 'machine ls --format 'table {{ .Name}}: {{ .DriverName }}'" {
+  run machine ls --format 'table {{ .Name}}: {{ .DriverName }}'
+  [ "$status" -eq 0 ]
+  [[ ${#lines[@]} == 6 ]]
+  [[ ${lines[1]} =~ "testmachine: none" ]]
+  [[ ${lines[2]} =~ "testmachine2: none" ]]
+  [[ ${lines[3]} =~ "testmachine3: none" ]]
+  [[ ${lines[4]} =~ "testmachine4: none" ]]
+  [[ ${lines[5]} =~ "testmachine5: none" ]]
+}
+

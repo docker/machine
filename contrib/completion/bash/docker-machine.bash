@@ -96,7 +96,7 @@ _docker_machine_ls() {
             COMPREPLY=()
             ;;
         *)
-            COMPREPLY=($(compgen -W "--quiet --filter --timeout --help" -- "${cur}"))
+            COMPREPLY=($(compgen -W "--quiet --filter --format --timeout --help" -- "${cur}"))
             ;;
     esac
 }

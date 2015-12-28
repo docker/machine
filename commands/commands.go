@@ -214,6 +214,9 @@ var Commands = []cli.Command{
 		Action:      fatalOnError(cmdKill),
 	},
 	{
+		Name:   "ls",
+		Usage:  "List machines",
+		Action: fatalOnError(cmdLs),
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "quiet, q",
@@ -229,10 +232,11 @@ var Commands = []cli.Command{
 				Usage: fmt.Sprintf("Timeout in seconds, default to %s", stateTimeoutDuration),
 				Value: lsDefaultTimeout,
 			},
+			cli.StringFlag{
+				Name:  "format, f",
+				Usage: "Pretty-print machines using a Go template",
+			},
 		},
-		Name:   "ls",
-		Usage:  "List machines",
-		Action: fatalOnError(cmdLs),
 	},
 	{
 		Name:        "regenerate-certs",
