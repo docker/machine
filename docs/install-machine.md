@@ -32,24 +32,24 @@ instructions in the next section.
 
         Linux:
 
-            $ curl -L https://github.com/docker/machine/releases/download/v0.5.4/docker-machine_linux-amd64 >/usr/local/bin/docker-machine && \
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.5/docker-machine_linux-amd64 >/usr/local/bin/docker-machine && \
             chmod +x /usr/local/bin/docker-machine
 
         OSX:
 
-            $ curl -L https://github.com/docker/machine/releases/download/v0.5.4/docker-machine_darwin-amd64 >/usr/local/bin/docker-machine && \
+            $ curl -L https://github.com/docker/machine/releases/download/v0.5.5/docker-machine_darwin-amd64 >/usr/local/bin/docker-machine && \
             chmod +x /usr/local/bin/docker-machine
 
         Windows (using Git Bash):
 
             $ if [[ ! -d "$HOME/bin" ]]; then mkdir -p "$HOME/bin"; fi && \
-            curl -L https://github.com/docker/machine/releases/download/v0.5.4/docker-machine_windows-amd64.exe > "$HOME/bin/docker-machine.exe" && \
+            curl -L https://github.com/docker/machine/releases/download/v0.5.5/docker-machine_windows-amd64.exe > "$HOME/bin/docker-machine.exe" && \
             chmod +x "$HOME/bin/docker-machine.exe"
 
 3.  Check the installation by displaying the Machine version:
 
         $ docker-machine version
-        docker-machine version 0.5.3
+        docker-machine version 0.5.5, build 02c4254
 
 ## Installing bash completion scripts
 
