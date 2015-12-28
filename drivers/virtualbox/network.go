@@ -14,7 +14,7 @@ const (
 
 var (
 	reHostonlyInterfaceCreated        = regexp.MustCompile(`Interface '(.+)' was successfully created`)
-	errNewHostOnlyInterfaceNotVisible = errors.New("The host-only interface we just created is not visible. This is a well known bug of VirtualBox. You might want to uninstall it and reinstall the version listed here: https://www.virtualbox.org/ticket/14437?cversion=0&cnum_hist=42")
+	errNewHostOnlyInterfaceNotVisible = errors.New("The host-only interface we just created is not visible. This is a well known bug of VirtualBox. You might want to uninstall it and reinstall at least version 5.0.12 that is is supposed to fix this issue")
 )
 
 // Host-only network.
