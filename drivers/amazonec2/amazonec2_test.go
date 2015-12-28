@@ -5,9 +5,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/drivers/amazonec2/amz"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,10 +25,10 @@ const (
 )
 
 var (
-	securityGroup = amz.SecurityGroup{
-		GroupName: "test-group",
-		GroupId:   "12345",
-		VpcId:     "12345",
+	securityGroup = &ec2.SecurityGroup{
+		GroupName: aws.String("test-group"),
+		GroupId:   aws.String("12345"),
+		VpcId:     aws.String("12345"),
 	}
 )
 
@@ -96,7 +97,7 @@ func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
 	defer cleanup()
 
 	group := securityGroup
-	perms := d.configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(group)
 	if len(perms) != 2 {
 		t.Fatalf("expected 2 permissions; received %d", len(perms))
 	}
@@ -111,20 +112,20 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 
 	group := securityGroup
 
-	group.IpPermissions = []amz.IpPermission{
+	group.IpPermissions = []*ec2.IpPermission{
 		{
-			IpProtocol: "tcp",
-			FromPort:   testSSHPort,
-			ToPort:     testSSHPort,
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(int64(testSSHPort)),
+			ToPort:     aws.Int64(int64(testSSHPort)),
 		},
 	}
 
-	perms := d.configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(group)
 	if len(perms) != 1 {
 		t.Fatalf("expected 1 permission; received %d", len(perms))
 	}
 
-	receivedPort := perms[0].FromPort
+	receivedPort := *perms[0].FromPort
 	if receivedPort != testDockerPort {
 		t.Fatalf("expected permission on port %d; received port %d", testDockerPort, receivedPort)
 	}
@@ -139,20 +140,20 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 
 	group := securityGroup
 
-	group.IpPermissions = []amz.IpPermission{
+	group.IpPermissions = []*ec2.IpPermission{
 		{
-			IpProtocol: "tcp",
-			FromPort:   testDockerPort,
-			ToPort:     testDockerPort,
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64((testDockerPort)),
+			ToPort:     aws.Int64((testDockerPort)),
 		},
 	}
 
-	perms := d.configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(group)
 	if len(perms) != 1 {
 		t.Fatalf("expected 1 permission; received %d", len(perms))
 	}
 
-	receivedPort := perms[0].FromPort
+	receivedPort := *perms[0].FromPort
 	if receivedPort != testSSHPort {
 		t.Fatalf("expected permission on port %d; received port %d", testSSHPort, receivedPort)
 	}
@@ -167,20 +168,20 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 
 	group := securityGroup
 
-	group.IpPermissions = []amz.IpPermission{
+	group.IpPermissions = []*ec2.IpPermission{
 		{
-			IpProtocol: "tcp",
-			FromPort:   testSSHPort,
-			ToPort:     testSSHPort,
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(testSSHPort),
+			ToPort:     aws.Int64(testSSHPort),
 		},
 		{
-			IpProtocol: "tcp",
-			FromPort:   testDockerPort,
-			ToPort:     testDockerPort,
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(testDockerPort),
+			ToPort:     aws.Int64(testDockerPort),
 		},
 	}
 
-	perms := d.configureSecurityGroupPermissions(&group)
+	perms := d.configureSecurityGroupPermissions(group)
 	if len(perms) != 0 {
 		t.Fatalf("expected 0 permissions; received %d", len(perms))
 	}
