@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/docker/machine/libmachine/log"
+	"github.com/stretchr/testify/assert"
 )
 
 type FakeExecutor struct {
@@ -56,15 +57,16 @@ func TestLocalBinaryPluginAddressTimeout(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping timeout test")
 	}
-	lbp := &Plugin{}
-	lbp.addrCh = make(chan string, 1)
-	go func() {
-		_, err := lbp.Address()
-		if err == nil {
-			t.Fatalf("Expected to get a timeout error, instead got %s", err)
-		}
-	}()
-	time.Sleep(defaultTimeout + 1)
+
+	lbp := &Plugin{
+		addrCh:  make(chan string, 1),
+		timeout: 1 * time.Second,
+	}
+
+	addr, err := lbp.Address()
+
+	assert.Empty(t, addr)
+	assert.EqualError(t, err, "Failed to dial the plugin server in 1s")
 }
 
 func TestLocalBinaryPluginClose(t *testing.T) {

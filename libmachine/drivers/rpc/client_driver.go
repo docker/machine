@@ -66,8 +66,6 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
-	LocalArtifactPathMethod  = `.LocalArtifactPath`
-	GlobalArtifactPathMethod = `.GlobalArtifactPath`
 )
 
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
@@ -90,13 +88,14 @@ func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 
 func CloseDrivers() {
 	openedDriversLock.Lock()
+	defer openedDriversLock.Unlock()
 
 	for _, openedDriver := range openedDrivers {
-		openedDriver.close()
+		if err := openedDriver.close(); err != nil {
+			log.Warnf("Error closing a plugin driver: %s", err)
+		}
 	}
 	openedDrivers = []*RPCClientDriver{}
-
-	openedDriversLock.Unlock()
 }
 
 func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
@@ -159,8 +158,6 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 			case <-time.After(heartbeatInterval):
 				if err := c.Client.Call(HeartbeatMethod, struct{}{}, nil); err != nil {
 					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
-					c.close()
-					return
 				}
 			}
 		}
@@ -190,12 +187,6 @@ func (c *RPCClientDriver) close() error {
 	c.heartbeatDoneCh <- true
 	close(c.heartbeatDoneCh)
 
-	log.Debug("Making call to close connection to plugin binary")
-
-	if err := c.plugin.Close(); err != nil {
-		return err
-	}
-
 	log.Debug("Making call to close driver server")
 
 	if err := c.Client.Call(CloseMethod, struct{}{}, nil); err != nil {
@@ -203,6 +194,12 @@ func (c *RPCClientDriver) close() error {
 	}
 
 	log.Debug("Successfully made call to close driver server")
+
+	log.Debug("Making call to close connection to plugin binary")
+
+	if err := c.plugin.Close(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -344,25 +341,6 @@ func (c *RPCClientDriver) Restart() error {
 
 func (c *RPCClientDriver) Kill() error {
 	return c.Client.Call(KillMethod, struct{}{}, nil)
-}
-
-func (c *RPCClientDriver) LocalArtifactPath(file string) string {
-	var path string
-
-	if err := c.Client.Call(LocalArtifactPathMethod, file, &path); err != nil {
-		log.Warnf("Error attempting call to get LocalArtifactPath: %s", err)
-	}
-
-	return path
-}
-
-func (c *RPCClientDriver) GlobalArtifactPath() string {
-	globalArtifactPath, err := c.rpcStringCall(GlobalArtifactPathMethod)
-	if err != nil {
-		log.Warnf("Error attempting call to get GlobalArtifactPath: %s", err)
-	}
-
-	return globalArtifactPath
 }
 
 func (c *RPCClientDriver) Upgrade() error {
