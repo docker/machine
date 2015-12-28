@@ -29,3 +29,7 @@ func detectVBoxManageCmd() string {
 func getShareDriveAndName() (string, string) {
 	return "Users", "/Users"
 }
+
+func isHyperVInstalled() bool {
+	return false
+}

@@ -38,6 +38,7 @@ const (
 var (
 	ErrUnableToGenerateRandomIP = errors.New("unable to generate random IP")
 	ErrMustEnableVTX            = errors.New("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory")
+	ErrNotCompatibleWithHyperV  = errors.New("This computer has Hyper-V installed. VirtualBox refuses to boot a 64bits VM when Hyper-V is installed. See https://www.virtualbox.org/ticket/12350")
 	ErrNetworkAddrCidr          = errors.New("host-only cidr must be specified with a host address, not a network address")
 )
 
@@ -213,6 +214,9 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	if !d.NoVTXCheck && d.IsVTXDisabled() {
+		if isHyperVInstalled() {
+			return ErrNotCompatibleWithHyperV
+		}
 		return ErrMustEnableVTX
 	}
 
