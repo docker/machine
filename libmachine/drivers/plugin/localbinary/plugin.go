@@ -173,12 +173,13 @@ func stream(scanner *bufio.Scanner, streamOutCh chan<- string, stopCh <-chan boo
 			close(streamOutCh)
 			return
 		default:
-			scanner.Scan()
-			line := scanner.Text()
-			if err := scanner.Err(); err != nil {
-				log.Warnf("Scanning stream: %s", err)
+			if scanner.Scan() {
+				line := scanner.Text()
+				if err := scanner.Err(); err != nil {
+					log.Warnf("Scanning stream: %s", err)
+				}
+				streamOutCh <- strings.Trim(line, "\n")
 			}
-			streamOutCh <- strings.Trim(line, "\n")
 		}
 	}
 }
