@@ -16,9 +16,10 @@ parent="smn_machine_subcmds"
 
     Options:
 
-       --quiet, -q					                Enable quiet mode
-       --filter [--filter option --filter option]	Filter output based on conditions provided
-       --timeout, -t				                Timeout in seconds, default to 10s
+       --quiet, -q                                  Enable quiet mode
+       --filter [--filter option --filter option]   Filter output based on conditions provided
+       --timeout, -t                                Timeout in seconds, default to 10s
+       --format, -f                                 Pretty-print machines using a Go template
 
 ## Timeout
 
@@ -46,6 +47,42 @@ The currently supported filters are:
 -   state  (`Running|Paused|Saved|Stopped|Stopping|Starting|Error`)
 -   name   (Machine name returned by driver, supports [golang style](https://github.com/google/re2/wiki/Syntax) regular expressions)
 -   label  (Machine created with `--engine-label` option, can be filtered with `label=<key>[=<value>]`)
+
+## Formatting
+
+The formatting option (`--format`) will pretty-print machines using a Go template.
+
+Valid placeholders for the Go template are listed below:
+
+| Placeholder    | Description                              |
+| -------------- | ---------------------------------------- |
+| .Name          | Machine name                             |
+| .Active        | Is the machine active?                   |
+| .ActiveHost    | Is the machine an active non-swarm host? |
+| .ActiveSwarm   | Is the machine an active swarm master?   |
+| .DriverName    | Driver name                              |
+| .State         | Machine state (running, stopped...)      |
+| .URL           | Machine URL                              |
+| .Swarm         | Machine swarm name                       |
+| .Error         | Machine errors                           |
+| .DockerVersion | Docker Daemon version                    |
+
+When using the `--format` option, the `ls` command will either output the data exactly as the template declares or,
+when using the table directive, will include column headers as well.
+
+The following example uses a template without headers and outputs the `Name` and `Driver` entries separated by a colon
+for all running machines:
+
+    $ docker-machine ls --format "{{.Name}}: {{.DriverName}}"
+    default: virtualbox
+    ec2: amazonec2
+
+To list all machine names with their driver in a table format you can use:
+
+    $ docker-machine ls --format "table {{.Name}}: {{.DriverName}}"
+    NAME     DRIVER
+    default  virtualbox
+    ec2      amazonec2
 
 ## Examples
 
