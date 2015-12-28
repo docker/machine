@@ -158,8 +158,6 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 			case <-time.After(heartbeatInterval):
 				if err := c.Client.Call(HeartbeatMethod, struct{}{}, nil); err != nil {
 					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
-					c.close()
-					return
 				}
 			}
 		}
