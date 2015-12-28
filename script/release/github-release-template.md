@@ -27,21 +27,20 @@ $ if [[ ! -d "$HOME/bin" ]]; then mkdir -p "$HOME/bin"; fi && \
 
 ## Changelog
 
-
 *Edit the changelog below by hand*
 
 {{CHANGELOG}}
 
 ## Thank You
 
-Thank you very much to our active users and contributors.  If you have filed detailed bug reports, THANK YOU!  Please continue to do so if you encounter any issues.  It's your hard work that makes Machine better.
+Thank you very much to our active users and contributors. If you have filed detailed bug reports, THANK YOU!
+Please continue to do so if you encounter any issues. It's your hard work that makes Docker Machine better.
 
 The following authors contributed changes to this release:
 
 {{CONTRIBUTORS}}
 
-Great thanks to all of the above!  We appreciate it.  Keep up the great work!
-
+Great thanks to all of the above! We appreciate it. Keep up the great work!
 
 ## Checksums
 
