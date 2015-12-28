@@ -43,7 +43,9 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-subnet-id`: AWS VPC subnet id.
 -   `--amazonec2-security-group`: AWS VPC security group name.
 -   `--amazonec2-instance-type`: The instance type to run.
+-   `--amazonec2-device-name`: The root device name of the instance.
 -   `--amazonec2-root-size`: The root disk size of the instance (in GB).
+-   `--amazonec2-volume-type`: The Amazon EBS volume type to be attached to the instance.
 -   `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile.
 -   `--amazonec2-ssh-user`: SSH Login user name.
 -   `--amazonec2-request-spot-instance`: Use spot instances.
@@ -82,7 +84,9 @@ Environment variables and default values:
 | `--amazonec2-subnet-id`             | `AWS_SUBNET_ID`         | -                |
 | `--amazonec2-security-group`        | `AWS_SECURITY_GROUP`    | `docker-machine` |
 | `--amazonec2-instance-type`         | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
+| `--amazonec2-device-name`           | `AWS_DEVICE_NAME`       | `/dev/sda1`      |
 | `--amazonec2-root-size`             | `AWS_ROOT_SIZE`         | `16`             |
+| `--amazonec2-volume-type`           | `AWS_VOLUME_TYPE`       | `gp2`            |
 | `--amazonec2-iam-instance-profile`  | `AWS_INSTANCE_PROFILE`  | -                |
 | `--amazonec2-ssh-user`              | `AWS_SSH_USER`          | `ubuntu`         |
 | `--amazonec2-request-spot-instance` | -                       | `false`          |

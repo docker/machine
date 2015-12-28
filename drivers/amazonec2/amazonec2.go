@@ -32,7 +32,9 @@ const (
 	defaultAmiId             = "ami-615cb725"
 	defaultRegion            = "us-east-1"
 	defaultInstanceType      = "t2.micro"
+	defaultDeviceName        = "/dev/sda1"
 	defaultRootSize          = 16
+	defaultVolumeType        = "gp2"
 	defaultZone              = "a"
 	defaultSecurityGroup     = machineSecurityGroupName
 	defaultSSHUser           = "ubuntu"
@@ -64,7 +66,9 @@ type Driver struct {
 	SecurityGroupId     string
 	SecurityGroupName   string
 	ReservationId       string
+	DeviceName          string
 	RootSize            int64
+	VolumeType          string
 	IamInstanceProfile  string
 	VpcId               string
 	SubnetId            string
@@ -133,11 +137,23 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultInstanceType,
 			EnvVar: "AWS_INSTANCE_TYPE",
 		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-device-name",
+			Usage:  "AWS root device name",
+			Value:  defaultDeviceName,
+			EnvVar: "AWS_DEVICE_NAME",
+		},
 		mcnflag.IntFlag{
 			Name:   "amazonec2-root-size",
 			Usage:  "AWS root disk size (in GB)",
 			Value:  defaultRootSize,
 			EnvVar: "AWS_ROOT_SIZE",
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-volume-type",
+			Usage:  "Amazon EBS volume type",
+			Value:  defaultVolumeType,
+			EnvVar: "AWS_VOLUME_TYPE",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-iam-instance-profile",
@@ -217,7 +233,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SecurityGroupName = flags.String("amazonec2-security-group")
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
+	d.DeviceName = flags.String("amazonec2-device-name")
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
+	d.VolumeType = flags.String("amazonec2-volume-type")
 	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
@@ -373,10 +391,10 @@ func (d *Driver) Create() error {
 	}
 
 	bdm := &ec2.BlockDeviceMapping{
-		DeviceName: aws.String("/dev/sda1"),
+		DeviceName: aws.String(d.DeviceName),
 		Ebs: &ec2.EbsBlockDevice{
 			VolumeSize:          aws.Int64(d.RootSize),
-			VolumeType:          aws.String("gp2"),
+			VolumeType:          aws.String(d.VolumeType),
 			DeleteOnTermination: aws.Bool(true),
 		},
 	}
