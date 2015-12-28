@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"text/tabwriter"
+	"text/template"
 	"time"
 
 	"github.com/docker/machine/libmachine"
@@ -26,6 +27,7 @@ const lsDefaultTimeout = 10
 
 var (
 	stateTimeoutDuration = lsDefaultTimeout * time.Second
+	defaultLsTemplate    = "{{ .Name }}\t{{ .Active }}\t{{ .DriverName}}\t{{ .State }}\t{{ .URL }}\t{{ .Swarm }}\t{{ .DockerVersion }}\t{{ .Error}}"
 )
 
 // FilterOptions -
@@ -39,12 +41,14 @@ type FilterOptions struct {
 
 type HostListItem struct {
 	Name          string
-	Active        bool
-	SwarmActive   bool
+	Active        string
+	ActiveHost    bool
+	ActiveSwarm   bool
 	DriverName    string
 	State         state.State
 	URL           string
 	SwarmOptions  *swarm.Options
+	Swarm         string
 	EngineOptions *engine.Options
 	Error         string
 	DockerVersion string
@@ -75,6 +79,12 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 		return nil
 	}
 
+	t := template.New("lsConfig")
+	template, err := t.Parse(defaultLsTemplate + "\n")
+	if err != nil {
+		return err
+	}
+
 	swarmMasters := make(map[string]string)
 	swarmInfo := make(map[string]string)
 
@@ -97,34 +107,22 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 	}
 
 	items := getHostListItems(hostList, hostInError)
-
 	for _, item := range items {
-		printItemToTabWriter(item, swarmInfo, swarmMasters, w)
-	}
+		swarmColumn := ""
+		if item.SwarmOptions != nil && item.SwarmOptions.Discovery != "" {
+			swarmColumn = swarmMasters[item.SwarmOptions.Discovery]
+			if item.SwarmOptions.Master {
+				swarmColumn = fmt.Sprintf("%s (master)", swarmColumn)
+			}
+		}
+		item.Swarm = swarmColumn
 
-	return nil
-}
-
-func printItemToTabWriter(item HostListItem, swarmInfo map[string]string, swarmMasters map[string]string, w *tabwriter.Writer) {
-	activeColumn := "-"
-	if item.Active {
-		activeColumn = "*"
-	}
-	if item.SwarmActive {
-		activeColumn = "* (swarm)"
-	}
-
-	swarmColumn := ""
-
-	if item.SwarmOptions != nil && item.SwarmOptions.Discovery != "" {
-		swarmColumn = swarmMasters[item.SwarmOptions.Discovery]
-		if item.SwarmOptions.Master {
-			swarmColumn = fmt.Sprintf("%s (master)", swarmColumn)
+		if err := template.Execute(w, item); err != nil {
+			return err
 		}
 	}
 
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-		item.Name, activeColumn, item.DriverName, item.State, item.URL, swarmColumn, item.DockerVersion, item.Error)
+	return nil
 }
 
 func parseFilters(filters []string) (FilterOptions, error) {
@@ -339,10 +337,21 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 		swarmHost = swarmOptions.Host
 	}
 
+	activeHost := isActive(currentState, url)
+	activeSwarm := isSwarmActive(currentState, url, isMaster, swarmHost)
+	active := "-"
+	if activeHost {
+		active = "*"
+	}
+	if activeSwarm {
+		active = "* (swarm)"
+	}
+
 	stateQueryChan <- HostListItem{
 		Name:          h.Name,
-		Active:        isActive(currentState, url),
-		SwarmActive:   isSwarmActive(currentState, url, isMaster, swarmHost),
+		Active:        active,
+		ActiveHost:    activeHost,
+		ActiveSwarm:   activeSwarm,
 		DriverName:    h.Driver.DriverName(),
 		State:         currentState,
 		URL:           url,

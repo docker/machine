@@ -25,7 +25,7 @@ func cmdActive(c CommandLine, api libmachine.API) error {
 	items := getHostListItems(hosts, hostsInError)
 
 	for _, item := range items {
-		if item.Active {
+		if item.ActiveHost {
 			fmt.Println(item.Name)
 			return nil
 		}
