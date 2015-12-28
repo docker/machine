@@ -16,7 +16,7 @@
 
 _docker_machine_active() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--swarm --help" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--help" -- "${cur}"))
     else
         COMPREPLY=()
     fi
@@ -119,7 +119,7 @@ _docker_machine_restart() {
 
 _docker_machine_rm() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--help --force" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--help --force -y" -- "${cur}"))
     else
         # For rm, it's best to be explicit
         COMPREPLY=()
@@ -215,7 +215,7 @@ _docker_machine_docker_machine() {
 
 _docker_machine() {
     COMPREPLY=()
-    local commands=(active config create env inspect ip kill ls regenerate-certs restart rm ssh scp start status stop upgrade url help)
+    local commands=(active config create env inspect ip kill ls regenerate-certs restart rm ssh scp start status stop upgrade url version help)
 
     local flags=(--debug --native-ssh --github-api-token --bugsnag-api-token --help --version)
     local wants_dir=(--storage-path)
