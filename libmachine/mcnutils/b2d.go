@@ -34,6 +34,12 @@ var (
 You may be getting rate limited by Github.`)
 )
 
+var (
+	AUFSBugB2DVersions = map[string]string{
+		"v1.9.1": "https://github.com/docker/docker/issues/18180",
+	}
+)
+
 func defaultTimeout(network, addr string) (net.Conn, error) {
 	return net.Dial(network, addr)
 }
@@ -144,6 +150,14 @@ func (b *b2dReleaseGetter) getReleaseURL(apiURL string) (string, error) {
 	}
 
 	log.Infof("Latest release for %s/%s/%s is %s", host, org, repo, tag)
+	bugURL, ok := AUFSBugB2DVersions[tag]
+	if ok {
+		log.Warnf(`
+Boot2Docker %s has a known issue with AUFS.
+See here for more details: %s
+Consider specifying another storage driver (e.g. 'overlay') using '--engine-storage-driver' instead.
+`, tag, bugURL)
+	}
 	url := fmt.Sprintf("%s://%s/%s/%s/releases/download/%s/%s", scheme, host, org, repo, tag, b.isoFilename)
 	return url, nil
 }
