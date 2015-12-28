@@ -93,3 +93,8 @@ func findVBoxInstallDirInRegistry() (string, error) {
 func getShareDriveAndName() (string, string) {
 	return "c/Users", "c:\\Users"
 }
+
+func isHyperVInstalled() bool {
+	_, err := exec.LookPath("vmms.exe")
+	return err == nil
+}
