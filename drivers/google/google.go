@@ -165,11 +165,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UseInternalIP = flags.Bool("google-use-internal-ip")
 	d.Scopes = flags.String("google-scopes")
 	d.Tags = flags.String("google-tags")
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
+	d.SetSwarmConfigFromFlags(flags)
 
 	return nil
 }

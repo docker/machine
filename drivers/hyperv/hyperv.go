@@ -83,10 +83,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("hyperv-disk-size")
 	d.MemSize = flags.Int("hyperv-memory")
 	d.CPU = flags.Int("hyperv-cpu-count")
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "docker"
+	d.SetSwarmConfigFromFlags(flags)
+
 	return nil
 }
 
