@@ -160,38 +160,39 @@ func (api *Client) performCreate(h *host.Host) error {
 		return fmt.Errorf("Error saving host to store after attempting creation: %s", err)
 	}
 
-	// TODO: Not really a fan of just checking "none" here.
-	if h.Driver.DriverName() != "none" {
-		log.Info("Waiting for machine to be running, this may take a few minutes...")
-		if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
-			return fmt.Errorf("Error waiting for machine to be running: %s", err)
-		}
-
-		log.Info("Machine is running, waiting for SSH to be available...")
-		if err := drivers.WaitForSSH(h.Driver); err != nil {
-			return fmt.Errorf("Error waiting for SSH: %s", err)
-		}
-
-		log.Info("Detecting operating system of created instance...")
-		provisioner, err := provision.DetectProvisioner(h.Driver)
-		if err != nil {
-			return fmt.Errorf("Error detecting OS: %s", err)
-		}
-
-		log.Infof("Provisioning with %s...", provisioner.String())
-		if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
-			return fmt.Errorf("Error running provisioning: %s", err)
-		}
-
-		// We should check the connection to docker here
-		log.Info("Checking connection to Docker...")
-		if _, _, err = check.DefaultConnChecker.Check(h, false); err != nil {
-			return fmt.Errorf("Error checking the host: %s", err)
-		}
-
-		log.Info("Docker is up and running!")
+	// TODO: Not really a fan of just checking "none" or "ci-test" here.
+	if h.Driver.DriverName() == "none" || h.Driver.DriverName() == "ci-test" {
+		return nil
 	}
 
+	log.Info("Waiting for machine to be running, this may take a few minutes...")
+	if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
+		return fmt.Errorf("Error waiting for machine to be running: %s", err)
+	}
+
+	log.Info("Machine is running, waiting for SSH to be available...")
+	if err := drivers.WaitForSSH(h.Driver); err != nil {
+		return fmt.Errorf("Error waiting for SSH: %s", err)
+	}
+
+	log.Info("Detecting operating system of created instance...")
+	provisioner, err := provision.DetectProvisioner(h.Driver)
+	if err != nil {
+		return fmt.Errorf("Error detecting OS: %s", err)
+	}
+
+	log.Infof("Provisioning with %s...", provisioner.String())
+	if err := provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
+		return fmt.Errorf("Error running provisioning: %s", err)
+	}
+
+	// We should check the connection to docker here
+	log.Info("Checking connection to Docker...")
+	if _, _, err = check.DefaultConnChecker.Check(h, false); err != nil {
+		return fmt.Errorf("Error checking the host: %s", err)
+	}
+
+	log.Info("Docker is up and running!")
 	return nil
 }
 
