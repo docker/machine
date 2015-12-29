@@ -25,7 +25,7 @@ Place the completion scripts in `/etc/bash_completion.d/` (`` `brew --prefix`/et
 
     files=(docker-machine docker-machine-wrapper docker-machine-prompt)
     for f in "${files[@]}"; do
-      curl -L https://raw.githubusercontent.com/docker/machine/v$(docker-machine --version | awk 'NR==1{print $(NF-1)}')/contrib/completion/bash/$f.bash > `brew --prefix`/etc/bash_completion.d/$f
+      curl -L https://raw.githubusercontent.com/docker/machine/v$(docker-machine --version | tr -ds ',' ' ' | awk 'NR==1{print $(3)}')/contrib/completion/bash/$f.bash > `brew --prefix`/etc/bash_completion.d/$f
     done
 
 Completion will be available upon next login.
@@ -40,7 +40,7 @@ Place the completion scripts in your `/path/to/zsh/completion`, using e.g. `~/.z
     mkdir -p ~/.zsh/completion
     files=(docker-machine docker-machine-wrapper docker-machine-prompt)
     for f in "${files[@]}"; do
-      curl -L https://raw.githubusercontent.com/docker/machine/v$(docker-machine --version | awk 'NR==1{print $(NF-1)}')/contrib/completion/zsh/$f > ~/.zsh/completion/_$f
+      curl -L https://raw.githubusercontent.com/docker/machine/v$(docker-machine --version | tr -ds ',' ' ' | awk 'NR==1{print $(3)}')/contrib/completion/zsh/$f > ~/.zsh/completion/_$f
     done
 
 Include the directory in your `$fpath`, e.g. by adding in `~/.zshrc`
