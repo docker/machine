@@ -1,11 +1,9 @@
-# Pony-up!
 machine:
   pre:
   # Install gvm
     - bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/1.0.22/binscripts/gvm-installer)
   # Install bats
     - git clone https://github.com/sstephenson/bats.git && cd bats && sudo ./install.sh /usr/local
-    # - sudo apt-get install -y virtualbox
 
   post:
     - gvm install go1.5.2 -B --name=stable
@@ -16,8 +14,6 @@ machine:
     BASE_DIR: src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
   # Trick circle brainflat "no absolute path" behavior
     BASE_STABLE: ../../../$HOME/.gvm/pkgsets/stable/global/$BASE_DIR
-  # BASE_BLEED: ../../../$HOME/.gvm/pkgsets/bleed/global/$BASE_DIR
-    BUILDTAGS: ""
 
 dependencies:
   override:
@@ -31,23 +27,12 @@ test:
     - gvm use stable && go version
     - gvm use stable && make build:
         pwd: $BASE_STABLE
+    - gvm use stable && GO15VENDOREXPERIMENT=1 go get github.com/docker/docker-machine-driver-ci-test
 
   override:
     - DRIVER=none test/integration/run-bats.sh test/integration/cli:
         pwd: $BASE_STABLE
         timeout: 600
-    # - DRIVER=virtualbox test/integration/run-bats.sh test/integration/core:
-    #     pwd: $BASE_STABLE
-    #     timeout: 1200
-    # - DRIVER=digitalocean test/integration/run-bats.sh test/integration/core:
-    #     pwd: $BASE_STABLE
-    #     timeout: 1200
-    # - DRIVER=azure test/integration/run-bats.sh test/integration/core:
-    #     pwd: $BASE_STABLE
-    #     timeout: 1200
-    # - DRIVER=amazonec2 test/integration/run-bats.sh test/integration/core:
-    #     pwd: $BASE_STABLE
-    #     timeout: 1200
-
-    # - gvm use stable && DRIVER=amazonec2 test/integration/run-bats.sh test/integration/core:
-    #     pwd: $BASE_STABLE
+    - PATH=../../../../bin:$PATH DRIVER=ci-test test/integration/run-bats.sh test/integration/3rdparty:
+        pwd: $BASE_STABLE
+        timeout: 600
