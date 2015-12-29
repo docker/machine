@@ -217,9 +217,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		ApiKey:   flags.String("softlayer-api-key"),
 	}
 
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SetSwarmConfigFromFlags(flags)
 	d.SSHUser = "root"
 	d.SSHPort = 22
 

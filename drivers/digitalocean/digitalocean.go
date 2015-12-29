@@ -131,11 +131,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.PrivateNetworking = flags.Bool("digitalocean-private-networking")
 	d.Backups = flags.Bool("digitalocean-backups")
 	d.UserDataFile = flags.String("digitalocean-userdata")
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = flags.String("digitalocean-ssh-user")
 	d.SSHPort = flags.Int("digitalocean-ssh-port")
+	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")

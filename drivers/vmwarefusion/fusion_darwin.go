@@ -150,9 +150,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ConfigDriveURL = flags.String("vmwarefusion-configdrive-url")
 	d.ISO = d.ResolveStorePath(isoFilename)
 	d.ConfigDriveISO = d.ResolveStorePath(isoConfigDrive)
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SetSwarmConfigFromFlags(flags)
 	d.SSHUser = flags.String("vmwarefusion-ssh-user")
 	d.SSHPassword = flags.String("vmwarefusion-ssh-password")
 	d.SSHPort = 22

@@ -192,9 +192,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	d.Pool = flags.String("vmwarevsphere-pool")
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SetSwarmConfigFromFlags(flags)
 
 	d.ISO = d.ResolveStorePath(isoFilename)
 
