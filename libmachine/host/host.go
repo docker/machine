@@ -21,8 +21,7 @@ import (
 )
 
 var (
-	validHostNameChars                = `^[a-zA-Z0-9][a-zA-Z0-9\-\.]*$`
-	validHostNamePattern              = regexp.MustCompile(validHostNameChars)
+	validHostNamePattern              = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-\.]*$`)
 	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
 )
 
@@ -69,13 +68,9 @@ func (h *Host) CreateSSHClient() (ssh.Client, error) {
 		return ssh.ExternalClient{}, err
 	}
 
-	var auth *ssh.Auth
-	if h.Driver.GetSSHKeyPath() == "" {
-		auth = &ssh.Auth{}
-	} else {
-		auth = &ssh.Auth{
-			Keys: []string{h.Driver.GetSSHKeyPath()},
-		}
+	auth := &ssh.Auth{}
+	if h.Driver.GetSSHKeyPath() != "" {
+		auth.Keys = []string{h.Driver.GetSSHKeyPath()}
 	}
 
 	return ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
@@ -181,9 +176,5 @@ func (h *Host) ConfigureAuth() error {
 	// and modularity of the provisioners should be).
 	//
 	// Call provision to re-provision the certs properly.
-	if err := provisioner.Provision(swarm.Options{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions); err != nil {
-		return err
-	}
-
-	return nil
+	return provisioner.Provision(swarm.Options{}, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
 }
