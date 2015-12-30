@@ -27,12 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pluginDriver, err := client.NewPluginDriver("virtualbox", data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	h, err := client.NewHost(pluginDriver)
+	h, err := client.NewHost("virtualbox", data)
 	if err != nil {
 		log.Fatal(err)
 	}

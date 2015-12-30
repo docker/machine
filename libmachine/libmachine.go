@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"io"
+
+	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/check"
 	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
@@ -22,60 +27,90 @@ import (
 )
 
 type API interface {
-	persist.Store
-	persist.PluginDriverFactory
-	NewHost(drivers.Driver) (*host.Host, error)
+	io.Closer
+	NewHost(driverName string, rawDriver []byte) (*host.Host, error)
 	Create(h *host.Host) error
+	persist.Store
 }
 
 type Client struct {
-	*persist.PluginStore
 	IsDebug        bool
 	SSHClientType  ssh.ClientType
 	GithubAPIToken string
+	*persist.Filestore
+	clientDriverFactory rpcdriver.RPCClientDriverFactory
 }
 
 func NewClient(storePath string) *Client {
 	certsDir := filepath.Join(storePath, ".docker", "machine", "certs")
 	return &Client{
-		IsDebug:       false,
-		SSHClientType: ssh.External,
-		PluginStore:   persist.NewPluginStore(storePath, certsDir, certsDir),
+		IsDebug:             false,
+		SSHClientType:       ssh.External,
+		Filestore:           persist.NewFilestore(storePath, certsDir, certsDir),
+		clientDriverFactory: rpcdriver.NewRPCClientDriverFactory(),
 	}
 }
 
-func (api *Client) NewHost(driver drivers.Driver) (*host.Host, error) {
-	certDir := filepath.Join(api.Path, "certs")
-
-	hostOptions := &host.Options{
-		AuthOptions: &auth.Options{
-			CertDir:          certDir,
-			CaCertPath:       filepath.Join(certDir, "ca.pem"),
-			CaPrivateKeyPath: filepath.Join(certDir, "ca-key.pem"),
-			ClientCertPath:   filepath.Join(certDir, "cert.pem"),
-			ClientKeyPath:    filepath.Join(certDir, "key.pem"),
-			ServerCertPath:   filepath.Join(api.GetMachinesDir(), "server.pem"),
-			ServerKeyPath:    filepath.Join(api.GetMachinesDir(), "server-key.pem"),
-		},
-		EngineOptions: &engine.Options{
-			InstallURL:    "https://get.docker.com",
-			StorageDriver: "aufs",
-			TLSVerify:     true,
-		},
-		SwarmOptions: &swarm.Options{
-			Host:     "tcp://0.0.0.0:3376",
-			Image:    "swarm:latest",
-			Strategy: "spread",
-		},
+func (api *Client) NewHost(driverName string, rawDriver []byte) (*host.Host, error) {
+	driver, err := api.clientDriverFactory.NewRPCClientDriver(driverName, rawDriver)
+	if err != nil {
+		return nil, err
 	}
+
+	certDir := filepath.Join(api.Path, "certs")
 
 	return &host.Host{
 		ConfigVersion: version.ConfigVersion,
 		Name:          driver.GetMachineName(),
 		Driver:        driver,
 		DriverName:    driver.DriverName(),
-		HostOptions:   hostOptions,
+		HostOptions: &host.Options{
+			AuthOptions: &auth.Options{
+				CertDir:          certDir,
+				CaCertPath:       filepath.Join(certDir, "ca.pem"),
+				CaPrivateKeyPath: filepath.Join(certDir, "ca-key.pem"),
+				ClientCertPath:   filepath.Join(certDir, "cert.pem"),
+				ClientKeyPath:    filepath.Join(certDir, "key.pem"),
+				ServerCertPath:   filepath.Join(api.GetMachinesDir(), "server.pem"),
+				ServerKeyPath:    filepath.Join(api.GetMachinesDir(), "server-key.pem"),
+			},
+			EngineOptions: &engine.Options{
+				InstallURL:    "https://get.docker.com",
+				StorageDriver: "aufs",
+				TLSVerify:     true,
+			},
+			SwarmOptions: &swarm.Options{
+				Host:     "tcp://0.0.0.0:3376",
+				Image:    "swarm:latest",
+				Strategy: "spread",
+			},
+		},
 	}, nil
+}
+
+func (api *Client) Load(name string) (*host.Host, error) {
+	h, err := api.Filestore.Load(name)
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := api.clientDriverFactory.NewRPCClientDriver(h.DriverName, h.RawDriver)
+	if err != nil {
+		// Not being able to find a driver binary is a "known error"
+		if _, ok := err.(localbinary.ErrPluginBinaryNotFound); ok {
+			h.Driver = errdriver.NewDriver(h.DriverName)
+			return h, nil
+		}
+		return nil, err
+	}
+
+	if h.DriverName == "virtualbox" {
+		h.Driver = drivers.NewSerialDriver(d)
+	} else {
+		h.Driver = d
+	}
+
+	return h, nil
 }
 
 // Create is the wrapper method which covers all of the boilerplate around
@@ -158,4 +193,8 @@ func sendCrashReport(err error, api *Client, host *host.Host) {
 	} else {
 		crashreport.Send(err, "api.performCreate", host.DriverName, "Create")
 	}
+}
+
+func (api *Client) Close() error {
+	return api.clientDriverFactory.Close()
 }

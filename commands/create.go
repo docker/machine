@@ -14,7 +14,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
@@ -152,12 +151,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	}
 
 	driverName := c.String("driver")
-	driver, err := api.NewPluginDriver(driverName, rawDriver)
-	if err != nil {
-		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
-	}
-
-	h, err := api.NewHost(driver)
+	h, err := api.NewHost(driverName, rawDriver)
 	if err != nil {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
@@ -211,7 +205,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	// driverOpts is the actual data we send over the wire to set the
 	// driver parameters (an interface fulfilling drivers.DriverOptions,
 	// concrete type rpcdriver.RpcFlags).
-	mcnFlags := driver.GetCreateFlags()
+	mcnFlags := h.Driver.GetCreateFlags()
 	driverOpts := getDriverOpts(c, mcnFlags)
 
 	if err := h.Driver.SetConfigFromFlags(driverOpts); err != nil {
@@ -287,13 +281,9 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
 	}
 
-	driver, err := api.NewPluginDriver(driverName, rawDriver)
+	h, err := api.NewHost(driverName, rawDriver)
 	if err != nil {
-		return fmt.Errorf("Error loading driver %q: %s", driverName, err)
-	}
-
-	if _, ok := driver.(*errdriver.Driver); ok {
-		return errdriver.NotLoadable{Name: driverName}
+		return err
 	}
 
 	// TODO: So much flag manipulation and voodoo here, it seems to be
@@ -301,7 +291,7 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 	//
 	// mcnFlags is the data we get back over the wire (type mcnflag.Flag)
 	// to indicate which parameters are available.
-	mcnFlags := driver.GetCreateFlags()
+	mcnFlags := h.Driver.GetCreateFlags()
 
 	// This bit will actually make "create" display the correct flags based
 	// on the requested driver.
@@ -315,10 +305,6 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 		if cmd.HasName("create") {
 			cmd = addDriverFlagsToCommand(cliFlags, cmd)
 		}
-	}
-
-	if serialDriver, ok := driver.(*drivers.SerialDriver); ok {
-		driver = serialDriver.Driver
 	}
 
 	return c.Application().Run(os.Args)
