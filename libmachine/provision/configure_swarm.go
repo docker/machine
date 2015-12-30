@@ -41,6 +41,8 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 	}
 	advertiseInfo := fmt.Sprintf("%s:%s", ip, dockerPort)
 
+	log.Info("SwarmOptions.Env : ", swarmOptions.Env)
+
 	if swarmOptions.Master {
 		cmd := fmt.Sprintf("manage --tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy %s --advertise %s",
 			authOptions.CaCertRemotePath,
@@ -81,9 +83,16 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			HostConfig: masterHostConfig,
 		}
 
-		err = mcndockerclient.CreateContainer(dockerClient, swarmMasterConfig, "swarm-agent-master")
+		//Check if container "swarm-agent-master" already present, just start and break
+		id, err := FindContainer(dockerClient, "swarm-agent-master")
 		if err != nil {
-			return err
+			if err = CreateContainer(dockerClient, swarmMasterConfig, "swarm-agent-master"); err != nil {
+				return err
+			}
+		} else {
+			if err = StartContainer(dockerClient, id, &masterHostConfig); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -107,5 +116,17 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		HostConfig: workerHostConfig,
 	}
 
-	return mcndockerclient.CreateContainer(dockerClient, swarmWorkerConfig, "swarm-agent")
+	//Check if, "swarm-agent" present, just start and skip creation.
+	id, err := FindContainer(dockerClient, "swarm-agent")
+	if err != nil {
+		if err = CreateContainer(dockerClient, swarmWorkerConfig, "swarm-agent"); err != nil {
+			return err
+		}
+	} else {
+		if err = StartContainer(dockerClient, id, &workerHostConfig); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

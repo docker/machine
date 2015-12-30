@@ -165,6 +165,12 @@ var Commands = []cli.Command{
 		SkipFlagParsing: true,
 	},
 	{
+		Flags:  sharedApplyFlags,
+		Name:   "apply",
+		Usage:  fmt.Sprintf("Create/Modify a machine.\n\nRun '%s apply --config file' ", os.Args[0]),
+		Action: fatalOnError(cmdApply),
+	},
+	{
 		Name:        "env",
 		Usage:       "Display the commands to set up the environment for the Docker client",
 		Description: "Argument is a machine name.",

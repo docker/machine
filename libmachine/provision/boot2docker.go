@@ -245,14 +245,18 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.Options,
 		return err
 	}
 
-	if err = makeDockerOptionsDir(provisioner); err != nil {
-		return err
+	if !authOptions.SkipCertGeneration {
+		if err = makeDockerOptionsDir(provisioner); err != nil {
+			return err
+		}
 	}
 
 	provisioner.AuthOptions = setRemoteAuthOptions(provisioner)
 
-	if err = ConfigureAuth(provisioner); err != nil {
-		return err
+	if !authOptions.SkipCertGeneration {
+		if err = ConfigureAuth(provisioner); err != nil {
+			return err
+		}
 	}
 
 	if err = configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {

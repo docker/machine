@@ -1,17 +1,17 @@
 package engine
 
 type Options struct {
-	ArbitraryFlags   []string
+	ArbitraryFlags   []string `yaml:"opt"`
 	DNS              []string `json:"Dns"`
-	GraphDir         string
-	Env              []string
-	Ipv6             bool
-	InsecureRegistry []string
-	Labels           []string
-	LogLevel         string
-	StorageDriver    string
-	SelinuxEnabled   bool
-	TLSVerify        bool `json:"TlsVerify"`
-	RegistryMirror   []string
-	InstallURL       string
+	GraphDir         string   `yaml:"graph_dir"`
+	Env              []string `yaml:"env"`
+	Ipv6             bool     `yaml:"ipv6"`
+	InsecureRegistry []string `yaml:"insecure_registry"`
+	Labels           []string `yaml:"label"`
+	LogLevel         string   `yaml:"storage_driver"`
+	StorageDriver    string   `yaml:"storage_driver"`
+	SelinuxEnabled   bool     `yaml:"selinux_enabled"`
+	TLSVerify        bool     `json:"TlsVerify"`
+	RegistryMirror   []string `yaml:"registry_mirror"`
+	InstallURL       string   `yaml:"install_url"`
 }
