@@ -97,7 +97,7 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 
 func fatalOnError(command func(commandLine CommandLine, api libmachine.API) error) func(context *cli.Context) {
 	return func(context *cli.Context) {
-		api := libmachine.NewClient(mcndirs.GetBaseDir())
+		api := libmachine.NewClient(mcndirs.GetBaseDir(), mcndirs.GetMachineCertDir())
 		defer api.Close()
 
 		if context.GlobalBool("native-ssh") {

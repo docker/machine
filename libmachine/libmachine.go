@@ -34,6 +34,7 @@ type API interface {
 }
 
 type Client struct {
+	certsDir       string
 	IsDebug        bool
 	SSHClientType  ssh.ClientType
 	GithubAPIToken string
@@ -41,9 +42,9 @@ type Client struct {
 	clientDriverFactory rpcdriver.RPCClientDriverFactory
 }
 
-func NewClient(storePath string) *Client {
-	certsDir := filepath.Join(storePath, ".docker", "machine", "certs")
+func NewClient(storePath, certsDir string) *Client {
 	return &Client{
+		certsDir:            certsDir,
 		IsDebug:             false,
 		SSHClientType:       ssh.External,
 		Filestore:           persist.NewFilestore(storePath, certsDir, certsDir),
@@ -57,8 +58,6 @@ func (api *Client) NewHost(driverName string, rawDriver []byte) (*host.Host, err
 		return nil, err
 	}
 
-	certDir := filepath.Join(api.Path, "certs")
-
 	return &host.Host{
 		ConfigVersion: version.ConfigVersion,
 		Name:          driver.GetMachineName(),
@@ -66,11 +65,11 @@ func (api *Client) NewHost(driverName string, rawDriver []byte) (*host.Host, err
 		DriverName:    driver.DriverName(),
 		HostOptions: &host.Options{
 			AuthOptions: &auth.Options{
-				CertDir:          certDir,
-				CaCertPath:       filepath.Join(certDir, "ca.pem"),
-				CaPrivateKeyPath: filepath.Join(certDir, "ca-key.pem"),
-				ClientCertPath:   filepath.Join(certDir, "cert.pem"),
-				ClientKeyPath:    filepath.Join(certDir, "key.pem"),
+				CertDir:          api.certsDir,
+				CaCertPath:       filepath.Join(api.certsDir, "ca.pem"),
+				CaPrivateKeyPath: filepath.Join(api.certsDir, "ca-key.pem"),
+				ClientCertPath:   filepath.Join(api.certsDir, "cert.pem"),
+				ClientKeyPath:    filepath.Join(api.certsDir, "key.pem"),
 				ServerCertPath:   filepath.Join(api.GetMachinesDir(), "server.pem"),
 				ServerKeyPath:    filepath.Join(api.GetMachinesDir(), "server-key.pem"),
 			},

@@ -13,7 +13,7 @@ import (
 func main() {
 	log.SetDebug(true)
 
-	client := libmachine.NewClient("/tmp/automatic")
+	client := libmachine.NewClient("/tmp/automatic", "/tmp/automatic/certs")
 
 	hostName := "myfunhost"
 
