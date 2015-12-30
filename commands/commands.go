@@ -4,13 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
@@ -390,37 +388,4 @@ func consolidateErrs(errs []error) error {
 	}
 
 	return errors.New(strings.TrimSpace(finalErr))
-}
-
-// Returns the cert paths.  codegangsta/cli will not set the cert paths if the
-// storage-path is set to something different so we cannot use the paths in the
-// global options. le sigh.
-func getCertPathInfoFromCommandLine(c CommandLine) cert.PathInfo {
-	caCertPath := c.GlobalString("tls-ca-cert")
-	caKeyPath := c.GlobalString("tls-ca-key")
-	clientCertPath := c.GlobalString("tls-client-cert")
-	clientKeyPath := c.GlobalString("tls-client-key")
-
-	if caCertPath == "" {
-		caCertPath = filepath.Join(mcndirs.GetMachineCertDir(), "ca.pem")
-	}
-
-	if caKeyPath == "" {
-		caKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "ca-key.pem")
-	}
-
-	if clientCertPath == "" {
-		clientCertPath = filepath.Join(mcndirs.GetMachineCertDir(), "cert.pem")
-	}
-
-	if clientKeyPath == "" {
-		clientKeyPath = filepath.Join(mcndirs.GetMachineCertDir(), "key.pem")
-	}
-
-	return cert.PathInfo{
-		CaCertPath:       caCertPath,
-		CaPrivateKeyPath: caKeyPath,
-		ClientCertPath:   clientCertPath,
-		ClientKeyPath:    clientKeyPath,
-	}
 }
