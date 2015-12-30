@@ -295,6 +295,11 @@ func (d *Driver) Restart() error {
 	return err
 }
 
+func (d *Driver) Kill() error {
+	_, _, err := d.getClient().DropletActions.PowerOff(d.DropletID)
+	return err
+}
+
 func (d *Driver) Remove() error {
 	client := d.getClient()
 	if resp, err := client.Keys.DeleteByID(d.SSHKeyID); err != nil {
@@ -312,11 +317,6 @@ func (d *Driver) Remove() error {
 		}
 	}
 	return nil
-}
-
-func (d *Driver) Kill() error {
-	_, _, err := d.getClient().DropletActions.PowerOff(d.DropletID)
-	return err
 }
 
 func (d *Driver) getClient() *godo.Client {

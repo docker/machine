@@ -580,21 +580,12 @@ func (d *Driver) Kill() error {
 		return err
 	}
 
-	status, err := vapp.GetStatus()
+	task, err := vapp.PowerOff()
 	if err != nil {
 		return err
 	}
-
-	if status == "POWERED_ON" {
-		log.Infof("Stopping %s...", d.MachineName)
-		task, err := vapp.PowerOff()
-		if err != nil {
-			return err
-		}
-		if err = task.WaitTaskCompletion(); err != nil {
-			return err
-		}
-
+	if err = task.WaitTaskCompletion(); err != nil {
+		return err
 	}
 
 	if err = p.Disconnect(); err != nil {

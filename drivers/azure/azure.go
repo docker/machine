@@ -310,8 +310,7 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Restart() error {
-	err := d.setUserSubscription()
-	if err != nil {
+	if err := d.setUserSubscription(); err != nil {
 		return err
 	}
 
@@ -322,6 +321,10 @@ func (d *Driver) Restart() error {
 	var err error
 	d.IPAddress, err = d.GetIP()
 	return err
+}
+
+func (d *Driver) Kill() error {
+	return d.Stop()
 }
 
 func (d *Driver) Remove() error {
@@ -336,28 +339,6 @@ func (d *Driver) Remove() error {
 	}
 
 	return vmClient.DeleteHostedService(d.MachineName)
-}
-
-func (d *Driver) Kill() error {
-	if err := d.setUserSubscription(); err != nil {
-		return err
-	}
-
-	if vmState, err := d.GetState(); err != nil {
-		return err
-	} else if vmState == state.Stopped {
-		log.Infof("Host is already stopped")
-		return nil
-	}
-
-	log.Debugf("killing %s", d.MachineName)
-
-	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
-		return err
-	}
-
-	d.IPAddress = ""
-	return nil
 }
 
 func (d *Driver) setUserSubscription() error {

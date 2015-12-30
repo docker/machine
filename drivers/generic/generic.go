@@ -164,10 +164,10 @@ func (d *Driver) Restart() error {
 	return err
 }
 
-func (d *Driver) Remove() error {
-	return nil
-}
-
 func (d *Driver) Kill() error {
 	return errors.New("generic driver does not support kill")
+}
+
+func (d *Driver) Remove() error {
+	return nil
 }

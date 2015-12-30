@@ -547,6 +547,10 @@ func (d *Driver) Restart() error {
 	return d.waitForIP()
 }
 
+func (d *Driver) Kill() error {
+	return d.vbm("controlvm", d.MachineName, "poweroff")
+}
+
 func (d *Driver) waitForIP() error {
 	// Wait for SSH over NAT to be available before returning to user
 	if err := drivers.WaitForSSH(d); err != nil {
@@ -585,10 +589,6 @@ func (d *Driver) Remove() error {
 	// vbox will not release it's lock immediately after the stop
 	time.Sleep(1 * time.Second)
 	return d.vbm("unregistervm", "--delete", d.MachineName)
-}
-
-func (d *Driver) Kill() error {
-	return d.vbm("controlvm", d.MachineName, "poweroff")
 }
 
 func (d *Driver) GetState() (state.State, error) {

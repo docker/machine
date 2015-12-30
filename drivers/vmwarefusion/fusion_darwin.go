@@ -416,6 +416,11 @@ func (d *Driver) Restart() error {
 	return err
 }
 
+func (d *Driver) Kill() error {
+	_, _, err := vmrun("stop", d.vmxPath(), "hard nogui")
+	return err
+}
+
 func (d *Driver) Remove() error {
 	s, _ := d.GetState()
 	if s == state.Running {
@@ -425,12 +430,6 @@ func (d *Driver) Remove() error {
 	}
 	log.Infof("Deleting %s...", d.MachineName)
 	vmrun("deleteVM", d.vmxPath(), "nogui")
-	return nil
-}
-
-func (d *Driver) Kill() error {
-	log.Infof("Forcibly halting %s...", d.MachineName)
-	vmrun("stop", d.vmxPath(), "hard nogui")
 	return nil
 }
 

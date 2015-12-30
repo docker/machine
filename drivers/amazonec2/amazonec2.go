@@ -632,6 +632,14 @@ func (d *Driver) Restart() error {
 	return err
 }
 
+func (d *Driver) Kill() error {
+	_, err := d.getClient().StopInstances(&ec2.StopInstancesInput{
+		InstanceIds: []*string{&d.InstanceId},
+		Force:       aws.Bool(true),
+	})
+	return err
+}
+
 func (d *Driver) Remove() error {
 	if err := d.terminate(); err != nil {
 		return fmt.Errorf("unable to terminate instance: %s", err)
@@ -643,14 +651,6 @@ func (d *Driver) Remove() error {
 	}
 
 	return nil
-}
-
-func (d *Driver) Kill() error {
-	_, err := d.getClient().StopInstances(&ec2.StopInstancesInput{
-		InstanceIds: []*string{&d.InstanceId},
-		Force:       aws.Bool(true),
-	})
-	return err
 }
 
 func (d *Driver) getClient() *ec2.EC2 {
