@@ -354,6 +354,10 @@ func (d *Driver) Restart() error {
 	return d.waitForJob(client, svmresp)
 }
 
+func (d *Driver) Kill() error {
+	return d.Stop()
+}
+
 func (d *Driver) Remove() error {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
@@ -371,10 +375,6 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	return nil
-}
-
-func (d *Driver) Kill() error {
-	return d.Stop()
 }
 
 func (d *Driver) jobIsDone(client *egoscale.Client, jobid string) (bool, error) {

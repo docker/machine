@@ -639,6 +639,35 @@ func (d *Driver) Restart() error {
 	return d.Start()
 }
 
+func (d *Driver) Kill() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
+	if err != nil {
+		return err
+	}
+
+	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	if err != nil {
+		return err
+	}
+
+	task, err := vm.PowerOff(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = task.WaitForResult(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+
+	return nil
+}
+
 func (d *Driver) Remove() error {
 	machineState, err := d.GetState()
 	if err != nil {
@@ -701,35 +730,6 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (d *Driver) Kill() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	c, err := d.vsphereLogin(ctx)
-	if err != nil {
-		return err
-	}
-
-	vm, err := d.fetchVM(c, ctx, d.MachineName)
-	if err != nil {
-		return err
-	}
-	log.Infof("Powering off VM forcibly...")
-	task, err := vm.PowerOff(ctx)
-	if err != nil {
-		return err
-	}
-
-	_, err = task.WaitForResult(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	d.IPAddress = ""
-
 	return nil
 }
 

@@ -114,6 +114,7 @@ func (h *Host) Stop() error {
 }
 
 func (h *Host) Kill() error {
+	log.Infof("Killing %q...", h.Name)
 	if err := h.runActionForState(h.Driver.Kill, state.Stopped); err != nil {
 		return err
 	}

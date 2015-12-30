@@ -408,6 +408,10 @@ func (d *Driver) Restart() error {
 	return d.client.RestartInstance(d)
 }
 
+func (d *Driver) Kill() error {
+	return d.Stop()
+}
+
 func (d *Driver) Remove() error {
 	log.Debug("deleting instance...", map[string]string{"MachineId": d.MachineId})
 	log.Info("Deleting OpenStack instance...")
@@ -423,10 +427,6 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	return nil
-}
-
-func (d *Driver) Kill() error {
-	return d.Stop()
 }
 
 const (
