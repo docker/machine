@@ -454,7 +454,6 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Start() error {
-
 	p, err := govcloudair.NewClient()
 	if err != nil {
 		return err
@@ -542,7 +541,6 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Restart() error {
-
 	p, err := govcloudair.NewClient()
 	if err != nil {
 		return err

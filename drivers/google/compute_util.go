@@ -351,7 +351,6 @@ func (c *ComputeUtil) stopInstance() error {
 
 // startInstance starts the instance.
 func (c *ComputeUtil) startInstance() error {
-	log.Infof("Starting instance.")
 	op, err := c.service.Instances.Start(c.project, c.zone, c.instanceName).Do()
 	if err != nil {
 		return err

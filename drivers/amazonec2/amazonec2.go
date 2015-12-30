@@ -614,11 +614,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	if err := d.waitForInstance(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.waitForInstance()
 }
 
 func (d *Driver) Stop() error {

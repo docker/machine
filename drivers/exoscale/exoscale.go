@@ -322,24 +322,14 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	vmstate, err := d.GetState()
-	if err != nil {
-		return err
-	}
-	if vmstate == state.Running || vmstate == state.Starting {
-		log.Infof("Host is already running or starting")
-		return nil
-	}
-
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+
 	svmresp, err := client.StartVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
-	return nil
+
+	return d.waitForJob(client, svmresp)
 }
 
 func (d *Driver) Stop() error {

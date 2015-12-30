@@ -481,7 +481,6 @@ func (d *Driver) Start() error {
 		if err := d.vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
 			return err
 		}
-		log.Infof("Starting VM...")
 	case state.Paused:
 		if err := d.vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
 			return err

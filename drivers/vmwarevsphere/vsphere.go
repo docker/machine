@@ -565,7 +565,7 @@ func (d *Driver) Start() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Powering on VM...")
+
 		task, err := vm.PowerOn(ctx)
 		if err != nil {
 			return err

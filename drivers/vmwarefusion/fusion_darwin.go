@@ -376,7 +376,6 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.Infof("Starting %s...", d.MachineName)
 	vmrun("start", d.vmxPath(), "nogui")
 
 	// Do not execute the rest of boot2docker specific configuration, exit here

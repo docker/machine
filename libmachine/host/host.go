@@ -94,6 +94,7 @@ func (h *Host) runActionForState(action func() error, desiredState state.State) 
 }
 
 func (h *Host) Start() error {
+	log.Infof("Starting %q...", h.Name)
 	if err := h.runActionForState(h.Driver.Start, state.Running); err != nil {
 		return err
 	}

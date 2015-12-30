@@ -385,25 +385,19 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.Debug("Starting OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return err
 	}
-	if err := d.client.StartInstance(d); err != nil {
-		return err
-	}
-	return nil
+
+	return d.client.StartInstance(d)
 }
 
 func (d *Driver) Stop() error {
 	if err := d.initCompute(); err != nil {
 		return err
 	}
-	if err := d.client.StopInstance(d); err != nil {
-		return err
-	}
 
-	return nil
+	return d.client.StopInstance(d)
 }
 
 func (d *Driver) Remove() error {
