@@ -103,6 +103,7 @@ func (h *Host) Start() error {
 }
 
 func (h *Host) Stop() error {
+	log.Infof("Stopping %q...", h.Name)
 	if err := h.runActionForState(h.Driver.Stop, state.Stopped); err != nil {
 		return err
 	}

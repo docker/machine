@@ -597,7 +597,7 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Powering off VM...")
+
 	if err := vm.ShutdownGuest(ctx); err != nil {
 		return err
 	}

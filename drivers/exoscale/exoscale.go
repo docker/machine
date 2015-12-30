@@ -343,24 +343,14 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	vmstate, err := d.GetState()
-	if err != nil {
-		return err
-	}
-	if vmstate == state.Stopped {
-		log.Infof("Host is already stopped")
-		return nil
-	}
-
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+
 	svmresp, err := client.StopVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
-	return nil
+
+	return d.waitForJob(client, svmresp)
 }
 
 func (d *Driver) Remove() error {

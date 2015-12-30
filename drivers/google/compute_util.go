@@ -340,7 +340,6 @@ func (c *ComputeUtil) deleteInstance() error {
 
 // stopInstance stops the instance.
 func (c *ComputeUtil) stopInstance() error {
-	log.Infof("Stopping instance.")
 	op, err := c.service.Instances.Stop(c.project, c.zone, c.instanceName).Do()
 	if err != nil {
 		return err

@@ -408,13 +408,11 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	log.Infof("Gracefully shutting down %s...", d.MachineName)
-	vmrun("stop", d.vmxPath(), "nogui")
-	return nil
+	_, _, err := vmrun("stop", d.vmxPath(), "nogui")
+	return err
 }
 
 func (d *Driver) Remove() error {
-
 	s, _ := d.GetState()
 	if s == state.Running {
 		if err := d.Kill(); err != nil {

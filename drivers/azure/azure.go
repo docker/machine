@@ -304,15 +304,6 @@ func (d *Driver) Stop() error {
 		return err
 	}
 
-	if vmState, err := d.GetState(); err != nil {
-		return err
-	} else if vmState == state.Stopped {
-		log.Infof("Host is already stopped")
-		return nil
-	}
-
-	log.Debugf("stopping %s", d.MachineName)
-
 	if err := vmClient.ShutdownRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
 	}

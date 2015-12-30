@@ -630,7 +630,6 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Remove() error {
-
 	if err := d.terminate(); err != nil {
 		return fmt.Errorf("unable to terminate instance: %s", err)
 	}
