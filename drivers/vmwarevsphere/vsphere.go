@@ -607,6 +607,38 @@ func (d *Driver) Stop() error {
 	return nil
 }
 
+func (d *Driver) Restart() error {
+	if err := d.Stop(); err != nil {
+		return err
+	}
+
+	// Check for 120 seconds for the machine to stop
+	for i := 1; i <= 60; i++ {
+		machineState, err := d.GetState()
+		if err != nil {
+			return err
+		}
+		if machineState == state.Running {
+			log.Debugf("Not there yet %d/%d", i, 60)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		if machineState == state.Stopped {
+			break
+		}
+	}
+
+	machineState, err := d.GetState()
+	// If the VM is still running after 120 seconds just kill it.
+	if machineState == state.Running {
+		if err = d.Kill(); err != nil {
+			return fmt.Errorf("can't stop VM: %s", err)
+		}
+	}
+
+	return d.Start()
+}
+
 func (d *Driver) Remove() error {
 	machineState, err := d.GetState()
 	if err != nil {
@@ -670,37 +702,6 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	return nil
-}
-
-func (d *Driver) Restart() error {
-	if err := d.Stop(); err != nil {
-		return err
-	}
-	// Check for 120 seconds for the machine to stop
-	for i := 1; i <= 60; i++ {
-		machineState, err := d.GetState()
-		if err != nil {
-			return err
-		}
-		if machineState == state.Running {
-			log.Debugf("Not there yet %d/%d", i, 60)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		if machineState == state.Stopped {
-			break
-		}
-	}
-
-	machineState, err := d.GetState()
-	// If the VM is still running after 120 seconds just kill it.
-	if machineState == state.Running {
-		if err = d.Kill(); err != nil {
-			return fmt.Errorf("can't stop VM: %s", err)
-		}
-	}
-
-	return d.Start()
 }
 
 func (d *Driver) Kill() error {

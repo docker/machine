@@ -343,6 +343,17 @@ func (d *Driver) Stop() error {
 	return d.waitForJob(client, svmresp)
 }
 
+func (d *Driver) Restart() error {
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+
+	svmresp, err := client.RebootVirtualMachine(d.ID)
+	if err != nil {
+		return err
+	}
+
+	return d.waitForJob(client, svmresp)
+}
+
 func (d *Driver) Remove() error {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
@@ -359,27 +370,6 @@ func (d *Driver) Remove() error {
 	if err = d.waitForJob(client, dvmresp); err != nil {
 		return err
 	}
-	return nil
-}
-
-func (d *Driver) Restart() error {
-	vmstate, err := d.GetState()
-	if err != nil {
-		return err
-	}
-	if vmstate == state.Stopped {
-		return fmt.Errorf("Host is stopped, use start command to start it")
-	}
-
-	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
-	svmresp, err := client.RebootVirtualMachine(d.ID)
-	if err != nil {
-		return err
-	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
-
 	return nil
 }
 

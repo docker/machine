@@ -159,14 +159,13 @@ func (d *Driver) Stop() error {
 	return errors.New("generic driver does not support stop")
 }
 
-func (d *Driver) Remove() error {
-	return nil
-}
-
 func (d *Driver) Restart() error {
-	log.Debug("Restarting...")
 	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now")
 	return err
+}
+
+func (d *Driver) Remove() error {
+	return nil
 }
 
 func (d *Driver) Kill() error {

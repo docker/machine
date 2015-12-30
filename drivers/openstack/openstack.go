@@ -400,6 +400,14 @@ func (d *Driver) Stop() error {
 	return d.client.StopInstance(d)
 }
 
+func (d *Driver) Restart() error {
+	if err := d.initCompute(); err != nil {
+		return err
+	}
+
+	return d.client.RestartInstance(d)
+}
+
 func (d *Driver) Remove() error {
 	log.Debug("deleting instance...", map[string]string{"MachineId": d.MachineId})
 	log.Info("Deleting OpenStack instance...")
@@ -412,17 +420,6 @@ func (d *Driver) Remove() error {
 	log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
 	// TODO (fsoppelsa) maybe we want to check this, in case of shared keypairs, before removal
 	if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *Driver) Restart() error {
-	log.Info("Restarting OpenStack instance...", map[string]string{"MachineId": d.MachineId})
-	if err := d.initCompute(); err != nil {
-		return err
-	}
-	if err := d.client.RestartInstance(d); err != nil {
 		return err
 	}
 	return nil
