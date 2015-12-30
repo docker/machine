@@ -28,10 +28,12 @@ Options:
 -   `--openstack-floatingip-pool`: The IP pool that will be used to get a public IP can assign it to the machine. If there is an
     IP address already allocated but not assigned to any machine, this IP will be chosen and assigned to the machine. If
     there is no IP address already allocated a new IP will be allocated and assigned to the machine.
+-   `--openstack-keypair-name`: Specify the existing Nova keypair to use.
 -   `--openstack-insecure`: Explicitly allow openstack driver to perform "insecure" SSL (https) requests. The server's certificate will not be verified against any certificate authorities. This option should be used with caution.
 -   `--openstack-ip-version`: If the instance has both IPv4 and IPv6 address, you can select IP version. If not provided `4` will be used.
 -   `--openstack-net-name` or `--openstack-net-id`: Identify the private network the machine will be connected on. If your OpenStack project project contains only one private network it will be use automatically.
 -   `--openstack-password`: User password. It can be omitted if the standard environment variable `OS_PASSWORD` is set.
+-   `--openstack-private-key-file`: Used with `--openstack-keypair-name`, associates the private key to the keypair.
 -   `--openstack-region`: The region to work on. Can be omitted if there is only one region on the OpenStack.
 -   `--openstack-sec-groups`: If security groups are available on your OpenStack you can specify a comma separated list
     to use for the machine (e.g. `secgrp001,secgrp002`).
@@ -57,9 +59,11 @@ Environment variables and default values:
 | `--openstack-image-name`        | `OS_IMAGE_NAME`        | -           |
 | `--openstack-insecure`          | `OS_INSECURE`          | `false`     |
 | `--openstack-ip-version`        | `OS_IP_VERSION`        | `4`         |
+| `--openstack-keypair-name`      | `OS_KEYPAIR_NAME`      | -           |
 | `--openstack-net-id`            | `OS_NETWORK_ID`        | -           |
 | `--openstack-net-name`          | `OS_NETWORK_NAME`      | -           |
 | `--openstack-password`          | `OS_PASSWORD`          | -           |
+| `--openstack-private-key-file`  | `OS_PRIVATE_KEY_FILE`  | -           |
 | `--openstack-region`            | `OS_REGION_NAME`       | -           |
 | `--openstack-sec-groups`        | `OS_SECURITY_GROUPS`   | -           |
 | `--openstack-ssh-port`          | `OS_SSH_PORT`          | `22`        |
