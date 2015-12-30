@@ -123,15 +123,18 @@ func (h *Host) Kill() error {
 }
 
 func (h *Host) Restart() error {
+	log.Infof("Restarting %q...", h.Name)
 	if drivers.MachineInState(h.Driver, state.Stopped)() {
 		return h.Start()
 	}
+
 	if drivers.MachineInState(h.Driver, state.Running)() {
 		if err := h.Driver.Restart(); err != nil {
 			return err
 		}
 		return mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running))
 	}
+
 	return nil
 }
 

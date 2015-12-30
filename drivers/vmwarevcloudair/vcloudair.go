@@ -206,7 +206,6 @@ func (d *Driver) GetIP() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-
 	p, err := govcloudair.NewClient()
 	if err != nil {
 		return state.Error, err
@@ -240,11 +239,9 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Stopped, nil
 	}
 	return state.None, nil
-
 }
 
 func (d *Driver) Create() error {
-
 	key, err := d.createSSHKey()
 	if err != nil {
 		return err
@@ -514,21 +511,12 @@ func (d *Driver) Stop() error {
 		return err
 	}
 
-	status, err := vapp.GetStatus()
+	task, err := vapp.Shutdown()
 	if err != nil {
 		return err
 	}
-
-	if status == "POWERED_ON" {
-		log.Infof("Shutting down %s...", d.MachineName)
-		task, err := vapp.Shutdown()
-		if err != nil {
-			return err
-		}
-		if err = task.WaitTaskCompletion(); err != nil {
-			return err
-		}
-
+	if err = task.WaitTaskCompletion(); err != nil {
+		return err
 	}
 
 	if err = p.Disconnect(); err != nil {
@@ -558,33 +546,12 @@ func (d *Driver) Restart() error {
 		return err
 	}
 
-	status, err := vapp.GetStatus()
+	task, err := vapp.Reset()
 	if err != nil {
 		return err
 	}
-
-	if status == "POWERED_ON" {
-		// If it's powered on, restart the machine
-		log.Infof("Restarting %s...", d.MachineName)
-		task, err := vapp.Reset()
-		if err != nil {
-			return err
-		}
-		if err = task.WaitTaskCompletion(); err != nil {
-			return err
-		}
-
-	} else {
-		// If it's not powered on, start it.
-		log.Infof("Docker host %s is powered off, powering it back on...", d.MachineName)
-		task, err := vapp.PowerOn()
-		if err != nil {
-			return err
-		}
-		if err = task.WaitTaskCompletion(); err != nil {
-			return err
-		}
-
+	if err = task.WaitTaskCompletion(); err != nil {
+		return err
 	}
 
 	if err = p.Disconnect(); err != nil {

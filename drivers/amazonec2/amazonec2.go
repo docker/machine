@@ -625,6 +625,13 @@ func (d *Driver) Stop() error {
 	return err
 }
 
+func (d *Driver) Restart() error {
+	_, err := d.getClient().RebootInstances(&ec2.RebootInstancesInput{
+		InstanceIds: []*string{&d.InstanceId},
+	})
+	return err
+}
+
 func (d *Driver) Remove() error {
 	if err := d.terminate(); err != nil {
 		return fmt.Errorf("unable to terminate instance: %s", err)
@@ -636,13 +643,6 @@ func (d *Driver) Remove() error {
 	}
 
 	return nil
-}
-
-func (d *Driver) Restart() error {
-	_, err := d.getClient().RebootInstances(&ec2.RebootInstancesInput{
-		InstanceIds: []*string{&d.InstanceId},
-	})
-	return err
 }
 
 func (d *Driver) Kill() error {

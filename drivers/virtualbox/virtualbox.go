@@ -503,23 +503,6 @@ func (d *Driver) Start() error {
 	return d.waitForIP()
 }
 
-func (d *Driver) waitForIP() error {
-	// Wait for SSH over NAT to be available before returning to user
-	if err := drivers.WaitForSSH(d); err != nil {
-		return err
-	}
-
-	// Bail if we don't get an IP from DHCP after a given number of seconds.
-	if err := mcnutils.WaitForSpecific(d.hostOnlyIPAvailable, 5, 4*time.Second); err != nil {
-		return err
-	}
-
-	var err error
-	d.IPAddress, err = d.GetIP()
-
-	return err
-}
-
 func (d *Driver) Stop() error {
 	currentState, err := d.GetState()
 	if err != nil {
@@ -553,6 +536,34 @@ func (d *Driver) Stop() error {
 	return nil
 }
 
+// Restart restarts a machine which is known to be running.
+func (d *Driver) Restart() error {
+	if err := d.vbm("controlvm", d.MachineName, "reset"); err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+
+	return d.waitForIP()
+}
+
+func (d *Driver) waitForIP() error {
+	// Wait for SSH over NAT to be available before returning to user
+	if err := drivers.WaitForSSH(d); err != nil {
+		return err
+	}
+
+	// Bail if we don't get an IP from DHCP after a given number of seconds.
+	if err := mcnutils.WaitForSpecific(d.hostOnlyIPAvailable, 5, 4*time.Second); err != nil {
+		return err
+	}
+
+	var err error
+	d.IPAddress, err = d.GetIP()
+
+	return err
+}
+
 func (d *Driver) Remove() error {
 	s, err := d.GetState()
 	if err != nil {
@@ -574,18 +585,6 @@ func (d *Driver) Remove() error {
 	// vbox will not release it's lock immediately after the stop
 	time.Sleep(1 * time.Second)
 	return d.vbm("unregistervm", "--delete", d.MachineName)
-}
-
-// Restart restarts a machine which is known to be running.
-func (d *Driver) Restart() error {
-	log.Infof("Restarting VM...")
-	if err := d.vbm("controlvm", d.MachineName, "reset"); err != nil {
-		return err
-	}
-
-	d.IPAddress = ""
-
-	return d.waitForIP()
 }
 
 func (d *Driver) Kill() error {

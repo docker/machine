@@ -411,6 +411,11 @@ func (d *Driver) Stop() error {
 	return err
 }
 
+func (d *Driver) Restart() error {
+	_, _, err := vmrun("reset", d.vmxPath(), "nogui")
+	return err
+}
+
 func (d *Driver) Remove() error {
 	s, _ := d.GetState()
 	if s == state.Running {
@@ -420,12 +425,6 @@ func (d *Driver) Remove() error {
 	}
 	log.Infof("Deleting %s...", d.MachineName)
 	vmrun("deleteVM", d.vmxPath(), "nogui")
-	return nil
-}
-
-func (d *Driver) Restart() error {
-	log.Infof("Gracefully restarting %s...", d.MachineName)
-	vmrun("reset", d.vmxPath(), "nogui")
 	return nil
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
-	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 )
@@ -310,40 +309,33 @@ func (d *Driver) Stop() error {
 	return nil
 }
 
+func (d *Driver) Restart() error {
+	err := d.setUserSubscription()
+	if err != nil {
+		return err
+	}
+
+	if err := vmClient.RestartRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
+		return err
+	}
+
+	var err error
+	d.IPAddress, err = d.GetIP()
+	return err
+}
+
 func (d *Driver) Remove() error {
 	if err := d.setUserSubscription(); err != nil {
 		return err
 	}
+
 	if available, _, err := vmClient.CheckHostedServiceNameAvailability(d.MachineName); err != nil {
 		return err
 	} else if available {
 		return nil
 	}
 
-	log.Debugf("removing %s", d.MachineName)
-
 	return vmClient.DeleteHostedService(d.MachineName)
-}
-
-func (d *Driver) Restart() error {
-	err := d.setUserSubscription()
-	if err != nil {
-		return err
-	}
-	if vmState, err := d.GetState(); err != nil {
-		return err
-	} else if vmState == state.Stopped {
-		return errors.New("Host is already stopped, use start command to run it")
-	}
-
-	log.Debugf("restarting %s", d.MachineName)
-
-	if err := vmClient.RestartRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
-		return err
-	}
-
-	d.IPAddress, err = d.GetIP()
-	return err
 }
 
 func (d *Driver) Kill() error {
@@ -366,11 +358,6 @@ func (d *Driver) Kill() error {
 
 	d.IPAddress = ""
 	return nil
-}
-
-func generateVMName() string {
-	randomID := mcnutils.TruncateID(mcnutils.GenerateRandomID())
-	return fmt.Sprintf("docker-host-%s", randomID)
 }
 
 func (d *Driver) setUserSubscription() error {
