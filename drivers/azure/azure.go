@@ -288,8 +288,6 @@ func (d *Driver) Start() error {
 		return nil
 	}
 
-	log.Debugf("starting %s", d.MachineName)
-
 	if err := vmClient.StartRole(d.MachineName, d.MachineName, d.MachineName); err != nil {
 		return err
 	}
