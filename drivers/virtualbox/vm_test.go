@@ -1,9 +1,9 @@
 package virtualbox
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/docker/machine/drivers/vmwarevsphere/errors"
 	"github.com/stretchr/testify/assert"
 )
 
