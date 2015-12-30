@@ -16,6 +16,10 @@ func (api *FakeAPI) NewPluginDriver(string, []byte) (drivers.Driver, error) {
 	return nil, nil
 }
 
+func (api *FakeAPI) Close() error {
+	return nil
+}
+
 func (api *FakeAPI) NewHost(driver drivers.Driver) (*host.Host, error) {
 	return nil, nil
 }

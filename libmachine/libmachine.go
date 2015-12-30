@@ -108,7 +108,6 @@ func (api *Client) Create(h *host.Host) error {
 }
 
 func (api *Client) performCreate(h *host.Host) error {
-
 	if err := h.Driver.Create(); err != nil {
 		return fmt.Errorf("Error in driver during machine creation: %s", err)
 	}
@@ -150,7 +149,6 @@ func (api *Client) performCreate(h *host.Host) error {
 	}
 
 	return nil
-
 }
 
 func sendCrashReport(err error, api *Client, host *host.Host) {
