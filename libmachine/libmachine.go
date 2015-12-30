@@ -81,7 +81,7 @@ func (api *Client) NewHost(driver drivers.Driver) (*host.Host, error) {
 // Create is the wrapper method which covers all of the boilerplate around
 // actually creating, provisioning, and persisting an instance in the store.
 func (api *Client) Create(h *host.Host) error {
-	if err := cert.BootstrapCertificates(h.HostOptions.AuthOptions); err != nil {
+	if err := cert.BootstrapCertificates(h.AuthOptions()); err != nil {
 		return fmt.Errorf("Error generating certificates: %s", err)
 	}
 
