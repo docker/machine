@@ -396,7 +396,6 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	log.Debug("Stopping OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return err
 	}

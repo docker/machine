@@ -498,7 +498,6 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-
 	p, err := govcloudair.NewClient()
 	if err != nil {
 		return err

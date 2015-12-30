@@ -548,7 +548,6 @@ func (d *Driver) Stop() error {
 			break
 		}
 	}
-	log.Infof("Stopping VM...")
 
 	d.IPAddress = ""
 
