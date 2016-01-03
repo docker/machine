@@ -42,6 +42,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-zone`: The AWS zone to launch the instance in (i.e. one of a,b,c,d,e).
 -   `--amazonec2-subnet-id`: AWS VPC subnet id.
 -   `--amazonec2-security-group`: AWS VPC security group name.
+-   `--amazonec2-tags`: AWS extra tag key-value pairs (comma-separated, e.g. key1,value1,key2,value2).
 -   `--amazonec2-instance-type`: The instance type to run.
 -   `--amazonec2-device-name`: The root device name of the instance.
 -   `--amazonec2-root-size`: The root disk size of the instance (in GB).
@@ -53,6 +54,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-use-private-address`: Use the private IP address for docker-machine, but still create a public IP address.
 -   `--amazonec2-private-address-only`: Use the private IP address only.
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
+
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 
@@ -83,6 +85,7 @@ Environment variables and default values:
 | `--amazonec2-zone`                  | `AWS_ZONE`              | `a`              |
 | `--amazonec2-subnet-id`             | `AWS_SUBNET_ID`         | -                |
 | `--amazonec2-security-group`        | `AWS_SECURITY_GROUP`    | `docker-machine` |
+| `--amazonec2-tags`                  | `AWS_TAGS`              | -                |
 | `--amazonec2-instance-type`         | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
 | `--amazonec2-device-name`           | `AWS_DEVICE_NAME`       | `/dev/sda1`      |
 | `--amazonec2-root-size`             | `AWS_ROOT_SIZE`         | `16`             |
