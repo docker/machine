@@ -65,6 +65,7 @@ type Driver struct {
 	PrivateIPAddress    string
 	SecurityGroupId     string
 	SecurityGroupName   string
+	Tags                string
 	ReservationId       string
 	DeviceName          string
 	RootSize            int64
@@ -130,6 +131,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "AWS VPC security group",
 			Value:  defaultSecurityGroup,
 			EnvVar: "AWS_SECURITY_GROUP",
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-tags",
+			Usage:  "AWS Tags (e.g. key1,value1,key2,value2)",
+			EnvVar: "AWS_TAGS",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-instance-type",
@@ -231,6 +237,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.VpcId = flags.String("amazonec2-vpc-id")
 	d.SubnetId = flags.String("amazonec2-subnet-id")
 	d.SecurityGroupName = flags.String("amazonec2-security-group")
+	d.Tags = flags.String("amazonec2-tags")
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
 	d.DeviceName = flags.String("amazonec2-device-name")
@@ -518,13 +525,8 @@ func (d *Driver) Create() error {
 	)
 
 	log.Debug("Settings tags for instance")
-	_, err := d.getClient().CreateTags(&ec2.CreateTagsInput{
-		Resources: []*string{&d.InstanceId},
-		Tags: []*ec2.Tag{{
-			Key:   aws.String("Name"),
-			Value: &d.MachineName,
-		}},
-	})
+	err := d.configureTags(d.Tags)
+
 	if err != nil {
 		return fmt.Errorf("Unable to tag instance %s: %s", d.InstanceId, err)
 	}
@@ -752,6 +754,39 @@ func (d *Driver) securityGroupAvailableFunc(id string) func() bool {
 		log.Debug(err)
 		return false
 	}
+}
+
+func (d *Driver) configureTags(tagGroups string) error {
+
+	tags := []*ec2.Tag{}
+	tags = append(tags, &ec2.Tag{
+		Key:   aws.String("Name"),
+		Value: &d.MachineName,
+	})
+
+	if tagGroups != "" {
+		t := strings.Split(tagGroups, ",")
+		if len(t) > 0 && len(t)%2 != 0 {
+			log.Warnf("Tags are not key value in pairs. %d elements found", len(t))
+		}
+		for i := 0; i < len(t)-1; i += 2 {
+			tags = append(tags, &ec2.Tag{
+				Key:   &t[i],
+				Value: &t[i+1],
+			})
+		}
+	}
+
+	_, err := d.getClient().CreateTags(&ec2.CreateTagsInput{
+		Resources: []*string{&d.InstanceId},
+		Tags:      tags,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Driver) configureSecurityGroup(groupName string) error {
