@@ -15,3 +15,10 @@ func TestDetect(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "cmd", shell)
 }
+
+func TestStartedBy(t *testing.T) {
+	shell, err := startedBy()
+	assert.Nil(t, err)
+	assert.NotNil(t, shell)
+	assert.Equal(t, "go.exe", shell)
+}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"text/template"
 
@@ -250,23 +249,4 @@ func (g *EnvUsageHintGenerator) GenerateUsageHint(userShell string, args []strin
 	}
 
 	return fmt.Sprintf("%s Run this command to configure your shell: \n%s %s\n", comment, comment, cmd)
-}
-
-func detectShell() (string, error) {
-	shell := os.Getenv("SHELL")
-
-	if shell == "" {
-		if runtime.GOOS == "windows" {
-			fmt.Printf("You can further specify your shell with either 'cmd' or 'powershell' with the --shell flag.\n\n")
-			return "cmd", nil // this could be either powershell or cmd, defaulting to cmd
-		}
-		fmt.Printf("The default lines below are for a sh/bash shell, you can specify the shell you're using, with the --shell flag.\n\n")
-		return "", ErrUnknownShell
-	}
-
-	if os.Getenv("__fish_bin_dir") != "" {
-		return "fish", nil
-	}
-
-	return filepath.Base(shell), nil
 }
