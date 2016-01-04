@@ -15,8 +15,9 @@ import (
 var (
 	// Timeout where we will bail if we're not able to properly contact the
 	// plugin server.
-	defaultTimeout = 10 * time.Second
-	CoreDrivers    = [...]string{"amazonec2", "azure", "digitalocean",
+	defaultTimeout               = 10 * time.Second
+	CurrentBinaryIsDockerMachine = false
+	CoreDrivers                  = [...]string{"amazonec2", "azure", "digitalocean",
 		"exoscale", "generic", "google", "hyperv", "none", "openstack",
 		"rackspace", "softlayer", "virtualbox", "vmwarefusion",
 		"vmwarevcloudair", "vmwarevsphere"}
@@ -90,10 +91,19 @@ func (e ErrPluginBinaryNotFound) Error() string {
 	return fmt.Sprintf("Driver %q not found. Do you have the plugin binary accessible in your PATH?", e.driverName)
 }
 
+// driverPath finds the path of a driver binary by its name.
+//  + If the driver is a core driver, there is no separate driver binary. We reuse current binary if it's `docker-machine`
+// or we assume `docker-machine` is in the PATH.
+//  + If the driver is NOT a core driver, then the separate binary must be in the PATH and it's name must be
+// `docker-machine-driver-driverName`
 func driverPath(driverName string) string {
 	for _, coreDriver := range CoreDrivers {
 		if coreDriver == driverName {
-			return os.Args[0] // "docker-machine"
+			if CurrentBinaryIsDockerMachine {
+				return os.Args[0]
+			}
+
+			return "docker-machine"
 		}
 	}
 
