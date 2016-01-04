@@ -316,6 +316,15 @@ func (d *Driver) Stop() error {
 	return nil
 }
 
+// Restart restarts a machine which is known to be running.
+func (d *Driver) Restart() error {
+	if err := d.Stop(); err != nil {
+		return err
+	}
+
+	return d.Start()
+}
+
 // Kill stops an existing GCE instance.
 func (d *Driver) Kill() error {
 	return d.Stop()
@@ -338,13 +347,4 @@ func (d *Driver) Remove() error {
 		}
 	}
 	return c.deleteDisk()
-}
-
-// Restart restarts a machine which is known to be running.
-func (d *Driver) Restart() error {
-	if err := d.Stop(); err != nil {
-		return err
-	}
-
-	return d.Start()
 }

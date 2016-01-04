@@ -612,11 +612,7 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	if err := d.waitForInstance(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.waitForInstance()
 }
 
 func (d *Driver) Stop() error {
@@ -625,20 +621,6 @@ func (d *Driver) Stop() error {
 		Force:       aws.Bool(false),
 	})
 	return err
-}
-
-func (d *Driver) Remove() error {
-
-	if err := d.terminate(); err != nil {
-		return fmt.Errorf("unable to terminate instance: %s", err)
-	}
-
-	// remove keypair
-	if err := d.deleteKeyPair(); err != nil {
-		return fmt.Errorf("unable to remove key pair: %s", err)
-	}
-
-	return nil
 }
 
 func (d *Driver) Restart() error {
@@ -654,6 +636,19 @@ func (d *Driver) Kill() error {
 		Force:       aws.Bool(true),
 	})
 	return err
+}
+
+func (d *Driver) Remove() error {
+	if err := d.terminate(); err != nil {
+		return fmt.Errorf("unable to terminate instance: %s", err)
+	}
+
+	// remove keypair
+	if err := d.deleteKeyPair(); err != nil {
+		return fmt.Errorf("unable to remove key pair: %s", err)
+	}
+
+	return nil
 }
 
 func (d *Driver) getClient() *ec2.EC2 {

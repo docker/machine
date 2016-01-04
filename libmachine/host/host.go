@@ -89,6 +89,7 @@ func (h *Host) runActionForState(action func() error, desiredState state.State) 
 }
 
 func (h *Host) Start() error {
+	log.Infof("Starting %q...", h.Name)
 	if err := h.runActionForState(h.Driver.Start, state.Running); err != nil {
 		return err
 	}
@@ -98,6 +99,7 @@ func (h *Host) Start() error {
 }
 
 func (h *Host) Stop() error {
+	log.Infof("Stopping %q...", h.Name)
 	if err := h.runActionForState(h.Driver.Stop, state.Stopped); err != nil {
 		return err
 	}
@@ -107,6 +109,7 @@ func (h *Host) Stop() error {
 }
 
 func (h *Host) Kill() error {
+	log.Infof("Killing %q...", h.Name)
 	if err := h.runActionForState(h.Driver.Kill, state.Stopped); err != nil {
 		return err
 	}
@@ -116,15 +119,18 @@ func (h *Host) Kill() error {
 }
 
 func (h *Host) Restart() error {
+	log.Infof("Restarting %q...", h.Name)
 	if drivers.MachineInState(h.Driver, state.Stopped)() {
 		return h.Start()
 	}
+
 	if drivers.MachineInState(h.Driver, state.Running)() {
 		if err := h.Driver.Restart(); err != nil {
 			return err
 		}
 		return mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running))
 	}
+
 	return nil
 }
 

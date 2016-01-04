@@ -374,7 +374,6 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.Infof("Starting %s...", d.MachineName)
 	vmrun("start", d.vmxPath(), "nogui")
 
 	// Do not execute the rest of boot2docker specific configuration, exit here
@@ -406,13 +405,21 @@ func (d *Driver) Start() error {
 }
 
 func (d *Driver) Stop() error {
-	log.Infof("Gracefully shutting down %s...", d.MachineName)
-	vmrun("stop", d.vmxPath(), "nogui")
-	return nil
+	_, _, err := vmrun("stop", d.vmxPath(), "nogui")
+	return err
+}
+
+func (d *Driver) Restart() error {
+	_, _, err := vmrun("reset", d.vmxPath(), "nogui")
+	return err
+}
+
+func (d *Driver) Kill() error {
+	_, _, err := vmrun("stop", d.vmxPath(), "hard nogui")
+	return err
 }
 
 func (d *Driver) Remove() error {
-
 	s, _ := d.GetState()
 	if s == state.Running {
 		if err := d.Kill(); err != nil {
@@ -421,18 +428,6 @@ func (d *Driver) Remove() error {
 	}
 	log.Infof("Deleting %s...", d.MachineName)
 	vmrun("deleteVM", d.vmxPath(), "nogui")
-	return nil
-}
-
-func (d *Driver) Restart() error {
-	log.Infof("Gracefully restarting %s...", d.MachineName)
-	vmrun("reset", d.vmxPath(), "nogui")
-	return nil
-}
-
-func (d *Driver) Kill() error {
-	log.Infof("Forcibly halting %s...", d.MachineName)
-	vmrun("stop", d.vmxPath(), "hard nogui")
 	return nil
 }
 

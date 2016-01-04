@@ -563,7 +563,7 @@ func (d *Driver) Start() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Powering on VM...")
+
 		task, err := vm.PowerOn(ctx)
 		if err != nil {
 			return err
@@ -595,8 +595,69 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Powering off VM...")
+
 	if err := vm.ShutdownGuest(ctx); err != nil {
+		return err
+	}
+
+	d.IPAddress = ""
+
+	return nil
+}
+
+func (d *Driver) Restart() error {
+	if err := d.Stop(); err != nil {
+		return err
+	}
+
+	// Check for 120 seconds for the machine to stop
+	for i := 1; i <= 60; i++ {
+		machineState, err := d.GetState()
+		if err != nil {
+			return err
+		}
+		if machineState == state.Running {
+			log.Debugf("Not there yet %d/%d", i, 60)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		if machineState == state.Stopped {
+			break
+		}
+	}
+
+	machineState, err := d.GetState()
+	// If the VM is still running after 120 seconds just kill it.
+	if machineState == state.Running {
+		if err = d.Kill(); err != nil {
+			return fmt.Errorf("can't stop VM: %s", err)
+		}
+	}
+
+	return d.Start()
+}
+
+func (d *Driver) Kill() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := d.vsphereLogin(ctx)
+	if err != nil {
+		return err
+	}
+
+	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	if err != nil {
+		return err
+	}
+
+	task, err := vm.PowerOff(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = task.WaitForResult(ctx, nil)
+	if err != nil {
 		return err
 	}
 
@@ -667,66 +728,6 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (d *Driver) Restart() error {
-	if err := d.Stop(); err != nil {
-		return err
-	}
-	// Check for 120 seconds for the machine to stop
-	for i := 1; i <= 60; i++ {
-		machineState, err := d.GetState()
-		if err != nil {
-			return err
-		}
-		if machineState == state.Running {
-			log.Debugf("Not there yet %d/%d", i, 60)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		if machineState == state.Stopped {
-			break
-		}
-	}
-
-	machineState, err := d.GetState()
-	// If the VM is still running after 120 seconds just kill it.
-	if machineState == state.Running {
-		if err = d.Kill(); err != nil {
-			return fmt.Errorf("can't stop VM: %s", err)
-		}
-	}
-
-	return d.Start()
-}
-
-func (d *Driver) Kill() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	c, err := d.vsphereLogin(ctx)
-	if err != nil {
-		return err
-	}
-
-	vm, err := d.fetchVM(c, ctx, d.MachineName)
-	if err != nil {
-		return err
-	}
-	log.Infof("Powering off VM forcibly...")
-	task, err := vm.PowerOff(ctx)
-	if err != nil {
-		return err
-	}
-
-	_, err = task.WaitForResult(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	d.IPAddress = ""
-
 	return nil
 }
 

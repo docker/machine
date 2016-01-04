@@ -320,45 +320,40 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	vmstate, err := d.GetState()
-	if err != nil {
-		return err
-	}
-	if vmstate == state.Running || vmstate == state.Starting {
-		log.Infof("Host is already running or starting")
-		return nil
-	}
-
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+
 	svmresp, err := client.StartVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
-	return nil
+
+	return d.waitForJob(client, svmresp)
 }
 
 func (d *Driver) Stop() error {
-	vmstate, err := d.GetState()
-	if err != nil {
-		return err
-	}
-	if vmstate == state.Stopped {
-		log.Infof("Host is already stopped")
-		return nil
-	}
-
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+
 	svmresp, err := client.StopVirtualMachine(d.ID)
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, svmresp); err != nil {
+
+	return d.waitForJob(client, svmresp)
+}
+
+func (d *Driver) Restart() error {
+	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
+
+	svmresp, err := client.RebootVirtualMachine(d.ID)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	return d.waitForJob(client, svmresp)
+}
+
+func (d *Driver) Kill() error {
+	return d.Stop()
 }
 
 func (d *Driver) Remove() error {
@@ -378,31 +373,6 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	return nil
-}
-
-func (d *Driver) Restart() error {
-	vmstate, err := d.GetState()
-	if err != nil {
-		return err
-	}
-	if vmstate == state.Stopped {
-		return fmt.Errorf("Host is stopped, use start command to start it")
-	}
-
-	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
-	svmresp, err := client.RebootVirtualMachine(d.ID)
-	if err != nil {
-		return err
-	}
-	if err = d.waitForJob(client, svmresp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *Driver) Kill() error {
-	return d.Stop()
 }
 
 func (d *Driver) jobIsDone(client *egoscale.Client, jobid string) (bool, error) {
