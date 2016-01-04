@@ -1,14 +1,20 @@
 // +build !windows
 
-package commands
+package shell
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
-func detectShell() (string, error) {
+var (
+	ErrUnknownShell = errors.New("Error: Unknown shell")
+)
+
+// Detect detects user's current shell.
+func Detect() (string, error) {
 	shell := os.Getenv("SHELL")
 
 	if shell == "" {

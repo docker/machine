@@ -1,4 +1,4 @@
-package commands
+package shell
 
 import (
 	"fmt"
@@ -50,7 +50,7 @@ func startedBy() (exefile string, err error) {
 	return name, nil
 }
 
-func detectShell() (string, error) {
+func Detect() (string, error) {
 	shell := os.Getenv("SHELL")
 
 	if shell == "" {

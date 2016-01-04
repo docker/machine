@@ -1,6 +1,6 @@
 // +build !windows
 
-package commands
+package shell
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func TestUnknowShell(t *testing.T) {
 	originalShell := os.Getenv("SHELL")
 	os.Setenv("SHELL", "")
 	defer os.Setenv("SHELL", originalShell)
-	shell, err := detectShell()
+	shell, err := Detect()
 	fmt.Println(shell)
 	assert.Equal(t, err, ErrUnknownShell)
 	assert.Equal(t, "", shell)

@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/commands/shell"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/check"
 	"github.com/docker/machine/libmachine/log"
@@ -200,7 +201,7 @@ func getShell(userShell string) (string, error) {
 	if userShell != "" {
 		return userShell, nil
 	}
-	return detectShell()
+	return shell.Detect()
 }
 
 func findNoProxyFromEnv() (string, string) {
