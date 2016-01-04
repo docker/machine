@@ -3,6 +3,8 @@ package commands
 import (
 	"testing"
 
+	"errors"
+
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/drivers/fakedriver"
 	"github.com/docker/machine/libmachine/host"
@@ -133,7 +135,99 @@ func TestCmdRmforceConfirmUnset(t *testing.T) {
 	}
 
 	err := cmdRm(commandLine, api)
-	assert.EqualError(t, err, "EOF")
+	assert.NoError(t, err)
+
+	assert.True(t, libmachinetest.Exists(api, "machineToRemove1"))
+}
+
+type DriverWithRemoveWhichFail struct {
+	fakedriver.Driver
+}
+
+func (d *DriverWithRemoveWhichFail) Remove() error {
+	return errors.New("unknown error")
+}
+
+func TestDontStopWhenADriverRemovalFails(t *testing.T) {
+	commandLine := &commandstest.FakeCommandLine{
+		CliArgs: []string{"machineToRemove1", "machineToRemove2", "machineToRemove3"},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"y": true,
+			},
+		},
+	}
+	api := &libmachinetest.FakeAPI{
+		Hosts: []*host.Host{
+			{
+				Name:   "machineToRemove1",
+				Driver: &fakedriver.Driver{},
+			},
+			{
+				Name:   "machineToRemove2",
+				Driver: &DriverWithRemoveWhichFail{},
+			},
+			{
+				Name:   "machineToRemove3",
+				Driver: &fakedriver.Driver{},
+			},
+		},
+	}
+
+	err := cmdRm(commandLine, api)
+	assert.EqualError(t, err, "Error removing host \"machineToRemove2\": unknown error")
+
+	assert.False(t, libmachinetest.Exists(api, "machineToRemove1"))
+	assert.True(t, libmachinetest.Exists(api, "machineToRemove2"))
+	assert.False(t, libmachinetest.Exists(api, "machineToRemove3"))
+}
+
+func TestForceRemoveEvenWhenItFails(t *testing.T) {
+	commandLine := &commandstest.FakeCommandLine{
+		CliArgs: []string{"machineToRemove1"},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"y":     true,
+				"force": true,
+			},
+		},
+	}
+	api := &libmachinetest.FakeAPI{
+		Hosts: []*host.Host{
+			{
+				Name:   "machineToRemove1",
+				Driver: &DriverWithRemoveWhichFail{},
+			},
+		},
+	}
+
+	err := cmdRm(commandLine, api)
+	assert.EqualError(t, err, "Error removing host \"machineToRemove1\": unknown error")
+
+	assert.False(t, libmachinetest.Exists(api, "machineToRemove1"))
+}
+
+func TestDontRemoveMachineIsRemovalFailsAndNotForced(t *testing.T) {
+	commandLine := &commandstest.FakeCommandLine{
+		CliArgs: []string{"machineToRemove1"},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"y":     true,
+				"force": false,
+			},
+		},
+	}
+	api := &libmachinetest.FakeAPI{
+		Hosts: []*host.Host{
+			{
+				Name:   "machineToRemove1",
+				Driver: &DriverWithRemoveWhichFail{},
+			},
+		},
+	}
+
+	err := cmdRm(commandLine, api)
+	assert.EqualError(t, err, "Error removing host \"machineToRemove1\": unknown error")
 
 	assert.True(t, libmachinetest.Exists(api, "machineToRemove1"))
 }
