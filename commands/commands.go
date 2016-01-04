@@ -21,7 +21,6 @@ import (
 )
 
 var (
-	ErrUnknownShell       = errors.New("Error: Unknown shell")
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 	ErrTooManyArguments   = errors.New("Error: Too many arguments given")
