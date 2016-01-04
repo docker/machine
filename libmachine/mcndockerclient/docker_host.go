@@ -27,7 +27,7 @@ type RemoteDocker struct {
 }
 
 // URL returns the Docker host URL
-func (rd RemoteDocker) URL() (string, error) {
+func (rd *RemoteDocker) URL() (string, error) {
 	if rd.HostURL == "" {
 		return "", fmt.Errorf("Docker Host URL not set")
 	}
@@ -36,6 +36,6 @@ func (rd RemoteDocker) URL() (string, error) {
 }
 
 // AuthOptions returns the authOptions
-func (rd RemoteDocker) AuthOptions() *auth.Options {
+func (rd *RemoteDocker) AuthOptions() *auth.Options {
 	return rd.AuthOption
 }

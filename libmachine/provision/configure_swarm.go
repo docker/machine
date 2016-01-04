@@ -34,9 +34,8 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 
 	dockerPort := "2376"
 	dockerDir := p.GetDockerOptionsDir()
-	dockerHost := fmt.Sprintf("tcp://%s:%s", ip, dockerPort)
-	dockerClient := mcndockerclient.RemoteDocker{
-		HostURL:    dockerHost,
+	dockerHost := &mcndockerclient.RemoteDocker{
+		HostURL:    fmt.Sprintf("tcp://%s:%s", ip, dockerPort),
 		AuthOption: &authOptions,
 	}
 	advertiseInfo := fmt.Sprintf("%s:%s", ip, dockerPort)
@@ -81,7 +80,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			HostConfig: masterHostConfig,
 		}
 
-		err = mcndockerclient.CreateContainer(dockerClient, swarmMasterConfig, "swarm-agent-master")
+		err = mcndockerclient.CreateContainer(dockerHost, swarmMasterConfig, "swarm-agent-master")
 		if err != nil {
 			return err
 		}
@@ -107,5 +106,5 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		HostConfig: workerHostConfig,
 	}
 
-	return mcndockerclient.CreateContainer(dockerClient, swarmWorkerConfig, "swarm-agent")
+	return mcndockerclient.CreateContainer(dockerHost, swarmWorkerConfig, "swarm-agent")
 }

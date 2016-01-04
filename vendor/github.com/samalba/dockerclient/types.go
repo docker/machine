@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/docker/docker/pkg/units"
+	"github.com/docker/go-units"
 )
 
 type ContainerConfig struct {
@@ -252,17 +252,31 @@ type Port struct {
 	Type        string
 }
 
+type EndpointSettings struct {
+	EndpointID          string
+	Gateway             string
+	IPAddress           string
+	IPPrefixLen         int
+	IPv6Gateway         string
+	GlobalIPv6Address   string
+	GlobalIPv6PrefixLen int
+	MacAddress          string
+}
+
 type Container struct {
-	Id         string
-	Names      []string
-	Image      string
-	Command    string
-	Created    int64
-	Status     string
-	Ports      []Port
-	SizeRw     int64
-	SizeRootFs int64
-	Labels     map[string]string
+	Id              string
+	Names           []string
+	Image           string
+	Command         string
+	Created         int64
+	Status          string
+	Ports           []Port
+	SizeRw          int64
+	SizeRootFs      int64
+	Labels          map[string]string
+	NetworkSettings struct {
+		Networks map[string]EndpointSettings
+	}
 }
 
 type Event struct {
@@ -502,10 +516,12 @@ type NetworkResource struct {
 	Driver     string
 	IPAM       IPAM
 	Containers map[string]EndpointResource
+	Options    map[string]string
 }
 
-//EndpointResource contains network resources allocated and usd for a container in a network
+// EndpointResource contains network resources allocated and used for a container in a network
 type EndpointResource struct {
+	Name        string
 	EndpointID  string
 	MacAddress  string
 	IPv4Address string
