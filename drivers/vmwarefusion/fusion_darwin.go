@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -198,7 +199,11 @@ func (d *Driver) GetIP() (string, error) {
 
 func (d *Driver) GetState() (state.State, error) {
 	// VMRUN only tells use if the vm is running or not
-	if stdout, _, _ := vmrun("list"); strings.Contains(stdout, d.vmxPath()) {
+	vmxp, err := filepath.EvalSymlinks(d.vmxPath())
+	if err != nil {
+		return state.Error, err
+	}
+	if stdout, _, _ := vmrun("list"); strings.Contains(stdout, vmxp) {
 		return state.Running, nil
 	}
 	return state.Stopped, nil
