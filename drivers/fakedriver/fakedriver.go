@@ -80,10 +80,6 @@ func (d *Driver) Create() error {
 	return nil
 }
 
-func (d *Driver) Remove() error {
-	return nil
-}
-
 func (d *Driver) Start() error {
 	d.MockState = state.Running
 	return nil
@@ -101,6 +97,10 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) Kill() error {
 	d.MockState = state.Stopped
+	return nil
+}
+
+func (d *Driver) Remove() error {
 	return nil
 }
 

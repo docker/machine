@@ -383,26 +383,31 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) Start() error {
-	log.Debug("Starting OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return err
 	}
-	if err := d.client.StartInstance(d); err != nil {
-		return err
-	}
-	return nil
+
+	return d.client.StartInstance(d)
 }
 
 func (d *Driver) Stop() error {
-	log.Debug("Stopping OpenStack instance...", map[string]string{"MachineId": d.MachineId})
 	if err := d.initCompute(); err != nil {
 		return err
 	}
-	if err := d.client.StopInstance(d); err != nil {
+
+	return d.client.StopInstance(d)
+}
+
+func (d *Driver) Restart() error {
+	if err := d.initCompute(); err != nil {
 		return err
 	}
 
-	return nil
+	return d.client.RestartInstance(d)
+}
+
+func (d *Driver) Kill() error {
+	return d.Stop()
 }
 
 func (d *Driver) Remove() error {
@@ -420,21 +425,6 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	return nil
-}
-
-func (d *Driver) Restart() error {
-	log.Info("Restarting OpenStack instance...", map[string]string{"MachineId": d.MachineId})
-	if err := d.initCompute(); err != nil {
-		return err
-	}
-	if err := d.client.RestartInstance(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *Driver) Kill() error {
-	return d.Stop()
 }
 
 const (

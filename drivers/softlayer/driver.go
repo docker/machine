@@ -454,10 +454,6 @@ func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
 
-func (d *Driver) Kill() error {
-	return d.getClient().VirtualGuest().PowerOff(d.Id)
-}
-
 func (d *Driver) Remove() error {
 	log.Infof("Canceling SoftLayer instance %d...", d.Id)
 	var err error
@@ -479,12 +475,19 @@ func (d *Driver) Remove() error {
 
 	return nil
 }
-func (d *Driver) Restart() error {
-	return d.getClient().VirtualGuest().Reboot(d.Id)
-}
+
 func (d *Driver) Start() error {
 	return d.getClient().VirtualGuest().PowerOn(d.Id)
 }
+
 func (d *Driver) Stop() error {
 	return d.getClient().VirtualGuest().PowerOff(d.Id)
+}
+
+func (d *Driver) Restart() error {
+	return d.getClient().VirtualGuest().Reboot(d.Id)
+}
+
+func (d *Driver) Kill() error {
+	return d.Stop()
 }
