@@ -34,7 +34,7 @@ func (client *NopClient) InspectImage(id string) (*dockerclient.ImageInfo, error
 	return nil, ErrNoEngine
 }
 
-func (client *NopClient) CreateContainer(config *dockerclient.ContainerConfig, name string) (string, error) {
+func (client *NopClient) CreateContainer(config *dockerclient.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (string, error) {
 	return "", ErrNoEngine
 }
 

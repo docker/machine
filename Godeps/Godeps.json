@@ -173,7 +173,7 @@
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
-			"Rev": "82381805d3533c97cec74e1cc79b00ef45774571"
+			"Rev": "f661dd4754aa5c52da85d04b5871ee0e11f4b59c"
 		},
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",
@@ -236,6 +236,11 @@
 			"ImportPath": "github.com/vmware/govmomi",
 			"Comment": "prerelease-v0.1.0-73-gfc131d4-65-g482cd82",
 			"Rev": "482cd823716e0fa9bc4e186d262a6ea23d940fbf"
+		},
+		{
+			"ImportPath": "github.com/docker/go-units",
+			"Comment": "v0.1.0-21-g0bbddae",
+			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 		}
 	]
 }
