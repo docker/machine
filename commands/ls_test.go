@@ -350,7 +350,7 @@ func TestGetHostListItems(t *testing.T) {
 	for i := range expected {
 		assert.Equal(t, expected[i].name, items[i].Name)
 		assert.Equal(t, expected[i].state, items[i].State)
-		assert.Equal(t, expected[i].active, items[i].Active)
+		assert.Equal(t, expected[i].active, items[i].ActiveHost)
 		assert.Equal(t, expected[i].version, items[i].DockerVersion)
 		assert.Equal(t, expected[i].error, items[i].Error)
 	}
@@ -401,7 +401,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		expected := expected[item.Name]
 
 		assert.Equal(t, expected.state, item.State)
-		assert.Equal(t, expected.active, item.Active)
+		assert.Equal(t, expected.active, item.ActiveHost)
 	}
 }
 
