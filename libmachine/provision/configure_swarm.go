@@ -62,7 +62,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		hostBind := fmt.Sprintf("%s:%s", dockerDir, dockerDir)
 		masterHostConfig := dockerclient.HostConfig{
 			RestartPolicy: dockerclient.RestartPolicy{
-				Name:              "Always",
+				Name:              "always",
 				MaximumRetryCount: 0,
 			},
 			Binds:        []string{hostBind},
@@ -89,7 +89,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 
 	workerHostConfig := dockerclient.HostConfig{
 		RestartPolicy: dockerclient.RestartPolicy{
-			Name:              "Always",
+			Name:              "always",
 			MaximumRetryCount: 0,
 		},
 		NetworkMode: "host",
