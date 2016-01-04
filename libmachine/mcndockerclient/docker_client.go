@@ -7,13 +7,14 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-func DockerClient(host DockerHost) (*dockerclient.DockerClient, error) {
-	url, err := host.URL()
+// DockerClient creates a docker client for a given host.
+func DockerClient(dockerHost DockerHost) (*dockerclient.DockerClient, error) {
+	url, err := dockerHost.URL()
 	if err != nil {
 		return nil, err
 	}
 
-	tlsConfig, err := cert.ReadTLSConfig(url, host.AuthOptions())
+	tlsConfig, err := cert.ReadTLSConfig(url, dockerHost.AuthOptions())
 	if err != nil {
 		return nil, fmt.Errorf("Unable to read TLS config: %s", err)
 	}
@@ -21,18 +22,19 @@ func DockerClient(host DockerHost) (*dockerclient.DockerClient, error) {
 	return dockerclient.NewDockerClient(url, tlsConfig)
 }
 
-//CreateContainer creates a docker container.
-func CreateContainer(dockerHost RemoteDocker, config *dockerclient.ContainerConfig, name string) error {
+// CreateContainer creates a docker container.
+func CreateContainer(dockerHost DockerHost, config *dockerclient.ContainerConfig, name string) error {
 	docker, err := DockerClient(dockerHost)
 	if err != nil {
 		return err
 	}
 
 	if err = docker.PullImage(config.Image, nil); err != nil {
-		return fmt.Errorf("Unable to Pull Image: %s", err)
+		return fmt.Errorf("Unable to pull image: %s", err)
 	}
 
-	containerID, err := docker.CreateContainer(config, name)
+	var authConfig *dockerclient.AuthConfig
+	containerID, err := docker.CreateContainer(config, name, authConfig)
 	if err != nil {
 		return fmt.Errorf("Error while creating container: %s", err)
 	}
