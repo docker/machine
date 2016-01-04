@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
 	"strconv"
+
+	"path/filepath"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/commands"
@@ -94,7 +95,7 @@ func main() {
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
 	app := cli.NewApp()
-	app.Name = path.Base(os.Args[0])
+	app.Name = filepath.Base(os.Args[0])
 	app.Author = "Docker Machine Contributors"
 	app.Email = "https://github.com/docker/machine"
 
