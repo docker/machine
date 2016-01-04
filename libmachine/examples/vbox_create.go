@@ -14,6 +14,7 @@ func main() {
 	log.SetDebug(true)
 
 	client := libmachine.NewClient("/tmp/automatic", "/tmp/automatic/certs")
+	defer client.Close()
 
 	hostName := "myfunhost"
 
