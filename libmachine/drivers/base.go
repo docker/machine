@@ -76,3 +76,10 @@ func (d *BaseDriver) PreCreateCheck() error {
 func (d *BaseDriver) ResolveStorePath(file string) string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, file)
 }
+
+// SetSwarmConfigFromFlags configures the driver for swarm
+func (d *BaseDriver) SetSwarmConfigFromFlags(flags DriverOptions) {
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
+}

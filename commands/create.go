@@ -162,15 +162,13 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
-	certInfo := getCertPathInfoFromCommandLine(c)
-
 	h.HostOptions = &host.Options{
 		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
-			CaCertPath:       certInfo.CaCertPath,
-			CaPrivateKeyPath: certInfo.CaPrivateKeyPath,
-			ClientCertPath:   certInfo.ClientCertPath,
-			ClientKeyPath:    certInfo.ClientKeyPath,
+			CaCertPath:       tlsPath(c, "tls-ca-cert", "ca.pem"),
+			CaPrivateKeyPath: tlsPath(c, "tls-ca-key", "ca-key.pem"),
+			ClientCertPath:   tlsPath(c, "tls-client-cert", "cert.pem"),
+			ClientKeyPath:    tlsPath(c, "tls-client-key", "key.pem"),
 			ServerCertPath:   filepath.Join(mcndirs.GetMachineDir(), name, "server.pem"),
 			ServerKeyPath:    filepath.Join(mcndirs.GetMachineDir(), name, "server-key.pem"),
 			StorePath:        filepath.Join(mcndirs.GetMachineDir(), name),
@@ -432,4 +430,13 @@ func validateSwarmDiscovery(discovery string) error {
 	}
 
 	return fmt.Errorf("Swarm Discovery URL was in the wrong format: %s", discovery)
+}
+
+func tlsPath(c CommandLine, flag string, defaultName string) string {
+	path := c.GlobalString(flag)
+	if path != "" {
+		return path
+	}
+
+	return filepath.Join(mcndirs.GetMachineCertDir(), defaultName)
 }
