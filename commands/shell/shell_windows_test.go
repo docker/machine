@@ -1,4 +1,4 @@
-package commands
+package shell
 
 import (
 	"os"
@@ -11,7 +11,7 @@ func TestDetect(t *testing.T) {
 	originalShell := os.Getenv("SHELL")
 	os.Setenv("SHELL", "")
 	defer os.Setenv("SHELL", originalShell)
-	shell, err := detectShell()
+	shell, err := Detect()
 	assert.Nil(t, err)
 	assert.Equal(t, "cmd", shell)
 }
