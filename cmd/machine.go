@@ -88,6 +88,8 @@ func main() {
 		return
 	}
 
+	localbinary.CurrentBinaryIsDockerMachine = true
+
 	setDebugOutputLevel()
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
