@@ -58,7 +58,7 @@ func (mcc *MachineConnChecker) Check(h *host.Host, swarm bool) (string, *auth.Op
 		return "", &auth.Options{}, fmt.Errorf("Error parsing URL: %s", err)
 	}
 
-	authOptions := h.HostOptions.AuthOptions
+	authOptions := h.AuthOptions()
 
 	if err := checkCert(u.Host, authOptions); err != nil {
 		if swarm {

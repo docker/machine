@@ -155,9 +155,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UserPassword = flags.String("vmwarevcloudair-password")
 	d.VDCID = flags.String("vmwarevcloudair-vdcid")
 	d.PublicIP = flags.String("vmwarevcloudair-publicip")
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
+	d.SetSwarmConfigFromFlags(flags)
 
 	// Check for required Params
 	if d.UserName == "" || d.UserPassword == "" || d.VDCID == "" || d.PublicIP == "" {

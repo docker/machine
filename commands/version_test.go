@@ -1,12 +1,12 @@
 package commands
 
 import (
+	"errors"
 	"testing"
 
 	"bytes"
 
 	"github.com/docker/machine/commands/commandstest"
-	"github.com/docker/machine/drivers/vmwarevsphere/errors"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/libmachinetest"
 	"github.com/docker/machine/libmachine/mcndockerclient"
