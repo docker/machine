@@ -46,12 +46,13 @@ const (
 )
 
 var (
-	dockerPort                  = 2376
-	swarmPort                   = 3376
-	errorNoPrivateSSHKey        = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
-	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
-	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
-	errorNoVPCIdFound           = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
+	dockerPort                           = 2376
+	swarmPort                            = 3376
+	errorNoPrivateSSHKey                 = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
+	errorMissingAccessKeyOption          = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
+	errorMissingSecretKeyOption          = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
+	errorNoVPCIdFound                    = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
+	errorDisableSSLWithoutCustomEndpoint = errors.New("using --amazonec2-insecure-transport also requires --amazonec2-endpoint")
 )
 
 type Driver struct {
@@ -98,6 +99,8 @@ type Driver struct {
 	Monitoring              bool
 	SSHPrivateKeyPath       string
 	RetryCount              int
+	Endpoint                string
+	DisableSSL              bool
 }
 
 type clientFactory interface {
@@ -234,6 +237,17 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage: "Set retry count for recoverable failures (use -1 to disable)",
 			Value: 5,
 		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-endpoint",
+			Usage:  "Optional endpoint URL (hostname only or fully qualified URI)",
+			Value:  "",
+			EnvVar: "AWS_ENDPOINT",
+		},
+		mcnflag.BoolFlag{
+			Name:   "amazonec2-insecure-transport",
+			Usage:  "Disable SSL when sending requests",
+			EnvVar: "AWS_INSECURE_TRANSPORT",
+		},
 	}
 }
 
@@ -269,6 +283,10 @@ func (d *Driver) buildClient() Ec2Client {
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	config = config.WithMaxRetries(d.RetryCount)
+	if d.Endpoint != "" {
+		config = config.WithEndpoint(d.Endpoint)
+		config = config.WithDisableSSL(d.DisableSSL)
+	}
 	return ec2.New(session.New(config))
 }
 
@@ -277,9 +295,15 @@ func (d *Driver) getClient() Ec2Client {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.Endpoint = flags.String("amazonec2-endpoint")
+
 	region, err := validateAwsRegion(flags.String("amazonec2-region"))
-	if err != nil {
+	if err != nil && d.Endpoint == "" {
 		return err
+	}
+
+	if d.Endpoint != "" {
+		region = ""
 	}
 
 	image := flags.String("amazonec2-ami")
@@ -316,6 +340,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ExistingKey = flags.String("amazonec2-keypair-name") != ""
 	d.SetSwarmConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
+
+	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
+
+	if d.DisableSSL && d.Endpoint != "" {
+		return errorDisableSSLWithoutCustomEndpoint
+	}
 
 	if d.KeyName != "" && d.SSHPrivateKeyPath == "" {
 		return errorNoPrivateSSHKey
