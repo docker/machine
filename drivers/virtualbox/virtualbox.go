@@ -211,10 +211,11 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	if !d.NoVTXCheck && d.IsVTXDisabled() {
-		if isHyperVInstalled() {
-			return ErrNotCompatibleWithHyperV
-		}
+	if isHyperVInstalled() {
+		return ErrNotCompatibleWithHyperV
+	}
+
+	if !d.NoVTXCheck {
 		return ErrMustEnableVTX
 	}
 
@@ -489,12 +490,12 @@ func (d *Driver) Start() error {
 	}
 
 	// Verify that VT-X is not disabled in the started VM
-	disabled, err := d.IsVTXDisabledInTheVM()
+	vtxIsDisabled, err := d.IsVTXDisabledInTheVM()
 	if err != nil {
 		return fmt.Errorf("Checking if hardware virtualization is enabled failed: %s", err)
 	}
 
-	if disabled {
+	if vtxIsDisabled {
 		return ErrMustEnableVTX
 	}
 
