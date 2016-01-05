@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"io"
+
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/log"
@@ -16,9 +18,24 @@ import (
 
 var (
 	heartbeatInterval = 5 * time.Second
-	openedDrivers     = []*RPCClientDriver{}
-	openedDriversLock = &sync.Mutex{}
 )
+
+type RPCClientDriverFactory interface {
+	NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error)
+	io.Closer
+}
+
+type DefaultRPCClientDriverFactory struct {
+	openedDrivers     []*RPCClientDriver
+	openedDriversLock sync.Locker
+}
+
+func NewRPCClientDriverFactory() RPCClientDriverFactory {
+	return &DefaultRPCClientDriverFactory{
+		openedDrivers:     []*RPCClientDriver{},
+		openedDriversLock: &sync.Mutex{},
+	}
+}
 
 type RPCClientDriver struct {
 	plugin          localbinary.DriverPlugin
@@ -86,19 +103,21 @@ func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 	}
 }
 
-func CloseDrivers() {
-	openedDriversLock.Lock()
-	defer openedDriversLock.Unlock()
+func (f *DefaultRPCClientDriverFactory) Close() error {
+	f.openedDriversLock.Lock()
+	defer f.openedDriversLock.Unlock()
 
-	for _, openedDriver := range openedDrivers {
+	for _, openedDriver := range f.openedDrivers {
 		if err := openedDriver.close(); err != nil {
 			log.Warnf("Error closing a plugin driver: %s", err)
 		}
 	}
-	openedDrivers = []*RPCClientDriver{}
+	f.openedDrivers = []*RPCClientDriver{}
+
+	return nil
 }
 
-func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
+func (f *DefaultRPCClientDriverFactory) NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
 	mcnName := ""
 
 	p, err := localbinary.NewPlugin(driverName)
@@ -129,9 +148,9 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 		heartbeatDoneCh: make(chan bool),
 	}
 
-	openedDriversLock.Lock()
-	openedDrivers = append(openedDrivers, c)
-	openedDriversLock.Unlock()
+	f.openedDriversLock.Lock()
+	f.openedDrivers = append(f.openedDrivers, c)
+	f.openedDriversLock.Unlock()
 
 	var serverVersion int
 	if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {

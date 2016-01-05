@@ -13,7 +13,8 @@ import (
 func main() {
 	log.SetDebug(true)
 
-	client := libmachine.NewClient("/tmp/automatic")
+	client := libmachine.NewClient("/tmp/automatic", "/tmp/automatic/certs")
+	defer client.Close()
 
 	hostName := "myfunhost"
 
@@ -27,12 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pluginDriver, err := client.NewPluginDriver("virtualbox", data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	h, err := client.NewHost(pluginDriver)
+	h, err := client.NewHost("virtualbox", data)
 	if err != nil {
 		log.Fatal(err)
 	}
