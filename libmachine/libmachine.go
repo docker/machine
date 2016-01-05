@@ -132,8 +132,18 @@ func (api *Client) Create(h *host.Host) error {
 	log.Info("Creating machine...")
 
 	if err := api.performCreate(h); err != nil {
-		sendCrashReport(err, api, h)
-		return err
+		vBoxLog := ""
+		if h.DriverName == "virtualbox" {
+			vBoxLog = filepath.Join(api.GetMachinesDir(), h.Name, h.Name, "Logs", "VBox.log")
+		}
+
+		return crashreport.CrashError{
+			Cause:       err,
+			Command:     "Create",
+			Context:     "api.performCreate",
+			DriverName:  h.DriverName,
+			LogFilePath: vBoxLog,
+		}
 	}
 
 	log.Debug("Reticulating splines...")
@@ -183,15 +193,6 @@ func (api *Client) performCreate(h *host.Host) error {
 	}
 
 	return nil
-}
-
-func sendCrashReport(err error, api *Client, host *host.Host) {
-	if host.DriverName == "virtualbox" {
-		vboxlogPath := filepath.Join(api.GetMachinesDir(), host.Name, host.Name, "Logs", "VBox.log")
-		crashreport.SendWithFile(err, "api.performCreate", host.DriverName, "Create", vboxlogPath)
-	} else {
-		crashreport.Send(err, "api.performCreate", host.DriverName, "Create")
-	}
 }
 
 func (api *Client) Close() error {
