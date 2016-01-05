@@ -52,34 +52,35 @@ var (
 
 type Driver struct {
 	*drivers.BaseDriver
-	Id                  string
-	AccessKey           string
-	SecretKey           string
-	SessionToken        string
-	Region              string
-	AMI                 string
-	SSHKeyID            int
-	KeyName             string
-	InstanceId          string
-	InstanceType        string
-	PrivateIPAddress    string
-	SecurityGroupId     string
-	SecurityGroupName   string
-	Tags                string
-	ReservationId       string
-	DeviceName          string
-	RootSize            int64
-	VolumeType          string
-	IamInstanceProfile  string
-	VpcId               string
-	SubnetId            string
-	Zone                string
-	keyPath             string
-	RequestSpotInstance bool
-	SpotPrice           string
-	PrivateIPOnly       bool
-	UsePrivateIP        bool
-	Monitoring          bool
+	Id                      string
+	AccessKey               string
+	SecretKey               string
+	SessionToken            string
+	Region                  string
+	AMI                     string
+	SSHKeyID                int
+	KeyName                 string
+	InstanceId              string
+	InstanceType            string
+	PrivateIPAddress        string
+	SecurityGroupId         string
+	SecurityGroupName       string
+	Tags                    string
+	ReservationId           string
+	DeviceName              string
+	RootSize                int64
+	VolumeType              string
+	IamInstanceProfile      string
+	VpcId                   string
+	SubnetId                string
+	Zone                    string
+	keyPath                 string
+	RequestSpotInstance     bool
+	SpotPrice               string
+	PrivateIPOnly           bool
+	UsePrivateIP            bool
+	UseEbsOptimizedInstance bool
+	Monitoring              bool
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -193,6 +194,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "amazonec2-monitoring",
 			Usage: "Set this flag to enable CloudWatch monitoring",
 		},
+		mcnflag.BoolFlag{
+			Name:  "amazonec2-use-ebs-optimized-instance",
+			Usage: "Create an EBS optimized instance",
+		},
 	}
 }
 
@@ -249,6 +254,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
+	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessKey == "" {
@@ -429,6 +435,7 @@ func (d *Driver) Create() error {
 				IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 					Name: &d.IamInstanceProfile,
 				},
+				EbsOptimized:        &d.UseEbsOptimizedInstance,
 				BlockDeviceMappings: []*ec2.BlockDeviceMapping{bdm},
 			},
 			InstanceCount: aws.Int64(1),
@@ -494,6 +501,7 @@ func (d *Driver) Create() error {
 			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 				Name: &d.IamInstanceProfile,
 			},
+			EbsOptimized:        &d.UseEbsOptimizedInstance,
 			BlockDeviceMappings: []*ec2.BlockDeviceMapping{bdm},
 		})
 

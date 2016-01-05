@@ -54,6 +54,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-use-private-address`: Use the private IP address for docker-machine, but still create a public IP address.
 -   `--amazonec2-private-address-only`: Use the private IP address only.
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
+-   `--amazonec2-use-ebs-optimized-instance`: Create an EBS Optimized Instance, instance type must support it.
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
 
@@ -73,29 +74,31 @@ By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
 
 Environment variables and default values:
 
-| CLI option                          | Environment variable    | Default          |
-| ----------------------------------- | ----------------------- | ---------------- |
-| **`--amazonec2-access-key`**        | `AWS_ACCESS_KEY_ID`     | -                |
-| **`--amazonec2-secret-key`**        | `AWS_SECRET_ACCESS_KEY` | -                |
-| `--amazonec2-session-token`         | `AWS_SESSION_TOKEN`     | -                |
-| `--amazonec2-ami`                   | `AWS_AMI`               | `ami-5f709f34`   |
-| `--amazonec2-region`                | `AWS_DEFAULT_REGION`    | `us-east-1`      |
-| **`--amazonec2-vpc-id`**            | `AWS_VPC_ID`            | -                |
-| `--amazonec2-zone`                  | `AWS_ZONE`              | `a`              |
-| `--amazonec2-subnet-id`             | `AWS_SUBNET_ID`         | -                |
-| `--amazonec2-security-group`        | `AWS_SECURITY_GROUP`    | `docker-machine` |
-| `--amazonec2-tags`                  | `AWS_TAGS`              | -                |
-| `--amazonec2-instance-type`         | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
-| `--amazonec2-device-name`           | `AWS_DEVICE_NAME`       | `/dev/sda1`      |
-| `--amazonec2-root-size`             | `AWS_ROOT_SIZE`         | `16`             |
-| `--amazonec2-volume-type`           | `AWS_VOLUME_TYPE`       | `gp2`            |
-| `--amazonec2-iam-instance-profile`  | `AWS_INSTANCE_PROFILE`  | -                |
-| `--amazonec2-ssh-user`              | `AWS_SSH_USER`          | `ubuntu`         |
-| `--amazonec2-request-spot-instance` | -                       | `false`          |
-| `--amazonec2-spot-price`            | -                       | `0.50`           |
-| `--amazonec2-use-private-address`   | -                       | `false`          |
-| `--amazonec2-private-address-only`  | -                       | `false`          |
-| `--amazonec2-monitoring`            | -                       | `false`          |
+| CLI option                               | Environment variable    | Default          |
+| ---------------------------------------- | ----------------------- | ---------------- |
+| **`--amazonec2-access-key`**             | `AWS_ACCESS_KEY_ID`     | -                |
+| **`--amazonec2-secret-key`**             | `AWS_SECRET_ACCESS_KEY` | -                |
+| `--amazonec2-session-token`              | `AWS_SESSION_TOKEN`     | -                |
+| `--amazonec2-ami`                        | `AWS_AMI`               | `ami-5f709f34`   |
+| `--amazonec2-region`                     | `AWS_DEFAULT_REGION`    | `us-east-1`      |
+| **`--amazonec2-vpc-id`**                 | `AWS_VPC_ID`            | -                |
+| `--amazonec2-zone`                       | `AWS_ZONE`              | `a`              |
+| `--amazonec2-subnet-id`                  | `AWS_SUBNET_ID`         | -                |
+| `--amazonec2-security-group`             | `AWS_SECURITY_GROUP`    | `docker-machine` |
+| `--amazonec2-tags`                       | `AWS_TAGS`              | -                |
+| `--amazonec2-instance-type`              | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
+| `--amazonec2-device-name`                | `AWS_DEVICE_NAME`       | `/dev/sda1`      |
+| `--amazonec2-root-size`                  | `AWS_ROOT_SIZE`         | `16`             |
+| `--amazonec2-volume-type`                | `AWS_VOLUME_TYPE`       | `gp2`            |
+| `--amazonec2-iam-instance-profile`       | `AWS_INSTANCE_PROFILE`  | -                |
+| `--amazonec2-ssh-user`                   | `AWS_SSH_USER`          | `ubuntu`         |
+| `--amazonec2-request-spot-instance`      | -                       | `false`          |
+| `--amazonec2-spot-price`                 | -                       | `0.50`           |
+| `--amazonec2-use-private-address`        | -                       | `false`          |
+| `--amazonec2-private-address-only`       | -                       | `false`          |
+| `--amazonec2-monitoring`                 | -                       | `false`          |
+| `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
+
 
 ## Security Group
 
@@ -107,3 +110,4 @@ Note that a security group will be created and associated to the host. This secu
 
 If you specify a security group yourself using the `--amazonec2-security-group` flag, the above ports will be checked and opened and the security group modified.
 If you want more ports to be opened, like application specific ports, use the aws console and modify the configuration manually.
+
