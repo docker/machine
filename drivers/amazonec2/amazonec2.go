@@ -87,6 +87,8 @@ type Driver struct {
 	UseEbsOptimizedInstance bool
 	Monitoring              bool
 	SSHPrivateKeyPath       string
+	Endpoint                string
+	InsecureEndpoint        bool
 }
 
 type clientFactory interface {
@@ -213,6 +215,17 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "SSH Key for Instance",
 			EnvVar: "AWS_SSH_KEYPATH",
 		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-endpoint",
+			Usage:  "Optional endpoint URL (hostname only or fully qualified URI)",
+			Value:  "",
+			EnvVar: "AWS_ENDPOINT",
+		},
+		mcnflag.BoolFlag{
+			Name:   "amazonec2-insecure-endpoint",
+			Usage:  "Disable SSL when sending requests",
+			EnvVar: "AWS_INSECURE_ENDPOINT",
+		},
 	}
 }
 
@@ -247,6 +260,8 @@ func (d *Driver) buildClient() Ec2Client {
 	config = config.WithCredentials(d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
+	config = config.WithEndpoint(d.Endpoint)
+	config = config.WithDisableSSL(d.InsecureEndpoint)
 	return ec2.New(session.New(config))
 }
 
@@ -255,8 +270,10 @@ func (d *Driver) getClient() Ec2Client {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.Endpoint = flags.String("amazonec2-endpoint")
+
 	region, err := validateAwsRegion(flags.String("amazonec2-region"))
-	if err != nil {
+	if err != nil && d.Endpoint == "" {
 		return err
 	}
 
@@ -290,6 +307,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
+	d.InsecureEndpoint = flags.Bool("amazonec2-insecure-endpoint")
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessKey == "" && d.SecretKey == "" {
