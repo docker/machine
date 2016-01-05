@@ -10,7 +10,6 @@ import (
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/crashreport"
-	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
@@ -95,7 +94,8 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 
 func fatalOnError(command func(commandLine CommandLine, api libmachine.API) error) func(context *cli.Context) {
 	return func(context *cli.Context) {
-		api := libmachine.NewClient(mcndirs.GetBaseDir())
+		api := libmachine.NewClient(mcndirs.GetBaseDir(), mcndirs.GetMachineCertDir())
+		defer api.Close()
 
 		if context.GlobalBool("native-ssh") {
 			api.SSHClientType = ssh.Native
@@ -113,8 +113,6 @@ func fatalOnError(command func(commandLine CommandLine, api libmachine.API) erro
 		mcndirs.BaseDir = api.Filestore.Path
 		mcnutils.GithubAPIToken = api.GithubAPIToken
 		ssh.SetDefaultClient(api.SSHClientType)
-
-		defer rpcdriver.CloseDrivers()
 
 		if err := command(&contextCommandLine{context}, api); err != nil {
 			log.Fatal(err)
