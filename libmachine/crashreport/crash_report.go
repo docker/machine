@@ -16,7 +16,6 @@ import (
 	"io/ioutil"
 
 	"github.com/bugsnag/bugsnag-go"
-	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/version"
@@ -27,28 +26,53 @@ const (
 	noreportAPIKey = "no-report"
 )
 
-var apiKey string
+type CrashReporter interface {
+	Send(err CrashError) error
+}
 
-// Configure the apikey for bugnag
-func Configure(key string) {
-	apiKey = defaultAPIKey
-	if key != "" {
-		apiKey = key
+// CrashError describes an error that should be reported to bugsnag
+type CrashError struct {
+	Cause       error
+	Command     string
+	Context     string
+	DriverName  string
+	LogFilePath string
+}
+
+func (e CrashError) Error() string {
+	return e.Cause.Error()
+}
+
+type BugsnagCrashReporter struct {
+	baseDir string
+	apiKey  string
+}
+
+// NewCrashReporter creates a new bugsnag based CrashReporter. Needs an apiKey.
+func NewCrashReporter(baseDir string, apiKey string) *BugsnagCrashReporter {
+	if apiKey == "" {
+		apiKey = defaultAPIKey
+	}
+
+	return &BugsnagCrashReporter{
+		baseDir: baseDir,
+		apiKey:  apiKey,
 	}
 }
 
-func SendWithFile(err error, context string, driverName string, command string, path string) error {
-	if noReportFileExist() || apiKey == noreportAPIKey {
+// Send sends a crash report to bugsnag via an http call.
+func (r *BugsnagCrashReporter) Send(err CrashError) error {
+	if r.noReportFileExist() || r.apiKey == noreportAPIKey {
 		log.Debug("Opting out of crash reporting.")
 		return nil
 	}
 
-	if apiKey == "" {
+	if r.apiKey == "" {
 		return errors.New("Not sending report since no api key has been set.")
 	}
 
 	bugsnag.Configure(bugsnag.Configuration{
-		APIKey: apiKey,
+		APIKey: r.apiKey,
 		// XXX we need to abuse bugsnag metrics to get the OS/ARCH information as a usable filter
 		// Can do that with either "stage" or "hostname"
 		ReleaseStage:    fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH),
@@ -68,19 +92,23 @@ func SendWithFile(err error, context string, driverName string, command string, 
 	detectRunningShell(&metaData)
 	detectUname(&metaData)
 	detectOSVersion(&metaData)
-	addFile(path, &metaData)
+	addFile(err.LogFilePath, &metaData)
 
 	var buffer bytes.Buffer
 	for _, message := range log.History() {
 		buffer.WriteString(message + "\n")
 	}
 	metaData.Add("history", "trace", buffer.String())
-	return bugsnag.Notify(err, metaData, bugsnag.SeverityError, bugsnag.Context{String: context}, bugsnag.ErrorClass{Name: fmt.Sprintf("%s/%s", driverName, command)})
+
+	return bugsnag.Notify(err.Cause, metaData, bugsnag.SeverityError, bugsnag.Context{String: err.Context}, bugsnag.ErrorClass{Name: fmt.Sprintf("%s/%s", err.DriverName, err.Command)})
 }
 
-// Send through http the crash report to bugsnag need a call to Configure(apiKey) before
-func Send(err error, context string, driverName string, command string) error {
-	return SendWithFile(err, context, driverName, command, "")
+func (r *BugsnagCrashReporter) noReportFileExist() bool {
+	optOutFilePath := filepath.Join(r.baseDir, "no-error-report")
+	if _, err := os.Stat(optOutFilePath); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func addFile(path string, metaData *bugsnag.MetaData) {
@@ -95,14 +123,6 @@ func addFile(path string, metaData *bugsnag.MetaData) {
 		return
 	}
 	metaData.Add("logfile", filepath.Base(path), string(data))
-}
-
-func noReportFileExist() bool {
-	optOutFilePath := filepath.Join(mcndirs.GetBaseDir(), "no-error-report")
-	if _, err := os.Stat(optOutFilePath); os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
 
 func detectRunningShell(metaData *bugsnag.MetaData) {
