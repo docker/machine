@@ -3,15 +3,12 @@ package mcnutils
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"runtime"
 	"strconv"
 	"time"
-
-	"github.com/docker/machine/libmachine/log"
 )
 
 // GetHomeDir returns the home directory
@@ -95,16 +92,6 @@ func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration)
 
 func WaitFor(f func() bool) error {
 	return WaitForSpecific(f, 60, 3*time.Second)
-}
-
-func DumpVal(vals ...interface{}) {
-	for _, val := range vals {
-		prettyJSON, err := json.MarshalIndent(val, "", "    ")
-		if err != nil {
-			log.Warn(err)
-		}
-		log.Debug(string(prettyJSON))
-	}
 }
 
 // TruncateID returns a shorten id
