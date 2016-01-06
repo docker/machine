@@ -1,11 +1,11 @@
-package mcnutils
+package crashreport
 
 import (
 	"os/exec"
 	"strings"
 )
 
-func LocalOSVersion() string {
+func localOSVersion() string {
 	command := exec.Command("ver")
 	output, err := command.Output()
 	if err == nil {

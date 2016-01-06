@@ -17,7 +17,6 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/version"
 )
 
@@ -146,5 +145,5 @@ func detectUname(metaData *bugsnag.MetaData) {
 }
 
 func detectOSVersion(metaData *bugsnag.MetaData) {
-	metaData.Add("device", "os version", mcnutils.LocalOSVersion())
+	metaData.Add("device", "os version", localOSVersion())
 }
