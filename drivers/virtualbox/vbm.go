@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"strconv"
+
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -78,15 +80,35 @@ func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
 }
 
 func checkVBoxManageVersion(version string) error {
-	if !strings.HasPrefix(version, "5.") && !strings.HasPrefix(version, "4.") {
+	major, minor, err := parseVersion(version)
+	if (err != nil) || (major < 4) || (major == 4 && minor <= 2) {
 		return fmt.Errorf("We support Virtualbox starting with version 5. Your VirtualBox install is %q. Please upgrade at https://www.virtualbox.org", version)
 	}
 
-	if !strings.HasPrefix(version, "5.") {
+	if major < 5 {
 		log.Warnf("You are using version %s of VirtualBox. If you encouter issues, you might want to upgrade to version 5 at https://www.virtualbox.org", version)
 	}
 
 	return nil
+}
+
+func parseVersion(version string) (int, int, error) {
+	parts := strings.Split(version, ".")
+	if len(parts) < 2 {
+		return 0, 0, fmt.Errorf("Invalid version: %q", version)
+	}
+
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("Invalid version: %q", version)
+	}
+
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, 0, fmt.Errorf("Invalid version: %q", version)
+	}
+
+	return major, minor, err
 }
 
 func parseKeyValues(stdOut string, regexp *regexp.Regexp, callback func(key, val string) error) error {
