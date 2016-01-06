@@ -103,8 +103,6 @@ func fatalOnError(command func(commandLine CommandLine, api libmachine.API) erro
 		api.GithubAPIToken = context.GlobalString("github-api-token")
 		api.Filestore.Path = context.GlobalString("storage-path")
 
-		crashreport.Configure(context.GlobalString("bugsnag-api-token"))
-
 		// TODO (nathanleclaire): These should ultimately be accessed
 		// through the libmachine client by the rest of the code and
 		// not through their respective modules.  For now, however,
@@ -116,6 +114,11 @@ func fatalOnError(command func(commandLine CommandLine, api libmachine.API) erro
 
 		if err := command(&contextCommandLine{context}, api); err != nil {
 			log.Fatal(err)
+
+			if crashErr, ok := err.(crashreport.CrashError); ok {
+				crashReporter := crashreport.NewCrashReporter(mcndirs.GetBaseDir(), context.GlobalString("bugsnag-api-token"))
+				crashReporter.Send(crashErr)
+			}
 		}
 	}
 }
