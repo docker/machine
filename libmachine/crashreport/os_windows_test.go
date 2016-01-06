@@ -1,4 +1,4 @@
-package mcnutils
+package crashreport
 
 import (
 	"testing"
