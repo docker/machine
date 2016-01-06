@@ -228,7 +228,7 @@ func (g *EnvUsageHintGenerator) GenerateUsageHint(userShell string, args []strin
 	comment := "#"
 
 	dockerMachinePath := args[0]
-	if strings.Contains(dockerMachinePath, " ") {
+	if strings.Contains(dockerMachinePath, " ") || strings.Contains(dockerMachinePath, `\`) {
 		args[0] = fmt.Sprintf("\"%s\"", dockerMachinePath)
 	}
 
