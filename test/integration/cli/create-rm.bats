@@ -73,7 +73,7 @@ load ${BASE_TEST_DIR}/helpers.bash
 @test "none: rm non existent machine fails 'machine rm ∞'" {
   run machine rm ∞ -y
   [ "$status" -eq 1 ]
-  [[ ${lines[0]} == "Error removing host \"∞\": Host does not exist: \"∞\"" ]]
+  [[ ${lines[1]} == "Error removing host \"∞\": Host does not exist: \"∞\"" ]]
 }
 
 @test "none: rm is successful 'machine rm 0'" {
@@ -100,7 +100,7 @@ load ${BASE_TEST_DIR}/helpers.bash
   [ "$status" -eq 0 ]
   run bash -c "machine rm -f c"
   [ "$status" -eq 0 ]
-  [[ ${lines[0]} == "Successfully removed c" ]]
+  [[ ${lines[1]} == "Successfully removed c" ]]
 }
 
 # Should be replaced by the test below
