@@ -24,10 +24,21 @@ func localOSVersion() string {
 func parseSystemInfoOutput(output string) string {
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
-		if strings.HasPrefix(line, "OS Version") {
+		if strings.HasPrefix(line, "OS Version:") {
 			return strings.TrimSpace(line[len("OS Version:"):])
 		}
 	}
+
+	// If we couldn't find the version, maybe the output is not in english
+	// Let's parse the fourth line since it seems to be the one always used
+	// for the version.
+	if len(lines) >= 4 {
+		parts := strings.Split(lines[3], ":")
+		if len(parts) == 2 {
+			return strings.TrimSpace(parts[1])
+		}
+	}
+
 	return ""
 }
 
