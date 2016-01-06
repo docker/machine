@@ -17,6 +17,7 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/shell"
 	"github.com/docker/machine/version"
 )
 
@@ -125,12 +126,8 @@ func addFile(path string, metaData *bugsnag.MetaData) {
 }
 
 func detectRunningShell(metaData *bugsnag.MetaData) {
-	shell := os.Getenv("SHELL")
-	if shell != "" {
-		metaData.Add("device", "shell", shell)
-	}
-	shell = os.Getenv("__fish_bin_dir")
-	if shell != "" {
+	shell, err := shell.Detect()
+	if err == nil {
 		metaData.Add("device", "shell", shell)
 	}
 }
