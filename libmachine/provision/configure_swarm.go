@@ -41,13 +41,14 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 	advertiseInfo := fmt.Sprintf("%s:%s", ip, dockerPort)
 
 	if swarmOptions.Master {
+		advertiseMasterInfo := fmt.Sprintf("%s:%s", ip, "3376")
 		cmd := fmt.Sprintf("manage --tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy %s --advertise %s",
 			authOptions.CaCertRemotePath,
 			authOptions.ServerCertRemotePath,
 			authOptions.ServerKeyRemotePath,
 			swarmOptions.Host,
 			swarmOptions.Strategy,
-			advertiseInfo,
+			advertiseMasterInfo,
 		)
 
 		cmdMaster := strings.Fields(cmd)
