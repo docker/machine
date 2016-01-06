@@ -14,6 +14,10 @@ import (
 	"github.com/docker/machine/libmachine/log"
 )
 
+const (
+	retryCountOnObjectNotReadyError = 5
+)
+
 var (
 	reColonLine       = regexp.MustCompile(`(.+):\s+(.*)`)
 	reEqualLine       = regexp.MustCompile(`(.+)=(.*)`)
@@ -49,6 +53,10 @@ func (v *VBoxCmdManager) vbmOut(args ...string) (string, error) {
 }
 
 func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
+	return v.vbmOutErrRetry(retryCountOnObjectNotReadyError, args...)
+}
+
+func (v *VBoxCmdManager) vbmOutErrRetry(retry int, args ...string) (string, string, error) {
 	cmd := exec.Command(vboxManageCmd, args...)
 	log.Debugf("COMMAND: %v %v", vboxManageCmd, strings.Join(args, " "))
 	var stdout bytes.Buffer
@@ -65,6 +73,13 @@ func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
 	if err != nil {
 		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
 			err = ErrVBMNotFound
+		}
+	}
+
+	// Sometimes, we just need to retry...
+	if retry > 0 {
+		if strings.Contains(stderrStr, "error: The object is not ready") {
+			return v.vbmOutErrRetry(retry-1, args...)
 		}
 	}
 
