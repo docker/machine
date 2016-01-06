@@ -47,6 +47,7 @@ func TestHints(t *testing.T) {
 		{"", []string{"machine", "env", "--no-proxy", "--swarm", "default"}, "# Run this command to configure your shell: \n# eval $(machine env --no-proxy --swarm default)\n"},
 		{"", []string{"machine", "env", "--unset"}, "# Run this command to configure your shell: \n# eval $(machine env --unset)\n"},
 		{"", []string{`C:\\Program Files\docker-machine.exe`, "env", "default"}, "# Run this command to configure your shell: \n# eval $(\"C:\\\\Program Files\\docker-machine.exe\" env default)\n"},
+		{"", []string{`C:\\Me\docker-machine.exe`, "env", "default"}, "# Run this command to configure your shell: \n# eval $(\"C:\\\\Me\\docker-machine.exe\" env default)\n"},
 
 		{"fish", []string{"./machine", "env", "--shell=fish", "default"}, "# Run this command to configure your shell: \n# eval (./machine env --shell=fish default)\n"},
 		{"fish", []string{"./machine", "env", "--shell=fish", "--no-proxy", "default"}, "# Run this command to configure your shell: \n# eval (./machine env --shell=fish --no-proxy default)\n"},
@@ -61,6 +62,7 @@ func TestHints(t *testing.T) {
 		{"powershell", []string{"./machine", "env", "--shell=powershell", "--unset"}, "# Run this command to configure your shell: \n# & ./machine env --shell=powershell --unset | Invoke-Expression\n"},
 		{"powershell", []string{"./machine", "env", "--shell=powershell", "--unset"}, "# Run this command to configure your shell: \n# & ./machine env --shell=powershell --unset | Invoke-Expression\n"},
 		{"powershell", []string{`C:\\Program Files\docker-machine.exe`, "env", "--shell=powershell", "default"}, "# Run this command to configure your shell: \n# & \"C:\\\\Program Files\\docker-machine.exe\" env --shell=powershell default | Invoke-Expression\n"},
+		{"powershell", []string{`C:\\Me\docker-machine.exe`, "env", "--shell=powershell", "default"}, "# Run this command to configure your shell: \n# & \"C:\\\\Me\\docker-machine.exe\" env --shell=powershell default | Invoke-Expression\n"},
 
 		{"cmd", []string{"./machine", "env", "--shell=cmd", "default"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('./machine env --shell=cmd default') DO %i\n"},
 		{"cmd", []string{"./machine", "env", "--shell=cmd", "--no-proxy", "default"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('./machine env --shell=cmd --no-proxy default') DO %i\n"},
@@ -68,6 +70,7 @@ func TestHints(t *testing.T) {
 		{"cmd", []string{"./machine", "env", "--shell=cmd", "--no-proxy", "--swarm", "default"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('./machine env --shell=cmd --no-proxy --swarm default') DO %i\n"},
 		{"cmd", []string{"./machine", "env", "--shell=cmd", "--unset"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('./machine env --shell=cmd --unset') DO %i\n"},
 		{"cmd", []string{`C:\\Program Files\docker-machine.exe`, "env", "--shell=cmd", "default"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('\"C:\\\\Program Files\\docker-machine.exe\" env --shell=cmd default') DO %i\n"},
+		{"cmd", []string{`C:\\Me\docker-machine.exe`, "env", "--shell=cmd", "default"}, "REM Run this command to configure your shell: \nREM \tFOR /f \"tokens=*\" %i IN ('\"C:\\\\Me\\docker-machine.exe\" env --shell=cmd default') DO %i\n"},
 
 		{"emacs", []string{"./machine", "env", "--shell=emacs", "default"}, ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs default\" (current-buffer)) (eval-buffer))\n"},
 		{"emacs", []string{"./machine", "env", "--shell=emacs", "--no-proxy", "default"}, ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --no-proxy default\" (current-buffer)) (eval-buffer))\n"},
