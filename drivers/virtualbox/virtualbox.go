@@ -211,12 +211,14 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	if isHyperVInstalled() {
-		return ErrNotCompatibleWithHyperV
-	}
-
 	if !d.NoVTXCheck {
-		return ErrMustEnableVTX
+		if isHyperVInstalled() {
+			return ErrNotCompatibleWithHyperV
+		}
+
+		if d.IsVTXDisabled() {
+			return ErrMustEnableVTX
+		}
 	}
 
 	// Downloading boot2docker to cache should be done here to make sure
