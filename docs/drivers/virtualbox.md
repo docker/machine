@@ -12,7 +12,7 @@ parent="smn_machine_drivers"
 
 Create machines locally using [VirtualBox](https://www.virtualbox.org/).
 This driver requires VirtualBox 5+ to be installed on your host.
-Using VirtualBox 4+ should work but will give you a warning. Older versions
+Using VirtualBox 4.3+ should work but will give you a warning. Older versions
 will refuse to work.
 
     $ docker-machine create --driver=virtualbox vbox-test
