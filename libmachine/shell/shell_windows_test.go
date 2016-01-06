@@ -8,17 +8,18 @@ import (
 )
 
 func TestDetect(t *testing.T) {
-	originalShell := os.Getenv("SHELL")
+	defer func(shell string) { os.Setenv("SHELL", shell) }(os.Getenv("SHELL"))
 	os.Setenv("SHELL", "")
-	defer os.Setenv("SHELL", originalShell)
+
 	shell, err := Detect()
-	assert.Nil(t, err)
+
 	assert.Equal(t, "cmd", shell)
+	assert.NoError(t, err)
 }
 
 func TestStartedBy(t *testing.T) {
 	shell, err := startedBy()
-	assert.Nil(t, err)
-	assert.NotNil(t, shell)
+
 	assert.Equal(t, "go.exe", shell)
+	assert.NoError(t, err)
 }
