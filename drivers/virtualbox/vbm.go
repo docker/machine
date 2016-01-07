@@ -11,7 +11,15 @@ import (
 
 	"strconv"
 
+	"time"
+
 	"github.com/docker/machine/libmachine/log"
+)
+
+const (
+	retryCountOnObjectNotReadyError = 5
+	objectNotReady                  = "error: The object is not ready"
+	retryDelay                      = 100 * time.Millisecond
 )
 
 var (
@@ -36,7 +44,16 @@ type VBoxManager interface {
 }
 
 // VBoxCmdManager communicates with VirtualBox through the commandline using `VBoxManage`.
-type VBoxCmdManager struct{}
+type VBoxCmdManager struct {
+	runCmd func(cmd *exec.Cmd) error
+}
+
+// NewVBoxManager creates a VBoxManager instance.
+func NewVBoxManager() *VBoxCmdManager {
+	return &VBoxCmdManager{
+		runCmd: func(cmd *exec.Cmd) error { return cmd.Run() },
+	}
+}
 
 func (v *VBoxCmdManager) vbm(args ...string) error {
 	_, _, err := v.vbmOutErr(args...)
@@ -49,13 +66,17 @@ func (v *VBoxCmdManager) vbmOut(args ...string) (string, error) {
 }
 
 func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
+	return v.vbmOutErrRetry(retryCountOnObjectNotReadyError, args...)
+}
+
+func (v *VBoxCmdManager) vbmOutErrRetry(retry int, args ...string) (string, string, error) {
 	cmd := exec.Command(vboxManageCmd, args...)
 	log.Debugf("COMMAND: %v %v", vboxManageCmd, strings.Join(args, " "))
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	err := cmd.Run()
+	err := v.runCmd(cmd)
 	stderrStr := stderr.String()
 	if len(args) > 0 {
 		log.Debugf("STDOUT:\n{\n%v}", stdout.String())
@@ -65,6 +86,14 @@ func (v *VBoxCmdManager) vbmOutErr(args ...string) (string, string, error) {
 	if err != nil {
 		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
 			err = ErrVBMNotFound
+		}
+	}
+
+	// Sometimes, we just need to retry...
+	if retry > 1 {
+		if strings.Contains(stderrStr, objectNotReady) {
+			time.Sleep(retryDelay)
+			return v.vbmOutErrRetry(retry-1, args...)
 		}
 	}
 
