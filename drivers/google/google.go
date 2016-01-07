@@ -360,14 +360,9 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	s, err := d.GetState()
-	if err != nil {
+	if err := c.deleteInstance(); err != nil {
 		return err
 	}
-	if s == state.Running {
-		if err := c.deleteInstance(); err != nil {
-			return err
-		}
-	}
+
 	return c.deleteDisk()
 }
