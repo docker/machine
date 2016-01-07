@@ -202,7 +202,7 @@ func TestForceRemoveEvenWhenItFails(t *testing.T) {
 	}
 
 	err := cmdRm(commandLine, api)
-	assert.EqualError(t, err, "Error removing host \"machineToRemove1\": unknown error")
+	assert.NoError(t, err)
 
 	assert.False(t, libmachinetest.Exists(api, "machineToRemove1"))
 }
