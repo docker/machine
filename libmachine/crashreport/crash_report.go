@@ -49,7 +49,7 @@ type BugsnagCrashReporter struct {
 }
 
 // NewCrashReporter creates a new bugsnag based CrashReporter. Needs an apiKey.
-func NewCrashReporter(baseDir string, apiKey string) *BugsnagCrashReporter {
+var NewCrashReporter = func(baseDir string, apiKey string) CrashReporter {
 	if apiKey == "" {
 		apiKey = defaultAPIKey
 	}
