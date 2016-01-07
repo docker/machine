@@ -17,9 +17,6 @@ type MachineLogger interface {
 	Info(args ...interface{})
 	Infof(fmtString string, args ...interface{})
 
-	Fatal(args ...interface{})
-	Fatalf(fmtString string, args ...interface{})
-
 	Warn(args ...interface{})
 	Warnf(fmtString string, args ...interface{})
 

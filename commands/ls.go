@@ -312,8 +312,8 @@ func matchesName(host *host.Host, names []string) bool {
 	for _, n := range names {
 		r, err := regexp.Compile(n)
 		if err != nil {
-			// TODO: remove that call to Fatal
-			log.Fatal(err)
+			log.Error(err)
+			os.Exit(1) // TODO: Can we get rid of this call, and exit 'properly' ?
 		}
 		if r.MatchString(host.Driver.GetMachineName()) {
 			return true
