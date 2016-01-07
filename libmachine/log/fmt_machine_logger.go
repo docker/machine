@@ -69,18 +69,6 @@ func (ml *FmtMachineLogger) Infof(fmtString string, args ...interface{}) {
 	fmt.Fprintf(ml.outWriter, fmtString+"\n", args...)
 }
 
-func (ml *FmtMachineLogger) Fatal(args ...interface{}) {
-	ml.history.Record(args...)
-	fmt.Fprintln(ml.errWriter, args...)
-	os.Exit(1)
-}
-
-func (ml *FmtMachineLogger) Fatalf(fmtString string, args ...interface{}) {
-	ml.history.Recordf(fmtString, args...)
-	fmt.Fprintf(ml.errWriter, fmtString+"\n", args...)
-	os.Exit(1)
-}
-
 func (ml *FmtMachineLogger) Warn(args ...interface{}) {
 	ml.history.Record(args...)
 	fmt.Fprintln(ml.outWriter, args...)

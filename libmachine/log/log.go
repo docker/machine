@@ -49,14 +49,6 @@ func Infof(fmtString string, args ...interface{}) {
 	logger.Infof(fmtString, args...)
 }
 
-func Fatal(args ...interface{}) {
-	logger.Fatal(args...)
-}
-
-func Fatalf(fmtString string, args ...interface{}) {
-	logger.Fatalf(fmtString, args...)
-}
-
 func Warn(args ...interface{}) {
 	logger.Warn(args...)
 }

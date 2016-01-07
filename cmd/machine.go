@@ -204,11 +204,12 @@ func runDriver(driverName string) {
 }
 
 func cmdNotFound(c *cli.Context, command string) {
-	log.Fatalf(
+	log.Errorf(
 		"%s: '%s' is not a %s command. See '%s --help'.",
 		c.App.Name,
 		command,
 		c.App.Name,
 		os.Args[0],
 	)
+	os.Exit(1)
 }
