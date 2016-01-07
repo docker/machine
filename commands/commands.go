@@ -21,6 +21,8 @@ var (
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 	ErrTooManyArguments   = errors.New("Error: Too many arguments given")
+
+	osExit = func(code int) { os.Exit(code) }
 )
 
 // CommandLine contains all the information passed to the commands on the command line.
@@ -92,7 +94,7 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 	return nil
 }
 
-func fatalOnError(command func(commandLine CommandLine, api libmachine.API) error) func(context *cli.Context) {
+func runCommand(command func(commandLine CommandLine, api libmachine.API) error) func(context *cli.Context) {
 	return func(context *cli.Context) {
 		api := libmachine.NewClient(mcndirs.GetBaseDir(), mcndirs.GetMachineCertDir())
 		defer api.Close()
@@ -113,12 +115,14 @@ func fatalOnError(command func(commandLine CommandLine, api libmachine.API) erro
 		ssh.SetDefaultClient(api.SSHClientType)
 
 		if err := command(&contextCommandLine{context}, api); err != nil {
-			log.Fatal(err)
+			log.Error(err)
 
 			if crashErr, ok := err.(crashreport.CrashError); ok {
 				crashReporter := crashreport.NewCrashReporter(mcndirs.GetBaseDir(), context.GlobalString("bugsnag-api-token"))
 				crashReporter.Send(crashErr)
 			}
+
+			osExit(1)
 		}
 	}
 }
@@ -140,13 +144,13 @@ var Commands = []cli.Command{
 	{
 		Name:   "active",
 		Usage:  "Print which machine is active",
-		Action: fatalOnError(cmdActive),
+		Action: runCommand(cmdActive),
 	},
 	{
 		Name:        "config",
 		Usage:       "Print the connection config for machine",
 		Description: "Argument is a machine name.",
-		Action:      fatalOnError(cmdConfig),
+		Action:      runCommand(cmdConfig),
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "swarm",
@@ -159,14 +163,14 @@ var Commands = []cli.Command{
 		Name:            "create",
 		Usage:           "Create a machine",
 		Description:     fmt.Sprintf("Run '%s create --driver name' to include the create flags for that driver in the help text.", os.Args[0]),
-		Action:          fatalOnError(cmdCreateOuter),
+		Action:          runCommand(cmdCreateOuter),
 		SkipFlagParsing: true,
 	},
 	{
 		Name:        "env",
 		Usage:       "Display the commands to set up the environment for the Docker client",
 		Description: "Argument is a machine name.",
-		Action:      fatalOnError(cmdEnv),
+		Action:      runCommand(cmdEnv),
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "swarm",
@@ -190,7 +194,7 @@ var Commands = []cli.Command{
 		Name:        "inspect",
 		Usage:       "Inspect information about a machine",
 		Description: "Argument is a machine name.",
-		Action:      fatalOnError(cmdInspect),
+		Action:      runCommand(cmdInspect),
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "format, f",
@@ -203,18 +207,18 @@ var Commands = []cli.Command{
 		Name:        "ip",
 		Usage:       "Get the IP address of a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdIP),
+		Action:      runCommand(cmdIP),
 	},
 	{
 		Name:        "kill",
 		Usage:       "Kill a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdKill),
+		Action:      runCommand(cmdKill),
 	},
 	{
 		Name:   "ls",
 		Usage:  "List machines",
-		Action: fatalOnError(cmdLs),
+		Action: runCommand(cmdLs),
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "quiet, q",
@@ -240,7 +244,7 @@ var Commands = []cli.Command{
 		Name:        "regenerate-certs",
 		Usage:       "Regenerate TLS Certificates for a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdRegenerateCerts),
+		Action:      runCommand(cmdRegenerateCerts),
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "force, f",
@@ -252,7 +256,7 @@ var Commands = []cli.Command{
 		Name:        "restart",
 		Usage:       "Restart a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdRestart),
+		Action:      runCommand(cmdRestart),
 	},
 	{
 		Flags: []cli.Flag{
@@ -268,20 +272,20 @@ var Commands = []cli.Command{
 		Name:        "rm",
 		Usage:       "Remove a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdRm),
+		Action:      runCommand(cmdRm),
 	},
 	{
 		Name:            "ssh",
 		Usage:           "Log into or run a command on a machine with SSH.",
 		Description:     "Arguments are [machine-name] [command]",
-		Action:          fatalOnError(cmdSSH),
+		Action:          runCommand(cmdSSH),
 		SkipFlagParsing: true,
 	},
 	{
 		Name:        "scp",
 		Usage:       "Copy files between machines",
 		Description: "Arguments are [machine:][path] [machine:][path].",
-		Action:      fatalOnError(cmdScp),
+		Action:      runCommand(cmdScp),
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "recursive, r",
@@ -293,36 +297,36 @@ var Commands = []cli.Command{
 		Name:        "start",
 		Usage:       "Start a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdStart),
+		Action:      runCommand(cmdStart),
 	},
 	{
 		Name:        "status",
 		Usage:       "Get the status of a machine",
 		Description: "Argument is a machine name.",
-		Action:      fatalOnError(cmdStatus),
+		Action:      runCommand(cmdStatus),
 	},
 	{
 		Name:        "stop",
 		Usage:       "Stop a machine",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdStop),
+		Action:      runCommand(cmdStop),
 	},
 	{
 		Name:        "upgrade",
 		Usage:       "Upgrade a machine to the latest version of Docker",
 		Description: "Argument(s) are one or more machine names.",
-		Action:      fatalOnError(cmdUpgrade),
+		Action:      runCommand(cmdUpgrade),
 	},
 	{
 		Name:        "url",
 		Usage:       "Get the URL of a machine",
 		Description: "Argument is a machine name.",
-		Action:      fatalOnError(cmdURL),
+		Action:      runCommand(cmdURL),
 	},
 	{
 		Name:   "version",
 		Usage:  "Show the Docker Machine version or a machine docker version",
-		Action: fatalOnError(cmdVersion),
+		Action: runCommand(cmdVersion),
 	},
 }
 

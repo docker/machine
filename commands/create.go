@@ -395,7 +395,7 @@ func convertMcnFlagsToCliFlags(mcnFlags []mcnflag.Flag) ([]cli.Flag, error) {
 func addDriverFlagsToCommand(cliFlags []cli.Flag, cmd *cli.Command) *cli.Command {
 	cmd.Flags = append(sharedCreateFlags, cliFlags...)
 	cmd.SkipFlagParsing = false
-	cmd.Action = fatalOnError(cmdCreateInner)
+	cmd.Action = runCommand(cmdCreateInner)
 	sort.Sort(ByFlagName(cmd.Flags))
 
 	return cmd
