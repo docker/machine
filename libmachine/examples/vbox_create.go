@@ -25,29 +25,34 @@ func main() {
 
 	data, err := json.Marshal(driver)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 
 	h, err := client.NewHost("virtualbox", data)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 
 	h.HostOptions.EngineOptions.StorageDriver = "overlay"
 
 	if err := client.Create(h); err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 
 	out, err := h.RunSSHCommand("df -h")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 
 	fmt.Printf("Results of your disk space query:\n%s\n", out)
 
 	fmt.Println("Powering down machine now...")
 	if err := h.Stop(); err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 }
