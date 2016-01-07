@@ -17,11 +17,11 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 		return ErrNoMachineSpecified
 	}
 
-	log.Info(fmt.Sprintf("About to remove %s", strings.Join(c.Args(), ",")))
+	log.Info(fmt.Sprintf("About to remove %s", strings.Join(c.Args(), ", ")))
 
 	force := c.Bool("force")
 	confirm := c.Bool("y")
-	var errorOccured string
+	var errorOccured []string
 
 	if !userConfirm(confirm, force) {
 		return nil
@@ -30,22 +30,23 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 	for _, hostName := range c.Args() {
 		err := removeRemoteMachine(hostName, api)
 		if err != nil {
-			errorOccured = fmt.Sprintf("Error removing host %q: %s", hostName, err)
-			log.Errorf(errorOccured)
+			errorOccured = collectError(fmt.Sprintf("Error removing host %q: %s", hostName, err), force, errorOccured)
 		}
 
 		if err == nil || force {
-			removeErr := api.Remove(hostName)
+			removeErr := removeLocalMachine(hostName, api)
 			if removeErr != nil {
-				log.Errorf("Error removing machine %q from store: %s", hostName, removeErr)
+				errorOccured = collectError(fmt.Sprintf("Can't remove \"%s\"", hostName), force, errorOccured)
 			} else {
 				log.Infof("Successfully removed %s", hostName)
 			}
 		}
 	}
-	if errorOccured != "" {
-		return errors.New(errorOccured)
+
+	if len(errorOccured) > 0 && !force {
+		return errors.New(strings.Join(errorOccured, "\n"))
 	}
+
 	return nil
 }
 
@@ -69,4 +70,19 @@ func removeRemoteMachine(hostName string, api libmachine.API) error {
 	}
 
 	return currentHost.Driver.Remove()
+}
+
+func removeLocalMachine(hostName string, api libmachine.API) error {
+	exist, _ := api.Exists(hostName)
+	if !exist {
+		return errors.New(hostName + " does not exist.")
+	}
+	return api.Remove(hostName)
+}
+
+func collectError(message string, force bool, errorOccured []string) []string {
+	if force {
+		log.Error(message)
+	}
+	return append(errorOccured, message)
 }
