@@ -13,6 +13,22 @@ parent="smn_machine_subcmds"
 Set environment variables to dictate that `docker` should run a command against
 a particular machine.
 
+    $ docker-machine env --help
+
+    Usage: docker-machine env [OPTIONS] [arg...]
+
+    Display the commands to set up the environment for the Docker client
+
+    Description:
+       Argument is a machine name.
+
+    Options:
+
+       --swarm	Display the Swarm config instead of the Docker daemon
+       --shell 	Force environment to be configured for a specified shell: [fish, cmd, powershell], default is sh/bash
+       --unset, -u	Unset variables instead of setting them
+       --no-proxy	Add machine IP to NO_PROXY environment variable
+
 `docker-machine env machinename` will print out `export` commands which can be
 run in a subshell. Running `docker-machine env -u` will print `unset` commands
 which reverse this effect.
@@ -32,7 +48,8 @@ which reverse this effect.
 The output described above is intended for the shells `bash` and `zsh` (if
 you're not sure which shell you're using, there's a very good possibility that
 it's `bash`). However, these are not the only shells which Docker Machine
-supports.
+supports. Depending of the environment you're running your command into we will print them for the proper system.
+ We support `bash`, `cmd`, `powershell` and `emacs`.
 
 If you are using `fish` and the `SHELL` environment variable is correctly set to
 the path where `fish` is located, `docker-machine env name` will print out the
@@ -45,10 +62,9 @@ values in the format which `fish` expects:
     # Run this command to configure your shell:
     # eval "$(docker-machine env overlay)"
 
-If you are on Windows and using Powershell or `cmd.exe`, `docker-machine env`
-cannot detect your shell automatically, but it does have support for these
-shells. In order to use them, specify which shell you would like to print the
-options for using the `--shell` flag for `docker-machine env`.
+If you are on Windows and using either Powershell or `cmd.exe`, `docker-machine env`
+ Docker Machine should now detect your shell automatically. If the automagic detection does not work you
+  can still override it using the `--shell` flag for `docker-machine env`.
 
 For Powershell:
 

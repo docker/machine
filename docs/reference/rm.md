@@ -28,7 +28,6 @@ on the cloud provider or virtualization management platform.
        --force, -f	Remove local configuration even if machine cannot be removed, also implies an automatic yes (`-y`)
        -y		Assumes automatic yes to proceed with remove, without prompting further user confirmation
 
-
 ## Examples
 
     $ docker-machine ls
