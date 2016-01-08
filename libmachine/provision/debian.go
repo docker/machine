@@ -106,9 +106,11 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.Options, auth
 	provisioner.EngineOptions = engineOptions
 	swarmOptions.Env = engineOptions.Env
 
-	if provisioner.EngineOptions.StorageDriver == "" {
-		provisioner.EngineOptions.StorageDriver = "aufs"
+	storageDriver, err := decideStorageDriver(provisioner, "aufs", engineOptions.StorageDriver)
+	if err != nil {
+		return err
 	}
+	provisioner.EngineOptions.StorageDriver = storageDriver
 
 	// HACK: since debian does not come with sudo by default we install
 	log.Debug("installing sudo")
