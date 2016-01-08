@@ -31,7 +31,7 @@ To create the machine instance, specify `--driver amazonec2` and the three requi
 
 This example assumes the VPC ID was found in the `a` availability zone. Use the`--amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
 
-### Options
+## Options
 
 -   `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
 -   `--amazonec2-secret-key`: **required** Your secret access key for the Amazon Web Services API.
@@ -54,7 +54,6 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-use-private-address`: Use the private IP address for docker-machine, but still create a public IP address.
 -   `--amazonec2-private-address-only`: Use the private IP address only.
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
-
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
 
@@ -97,3 +96,14 @@ Environment variables and default values:
 | `--amazonec2-use-private-address`   | -                       | `false`          |
 | `--amazonec2-private-address-only`  | -                       | `false`          |
 | `--amazonec2-monitoring`            | -                       | `false`          |
+
+## Security Group
+
+Note that a security group will be created and associated to the host. This security group will have the following ports opened inbound :
+
+-   ssh (22/tcp)
+-   docker (2376/tcp)
+-   swarm (3376/tcp), only if the node is a swarm master
+
+If you specify a security group yourself using the `--amazonec2-security-group` flag, the above ports will be checked and opened and the security group modified.
+If you want more ports to be opened, like application specific ports, use the aws console and modify the configuration manually.
