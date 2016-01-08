@@ -85,21 +85,21 @@ use_shared_machine
   run machine url $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${output} == *"not running"* ]]
+  [[ ${output} == *"Host is not running"* ]]
 }
 
 @test "$DRIVER: env should show an error when machine is stopped" {
   run machine env $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${output} == *"not running. Please start"* ]]
+  [[ ${output} == *"Host is not running"* ]]
 }
 
 @test "$DRIVER: version should show an error when machine is stopped" {
   run machine version $NAME
   echo ${output}
   [ "$status" -eq 1 ]
-  [[ ${output} == *"not running"* ]]
+  [[ ${output} == *"Host is not running"* ]]
 }
 
 
