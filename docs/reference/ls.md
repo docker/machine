@@ -33,7 +33,7 @@ the -t flag for this purpose with a numerical value in seconds.
 
     $ docker-machine ls -t 12
     NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
-    default   -        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.0
+    default   -        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
 
 ## Filtering
 
@@ -84,24 +84,25 @@ To list all machine names with their driver in a table format you can use:
     default  virtualbox
     ec2      amazonec2
 
-## Examples
+### Examples
 
     $ docker-machine ls
-    NAME   ACTIVE   DRIVER       STATE     URL
+    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
     dev    -        virtualbox   Stopped
-    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
-    foo1   -        virtualbox   Running   tcp://192.168.99.106:2376
-    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
+    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
+    foo1   -        virtualbox   Running   tcp://192.168.99.106:2376           v1.9.1
+    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376           v1.9.1
 
     $ docker-machine ls --filter name=foo0
-    NAME   ACTIVE   DRIVER       STATE     URL
-    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
+    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
 
     $ docker-machine ls --filter driver=virtualbox --filter state=Stopped
-    NAME   ACTIVE   DRIVER       STATE     URL   SWARM
-    dev    -        virtualbox   Stopped
+    NAME   ACTIVE   DRIVER       STATE     URL   SWARM   DOCKER   ERRORS
+    dev    -        virtualbox   Stopped                 v1.9.1
 
     $ docker-machine ls --filter label=com.class.app=foo1 --filter label=com.class.app=foo2
-    NAME   ACTIVE   DRIVER       STATE     URL
-    foo1   -        virtualbox   Running   tcp://192.168.99.105:2376
-    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
+    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+    foo1   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
+    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376           v1.9.1
+
