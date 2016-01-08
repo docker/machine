@@ -14,15 +14,55 @@ parent="smn_machine_subcmds"
 Remove a machine. This will remove the local reference as well as delete it
 on the cloud provider or virtualization management platform.
 
-    $ docker-machine ls
-    NAME   ACTIVE   DRIVER       STATE     URL
-    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
-    foo1   -        virtualbox   Running   tcp://192.168.99.106:2376
+    $ docker-machine rm --help
 
-    $ docker-machine rm foo1
-    Do you really want to remove "foo1"? (y/n): y
-    Successfully removed foo1
+    Usage: docker-machine rm [OPTIONS] [arg...]
+
+    Remove a machine
+
+    Description:
+       Argument(s) are one or more machine names.
+
+    Options:
+
+       --force, -f	Remove local configuration even if machine cannot be removed, also implies an automatic yes (`-y`)
+       -y		Assumes automatic yes to proceed with remove, without prompting further user confirmation
+
+
+## Examples
 
     $ docker-machine ls
-    NAME   ACTIVE   DRIVER       STATE     URL
-    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
+    NAME   ACTIVE   URL          STATE     URL                         SWARM   DOCKER   ERRORS
+    bar    -        virtualbox   Running   tcp://192.168.99.101:2376           v1.9.1
+    baz    -        virtualbox   Running   tcp://192.168.99.103:2376           v1.9.1
+    foo    -        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
+    qix    -        virtualbox   Running   tcp://192.168.99.102:2376           v1.9.1
+
+
+    $ docker-machine rm baz
+    About to remove baz
+    Are you sure? (y/n): y
+    Successfully removed baz
+
+
+    $ docker-machine ls
+    NAME   ACTIVE   URL          STATE     URL                         SWARM   DOCKER   ERRORS
+    bar    -        virtualbox   Running   tcp://192.168.99.101:2376           v1.9.1
+    foo    -        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
+    qix    -        virtualbox   Running   tcp://192.168.99.102:2376           v1.9.1
+
+
+    $ docker-machine rm bar qix
+    About to remove bar, qix
+    Are you sure? (y/n): y
+    Successfully removed bar
+    Successfully removed qix
+
+
+    $ docker-machine ls
+    NAME   ACTIVE   URL          STATE     URL                         SWARM   DOCKER   ERRORS
+    foo    -        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
+
+    $ docker-machine rm -y foo
+    About to remove foo
+    Successfully removed foo
