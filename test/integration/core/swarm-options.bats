@@ -29,14 +29,13 @@ export TOKEN=$(curl -sS -X POST "https://discovery.hub.docker.com/v1/clusters")
 
 @test "should not show as swarm active if normal active" {
     eval $(machine env queenbee)
-    run machine ls
-    echo ${output}
+    run machine ls --filter name=queenbee
     [[ ${lines[1]} != *"* (swarm)"*  ]]
 }
 
 @test "should show as swarm active" {
     eval $(machine env --swarm queenbee)
-    run machine ls
+    run machine ls --filter name=queenbee
     echo ${output}
     [[ ${lines[1]} == *"* (swarm)"*  ]]
 }
