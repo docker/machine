@@ -48,6 +48,28 @@ The currently supported filters are:
 -   name   (Machine name returned by driver, supports [golang style](https://github.com/google/re2/wiki/Syntax) regular expressions)
 -   label  (Machine created with `--engine-label` option, can be filtered with `label=<key>[=<value>]`)
 
+### Examples
+
+    $ docker-machine ls
+    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+    dev    -        virtualbox   Stopped
+    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
+    foo1   -        virtualbox   Running   tcp://192.168.99.106:2376           v1.9.1
+    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376           v1.9.1
+
+    $ docker-machine ls --filter name=foo0
+    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
+
+    $ docker-machine ls --filter driver=virtualbox --filter state=Stopped
+    NAME   ACTIVE   DRIVER       STATE     URL   SWARM   DOCKER   ERRORS
+    dev    -        virtualbox   Stopped                 v1.9.1
+
+    $ docker-machine ls --filter label=com.class.app=foo1 --filter label=com.class.app=foo2
+    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+    foo1   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
+    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376           v1.9.1
+
 ## Formatting
 
 The formatting option (`--format`) will pretty-print machines using a Go template.
@@ -83,26 +105,3 @@ To list all machine names with their driver in a table format you can use:
     NAME     DRIVER
     default  virtualbox
     ec2      amazonec2
-
-### Examples
-
-    $ docker-machine ls
-    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
-    dev    -        virtualbox   Stopped
-    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
-    foo1   -        virtualbox   Running   tcp://192.168.99.106:2376           v1.9.1
-    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376           v1.9.1
-
-    $ docker-machine ls --filter name=foo0
-    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
-    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
-
-    $ docker-machine ls --filter driver=virtualbox --filter state=Stopped
-    NAME   ACTIVE   DRIVER       STATE     URL   SWARM   DOCKER   ERRORS
-    dev    -        virtualbox   Stopped                 v1.9.1
-
-    $ docker-machine ls --filter label=com.class.app=foo1 --filter label=com.class.app=foo2
-    NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
-    foo1   -        virtualbox   Running   tcp://192.168.99.105:2376           v1.9.1
-    foo2   *        virtualbox   Running   tcp://192.168.99.107:2376           v1.9.1
-
