@@ -93,6 +93,10 @@ To list all machine names with their driver in a table format you can use:
     foo1   -        virtualbox   Running   tcp://192.168.99.106:2376
     foo2   *        virtualbox   Running   tcp://192.168.99.107:2376
 
+    $ docker-machine ls --filter name=foo0
+    NAME   ACTIVE   DRIVER       STATE     URL
+    foo0   -        virtualbox   Running   tcp://192.168.99.105:2376
+
     $ docker-machine ls --filter driver=virtualbox --filter state=Stopped
     NAME   ACTIVE   DRIVER       STATE     URL   SWARM
     dev    -        virtualbox   Stopped
