@@ -55,7 +55,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-private-address-only`: Use the private IP address only.
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 
-By default, the Amazon EC2 driver will use a daily image of Ubuntu 14.04 LTS.
+By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
 
 | Region         | AMI ID       |
 | -------------- | ------------ |
