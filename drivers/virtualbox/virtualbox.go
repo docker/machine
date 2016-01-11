@@ -229,7 +229,7 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	// Check that Host-only interfaces are ok
-	if _, err = listHostOnlyNetworks(d.VBoxManager); err != nil {
+	if _, err = listHostOnlyAdapters(d.VBoxManager); err != nil {
 		return err
 	}
 
@@ -270,7 +270,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	log.Infof("Creating VirtualBox VM...")
+	log.Info("Creating VirtualBox VM...")
 
 	// import b2d VM if requested
 	if d.Boot2DockerImportVM != "" {
@@ -379,10 +379,6 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := d.setupHostOnlyNetwork(d.MachineName); err != nil {
-		return err
-	}
-
 	if err := d.vbm("storagectl", d.MachineName,
 		"--name", "SATA",
 		"--add", "sata",
@@ -442,6 +438,7 @@ func (d *Driver) Create() error {
 		}
 	}
 
+	log.Info("Starting the VM...")
 	return d.Start()
 }
 
@@ -466,9 +463,10 @@ func (d *Driver) Start() error {
 		return err
 	}
 
+	var hostOnlyAdapter *hostOnlyNetwork
 	if s == state.Stopped {
 		// check network to re-create if needed
-		if err := d.setupHostOnlyNetwork(d.MachineName); err != nil {
+		if hostOnlyAdapter, err = d.setupHostOnlyNetwork(d.MachineName); err != nil {
 			return fmt.Errorf("Error setting up host only network on machine start: %s", err)
 		}
 	}
@@ -479,8 +477,10 @@ func (d *Driver) Start() error {
 		if err != nil {
 			return err
 		}
+
 		if err := d.vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
-			return err
+			// TODO: We could capture the last lines of the vbox log
+			return fmt.Errorf("Unable to start the VM: %s", err)
 		}
 	case state.Paused:
 		if err := d.vbm("controlvm", d.MachineName, "resume", "--type", "headless"); err != nil {
@@ -501,6 +501,55 @@ func (d *Driver) Start() error {
 		return ErrMustEnableVTX
 	}
 
+	log.Infof("Waiting for an IP...")
+	if err := d.waitForIP(); err != nil {
+		return err
+	}
+
+	if hostOnlyAdapter == nil {
+		return nil
+	}
+
+	// Check that the host-only adapter we just created can still be found
+	// Sometimes it is corrupted after the VM is started.
+	nets, err := listHostOnlyAdapters(d.VBoxManager)
+	if err != nil {
+		return err
+	}
+
+	ip, network, err := parseAndValidateCIDR(d.HostOnlyCIDR)
+	if err != nil {
+		return err
+	}
+
+	hostOnlyNet := getHostOnlyAdapter(nets, ip, network.Mask)
+	if hostOnlyNet != nil {
+		// OK, we found a valid host-only adapter
+		return nil
+	}
+
+	// This happens a lot on windows. The adapter has an invalid IP and the VM has the same IP
+	log.Warn("The host-only adapter is corrupted. Let's stop the VM, fix the host-only adapter and restart the VM")
+	if err := d.Stop(); err != nil {
+		return err
+	}
+
+	// We have to be sure the host-only adapter is not used by the VM
+	time.Sleep(5 * time.Second)
+
+	log.Debugf("Fixing %+v...", hostOnlyAdapter)
+	if err := hostOnlyAdapter.SaveIPv4(d.VBoxManager); err != nil {
+		return err
+	}
+
+	// We have to be sure the adapter is updated before starting the VM
+	time.Sleep(5 * time.Second)
+
+	if err := d.vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
+		return fmt.Errorf("Unable to start the VM: %s", err)
+	}
+
+	log.Infof("Waiting for an IP...")
 	return d.waitForIP()
 }
 
@@ -593,8 +642,7 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	stdout, stderr, err := d.vbmOutErr("showvminfo", d.MachineName,
-		"--machinereadable")
+	stdout, stderr, err := d.vbmOutErr("showvminfo", d.MachineName, "--machinereadable")
 	if err != nil {
 		if reMachineNotFound.FindString(stderr) != "" {
 			return state.Error, ErrMachineNotExist
@@ -671,7 +719,7 @@ func (d *Driver) generateDiskImage(size int) error {
 	return createDiskImage(d.diskPath(), size, tarBuf)
 }
 
-func (d *Driver) setupHostOnlyNetwork(machineName string) error {
+func (d *Driver) setupHostOnlyNetwork(machineName string) (*hostOnlyNetwork, error) {
 	hostOnlyCIDR := d.HostOnlyCIDR
 
 	// This is to assist in migrating from version 0.2 to 0.3 format
@@ -682,38 +730,48 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) error {
 
 	ip, network, err := parseAndValidateCIDR(hostOnlyCIDR)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	log.Debugf("Searching for hostonly interface for IPv4: %s and Mask: %s", ip, network.Mask)
+	hostOnlyAdapter, err := getOrCreateHostOnlyNetwork(ip, network.Mask, d.VBoxManager)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug("Removing orphan DHCP servers...")
+	if err := removeOrphanDHCPServers(d.VBoxManager); err != nil {
+		return nil, err
 	}
 
 	dhcpAddr, err := getRandomIPinSubnet(ip)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	log.Debugf("Adding/Modifying DHCP server %q...", dhcpAddr)
 	nAddr := network.IP.To4()
-	lowerDHCPIP := net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100))
-	upperDHCPIP := net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254))
 
-	log.Debugf("using %s for dhcp address", dhcpAddr)
-
-	hostOnlyNetwork, err := getOrCreateHostOnlyNetwork(
-		ip,
-		network.Mask,
-		dhcpAddr,
-		lowerDHCPIP,
-		upperDHCPIP,
-		d.VBoxManager,
-	)
-	if err != nil {
-		return err
+	dhcp := dhcpServer{}
+	dhcp.IPv4.IP = dhcpAddr
+	dhcp.IPv4.Mask = network.Mask
+	dhcp.LowerIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100))
+	dhcp.UpperIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254))
+	dhcp.Enabled = true
+	if err := addHostOnlyDHCPServer(hostOnlyAdapter.Name, dhcp, d.VBoxManager); err != nil {
+		return nil, err
 	}
 
-	return d.vbm("modifyvm", machineName,
+	if err := d.vbm("modifyvm", machineName,
 		"--nic2", "hostonly",
 		"--nictype2", d.HostOnlyNicType,
 		"--nicpromisc2", d.HostOnlyPromiscMode,
-		"--hostonlyadapter2", hostOnlyNetwork.Name,
-		"--cableconnected2", "on")
+		"--hostonlyadapter2", hostOnlyAdapter.Name,
+		"--cableconnected2", "on"); err != nil {
+		return nil, err
+	}
+
+	return hostOnlyAdapter, nil
 }
 
 func parseAndValidateCIDR(hostOnlyCIDR string) (net.IP, *net.IPNet, error) {
