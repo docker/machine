@@ -4,6 +4,8 @@ load ${BASE_TEST_DIR}/helpers.bash
 
 only_if_env DRIVER virtualbox
 
+use_disposable_machine
+
 export CACHE_DIR="$MACHINE_STORAGE_PATH/cache"
 export ISO_PATH="$CACHE_DIR/boot2docker.iso"
 export OLD_ISO_URL="https://github.com/boot2docker/boot2docker/releases/download/v1.4.1/boot2docker.iso"
