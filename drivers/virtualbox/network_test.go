@@ -80,7 +80,7 @@ func TestGetHostOnlyNetworkHappy(t *testing.T) {
 		"HostInterfaceNetworking-vboxnet0": expectedHostOnlyNetwork,
 	}
 
-	n := getHostOnlyNetwork(vboxNets, ip, ipnet.Mask)
+	n := getHostOnlyAdapter(vboxNets, ip, ipnet.Mask)
 	if !reflect.DeepEqual(n, expectedHostOnlyNetwork) {
 		t.Fatalf("Expected result of calling getHostOnlyNetwork to be the same as expected but it was not:\nexpected: %+v\nactual: %+v\n", expectedHostOnlyNetwork, n)
 	}
@@ -107,7 +107,7 @@ func TestGetHostOnlyNetworkNotFound(t *testing.T) {
 		"HostInterfaceNetworking-vboxnet0": vboxNet,
 	}
 
-	n := getHostOnlyNetwork(vboxNets, ip, ipnet.Mask)
+	n := getHostOnlyAdapter(vboxNets, ip, ipnet.Mask)
 	if n != nil {
 		t.Fatalf("Expected vbox net to be nil but it has a value: %+v\n", n)
 	}
@@ -136,7 +136,7 @@ func TestGetHostOnlyNetworkWindows10Bug(t *testing.T) {
 
 	// The Mask that we are passing in will be the "legitimate" mask, so it
 	// must differ from the magic buggy mask.
-	n := getHostOnlyNetwork(vboxNets, ip, net.IPMask(net.ParseIP("255.255.255.0").To4()))
+	n := getHostOnlyAdapter(vboxNets, ip, net.IPMask(net.ParseIP("255.255.255.0").To4()))
 	if !reflect.DeepEqual(n, expectedHostOnlyNetwork) {
 		t.Fatalf("Expected result of calling getHostOnlyNetwork to be the same as expected but it was not:\nexpected: %+v\nactual: %+v\n", expectedHostOnlyNetwork, n)
 	}
@@ -148,7 +148,7 @@ func TestListHostOnlyNetworks(t *testing.T) {
 		stdOut: stdOutOneHostOnlyNetwork,
 	}
 
-	nets, err := listHostOnlyNetworks(vbox)
+	nets, err := listHostOnlyAdapters(vbox)
 
 	assert.Equal(t, 1, len(nets))
 	assert.NoError(t, err)
@@ -161,7 +161,6 @@ func TestListHostOnlyNetworks(t *testing.T) {
 	assert.False(t, net.DHCP)
 	assert.Equal(t, "192.168.99.1", net.IPv4.IP.String())
 	assert.Equal(t, "ffffff00", net.IPv4.Mask.String())
-	assert.Empty(t, net.IPv6.IP)
 	assert.Equal(t, "0a:00:27:00:00:00", net.HwAddr.String())
 	assert.Equal(t, "Ethernet", net.Medium)
 	assert.Equal(t, "Up", net.Status)
@@ -174,7 +173,7 @@ func TestListTwoHostOnlyNetworks(t *testing.T) {
 		stdOut: stdOutTwoHostOnlyNetwork,
 	}
 
-	nets, err := listHostOnlyNetworks(vbox)
+	nets, err := listHostOnlyAdapters(vbox)
 
 	assert.Equal(t, 2, len(nets))
 	assert.NoError(t, err)
@@ -187,7 +186,6 @@ func TestListTwoHostOnlyNetworks(t *testing.T) {
 	assert.False(t, net.DHCP)
 	assert.Equal(t, "169.254.37.187", net.IPv4.IP.String())
 	assert.Equal(t, "ffffff00", net.IPv4.Mask.String())
-	assert.Empty(t, net.IPv6.IP)
 	assert.Equal(t, "0a:00:27:00:00:01", net.HwAddr.String())
 	assert.Equal(t, "Ethernet", net.Medium)
 	assert.Equal(t, "Up", net.Status)
@@ -203,7 +201,7 @@ Name:            vboxnet1
 VBoxNetworkName: HostInterfaceNetworking-vboxnet1`,
 	}
 
-	nets, err := listHostOnlyNetworks(vbox)
+	nets, err := listHostOnlyAdapters(vbox)
 
 	assert.Equal(t, 2, len(nets))
 	assert.NoError(t, err)
@@ -223,7 +221,7 @@ func TestGetHostOnlyNetwork(t *testing.T) {
 		stdOut: stdOutOneHostOnlyNetwork,
 	}
 
-	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nil, nil, nil, vbox)
+	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), vbox)
 
 	assert.NotNil(t, net)
 	assert.Equal(t, "HostInterfaceNetworking-vboxnet0", net.NetworkName)
@@ -243,10 +241,10 @@ NetworkMask:     255.255.255.0
 VBoxNetworkName: HostInterfaceNetworking-vboxnet1`,
 	}
 
-	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nil, nil, nil, vbox)
+	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), vbox)
 
 	assert.Nil(t, net)
-	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only interfaces with the same IP "192.168.99.1". Please remove one.`)
+	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same IP "192.168.99.1". Please remove one.`)
 }
 
 func TestFailIfTwoNetworksHaveSameName(t *testing.T) {
@@ -258,10 +256,10 @@ Name:            vboxnet0
 VBoxNetworkName: HostInterfaceNetworking-vboxnet0`,
 	}
 
-	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nil, nil, nil, vbox)
+	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), vbox)
 
 	assert.Nil(t, net)
-	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only interfaces with the same name "HostInterfaceNetworking-vboxnet0". Please remove one.`)
+	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same name "HostInterfaceNetworking-vboxnet0". Please remove one.`)
 }
 
 func TestGetDHCPServers(t *testing.T) {
@@ -270,7 +268,7 @@ func TestGetDHCPServers(t *testing.T) {
 		stdOut: stdOutListTwoDHCPServers,
 	}
 
-	servers, err := getDHCPServers(vbox)
+	servers, err := listDHCPServers(vbox)
 
 	assert.Equal(t, 2, len(servers))
 	assert.NoError(t, err)
