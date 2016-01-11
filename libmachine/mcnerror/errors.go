@@ -24,3 +24,11 @@ type ErrHostAlreadyExists struct {
 func (e ErrHostAlreadyExists) Error() string {
 	return fmt.Sprintf("Host already exists: %q", e.Name)
 }
+
+type ErrDuringPreCreate struct {
+	Cause error
+}
+
+func (e ErrDuringPreCreate) Error() string {
+	return fmt.Sprintf("Error with pre-create check: %q", e.Cause)
+}
