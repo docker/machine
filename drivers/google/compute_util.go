@@ -88,11 +88,6 @@ func (c *ComputeUtil) disk() (*raw.Disk, error) {
 
 // deleteDisk deletes the persistent disk.
 func (c *ComputeUtil) deleteDisk() error {
-	disk, _ := c.disk()
-	if disk == nil {
-		return nil
-	}
-
 	log.Infof("Deleting disk.")
 	op, err := c.service.Disks.Delete(c.project, c.zone, c.diskName()).Do()
 	if err != nil {
@@ -167,9 +162,8 @@ func (c *ComputeUtil) portsUsed() ([]string, error) {
 	return ports, nil
 }
 
-// openFirewallPorts configures the firewall to open docker and swarm ports.
-func (c *ComputeUtil) openFirewallPorts() error {
-	log.Infof("Opening firewall ports")
+func (c *ComputeUtil) createFirewallRule() error {
+	log.Infof("Opening firewall ports.")
 
 	create := false
 	rule, _ := c.firewallRule()
@@ -219,7 +213,11 @@ func (c *ComputeUtil) instance() (*raw.Instance, error) {
 
 // createInstance creates a GCE VM instance.
 func (c *ComputeUtil) createInstance(d *Driver) error {
-	log.Infof("Creating instance")
+	log.Infof("Creating instance.")
+
+	if err := c.createFirewallRule(); err != nil {
+		return err
+	}
 
 	instance := &raw.Instance{
 		Name:        c.instanceName,
@@ -282,7 +280,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 
-	log.Infof("Waiting for Instance")
+	log.Infof("Waiting for Instance...")
 	if err = c.waitForRegionalOp(op.Name); err != nil {
 		return err
 	}
@@ -292,58 +290,15 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 
-	return c.uploadSSHKey(instance, d.GetSSHKeyPath())
-}
-
-// configureInstance configures an existing instance for use with Docker Machine.
-func (c *ComputeUtil) configureInstance(d *Driver) error {
-	log.Infof("Configuring instance")
-
-	instance, err := c.instance()
+	// Update the SSH Key
+	sshKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
 	if err != nil {
 		return err
 	}
 
-	if err := c.addFirewallTag(instance); err != nil {
-		return err
-	}
-
-	return c.uploadSSHKey(instance, d.GetSSHKeyPath())
-}
-
-// addFirewallTag adds a tag to the instance to match the firewall rule.
-func (c *ComputeUtil) addFirewallTag(instance *raw.Instance) error {
-	log.Infof("Adding tag for the firewall rule")
-
-	tags := instance.Tags
-	for _, tag := range tags.Items {
-		if tag == firewallTargetTag {
-			return nil
-		}
-	}
-
-	tags.Items = append(tags.Items, firewallTargetTag)
-
-	op, err := c.service.Instances.SetTags(c.project, c.zone, instance.Name, tags).Do()
-	if err != nil {
-		return err
-	}
-
-	return c.waitForRegionalOp(op.Name)
-}
-
-// uploadSSHKey updates the instance metadata with the given ssh key.
-func (c *ComputeUtil) uploadSSHKey(instance *raw.Instance, sshKeyPath string) error {
 	log.Infof("Uploading SSH Key")
-
-	sshKey, err := ioutil.ReadFile(sshKeyPath + ".pub")
-	if err != nil {
-		return err
-	}
-
 	metaDataValue := fmt.Sprintf("%s:%s %s\n", c.userName, strings.TrimSpace(string(sshKey)), c.userName)
-
-	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
+	op, err = c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
 		Fingerprint: instance.Metadata.Fingerprint,
 		Items: []*raw.MetadataItems{
 			{
@@ -352,6 +307,10 @@ func (c *ComputeUtil) uploadSSHKey(instance *raw.Instance, sshKeyPath string) er
 			},
 		},
 	}).Do()
+	if err != nil {
+		return err
+	}
+	log.Infof("Waiting for SSH Key")
 
 	return c.waitForRegionalOp(op.Name)
 }
@@ -401,7 +360,6 @@ func (c *ComputeUtil) startInstance() error {
 	return c.waitForRegionalOp(op.Name)
 }
 
-// waitForOp waits for the operation to finish.
 func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 	for {
 		op, err := opGetter()
@@ -409,7 +367,7 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 			return err
 		}
 
-		log.Debugf("Operation %q status: %s", op.Name, op.Status)
+		log.Debugf("operation %q status: %s", op.Name, op.Status)
 		if op.Status == "DONE" {
 			if op.Error != nil {
 				return fmt.Errorf("Operation error: %v", *op.Error.Errors[0])
@@ -421,7 +379,7 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 	return nil
 }
 
-// waitForRegionalOp waits for the regional operation to finish.
+// waitForOp waits for the operation to finish.
 func (c *ComputeUtil) waitForRegionalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
 		return c.service.ZoneOperations.Get(c.project, c.zone, name).Do()
