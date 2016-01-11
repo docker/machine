@@ -1,5 +1,69 @@
 # Changelog
 
+# 0.5.6 (2016-01-11)
+
+General
+
+- `create`
+  - Set swarm master to advertise on port 3376
+  - Fix swarm restart policy
+  - Stop asking for ssh key passwords interactively
+- `env`
+  - Improve documentation
+  - Fix bash on windows
+  - Automatic shell detection on Windows
+- `help`
+  - Don't show the full path to `docker-machine.exe` on windows
+- `ls`
+  - Allow custom format
+  - Improve documentation
+- `restart`
+  - Improve documentation
+- `rm`
+  - Improve documentation
+  - Better user experience when removing multiple hosts
+- `version`
+  - Don't show the full path to `docker-machine.exe` on windows
+- `start`, `stop`, `restart`, `kill`
+  - Better logs and homogeneous behaviour across all drivers
+
+Build
+
+- Introduce CI tests for external binary compatibility
+- Add amazon EC2 integration test
+
+Misc
+
+- Improve BugSnags reports: better shell detection, better windows version detection
+- Update DockerClient dependency
+- Improve bash-completion script
+- Improve documentation for bash-completion
+
+Drivers
+
+- Amazon EC2
+  - Improve documentation
+  - Support optional tags
+  - Option to create EbsOptimized instances
+- Google
+  - Fix remove when instance is stopped
+- Openstack
+  - Flags to import and reuse existing nova keypairs
+- VirtualBox
+  - Fix multiple bugs related to host-only adapters
+  - Retry commands when `VBoxManage` is not ready
+  - Reject VirtualBox versions older that 4.3
+  - Fail with a clear message when Hyper-v installation prevents VirtualBox from working
+  - Print a warning for Boot2Docker v1.9.1, which is known to have an issue with AUFS
+- Vmware Fusion
+  - Support soft links in VM paths
+
+Libmachine
+
+- Fix code sample that uses libmachine
+- libmachine can be used in external applications
+
+
 # 0.5.5 (2015-12-28)
 
 General
