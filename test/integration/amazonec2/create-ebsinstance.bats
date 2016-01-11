@@ -2,31 +2,26 @@
 
 load ${BASE_TEST_DIR}/helpers.bash
 
-force_env DRIVER amazonec2
+only_if_env DRIVER amazonec2
 
-#Use Instance Type that supports EBS Optimize 
-export AWS_INSTANCE_TYPE=m4.large
+use_disposable_machine
 
-only_if_env AWS_DEFAULT_REGION
+require_env AWS_ACCESS_KEY_ID
+require_env AWS_SECRET_ACCESS_KEY
+require_env AWS_VPC_ID
 
-only_if_env AWS_ACCESS_KEY_ID
-
-only_if_env AWS_SECRET_ACCESS_KEY
-
-only_if_env AWS_SUBNET_ID
-
+require_env AWS_DEFAULT_REGION
+require_env AWS_ZONE
 
 @test "$DRIVER: Should Create an EBS Optimized Instance" {
-  
-  machine create -d amazonec2 --amazonec2-use-ebs-optimized-instance $NAME
+    #Use Instance Type that supports EBS Optimize
+    run machine create -d amazonec2 --amazonec2-instance-type=m4.large --amazonec2-use-ebs-optimized-instance $NAME
+    echo ${output}
+    [ "$status" -eq 0 ]
+}
 
-  run docker $(machine config $NAME) run --rm -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION blendle/aws-cli ec2 describe-instances --filters Name=tag:Name,Values=$NAME Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].EbsOptimized' --output text	
-
+@test "$DRIVER: Check the machine is up" {
+    run docker $(machine config $NAME) run --rm -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION -e AWS_ZONE=$AWS_ZONE -e AWS_VPC_ID=$AWS_VPC_ID blendle/aws-cli ec2 describe-instances --filters Name=tag:Name,Values=$NAME Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].EbsOptimized' --output text
+    echo ${output}
     [[ ${lines[*]:-1} =~ "True" ]]
-
- }
-
-
-
- 
- 
+}
