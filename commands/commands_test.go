@@ -12,6 +12,7 @@ import (
 	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/hosttest"
+	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
@@ -190,4 +191,38 @@ func TestSendCrashReport(t *testing.T) {
 
 		assert.Equal(t, test.sent, mockCrashReporter.sent, test.description)
 	}
+}
+
+func TestReturnExitCode1onError(t *testing.T) {
+	command := func(commandLine CommandLine, api libmachine.API) error {
+		return errors.New("foo is not bar")
+	}
+
+	exitCode := checkErrorCodeForCommand(command)
+
+	assert.Equal(t, exitCode, 1)
+}
+
+func TestReturnExitCode3onErrorDuringPreCreate(t *testing.T) {
+	command := func(commandLine CommandLine, api libmachine.API) error {
+		return mcnerror.ErrDuringPreCreate{errors.New("foo is not bar")}
+	}
+
+	exitCode := checkErrorCodeForCommand(command)
+
+	assert.Equal(t, exitCode, 3)
+}
+
+func checkErrorCodeForCommand(command func(commandLine CommandLine, api libmachine.API) error) int {
+	var exitCode int
+
+	defer func(fnOsExit func(code int)) { osExit = fnOsExit }(osExit)
+	osExit = func(code int) {
+		exitCode = code
+	}
+
+	context := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
+	runCommand(command)(context)
+
+	return exitCode
 }
