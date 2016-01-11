@@ -128,7 +128,7 @@ display "Generating github release"
 cp -f script/release/github-release-template.md "${GITHUB_RELEASE_FILE}"
 checkError "Can't find github release template"
 CONTRIBUTORS=$(git log "${LAST_RELEASE_VERSION}".. --format="%aN" --reverse | sort | uniq | awk '{printf "- %s\n", $0 }')
-CHANGELOG=$(git log "${LAST_RELEASE_VERSION}".. --oneline)
+CHANGELOG=$(git log "${LAST_RELEASE_VERSION}".. --oneline | grep -v 'Merge pull request')
 
 CHECKSUM=""
 for file in $(ls bin/docker-machine*); do
