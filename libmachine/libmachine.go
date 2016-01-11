@@ -6,6 +6,8 @@ import (
 
 	"io"
 
+	"time"
+
 	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
@@ -132,6 +134,9 @@ func (api *Client) Create(h *host.Host) error {
 	log.Info("Creating machine...")
 
 	if err := api.performCreate(h); err != nil {
+		// Wait for all the logs to reach the client
+		time.Sleep(2 * time.Second)
+
 		vBoxLog := ""
 		if h.DriverName == "virtualbox" {
 			vBoxLog = filepath.Join(api.GetMachinesDir(), h.Name, h.Name, "Logs", "VBox.log")
