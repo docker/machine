@@ -224,3 +224,15 @@ Example create:
 This will set the swarm scheduling strategy to "binpack" (pack in containers as
 tightly as possible per host instead of spreading them out), and the "heartbeat"
 interval to 5 seconds.
+
+## Pre-create check
+
+Since many drivers require a certain set of conditions to be in place before
+they can successfully perform a create (e.g. VirtualBox should be installed, or
+the provided API credentials should be valid), Docker Machine has a "pre-create
+check" which is specified at the driver level.
+
+If this pre-create check succeeds, Docker Machine will proceed with the creation
+as normal.  If the pre-create check fails, the Docker Machine process will exit
+with status code 3 to indicate that the source of the non-zero exit was the
+pre-create check failing.
