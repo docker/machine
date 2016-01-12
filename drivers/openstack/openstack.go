@@ -566,7 +566,7 @@ func (d *Driver) resolveIds() error {
 		})
 	}
 
-	if d.TenantId == "" {
+	if d.TenantName != "" && d.TenantId == "" {
 		if err := d.initIdentity(); err != nil {
 			return err
 		}
