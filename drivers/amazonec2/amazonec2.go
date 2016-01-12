@@ -655,8 +655,11 @@ func (d *Driver) Remove() error {
 
 func (d *Driver) getClient() *ec2.EC2 {
 	config := aws.NewConfig()
+	alogger := AwsLogger()
 	config = config.WithRegion(d.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	config = config.WithLogger(alogger)
+	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	return ec2.New(session.New(config))
 }
 
