@@ -19,6 +19,7 @@ import (
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/provision"
@@ -124,7 +125,7 @@ func (api *Client) Create(h *host.Host) error {
 	log.Info("Running pre-create checks...")
 
 	if err := h.Driver.PreCreateCheck(); err != nil {
-		return fmt.Errorf("Error with pre-create check: %s", err)
+		return mcnerror.ErrDuringPreCreate{err}
 	}
 
 	if err := api.Save(h); err != nil {

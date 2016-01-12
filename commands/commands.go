@@ -12,6 +12,7 @@ import (
 	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/ssh"
@@ -122,7 +123,11 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 				crashReporter.Send(crashErr)
 			}
 
-			osExit(1)
+			if _, ok := err.(mcnerror.ErrDuringPreCreate); ok {
+				osExit(3)
+			} else {
+				osExit(1)
+			}
 		}
 	}
 }
