@@ -99,7 +99,6 @@ Environment variables and default values:
 | `--amazonec2-monitoring`                 | -                       | `false`          |
 | `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
 
-
 ## Security Group
 
 Note that a security group will be created and associated to the host. This security group will have the following ports opened inbound :
@@ -110,4 +109,3 @@ Note that a security group will be created and associated to the host. This secu
 
 If you specify a security group yourself using the `--amazonec2-security-group` flag, the above ports will be checked and opened and the security group modified.
 If you want more ports to be opened, like application specific ports, use the aws console and modify the configuration manually.
-

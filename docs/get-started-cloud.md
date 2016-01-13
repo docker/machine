@@ -95,10 +95,11 @@ Docker Machine drivers are available for several other cloud providers. For a fu
 
 ### Docker Machine command and driver reference
 
-  * `docker-machine` [create](https://docs.docker.com/machine/reference/create/) command
-  * [Driver options and operating system defaults](https://docs.docker.com/machine/drivers/os-base/)
+-   `docker-machine` [create](https://docs.docker.com/machine/reference/create/) command
+-   [Driver options and operating system defaults](https://docs.docker.com/machine/drivers/os-base/)
 
 ### 3rd-party driver plugins
+
   Several Docker Machine driver plugins for use with other cloud platforms are available from 3rd party contributors. These are use-at-your-own-risk plugins, not maintained by or formally associated with Docker.
 
   See [Available driver plugins](https://github.com/docker/machine/blob/master/docs/AVAILABLE_DRIVER_PLUGINS.md) in the docker/machine repo on GitHub.
