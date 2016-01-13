@@ -866,13 +866,15 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) []*
 	hasDockerPort := false
 	hasSwarmPort := false
 	for _, p := range group.IpPermissions {
-		switch *p.FromPort {
-		case 22:
-			hasSshPort = true
-		case int64(dockerPort):
-			hasDockerPort = true
-		case int64(swarmPort):
-			hasSwarmPort = true
+		if p.FromPort != nil {
+			switch *p.FromPort {
+			case 22:
+				hasSshPort = true
+			case int64(dockerPort):
+				hasDockerPort = true
+			case int64(swarmPort):
+				hasSwarmPort = true
+			}
 		}
 	}
 
