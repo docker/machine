@@ -34,7 +34,7 @@ Options:
 Environment variables and default values:
 
 | CLI option                 | Environment variable | Default                   |
-|----------------------------|----------------------|---------------------------|
+| -------------------------- | -------------------- | ------------------------- |
 | **`--generic-ip-address`** | `GENERIC_IP_ADDRESS` | -                         |
 | `--generic-ssh-key`        | `GENERIC_SSH_KEY`    | _(defers to `ssh-agent`)_ |
 | `--generic-ssh-user`       | `GENERIC_SSH_USER`   | `root`                    |

@@ -12,10 +12,10 @@ several "checklist items" which should be documented.  This document is intended
 to cover the current Docker Machine release process.  It is written for Docker
 Machine core maintainers who might find themselves performing a release.
 
-1. **Get a GITHUB_TOKEN** Check that you have a proper `GITHUB_TOKEN`. This
-   token needs only to have the `repo` scope. The token can be created on github
-   in the settings > Personal Access Token menu.
-1. **Run the release script** At the root of the project, run the following
+1.  **Get a GITHUB_TOKEN** Check that you have a proper `GITHUB_TOKEN`. This
+    token needs only to have the `repo` scope. The token can be created on github
+    in the settings > Personal Access Token menu.
+2.  **Run the release script** At the root of the project, run the following
     command `GITHUB_TOKEN=XXXX script/release.sh X.Y.Z` where `XXXX` is the
     value of the GITHUB_TOKEN generated, `X.Y.Z` the version to release
     ( Explicitly excluding the 'v' prefix, the script takes care of it.). As of
@@ -23,18 +23,18 @@ Machine core maintainers who might find themselves performing a release.
     script has been built to be as resilient as possible, cleaning everything
     it does along its way if necessary. You can run it many times in a row,
     fixing the various bits along the way.
-1. **Update the changelog on github** -- The script generated a list of all
-   commits since last release. You need to edit this manually, getting rid of
-   non critical details, and putting emphasis to what need our users attention.
-1.  **Update the CHANGELOG.md** -- Add the same notes from the previous step to
+3.  **Update the changelog on github** -- The script generated a list of all
+    commits since last release. You need to edit this manually, getting rid of
+    non critical details, and putting emphasis to what need our users attention.
+4.  **Update the CHANGELOG.md** -- Add the same notes from the previous step to
     the `CHANGELOG.md` file in the repository.
-1. **Update the Documentation** -- Ensure that the `docs` branch on GitHub
+5.  **Update the Documentation** -- Ensure that the `docs` branch on GitHub
     (which the Docker docs team uses to deploy from) is up to date with the
     changes to be deployed from the release branch / master.
-1. **Verify the Installation** -- Copy and paste the suggested commands in the
+6.  **Verify the Installation** -- Copy and paste the suggested commands in the
     installation notes to ensure that they work properly.  Best of all, grab an
     (uninvolved) buddy and have them try it.  `docker-machine -v` should give
     them the released version once they have run the install commands.
-1. (Optional) **Drink a Glass of Wine** -- You've worked hard on this release.
+7.  (Optional) **Drink a Glass of Wine** -- You've worked hard on this release.
     You deserve it.  For wine suggestions, please consult your friendly
     neighborhood sommelier.
