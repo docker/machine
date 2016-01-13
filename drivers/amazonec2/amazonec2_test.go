@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"errors"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/commands/commandstest"
@@ -85,8 +87,7 @@ func getTestDriver() (*Driver, error) {
 
 	d := NewDriver(machineTestName, storePath)
 	d.SetConfigFromFlags(getDefaultTestDriverFlags())
-	drv := d.(*Driver)
-	return drv, nil
+	return d, nil
 }
 
 func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {

@@ -3,6 +3,7 @@ package amazonec2
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -52,6 +53,7 @@ var (
 
 type Driver struct {
 	*drivers.BaseDriver
+	clientFactory           func() Ec2Client
 	Id                      string
 	AccessKey               string
 	SecretKey               string
@@ -81,6 +83,10 @@ type Driver struct {
 	UsePrivateIP            bool
 	UseEbsOptimizedInstance bool
 	Monitoring              bool
+}
+
+type clientFactory interface {
+	build(d *Driver) Ec2Client
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -201,9 +207,9 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
-func NewDriver(hostName, storePath string) drivers.Driver {
+func NewDriver(hostName, storePath string) *Driver {
 	id := generateId()
-	return &Driver{
+	driver := &Driver{
 		Id:                id,
 		AMI:               defaultAmiId,
 		Region:            defaultRegion,
@@ -218,6 +224,24 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			StorePath:   storePath,
 		},
 	}
+
+	driver.clientFactory = driver.buildClient
+
+	return driver
+}
+
+func (d *Driver) buildClient() Ec2Client {
+	config := aws.NewConfig()
+	alogger := AwsLogger()
+	config = config.WithRegion(d.Region)
+	config = config.WithCredentials(credentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	config = config.WithLogger(alogger)
+	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
+	return ec2.New(session.New(config))
+}
+
+func (d *Driver) getClient() Ec2Client {
+	return d.clientFactory()
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
@@ -659,16 +683,6 @@ func (d *Driver) Remove() error {
 	}
 
 	return nil
-}
-
-func (d *Driver) getClient() *ec2.EC2 {
-	config := aws.NewConfig()
-	alogger := AwsLogger()
-	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
-	config = config.WithLogger(alogger)
-	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
-	return ec2.New(session.New(config))
 }
 
 func (d *Driver) getInstance() (*ec2.Instance, error) {
