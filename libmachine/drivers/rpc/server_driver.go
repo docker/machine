@@ -3,12 +3,28 @@ package rpcdriver
 import (
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
+	"runtime/debug"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/version"
+)
+
+type Stacker interface {
+	Stack() []byte
+}
+
+type StandardStack struct{}
+
+func (ss *StandardStack) Stack() []byte {
+	return debug.Stack()
+}
+
+var (
+	stdStacker Stacker = &StandardStack{}
 )
 
 func init() {
@@ -108,8 +124,22 @@ func (r *RPCServerDriver) SetConfigRaw(data []byte, _ *struct{}) error {
 	return json.Unmarshal(data, &r.ActualDriver)
 }
 
-func (r *RPCServerDriver) Create(_, _ *struct{}) error {
-	return r.ActualDriver.Create()
+func trapPanic(err *error) {
+	if r := recover(); r != nil {
+		*err = fmt.Errorf("Panic in the driver: %s\n%s", r.(error), stdStacker.Stack())
+	}
+}
+
+func (r *RPCServerDriver) Create(_, _ *struct{}) (err error) {
+	// In an ideal world, plugins wouldn't ever panic.  However, panics
+	// have been known to happen and cause issues.  Therefore, we recover
+	// and do not crash the RPC server completely in the case of a panic
+	// during create.
+	defer trapPanic(&err)
+
+	err = r.ActualDriver.Create()
+
+	return err
 }
 
 func (r *RPCServerDriver) DriverName(_ *struct{}, reply *string) error {
