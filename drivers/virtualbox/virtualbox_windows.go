@@ -1,44 +1,31 @@
 package virtualbox
 
 import (
-	"strings"
-
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/docker/machine/libmachine/log"
 	"golang.org/x/sys/windows/registry"
 )
 
+const PF_VIRT_FIRMWARE_ENABLED = 21
+
 // IsVTXDisabled checks if VT-X is disabled in the BIOS. If it is, the vm will fail to start.
 // If we can't be sure it is disabled, we carry on and will check the vm logs after it's started.
 func (d *Driver) IsVTXDisabled() bool {
-	errmsg := "Couldn't check that VT-X/AMD-v is enabled. Will check that the vm is properly created: %v"
-	output, err := cmdOutput("wmic", "cpu", "get", "VirtualizationFirmwareEnabled")
+	mod := syscall.NewLazyDLL("kernel32.dll")
+	proc := mod.NewProc("IsProcessorFeaturePresent")
+
+	ret, _, err := proc.Call(uintptr(PF_VIRT_FIRMWARE_ENABLED))
 	if err != nil {
-		log.Debugf(errmsg, err)
+		log.Debugf("%s: %v", ErrMsgUnableToCheckVTX, err)
 		return false
 	}
 
-	disabled := strings.Contains(output, "FALSE")
-	return disabled
-}
-
-// cmdOutput runs a shell command and returns its output.
-func cmdOutput(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	log.Debugf("COMMAND: %v %v", name, strings.Join(args, " "))
-
-	stdout, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	log.Debugf("STDOUT:\n{\n%v}", string(stdout))
-
-	return string(stdout), nil
+	return ret == 0
 }
 
 func detectVBoxManageCmd() string {

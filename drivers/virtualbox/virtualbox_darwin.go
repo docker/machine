@@ -12,7 +12,7 @@ import (
 func (d *Driver) IsVTXDisabled() bool {
 	features, err := syscall.Sysctl("machdep.cpu.features")
 	if err != nil {
-		log.Debugf("Couldn't check that VT-X/AMD-v is enabled. Will check that the vm is properly created: %v", err)
+		log.Debugf("%s: %v", ErrMsgUnableToCheckVTX, err)
 		return false
 	}
 	return isVTXDisabled(features)
