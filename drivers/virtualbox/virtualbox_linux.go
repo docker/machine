@@ -13,9 +13,10 @@ import (
 func (d *Driver) IsVTXDisabled() bool {
 	cpuinfo, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {
-		log.Debugf("Couldn't check that VT-X/AMD-v is enabled. Will check that the vm is properly created: %v", err)
+		log.Debugf("%s: %v", ErrMsgUnableToCheckVTX, err)
 		return false
 	}
+
 	return isVTXDisabled(cpuinfo)
 }
 
