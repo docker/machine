@@ -10,26 +10,16 @@ parent="smn_machine_drivers"
 
 # Amazon Web Services
 
-Create machines on [Amazon Web Services](http://aws.amazon.com). To create machines on [Amazon Web Services](http://aws.amazon.com), you must supply three required parameters:
+Create machines on [Amazon Web Services](http://aws.amazon.com). To create machines on [Amazon Web Services](http://aws.amazon.com), you must supply two required parameters:
 
 -   Access Key ID
 -   Secret Access Key
--   VPC ID
 
-Obtain your IDs and Keys from AWS. To find the VPC ID:
-
-1.  Login to the AWS console
-2.  Go to **Services -> VPC -> Your VPCs**.
-3.  Locate the VPC ID you want from the _VPC_ column.
-4.  Go to **Services -> VPC -> Subnets**. Examine the _Availability Zone_ column to verify that zone `a` exists and matches your VPC ID.
-
-    For example, `us-east1-a` is in the `a` availability zone. If the `a` zone is not present, you can create a new subnet in that zone or specify a different zone when you create the machine.
+Obtain your IDs and Keys from AWS.
 
 To create the machine instance, specify `--driver amazonec2` and the three required parameters.
 
-    $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C********* --amazonec2-vpc-id vpc-****** aws01
-
-This example assumes the VPC ID was found in the `a` availability zone. Use the`--amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
+    $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C*******  aws01
 
 ## Options
 
@@ -38,7 +28,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 -   `--amazonec2-session-token`: Your session token for the Amazon Web Services API.
 -   `--amazonec2-ami`: The AMI ID of the instance to use.
 -   `--amazonec2-region`: The region to use when launching the instance.
--   `--amazonec2-vpc-id`: **required** Your VPC ID to launch the instance in.
+-   `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
 -   `--amazonec2-zone`: The AWS zone to launch the instance in (i.e. one of a,b,c,d,e).
 -   `--amazonec2-subnet-id`: AWS VPC subnet id.
 -   `--amazonec2-security-group`: AWS VPC security group name.
@@ -81,7 +71,7 @@ Environment variables and default values:
 | `--amazonec2-session-token`              | `AWS_SESSION_TOKEN`     | -                |
 | `--amazonec2-ami`                        | `AWS_AMI`               | `ami-5f709f34`   |
 | `--amazonec2-region`                     | `AWS_DEFAULT_REGION`    | `us-east-1`      |
-| **`--amazonec2-vpc-id`**                 | `AWS_VPC_ID`            | -                |
+| `--amazonec2-vpc-id`                     | `AWS_VPC_ID`            | -                |
 | `--amazonec2-zone`                       | `AWS_ZONE`              | `a`              |
 | `--amazonec2-subnet-id`                  | `AWS_SUBNET_ID`         | -                |
 | `--amazonec2-security-group`             | `AWS_SECURITY_GROUP`    | `docker-machine` |
@@ -109,3 +99,23 @@ Note that a security group will be created and associated to the host. This secu
 
 If you specify a security group yourself using the `--amazonec2-security-group` flag, the above ports will be checked and opened and the security group modified.
 If you want more ports to be opened, like application specific ports, use the aws console and modify the configuration manually.
+
+
+## VPC ID
+We determine your default vpc id at the start of a command.
+In some cases, either because your account does not have a default vpc, or you don't want to use the default one, you can specify a vpc with the `--amazonec2-vpc-id` flag.
+
+To find the VPC ID:
+
+1.  Login to the AWS console
+2.  Go to **Services -> VPC -> Your VPCs**.
+3.  Locate the VPC ID you want from the _VPC_ column.
+4.  Go to **Services -> VPC -> Subnets**. Examine the _Availability Zone_ column to verify that zone `a` exists and matches your VPC ID.
+
+    For example, `us-east1-a` is in the `a` availability zone. If the `a` zone is not present, you can create a new subnet in that zone or specify a different zone when you create the machine.
+
+To create a machine with a non-default vpc-id:
+
+    $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C********* --amazonec2-vpc-id vpc-****** aws02
+
+This example assumes the VPC ID was found in the `a` availability zone. Use the`--amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
