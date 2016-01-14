@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"errors"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/commands/commandstest"
@@ -85,8 +87,7 @@ func getTestDriver() (*Driver, error) {
 
 	d := NewDriver(machineTestName, storePath)
 	d.SetConfigFromFlags(getDefaultTestDriverFlags())
-	drv := d.(*Driver)
-	return drv, nil
+	return d, nil
 }
 
 func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
@@ -237,4 +238,70 @@ func TestSetConfigFromFlags(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Empty(t, checkFlags.InvalidFlags)
+}
+
+type fakeEC2WithDescribe struct {
+	*ec2.EC2
+	output *ec2.DescribeAccountAttributesOutput
+	err    error
+}
+
+func (f *fakeEC2WithDescribe) DescribeAccountAttributes(input *ec2.DescribeAccountAttributesInput) (*ec2.DescribeAccountAttributesOutput, error) {
+	return f.output, f.err
+}
+
+func TestFindDefaultVPC(t *testing.T) {
+	defaultVpc := "default-vpc"
+	vpcName := "vpc-9999"
+
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2WithDescribe{
+			output: &ec2.DescribeAccountAttributesOutput{
+				AccountAttributes: []*ec2.AccountAttribute{
+					{
+						AttributeName: &defaultVpc,
+						AttributeValues: []*ec2.AccountAttributeValue{
+							{AttributeValue: &vpcName},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	vpc, err := driver.getDefaultVPCId()
+
+	assert.Equal(t, "vpc-9999", vpc)
+	assert.NoError(t, err)
+}
+
+func TestDefaultVPCIsMissing(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2WithDescribe{
+			output: &ec2.DescribeAccountAttributesOutput{
+				AccountAttributes: []*ec2.AccountAttribute{},
+			},
+		}
+	}
+
+	vpc, err := driver.getDefaultVPCId()
+
+	assert.EqualError(t, err, "No default-vpc attribute")
+	assert.Empty(t, vpc)
+}
+
+func TestDescribeAccountAttributeFails(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2WithDescribe{
+			err: errors.New("Not Found"),
+		}
+	}
+
+	vpc, err := driver.getDefaultVPCId()
+
+	assert.EqualError(t, err, "Not Found")
+	assert.Empty(t, vpc)
 }

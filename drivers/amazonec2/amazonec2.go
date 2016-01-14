@@ -3,6 +3,7 @@ package amazonec2
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -46,12 +47,16 @@ const (
 )
 
 var (
-	dockerPort = 2376
-	swarmPort  = 3376
+	dockerPort                  = 2376
+	swarmPort                   = 3376
+	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option")
+	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option")
+	errorNoVPCIdFound           = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
 )
 
 type Driver struct {
 	*drivers.BaseDriver
+	clientFactory           func() Ec2Client
 	Id                      string
 	AccessKey               string
 	SecretKey               string
@@ -81,6 +86,10 @@ type Driver struct {
 	UsePrivateIP            bool
 	UseEbsOptimizedInstance bool
 	Monitoring              bool
+}
+
+type clientFactory interface {
+	build(d *Driver) Ec2Client
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -201,9 +210,9 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
-func NewDriver(hostName, storePath string) drivers.Driver {
+func NewDriver(hostName, storePath string) *Driver {
 	id := generateId()
-	return &Driver{
+	driver := &Driver{
 		Id:                id,
 		AMI:               defaultAmiId,
 		Region:            defaultRegion,
@@ -218,6 +227,24 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			StorePath:   storePath,
 		},
 	}
+
+	driver.clientFactory = driver.buildClient
+
+	return driver
+}
+
+func (d *Driver) buildClient() Ec2Client {
+	config := aws.NewConfig()
+	alogger := AwsLogger()
+	config = config.WithRegion(d.Region)
+	config = config.WithCredentials(credentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	config = config.WithLogger(alogger)
+	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
+	return ec2.New(session.New(config))
+}
+
+func (d *Driver) getClient() Ec2Client {
+	return d.clientFactory()
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
@@ -258,15 +285,22 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessKey == "" {
-		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
+		return errorMissingAccessKeyOption
 	}
 
 	if d.SecretKey == "" {
-		return fmt.Errorf("amazonec2 driver requires the --amazonec2-secret-key option")
+		return errorMissingSecretKeyOption
+	}
+
+	if d.VpcId == "" {
+		d.VpcId, err = d.getDefaultVPCId()
+		if err != nil {
+			log.Warnf("Couldn't determine your account Default VPC ID : %q", err)
+		}
 	}
 
 	if d.SubnetId == "" && d.VpcId == "" {
-		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
+		return errorNoVPCIdFound
 	}
 
 	if d.SubnetId != "" && d.VpcId != "" {
@@ -608,7 +642,7 @@ func (d *Driver) GetSSHHostname() (string, error) {
 
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
-		d.SSHUser = "ubuntu"
+		d.SSHUser = defaultSSHUser
 	}
 
 	return d.SSHUser
@@ -659,16 +693,6 @@ func (d *Driver) Remove() error {
 	}
 
 	return nil
-}
-
-func (d *Driver) getClient() *ec2.EC2 {
-	config := aws.NewConfig()
-	alogger := AwsLogger()
-	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
-	config = config.WithLogger(alogger)
-	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
-	return ec2.New(session.New(config))
 }
 
 func (d *Driver) getInstance() (*ec2.Instance, error) {
@@ -936,6 +960,21 @@ func (d *Driver) deleteKeyPair() error {
 	}
 
 	return nil
+}
+
+func (d *Driver) getDefaultVPCId() (string, error) {
+	output, err := d.getClient().DescribeAccountAttributes(&ec2.DescribeAccountAttributesInput{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, attribute := range output.AccountAttributes {
+		if *attribute.AttributeName == "default-vpc" {
+			return *attribute.AttributeValues[0].AttributeValue, nil
+		}
+	}
+
+	return "", errors.New("No default-vpc attribute")
 }
 
 func generateId() string {
