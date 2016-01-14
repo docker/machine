@@ -42,7 +42,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 
 	if swarmOptions.Master {
 		advertiseMasterInfo := fmt.Sprintf("%s:%s", ip, "3376")
-		cmd := fmt.Sprintf("manage --tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy %s --advertise %s",
+		cmd := fmt.Sprintf("manage --tlsverify --tlscacert=%s --tlscert=%s --tlskey=%s -H %s --strategy %s --replication  --advertise %s",
 			authOptions.CaCertRemotePath,
 			authOptions.ServerCertRemotePath,
 			authOptions.ServerKeyRemotePath,
