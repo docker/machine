@@ -18,7 +18,7 @@ guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md).
 
 The requirements to build Machine are:
 
-1.  A running instance of Docker or a Golang 1.5.2 development environment
+1.  A running instance of Docker or a Golang 1.5.3 development environment
 2.  The `bash` shell
 3.  [Make](https://www.gnu.org/software/make/)
 
