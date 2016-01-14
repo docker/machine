@@ -289,8 +289,15 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("amazonec2 driver requires the --amazonec2-secret-key option")
 	}
 
+	if d.VpcId == "" {
+		d.VpcId, err = d.getDefaultVPCId()
+		if err != nil {
+			log.Errorf("couldn't determine your account Default VPC ID : %q", err)
+		}
+	}
+
 	if d.SubnetId == "" && d.VpcId == "" {
-		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option")
+		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
 	}
 
 	if d.SubnetId != "" && d.VpcId != "" {
@@ -950,6 +957,21 @@ func (d *Driver) deleteKeyPair() error {
 	}
 
 	return nil
+}
+
+func (d *Driver) getDefaultVPCId() (string, error) {
+	output, err := d.getClient().DescribeAccountAttributes(&ec2.DescribeAccountAttributesInput{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, attribute := range output.AccountAttributes {
+		if *attribute.AttributeName == "default-vpc" {
+			return *attribute.AttributeValues[0].AttributeValue, nil
+		}
+	}
+
+	return "", errors.New("No default-vpc attribute")
 }
 
 func generateId() string {
