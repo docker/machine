@@ -240,34 +240,10 @@ func TestSetConfigFromFlags(t *testing.T) {
 	assert.Empty(t, checkFlags.InvalidFlags)
 }
 
-type fakeEC2WithDescribe struct {
-	*ec2.EC2
-	output *ec2.DescribeAccountAttributesOutput
-	err    error
-}
-
-func (f *fakeEC2WithDescribe) DescribeAccountAttributes(input *ec2.DescribeAccountAttributesInput) (*ec2.DescribeAccountAttributesOutput, error) {
-	return f.output, f.err
-}
-
 func TestFindDefaultVPC(t *testing.T) {
-	defaultVpc := "default-vpc"
-	vpcName := "vpc-9999"
-
 	driver := NewDriver("machineFoo", "path")
 	driver.clientFactory = func() Ec2Client {
-		return &fakeEC2WithDescribe{
-			output: &ec2.DescribeAccountAttributesOutput{
-				AccountAttributes: []*ec2.AccountAttribute{
-					{
-						AttributeName: &defaultVpc,
-						AttributeValues: []*ec2.AccountAttributeValue{
-							{AttributeValue: &vpcName},
-						},
-					},
-				},
-			},
-		}
+		return &fakeEC2WithLogin{}
 	}
 
 	vpc, err := driver.getDefaultVPCId()
@@ -305,3 +281,12 @@ func TestDescribeAccountAttributeFails(t *testing.T) {
 	assert.EqualError(t, err, "Not Found")
 	assert.Empty(t, vpc)
 }
+
+}
+
+}
+
+}
+
+}
+

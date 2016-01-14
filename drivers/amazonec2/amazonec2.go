@@ -15,7 +15,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/libmachine/drivers"
@@ -57,6 +56,7 @@ var (
 type Driver struct {
 	*drivers.BaseDriver
 	clientFactory           func() Ec2Client
+	awsCredentials          awsCredentials
 	Id                      string
 	AccessKey               string
 	SecretKey               string
@@ -226,6 +226,7 @@ func NewDriver(hostName, storePath string) *Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
+		awsCredentials: &defaultAWSCredentials{},
 	}
 
 	driver.clientFactory = driver.buildClient
@@ -237,7 +238,7 @@ func (d *Driver) buildClient() Ec2Client {
 	config := aws.NewConfig()
 	alogger := AwsLogger()
 	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	config = config.WithCredentials(d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	return ec2.New(session.New(config))
