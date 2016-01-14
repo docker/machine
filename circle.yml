@@ -6,7 +6,7 @@ machine:
     - git clone https://github.com/sstephenson/bats.git && cd bats && sudo ./install.sh /usr/local
 
   post:
-    - gvm install go1.5.2 -B --name=stable
+    - gvm install go1.5.3 -B --name=stable
 
   environment:
   # Convenient shortcuts to "common" locations
