@@ -47,8 +47,11 @@ const (
 )
 
 var (
-	dockerPort = 2376
-	swarmPort  = 3376
+	dockerPort                  = 2376
+	swarmPort                   = 3376
+	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option")
+	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option")
+	errorNoVPCIdFound           = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
 )
 
 type Driver struct {
@@ -282,22 +285,22 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessKey == "" {
-		return fmt.Errorf("amazonec2 driver requires the --amazonec2-access-key option")
+		return errorMissingAccessKeyOption
 	}
 
 	if d.SecretKey == "" {
-		return fmt.Errorf("amazonec2 driver requires the --amazonec2-secret-key option")
+		return errorMissingSecretKeyOption
 	}
 
 	if d.VpcId == "" {
 		d.VpcId, err = d.getDefaultVPCId()
 		if err != nil {
-			log.Errorf("couldn't determine your account Default VPC ID : %q", err)
+			log.Warnf("Couldn't determine your account Default VPC ID : %q", err)
 		}
 	}
 
 	if d.SubnetId == "" && d.VpcId == "" {
-		return fmt.Errorf("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
+		return errorNoVPCIdFound
 	}
 
 	if d.SubnetId != "" && d.VpcId != "" {
