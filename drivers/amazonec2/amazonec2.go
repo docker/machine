@@ -639,7 +639,7 @@ func (d *Driver) GetSSHHostname() (string, error) {
 
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
-		d.SSHUser = "ubuntu"
+		d.SSHUser = defaultSSHUser
 	}
 
 	return d.SSHUser
