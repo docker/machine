@@ -14,6 +14,7 @@ import (
 const (
 	testSSHPort    = 22
 	testDockerPort = 2376
+	testSwarmPort  = 3376
 )
 
 var (
@@ -85,6 +86,29 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 	perms := driver.configureSecurityGroupPermissions(group)
 
 	assert.Empty(t, perms)
+}
+
+func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
+	driver := NewTestDriver()
+	driver.SwarmMaster = true
+	group := securityGroup
+	group.IpPermissions = []*ec2.IpPermission{
+		{
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(testSSHPort),
+			ToPort:     aws.Int64(testSSHPort),
+		},
+		{
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(testDockerPort),
+			ToPort:     aws.Int64(testDockerPort),
+		},
+	}
+
+	perms := driver.configureSecurityGroupPermissions(group)
+
+	assert.Len(t, perms, 1)
+	assert.Equal(t, testSwarmPort, *perms[0].FromPort)
 }
 
 func TestValidateAwsRegionValid(t *testing.T) {
