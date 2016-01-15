@@ -87,6 +87,7 @@ type Driver struct {
 	UseEbsOptimizedInstance bool
 	Monitoring              bool
 	SSHPrivateKeyPath       string
+	RetryCount              int
 }
 
 type clientFactory interface {
@@ -213,6 +214,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "SSH Key for Instance",
 			EnvVar: "AWS_SSH_KEYPATH",
 		},
+		mcnflag.IntFlag{
+			Name:  "amazonec2-retries",
+			Usage: "Set retry count for recoverable failures (use -1 to disable)",
+			Value: 5,
+		},
 	}
 }
 
@@ -247,6 +253,7 @@ func (d *Driver) buildClient() Ec2Client {
 	config = config.WithCredentials(d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
+	config = config.WithMaxRetries(d.RetryCount)
 	return ec2.New(session.New(config))
 }
 
@@ -291,6 +298,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
 	d.SetSwarmConfigFromFlags(flags)
+	d.RetryCount = flags.Int("amazonec2-retries")
 
 	if d.AccessKey == "" && d.SecretKey == "" {
 		credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
