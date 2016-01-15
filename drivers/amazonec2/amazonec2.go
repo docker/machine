@@ -86,6 +86,7 @@ type Driver struct {
 	UsePrivateIP            bool
 	UseEbsOptimizedInstance bool
 	Monitoring              bool
+	SSHPrivateKeyPath       string
 }
 
 type clientFactory interface {
@@ -207,6 +208,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "amazonec2-use-ebs-optimized-instance",
 			Usage: "Create an EBS optimized instance",
 		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-ssh-keypath",
+			Usage:  "SSH Key for Instance",
+			EnvVar: "AWS_SSH_KEYPATH",
+		},
 	}
 }
 
@@ -283,6 +289,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
+	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessKey == "" && d.SecretKey == "" {
@@ -738,11 +745,27 @@ func (d *Driver) waitForInstance() error {
 }
 
 func (d *Driver) createKeyPair() error {
-	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
-		return err
+
+	keyPath := ""
+
+	if d.SSHPrivateKeyPath == "" {
+		log.Debugf("Creating New SSH Key")
+		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+			return err
+		}
+		keyPath = d.GetSSHKeyPath()
+	} else {
+		log.Debugf("Using ExistingKeyPair: %s", d.SSHPrivateKeyPath)
+		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath, d.GetSSHKeyPath()); err != nil {
+			return err
+		}
+		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
+			return err
+		}
+		keyPath = d.SSHPrivateKeyPath
 	}
 
-	publicKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
+	publicKey, err := ioutil.ReadFile(keyPath + ".pub")
 	if err != nil {
 		return err
 	}
