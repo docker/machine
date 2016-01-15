@@ -7,6 +7,14 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
+type errStateInvalidForSSH struct {
+	HostName string
+}
+
+func (e errStateInvalidForSSH) Error() string {
+	return fmt.Sprintf("Error: Cannot run SSH command: Host %q is not running", e.HostName)
+}
+
 func cmdSSH(c CommandLine, api libmachine.API) error {
 	// Check for help flag -- Needed due to SkipFlagParsing
 	firstArg := c.Args().First()
@@ -31,7 +39,7 @@ func cmdSSH(c CommandLine, api libmachine.API) error {
 	}
 
 	if currentState != state.Running {
-		return fmt.Errorf("Error: Cannot run SSH command: Host %q is not running", host.Name)
+		return errStateInvalidForSSH{host.Name}
 	}
 
 	client, err := host.CreateSSHClient()

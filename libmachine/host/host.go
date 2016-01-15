@@ -21,9 +21,22 @@ import (
 )
 
 var (
-	validHostNamePattern              = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-\.]*$`)
-	errMachineMustBeRunningForUpgrade = errors.New("Error: machine must be running to upgrade.")
+	validHostNamePattern                               = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-\.]*$`)
+	errMachineMustBeRunningForUpgrade                  = errors.New("Error: machine must be running to upgrade.")
+	stdSSHClientCreator               SSHClientCreator = &StandardSSHClientCreator{}
 )
+
+type SSHClientCreator interface {
+	CreateSSHClient(d drivers.Driver) (ssh.Client, error)
+}
+
+type StandardSSHClientCreator struct {
+	drivers.Driver
+}
+
+func SetSSHClientCreator(creator SSHClientCreator) {
+	stdSSHClientCreator = creator
+}
 
 type Host struct {
 	ConfigVersion int
@@ -58,22 +71,26 @@ func (h *Host) RunSSHCommand(command string) (string, error) {
 }
 
 func (h *Host) CreateSSHClient() (ssh.Client, error) {
-	addr, err := h.Driver.GetSSHHostname()
+	return stdSSHClientCreator.CreateSSHClient(h.Driver)
+}
+
+func (creator *StandardSSHClientCreator) CreateSSHClient(d drivers.Driver) (ssh.Client, error) {
+	addr, err := d.GetSSHHostname()
 	if err != nil {
 		return ssh.ExternalClient{}, err
 	}
 
-	port, err := h.Driver.GetSSHPort()
+	port, err := d.GetSSHPort()
 	if err != nil {
 		return ssh.ExternalClient{}, err
 	}
 
 	auth := &ssh.Auth{}
-	if h.Driver.GetSSHKeyPath() != "" {
-		auth.Keys = []string{h.Driver.GetSSHKeyPath()}
+	if d.GetSSHKeyPath() != "" {
+		auth.Keys = []string{d.GetSSHKeyPath()}
 	}
 
-	return ssh.NewClient(h.Driver.GetSSHUsername(), addr, port, auth)
+	return ssh.NewClient(d.GetSSHUsername(), addr, port, auth)
 }
 
 func (h *Host) runActionForState(action func() error, desiredState state.State) error {
