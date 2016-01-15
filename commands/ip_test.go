@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/docker/machine/drivers/fakedriver"
+	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/libmachinetest"
 	"github.com/docker/machine/libmachine/state"
@@ -17,30 +18,62 @@ func TestCmdIPMissingMachineName(t *testing.T) {
 
 	err := cmdURL(commandLine, api)
 
-	assert.EqualError(t, err, "Error: Expected one machine name as an argument")
+	assert.Equal(t, err, ErrNoDefault)
 }
 
 func TestCmdIP(t *testing.T) {
-	commandLine := &commandstest.FakeCommandLine{
-		CliArgs: []string{"machine"},
-	}
-	api := &libmachinetest.FakeAPI{
-		Hosts: []*host.Host{
-			{
-				Name: "machine",
-				Driver: &fakedriver.Driver{
-					MockState: state.Running,
-					MockIP:    "1.2.3.4",
+	testCases := []struct {
+		commandLine CommandLine
+		api         libmachine.API
+		expectedErr error
+		expectedOut string
+	}{
+		{
+			commandLine: &commandstest.FakeCommandLine{
+				CliArgs: []string{"machine"},
+			},
+			api: &libmachinetest.FakeAPI{
+				Hosts: []*host.Host{
+					{
+						Name: "machine",
+						Driver: &fakedriver.Driver{
+							MockState: state.Running,
+							MockIP:    "1.2.3.4",
+						},
+					},
 				},
 			},
+			expectedErr: nil,
+			expectedOut: "1.2.3.4\n",
+		},
+		{
+			commandLine: &commandstest.FakeCommandLine{
+				CliArgs: []string{},
+			},
+			api: &libmachinetest.FakeAPI{
+				Hosts: []*host.Host{
+					{
+						Name: "default",
+						Driver: &fakedriver.Driver{
+							MockState: state.Running,
+							MockIP:    "1.2.3.4",
+						},
+					},
+				},
+			},
+			expectedErr: nil,
+			expectedOut: "1.2.3.4\n",
 		},
 	}
 
-	stdoutGetter := commandstest.NewStdoutGetter()
-	defer stdoutGetter.Stop()
+	for _, tc := range testCases {
+		stdoutGetter := commandstest.NewStdoutGetter()
 
-	err := cmdIP(commandLine, api)
+		err := cmdIP(tc.commandLine, tc.api)
 
-	assert.NoError(t, err)
-	assert.Equal(t, "1.2.3.4\n", stdoutGetter.Output())
+		assert.Equal(t, tc.expectedErr, err)
+		assert.Equal(t, tc.expectedOut, stdoutGetter.Output())
+
+		stdoutGetter.Stop()
+	}
 }

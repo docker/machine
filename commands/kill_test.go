@@ -17,7 +17,7 @@ func TestCmdKillMissingMachineName(t *testing.T) {
 
 	err := cmdKill(commandLine, api)
 
-	assert.EqualError(t, err, "Error: Expected to get one or more machine names as arguments")
+	assert.Equal(t, ErrNoDefault, err)
 }
 
 func TestCmdKill(t *testing.T) {

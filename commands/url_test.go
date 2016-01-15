@@ -17,7 +17,7 @@ func TestCmdURLMissingMachineName(t *testing.T) {
 
 	err := cmdURL(commandLine, api)
 
-	assert.EqualError(t, err, "Error: Expected one machine name as an argument")
+	assert.Equal(t, ErrNoDefault, err)
 }
 
 func TestCmdURLTooManyNames(t *testing.T) {

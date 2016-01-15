@@ -14,11 +14,12 @@ func cmdConfig(c CommandLine, api libmachine.API) error {
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
-	if len(c.Args()) != 1 {
-		return ErrExpectedOneMachine
+	target, err := targetHost(c, api)
+	if err != nil {
+		return err
 	}
 
-	host, err := api.Load(c.Args().First())
+	host, err := api.Load(target)
 	if err != nil {
 		return err
 	}

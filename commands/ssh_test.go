@@ -53,10 +53,10 @@ func TestCmdSSH(t *testing.T) {
 		},
 		{
 			commandLine: &commandstest.FakeCommandLine{
-				CliArgs: []string{""},
+				CliArgs: []string{},
 			},
 			api:         &libmachinetest.FakeAPI{},
-			expectedErr: ErrExpectedOneMachine,
+			expectedErr: ErrNoDefault,
 		},
 		{
 			commandLine: &commandstest.FakeCommandLine{
