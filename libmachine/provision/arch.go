@@ -94,9 +94,11 @@ func (provisioner *ArchProvisioner) Provision(swarmOptions swarm.Options, authOp
 	provisioner.EngineOptions = engineOptions
 	swarmOptions.Env = engineOptions.Env
 
-	if provisioner.EngineOptions.StorageDriver == "" {
-		provisioner.EngineOptions.StorageDriver = "overlay"
+	storageDriver, err := decideStorageDriver(provisioner, "overlay", engineOptions.StorageDriver)
+	if err != nil {
+		return err
 	}
+	provisioner.EngineOptions.StorageDriver = storageDriver
 
 	// HACK: since Arch does not come with sudo by default we install
 	log.Debug("Installing sudo")

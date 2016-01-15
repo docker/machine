@@ -159,9 +159,11 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 	swarmOptions.Env = engineOptions.Env
 
 	// set default storage driver for redhat
-	if provisioner.EngineOptions.StorageDriver == "" {
-		provisioner.EngineOptions.StorageDriver = "devicemapper"
+	storageDriver, err := decideStorageDriver(provisioner, "devicemapper", engineOptions.StorageDriver)
+	if err != nil {
+		return err
 	}
+	provisioner.EngineOptions.StorageDriver = storageDriver
 
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err
