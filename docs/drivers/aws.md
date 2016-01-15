@@ -68,6 +68,7 @@ You can use environment variables:
 -   `--amazonec2-private-address-only`: Use the private IP address only.
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 -   `--amazonec2-use-ebs-optimized-instance`: Create an EBS Optimized Instance, instance type must support it.
+-   `--amazonec2-ssh-keypath`: Path to Private Key file to use for instance. Matching public key with .pub extension should exist
 
 By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
 
@@ -111,6 +112,7 @@ Environment variables and default values:
 | `--amazonec2-private-address-only`       | -                       | `false`          |
 | `--amazonec2-monitoring`                 | -                       | `false`          |
 | `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
+| `--amazonec2-ssh-keypath`                |`AWS_SSH_KEYPATH`        | -                |
 
 ## Security Group
 Note that a security group will be created and associated to the host. This security group will have the following ports opened inbound:
