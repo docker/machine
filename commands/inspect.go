@@ -21,12 +21,17 @@ var funcMap = template.FuncMap{
 }
 
 func cmdInspect(c CommandLine, api libmachine.API) error {
-	if len(c.Args()) == 0 {
+	if len(c.Args()) > 1 {
 		c.ShowHelp()
 		return ErrExpectedOneMachine
 	}
 
-	host, err := api.Load(c.Args().First())
+	target, err := targetHost(c, api)
+	if err != nil {
+		return err
+	}
+
+	host, err := api.Load(target)
 	if err != nil {
 		return err
 	}
