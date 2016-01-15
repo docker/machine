@@ -41,5 +41,5 @@ func validateAwsRegion(region string) (string, error) {
 		}
 	}
 
-	return "", errors.New("invalid region specified")
+	return "", errors.New("Invalid region specified")
 }
