@@ -415,8 +415,15 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Restart() error {
-	_, _, err := vmrun("reset", d.vmxPath(), "nogui")
-	return err
+	// Stop VM gracefully
+	if err := d.Stop(); err != nil {
+		return err
+	}
+	// Start it again and mount shared folder
+	if err := d.Start(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *Driver) Kill() error {
