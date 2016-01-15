@@ -1,8 +1,6 @@
 package amazonec2
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"errors"
@@ -10,20 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/commands/commandstest"
-	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/libmachine/drivers"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	testSSHPort           = 22
-	testDockerPort        = 2376
-	testStoreDir          = ".store-test"
-	machineTestName       = "test-host"
-	machineTestDriverName = "none"
-	machineTestStorePath  = "/test/path"
-	machineTestCaCert     = "test-cert"
-	machineTestPrivateKey = "test-key"
+	testSSHPort    = 22
+	testDockerPort = 2376
 )
 
 var (
@@ -34,85 +24,17 @@ var (
 	}
 )
 
-func cleanup() error {
-	return os.RemoveAll(testStoreDir)
-}
-
-func getTestStorePath() (string, error) {
-	tmpDir, err := ioutil.TempDir("", "machine-test-")
-	if err != nil {
-		return "", err
-	}
-	mcndirs.BaseDir = tmpDir
-	return tmpDir, nil
-}
-
-func getDefaultTestDriverFlags() *commandstest.FakeFlagger {
-	return &commandstest.FakeFlagger{
-		Data: map[string]interface{}{
-			"name":                            "test",
-			"url":                             "unix:///var/run/docker.sock",
-			"swarm":                           false,
-			"swarm-host":                      "",
-			"swarm-master":                    false,
-			"swarm-discovery":                 "",
-			"amazonec2-ami":                   "ami-12345",
-			"amazonec2-access-key":            "abcdefg",
-			"amazonec2-secret-key":            "12345",
-			"amazonec2-session-token":         "",
-			"amazonec2-instance-type":         "t1.micro",
-			"amazonec2-vpc-id":                "vpc-12345",
-			"amazonec2-subnet-id":             "subnet-12345",
-			"amazonec2-security-group":        "docker-machine-test",
-			"amazonec2-region":                "us-east-1",
-			"amazonec2-zone":                  "e",
-			"amazonec2-root-size":             10,
-			"amazonec2-iam-instance-profile":  "",
-			"amazonec2-ssh-user":              "ubuntu",
-			"amazonec2-request-spot-instance": false,
-			"amazonec2-spot-price":            "",
-			"amazonec2-private-address-only":  false,
-			"amazonec2-use-private-address":   false,
-			"amazonec2-monitoring":            false,
-		},
-	}
-}
-
-func getTestDriver() (*Driver, error) {
-	storePath, err := getTestStorePath()
-	if err != nil {
-		return nil, err
-	}
-	defer cleanup()
-
-	d := NewDriver(machineTestName, storePath)
-	d.SetConfigFromFlags(getDefaultTestDriverFlags())
-	return d, nil
-}
-
 func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
-	d, err := getTestDriver()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	driver := NewTestDriver()
 
-	group := securityGroup
-	perms := d.configureSecurityGroupPermissions(group)
-	if len(perms) != 2 {
-		t.Fatalf("expected 2 permissions; received %d", len(perms))
-	}
+	perms := driver.configureSecurityGroupPermissions(securityGroup)
+
+	assert.Len(t, perms, 2)
 }
 
 func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
-	d, err := getTestDriver()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
-
+	driver := NewTestDriver()
 	group := securityGroup
-
 	group.IpPermissions = []*ec2.IpPermission{
 		{
 			IpProtocol: aws.String("tcp"),
@@ -121,26 +43,15 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 		},
 	}
 
-	perms := d.configureSecurityGroupPermissions(group)
-	if len(perms) != 1 {
-		t.Fatalf("expected 1 permission; received %d", len(perms))
-	}
+	perms := driver.configureSecurityGroupPermissions(group)
 
-	receivedPort := *perms[0].FromPort
-	if receivedPort != testDockerPort {
-		t.Fatalf("expected permission on port %d; received port %d", testDockerPort, receivedPort)
-	}
+	assert.Len(t, perms, 1)
+	assert.Equal(t, testDockerPort, *perms[0].FromPort)
 }
 
 func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
-	d, err := getTestDriver()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
-
+	driver := NewTestDriver()
 	group := securityGroup
-
 	group.IpPermissions = []*ec2.IpPermission{
 		{
 			IpProtocol: aws.String("tcp"),
@@ -149,26 +60,15 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 		},
 	}
 
-	perms := d.configureSecurityGroupPermissions(group)
-	if len(perms) != 1 {
-		t.Fatalf("expected 1 permission; received %d", len(perms))
-	}
+	perms := driver.configureSecurityGroupPermissions(group)
 
-	receivedPort := *perms[0].FromPort
-	if receivedPort != testSSHPort {
-		t.Fatalf("expected permission on port %d; received port %d", testSSHPort, receivedPort)
-	}
+	assert.Len(t, perms, 1)
+	assert.Equal(t, testSSHPort, *perms[0].FromPort)
 }
 
 func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
-	d, err := getTestDriver()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
-
+	driver := NewTestDriver()
 	group := securityGroup
-
 	group.IpPermissions = []*ec2.IpPermission{
 		{
 			IpProtocol: aws.String("tcp"),
@@ -182,69 +82,35 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 		},
 	}
 
-	perms := d.configureSecurityGroupPermissions(group)
-	if len(perms) != 0 {
-		t.Fatalf("expected 0 permissions; received %d", len(perms))
-	}
-}
+	perms := driver.configureSecurityGroupPermissions(group)
 
-func TestAwsRegionList(t *testing.T) {
+	assert.Empty(t, perms)
 }
 
 func TestValidateAwsRegionValid(t *testing.T) {
 	regions := []string{"eu-west-1", "eu-central-1"}
 
-	for _, v := range regions {
-		r, err := validateAwsRegion(v)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, region := range regions {
+		validatedRegion, err := validateAwsRegion(region)
 
-		if v != r {
-			t.Fatal("Wrong region returned")
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, region, validatedRegion)
 	}
 }
 
 func TestValidateAwsRegionInvalid(t *testing.T) {
 	regions := []string{"eu-west-2", "eu-central-2"}
 
-	for _, v := range regions {
-		r, err := validateAwsRegion(v)
-		if err == nil {
-			t.Fatal("No error returned")
-		}
+	for _, region := range regions {
+		_, err := validateAwsRegion(region)
 
-		if v == r {
-			t.Fatal("Wrong region returned")
-		}
+		assert.EqualError(t, err, "Invalid region specified")
 	}
-}
-
-func TestSetConfigFromFlags(t *testing.T) {
-	driver, err := getTestDriver()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	checkFlags := &drivers.CheckDriverOptions{
-		FlagsValues: map[string]interface{}{
-			"amazonec2-region": "us-west-2",
-		},
-		CreateFlags: driver.GetCreateFlags(),
-	}
-
-	driver.SetConfigFromFlags(checkFlags)
-
-	assert.NoError(t, err)
-	assert.Empty(t, checkFlags.InvalidFlags)
 }
 
 func TestFindDefaultVPC(t *testing.T) {
 	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client {
-		return &fakeEC2WithLogin{}
-	}
+	driver.clientFactory = func() Ec2Client { return &fakeEC2WithLogin{} }
 
 	vpc, err := driver.getDefaultVPCId()
 
@@ -283,8 +149,7 @@ func TestDescribeAccountAttributeFails(t *testing.T) {
 }
 
 func TestAccessKeyIsMandatory(t *testing.T) {
-	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver := NewTestDriver()
 	driver.awsCredentials = &cliCredentials{}
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -300,8 +165,7 @@ func TestAccessKeyIsMandatory(t *testing.T) {
 }
 
 func TestAccessKeyIsMandatoryEvenIfSecretKeyIsPassed(t *testing.T) {
-	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver := NewTestDriver()
 	driver.awsCredentials = &cliCredentials{}
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -318,8 +182,7 @@ func TestAccessKeyIsMandatoryEvenIfSecretKeyIsPassed(t *testing.T) {
 }
 
 func TestSecretKeyIsMandatory(t *testing.T) {
-	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver := NewTestDriver()
 	driver.awsCredentials = &cliCredentials{}
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -336,8 +199,7 @@ func TestSecretKeyIsMandatory(t *testing.T) {
 }
 
 func TestLoadingFromCredentialsWorked(t *testing.T) {
-	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2WithLogin{} }
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
 	driver.awsCredentials = &fileCredentials{}
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -356,8 +218,7 @@ func TestLoadingFromCredentialsWorked(t *testing.T) {
 }
 
 func TestPassingBothCLIArgWorked(t *testing.T) {
-	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2WithLogin{} }
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
 	driver.awsCredentials = &cliCredentials{}
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{

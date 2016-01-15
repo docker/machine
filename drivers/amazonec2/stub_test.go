@@ -88,3 +88,15 @@ func (f *fakeEC2WithLogin) DescribeAccountAttributes(input *ec2.DescribeAccountA
 		},
 	}, nil
 }
+
+func NewTestDriver() *Driver {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	return driver
+}
+
+func NewCustomTestDriver(ec2Client Ec2Client) *Driver {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client { return ec2Client }
+	return driver
+}
