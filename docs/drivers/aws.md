@@ -10,21 +10,44 @@ parent="smn_machine_drivers"
 
 # Amazon Web Services
 
-Create machines on [Amazon Web Services](http://aws.amazon.com). To create machines on [Amazon Web Services](http://aws.amazon.com), you must supply two required parameters:
+Create machines on [Amazon Web Services](http://aws.amazon.com).
 
--   Access Key ID
--   Secret Access Key
+To create machines on [Amazon Web Services](http://aws.amazon.com), you must supply two parameters: the AWS Access Key ID and the AWS Secret Access Key.
 
-Obtain your IDs and Keys from AWS.
 
-To create the machine instance, specify `--driver amazonec2` and the three required parameters.
+## Configuring credentials
+
+Before using the amazonec2 driver, ensure that you've configured credentials.
+
+### AWS credential file
+One way to configure credentials is to use the standard credential file for Amazon AWS `~/.aws/credentials` file, which might look like:
+
+    [default]
+    aws_access_key_id = AKID1234567890
+    aws_secret_access_key = MY-SECRET-KEY
+
+You can learn more about the credentials file from this [blog post](http://blogs.aws.amazon.com/security/post/Tx3D6U6WSFGOK2H/A-New-and-Standardized-Way-to-Manage-Credentials-in-the-AWS-SDKs).
+
+This is the simplest case, you can then create a new machine with:
+
+    $ docker-machine create --driver amazonec2 aws01
+
+### Command line flags
+Alternatively, you can use the flags `--amazonec2-access-key` and `--amazonec2-secret-key` on the command line:
 
     $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C*******  aws01
 
+### Environment variables
+You can use environment variables:
+
+    $ export AWS_ACCESS_KEY_ID=AKID1234567890
+    $ export AWS_SECRET_ACCESS_KEY=MY-SECRET-KEY
+    $ docker-machine create --driver amazonec2 aws01
+
 ## Options
 
--   `--amazonec2-access-key`: **required** Your access key id for the Amazon Web Services API.
--   `--amazonec2-secret-key`: **required** Your secret access key for the Amazon Web Services API.
+-   `--amazonec2-access-key`: Your access key id for the Amazon Web Services API.
+-   `--amazonec2-secret-key`: Your secret access key for the Amazon Web Services API.
 -   `--amazonec2-session-token`: Your session token for the Amazon Web Services API.
 -   `--amazonec2-ami`: The AMI ID of the instance to use.
 -   `--amazonec2-region`: The region to use when launching the instance.
@@ -66,8 +89,8 @@ Environment variables and default values:
 
 | CLI option                               | Environment variable    | Default          |
 | ---------------------------------------- | ----------------------- | ---------------- |
-| **`--amazonec2-access-key`**             | `AWS_ACCESS_KEY_ID`     | -                |
-| **`--amazonec2-secret-key`**             | `AWS_SECRET_ACCESS_KEY` | -                |
+| `--amazonec2-access-key`                 | `AWS_ACCESS_KEY_ID`     | -                |
+| `--amazonec2-secret-key`                 | `AWS_SECRET_ACCESS_KEY` | -                |
 | `--amazonec2-session-token`              | `AWS_SESSION_TOKEN`     | -                |
 | `--amazonec2-ami`                        | `AWS_AMI`               | `ami-5f709f34`   |
 | `--amazonec2-region`                     | `AWS_DEFAULT_REGION`    | `us-east-1`      |
@@ -90,8 +113,7 @@ Environment variables and default values:
 | `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
 
 ## Security Group
-
-Note that a security group will be created and associated to the host. This security group will have the following ports opened inbound :
+Note that a security group will be created and associated to the host. This security group will have the following ports opened inbound:
 
 -   ssh (22/tcp)
 -   docker (2376/tcp)

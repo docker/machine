@@ -282,11 +282,96 @@ func TestDescribeAccountAttributeFails(t *testing.T) {
 	assert.Empty(t, vpc)
 }
 
+func TestAccessKeyIsMandatory(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver.awsCredentials = &cliCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":             "test",
+			"amazonec2-region": "us-east-1",
+			"amazonec2-zone":   "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, err, errorMissingAccessKeyOption)
 }
 
+func TestAccessKeyIsMandatoryEvenIfSecretKeyIsPassed(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver.awsCredentials = &cliCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                 "test",
+			"amazonec2-secret-key": "123",
+			"amazonec2-region":     "us-east-1",
+			"amazonec2-zone":       "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, err, errorMissingAccessKeyOption)
 }
 
+func TestSecretKeyIsMandatory(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver.awsCredentials = &cliCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                 "test",
+			"amazonec2-access-key": "foobar",
+			"amazonec2-region":     "us-east-1",
+			"amazonec2-zone":       "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, err, errorMissingSecretKeyOption)
 }
 
+func TestLoadingFromCredentialsWorked(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client { return &fakeEC2WithLogin{} }
+	driver.awsCredentials = &fileCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":             "test",
+			"amazonec2-region": "us-east-1",
+			"amazonec2-zone":   "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "access", driver.AccessKey)
+	assert.Equal(t, "secret", driver.SecretKey)
+	assert.Equal(t, "token", driver.SessionToken)
 }
 
+func TestPassingBothCLIArgWorked(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client { return &fakeEC2WithLogin{} }
+	driver.awsCredentials = &cliCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                 "test",
+			"amazonec2-access-key": "foobar",
+			"amazonec2-secret-key": "123",
+			"amazonec2-region":     "us-east-1",
+			"amazonec2-zone":       "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "foobar", driver.AccessKey)
+	assert.Equal(t, "123", driver.SecretKey)
+}

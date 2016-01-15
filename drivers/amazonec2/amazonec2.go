@@ -48,8 +48,8 @@ const (
 var (
 	dockerPort                  = 2376
 	swarmPort                   = 3376
-	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option")
-	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option")
+	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
+	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
 	errorNoVPCIdFound           = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
 )
 
@@ -284,6 +284,18 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
 	d.SetSwarmConfigFromFlags(flags)
+
+	if d.AccessKey == "" && d.SecretKey == "" {
+		credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
+		if err != nil {
+			log.Debug("Could not load credentials from ~/.aws/credentials")
+		} else {
+			log.Debug("Successfully loaded credentials from ~/.aws/credentials")
+			d.AccessKey = credentials.AccessKeyID
+			d.SecretKey = credentials.SecretAccessKey
+			d.SessionToken = credentials.SessionToken
+		}
+	}
 
 	if d.AccessKey == "" {
 		return errorMissingAccessKeyOption
