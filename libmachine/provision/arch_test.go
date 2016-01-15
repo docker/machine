@@ -12,7 +12,7 @@ import (
 
 func TestArchDefaultStorageDriver(t *testing.T) {
 	p := NewArchProvisioner(&fakedriver.Driver{}).(*ArchProvisioner)
-	p.SSHCommander = provisiontest.FakeSSHCommander{FilesystemType: "ext4"}
+	p.SSHCommander = provisiontest.NewFakeSSHCommander(provisiontest.FakeSSHCommanderOptions{})
 	p.Provision(swarm.Options{}, auth.Options{}, engine.Options{})
 	if p.EngineOptions.StorageDriver != "overlay" {
 		t.Fatal("Default storage driver should be overlay")

@@ -200,13 +200,28 @@ func TestDecideStorageDriver(t *testing.T) {
 	p := &fakeProvisioner{GenericProvisioner{
 		Driver: &fakedriver.Driver{},
 	}}
-	engineOptions := engine.Options{}
 	for _, test := range tests {
-		engineOptions.StorageDriver = test.suppliedDriver
-		p.SSHCommander = provisiontest.FakeSSHCommander{FilesystemType: test.remoteFilesystemType}
+		p.SSHCommander = provisiontest.NewFakeSSHCommander(
+			provisiontest.FakeSSHCommanderOptions{
+				FilesystemType: test.remoteFilesystemType,
+			},
+		)
 		storageDriver, err := decideStorageDriver(p, test.defaultDriver, test.suppliedDriver)
 		assert.NoError(t, err)
 		assert.Equal(t, test.expectedDriver, storageDriver)
 	}
+}
 
+func TestGetFilesystemType(t *testing.T) {
+	p := &fakeProvisioner{GenericProvisioner{
+		Driver: &fakedriver.Driver{},
+	}}
+	p.SSHCommander = &provisiontest.FakeSSHCommander{
+		Responses: map[string]string{
+			"stat -f -c %T /var/lib": "btrfs\n",
+		},
+	}
+	fsType, err := getFilesystemType(p, "/var/lib")
+	assert.NoError(t, err)
+	assert.Equal(t, "btrfs", fsType)
 }

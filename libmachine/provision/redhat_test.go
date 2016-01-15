@@ -35,7 +35,7 @@ func TestRedHatGenerateYumRepoList(t *testing.T) {
 
 func TestRedHatDefaultStorageDriver(t *testing.T) {
 	p := NewRedHatProvisioner("", &fakedriver.Driver{})
-	p.SSHCommander = provisiontest.FakeSSHCommander{FilesystemType: "ext4"}
+	p.SSHCommander = provisiontest.NewFakeSSHCommander(provisiontest.FakeSSHCommanderOptions{})
 	p.Provision(swarm.Options{}, auth.Options{}, engine.Options{})
 	if p.EngineOptions.StorageDriver != "devicemapper" {
 		t.Fatal("Default storage driver should be devicemapper")
