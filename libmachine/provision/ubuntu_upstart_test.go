@@ -36,7 +36,7 @@ func TestUbuntuCompatibleWithHost(t *testing.T) {
 
 func TestUbuntuDefaultStorageDriver(t *testing.T) {
 	p := NewUbuntuProvisioner(&fakedriver.Driver{}).(*UbuntuProvisioner)
-	p.SSHCommander = provisiontest.FakeSSHCommander{FilesystemType: "ext4"}
+	p.SSHCommander = provisiontest.NewFakeSSHCommander(provisiontest.FakeSSHCommanderOptions{})
 	p.Provision(swarm.Options{}, auth.Options{}, engine.Options{})
 	if p.EngineOptions.StorageDriver != "aufs" {
 		t.Fatal("Default storage driver should be aufs")
