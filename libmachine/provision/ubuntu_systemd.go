@@ -122,9 +122,11 @@ func (provisioner *UbuntuSystemdProvisioner) Provision(swarmOptions swarm.Option
 	provisioner.EngineOptions = engineOptions
 	swarmOptions.Env = engineOptions.Env
 
-	if provisioner.EngineOptions.StorageDriver == "" {
-		provisioner.EngineOptions.StorageDriver = "aufs"
+	storageDriver, err := decideStorageDriver(provisioner, "aufs", engineOptions.StorageDriver)
+	if err != nil {
+		return err
 	}
+	provisioner.EngineOptions.StorageDriver = storageDriver
 
 	log.Debug("setting hostname")
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {

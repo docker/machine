@@ -208,6 +208,46 @@ func matchNetstatOut(reDaemonListening, netstatOut string) bool {
 	return false
 }
 
+func decideStorageDriver(p Provisioner, defaultDriver, suppliedDriver string) (string, error) {
+	if suppliedDriver != "" {
+		return suppliedDriver, nil
+	}
+	bestSuitedDriver := ""
+
+	defer func() {
+		if bestSuitedDriver != "" {
+			log.Debugf("No storagedriver specified, using %s\n", bestSuitedDriver)
+		}
+	}()
+
+	if defaultDriver != "aufs" {
+		bestSuitedDriver = defaultDriver
+	} else {
+		remoteFilesystemType, err := getFilesystemType(p, "/var/lib")
+		if err != nil {
+			return "", err
+		}
+		if remoteFilesystemType == "btrfs" {
+			bestSuitedDriver = "btrfs"
+		} else {
+			bestSuitedDriver = "aufs"
+		}
+	}
+	return bestSuitedDriver, nil
+
+}
+
+func getFilesystemType(p Provisioner, directory string) (string, error) {
+	statCommandOutput, err := p.SSHCommand("stat -f -c %T " + directory)
+	if err != nil {
+		err = fmt.Errorf("Error looking up filesystem type: %s", err)
+		return "", err
+	}
+
+	fstype := strings.TrimSpace(statCommandOutput)
+	return fstype, nil
+}
+
 func checkDaemonUp(p Provisioner, dockerPort int) func() bool {
 	reDaemonListening := fmt.Sprintf(":%d.*LISTEN", dockerPort)
 	return func() bool {
