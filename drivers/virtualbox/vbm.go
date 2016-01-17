@@ -115,7 +115,7 @@ func checkVBoxManageVersion(version string) error {
 	}
 
 	if major < 5 {
-		log.Warnf("You are using version %s of VirtualBox. If you encouter issues, you might want to upgrade to version 5 at https://www.virtualbox.org", version)
+		log.Warnf("You are using version %s of VirtualBox. If you encounter issues, you might want to upgrade to version 5 at https://www.virtualbox.org", version)
 	}
 
 	return nil
