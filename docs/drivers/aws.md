@@ -61,7 +61,7 @@ You can use environment variables:
 -   `--amazonec2-root-size`: The root disk size of the instance (in GB).
 -   `--amazonec2-volume-type`: The Amazon EBS volume type to be attached to the instance.
 -   `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile.
--   `--amazonec2-ssh-user`: SSH Login user name.
+-   `--amazonec2-ssh-user`: The SSH Login username, which must match the default SSH user set in the ami used.
 -   `--amazonec2-request-spot-instance`: Use spot instances.
 -   `--amazonec2-spot-price`: Spot instance bid price (in dollars). Require the `--amazonec2-request-spot-instance` flag.
 -   `--amazonec2-use-private-address`: Use the private IP address for docker-machine, but still create a public IP address.
@@ -69,22 +69,6 @@ You can use environment variables:
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 -   `--amazonec2-use-ebs-optimized-instance`: Create an EBS Optimized Instance, instance type must support it.
 -   `--amazonec2-ssh-keypath`: Path to Private Key file to use for instance. Matching public key with .pub extension should exist
-
-By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
-
-| Region         | AMI ID       |
-| -------------- | ------------ |
-| ap-northeast-1 | ami-b36d4edd |
-| ap-southeast-1 | ami-1069af73 |
-| ap-southeast-2 | ami-1d336a7e |
-| cn-north-1     | ami-79eb2214 |
-| eu-west-1      | ami-8aa67cf9 |
-| eu-central-1   | ami-ab0210c7 |
-| sa-east-1      | ami-185de774 |
-| us-east-1      | ami-26d5af4c |
-| us-west-1      | ami-9cbcd2fc |
-| us-west-2      | ami-16b1a077 |
-| us-gov-west-1  | ami-b0bad893 |
 
 Environment variables and default values:
 
@@ -113,6 +97,24 @@ Environment variables and default values:
 | `--amazonec2-monitoring`                 | -                       | `false`          |
 | `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
 | `--amazonec2-ssh-keypath`                |`AWS_SSH_KEYPATH`        | -                |
+
+## Default AMIs
+
+By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
+
+| Region         | AMI ID       |
+| -------------- | ------------ |
+| ap-northeast-1 | ami-b36d4edd |
+| ap-southeast-1 | ami-1069af73 |
+| ap-southeast-2 | ami-1d336a7e |
+| cn-north-1     | ami-79eb2214 |
+| eu-west-1      | ami-8aa67cf9 |
+| eu-central-1   | ami-ab0210c7 |
+| sa-east-1      | ami-185de774 |
+| us-east-1      | ami-26d5af4c |
+| us-west-1      | ami-9cbcd2fc |
+| us-west-2      | ami-16b1a077 |
+| us-gov-west-1  | ami-b0bad893 |
 
 ## Security Group
 Note that a security group will be created and associated to the host. This security group will have the following ports opened inbound:
@@ -143,3 +145,10 @@ To create a machine with a non-default vpc-id:
     $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C********* --amazonec2-vpc-id vpc-****** aws02
 
 This example assumes the VPC ID was found in the `a` availability zone. Use the`--amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
+
+## Custom AMI and SSH username
+The default SSH username for the default AMIs is `ubuntu`.
+
+You need to change the SSH username only if the custom AMI you use has a different SSH username.
+
+You can change the SSH username with the `--amazonec2-ssh-user` according to the AMI you selected with the `--amazonec2-ami`.
