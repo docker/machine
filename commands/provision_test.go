@@ -11,7 +11,6 @@ import (
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/libmachinetest"
 	"github.com/docker/machine/libmachine/provision"
-	"github.com/docker/machine/libmachine/provision/provisiontest"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,14 +51,14 @@ func TestCmdProvision(t *testing.T) {
 		},
 	}
 
-	provision.SetDetector(&provisiontest.FakeDetector{
-		Provisioner: provisiontest.NewFakeProvisioner(nil),
+	provision.SetDetector(&provision.FakeDetector{
+		Provisioner: provision.NewFakeProvisioner(nil),
 	})
 
 	// fakeprovisioner always returns "true" for compatible host, so we
 	// just need to register it.
 	provision.Register("fakeprovisioner", &provision.RegisteredProvisioner{
-		New: provisiontest.NewFakeProvisioner,
+		New: provision.NewFakeProvisioner,
 	})
 
 	for _, tc := range testCases {

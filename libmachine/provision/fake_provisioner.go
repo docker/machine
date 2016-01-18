@@ -1,26 +1,25 @@
-package provisiontest
+package provision
 
 import (
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
 type FakeDetector struct {
-	provision.Provisioner
+	Provisioner
 }
 
-func (fd *FakeDetector) DetectProvisioner(d drivers.Driver) (provision.Provisioner, error) {
+func (fd *FakeDetector) DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 	return fd.Provisioner, nil
 }
 
 type FakeProvisioner struct{}
 
-func NewFakeProvisioner(d drivers.Driver) provision.Provisioner {
+func NewFakeProvisioner(d drivers.Driver) Provisioner {
 	return &FakeProvisioner{}
 }
 
@@ -32,7 +31,7 @@ func (fp *FakeProvisioner) String() string {
 	return "fakeprovisioner"
 }
 
-func (fp *FakeProvisioner) GenerateDockerOptions(dockerPort int) (*provision.DockerOptions, error) {
+func (fp *FakeProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
 	return nil, nil
 }
 
@@ -72,8 +71,8 @@ func (fp *FakeProvisioner) GetDriver() drivers.Driver {
 	return nil
 }
 
-func (fp *FakeProvisioner) SetOsReleaseInfo(info *provision.OsRelease) {}
+func (fp *FakeProvisioner) SetOsReleaseInfo(info *OsRelease) {}
 
-func (fp *FakeProvisioner) GetOsReleaseInfo() (*provision.OsRelease, error) {
+func (fp *FakeProvisioner) GetOsReleaseInfo() (*OsRelease, error) {
 	return nil, nil
 }
