@@ -12,11 +12,24 @@ import (
 	"github.com/docker/machine/libmachine/swarm"
 )
 
-var provisioners = make(map[string]*RegisteredProvisioner)
+var (
+	provisioners          = make(map[string]*RegisteredProvisioner)
+	detector     Detector = &StandardDetector{}
+)
 
 type SSHCommander interface {
 	// Short-hand for accessing an SSH command from the driver.
 	SSHCommand(args string) (string, error)
+}
+
+type Detector interface {
+	DetectProvisioner(d drivers.Driver) (Provisioner, error)
+}
+
+type StandardDetector struct{}
+
+func SetDetector(newDetector Detector) {
+	detector = newDetector
 }
 
 // Provisioner defines distribution specific actions
@@ -77,6 +90,10 @@ func Register(name string, p *RegisteredProvisioner) {
 }
 
 func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
+	return detector.DetectProvisioner(d)
+}
+
+func (detector StandardDetector) DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 	log.Info("Detecting the provisioner...")
 
 	osReleaseOut, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
