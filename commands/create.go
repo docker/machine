@@ -12,10 +12,13 @@ import (
 
 	"errors"
 
+	"time"
+
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/engine"
@@ -211,7 +214,21 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	}
 
 	if err := api.Create(h); err != nil {
-		return fmt.Errorf("Error creating machine: %s", err)
+		// Wait for all the logs to reach the client
+		time.Sleep(2 * time.Second)
+
+		vBoxLog := ""
+		if h.DriverName == "virtualbox" {
+			vBoxLog = filepath.Join(api.GetMachinesDir(), h.Name, h.Name, "Logs", "VBox.log")
+		}
+
+		return crashreport.CrashError{
+			Cause:       err,
+			Command:     "Create",
+			Context:     "api.performCreate",
+			DriverName:  h.DriverName,
+			LogFilePath: vBoxLog,
+		}
 	}
 
 	if err := api.Save(h); err != nil {

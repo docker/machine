@@ -6,13 +6,10 @@ import (
 
 	"io"
 
-	"time"
-
 	"github.com/docker/machine/drivers/errdriver"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/docker/machine/libmachine/check"
-	"github.com/docker/machine/libmachine/crashreport"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/drivers/rpc"
@@ -34,6 +31,7 @@ type API interface {
 	NewHost(driverName string, rawDriver []byte) (*host.Host, error)
 	Create(h *host.Host) error
 	persist.Store
+	GetMachinesDir() string
 }
 
 type Client struct {
@@ -135,21 +133,7 @@ func (api *Client) Create(h *host.Host) error {
 	log.Info("Creating machine...")
 
 	if err := api.performCreate(h); err != nil {
-		// Wait for all the logs to reach the client
-		time.Sleep(2 * time.Second)
-
-		vBoxLog := ""
-		if h.DriverName == "virtualbox" {
-			vBoxLog = filepath.Join(api.GetMachinesDir(), h.Name, h.Name, "Logs", "VBox.log")
-		}
-
-		return crashreport.CrashError{
-			Cause:       err,
-			Command:     "Create",
-			Context:     "api.performCreate",
-			DriverName:  h.DriverName,
-			LogFilePath: vBoxLog,
-		}
+		return fmt.Errorf("Error creating machine: %s", err)
 	}
 
 	log.Debug("Reticulating splines...")

@@ -72,6 +72,10 @@ func (api *FakeAPI) Save(host *host.Host) error {
 	return nil
 }
 
+func (api FakeAPI) GetMachinesDir() string {
+	return ""
+}
+
 func State(api libmachine.API, name string) state.State {
 	host, _ := api.Load(name)
 	machineState, _ := host.Driver.GetState()
