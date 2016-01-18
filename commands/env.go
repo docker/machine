@@ -20,7 +20,6 @@ const (
 )
 
 var (
-	errImproperEnvArgs      = errors.New("Error: Expected one machine name")
 	errImproperUnsetEnvArgs = errors.New("Error: Expected no machine name when the -u flag is present")
 	defaultUsageHinter      UsageHintGenerator
 )
@@ -68,11 +67,16 @@ func cmdEnv(c CommandLine, api libmachine.API) error {
 }
 
 func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
-	if len(c.Args()) != 1 {
-		return nil, errImproperEnvArgs
+	if len(c.Args()) > 1 {
+		return nil, ErrExpectedOneMachine
 	}
 
-	host, err := api.Load(c.Args().First())
+	target, err := targetHost(c, api)
+	if err != nil {
+		return nil, err
+	}
+
+	host, err := api.Load(target)
 	if err != nil {
 		return nil, err
 	}

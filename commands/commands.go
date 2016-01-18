@@ -18,7 +18,13 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 )
 
+const (
+	defaultMachineName = "default"
+)
+
 var (
+	ErrHostLoad           = errors.New("All specified hosts had errors loading their configuration.")
+	ErrNoDefault          = fmt.Errorf("Error: No machine name(s) specified and no %q machine exists.", defaultMachineName)
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 	ErrTooManyArguments   = errors.New("Error: Too many arguments given")
@@ -67,8 +73,45 @@ func (c *contextCommandLine) Application() *cli.App {
 	return c.App
 }
 
+// targetHost returns a specific host name if one is indicated by the first CLI
+// arg, or the default host name if no host is specified.
+func targetHost(c CommandLine, api libmachine.API) (string, error) {
+	if len(c.Args()) == 0 {
+		defaultExists, err := api.Exists(defaultMachineName)
+		if err != nil {
+			return "", fmt.Errorf("Error checking if host %q exists: %s", defaultMachineName, err)
+		}
+
+		if defaultExists {
+			return defaultMachineName, nil
+		}
+
+		return "", ErrNoDefault
+	}
+
+	return c.Args()[0], nil
+}
+
 func runAction(actionName string, c CommandLine, api libmachine.API) error {
-	hosts, hostsInError := persist.LoadHosts(api, c.Args())
+	var (
+		hostsToLoad []string
+	)
+
+	// If user did not specify a machine name explicitly, use the 'default'
+	// machine if it exists.  This allows short form commands such as
+	// 'docker-machine stop' for convenience.
+	if len(c.Args()) == 0 {
+		target, err := targetHost(c, api)
+		if err != nil {
+			return err
+		}
+
+		hostsToLoad = []string{target}
+	} else {
+		hostsToLoad = c.Args()
+	}
+
+	hosts, hostsInError := persist.LoadHosts(api, hostsToLoad)
 
 	if len(hostsInError) > 0 {
 		errs := []error{}
@@ -79,7 +122,7 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 	}
 
 	if len(hosts) == 0 {
-		return ErrNoMachineSpecified
+		return ErrHostLoad
 	}
 
 	if errs := runActionForeachMachine(actionName, hosts); len(errs) > 0 {

@@ -7,11 +7,16 @@ import (
 )
 
 func cmdURL(c CommandLine, api libmachine.API) error {
-	if len(c.Args()) != 1 {
+	if len(c.Args()) > 1 {
 		return ErrExpectedOneMachine
 	}
 
-	host, err := api.Load(c.Args().First())
+	target, err := targetHost(c, api)
+	if err != nil {
+		return err
+	}
+
+	host, err := api.Load(target)
 	if err != nil {
 		return err
 	}

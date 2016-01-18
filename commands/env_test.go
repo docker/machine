@@ -111,11 +111,14 @@ func TestShellCfgSet(t *testing.T) {
 	}{
 		{
 			description: "no host name specified",
+			api: &libmachinetest.FakeAPI{
+				Hosts: []*host.Host{},
+			},
 			commandLine: &commandstest.FakeCommandLine{
 				CliArgs: nil,
 			},
 			expectedShellCfg: nil,
-			expectedErr:      errImproperEnvArgs,
+			expectedErr:      ErrNoDefault,
 		},
 		{
 			description: "bash shell set happy path without any flags set",
@@ -150,6 +153,42 @@ func TestShellCfgSet(t *testing.T) {
 				DockerTLSVerify: "1",
 				UsageHint:       usageHint,
 				MachineName:     "quux",
+			},
+			expectedErr: nil,
+		},
+		{
+			description: "bash shell set happy path with 'default' vm",
+			commandLine: &commandstest.FakeCommandLine{
+				CliArgs: []string{},
+				LocalFlags: &commandstest.FakeFlagger{
+					Data: map[string]interface{}{
+						"shell":    "bash",
+						"swarm":    false,
+						"no-proxy": false,
+					},
+				},
+			},
+			api: &libmachinetest.FakeAPI{
+				Hosts: []*host.Host{
+					{
+						Name: defaultMachineName,
+					},
+				},
+			},
+			connChecker: &FakeConnChecker{
+				DockerHost:  "tcp://1.2.3.4:2376",
+				AuthOptions: nil,
+				Err:         nil,
+			},
+			expectedShellCfg: &ShellConfig{
+				Prefix:          "export ",
+				Delimiter:       "=\"",
+				Suffix:          "\"\n",
+				DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), defaultMachineName),
+				DockerHost:      "tcp://1.2.3.4:2376",
+				DockerTLSVerify: "1",
+				UsageHint:       usageHint,
+				MachineName:     defaultMachineName,
 			},
 			expectedErr: nil,
 		},
