@@ -1,5 +1,40 @@
 # Changelog
 
+# 0.6.0-rc1 (2016-01-18)
+
+General
+
+- Update to Go 1.5.3
+- Short form of command invocations is now supported
+    - `docker-machine start`, `docker-machine stop` and others will now use
+      `default` as the machine name argument if one is not specified
+- Fix issue with panics in drivers 
+- Machine now returns exit code 3 if the pre-create check fails.
+    - This is potentially useful for scripting `docker-machine`.
+- `docker-machine provision` command added to allow re-running of provisioning
+  on instances.
+    - This allows users to re-run provisioning if it fails during `create`
+      instead of needing to completely start over.
+
+Provisioning
+
+- Most provisioners now use `docker daemon` instead of `docker -d`
+- Swarm masters now run with replication enabled
+- If `/var/lib` is a BTRFS partition, `btrfs` will now be used as the storage
+  driver for the instance
+
+Drivers
+
+- Amazon EC2
+    - Default VPC will be used automatically if none is specified
+    - Credentials are now be read from the conventional `~/.aws/credentials`
+      file automatically
+    - Fix a few issues such as nil pointer dereferences
+- VMware Fusion
+    - Try to get IP from multiple DHCP lease files
+- OpenStack
+    - Only derive tenant ID if tenant name is supplied
+
 # 0.5.6 (2016-01-11)
 
 General
