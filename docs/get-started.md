@@ -62,7 +62,7 @@ Next, as noted in the output of the `docker-machine create` command, we have to
 tell Docker to talk to that machine. You can do this with the `docker-machine
 env` command. For example,
 
-    $ eval "$(docker-machine env dev)"
+    $ eval "$(docker-machine env default)"
     $ docker ps
 
 > **Note**: If you are using `fish`, or a Windows shell such as
@@ -74,15 +74,15 @@ This will set environment variables that the Docker client will read which
 specify the TLS settings. Note that you will need to do that every time you
 open a new tab or restart your machine.
 
-To see what will be set, run `docker-machine env dev`.
+To see what will be set, we can run `docker-machine env default`.
 
-    $ docker-machine env dev
+    $ docker-machine env default
     export DOCKER_TLS_VERIFY="1"
     export DOCKER_HOST="tcp://172.16.62.130:2376"
-    export DOCKER_CERT_PATH="/Users/<your username>/.docker/machine/machines/dev"
-    export DOCKER_MACHINE_NAME="dev"
+    export DOCKER_CERT_PATH="/Users/<yourusername>/.docker/machine/machines/default"
+    export DOCKER_MACHINE_NAME="default"
     # Run this command to configure your shell:
-    # eval "$(docker-machine env dev)"
+    # eval "$(docker-machine env default)"
 
 You can now run Docker commands on this host:
 
@@ -98,7 +98,7 @@ You can now run Docker commands on this host:
 Any exposed ports are available on the Docker host’s IP address, which you can
 get using the `docker-machine ip` command:
 
-    $ docker-machine ip dev
+    $ docker-machine ip default
     192.168.99.100
 
 For instance, you can try running a webserver ([nginx](https://www.nginx.com/)
@@ -109,7 +109,7 @@ in a container with the following command:
 When the image is finished pulling, you can hit the server at port 8000 on the
 IP address given to you by `docker-machine ip`. For instance:
 
-    $ curl $(docker-machine ip dev):8000
+    $ curl $(docker-machine ip default):8000
     <!DOCTYPE html>
     <html>
     <head>
@@ -142,7 +142,47 @@ output of `docker-machine ls`.
 
 If you are finished using a host for the time being, you can stop it with
 `docker-machine stop` and later start it again with `docker-machine start`.
-Make sure to specify the machine name as an argument:
 
-    $ docker-machine stop dev
-    $ docker-machine start dev
+    $ docker-machine stop default
+    $ docker-machine start default
+
+## Operating on machines without specifying the name
+
+Some commands will assume that the specified operation should be run on a
+machine named `default` (if it exists) if no machine name is passed to them as
+an argument.  Because using a local VM named `default` is such a common pattern,
+this allows you to save some typing on Machine commands that may be frequently
+invoked.
+
+For instance:
+
+    $ docker-machine stop
+    Stopping "default"....
+    Machine "default" was stopped.
+
+    $ docker-machine start
+    Starting "default"...
+    (default) Waiting for an IP...
+    Machine "default" was started.
+    Started machines may have new IP addresses.  You may need to re-run the `docker-machine env` command.
+
+    $ eval $(docker-machine env)
+
+    $ docker-machine ip
+    192.168.99.100
+
+Commands that will follow this style are:
+
+- `docker-machine stop`
+- `docker-machine start`
+- `docker-machine regenerate-certs`
+- `docker-machine restart`
+- `docker-machine kill`
+- `docker-machine upgrade`
+- `docker-machine config`
+- `docker-machine env`
+- `docker-machine inspect`
+- `docker-machine url`
+
+For machines other than `default`, and commands other than those listed above,
+you must always specify the name explicitly as an argument.

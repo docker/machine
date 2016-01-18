@@ -23,12 +23,12 @@ func cmdSSH(c CommandLine, api libmachine.API) error {
 		return nil
 	}
 
-	name := firstArg
-	if name == "" {
-		return ErrExpectedOneMachine
+	target, err := targetHost(c, api)
+	if err != nil {
+		return err
 	}
 
-	host, err := api.Load(name)
+	host, err := api.Load(target)
 	if err != nil {
 		return err
 	}
