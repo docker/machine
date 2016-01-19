@@ -30,9 +30,6 @@ test:
     - gvm use stable && GO15VENDOREXPERIMENT=1 go get github.com/docker/docker-machine-driver-ci-test
 
   override:
-    - DRIVER=none test/integration/run-bats.sh test/integration/cli:
-        pwd: $BASE_STABLE
-        timeout: 600
-    - PATH=../../../../bin:$PATH DRIVER=ci-test test/integration/run-bats.sh test/integration/3rdparty:
+    - gvm use stable && PATH=../../../../bin:$PATH DRIVER=ci-test GO15VENDOREXPERIMENT=1 go test -v github.com/docker/machine/its/...:
         pwd: $BASE_STABLE
         timeout: 600
