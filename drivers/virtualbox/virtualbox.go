@@ -192,6 +192,9 @@ func (d *Driver) GetURL() (string, error) {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("virtualbox-cpu-count")
 	d.Memory = flags.Int("virtualbox-memory")
+	if d.Memory < 640 { // mininum amount is around 300Mb doubling that and rounding to the next IT-compliant number
+		log.Warn("You've assigned too few memory, the VM may not start, or container may not run.\nConsider increasing the memory to a sensible default %d", defaultMemory)
+	}
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
 	d.SetSwarmConfigFromFlags(flags)
