@@ -76,7 +76,7 @@ From this point, the remote host behaves much like the local host we created in 
     $ docker-machine ls
     NAME      ACTIVE   DRIVER         STATE     URL
     dev       -        virtualbox     Running   tcp://192.168.99.103:2376
-    staging   *        digitalocean   Running   tcp://104.236.50.118:2376
+    staging   *        digitalocean   Running   tcp://203.0.113.81:2376
 
 To remove a host and all of its containers and images, use `docker-machine rm`:
 
