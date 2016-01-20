@@ -173,15 +173,19 @@ For instance:
 
 Commands that will follow this style are:
 
-- `docker-machine stop`
-- `docker-machine start`
-- `docker-machine regenerate-certs`
-- `docker-machine restart`
-- `docker-machine kill`
-- `docker-machine upgrade`
 - `docker-machine config`
 - `docker-machine env`
 - `docker-machine inspect`
+- `docker-machine ip`
+- `docker-machine kill`
+- `docker-machine provision`
+- `docker-machine regenerate-certs`
+- `docker-machine restart`
+- `docker-machine ssh`
+- `docker-machine start`
+- `docker-machine status`
+- `docker-machine stop`
+- `docker-machine upgrade`
 - `docker-machine url`
 
 For machines other than `default`, and commands other than those listed above,
