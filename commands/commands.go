@@ -19,10 +19,13 @@ import (
 )
 
 const (
-	defaultMachineName = "default"
+	defaultMachineNameEnvVar   = "DOCKER_MACHINE_NAME"
+	defaultMachineNameFallback = "default"
 )
 
 var (
+	defaultMachineName = getEnvWithFallback(defaultMachineNameEnvVar, defaultMachineNameFallback)
+
 	ErrHostLoad           = errors.New("All specified hosts had errors loading their configuration.")
 	ErrNoDefault          = fmt.Errorf("Error: No machine name(s) specified and no %q machine exists.", defaultMachineName)
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments")
@@ -73,6 +76,14 @@ func (c *contextCommandLine) Application() *cli.App {
 	return c.App
 }
 
+func getEnvWithFallback(envVar string, fallback string) string {
+	value := os.Getenv(envVar)
+	if value == "" {
+		value = fallback
+	}
+	return value
+}
+
 // targetHost returns a specific host name if one is indicated by the first CLI
 // arg, or the default host name if no host is specified.
 func targetHost(c CommandLine, api libmachine.API) (string, error) {
@@ -97,8 +108,8 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 		hostsToLoad []string
 	)
 
-	// If user did not specify a machine name explicitly, use the 'default'
-	// machine if it exists.  This allows short form commands such as
+	// If user did not specify a machine name explicitly, use the default
+	// machine name if it exists.  This allows short form commands such as
 	// 'docker-machine stop' for convenience.
 	if len(c.Args()) == 0 {
 		target, err := targetHost(c, api)
