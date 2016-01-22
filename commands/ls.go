@@ -468,16 +468,20 @@ func getHostListItems(hostList []*host.Host, hostsInError map[string]error) []Ho
 	close(hostListItemsChan)
 
 	for name, err := range hostsInError {
-		itemInError := HostListItem{}
-		itemInError.Name = name
-		itemInError.DriverName = "not found"
-		itemInError.State = state.Error
-		itemInError.Error = err.Error()
-		hostListItems = append(hostListItems, itemInError)
+		hostListItems = append(hostListItems, newHostListItemInError(name, err))
 	}
 
 	sortHostListItemsByName(hostListItems)
 	return hostListItems
+}
+
+func newHostListItemInError(name string, err error) HostListItem {
+	return HostListItem{
+		Name:       name,
+		DriverName: "not found",
+		State:      state.Error,
+		Error:      strings.Replace(err.Error(), "\n", " ", -1),
+	}
 }
 
 func sortHostListItemsByName(items []HostListItem) {
