@@ -345,7 +345,6 @@ func TestStart(t *testing.T) {
 			{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
 			{"vbm list hostonlyifs", "", nil},
 			{"vbm hostonlyif create", "Interface 'VirtualBox Host-Only Ethernet Adapter' was successfully created", nil},
-			{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
 			{"vbm list hostonlyifs", `
 Name:            VirtualBox Host-Only Ethernet Adapter
 GUID:            786f6276-656e-4074-8000-0a0027000000
@@ -358,6 +357,7 @@ HardwareAddress: 0a:00:27:00:00:00
 MediumType:      Ethernet
 Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
+			{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
 			{"vbm list dhcpservers", "", nil},
 			{"vbm list dhcpservers", "", nil},
 			{"vbm dhcpserver add --netname HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.6 --netmask 255.255.255.0 --lowerip 192.168.99.100 --upperip 192.168.99.254 --enable", "", nil},
@@ -419,18 +419,6 @@ MediumType:      Ethernet
 Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
 			{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
-			{"vbm list hostonlyifs", `
-Name:            VirtualBox Host-Only Ethernet Adapter
-GUID:            786f6276-656e-4074-8000-0a0027000000
-DHCP:            Disabled
-IPAddress:       192.168.99.1
-NetworkMask:     255.255.255.0
-IPV6Address:
-IPV6NetworkMaskPrefixLength: 0
-HardwareAddress: 0a:00:27:00:00:00
-MediumType:      Ethernet
-Status:          Up
-VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
 			{"vbm list dhcpservers", "", nil},
 			{"vbm list dhcpservers", "", nil},
 			{"vbm dhcpserver add --netname HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.6 --netmask 255.255.255.0 --lowerip 192.168.99.100 --upperip 192.168.99.254 --enable", "", nil},

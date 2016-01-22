@@ -154,43 +154,34 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, vbox VBoxMana
 		return nil, err
 	}
 
+	// Search for an existing host-only adapter.
 	hostOnlyAdapter := getHostOnlyAdapter(nets, hostIP, netmask)
 	if hostOnlyAdapter != nil {
 		return hostOnlyAdapter, nil
 	}
 
 	// No existing host-only adapter found. Create a new one.
-	hostOnlyAdapter, err = createHostonlyAdapter(vbox)
+	_, err = createHostonlyAdapter(vbox)
 	if err != nil {
 		// Sometimes the host-only adapter fails to create. See https://www.virtualbox.org/ticket/14040
 		// BUT, it is created in fact! So let's wait until it appears last in the list
 		log.Warnf("Creating a new host-only adapter produced an error: %s", err)
 		log.Warn("This is a known VirtualBox bug. Let's try to recover anyway...")
-
-		hostOnlyAdapter, err = waitForNewHostOnlyNetwork(nets, vbox)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Warnf("Found a new host-only adapter: %q", hostOnlyAdapter.Name)
 	}
+
+	// It can take some time for an adapter to appear. Let's poll.
+	hostOnlyAdapter, err = waitForNewHostOnlyNetwork(nets, vbox)
+	if err != nil {
+		// Sometimes, Vbox says it created it but then it cannot be found...
+		return nil, errNewHostOnlyAdapterNotVisible
+	}
+
+	log.Warnf("Found a new host-only adapter: %q", hostOnlyAdapter.Name)
 
 	hostOnlyAdapter.IPv4.IP = hostIP
 	hostOnlyAdapter.IPv4.Mask = netmask
 	if err := hostOnlyAdapter.Save(vbox); err != nil {
 		return nil, err
-	}
-
-	// Check that the adapter still exists.
-	// Sometimes, Vbox says it created it but then it cannot be found...
-	nets, err = listHostOnlyAdapters(vbox)
-	if err != nil {
-		return nil, err
-	}
-
-	found := getHostOnlyAdapter(nets, hostIP, netmask)
-	if found == nil {
-		return nil, errNewHostOnlyAdapterNotVisible
 	}
 
 	return hostOnlyAdapter, nil
