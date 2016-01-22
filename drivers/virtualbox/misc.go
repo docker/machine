@@ -11,7 +11,7 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 )
 
-// B2DUpdater describes the interactions with bd2.
+// B2DUpdater describes the interactions with b2d.
 type B2DUpdater interface {
 	UpdateISOCache(storePath, isoURL string) error
 	CopyIsoToMachineDir(storePath, machineName, isoURL string) error
