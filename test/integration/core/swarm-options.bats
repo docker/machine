@@ -27,15 +27,29 @@ export TOKEN=$(curl -sS -X POST "https://discovery.hub.docker.com/v1/clusters")
     [[ "$heartbeat_arg" =~ "--heartbeat=5s" ]]
 }
 
-@test "should not show as swarm active if normal active" {
+@test "ls command should not show as swarm active if normal active" {
     eval $(machine env queenbee)
     run machine ls --filter name=queenbee
-    [[ ${lines[1]} != *"* (swarm)"*  ]]
+    [[ ${lines[1]} != *"* (swarm)"* ]]
 }
 
-@test "should show as swarm active" {
+@test "ls command should show as swarm active" {
     eval $(machine env --swarm queenbee)
     run machine ls --filter name=queenbee
     echo ${output}
-    [[ ${lines[1]} == *"* (swarm)"*  ]]
+    [[ ${lines[1]} == *"* (swarm)"* ]]
+}
+
+@test "active command should show the host as active if normal active" {
+    eval $(machine env queenbee)
+    run machine active
+    echo ${output}
+    [[ ${lines[0]} == "queenbee" ]]
+}
+
+@test "active command should show the host as active if swarm active" {
+    eval $(machine env --swarm queenbee)
+    run machine active
+    echo ${output}
+    [[ ${lines[0]} == "queenbee" ]]
 }
