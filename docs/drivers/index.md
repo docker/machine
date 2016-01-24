@@ -4,8 +4,9 @@ title = "Drivers"
 description = "Reference for drivers Docker Machine supports"
 keywords = ["machine, drivers, supports"]
 [menu.main]
-parent="smn_machine_ref"
+parent="workw_machine"
 identifier="smn_machine_drivers"
+weight=90
 +++
 <![end-metadata]-->
 

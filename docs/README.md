@@ -62,7 +62,7 @@ The top of each Docker machine documentation file contains TOML metadata. The me
     description = "How to use Docker machine's extends keyword to share configuration between files and projects"
     keywords = ["fig, composition, machine, docker, orchestration, documentation, docs"]
     [menu.main]
-    parent="smn_workw_machine"
+    parent="workw_machine"
     weight=2
     +++
     <![end-metadata]-->  
@@ -74,7 +74,7 @@ The metadata alone has this structure:
     description = "How to use Docker machine's extends keyword to share configuration between files and projects"
     keywords = ["fig, composition, machine, docker, orchestration, documentation, docs"]
     [menu.main]
-    parent="smn_workw_machine"
+    parent="workw_machine"
     weight=2
     +++
 
