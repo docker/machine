@@ -1,15 +1,16 @@
 <!--[metadata]>
 +++
-title = "Subcommands"
+title = "Command line reference"
 description = "Docker Machine Commands Overview"
 keywords = ["machine, commands"]
 [menu.main]
 identifier="smn_machine_subcmds"
-parent="smn_machine_ref"
+parent="workw_machine"
+weight=80
 +++
 <![end-metadata]-->
 
-# Supported Docker Machine subcommands
+# Docker Machine command line reference
 
 -   [active](active.md)
 -   [config](config.md)

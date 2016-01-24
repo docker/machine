@@ -1,15 +1,15 @@
 <!--[metadata]>
 +++
-title = "Using Docker Machine with a cloud provider"
+title = "Use Machine with a cloud provider"
 description = "Using Docker Machine with a cloud provider"
 keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
 [menu.main]
-parent="smn_workw_machine"
+parent="workw_machine"
 weight=2
 +++
 <![end-metadata]-->
 
-## Using Docker Machine with a cloud provider
+## Use Docker Machine with a cloud provider
 
 Creating a local virtual machine running Docker is useful and fun, but it isn't the only thing Docker Machine can do. Docker Machine supports several
 “drivers” which let you use the same interface to create hosts on many different
