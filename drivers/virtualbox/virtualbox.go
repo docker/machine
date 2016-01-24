@@ -247,10 +247,7 @@ func (d *Driver) PreCreateCheck() error {
 
 // IsVTXDisabledInTheVM checks if VT-X is disabled in the started vm.
 func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
-	logPath := filepath.Join(d.ResolveStorePath(d.MachineName), "Logs", "VBox.log")
-	log.Debugf("Checking vm logs: %s", logPath)
-
-	lines, err := d.logsReader.Read(logPath)
+	lines, err := d.readVBoxLog()
 	if err != nil {
 		return true, err
 	}
@@ -492,7 +489,9 @@ func (d *Driver) Start() error {
 		}
 
 		if err := d.vbm("startvm", d.MachineName, "--type", "headless"); err != nil {
-			// TODO: We could capture the last lines of the vbox log
+			if lines, readErr := d.readVBoxLog(); readErr == nil && len(lines) > 0 {
+				return fmt.Errorf("Unable to start the VM: %s\nDetails: %s", err, lines[len(lines)-1])
+			}
 			return fmt.Errorf("Unable to start the VM: %s", err)
 		}
 	case state.Paused:
@@ -837,4 +836,11 @@ func detectVBoxManageCmdInPath() string {
 		return path
 	}
 	return cmd
+}
+
+func (d *Driver) readVBoxLog() ([]string, error) {
+	logPath := filepath.Join(d.ResolveStorePath(d.MachineName), "Logs", "VBox.log")
+	log.Debugf("Checking vm logs: %s", logPath)
+
+	return d.logsReader.Read(logPath)
 }
