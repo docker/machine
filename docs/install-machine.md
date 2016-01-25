@@ -30,26 +30,23 @@ instructions in the next section.
 
 2.  Download the Docker Machine binary and extract it to your PATH.
 
-        Linux:
+    If you are running OS X or Linux:
 
-            $ curl -L https://github.com/docker/machine/releases/download/v0.5.5/docker-machine_linux-amd64 >/usr/local/bin/docker-machine && \
-            chmod +x /usr/local/bin/docker-machine
+        $ curl -L https://github.com/docker/machine/releases/download/v0.6.0/docker-machine-`uname -s`-`uname -m` > /usr/local/bin/docker-machine && \
+        chmod +x /usr/local/bin/docker-machine
 
-        OSX:
+    If you are running Windows with git bash
 
-            $ curl -L https://github.com/docker/machine/releases/download/v0.5.5/docker-machine_darwin-amd64 >/usr/local/bin/docker-machine && \
-            chmod +x /usr/local/bin/docker-machine
+        $ if [[ ! -d "$HOME/bin" ]]; then mkdir -p "$HOME/bin"; fi && \
+        curl -L https://github.com/docker/machine/releases/download/v0.6.0/docker-machine-Windows-x86_64.exe > "$HOME/bin/docker-machine.exe" && \
+        chmod +x "$HOME/bin/docker-machine.exe"
 
-        Windows (using Git Bash):
-
-            $ if [[ ! -d "$HOME/bin" ]]; then mkdir -p "$HOME/bin"; fi && \
-            curl -L https://github.com/docker/machine/releases/download/v0.5.5/docker-machine_windows-amd64.exe > "$HOME/bin/docker-machine.exe" && \
-            chmod +x "$HOME/bin/docker-machine.exe"
+    Otherwise, download one of the releases from the [release page](https://github.com/docker/machine/releases/) directly.
 
 3.  Check the installation by displaying the Machine version:
 
         $ docker-machine version
-        docker-machine version 0.5.5, build 02c4254
+        docker-machine version 0.6.0, build 61388e9
 
 ## Installing bash completion scripts
 
