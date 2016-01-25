@@ -1,29 +1,24 @@
 ## Installation
 
-1. Download the file for your OS and architecture.
-2. Move the binary to your PATH.
+If you're a Mac or Windows user, the [Docker Toolbox](https://www.docker.com/docker-toolbox) will install Docker Machine {{VERSION}} for you, alongside the latest versions of the Docker Engine, Compose and Kitematic.
 
-e.g., for Mac OSX:
+You can use the usual commands to install or upgrade:
 
+On OS X or Linux
 ```console
-$ curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker-machine_darwin-amd64 >/usr/local/bin/docker-machine && \
+$ curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker-machine-`uname -s`-`uname -m` >/usr/local/bin/docker-machine && \
   chmod +x /usr/local/bin/docker-machine
 ```
-
-Linux:
-
-```console
-$ curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker-machine_linux-amd64 >/usr/local/bin/docker-machine && \
-  chmod +x /usr/local/bin/docker-machine
-```
-
-Windows (using [git bash](https://git-for-windows.github.io/)):
-
+On Windows with git bash
 ```console
 $ if [[ ! -d "$HOME/bin" ]]; then mkdir -p "$HOME/bin"; fi && \
-  curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker-machine_windows-amd64.exe > "$HOME/bin/docker-machine.exe" && \
-  chmod +x "$HOME/bin/docker-machine.exe"
+curl -L https://github.com/docker/machine/releases/download/v0.6.0/docker-machine-Windows-x86_64.exe > "$HOME/bin/docker-machine.exe" && \
+chmod +x "$HOME/bin/docker-machine.exe"
 ```
+
+Otherwise, download one of the releases from the [release page](https://github.com/docker/machine/releases/) directly.
+
+See the install [docs](https://docs.docker.com/machine/install-machine/) for more install options and instructions.
 
 ## Changelog
 
