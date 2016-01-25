@@ -97,6 +97,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
 		},
 		mcnflag.IntFlag{
+			Name:   "virtualbox-memory-size",
+			Usage:  "Size of memory for host in MB",
+			Value:  defaultMemory,
+			EnvVar: "VIRTUALBOX_MEMORY_SIZE",
+		},
+		mcnflag.IntFlag{
 			Name:   "virtualbox-cpu-count",
 			Usage:  "number of CPUs for the machine (-1 to use the number of CPUs available)",
 			Value:  defaultCPU,
@@ -191,7 +197,11 @@ func (d *Driver) GetURL() (string, error) {
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CPU = flags.Int("virtualbox-cpu-count")
-	d.Memory = flags.Int("virtualbox-memory")
+	if flags.Int("virtualbox-memory-size") != defaultMemory {
+		d.Memory = flags.Int("virtualbox-memory-size")
+	} else {
+		d.Memory = flags.Int("virtualbox-memory")
+	}
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
 	d.SetSwarmConfigFromFlags(flags)

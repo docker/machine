@@ -60,3 +60,33 @@ func TestSetConfigFromCustomFlags(t *testing.T) {
 	assert.Equal(t, 4, driver.CPU)
 	assert.Equal(t, "docker", driver.GetSSHUsername())
 }
+
+func TestSetConfigFromCustomFlagsMemorySize(t *testing.T) {
+	driver := NewDriver("default", "path")
+
+	checkFlags := &drivers.CheckDriverOptions{
+		FlagsValues: map[string]interface{}{
+			"hyperv-boot2docker-url": "B2D_URL",
+			"hyperv-virtual-switch":  "TheSwitch",
+			"hyperv-disk-size":       100000,
+			"hyperv-memory-size":     4096,
+			"hyperv-cpu-count":       4,
+		},
+		CreateFlags: driver.GetCreateFlags(),
+	}
+
+	err := driver.SetConfigFromFlags(checkFlags)
+	assert.NoError(t, err)
+	assert.Empty(t, checkFlags.InvalidFlags)
+
+	sshPort, err := driver.GetSSHPort()
+	assert.Equal(t, 22, sshPort)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "B2D_URL", driver.Boot2DockerURL)
+	assert.Equal(t, "TheSwitch", driver.VSwitch)
+	assert.Equal(t, 100000, driver.DiskSize)
+	assert.Equal(t, 4096, driver.MemSize)
+	assert.Equal(t, 4, driver.CPU)
+	assert.Equal(t, "docker", driver.GetSSHUsername())
+}

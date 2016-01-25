@@ -23,7 +23,7 @@ function checkError {
 
 function createMachine {
   docker-machine rm -f release 2> /dev/null
-  docker-machine create -d virtualbox --virtualbox-cpu-count=2 --virtualbox-memory=2048 release
+  docker-machine create -d virtualbox --virtualbox-cpu-count=2 --virtualbox-memory-size=2048 release
 }
 
 if [[ -z "${GITHUB_TOKEN}" ]]; then

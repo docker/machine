@@ -103,7 +103,7 @@ invoking the `create` help text.
        --virtualbox-hostonly-nicpromisc "deny"                                                              Specify the Host Only Network Adapter Promiscuous Mode [$VIRTUALBOX_HOSTONLY_NIC_PROMISC]
        --virtualbox-hostonly-nictype "82540EM"                                                              Specify the Host Only Network Adapter Type [$VIRTUALBOX_HOSTONLY_NIC_TYPE]
        --virtualbox-import-boot2docker-vm                                                                   The name of a Boot2Docker VM to import
-       --virtualbox-memory "1024"                                                                           Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
+       --virtualbox-memory-size "1024"                                                                      Size of memory for host in MB [$VIRTUALBOX_MEMORY_SIZE]
        --virtualbox-no-share                                                                                Disable the mount of your home directory
 
 You may notice that some flags specify environment variables that they are

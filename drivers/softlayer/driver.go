@@ -91,6 +91,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultMemory,
 		},
 		mcnflag.IntFlag{
+			EnvVar: "SOFTLAYER_MEMORY_SIZE",
+			Name:   "softlayer-memory-size",
+			Usage:  "Memory in MB for machine",
+			Value:  defaultMemory,
+		},
+		mcnflag.IntFlag{
 			EnvVar: "SOFTLAYER_DISK_SIZE",
 			Name:   "softlayer-disk-size",
 			Usage:  "Disk size for machine, a value of 0 uses the default size on softlayer",
@@ -225,12 +231,17 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return err
 	}
 
+	memorySize := flags.Int("softlayer-memory-size")
+	if memorySize == defaultMemory {
+		memorySize = flags.Int("softlayer-memory")
+	}
+
 	d.deviceConfig = &deviceConfig{
 		Hostname:      flags.String("softlayer-hostname"),
 		DiskSize:      flags.Int("softlayer-disk-size"),
 		Cpu:           flags.Int("softlayer-cpu"),
 		Domain:        flags.String("softlayer-domain"),
-		Memory:        flags.Int("softlayer-memory"),
+		Memory:        memorySize,
 		PrivateNet:    flags.Bool("softlayer-private-net-only"),
 		LocalDisk:     flags.Bool("softlayer-local-disk"),
 		HourlyBilling: flags.Bool("softlayer-hourly-billing"),
