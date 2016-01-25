@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"runtime"
+
 	"github.com/docker/machine/libmachine/log"
 )
 
@@ -49,6 +51,10 @@ func (n *hostOnlyNetwork) Save(vbox VBoxManager) error {
 // SaveIPv4 changes the ipv4 configuration of the host-only network.
 func (n *hostOnlyNetwork) SaveIPv4(vbox VBoxManager) error {
 	if n.IPv4.IP != nil && n.IPv4.Mask != nil {
+		if runtime.GOOS == "windows" {
+			log.Warn("Windows might ask for the permission to configure a network adapter. Sometimes, such confirmation window is minimized in the taskbar.")
+		}
+
 		if err := vbox.vbm("hostonlyif", "ipconfig", n.Name, "--ip", n.IPv4.IP.String(), "--netmask", net.IP(n.IPv4.Mask).String()); err != nil {
 			return err
 		}
@@ -59,6 +65,10 @@ func (n *hostOnlyNetwork) SaveIPv4(vbox VBoxManager) error {
 
 // createHostonlyAdapter creates a new host-only network.
 func createHostonlyAdapter(vbox VBoxManager) (*hostOnlyNetwork, error) {
+	if runtime.GOOS == "windows" {
+		log.Warn("Windows might ask for the permission to create a network adapter. Sometimes, such confirmation window is minimized in the taskbar.")
+	}
+
 	out, err := vbox.vbmOut("hostonlyif", "create")
 	if err != nil {
 		return nil, err
@@ -226,6 +236,8 @@ func removeOrphanDHCPServers(vbox VBoxManager) error {
 		return nil
 	}
 
+	log.Debug("Removing orphan DHCP servers...")
+
 	nets, err := listHostOnlyAdapters(vbox)
 	if err != nil {
 		return err
@@ -275,6 +287,10 @@ func addHostOnlyDHCPServer(ifname string, d dhcpServer, vbox VBoxManager) error 
 		args = append(args, "--enable")
 	} else {
 		args = append(args, "--disable")
+	}
+
+	if runtime.GOOS == "windows" {
+		log.Warn("Windows might ask for the permission to configure a dhcp server. Sometimes, such confirmation window is minimized in the taskbar.")
 	}
 
 	return vbox.vbm(args...)
