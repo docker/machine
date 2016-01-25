@@ -9,5 +9,5 @@ RUN go get  github.com/golang/lint/golint \
 ENV USER root
 WORKDIR /go/src/github.com/docker/machine
 
-ADD . /go/src/github.com/docker/machine
+COPY . /go/src/github.com/docker/machine
 RUN mkdir bin
