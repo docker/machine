@@ -21,6 +21,7 @@ type Driver struct {
 	DiskSize       int
 	MemSize        int
 	CPU            int
+	MacAddr        string
 }
 
 const (
@@ -74,6 +75,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultCPU,
 			EnvVar: "HYPERV_CPU_COUNT",
 		},
+		mcnflag.StringFlag{
+			Name:  "hyperv-static-macaddress",
+			Usage: "Hyper-V network adatpter's static MAC address.",
+			EnvVar: "HYPERV_STATIC_MACADDRESS",
+		},
 	}
 }
 
@@ -83,6 +89,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("hyperv-disk-size")
 	d.MemSize = flags.Int("hyperv-memory")
 	d.CPU = flags.Int("hyperv-cpu-count")
+	d.MacAddr = flags.String("hyperv-static-macaddress")
 	d.SSHUser = "docker"
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -204,6 +211,14 @@ func (d *Driver) Create() error {
 		if err := cmd("Set-VMProcessor",
 			d.MachineName,
 			"-Count", fmt.Sprintf("%d", d.CPU)); err != nil {
+			return err
+		}
+	}
+
+	if d.MacAddr != "" {
+		if err := cmd("Set-VMNetworkAdapter",
+			"-VMName", d.MachineName,
+			"-StaticMacAddress", fmt.Sprintf("\"%s\"", d.MacAddr)); err != nil {
 			return err
 		}
 	}
