@@ -235,7 +235,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error attempting to save store: %s", err)
 	}
 
-	log.Infof("To see how to connect Docker to this machine, run: %s", fmt.Sprintf("%s env %s", os.Args[0], name))
+	log.Infof("To see how to connect your Docker Client to the Docker Engine running on this virtual machine, run: %s env %s", os.Args[0], name)
 
 	return nil
 }
