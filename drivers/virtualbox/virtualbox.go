@@ -478,7 +478,8 @@ func (d *Driver) Start() error {
 
 	var hostOnlyAdapter *hostOnlyNetwork
 	if s == state.Stopped {
-		// check network to re-create if needed
+		log.Infof("Check network to re-create if needed...")
+
 		if hostOnlyAdapter, err = d.setupHostOnlyNetwork(d.MachineName); err != nil {
 			return fmt.Errorf("Error setting up host only network on machine start: %s", err)
 		}
@@ -715,7 +716,6 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) (*hostOnlyNetwork, err
 		return nil, err
 	}
 
-	log.Debug("Removing orphan DHCP servers...")
 	if err := removeOrphanDHCPServers(d.VBoxManager); err != nil {
 		return nil, err
 	}
