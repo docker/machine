@@ -1,11 +1,11 @@
 <!--[metadata]>
 +++
-title = "Docker Machine"
+title = "Install Machine"
 description = "How to install Docker Machine"
 keywords = ["machine, orchestration, install, installation, docker, documentation"]
 [menu.main]
-parent="mn_install"
-weight=3
+parent="workw_machine"
+weight=-80
 +++
 <![end-metadata]-->
 
