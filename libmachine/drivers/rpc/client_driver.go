@@ -109,7 +109,8 @@ func (f *DefaultRPCClientDriverFactory) Close() error {
 
 	for _, openedDriver := range f.openedDrivers {
 		if err := openedDriver.close(); err != nil {
-			log.Warnf("Error closing a plugin driver: %s", err)
+			// No need to display an error.
+			// There's nothing we can do and it doesn't add value to the user.
 		}
 	}
 	f.openedDrivers = []*RPCClientDriver{}
@@ -213,14 +214,9 @@ func (c *RPCClientDriver) close() error {
 	}
 
 	log.Debug("Successfully made call to close driver server")
-
 	log.Debug("Making call to close connection to plugin binary")
 
-	if err := c.plugin.Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return c.plugin.Close()
 }
 
 // Helper method to make requests which take no arguments and return simply a
