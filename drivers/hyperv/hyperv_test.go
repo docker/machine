@@ -28,6 +28,8 @@ func TestSetConfigFromDefaultFlags(t *testing.T) {
 	assert.Equal(t, defaultDiskSize, driver.DiskSize)
 	assert.Equal(t, defaultMemory, driver.MemSize)
 	assert.Equal(t, defaultCPU, driver.CPU)
+	assert.Equal(t, "", driver.MacAddr)
+	assert.Equal(t, defaultVLanId, driver.VLanId)
 	assert.Equal(t, "docker", driver.GetSSHUsername())
 }
 
@@ -36,11 +38,13 @@ func TestSetConfigFromCustomFlags(t *testing.T) {
 
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"hyperv-boot2docker-url": "B2D_URL",
-			"hyperv-virtual-switch":  "TheSwitch",
-			"hyperv-disk-size":       100000,
-			"hyperv-memory":          4096,
-			"hyperv-cpu-count":       4,
+			"hyperv-boot2docker-url":   "B2D_URL",
+			"hyperv-virtual-switch":    "TheSwitch",
+			"hyperv-disk-size":         100000,
+			"hyperv-memory":            4096,
+			"hyperv-cpu-count":         4,
+			"hyperv-static-macaddress": "00:0a:95:9d:68:16",
+			"hyperv-vlan-id":           2,
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}
@@ -58,5 +62,7 @@ func TestSetConfigFromCustomFlags(t *testing.T) {
 	assert.Equal(t, 100000, driver.DiskSize)
 	assert.Equal(t, 4096, driver.MemSize)
 	assert.Equal(t, 4, driver.CPU)
+	assert.Equal(t, "00:0a:95:9d:68:16", driver.MacAddr)
+	assert.Equal(t, 2, driver.VLanId)
 	assert.Equal(t, "docker", driver.GetSSHUsername())
 }
