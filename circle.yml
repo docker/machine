@@ -9,6 +9,7 @@ machine:
     CHECKOUT: /home/ubuntu/$CIRCLE_PROJECT_REPONAME
     BASE_DIR: src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
     BASE_STABLE: ../../../$HOME/.gvm/pkgsets/stable/global/$BASE_DIR
+    GO15VENDOREXPERIMENT: 1
 
 dependencies:
   override:
@@ -21,9 +22,9 @@ test:
   pre:
     - gvm use stable && make build:
         pwd: $BASE_STABLE
-    - gvm use stable && GO15VENDOREXPERIMENT=1 go get github.com/docker/docker-machine-driver-ci-test
+    - gvm use stable && go get github.com/docker/docker-machine-driver-ci-test
 
   override:
-    - gvm use stable && PATH=../../../../bin:$PATH DRIVER=ci-test GO15VENDOREXPERIMENT=1 go test -v github.com/docker/machine/its/...:
+    - gvm use stable && PATH=../../../../bin:$PATH DRIVER=ci-test go test -v github.com/docker/machine/its/...:
         pwd: $BASE_STABLE
         timeout: 600
