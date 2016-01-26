@@ -14,12 +14,12 @@ Create machines on [Amazon Web Services](http://aws.amazon.com).
 
 To create machines on [Amazon Web Services](http://aws.amazon.com), you must supply two parameters: the AWS Access Key ID and the AWS Secret Access Key.
 
-
 ## Configuring credentials
 
 Before using the amazonec2 driver, ensure that you've configured credentials.
 
 ### AWS credential file
+
 One way to configure credentials is to use the standard credential file for Amazon AWS `~/.aws/credentials` file, which might look like:
 
     [default]
@@ -33,11 +33,13 @@ This is the simplest case, you can then create a new machine with:
     $ docker-machine create --driver amazonec2 aws01
 
 ### Command line flags
+
 Alternatively, you can use the flags `--amazonec2-access-key` and `--amazonec2-secret-key` on the command line:
 
     $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C*******  aws01
 
 ### Environment variables
+
 You can use environment variables:
 
     $ export AWS_ACCESS_KEY_ID=AKID1234567890
@@ -96,7 +98,7 @@ Environment variables and default values:
 | `--amazonec2-private-address-only`       | -                       | `false`          |
 | `--amazonec2-monitoring`                 | -                       | `false`          |
 | `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
-| `--amazonec2-ssh-keypath`                |`AWS_SSH_KEYPATH`        | -                |
+| `--amazonec2-ssh-keypath`                | `AWS_SSH_KEYPATH`       | -                |
 
 ## Default AMIs
 
@@ -117,6 +119,7 @@ By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
 | us-gov-west-1  | ami-b0bad893 |
 
 ## Security Group
+
 Note that a security group will be created and associated to the host. This security group will have the following ports opened inbound:
 
 -   ssh (22/tcp)
@@ -126,8 +129,8 @@ Note that a security group will be created and associated to the host. This secu
 If you specify a security group yourself using the `--amazonec2-security-group` flag, the above ports will be checked and opened and the security group modified.
 If you want more ports to be opened, like application specific ports, use the aws console and modify the configuration manually.
 
-
 ## VPC ID
+
 We determine your default vpc id at the start of a command.
 In some cases, either because your account does not have a default vpc, or you don't want to use the default one, you can specify a vpc with the `--amazonec2-vpc-id` flag.
 
@@ -147,6 +150,7 @@ To create a machine with a non-default vpc-id:
 This example assumes the VPC ID was found in the `a` availability zone. Use the`--amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
 
 ## Custom AMI and SSH username
+
 The default SSH username for the default AMIs is `ubuntu`.
 
 You need to change the SSH username only if the custom AMI you use has a different SSH username.
