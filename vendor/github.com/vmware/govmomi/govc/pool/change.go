@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,19 +28,32 @@ import (
 type change struct {
 	*flags.DatacenterFlag
 	*ResourceConfigSpecFlag
+
 	name string
 }
 
 func init() {
-	spec := NewResourceConfigSpecFlag()
-	cli.Register("pool.change", &change{ResourceConfigSpecFlag: spec})
+	cli.Register("pool.change", &change{})
 }
 
-func (cmd *change) Register(f *flag.FlagSet) {
+func (cmd *change) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.DatacenterFlag, ctx = flags.NewDatacenterFlag(ctx)
+	cmd.DatacenterFlag.Register(ctx, f)
+	cmd.ResourceConfigSpecFlag = NewResourceConfigSpecFlag()
+	cmd.ResourceConfigSpecFlag.Register(ctx, f)
+
 	f.StringVar(&cmd.name, "name", "", "Resource pool name")
 }
 
-func (cmd *change) Process() error { return nil }
+func (cmd *change) Process(ctx context.Context) error {
+	if err := cmd.DatacenterFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.ResourceConfigSpecFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *change) Usage() string {
 	return "POOL..."
@@ -50,7 +63,7 @@ func (cmd *change) Description() string {
 	return "Change the configuration of one or more resource POOLs.\n" + poolNameHelp
 }
 
-func (cmd *change) Run(f *flag.FlagSet) error {
+func (cmd *change) Run(ctx context.Context, f *flag.FlagSet) error {
 	if f.NArg() == 0 {
 		return flag.ErrHelp
 	}

@@ -17,12 +17,18 @@ limitations under the License.
 package object
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
+)
+
+var (
+	ErrNotSupported = errors.New("not supported (vCenter only)")
 )
 
 // Common contains the fields and functions common to all objects.
@@ -49,4 +55,17 @@ func (c Common) Client() *vim25.Client {
 
 func (c Common) Properties(ctx context.Context, r types.ManagedObjectReference, ps []string, dst interface{}) error {
 	return property.DefaultCollector(c.c).RetrieveOne(ctx, r, ps, dst)
+}
+
+func (c Common) Destroy(ctx context.Context) (*Task, error) {
+	req := types.Destroy_Task{
+		This: c.Reference(),
+	}
+
+	res, err := methods.Destroy_Task(ctx, c.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(c.c, res.Returnval), nil
 }

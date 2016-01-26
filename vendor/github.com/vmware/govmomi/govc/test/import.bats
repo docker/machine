@@ -34,3 +34,27 @@ load test_helper
   run govc vm.destroy ${TTYLINUX_NAME}
   assert_success
 }
+
+@test "import.ovf with name in options" {
+  name=$(new_id)
+  file=$($mktemp --tmpdir govc-test-XXXXX)
+  echo "{ \"Name\": \"${name}\"}" > ${file}
+
+  run govc import.ovf -options="${file}" $GOVC_IMAGES/${TTYLINUX_NAME}.ovf
+  assert_success
+
+  run govc vm.destroy "${name}"
+  assert_success
+
+  rm -f ${file}
+}
+
+@test "import.ovf with name as argument" {
+  name=$(new_id)
+
+  run govc import.ova -name="${name}" $GOVC_IMAGES/${TTYLINUX_NAME}.ova
+  assert_success
+
+  run govc vm.destroy "${name}"
+  assert_success
+}

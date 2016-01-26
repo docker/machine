@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ limitations under the License.
 package methods
 
 import (
+	"time"
+
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
@@ -38,4 +40,17 @@ func GetServiceContent(ctx context.Context, r soap.RoundTripper) (types.ServiceC
 	}
 
 	return res.Returnval, nil
+}
+
+func GetCurrentTime(ctx context.Context, r soap.RoundTripper) (*time.Time, error) {
+	req := types.CurrentTime{
+		This: serviceInstance,
+	}
+
+	res, err := CurrentTime(ctx, r, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Returnval, nil
 }

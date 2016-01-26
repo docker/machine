@@ -4,6 +4,15 @@
 
 Install [Bats](https://github.com/sstephenson/bats/)
 
+## coreutils
+
+Install gxargs, greadlink and gmktemp on Darwin
+
+```
+brew install coreutils
+brew install findutils
+```
+
 ## Download test images
 
 Some tests depend on [ttylinux](http://ttylinux.net) images, these can be downloaded by running:
@@ -46,7 +55,7 @@ running.  To enable these tests:
 
 ## Running tests
 
-The *govc* binary should be in your `PATH`; the test helper also prepends ../govc to `PATH`.
+The test helper prepends ../govc to `PATH`.
 
 The tests can be run from any directory, as *govc* is found related to
 `PATH` and *images* are found relative to `$BATS_TEST_DIRNAME`.

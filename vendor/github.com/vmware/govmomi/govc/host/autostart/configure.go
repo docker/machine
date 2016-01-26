@@ -19,41 +19,45 @@ package autostart
 import (
 	"flag"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
+	"github.com/vmware/govmomi/govc/flags"
 	"github.com/vmware/govmomi/vim25/types"
 )
 
 type configure struct {
 	*AutostartFlag
 
-	defaults types.AutoStartDefaults
+	types.AutoStartDefaults
 }
 
 func init() {
 	cli.Register("host.autostart.configure", &configure{})
 }
 
-func (cmd *configure) Register(f *flag.FlagSet) {
-	cmd.defaults.Enabled = types.NewBool(false)
-	f.BoolVar(cmd.defaults.Enabled, "enabled", false, "")
+func (cmd *configure) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.AutostartFlag, ctx = newAutostartFlag(ctx)
+	cmd.AutostartFlag.Register(ctx, f)
 
-	f.IntVar(&cmd.defaults.StartDelay, "start-delay", 0, "")
-	f.StringVar(&cmd.defaults.StopAction, "stop-action", "", "")
-	f.IntVar(&cmd.defaults.StopDelay, "stop-delay", 0, "")
-
-	cmd.defaults.WaitForHeartbeat = types.NewBool(false)
-	f.BoolVar(cmd.defaults.WaitForHeartbeat, "wait-for-heartbeat", false, "")
+	f.Var(flags.NewOptionalBool(&cmd.Enabled), "enabled", "")
+	f.IntVar(&cmd.StartDelay, "start-delay", 0, "")
+	f.StringVar(&cmd.StopAction, "stop-action", "", "")
+	f.IntVar(&cmd.StopDelay, "stop-delay", 0, "")
+	f.Var(flags.NewOptionalBool(&cmd.WaitForHeartbeat), "wait-for-heartbeat", "")
 }
 
-func (cmd *configure) Process() error { return nil }
+func (cmd *configure) Process(ctx context.Context) error {
+	if err := cmd.AutostartFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *configure) Usage() string {
 	return ""
 }
 
-func (cmd *configure) Run(f *flag.FlagSet) error {
-	// Note: this command cannot DISABLE autostart because the "Enabled" field is
-	// marked "omitempty", which means that it is not included when it is false.
-	// Also see: https://github.com/vmware/govmomi/issues/240
-	return cmd.ReconfigureDefaults(cmd.defaults)
+func (cmd *configure) Run(ctx context.Context, f *flag.FlagSet) error {
+	return cmd.ReconfigureDefaults(cmd.AutoStartDefaults)
 }

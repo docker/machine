@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -57,7 +57,25 @@ func init() {
 	cli.Register("vm.create", &create{})
 }
 
-func (cmd *create) Register(f *flag.FlagSet) {
+func (cmd *create) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	cmd.ClientFlag.Register(ctx, f)
+
+	cmd.DatacenterFlag, ctx = flags.NewDatacenterFlag(ctx)
+	cmd.DatacenterFlag.Register(ctx, f)
+
+	cmd.DatastoreFlag, ctx = flags.NewDatastoreFlag(ctx)
+	cmd.DatastoreFlag.Register(ctx, f)
+
+	cmd.ResourcePoolFlag, ctx = flags.NewResourcePoolFlag(ctx)
+	cmd.ResourcePoolFlag.Register(ctx, f)
+
+	cmd.HostSystemFlag, ctx = flags.NewHostSystemFlag(ctx)
+	cmd.HostSystemFlag.Register(ctx, f)
+
+	cmd.NetworkFlag, ctx = flags.NewNetworkFlag(ctx)
+	cmd.NetworkFlag.Register(ctx, f)
+
 	f.IntVar(&cmd.memory, "m", 1024, "Size in MB of memory")
 	f.IntVar(&cmd.cpus, "c", 1, "Number of CPUs")
 	f.StringVar(&cmd.guestID, "g", "otherGuest", "Guest OS")
@@ -69,9 +87,29 @@ func (cmd *create) Register(f *flag.FlagSet) {
 	f.StringVar(&cmd.disk, "disk", "", "Disk path name")
 }
 
-func (cmd *create) Process() error { return nil }
+func (cmd *create) Process(ctx context.Context) error {
+	if err := cmd.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.DatacenterFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.DatastoreFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.ResourcePoolFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.HostSystemFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.NetworkFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *create) Run(f *flag.FlagSet) error {
+func (cmd *create) Run(ctx context.Context, f *flag.FlagSet) error {
 	var err error
 
 	if len(f.Args()) != 1 {
@@ -111,7 +149,7 @@ func (cmd *create) Run(f *flag.FlagSet) error {
 
 	for _, file := range []*string{&cmd.iso, &cmd.disk} {
 		if *file != "" {
-			_, err = cmd.Stat(*file)
+			_, err = cmd.Datastore.Stat(context.TODO(), *file)
 			if err != nil {
 				return err
 			}
@@ -208,7 +246,7 @@ func (cmd *create) createVM(name string) (*object.Task, error) {
 	if !cmd.force {
 		vmxPath := fmt.Sprintf("%s/%s.vmx", name, name)
 
-		_, err := cmd.Stat(vmxPath)
+		_, err := cmd.Datastore.Stat(context.TODO(), vmxPath)
 		if err == nil {
 			dsPath := cmd.Datastore.Path(vmxPath)
 			return nil, fmt.Errorf("File %s already exists", dsPath)

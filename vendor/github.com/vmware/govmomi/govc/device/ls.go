@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,13 +37,21 @@ func init() {
 	cli.Register("device.ls", &ls{})
 }
 
-func (cmd *ls) Register(f *flag.FlagSet) {
+func (cmd *ls) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.VirtualMachineFlag, ctx = flags.NewVirtualMachineFlag(ctx)
+	cmd.VirtualMachineFlag.Register(ctx, f)
+
 	f.BoolVar(&cmd.boot, "boot", false, "List devices configured in the VM's boot options")
 }
 
-func (cmd *ls) Process() error { return nil }
+func (cmd *ls) Process(ctx context.Context) error {
+	if err := cmd.VirtualMachineFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *ls) Run(f *flag.FlagSet) error {
+func (cmd *ls) Run(ctx context.Context, f *flag.FlagSet) error {
 	vm, err := cmd.VirtualMachine()
 	if err != nil {
 		return err

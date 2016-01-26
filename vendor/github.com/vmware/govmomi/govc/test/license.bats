@@ -44,3 +44,10 @@ get_property() {
   # Expect the test instance to run in evaluation mode
   assert_equal "Evaluation Mode" $(get_key 00000-00000-00000-00000-00000 <<<$output | jq -r ".Name")
 }
+
+@test "license.decode" {
+  verify_evaluation
+
+  key=00000-00000-00000-00000-00000
+  assert_equal "eval" $(govc license.decode $key | grep $key | awk '{print $2}')
+}

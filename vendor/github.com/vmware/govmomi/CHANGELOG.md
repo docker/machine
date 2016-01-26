@@ -1,8 +1,34 @@
 # changelog
 
-### (unreleased)
+### 0.3.0 (2016-01-16)
+
+* Add object.VirtualNicManager wrapper
+
+* Add object.HostVsanSystem wrapper
+
+* Add object.HostSystem methods: EnterMaintenanceMode, ExitMaintenanceMode, Disconnect, Reconnect
+
+* Add finder.Folder method
+
+* Add object.Common.Destroy method
+
+* Add object.ComputeResource.Reconfigure method
+
+* Add license.AssignmentManager wrapper
+
+* Add object.HostFirewallSystem wrapper
+
+* Add object.DiagnosticManager wrapper
+
+* Add LoginExtensionByCertificate support
+
+* Add object.ExtensionManager
 
 ...
+
+### 0.2.0 (2015-09-15)
+
+* Update to vim25/6.0 API
 
 * Stop returning children from `ManagedObjectList`
 

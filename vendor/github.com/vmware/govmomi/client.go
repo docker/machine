@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ are kept outside the object package.
 package govmomi
 
 import (
+	"crypto/tls"
 	"net/url"
 
 	"github.com/vmware/govmomi/property"
@@ -74,7 +75,7 @@ type Client struct {
 }
 
 // NewClient creates a new client from a URL. The client authenticates with the
-// server before returning if the URL contains user information.
+// server with username/password before returning if the URL contains user information.
 func NewClient(ctx context.Context, u *url.URL, insecure bool) (*Client, error) {
 	soapClient := soap.NewClient(u, insecure)
 	vimClient, err := vim25.NewClient(ctx, soapClient)
@@ -98,9 +99,39 @@ func NewClient(ctx context.Context, u *url.URL, insecure bool) (*Client, error) 
 	return c, nil
 }
 
+// NewClientWithCertificate creates a new client from a URL. The client authenticates with the
+// server with the certificate before returning if the URL contains user information.
+func NewClientWithCertificate(ctx context.Context, u *url.URL, insecure bool, cert tls.Certificate) (*Client, error) {
+	soapClient := soap.NewClient(u, insecure)
+	soapClient.SetCertificate(cert)
+	vimClient, err := vim25.NewClient(ctx, soapClient)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &Client{
+		Client:         vimClient,
+		SessionManager: session.NewManager(vimClient),
+	}
+
+	if u.User != nil {
+		err = c.LoginExtensionByCertificate(ctx, u.User.Username(), "")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return c, nil
+}
+
 // Login dispatches to the SessionManager.
 func (c *Client) Login(ctx context.Context, u *url.Userinfo) error {
 	return c.SessionManager.Login(ctx, u)
+}
+
+// Login dispatches to the SessionManager.
+func (c *Client) LoginExtensionByCertificate(ctx context.Context, key string, locale string) error {
+	return c.SessionManager.LoginExtensionByCertificate(ctx, key, locale)
 }
 
 // Logout dispatches to the SessionManager.

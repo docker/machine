@@ -234,8 +234,8 @@
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi",
-			"Comment": "prerelease-v0.1.0-73-gfc131d4-65-g482cd82",
-			"Rev": "482cd823716e0fa9bc4e186d262a6ea23d940fbf"
+			"Comment": "v0.3.0-11-g20c009c",
+			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
 		},
 		{
 			"ImportPath": "github.com/docker/go-units",

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,13 +33,21 @@ func init() {
 	cli.Register("guest.rmdir", &rmdir{})
 }
 
-func (cmd *rmdir) Register(f *flag.FlagSet) {
+func (cmd *rmdir) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.GuestFlag, ctx = newGuestFlag(ctx)
+	cmd.GuestFlag.Register(ctx, f)
+
 	f.BoolVar(&cmd.recursive, "p", false, "Recursive removal")
 }
 
-func (cmd *rmdir) Process() error { return nil }
+func (cmd *rmdir) Process(ctx context.Context) error {
+	if err := cmd.GuestFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *rmdir) Run(f *flag.FlagSet) error {
+func (cmd *rmdir) Run(ctx context.Context, f *flag.FlagSet) error {
 	m, err := cmd.FileManager()
 	if err != nil {
 		return err

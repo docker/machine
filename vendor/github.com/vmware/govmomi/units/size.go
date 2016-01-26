@@ -19,7 +19,6 @@ package units
 import (
 	"errors"
 	"fmt"
-	"math"
 	"regexp"
 	"strconv"
 )
@@ -71,17 +70,17 @@ func (b *ByteSize) Set(s string) error {
 	switch m[2] {
 	case "B", "b", "":
 	case "K", "k":
-		*b *= ByteSize(math.Pow(1024, 1))
+		*b *= ByteSize(KB)
 	case "M", "m":
-		*b *= ByteSize(math.Pow(1024, 2))
+		*b *= ByteSize(MB)
 	case "G", "g":
-		*b *= ByteSize(math.Pow(1024, 3))
+		*b *= ByteSize(GB)
 	case "T", "t":
-		*b *= ByteSize(math.Pow(1024, 4))
+		*b *= ByteSize(TB)
 	case "P", "p":
-		*b *= ByteSize(math.Pow(1024, 5))
+		*b *= ByteSize(PB)
 	case "E", "e":
-		*b *= ByteSize(math.Pow(1024, 6))
+		*b *= ByteSize(EB)
 	default:
 		return errors.New("invalid byte suffix")
 	}

@@ -3,7 +3,7 @@
 load test_helper
 
 upload_file() {
-  file=$(mktemp --tmpdir govc-test-XXXXX)
+  file=$($mktemp --tmpdir govc-test-XXXXX)
   name=$(basename ${file})
   echo "Hello world!" > ${file}
 
@@ -35,7 +35,7 @@ upload_file() {
   # Long listing
   run govc datastore.ls -l "./govc-test-*"
   assert_success
-  assert_equal "13" $(awk '{ print $1 }' <<<${output})
+  assert_equal "13B" $(awk '{ print $1 }' <<<${output})
 }
 
 @test "datastore.rm" {
@@ -44,7 +44,7 @@ upload_file() {
   # Not found is a failure
   run govc datastore.rm "${name}.notfound"
   assert_failure
-  assert_matches "Error: File .* was not found" "${output}"
+  assert_matches "govc: File .* was not found" "${output}"
 
   # Not found is NOT a failure with the force flag
   run govc datastore.rm -f "${name}.notfound"

@@ -37,7 +37,7 @@ load test_helper
   assert_success
 
   run govc device.remove -vm $vm $eth0
-  assert_failure "Error: device '$eth0' not found"
+  assert_failure "govc: device '$eth0' not found"
 }
 
 @test "network change backing" {
@@ -47,10 +47,10 @@ load test_helper
 
   eth0=$(govc device.ls -vm $vm | grep ethernet- | awk '{print $1}')
   run govc vm.network.change -vm $vm $eth0 enoent
-  assert_failure "Error: network 'enoent' not found"
+  assert_failure "govc: network 'enoent' not found"
 
   run govc vm.network.change -vm $vm enoent "VM Network"
-  assert_failure "Error: device 'enoent' not found"
+  assert_failure "govc: device 'enoent' not found"
 
   run govc vm.network.change -vm $vm $eth0 "VM Network"
   assert_success
@@ -60,7 +60,7 @@ load test_helper
 
   unset GOVC_NETWORK
   run govc vm.network.change -vm $vm $eth0
-  assert_failure "Error: default network resolves to multiple instances, please specify"
+  assert_failure "govc: default network resolves to multiple instances, please specify"
 
   run govc vm.power -on $vm
   assert_success
@@ -89,7 +89,7 @@ load test_helper
   assert_failure
 
   run govc vm.network.add -vm $vm enoent
-  assert_failure "Error: network 'enoent' not found"
+  assert_failure "govc: network 'enoent' not found"
 
   run govc vm.network.add -vm $vm "VM Network"
   assert_success
@@ -101,7 +101,7 @@ load test_helper
 @test "network adapter" {
   vm=$(new_id)
   run govc vm.create -on=false -net.adapter=enoent $vm
-  assert_failure "Error: unknown ethernet card type 'enoent'"
+  assert_failure "govc: unknown ethernet card type 'enoent'"
 
   vm=$(new_id)
   run govc vm.create -on=false -net.adapter=vmxnet3 $vm
@@ -125,7 +125,7 @@ load test_helper
   # -net flag is required when there are multiple networks
   unset GOVC_NETWORK
   run govc vm.create -on=false $(new_id)
-  assert_failure "Error: default network resolves to multiple instances, please specify"
+  assert_failure "govc: default network resolves to multiple instances, please specify"
 }
 
 @test "network change hardware address" {

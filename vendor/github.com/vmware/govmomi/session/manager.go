@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -65,6 +65,22 @@ func (sm *Manager) Login(ctx context.Context, u *url.Userinfo) error {
 	return nil
 }
 
+func (sm *Manager) LoginExtensionByCertificate(ctx context.Context, key string, locale string) error {
+	req := types.LoginExtensionByCertificate{
+		This:         sm.Reference(),
+		ExtensionKey: key,
+		Locale:       locale,
+	}
+
+	login, err := methods.LoginExtensionByCertificate(ctx, sm.client, &req)
+	if err != nil {
+		return err
+	}
+
+	sm.userSession = &login.Returnval
+	return nil
+}
+
 func (sm *Manager) Logout(ctx context.Context) error {
 	req := types.Logout{
 		This: sm.Reference(),
@@ -101,6 +117,16 @@ func (sm *Manager) UserSession(ctx context.Context) (*types.UserSession, error) 
 	return mgr.CurrentSession, nil
 }
 
+func (sm *Manager) TerminateSession(ctx context.Context, sessionId []string) error {
+	req := types.TerminateSession{
+		This:      sm.Reference(),
+		SessionId: sessionId,
+	}
+
+	_, err := methods.TerminateSession(ctx, sm.client, &req)
+	return err
+}
+
 // SessionIsActive checks whether the session that was created at login is
 // still valid. This function only works against vCenter.
 func (sm *Manager) SessionIsActive(ctx context.Context) (bool, error) {
@@ -120,4 +146,18 @@ func (sm *Manager) SessionIsActive(ctx context.Context) (bool, error) {
 	}
 
 	return active.Returnval, err
+}
+
+func (sm *Manager) AcquireGenericServiceTicket(ctx context.Context, spec types.BaseSessionManagerServiceRequestSpec) (*types.SessionManagerGenericServiceTicket, error) {
+	req := types.AcquireGenericServiceTicket{
+		This: sm.Reference(),
+		Spec: spec,
+	}
+
+	res, err := methods.AcquireGenericServiceTicket(ctx, sm.client, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Returnval, nil
 }

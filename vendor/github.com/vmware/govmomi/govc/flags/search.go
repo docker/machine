@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25"
 	"golang.org/x/net/context"
@@ -30,9 +31,12 @@ import (
 const (
 	SearchVirtualMachines = iota + 1
 	SearchHosts
+	SearchVirtualApps
 )
 
 type SearchFlag struct {
+	common
+
 	*ClientFlag
 	*DatacenterFlag
 
@@ -48,65 +52,91 @@ type SearchFlag struct {
 	isset bool
 }
 
-func NewSearchFlag(t int) *SearchFlag {
-	s := SearchFlag{
+var searchFlagKey = flagKey("search")
+
+func NewSearchFlag(ctx context.Context, t int) (*SearchFlag, context.Context) {
+	if v := ctx.Value(searchFlagKey); v != nil {
+		return v.(*SearchFlag), ctx
+	}
+
+	v := &SearchFlag{
 		t: t,
 	}
 
+	v.ClientFlag, ctx = NewClientFlag(ctx)
+	v.DatacenterFlag, ctx = NewDatacenterFlag(ctx)
+
 	switch t {
 	case SearchVirtualMachines:
-		s.entity = "VM"
+		v.entity = "VM"
 	case SearchHosts:
-		s.entity = "host"
+		v.entity = "host"
+	case SearchVirtualApps:
+		v.entity = "vapp"
 	default:
 		panic("invalid search type")
 	}
 
-	return &s
+	ctx = context.WithValue(ctx, searchFlagKey, v)
+	return v, ctx
 }
 
-func (flag *SearchFlag) Register(fs *flag.FlagSet) {
-	register := func(v *string, f string, d string) {
-		f = fmt.Sprintf("%s.%s", strings.ToLower(flag.entity), f)
-		d = fmt.Sprintf(d, flag.entity)
-		fs.StringVar(v, f, "", d)
-	}
+func (flag *SearchFlag) Register(ctx context.Context, fs *flag.FlagSet) {
+	flag.RegisterOnce(func() {
+		flag.ClientFlag.Register(ctx, fs)
+		flag.DatacenterFlag.Register(ctx, fs)
 
-	switch flag.t {
-	case SearchVirtualMachines:
-		register(&flag.byDatastorePath, "path", "Find %s by path to .vmx file")
-	}
-
-	switch flag.t {
-	case SearchVirtualMachines, SearchHosts:
-		register(&flag.byDNSName, "dns", "Find %s by FQDN")
-		register(&flag.byIP, "ip", "Find %s by IP address")
-		register(&flag.byUUID, "uuid", "Find %s by instance UUID")
-	}
-
-	register(&flag.byInventoryPath, "ipath", "Find %s by inventory path")
-}
-
-func (flag *SearchFlag) Process() error {
-	flags := []string{
-		flag.byDatastorePath,
-		flag.byDNSName,
-		flag.byInventoryPath,
-		flag.byIP,
-		flag.byUUID,
-	}
-
-	flag.isset = false
-	for _, f := range flags {
-		if f != "" {
-			if flag.isset {
-				return errors.New("cannot use more than one search flag")
-			}
-			flag.isset = true
+		register := func(v *string, f string, d string) {
+			f = fmt.Sprintf("%s.%s", strings.ToLower(flag.entity), f)
+			d = fmt.Sprintf(d, flag.entity)
+			fs.StringVar(v, f, "", d)
 		}
-	}
 
-	return nil
+		switch flag.t {
+		case SearchVirtualMachines:
+			register(&flag.byDatastorePath, "path", "Find %s by path to .vmx file")
+		}
+
+		switch flag.t {
+		case SearchVirtualMachines, SearchHosts:
+			register(&flag.byDNSName, "dns", "Find %s by FQDN")
+			register(&flag.byIP, "ip", "Find %s by IP address")
+			register(&flag.byUUID, "uuid", "Find %s by instance UUID")
+		}
+
+		register(&flag.byInventoryPath, "ipath", "Find %s by inventory path")
+	})
+}
+
+func (flag *SearchFlag) Process(ctx context.Context) error {
+	return flag.ProcessOnce(func() error {
+		if err := flag.ClientFlag.Process(ctx); err != nil {
+			return err
+		}
+		if err := flag.DatacenterFlag.Process(ctx); err != nil {
+			return err
+		}
+
+		flags := []string{
+			flag.byDatastorePath,
+			flag.byDNSName,
+			flag.byInventoryPath,
+			flag.byIP,
+			flag.byUUID,
+		}
+
+		flag.isset = false
+		for _, f := range flags {
+			if f != "" {
+				if flag.isset {
+					return errors.New("cannot use more than one search flag")
+				}
+				flag.isset = true
+			}
+		}
+
+		return nil
+	})
 }
 
 func (flag *SearchFlag) IsSet() bool {
@@ -156,9 +186,9 @@ func (flag *SearchFlag) searchByIP(c *vim25.Client, dc *object.Datacenter) (obje
 func (flag *SearchFlag) searchByUUID(c *vim25.Client, dc *object.Datacenter) (object.Reference, error) {
 	switch flag.t {
 	case SearchVirtualMachines:
-		return flag.searchIndex(c).FindByUuid(context.TODO(), dc, flag.byUUID, true)
+		return flag.searchIndex(c).FindByUuid(context.TODO(), dc, flag.byUUID, true, nil)
 	case SearchHosts:
-		return flag.searchIndex(c).FindByUuid(context.TODO(), dc, flag.byUUID, false)
+		return flag.searchIndex(c).FindByUuid(context.TODO(), dc, flag.byUUID, false, nil)
 	default:
 		panic("unsupported type")
 	}
@@ -241,14 +271,71 @@ func (flag *SearchFlag) VirtualMachines(args []string) ([]*object.VirtualMachine
 		return nil, err
 	}
 
+	var nfe error
+
 	// List virtual machines for every argument
 	for _, arg := range args {
 		vms, err := finder.VirtualMachineList(context.TODO(), arg)
 		if err != nil {
+			if _, ok := err.(*find.NotFoundError); ok {
+				// Let caller decide how to handle NotFoundError
+				nfe = err
+				continue
+			}
 			return nil, err
 		}
 
 		out = append(out, vms...)
+	}
+
+	return out, nfe
+}
+
+func (flag *SearchFlag) VirtualApp() (*object.VirtualApp, error) {
+	ref, err := flag.search()
+	if err != nil {
+		return nil, err
+	}
+
+	app, ok := ref.(*object.VirtualApp)
+	if !ok {
+		return nil, fmt.Errorf("expected VirtualApp entity, got %s", ref.Reference().Type)
+	}
+
+	return app, nil
+}
+
+func (flag *SearchFlag) VirtualApps(args []string) ([]*object.VirtualApp, error) {
+	var out []*object.VirtualApp
+
+	if flag.IsSet() {
+		app, err := flag.VirtualApp()
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, app)
+		return out, nil
+	}
+
+	// List virtual apps
+	if len(args) == 0 {
+		return nil, errors.New("no argument")
+	}
+
+	finder, err := flag.Finder()
+	if err != nil {
+		return nil, err
+	}
+
+	// List virtual apps for every argument
+	for _, arg := range args {
+		apps, err := finder.VirtualAppList(context.TODO(), arg)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, apps...)
 	}
 
 	return out, nil

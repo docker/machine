@@ -34,9 +34,32 @@ type AutostartFlag struct {
 	*flags.HostSystemFlag
 }
 
-func (f *AutostartFlag) Register(fs *flag.FlagSet) {}
+func newAutostartFlag(ctx context.Context) (*AutostartFlag, context.Context) {
+	f := &AutostartFlag{}
+	f.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	f.DatacenterFlag, ctx = flags.NewDatacenterFlag(ctx)
+	f.HostSystemFlag, ctx = flags.NewHostSystemFlag(ctx)
+	return f, ctx
+}
 
-func (f *AutostartFlag) Process() error { return nil }
+func (f *AutostartFlag) Register(ctx context.Context, fs *flag.FlagSet) {
+	f.ClientFlag.Register(ctx, fs)
+	f.DatacenterFlag.Register(ctx, fs)
+	f.HostSystemFlag.Register(ctx, fs)
+}
+
+func (f *AutostartFlag) Process(ctx context.Context) error {
+	if err := f.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := f.DatacenterFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := f.HostSystemFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 // VirtualMachines returns list of virtual machine objects based on the
 // arguments specified on the command line. This helper is defined in
