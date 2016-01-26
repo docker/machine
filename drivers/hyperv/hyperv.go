@@ -78,8 +78,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "HYPERV_CPU_COUNT",
 		},
 		mcnflag.StringFlag{
-			Name:  "hyperv-static-macaddress",
-			Usage: "Hyper-V network adatpter's static MAC address.",
+			Name:   "hyperv-static-macaddress",
+			Usage:  "Hyper-V network adatpter's static MAC address.",
 			EnvVar: "HYPERV_STATIC_MACADDRESS",
 		},
 		mcnflag.IntFlag{
