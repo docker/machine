@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import (
 	"errors"
 	"flag"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
 	"github.com/vmware/govmomi/vim25/soap"
@@ -33,26 +35,29 @@ func init() {
 	cli.Register("datastore.download", &download{})
 }
 
-func (cmd *download) Register(f *flag.FlagSet) {}
+func (cmd *download) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.DatastoreFlag, ctx = flags.NewDatastoreFlag(ctx)
+	cmd.DatastoreFlag.Register(ctx, f)
+}
 
-func (cmd *download) Process() error { return nil }
+func (cmd *download) Process(ctx context.Context) error {
+	if err := cmd.DatastoreFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *download) Usage() string {
 	return "REMOTE LOCAL"
 }
 
-func (cmd *download) Run(f *flag.FlagSet) error {
+func (cmd *download) Run(ctx context.Context, f *flag.FlagSet) error {
 	args := f.Args()
 	if len(args) != 2 {
 		return errors.New("invalid arguments")
 	}
 
-	c, err := cmd.Client()
-	if err != nil {
-		return err
-	}
-
-	u, err := cmd.DatastoreURL(args[0])
+	ds, err := cmd.Datastore()
 	if err != nil {
 		return err
 	}
@@ -64,5 +69,5 @@ func (cmd *download) Run(f *flag.FlagSet) error {
 		defer logger.Wait()
 	}
 
-	return c.Client.DownloadFile(args[1], u, &p)
+	return ds.DownloadFile(context.TODO(), args[0], args[1], &p)
 }

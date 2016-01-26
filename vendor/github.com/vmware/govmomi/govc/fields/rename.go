@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,20 +33,26 @@ func init() {
 	cli.Register("fields.rename", &rename{})
 }
 
-func (cmd *rename) Register(f *flag.FlagSet) {}
+func (cmd *rename) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	cmd.ClientFlag.Register(ctx, f)
+}
 
-func (cmd *rename) Process() error { return nil }
+func (cmd *rename) Process(ctx context.Context) error {
+	if err := cmd.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *rename) Usage() string {
 	return "KEY NAME"
 }
 
-func (cmd *rename) Run(f *flag.FlagSet) error {
+func (cmd *rename) Run(ctx context.Context, f *flag.FlagSet) error {
 	if f.NArg() != 2 {
 		return flag.ErrHelp
 	}
-
-	ctx := context.TODO()
 
 	c, err := cmd.Client()
 	if err != nil {

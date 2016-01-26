@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package flags
 
 import (
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -25,9 +26,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/vmware/govmomi/session"
 	"github.com/vmware/govmomi/vim25"
@@ -39,6 +38,8 @@ const (
 	envURL           = "GOVC_URL"
 	envUsername      = "GOVC_USERNAME"
 	envPassword      = "GOVC_PASSWORD"
+	envCertificate   = "GOVC_CERTIFICATE"
+	envPrivateKey    = "GOVC_PRIVATE_KEY"
 	envInsecure      = "GOVC_INSECURE"
 	envPersist       = "GOVC_PERSIST_SESSION"
 	envMinAPIVersion = "GOVC_MIN_API_VERSION"
@@ -47,18 +48,33 @@ const (
 const cDescr = "ESX or vCenter URL"
 
 type ClientFlag struct {
-	*DebugFlag
+	common
 
-	register sync.Once
+	*DebugFlag
 
 	url           *url.URL
 	username      string
 	password      string
+	cert          string
+	key           string
 	insecure      bool
 	persist       bool
 	minAPIVersion string
 
 	client *vim25.Client
+}
+
+var clientFlagKey = flagKey("client")
+
+func NewClientFlag(ctx context.Context) (*ClientFlag, context.Context) {
+	if v := ctx.Value(clientFlagKey); v != nil {
+		return v.(*ClientFlag), ctx
+	}
+
+	v := &ClientFlag{}
+	v.DebugFlag, ctx = NewDebugFlag(ctx)
+	ctx = context.WithValue(ctx, clientFlagKey, v)
+	return v, ctx
 }
 
 func (flag *ClientFlag) URLWithoutPassword() *url.URL {
@@ -80,37 +96,18 @@ func (flag *ClientFlag) String() string {
 	return url.String()
 }
 
-var schemeMatch = regexp.MustCompile(`^\w+://`)
-
 func (flag *ClientFlag) Set(s string) error {
 	var err error
 
-	if s != "" {
-		// Default the scheme to https
-		if !schemeMatch.MatchString(s) {
-			s = "https://" + s
-		}
+	flag.url, err = soap.ParseURL(s)
 
-		flag.url, err = url.Parse(s)
-		if err != nil {
-			return err
-		}
-
-		// Default the path to /sdk
-		if flag.url.Path == "" {
-			flag.url.Path = "/sdk"
-		}
-
-		if flag.url.User == nil {
-			flag.url.User = url.UserPassword("", "")
-		}
-	}
-
-	return nil
+	return err
 }
 
-func (flag *ClientFlag) Register(f *flag.FlagSet) {
-	flag.register.Do(func() {
+func (flag *ClientFlag) Register(ctx context.Context, f *flag.FlagSet) {
+	flag.RegisterOnce(func() {
+		flag.DebugFlag.Register(ctx, f)
+
 		{
 			flag.Set(os.Getenv(envURL))
 			usage := fmt.Sprintf("%s [%s]", cDescr, envURL)
@@ -120,6 +117,18 @@ func (flag *ClientFlag) Register(f *flag.FlagSet) {
 		{
 			flag.username = os.Getenv(envUsername)
 			flag.password = os.Getenv(envPassword)
+		}
+
+		{
+			value := os.Getenv(envCertificate)
+			usage := fmt.Sprintf("Certificate [%s]", envCertificate)
+			f.StringVar(&flag.cert, "cert", value, usage)
+		}
+
+		{
+			value := os.Getenv(envPrivateKey)
+			usage := fmt.Sprintf("Private key [%s]", envPrivateKey)
+			f.StringVar(&flag.key, "key", value, usage)
 		}
 
 		{
@@ -155,39 +164,45 @@ func (flag *ClientFlag) Register(f *flag.FlagSet) {
 	})
 }
 
-func (flag *ClientFlag) Process() error {
-	if flag.url == nil {
-		return errors.New("specify an " + cDescr)
-	}
-
-	// Override username if set
-	if flag.username != "" {
-		var password string
-		var ok bool
-
-		if flag.url.User != nil {
-			password, ok = flag.url.User.Password()
+func (flag *ClientFlag) Process(ctx context.Context) error {
+	return flag.ProcessOnce(func() error {
+		if err := flag.DebugFlag.Process(ctx); err != nil {
+			return err
 		}
 
-		if ok {
-			flag.url.User = url.UserPassword(flag.username, password)
-		} else {
-			flag.url.User = url.User(flag.username)
-		}
-	}
-
-	// Override password if set
-	if flag.password != "" {
-		var username string
-
-		if flag.url.User != nil {
-			username = flag.url.User.Username()
+		if flag.url == nil {
+			return errors.New("specify an " + cDescr)
 		}
 
-		flag.url.User = url.UserPassword(username, flag.password)
-	}
+		// Override username if set
+		if flag.username != "" {
+			var password string
+			var ok bool
 
-	return nil
+			if flag.url.User != nil {
+				password, ok = flag.url.User.Password()
+			}
+
+			if ok {
+				flag.url.User = url.UserPassword(flag.username, password)
+			} else {
+				flag.url.User = url.User(flag.username)
+			}
+		}
+
+		// Override password if set
+		if flag.password != "" {
+			var username string
+
+			if flag.url.User != nil {
+				username = flag.url.User.Username()
+			}
+
+			flag.url.User = url.UserPassword(username, flag.password)
+		}
+
+		return nil
+	})
 }
 
 // Retry twice when a temporary I/O error occurs.
@@ -221,11 +236,9 @@ func (flag *ClientFlag) saveClient(c *vim25.Client) error {
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
-	enc := json.NewEncoder(f)
-	err = enc.Encode(c)
+	err = json.NewEncoder(f).Encode(c)
 	if err != nil {
 		return err
 	}
@@ -288,6 +301,17 @@ func (flag *ClientFlag) loadClient() (*vim25.Client, error) {
 
 func (flag *ClientFlag) newClient() (*vim25.Client, error) {
 	sc := soap.NewClient(flag.url, flag.insecure)
+	isTunnel := false
+
+	if flag.cert != "" {
+		isTunnel = true
+		cert, err := tls.LoadX509KeyPair(flag.cert, flag.key)
+		if err != nil {
+			return nil, err
+		}
+
+		sc.SetCertificate(cert)
+	}
 
 	// Add retry functionality before making any calls
 	rt := attachRetries(sc)
@@ -300,9 +324,17 @@ func (flag *ClientFlag) newClient() (*vim25.Client, error) {
 	c.Client = sc
 
 	m := session.NewManager(c)
-	err = m.Login(context.TODO(), flag.url.User)
-	if err != nil {
-		return nil, err
+	u := flag.url.User
+	if isTunnel {
+		err = m.LoginExtensionByCertificate(context.TODO(), u.Username(), "")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err = m.Login(context.TODO(), u)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = flag.saveClient(c)
@@ -316,7 +348,18 @@ func (flag *ClientFlag) newClient() (*vim25.Client, error) {
 // apiVersionValid returns whether or not the API version supported by the
 // server the client is connected to is not recent enough.
 func apiVersionValid(c *vim25.Client, minVersionString string) error {
-	realVersion, err := ParseVersion(c.ServiceContent.About.ApiVersion)
+	if minVersionString == "-" {
+		// Disable version check
+		return nil
+	}
+
+	apiVersion := c.ServiceContent.About.ApiVersion
+	if strings.HasSuffix(apiVersion, ".x") {
+		// Skip version check for development builds
+		return nil
+	}
+
+	realVersion, err := ParseVersion(apiVersion)
 	if err != nil {
 		return err
 	}

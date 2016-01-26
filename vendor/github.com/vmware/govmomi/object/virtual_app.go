@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -84,30 +84,43 @@ func (p VirtualApp) UpdateVAppConfig(ctx context.Context, spec types.VAppConfigS
 	return err
 }
 
-func (p VirtualApp) PowerOnVApp_Task(ctx context.Context) error {
+func (p VirtualApp) PowerOnVApp_Task(ctx context.Context) (*Task, error) {
 	req := types.PowerOnVApp_Task{
 		This: p.Reference(),
 	}
 
-	_, err := methods.PowerOnVApp_Task(ctx, p.c, &req)
-	return err
+	res, err := methods.PowerOnVApp_Task(ctx, p.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(p.c, res.Returnval), nil
 }
 
-func (p VirtualApp) PowerOffVApp_Task(ctx context.Context, force bool) error {
+func (p VirtualApp) PowerOffVApp_Task(ctx context.Context, force bool) (*Task, error) {
 	req := types.PowerOffVApp_Task{
 		This:  p.Reference(),
 		Force: force,
 	}
 
-	_, err := methods.PowerOffVApp_Task(ctx, p.c, &req)
-	return err
+	res, err := methods.PowerOffVApp_Task(ctx, p.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(p.c, res.Returnval), nil
+
 }
 
-func (p VirtualApp) SuspendVApp_Task(ctx context.Context) error {
+func (p VirtualApp) SuspendVApp_Task(ctx context.Context) (*Task, error) {
 	req := types.SuspendVApp_Task{
 		This: p.Reference(),
 	}
 
-	_, err := methods.SuspendVApp_Task(ctx, p.c, &req)
-	return err
+	res, err := methods.SuspendVApp_Task(ctx, p.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(p.c, res.Returnval), nil
 }

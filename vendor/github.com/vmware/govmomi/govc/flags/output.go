@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/vim25/progress"
 )
 
@@ -33,21 +35,39 @@ type OutputWriter interface {
 }
 
 type OutputFlag struct {
+	common
+
 	JSON bool
 	TTY  bool
 }
 
-func (flag *OutputFlag) Register(f *flag.FlagSet) {
-	f.BoolVar(&flag.JSON, "json", false, "Enable JSON output")
-}
+var outputFlagKey = flagKey("output")
 
-func (flag *OutputFlag) Process() error {
-	if !flag.JSON {
-		// Assume we have a tty if not outputting JSON
-		flag.TTY = true
+func NewOutputFlag(ctx context.Context) (*OutputFlag, context.Context) {
+	if v := ctx.Value(outputFlagKey); v != nil {
+		return v.(*OutputFlag), ctx
 	}
 
-	return nil
+	v := &OutputFlag{}
+	ctx = context.WithValue(ctx, outputFlagKey, v)
+	return v, ctx
+}
+
+func (flag *OutputFlag) Register(ctx context.Context, f *flag.FlagSet) {
+	flag.RegisterOnce(func() {
+		f.BoolVar(&flag.JSON, "json", false, "Enable JSON output")
+	})
+}
+
+func (flag *OutputFlag) Process(ctx context.Context) error {
+	return flag.ProcessOnce(func() error {
+		if !flag.JSON {
+			// Assume we have a tty if not outputting JSON
+			flag.TTY = true
+		}
+
+		return nil
+	})
 }
 
 // Log outputs the specified string, prefixed with the current time.
@@ -81,8 +101,7 @@ func (flag *OutputFlag) WriteResult(result OutputWriter) error {
 	var out = os.Stdout
 
 	if flag.JSON {
-		enc := json.NewEncoder(out)
-		err = enc.Encode(result)
+		err = json.NewEncoder(out).Encode(result)
 	} else {
 		err = result.Write(out)
 	}

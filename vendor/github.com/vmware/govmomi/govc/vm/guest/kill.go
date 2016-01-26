@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,13 +33,21 @@ func init() {
 	cli.Register("guest.kill", &kill{})
 }
 
-func (cmd *kill) Register(f *flag.FlagSet) {
+func (cmd *kill) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.GuestFlag, ctx = newGuestFlag(ctx)
+	cmd.GuestFlag.Register(ctx, f)
+
 	f.Var(&cmd.pids, "p", "Process ID")
 }
 
-func (cmd *kill) Process() error { return nil }
+func (cmd *kill) Process(ctx context.Context) error {
+	if err := cmd.GuestFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *kill) Run(f *flag.FlagSet) error {
+func (cmd *kill) Run(ctx context.Context, f *flag.FlagSet) error {
 	m, err := cmd.ProcessManager()
 	if err != nil {
 		return err

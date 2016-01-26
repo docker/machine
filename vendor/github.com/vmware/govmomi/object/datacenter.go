@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ limitations under the License.
 package object
 
 import (
+	"fmt"
+
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -44,7 +46,7 @@ func NewDatacenter(c *vim25.Client, ref types.ManagedObjectReference) *Datacente
 func (d *Datacenter) Folders(ctx context.Context) (*DatacenterFolders, error) {
 	var md mo.Datacenter
 
-	ps := []string{"vmFolder", "hostFolder", "datastoreFolder", "networkFolder"}
+	ps := []string{"name", "vmFolder", "hostFolder", "datastoreFolder", "networkFolder"}
 	err := d.Properties(ctx, d.Reference(), ps, &md)
 	if err != nil {
 		return nil, err
@@ -55,6 +57,20 @@ func (d *Datacenter) Folders(ctx context.Context) (*DatacenterFolders, error) {
 		HostFolder:      NewFolder(d.c, md.HostFolder),
 		DatastoreFolder: NewFolder(d.c, md.DatastoreFolder),
 		NetworkFolder:   NewFolder(d.c, md.NetworkFolder),
+	}
+
+	paths := []struct {
+		name string
+		path *string
+	}{
+		{"vm", &df.VmFolder.InventoryPath},
+		{"host", &df.HostFolder.InventoryPath},
+		{"datastore", &df.DatastoreFolder.InventoryPath},
+		{"network", &df.NetworkFolder.InventoryPath},
+	}
+
+	for _, p := range paths {
+		*p.path = fmt.Sprintf("/%s/%s", md.Name, p.name)
 	}
 
 	return df, nil

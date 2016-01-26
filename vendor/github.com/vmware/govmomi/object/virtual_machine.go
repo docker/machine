@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +26,10 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
+)
+
+const (
+	PropRuntimePowerState = "summary.runtime.powerState"
 )
 
 type VirtualMachine struct {
@@ -56,6 +60,17 @@ func (v VirtualMachine) Name(ctx context.Context) (string, error) {
 	}
 
 	return o.Name, nil
+}
+
+func (v VirtualMachine) PowerState(ctx context.Context) (types.VirtualMachinePowerState, error) {
+	var o mo.VirtualMachine
+
+	err := v.Properties(ctx, v.Reference(), []string{PropRuntimePowerState}, &o)
+	if err != nil {
+		return "", err
+	}
+
+	return o.Summary.Runtime.PowerState, nil
 }
 
 func (v VirtualMachine) PowerOn(ctx context.Context) (*Task, error) {
@@ -150,6 +165,20 @@ func (v VirtualMachine) Clone(ctx context.Context, folder *Folder, name string, 
 	}
 
 	res, err := methods.CloneVM_Task(ctx, v.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(v.c, res.Returnval), nil
+}
+
+func (v VirtualMachine) Customize(ctx context.Context, spec types.CustomizationSpec) (*Task, error) {
+	req := types.CustomizeVM_Task{
+		This: v.Reference(),
+		Spec: spec,
+	}
+
+	res, err := methods.CustomizeVM_Task(ctx, v.c, &req)
 	if err != nil {
 		return nil, err
 	}
@@ -353,6 +382,24 @@ func (v VirtualMachine) Answer(ctx context.Context, id, answer string) error {
 	return nil
 }
 
+// CreateSnapshot creates a new snapshot of a virtual machine.
+func (v VirtualMachine) CreateSnapshot(ctx context.Context, name string, description string, memory bool, quiesce bool) (*Task, error) {
+	req := types.CreateSnapshot_Task{
+		This:        v.Reference(),
+		Name:        name,
+		Description: description,
+		Memory:      memory,
+		Quiesce:     quiesce,
+	}
+
+	res, err := methods.CreateSnapshot_Task(ctx, v.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(v.c, res.Returnval), nil
+}
+
 // IsToolsRunning returns true if VMware Tools is currently running in the guest OS, and false otherwise.
 func (v VirtualMachine) IsToolsRunning(ctx context.Context) (bool, error) {
 	var o mo.VirtualMachine
@@ -363,6 +410,29 @@ func (v VirtualMachine) IsToolsRunning(ctx context.Context) (bool, error) {
 	}
 
 	return o.Guest.ToolsRunningStatus == string(types.VirtualMachineToolsRunningStatusGuestToolsRunning), nil
+}
+
+// Wait for the VirtualMachine to change to the desired power state.
+func (v VirtualMachine) WaitForPowerState(ctx context.Context, state types.VirtualMachinePowerState) error {
+	p := property.DefaultCollector(v.c)
+	err := property.Wait(ctx, p, v.Reference(), []string{PropRuntimePowerState}, func(pc []types.PropertyChange) bool {
+		for _, c := range pc {
+			if c.Name != PropRuntimePowerState {
+				continue
+			}
+			if c.Val == nil {
+				continue
+			}
+
+			ps := c.Val.(types.VirtualMachinePowerState)
+			if ps == state {
+				return true
+			}
+		}
+		return false
+	})
+
+	return err
 }
 
 func (v VirtualMachine) MarkAsTemplate(ctx context.Context) error {

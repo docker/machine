@@ -17,7 +17,19 @@ export GITHUB_USER="${GITHUB_USER:-vmware}"
 export GITHUB_REPO="${GITHUB_REPO:-govmomi}"
 
 name="$(git describe)"
-tag="prerelease-${name}"
+
+case "$1" in
+  release)
+    tag="${name}"
+    ;;
+  prerelease)
+    tag="prerelease-${name}"
+    ;;
+  *)
+    echo "Usage: $0 [release|prerelease]"
+    exit 1
+    ;;
+esac
 
 echo "Building govc..."
 rm -f govc_*

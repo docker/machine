@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,11 +32,24 @@ func init() {
 	cli.Register("guest.chmod", &chmod{})
 }
 
-func (cmd *chmod) Register(f *flag.FlagSet) {}
+func (cmd *chmod) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.GuestFlag, ctx = newGuestFlag(ctx)
+	cmd.GuestFlag.Register(ctx, f)
+	cmd.FileAttrFlag, ctx = newFileAttrFlag(ctx)
+	cmd.FileAttrFlag.Register(ctx, f)
+}
 
-func (cmd *chmod) Process() error { return nil }
+func (cmd *chmod) Process(ctx context.Context) error {
+	if err := cmd.GuestFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.FileAttrFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *chmod) Run(f *flag.FlagSet) error {
+func (cmd *chmod) Run(ctx context.Context, f *flag.FlagSet) error {
 	m, err := cmd.FileManager()
 	if err != nil {
 		return err

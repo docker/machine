@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,13 +21,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/vmware/govmomi/event"
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
-	"github.com/vmware/govmomi/list"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
 )
@@ -42,24 +40,25 @@ func init() {
 	cli.Register("events", &events{})
 }
 
-func (cmd *events) Register(f *flag.FlagSet) {
+func (cmd *events) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.DatacenterFlag, ctx = flags.NewDatacenterFlag(ctx)
+	cmd.DatacenterFlag.Register(ctx, f)
+
 	f.IntVar(&cmd.Max, "n", 25, "Output the last N events")
 }
 
-func (cmd *events) Process() error { return nil }
+func (cmd *events) Process(ctx context.Context) error {
+	if err := cmd.DatacenterFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *events) Usage() string {
 	return "[PATH]..."
 }
 
-func (cmd *events) Run(f *flag.FlagSet) error {
-	ctx := context.TODO()
-
-	finder, err := cmd.Finder()
-	if err != nil {
-		return err
-	}
-
+func (cmd *events) Run(ctx context.Context, f *flag.FlagSet) error {
 	c, err := cmd.Client()
 	if err != nil {
 		return err
@@ -67,20 +66,9 @@ func (cmd *events) Run(f *flag.FlagSet) error {
 
 	m := event.NewManager(c)
 
-	var objs []list.Element
-
-	args := f.Args()
-	if len(args) == 0 {
-		args = []string{"."}
-	}
-
-	for _, arg := range args {
-		es, err := finder.ManagedObjectList(ctx, arg)
-		if err != nil {
-			return err
-		}
-
-		objs = append(objs, es...)
+	objs, err := cmd.ManagedObjects(ctx, f.Args())
+	if err != nil {
+		return err
 	}
 
 	var events []types.BaseEvent
@@ -88,14 +76,14 @@ func (cmd *events) Run(f *flag.FlagSet) error {
 	for _, o := range objs {
 		filter := types.EventFilterSpec{
 			Entity: &types.EventFilterSpecByEntity{
-				Entity:    o.Object.Reference(),
+				Entity:    o,
 				Recursion: types.EventFilterSpecRecursionOptionAll,
 			},
 		}
 
 		collector, err := m.CreateCollectorForEvents(ctx, filter)
 		if err != nil {
-			return fmt.Errorf("[%s] %s", o.Path, err)
+			return fmt.Errorf("[%#v] %s", o, err)
 		}
 		defer collector.Destroy(ctx)
 
@@ -114,8 +102,6 @@ func (cmd *events) Run(f *flag.FlagSet) error {
 
 	event.Sort(events)
 
-	tw := tabwriter.NewWriter(os.Stdout, 3, 0, 2, ' ', 0)
-
 	for _, e := range events {
 		cat, err := m.EventCategory(ctx, e)
 		if err != nil {
@@ -129,10 +115,10 @@ func (cmd *events) Run(f *flag.FlagSet) error {
 			msg = fmt.Sprintf("%s (target=%s %s)", msg, t.Info.Entity.Type, t.Info.EntityName)
 		}
 
-		fmt.Fprintf(tw, "[%s]\t[%s]\t%s\n",
+		fmt.Fprintf(os.Stdout, "[%s] [%s] %s\n",
 			event.CreatedTime.Local().Format(time.ANSIC),
 			cat, msg)
 	}
 
-	return tw.Flush()
+	return nil
 }

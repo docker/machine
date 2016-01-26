@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import (
 
 type Folder struct {
 	Common
+
+	InventoryPath string
 }
 
 func NewFolder(c *vim25.Client, ref types.ManagedObjectReference) *Folder {
@@ -174,6 +176,20 @@ func (f Folder) RegisterVM(ctx context.Context, path string, name string, asTemp
 	}
 
 	res, err := methods.RegisterVM_Task(ctx, f.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(f.c, res.Returnval), nil
+}
+
+func (f Folder) CreateDVS(ctx context.Context, spec types.DVSCreateSpec) (*Task, error) {
+	req := types.CreateDVS_Task{
+		This: f.Reference(),
+		Spec: spec,
+	}
+
+	res, err := methods.CreateDVS_Task(ctx, f.c, &req)
 	if err != nil {
 		return nil, err
 	}

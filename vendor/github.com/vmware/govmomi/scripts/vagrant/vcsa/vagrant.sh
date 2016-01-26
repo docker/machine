@@ -3,7 +3,7 @@
 useradd vagrant -m -s /bin/bash
 groupmod -A vagrant wheel
 
-echo -e "vagrant ALL=(ALL) NOPASSWD: ALL\n" >> /etc/sudoers
+echo "vagrant ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 mkdir ~vagrant/.ssh
 wget --no-check-certificate \
@@ -12,13 +12,12 @@ wget --no-check-certificate \
 chown -R vagrant ~vagrant/.ssh
 chmod -R go-rwsx ~vagrant/.ssh
 
-perl -pi -e 's/^#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
-perl -pi -e 's/^AllowTcpForwarding no//' /etc/ssh/sshd_config
-perl -pi -e 's/^PermitTunnel no//' /etc/ssh/sshd_config
-perl -pi -e 's/^MaxSessions \d+//' /etc/ssh/sshd_config
+sed -i -e 's/^#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
+sed -i -e 's/^AllowTcpForwarding no//' /etc/ssh/sshd_config
+sed -i -e 's/^PermitTunnel no//' /etc/ssh/sshd_config
+sed -i -e 's/^MaxSessions 1//' /etc/ssh/sshd_config
 
 # disable password expiration
-for uid in root vagrant
-do
+for uid in root vagrant; do
   chage -I -1 -E -1 -m 0 -M -1 $uid
 done

@@ -37,15 +37,11 @@ type Envelope struct {
 type VirtualSystem struct {
 	Content
 
-	Annotation         *AnnotationSection         `xml:"AnnotationSection"`
-	Product            *ProductSection            `xml:"ProductSection"`
-	Network            *NetworkSection            `xml:"NetworkSection"`
-	Disk               *DiskSection               `xml:"DiskSection"`
-	OperatingSystem    *OperatingSystemSection    `xml:"OperatingSystemSection"`
-	Eula               *EulaSection               `xml:"EulaSection"`
-	VirtualHardware    *VirtualHardwareSection    `xml:"VirtualHardwareSection"`
-	ResourceAllocation *ResourceAllocationSection `xml:"ResourceAllocationSection"`
-	DeploymentOption   *DeploymentOptionSection   `xml:"DeploymentOptionSection"`
+	Annotation      []AnnotationSection      `xml:"AnnotationSection"`
+	Product         []ProductSection         `xml:"ProductSection"`
+	OperatingSystem []OperatingSystemSection `xml:"OperatingSystemSection"`
+	Eula            []EulaSection            `xml:"EulaSection"`
+	VirtualHardware []VirtualHardwareSection `xml:"VirtualHardwareSection"`
 }
 
 type File struct {

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,17 +37,31 @@ func init() {
 	cli.Register("datastore.cp", &cp{})
 }
 
-func (cmd *cp) Register(f *flag.FlagSet) {
+func (cmd *cp) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
+
+	cmd.DatastoreFlag, ctx = flags.NewDatastoreFlag(ctx)
+	cmd.DatastoreFlag.Register(ctx, f)
+
 	f.BoolVar(&cmd.force, "f", false, "If true, overwrite any identically named file at the destination")
 }
 
-func (cmd *cp) Process() error { return nil }
+func (cmd *cp) Process(ctx context.Context) error {
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.DatastoreFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *cp) Usage() string {
 	return "SRC DST"
 }
 
-func (cmd *cp) Run(f *flag.FlagSet) error {
+func (cmd *cp) Run(ctx context.Context, f *flag.FlagSet) error {
 	args := f.Args()
 	if len(args) != 2 {
 		return errors.New("SRC and DST arguments are required")

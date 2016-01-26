@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,34 +17,41 @@ limitations under the License.
 package flags
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"net/url"
 	"os"
-	"path"
-	"sync"
 
 	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
 )
 
-var (
-	ErrDatastoreDirNotExist  = errors.New("datastore directory does not exist")
-	ErrDatastoreFileNotExist = errors.New("datastore file does not exist")
-)
-
 type DatastoreFlag struct {
+	common
+
 	*DatacenterFlag
 
-	register sync.Once
-	name     string
-	ds       *object.Datastore
+	name string
+	ds   *object.Datastore
 }
 
-func (flag *DatastoreFlag) Register(f *flag.FlagSet) {
-	flag.register.Do(func() {
+var datastoreFlagKey = flagKey("datastore")
+
+func NewDatastoreFlag(ctx context.Context) (*DatastoreFlag, context.Context) {
+	if v := ctx.Value(datastoreFlagKey); v != nil {
+		return v.(*DatastoreFlag), ctx
+	}
+
+	v := &DatastoreFlag{}
+	v.DatacenterFlag, ctx = NewDatacenterFlag(ctx)
+	ctx = context.WithValue(ctx, datastoreFlagKey, v)
+	return v, ctx
+}
+
+func (flag *DatastoreFlag) Register(ctx context.Context, f *flag.FlagSet) {
+	flag.RegisterOnce(func() {
+		flag.DatacenterFlag.Register(ctx, f)
+
 		env := "GOVC_DATASTORE"
 		value := os.Getenv(env)
 		usage := fmt.Sprintf("Datastore [%s]", env)
@@ -52,7 +59,14 @@ func (flag *DatastoreFlag) Register(f *flag.FlagSet) {
 	})
 }
 
-func (flag *DatastoreFlag) Process() error { return nil }
+func (flag *DatastoreFlag) Process(ctx context.Context) error {
+	return flag.ProcessOnce(func() error {
+		if err := flag.DatacenterFlag.Process(ctx); err != nil {
+			return err
+		}
+		return nil
+	})
+}
 
 func (flag *DatastoreFlag) Datastore() (*object.Datastore, error) {
 	if flag.ds != nil {
@@ -64,13 +78,11 @@ func (flag *DatastoreFlag) Datastore() (*object.Datastore, error) {
 		return nil, err
 	}
 
-	if flag.name == "" {
-		flag.ds, err = finder.DefaultDatastore(context.TODO())
-	} else {
-		flag.ds, err = finder.Datastore(context.TODO(), flag.name)
+	if flag.ds, err = finder.DatastoreOrDefault(context.TODO(), flag.name); err != nil {
+		return nil, err
 	}
 
-	return flag.ds, err
+	return flag.ds, nil
 }
 
 func (flag *DatastoreFlag) DatastorePath(name string) (string, error) {
@@ -99,51 +111,4 @@ func (flag *DatastoreFlag) DatastoreURL(path string) (*url.URL, error) {
 	}
 
 	return u, nil
-}
-
-func (flag *DatastoreFlag) Stat(file string) (types.BaseFileInfo, error) {
-	ds, err := flag.Datastore()
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := ds.Browser(context.TODO())
-	if err != nil {
-		return nil, err
-	}
-
-	spec := types.HostDatastoreBrowserSearchSpec{
-		Details: &types.FileQueryFlags{
-			FileType:  true,
-			FileOwner: types.NewBool(true), // TODO: omitempty is generated, but seems to be required
-		},
-		MatchPattern: []string{path.Base(file)},
-	}
-
-	dsPath := ds.Path(path.Dir(file))
-	task, err := b.SearchDatastore(context.TODO(), dsPath, &spec)
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := task.WaitForResult(context.TODO(), nil)
-	if err != nil {
-		if info != nil && info.Error != nil {
-			_, ok := info.Error.Fault.(*types.FileNotFound)
-			if ok {
-				// FileNotFound means the base path doesn't exist.
-				return nil, ErrDatastoreDirNotExist
-			}
-		}
-
-		return nil, err
-	}
-
-	res := info.Result.(types.HostDatastoreBrowserSearchResults)
-	if len(res.File) == 0 {
-		// File doesn't exist
-		return nil, ErrDatastoreFileNotExist
-	}
-
-	return res.File[0], nil
 }

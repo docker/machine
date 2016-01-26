@@ -225,6 +225,7 @@ func (d *Driver) GetIP() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer c.Logout(ctx)
 
 	vm, err := d.fetchVM(c, ctx, d.MachineName)
 	if err != nil {
@@ -250,6 +251,7 @@ func (d *Driver) GetState() (state.State, error) {
 	if err != nil {
 		return state.None, err
 	}
+	defer c.Logout(ctx)
 
 	vm, err := d.fetchVM(c, ctx, d.MachineName)
 	if err != nil {
@@ -284,26 +286,27 @@ func (d *Driver) PreCreateCheck() error {
 	if err != nil {
 		return err
 	}
+	defer c.Logout(ctx)
 
 	// Create a new finder
 	f := find.NewFinder(c.Client, true)
 
-	dc, err := d.getDatacenter(f, ctx)
+	dc, err := f.DatacenterOrDefault(ctx, d.Datacenter)
 	if err != nil {
 		return err
 	}
 
 	f.SetDatacenter(dc)
 
-	if _, err := d.getDatastore(f, ctx); err != nil {
+	if _, err := f.DatastoreOrDefault(ctx, d.Datastore); err != nil {
 		return err
 	}
 
-	if _, err := d.getNetwork(f, ctx); err != nil {
+	if _, err := f.NetworkOrDefault(ctx, d.Network); err != nil {
 		return err
 	}
 
-	hs, err := d.getHostSystem(f, ctx)
+	hs, err := f.HostSystemOrDefault(ctx, d.HostSystem)
 	if err != nil {
 		return err
 	}
@@ -348,27 +351,29 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
+	defer c.Logout(ctx)
+
 	// Create a new finder
 	f := find.NewFinder(c.Client, true)
 
-	dc, err := d.getDatacenter(f, ctx)
+	dc, err := f.DatacenterOrDefault(ctx, d.Datacenter)
 	if err != nil {
 		return err
 	}
 
 	f.SetDatacenter(dc)
 
-	dss, err := d.getDatastore(f, ctx)
+	dss, err := f.DatastoreOrDefault(ctx, d.Datastore)
 	if err != nil {
 		return err
 	}
 
-	net, err := d.getNetwork(f, ctx)
+	net, err := f.NetworkOrDefault(ctx, d.Network)
 	if err != nil {
 		return err
 	}
 
-	hs, err := d.getHostSystem(f, ctx)
+	hs, err := f.HostSystemOrDefault(ctx, d.HostSystem)
 	if err != nil {
 		return err
 	}
@@ -558,6 +563,7 @@ func (d *Driver) Start() error {
 		if err != nil {
 			return err
 		}
+		defer c.Logout(ctx)
 
 		vm, err := d.fetchVM(c, ctx, d.MachineName)
 		if err != nil {
@@ -590,6 +596,7 @@ func (d *Driver) Stop() error {
 	if err != nil {
 		return err
 	}
+	defer c.Logout(ctx)
 
 	vm, err := d.fetchVM(c, ctx, d.MachineName)
 	if err != nil {
@@ -645,6 +652,7 @@ func (d *Driver) Kill() error {
 	if err != nil {
 		return err
 	}
+	defer c.Logout(ctx)
 
 	vm, err := d.fetchVM(c, ctx, d.MachineName)
 	if err != nil {
@@ -683,18 +691,19 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
+	defer c.Logout(ctx)
 
 	// Create a new finder
 	f := find.NewFinder(c.Client, true)
 
-	dc, err := d.getDatacenter(f, ctx)
+	dc, err := f.DatacenterOrDefault(ctx, d.Datacenter)
 	if err != nil {
 		return err
 	}
 
 	f.SetDatacenter(dc)
 
-	dss, err := d.getDatastore(f, ctx)
+	dss, err := f.DatastoreOrDefault(ctx, d.Datastore)
 	if err != nil {
 		return err
 	}
@@ -821,7 +830,7 @@ func (d *Driver) fetchVM(c *govmomi.Client, ctx context.Context, vmname string) 
 	var vm *object.VirtualMachine
 	var err error
 
-	dc, err := d.getDatacenter(f, ctx)
+	dc, err := f.DatacenterOrDefault(ctx, d.Datacenter)
 	if err != nil {
 		return vm, err
 	}
@@ -855,84 +864,4 @@ func (f *FileAttrFlag) SetPerms(owner, group, perms int) {
 
 func (f *FileAttrFlag) Attr() types.BaseGuestFileAttributes {
 	return &f.GuestPosixFileAttributes
-}
-
-func (d *Driver) getDatacenter(f *find.Finder, ctx context.Context) (dc *object.Datacenter, err error) {
-
-	// Datacenter
-	if d.Datacenter != "" {
-		// Find specified Datacenter
-		dc, err = f.Datacenter(ctx, d.Datacenter)
-		if err != nil {
-			return dc, err
-		}
-	} else {
-		// Use default Datacenter
-		dc, err = f.DefaultDatacenter(ctx)
-		if err != nil {
-			return dc, err
-		}
-	}
-	log.Debug("Datacenter found: ", dc)
-	return dc, nil
-}
-
-func (d *Driver) getDatastore(f *find.Finder, ctx context.Context) (dss *object.Datastore, err error) {
-
-	// Datastore
-	if d.Datastore != "" {
-		// Find specified Datastore
-		dss, err = f.Datastore(ctx, d.Datastore)
-		if err != nil {
-			return dss, err
-		}
-	} else {
-		// Find default Datastore
-		dss, err = f.DefaultDatastore(ctx)
-		if err != nil {
-			return dss, err
-		}
-	}
-	log.Debug("Datastore found: ", dss)
-	return dss, err
-}
-
-func (d *Driver) getNetwork(f *find.Finder, ctx context.Context) (net object.NetworkReference, err error) {
-
-	// Network
-	if d.Network != "" {
-		// Find specified Network
-		net, err = f.Network(ctx, d.Network)
-		if err != nil {
-			return net, err
-		}
-	} else {
-		// Find default Network
-		net, err = f.DefaultNetwork(ctx)
-		if err != nil {
-			return net, err
-		}
-	}
-	log.Debug("Network found: ", net)
-	return net, nil
-
-}
-
-func (d *Driver) getHostSystem(f *find.Finder, ctx context.Context) (hs *object.HostSystem, err error) {
-	// HostSystem
-	if d.HostSystem != "" {
-		// Find specified HostSystem
-		hs, err = f.HostSystem(ctx, d.HostSystem)
-		if err != nil {
-			return hs, err
-		}
-	} else {
-		// Find default HostSystem
-		hs, err = f.DefaultHostSystem(ctx)
-		if err != nil {
-			return hs, err
-		}
-	}
-	log.Debug("HostSystem found: ", hs)
-	return hs, nil
 }

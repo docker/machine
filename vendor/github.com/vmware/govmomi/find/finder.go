@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -243,6 +243,18 @@ func (f *Finder) DefaultDatacenter(ctx context.Context) (*object.Datacenter, err
 	return dc, nil
 }
 
+func (f *Finder) DatacenterOrDefault(ctx context.Context, path string) (*object.Datacenter, error) {
+	if path != "" {
+		dc, err := f.Datacenter(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		return dc, nil
+	}
+
+	return f.DefaultDatacenter(ctx)
+}
+
 func (f *Finder) DatastoreList(ctx context.Context, path string) ([]*object.Datastore, error) {
 	es, err := f.find(ctx, f.datastoreFolder, false, path)
 	if err != nil {
@@ -287,6 +299,18 @@ func (f *Finder) DefaultDatastore(ctx context.Context) (*object.Datastore, error
 	}
 
 	return ds, nil
+}
+
+func (f *Finder) DatastoreOrDefault(ctx context.Context, path string) (*object.Datastore, error) {
+	if path != "" {
+		ds, err := f.Datastore(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		return ds, nil
+	}
+
+	return f.DefaultDatastore(ctx)
 }
 
 func (f *Finder) ComputeResourceList(ctx context.Context, path string) ([]*object.ComputeResource, error) {
@@ -337,6 +361,18 @@ func (f *Finder) DefaultComputeResource(ctx context.Context) (*object.ComputeRes
 	}
 
 	return cr, nil
+}
+
+func (f *Finder) ComputeResourceOrDefault(ctx context.Context, path string) (*object.ComputeResource, error) {
+	if path != "" {
+		cr, err := f.ComputeResource(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		return cr, nil
+	}
+
+	return f.DefaultComputeResource(ctx)
 }
 
 func (f *Finder) ClusterComputeResourceList(ctx context.Context, path string) ([]*object.ClusterComputeResource, error) {
@@ -393,19 +429,21 @@ func (f *Finder) HostSystemList(ctx context.Context, path string) ([]*object.Hos
 		switch o := e.Object.(type) {
 		case mo.HostSystem:
 			hs = object.NewHostSystem(f.client, o.Reference())
-		case mo.ComputeResource:
+
+			hs.InventoryPath = e.Path
+			hss = append(hss, hs)
+		case mo.ComputeResource, mo.ClusterComputeResource:
 			cr := object.NewComputeResource(f.client, o.Reference())
+
+			cr.InventoryPath = e.Path
+
 			hosts, err := cr.Hosts(ctx)
 			if err != nil {
 				return nil, err
 			}
-			hs = object.NewHostSystem(f.client, hosts[0])
-		default:
-			continue
-		}
 
-		hs.InventoryPath = e.Path
-		hss = append(hss, hs)
+			hss = append(hss, hosts...)
+		}
 	}
 
 	if len(hss) == 0 {
@@ -437,6 +475,18 @@ func (f *Finder) DefaultHostSystem(ctx context.Context) (*object.HostSystem, err
 	return hs, nil
 }
 
+func (f *Finder) HostSystemOrDefault(ctx context.Context, path string) (*object.HostSystem, error) {
+	if path != "" {
+		hs, err := f.HostSystem(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		return hs, nil
+	}
+
+	return f.DefaultHostSystem(ctx)
+}
+
 func (f *Finder) NetworkList(ctx context.Context, path string) ([]object.NetworkReference, error) {
 	es, err := f.find(ctx, f.networkFolder, false, path)
 	if err != nil {
@@ -453,6 +503,10 @@ func (f *Finder) NetworkList(ctx context.Context, path string) ([]object.Network
 			ns = append(ns, r)
 		case "DistributedVirtualPortgroup":
 			r := object.NewDistributedVirtualPortgroup(f.client, ref)
+			r.InventoryPath = e.Path
+			ns = append(ns, r)
+		case "DistributedVirtualSwitch", "VmwareDistributedVirtualSwitch":
+			r := object.NewDistributedVirtualSwitch(f.client, ref)
 			r.InventoryPath = e.Path
 			ns = append(ns, r)
 		}
@@ -485,6 +539,18 @@ func (f *Finder) DefaultNetwork(ctx context.Context) (object.NetworkReference, e
 	}
 
 	return network, nil
+}
+
+func (f *Finder) NetworkOrDefault(ctx context.Context, path string) (object.NetworkReference, error) {
+	if path != "" {
+		network, err := f.Network(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		return network, nil
+	}
+
+	return f.DefaultNetwork(ctx)
 }
 
 func (f *Finder) ResourcePoolList(ctx context.Context, path string) ([]*object.ResourcePool, error) {
@@ -532,6 +598,18 @@ func (f *Finder) DefaultResourcePool(ctx context.Context) (*object.ResourcePool,
 	}
 
 	return rp, nil
+}
+
+func (f *Finder) ResourcePoolOrDefault(ctx context.Context, path string) (*object.ResourcePool, error) {
+	if path != "" {
+		rp, err := f.ResourcePool(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		return rp, nil
+	}
+
+	return f.DefaultResourcePool(ctx)
 }
 
 func (f *Finder) VirtualMachineList(ctx context.Context, path string) ([]*object.VirtualMachine, error) {
@@ -604,4 +682,30 @@ func (f *Finder) VirtualApp(ctx context.Context, path string) (*object.VirtualAp
 	}
 
 	return apps[0], nil
+}
+
+func (f *Finder) Folder(ctx context.Context, path string) (*object.Folder, error) {
+	mo, err := f.ManagedObjectList(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(mo) == 0 {
+		return nil, &NotFoundError{"folder", path}
+	}
+
+	if len(mo) > 1 {
+		return nil, &MultipleFoundError{"folder", path}
+	}
+
+	ref := mo[0].Object.Reference()
+	if ref.Type != "Folder" {
+		return nil, &NotFoundError{"folder", path}
+	}
+
+	folder := object.NewFolder(f.client, ref)
+
+	folder.InventoryPath = mo[0].Path
+
+	return folder, nil
 }

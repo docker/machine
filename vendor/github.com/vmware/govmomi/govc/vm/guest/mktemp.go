@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -36,15 +36,23 @@ func init() {
 	cli.Register("guest.mktemp", &mktemp{})
 }
 
-func (cmd *mktemp) Register(f *flag.FlagSet) {
+func (cmd *mktemp) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.GuestFlag, ctx = newGuestFlag(ctx)
+	cmd.GuestFlag.Register(ctx, f)
+
 	f.BoolVar(&cmd.dir, "d", false, "Make a directory instead of a file")
 	f.StringVar(&cmd.prefix, "t", "", "Prefix")
 	f.StringVar(&cmd.suffix, "s", "", "Suffix")
 }
 
-func (cmd *mktemp) Process() error { return nil }
+func (cmd *mktemp) Process(ctx context.Context) error {
+	if err := cmd.GuestFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *mktemp) Run(f *flag.FlagSet) error {
+func (cmd *mktemp) Run(ctx context.Context, f *flag.FlagSet) error {
 	m, err := cmd.FileManager()
 	if err != nil {
 		return err

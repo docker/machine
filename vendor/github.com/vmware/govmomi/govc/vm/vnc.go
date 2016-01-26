@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -79,8 +79,9 @@ func init() {
 	cli.Register("vm.vnc", cmd)
 }
 
-func (cmd *vnc) Register(f *flag.FlagSet) {
-	cmd.SearchFlag = flags.NewSearchFlag(flags.SearchVirtualMachines)
+func (cmd *vnc) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.SearchFlag, ctx = flags.NewSearchFlag(ctx, flags.SearchVirtualMachines)
+	cmd.SearchFlag.Register(ctx, f)
 
 	f.BoolVar(&cmd.Enable, "enable", false, "Enable VNC")
 	f.BoolVar(&cmd.Disable, "disable", false, "Disable VNC")
@@ -89,7 +90,10 @@ func (cmd *vnc) Register(f *flag.FlagSet) {
 	f.StringVar(&cmd.Password, "password", "", "VNC password")
 }
 
-func (cmd *vnc) Process() error {
+func (cmd *vnc) Process(ctx context.Context) error {
+	if err := cmd.SearchFlag.Process(ctx); err != nil {
+		return err
+	}
 	// Either may be true or none may be true.
 	if cmd.Enable && cmd.Disable {
 		return flag.ErrHelp
@@ -110,7 +114,7 @@ Port numbers are automatically chosen from a range if not specified.
 If neither -enable or -disable is specified, the current state is returned.`
 }
 
-func (cmd *vnc) Run(f *flag.FlagSet) error {
+func (cmd *vnc) Run(ctx context.Context, f *flag.FlagSet) error {
 	vms, err := cmd.loadVMs(f.Args())
 	if err != nil {
 		return err

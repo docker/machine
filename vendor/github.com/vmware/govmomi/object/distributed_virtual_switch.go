@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,15 +18,51 @@ package object
 
 import (
 	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/types"
+	"golang.org/x/net/context"
 )
 
 type DistributedVirtualSwitch struct {
 	Common
+
+	InventoryPath string
 }
 
 func NewDistributedVirtualSwitch(c *vim25.Client, ref types.ManagedObjectReference) *DistributedVirtualSwitch {
 	return &DistributedVirtualSwitch{
 		Common: NewCommon(c, ref),
 	}
+}
+
+func (s DistributedVirtualSwitch) EthernetCardBackingInfo(ctx context.Context) (types.BaseVirtualDeviceBackingInfo, error) {
+	return nil, ErrNotSupported // TODO: just to satisfy NetworkReference interface for the finder
+}
+
+func (s DistributedVirtualSwitch) Reconfigure(ctx context.Context, spec types.BaseDVSConfigSpec) (*Task, error) {
+	req := types.ReconfigureDvs_Task{
+		This: s.Reference(),
+		Spec: spec,
+	}
+
+	res, err := methods.ReconfigureDvs_Task(ctx, s.Client(), &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(s.Client(), res.Returnval), nil
+}
+
+func (s DistributedVirtualSwitch) AddPortgroup(ctx context.Context, spec []types.DVPortgroupConfigSpec) (*Task, error) {
+	req := types.AddDVPortgroup_Task{
+		This: s.Reference(),
+		Spec: spec,
+	}
+
+	res, err := methods.AddDVPortgroup_Task(ctx, s.Client(), &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(s.Client(), res.Returnval), nil
 }

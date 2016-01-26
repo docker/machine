@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -66,16 +66,24 @@ func init() {
 	cli.Register("guest.ps", &ps{})
 }
 
-func (cmd *ps) Register(f *flag.FlagSet) {
+func (cmd *ps) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.GuestFlag, ctx = newGuestFlag(ctx)
+	cmd.GuestFlag.Register(ctx, f)
+
 	cmd.uids = make(map[string]bool)
 	f.BoolVar(&cmd.every, "e", false, "Select all processes")
 	f.Var(&cmd.pids, "p", "Select by process ID")
 	f.Var(&cmd.uids, "U", "Select by process UID")
 }
 
-func (cmd *ps) Process() error { return nil }
+func (cmd *ps) Process(ctx context.Context) error {
+	if err := cmd.GuestFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *ps) Run(f *flag.FlagSet) error {
+func (cmd *ps) Run(ctx context.Context, f *flag.FlagSet) error {
 	m, err := cmd.ProcessManager()
 	if err != nil {
 		return err

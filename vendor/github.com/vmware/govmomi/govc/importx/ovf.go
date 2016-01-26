@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"path"
 	"strings"
 
@@ -36,33 +35,77 @@ import (
 )
 
 type ovfx struct {
-	*ImportFlag
 	*flags.DatastoreFlag
 	*flags.HostSystemFlag
 	*flags.OutputFlag
 	*flags.ResourcePoolFlag
 
+	*ArchiveFlag
+	*OptionsFlag
+	*FolderFlag
+
+	Name string
+
 	Client       *vim25.Client
 	Datacenter   *object.Datacenter
 	Datastore    *object.Datastore
 	ResourcePool *object.ResourcePool
-
-	Archive
 }
 
 func init() {
 	cli.Register("import.ovf", &ovfx{})
 }
 
-func (cmd *ovfx) Register(f *flag.FlagSet) {}
+func (cmd *ovfx) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.DatastoreFlag, ctx = flags.NewDatastoreFlag(ctx)
+	cmd.DatastoreFlag.Register(ctx, f)
+	cmd.HostSystemFlag, ctx = flags.NewHostSystemFlag(ctx)
+	cmd.HostSystemFlag.Register(ctx, f)
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
+	cmd.ResourcePoolFlag, ctx = flags.NewResourcePoolFlag(ctx)
+	cmd.ResourcePoolFlag.Register(ctx, f)
 
-func (cmd *ovfx) Process() error { return nil }
+	cmd.ArchiveFlag, ctx = newArchiveFlag(ctx)
+	cmd.ArchiveFlag.Register(ctx, f)
+	cmd.OptionsFlag, ctx = newOptionsFlag(ctx)
+	cmd.OptionsFlag.Register(ctx, f)
+	cmd.FolderFlag, ctx = newFolderFlag(ctx)
+	cmd.FolderFlag.Register(ctx, f)
+
+	f.StringVar(&cmd.Name, "name", "", "Name to use for new entity")
+}
+
+func (cmd *ovfx) Process(ctx context.Context) error {
+	if err := cmd.DatastoreFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.HostSystemFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.ResourcePoolFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.ArchiveFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.OptionsFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.FolderFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *ovfx) Usage() string {
 	return "PATH_TO_OVF"
 }
 
-func (cmd *ovfx) Run(f *flag.FlagSet) error {
+func (cmd *ovfx) Run(ctx context.Context, f *flag.FlagSet) error {
 	fpath, err := cmd.Prepare(f)
 	if err != nil {
 		return err
@@ -76,7 +119,6 @@ func (cmd *ovfx) Run(f *flag.FlagSet) error {
 	}
 
 	vm := object.NewVirtualMachine(cmd.Client, *moref)
-
 	return cmd.Deploy(vm)
 }
 
@@ -127,33 +169,12 @@ func (cmd *ovfx) Deploy(vm *object.VirtualMachine) error {
 	return nil
 }
 
-func (cmd *ovfx) ReadOvf(fpath string) ([]byte, error) {
-	f, _, err := cmd.Open(fpath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	return ioutil.ReadAll(f)
-}
-
-func (cmd *ovfx) ReadEnvelope(fpath string) (*ovf.Envelope, error) {
-	if fpath == "" {
-		return nil, nil
+func (cmd *ovfx) Map(op []Property) (p []types.KeyValue) {
+	for _, v := range op {
+		p = append(p, v.KeyValue)
 	}
 
-	f, _, err := cmd.Open(fpath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	e, err := ovf.Unmarshal(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse ovf: %s", err.Error())
-	}
-
-	return e, nil
+	return
 }
 
 func (cmd *ovfx) Import(fpath string) (*types.ManagedObjectReference, error) {
@@ -170,6 +191,19 @@ func (cmd *ovfx) Import(fpath string) (*types.ManagedObjectReference, error) {
 	name := "Govc Virtual Appliance"
 	if e.VirtualSystem != nil {
 		name = e.VirtualSystem.ID
+		if e.VirtualSystem.Name != nil {
+			name = *e.VirtualSystem.Name
+		}
+	}
+
+	// Override name from options if specified
+	if cmd.Options.Name != nil {
+		name = *cmd.Options.Name
+	}
+
+	// Override name from arguments if specified
+	if cmd.Name != "" {
+		name = cmd.Name
 	}
 
 	cisp := types.OvfCreateImportSpecParams{
@@ -180,7 +214,7 @@ func (cmd *ovfx) Import(fpath string) (*types.ManagedObjectReference, error) {
 		OvfManagerCommonParams: types.OvfManagerCommonParams{
 			DeploymentOption: cmd.Options.Deployment,
 			Locale:           "US"},
-		PropertyMapping: cmd.Options.PropertyMapping,
+		PropertyMapping: cmd.Map(cmd.Options.PropertyMapping),
 	}
 
 	m := object.NewOvfManager(cmd.Client)
@@ -305,7 +339,7 @@ func (cmd *ovfx) PowerOn(vm *object.VirtualMachine) error {
 		return nil
 	}
 
-	cmd.Log("Powering on vm...\n")
+	cmd.Log("Powering on VM...\n")
 
 	task, err := vm.PowerOn(context.TODO())
 	if err != nil {
@@ -326,7 +360,7 @@ func (cmd *ovfx) InjectOvfEnv(vm *object.VirtualMachine) error {
 
 	a := cmd.Client.ServiceContent.About
 	if strings.EqualFold(a.ProductLineId, "esx") || strings.EqualFold(a.ProductLineId, "embeddedEsx") {
-		cmd.Log("Injecting ovf env...\n")
+		cmd.Log("Injecting OVF environment...\n")
 
 		// build up Environment in order to marshal to xml
 		var epa []ovf.EnvProperty
@@ -347,7 +381,7 @@ func (cmd *ovfx) InjectOvfEnv(vm *object.VirtualMachine) error {
 				Properties: epa},
 		}
 
-		xenv := ovf.MarshalManual(env)
+		xenv := env.MarshalManual()
 		vmConfigSpec := types.VirtualMachineConfigSpec{
 			ExtraConfig: []types.BaseOptionValue{&types.OptionValue{
 				Key:   "guestinfo.ovfEnv",
@@ -370,13 +404,12 @@ func (cmd *ovfx) WaitForIP(vm *object.VirtualMachine) error {
 		return nil
 	}
 
-	cmd.Log("Waiting for ip...\n")
-
+	cmd.Log("Waiting for IP address...\n")
 	ip, err := vm.WaitForIP(context.TODO())
 	if err != nil {
 		return err
 	}
-	cmd.Log(fmt.Sprintf("Received IP address: %s\n", ip))
 
+	cmd.Log(fmt.Sprintf("Received IP address: %s\n", ip))
 	return nil
 }

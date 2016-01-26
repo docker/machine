@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,11 +32,19 @@ func init() {
 	cli.Register("guest.getenv", &getenv{})
 }
 
-func (cmd *getenv) Register(f *flag.FlagSet) {}
+func (cmd *getenv) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.GuestFlag, ctx = newGuestFlag(ctx)
+	cmd.GuestFlag.Register(ctx, f)
+}
 
-func (cmd *getenv) Process() error { return nil }
+func (cmd *getenv) Process(ctx context.Context) error {
+	if err := cmd.GuestFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *getenv) Run(f *flag.FlagSet) error {
+func (cmd *getenv) Run(ctx context.Context, f *flag.FlagSet) error {
 	m, err := cmd.ProcessManager()
 	if err != nil {
 		return err

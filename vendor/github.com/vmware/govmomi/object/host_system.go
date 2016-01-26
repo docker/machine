@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"net"
 
 	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
@@ -111,4 +112,62 @@ func (h HostSystem) ManagementIPs(ctx context.Context) ([]net.IP, error) {
 	}
 
 	return ips, nil
+}
+
+func (h HostSystem) Disconnect(ctx context.Context) (*Task, error) {
+	req := types.DisconnectHost_Task{
+		This: h.Reference(),
+	}
+
+	res, err := methods.DisconnectHost_Task(ctx, h.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(h.c, res.Returnval), nil
+}
+
+func (h HostSystem) Reconnect(ctx context.Context, cnxSpec *types.HostConnectSpec, reconnectSpec *types.HostSystemReconnectSpec) (*Task, error) {
+	req := types.ReconnectHost_Task{
+		This:          h.Reference(),
+		CnxSpec:       cnxSpec,
+		ReconnectSpec: reconnectSpec,
+	}
+
+	res, err := methods.ReconnectHost_Task(ctx, h.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(h.c, res.Returnval), nil
+}
+
+func (h HostSystem) EnterMaintenanceMode(ctx context.Context, timeout int, evacuate bool, spec *types.HostMaintenanceSpec) (*Task, error) {
+	req := types.EnterMaintenanceMode_Task{
+		This:                  h.Reference(),
+		Timeout:               timeout,
+		EvacuatePoweredOffVms: types.NewBool(evacuate),
+		MaintenanceSpec:       spec,
+	}
+
+	res, err := methods.EnterMaintenanceMode_Task(ctx, h.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(h.c, res.Returnval), nil
+}
+
+func (h HostSystem) ExitMaintenanceMode(ctx context.Context, timeout int) (*Task, error) {
+	req := types.ExitMaintenanceMode_Task{
+		This:    h.Reference(),
+		Timeout: timeout,
+	}
+
+	res, err := methods.ExitMaintenanceMode_Task(ctx, h.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(h.c, res.Returnval), nil
 }

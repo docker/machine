@@ -18,108 +18,67 @@ package importx
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
-	"io/ioutil"
 	"os"
 
-	"github.com/vmware/govmomi/govc/flags"
-	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
+
+	"github.com/vmware/govmomi/ovf"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
+type Property struct {
+	types.KeyValue
+	Spec *ovf.Property `json:",omitempty"`
+}
+
 type Options struct {
-	AllDeploymentOptions []string
+	AllDeploymentOptions []string `json:",omitempty"`
 	Deployment           string
 
-	AllDiskProvisioningOptions []string
+	AllDiskProvisioningOptions []string `json:",omitempty"`
 	DiskProvisioning           string
 
-	AllIPAllocationPolicyOptions []string
+	AllIPAllocationPolicyOptions []string `json:",omitempty"`
 	IPAllocationPolicy           string
 
-	AllIPProtocolOptions []string
+	AllIPProtocolOptions []string `json:",omitempty"`
 	IPProtocol           string
 
-	PropertyMapping []types.KeyValue
+	PropertyMapping []Property `json:",omitempty"`
 
 	PowerOn      bool
 	InjectOvfEnv bool
 	WaitForIP    bool
+	Name         *string
 }
 
-type ImportFlag struct {
-	*flags.DatacenterFlag
+type OptionsFlag struct {
+	Options Options
 
-	folder       string
-	optionsFpath string
-	Options      Options
+	path string
 }
 
-func (flag *ImportFlag) Register(f *flag.FlagSet) {
-	f.StringVar(&flag.folder, "folder", "", "Path to folder to add the vm to")
-	f.StringVar(&flag.optionsFpath, "options", "", "Options spec file path for vm deployment")
+func newOptionsFlag(ctx context.Context) (*OptionsFlag, context.Context) {
+	return &OptionsFlag{}, ctx
 }
 
-func (flag *ImportFlag) Process() error {
-	if len(flag.optionsFpath) > 0 {
-		f, err := os.Open(flag.optionsFpath)
+func (flag *OptionsFlag) Register(ctx context.Context, f *flag.FlagSet) {
+	f.StringVar(&flag.path, "options", "", "Options spec file path for VM deployment")
+}
+
+func (flag *OptionsFlag) Process(ctx context.Context) error {
+	if len(flag.path) > 0 {
+		f, err := os.Open(flag.path)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
 
-		o, err := ioutil.ReadAll(f)
-		if err != nil {
-			return err
-		}
-
-		if err := json.Unmarshal(o, &flag.Options); err != nil {
+		if err := json.NewDecoder(f).Decode(&flag.Options); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func (flag *ImportFlag) Folder() (*object.Folder, error) {
-	if len(flag.folder) == 0 {
-		dc, err := flag.Datacenter()
-		if err != nil {
-			return nil, err
-		}
-		folders, err := dc.Folders(context.TODO())
-		if err != nil {
-			return nil, err
-		}
-		return folders.VmFolder, nil
-	}
-
-	finder, err := flag.Finder()
-	if err != nil {
-		return nil, err
-	}
-
-	mo, err := finder.ManagedObjectList(context.TODO(), flag.folder)
-	if err != nil {
-		return nil, err
-	}
-	if len(mo) == 0 {
-		return nil, errors.New("folder argument does not resolve to object")
-	}
-	if len(mo) > 1 {
-		return nil, errors.New("folder argument resolves to more than one object")
-	}
-
-	ref := mo[0].Object.Reference()
-	if ref.Type != "Folder" {
-		return nil, errors.New("folder argument does not resolve to folder")
-	}
-
-	c, err := flag.Client()
-	if err != nil {
-		return nil, err
-	}
-	return object.NewFolder(c, ref), nil
 }

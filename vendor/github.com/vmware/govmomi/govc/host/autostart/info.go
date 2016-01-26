@@ -32,8 +32,9 @@ import (
 )
 
 type info struct {
-	*AutostartFlag
+	cli.Command
 
+	*AutostartFlag
 	*flags.OutputFlag
 }
 
@@ -41,15 +42,28 @@ func init() {
 	cli.Register("host.autostart.info", &info{})
 }
 
-func (cmd *info) Register(f *flag.FlagSet) {}
+func (cmd *info) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.AutostartFlag, ctx = newAutostartFlag(ctx)
+	cmd.AutostartFlag.Register(ctx, f)
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
+}
 
-func (cmd *info) Process() error { return nil }
+func (cmd *info) Process(ctx context.Context) error {
+	if err := cmd.AutostartFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *info) Usage() string {
 	return ""
 }
 
-func (cmd *info) Run(f *flag.FlagSet) error {
+func (cmd *info) Run(ctx context.Context, f *flag.FlagSet) error {
 	client, err := cmd.Client()
 	if err != nil {
 		return err
