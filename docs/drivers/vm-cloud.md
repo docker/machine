@@ -12,6 +12,8 @@ parent="smn_machine_drivers"
 
 Creates machines on [vCloud Air](http://vcloud.vmware.com) subscription service. You need an account within an existing subscription of vCloud Air VPC or Dedicated Cloud.
 
+    $ docker-machine create --driver vmwarevcloudair --vmwarevcloudair-username=user --vmwarevcloudair-password=SECRET vm
+
 Options:
 
 -   `--vmwarevcloudair-username`: **required** vCloud Air Username.

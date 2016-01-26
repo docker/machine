@@ -22,6 +22,8 @@ Administrator level account to create and manage Hyper-V machines.
 > [Internet Connection
 > Sharing](http://www.packet6.com/allowing-windows-8-1-hyper-v-vm-to-work-with-wifi/).
 
+    $ docker-machine create --driver hyperv vm
+
 Options:
 
 -   `--hyperv-boot2docker-url`: The URL of the boot2docker ISO.

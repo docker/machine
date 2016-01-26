@@ -12,6 +12,8 @@ parent="smn_machine_drivers"
 
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.
 
+    $ docker-machine create --driver vmwarefusion vm
+
 Options:
 
 -   `--vmwarefusion-boot2docker-url`: URL for boot2docker image.
