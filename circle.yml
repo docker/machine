@@ -1,18 +1,13 @@
 machine:
   pre:
-  # Install gvm
     - bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/1.0.22/binscripts/gvm-installer)
-  # Install bats
-    - git clone https://github.com/sstephenson/bats.git && cd bats && sudo ./install.sh /usr/local
 
   post:
     - gvm install go1.5.3 -B --name=stable
 
   environment:
-  # Convenient shortcuts to "common" locations
     CHECKOUT: /home/ubuntu/$CIRCLE_PROJECT_REPONAME
     BASE_DIR: src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
-  # Trick circle brainflat "no absolute path" behavior
     BASE_STABLE: ../../../$HOME/.gvm/pkgsets/stable/global/$BASE_DIR
 
 dependencies:
