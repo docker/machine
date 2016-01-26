@@ -261,7 +261,7 @@ func (dmt *dockerMachineTest) ContainLines(count int) Assertions {
 	}
 
 	if count != len(dmt.lines) {
-		return dmt.failExpected("%d lines but got %d", count, len(dmt.lines))
+		return dmt.failExpected("%d lines but got %d\n%s", count, len(dmt.lines), dmt.rawOutput)
 	}
 
 	return dmt
