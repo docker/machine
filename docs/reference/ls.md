@@ -88,6 +88,7 @@ Valid placeholders for the Go template are listed below:
 | .Swarm         | Machine swarm name                       |
 | .Error         | Machine errors                           |
 | .DockerVersion | Docker Daemon version                    |
+| .ResponseTime  | Time taken by the host to respond        |
 
 When using the `--format` option, the `ls` command will either output the data exactly as the template declares or,
 when using the table directive, will include column headers as well.
