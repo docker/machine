@@ -10,7 +10,6 @@ identifier="workw_machine"
 
 # Docker Machine
 
--
 -   Install a machine on your [local system using VirtualBox](get-started.md).
 -   Install multiple machines [on your cloud provider](get-started-cloud.md).
 -   [Docker Machine driver reference](drivers/index.md)
