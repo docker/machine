@@ -15,6 +15,8 @@ Create machines on [Softlayer](http://softlayer.com).
 You need to generate an API key in the softlayer control panel.
 [Retrieve your API key](http://knowledgelayer.softlayer.com/procedure/retrieve-your-api-key)
 
+    $ docker-machine create --driver softlayer --softlayer-user=user --softlayer-api-key=KEY --softlayer-domain=domain vm
+
 Options:
 
 -   `--softlayer-memory`: Memory for host in MB.

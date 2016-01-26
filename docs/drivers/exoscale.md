@@ -14,6 +14,8 @@ Create machines on [exoscale](https://www.exoscale.ch/).
 
 Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
 
+    $ docker-machine create --driver exoscale --exoscale-api-key=API --exoscale-api-secret-key=SECRET vm
+
 Options:
 
 -   `--exoscale-url`: Your API endpoint.
