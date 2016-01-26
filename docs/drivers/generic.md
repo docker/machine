@@ -22,6 +22,9 @@ The driver will perform a list of tasks on create:
 -   It will generate certificates to secure the docker daemon
 -   The docker daemon will be restarted, thus all running containers will be stopped.
 
+
+    $ docker-machine create --driver generic --generic-ip-address=203.0.113.81 vm
+
 Options:
 
 -   `--generic-ip-address`: **required** IP Address of host.
