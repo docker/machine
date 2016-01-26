@@ -39,16 +39,16 @@ create containers on the host.
 
 To create a virtual machine, you supply Docker Machine with the name of the
 driver you want use. The driver represents the virtual environment. For example,
-on a local Linux, Mac, or Windows system the driver is typically Oracle Virtual
-Box. For cloud providers, Docker Machine supports drivers such as AWS, Microsoft
-Azure, Digital Ocean and many more. The Docker Machine reference includes a
-complete [list of the supported drivers](drivers/index.md).
+on a local Linux, Mac, or Windows system the driver is typically Oracle
+VirtualBox. For cloud providers, Docker Machine supports drivers such as AWS,
+Microsoft Azure, Digital Ocean and many more. The Docker Machine reference
+includes a complete [list of the supported drivers](drivers/index.md).
 
 Since Docker runs on Linux, each VM that Docker Machine provisions relies on a
 base operating system. For convenience, there are default base operating
 systems. For the Oracle Virtual Box driver, this base operating system is the
 `boot2docker.iso`. For drivers used to connect to cloud providers, the base
-operating system is Ubuntu 12.04+. You can change this default when you create a
+operating system is Ubuntu 15.10. You can change this default when you create a
 machine. The Docker Machine reference includes a complete [list of the supported
 operating systems](drivers/os-base.md).
 
