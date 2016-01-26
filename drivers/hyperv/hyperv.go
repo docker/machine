@@ -22,12 +22,14 @@ type Driver struct {
 	MemSize        int
 	CPU            int
 	MacAddr        string
+	VLanId         int
 }
 
 const (
 	defaultDiskSize = 20000
 	defaultMemory   = 1024
 	defaultCPU      = 1
+	defaultVLanId   = 0
 )
 
 // NewDriver creates a new Hyper-v driver with default settings.
@@ -80,6 +82,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage: "Hyper-V network adatpter's static MAC address.",
 			EnvVar: "HYPERV_STATIC_MACADDRESS",
 		},
+		mcnflag.IntFlag{
+			Name:   "hyperv-vlan-id",
+			Usage:  "Hyper-V network adatpter's VLAN ID",
+			EnvVar: "HYPERV_VLAN_ID",
+		},
 	}
 }
 
@@ -90,6 +97,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.MemSize = flags.Int("hyperv-memory")
 	d.CPU = flags.Int("hyperv-cpu-count")
 	d.MacAddr = flags.String("hyperv-static-macaddress")
+	d.VLanId = flags.Int("hyperv-vlan-id")
 	d.SSHUser = "docker"
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -219,6 +227,15 @@ func (d *Driver) Create() error {
 		if err := cmd("Set-VMNetworkAdapter",
 			"-VMName", d.MachineName,
 			"-StaticMacAddress", fmt.Sprintf("\"%s\"", d.MacAddr)); err != nil {
+			return err
+		}
+	}
+
+	if d.VLanId > 0 {
+		if err := cmd("Set-VMNetworkAdapterVlan",
+			"-VMName", d.MachineName,
+			"-Access",
+			"-VlanId", fmt.Sprintf("%d", d.VLanId)); err != nil {
 			return err
 		}
 	}
