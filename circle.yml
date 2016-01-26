@@ -19,7 +19,6 @@ dependencies:
 
 test:
   pre:
-    - gvm use stable && go version
     - gvm use stable && make build:
         pwd: $BASE_STABLE
     - gvm use stable && GO15VENDOREXPERIMENT=1 go get github.com/docker/docker-machine-driver-ci-test
