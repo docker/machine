@@ -23,6 +23,10 @@ command:
 
     $ docker-machine create -d virtualbox --virtualbox-import-boot2docker-vm boot2docker-vm b2d
 
+The size of the VM's disk can be configured this way:
+
+    $ docker-machine create -d virtualbox --virtualbox-disk-size "100000" large
+
 Options:
 
 -   `--virtualbox-memory`: Size of memory for the host in MB.

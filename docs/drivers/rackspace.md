@@ -12,6 +12,8 @@ parent="smn_machine_drivers"
 
 Create machines on [Rackspace cloud](http://www.rackspace.com/cloud)
 
+    $ docker-machine create --driver rackspace --rackspace-username=user --rackspace-api-key=KEY --rackspace-region=region vm
+
 Options:
 
 -   `--rackspace-username`: **required** Rackspace account username.
