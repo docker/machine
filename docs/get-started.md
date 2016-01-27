@@ -148,11 +148,11 @@ If you are finished using a host for the time being, you can stop it with
 
 ## Operating on machines without specifying the name
 
-Some commands will assume that the specified operation should be run on a
-machine named `default` (if it exists) if no machine name is passed to them as
-an argument.  Because using a local VM named `default` is such a common pattern,
-this allows you to save some typing on Machine commands that may be frequently
-invoked.
+Some commands will assume that the specified operation should be run on the default
+machine (if it exists) if no machine name is passed to them as an argument. The default
+machine name can be specified in an environment variable `DOCKER_MACHINE_NAME`, or is
+simply named `default` if this environment variable does not exist. This allows you to
+save some typing on Machine commands that may be frequently invoked.
 
 For instance:
 
@@ -171,6 +171,17 @@ For instance:
     $ docker-machine ip
     192.168.99.100
 
+And, because `docker-machine env` also defines `DOCKER_MACHINE_NAME`:
+
+    $ eval $(docker-machine env staging)
+
+    $ docker-machine start
+    Starting "staging"...
+    Machine "staging" is already running.
+
+    $ docker-machine ip
+    203.0.113.81
+
 Commands that will follow this style are:
 
 - `docker-machine config`
@@ -188,5 +199,5 @@ Commands that will follow this style are:
 - `docker-machine upgrade`
 - `docker-machine url`
 
-For machines other than `default`, and commands other than those listed above,
+For machines other than the default machine, and commands other than those listed above,
 you must always specify the name explicitly as an argument.
