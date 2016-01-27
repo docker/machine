@@ -2,7 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)
 [![Build Status](https://travis-ci.org/docker/machine.svg?branch=master)](https://travis-ci.org/docker/machine)
-[![Coverage Status](https://coveralls.io/repos/docker/machine/badge.svg?branch=upstream-master&service=github)](https://coveralls.io/github/docker/machine?branch=upstream-master)
+[![Coverage Status](https://coveralls.io/repos/docker/machine/badge.svg?branch=master&service=github)](https://coveralls.io/github/docker/machine?branch=master)
 
 Want to hack on Machine? Awesome! Here are instructions to get you
 started.
