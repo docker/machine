@@ -37,9 +37,9 @@ var (
 	headers = map[string]string{
 		"Name":          "NAME",
 		"Active":        "ACTIVE",
-		"ActiveHost":    "DRIVER",
-		"ActiveSwarm":   "STATE",
-		"DriverName":    "URL",
+		"ActiveHost":    "ACTIVE_HOST",
+		"ActiveSwarm":   "ACTIVE_SWARM",
+		"DriverName":    "DRIVER",
 		"State":         "STATE",
 		"URL":           "URL",
 		"SwarmOptions":  "SWARM_OPTIONS",
