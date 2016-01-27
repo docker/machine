@@ -102,7 +102,7 @@ func TestMachinePortBoot2Docker(t *testing.T) {
 	p := &Boot2DockerProvisioner{
 		Driver: &fakedriver.Driver{},
 	}
-	dockerPort := 2376
+	dockerPort := engine.DefaultPort
 	bindURL := fmt.Sprintf("tcp://0.0.0.0:%d", dockerPort)
 	p.AuthOptions = auth.Options{
 		CaCertRemotePath:     "/test/ca-cert",

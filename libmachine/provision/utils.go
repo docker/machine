@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
@@ -161,7 +162,7 @@ func ConfigureAuth(p Provisioner) error {
 	if err != nil {
 		return err
 	}
-	dockerPort := 2376
+	dockerPort := engine.DefaultPort
 	parts := strings.Split(u.Host, ":")
 	if len(parts) == 2 {
 		dPort, err := strconv.Atoi(parts[1])
@@ -186,7 +187,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	return waitForDocker(p, dockerPort)
+	return WaitForDocker(p, dockerPort)
 }
 
 func matchNetstatOut(reDaemonListening, netstatOut string) bool {
@@ -262,7 +263,7 @@ func checkDaemonUp(p Provisioner, dockerPort int) func() bool {
 	}
 }
 
-func waitForDocker(p Provisioner, dockerPort int) error {
+func WaitForDocker(p Provisioner, dockerPort int) error {
 	if err := mcnutils.WaitForSpecific(checkDaemonUp(p, dockerPort), 10, 3*time.Second); err != nil {
 		return NewErrDaemonAvailable(err)
 	}

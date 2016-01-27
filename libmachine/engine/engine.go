@@ -1,5 +1,9 @@
 package engine
 
+const (
+	DefaultPort = 2376
+)
+
 type Options struct {
 	ArbitraryFlags   []string
 	DNS              []string `json:"Dns"`

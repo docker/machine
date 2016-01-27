@@ -111,6 +111,17 @@ func (h *Host) Start() error {
 	}
 
 	log.Infof("Machine %q was started.", h.Name)
+
+	provisioner, err := provision.DetectProvisioner(h.Driver)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Migrate away from using hardcoded daemon port.
+	if err := provision.WaitForDocker(provisioner, engine.DefaultPort); err != nil {
+		return err
+	}
+
 	return nil
 }
 
