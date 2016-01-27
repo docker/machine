@@ -21,7 +21,8 @@ import (
 	"flag"
 	"fmt"
 	"path"
-	"strings"
+
+	"golang.org/x/net/context"
 
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/ovf"
@@ -31,7 +32,6 @@ import (
 var (
 	// all possible ovf property values
 	// the first element being the default value
-
 	allDeploymentOptions         = []string{"small", "medium", "large"}
 	allDiskProvisioningOptions   = []string{"thin", "monolithicSparse", "monolithicFlat", "twoGbMaxExtentSparse", "twoGbMaxExtentFlat", "seSparse", "eagerZeroedThick", "thick", "sparse", "flat"}
 	allIPAllocationPolicyOptions = []string{"dhcpPolicy", "transientPolicy", "fixedPolicy", "fixedAllocatedPolicy"}
@@ -39,60 +39,87 @@ var (
 )
 
 type spec struct {
-	*ovfx
+	*ArchiveFlag
+
+	verbose bool
 }
 
 func init() {
 	cli.Register("import.spec", &spec{})
 }
 
-func (cmd *spec) Register(f *flag.FlagSet) {}
+func (cmd *spec) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ArchiveFlag, ctx = newArchiveFlag(ctx)
+	cmd.ArchiveFlag.Register(ctx, f)
 
-func (cmd *spec) Process() error { return nil }
-
-func (cmd *spec) Usage() string {
-	return "PATH_TO_OVF or PATH_TO_OVA"
+	f.BoolVar(&cmd.verbose, "verbose", false, "Verbose spec output")
 }
 
-func (cmd *spec) Run(f *flag.FlagSet) error {
+func (cmd *spec) Process(ctx context.Context) error {
+	if err := cmd.ArchiveFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cmd *spec) Usage() string {
+	return "PATH_TO_OVF_OR_OVA"
+}
+
+func (cmd *spec) Run(ctx context.Context, f *flag.FlagSet) error {
 	fpath := ""
 	args := f.Args()
 	if len(args) == 1 {
 		fpath = f.Arg(0)
 	}
 
-	switch path.Ext(fpath) {
-	case "":
-	case ".ovf":
-		cmd.Archive = &FileArchive{fpath}
-	case ".ova":
-		cmd.Archive = &TapeArchive{fpath}
-		fpath = strings.TrimSuffix(path.Base(fpath), path.Ext(fpath)) + ".ovf"
-	default:
-		return fmt.Errorf("invalid file extension %s", path.Ext(fpath))
+	if len(fpath) > 0 {
+		switch path.Ext(fpath) {
+		case ".ovf":
+			cmd.Archive = &FileArchive{fpath}
+		case "", ".ova":
+			cmd.Archive = &TapeArchive{fpath}
+			fpath = "*.ovf"
+		default:
+			return fmt.Errorf("invalid file extension %s", path.Ext(fpath))
+		}
 	}
 
 	return cmd.Spec(fpath)
 }
 
-func (cmd *spec) Map(e *ovf.Envelope) []types.KeyValue {
+func (cmd *spec) Map(e *ovf.Envelope) (res []Property) {
 	if e == nil {
 		return nil
 	}
 
-	var p []types.KeyValue
-	for _, v := range e.VirtualSystem.Product.Property {
-		d := ""
-		if v.Default != nil {
-			d = *v.Default
-		}
+	for _, p := range e.VirtualSystem.Product {
+		for i, v := range p.Property {
+			d := ""
+			if v.Default != nil {
+				d = *v.Default
+			}
 
-		p = append(p, types.KeyValue{
-			Key:   v.Key,
-			Value: d})
+			// From OVF spec, section 9.5.1:
+			// key-value-env = [class-value "."] key-value-prod ["." instance-value]
+			k := v.Key
+			if p.Class != nil {
+				k = fmt.Sprintf("%s.%s", *p.Class, k)
+			}
+			if p.Instance != nil {
+				k = fmt.Sprintf("%s.%s", k, *p.Instance)
+			}
+
+			np := Property{KeyValue: types.KeyValue{Key: k, Value: d}}
+			if cmd.verbose {
+				np.Spec = &p.Property[i]
+			}
+
+			res = append(res, np)
+		}
 	}
 
-	return p
+	return
 }
 
 func (cmd *spec) Spec(fpath string) error {
@@ -102,14 +129,16 @@ func (cmd *spec) Spec(fpath string) error {
 	}
 
 	var deploymentOptions = allDeploymentOptions
-	if e != nil && e.DeploymentOption.Configuration != nil {
+	if e != nil && e.DeploymentOption != nil && e.DeploymentOption.Configuration != nil {
 		deploymentOptions = nil
+
 		// add default first
 		for _, c := range e.DeploymentOption.Configuration {
 			if c.Default != nil && *c.Default {
 				deploymentOptions = append(deploymentOptions, c.ID)
 			}
 		}
+
 		for _, c := range e.DeploymentOption.Configuration {
 			if c.Default == nil || !*c.Default {
 				deploymentOptions = append(deploymentOptions, c.ID)
@@ -118,24 +147,26 @@ func (cmd *spec) Spec(fpath string) error {
 	}
 
 	o := Options{
-		AllDeploymentOptions:         deploymentOptions,
-		Deployment:                   deploymentOptions[0],
-		AllDiskProvisioningOptions:   allDiskProvisioningOptions,
-		DiskProvisioning:             allDiskProvisioningOptions[0],
-		AllIPAllocationPolicyOptions: allIPAllocationPolicyOptions,
-		IPAllocationPolicy:           allIPAllocationPolicyOptions[0],
-		AllIPProtocolOptions:         allIPProtocolOptions,
-		IPProtocol:                   allIPProtocolOptions[0],
-		PowerOn:                      false,
-		WaitForIP:                    false,
-		InjectOvfEnv:                 false,
-		PropertyMapping:              cmd.Map(e)}
+		Deployment:         deploymentOptions[0],
+		DiskProvisioning:   allDiskProvisioningOptions[0],
+		IPAllocationPolicy: allIPAllocationPolicyOptions[0],
+		IPProtocol:         allIPProtocolOptions[0],
+		PowerOn:            false,
+		WaitForIP:          false,
+		InjectOvfEnv:       false,
+		PropertyMapping:    cmd.Map(e)}
+	if cmd.verbose {
+		o.AllDeploymentOptions = deploymentOptions
+		o.AllDiskProvisioningOptions = allDiskProvisioningOptions
+		o.AllIPAllocationPolicyOptions = allIPAllocationPolicyOptions
+		o.AllIPProtocolOptions = allIPProtocolOptions
+	}
 
 	j, err := json.Marshal(&o)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(j))
 
+	fmt.Println(string(j))
 	return nil
 }

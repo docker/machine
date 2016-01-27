@@ -3,14 +3,19 @@ export GOVC_URL=$GOVC_TEST_URL
 export GOVC_DATASTORE=datastore1
 export GOVC_NETWORK="VM Network"
 export GOVC_INSECURE=true
+unset GOVC_DATACENTER
+unset GOVC_USERNAME
+unset GOVC_PASSWORD
 
-if [ -z "$BATS_TEST_DIRNAME" ]
-then
+if [ -z "$BATS_TEST_DIRNAME" ]; then
   BATS_TEST_DIRNAME=$(dirname ${BASH_SOURCE})
 fi
 
-# canonicalize
+# gnu core utils
 readlink=$(type -p greadlink readlink | head -1)
+xargs=$(type -p gxargs xargs | head -1)
+mktemp=$(type -p gmktemp mktemp | head -1)
+
 BATS_TEST_DIRNAME=$($readlink -nf $BATS_TEST_DIRNAME)
 
 GOVC_IMAGES=$BATS_TEST_DIRNAME/images
@@ -28,8 +33,8 @@ GOVC_TEST_IMG=$(basename $GOVC_TEST_IMG_SRC)
 PATH="$(dirname $BATS_TEST_DIRNAME):$PATH"
 
 teardown() {
-  govc ls vm | grep govc-test- | xargs -r govc vm.destroy
-  govc datastore.ls | grep govc-test- | awk '{print ($NF)}' | xargs -n1 -r govc datastore.rm
+  govc ls vm | grep govc-test- | $xargs -r govc vm.destroy
+  govc datastore.ls | grep govc-test- | awk '{print ($NF)}' | $xargs -n1 -r govc datastore.rm
 }
 
 new_id() {
@@ -81,13 +86,11 @@ vm_mac() {
 
 # exports an enviroment for using vcsim if running, otherwise skips the calling test.
 vcsim_env() {
-  if [ "$(uname)" == "Darwin" ]
-  then
+  if [ "$(uname)" == "Darwin" ]; then
     PATH="/Applications/VMware Fusion.app/Contents/Library:$PATH"
   fi
 
-  if [ "$(vmrun list | grep $BATS_TEST_DIRNAME/vcsim | wc -l)" -eq 1 ]
-  then
+  if [ "$(vmrun list | grep $BATS_TEST_DIRNAME/vcsim | wc -l)" -eq 1 ]; then
     export GOVC_URL=https://root:vmware@localhost:16443/sdk \
            GOVC_DATACENTER=DC0 \
            GOVC_DATASTORE=GlobalDS_0 \
@@ -99,9 +102,21 @@ vcsim_env() {
   fi
 }
 
+# remove username/password from $GOVC_URL and set $GOVC_{USERNAME,PASSWORD}
+govc_url_to_vars() {
+  local url=$(awk -F@ '{print $2}' <<<"$GOVC_URL")
+  local userpass=$(awk -F// '{print $2}' <<<"$GOVC_URL" | awk -F@ '{print $1}')
+  local username=$(awk -F:  '{print $1}' <<<"$userpass")
+  local password=$(awk -F:  '{print $2}' <<<"$userpass")
+
+  export GOVC_URL="$url" GOVC_USERNAME="$username" GOVC_PASSWORD="$password"
+
+  # double check that we removed user/pass
+  grep -q -v @ <<<"$GOVC_URL"
+}
+
 quit_vnc() {
-  if [ "$(uname)" = "Darwin" ]
-  then
+  if [ "$(uname)" = "Darwin" ]; then
     osascript <<EOF
 tell application "Screen Sharing"
    quit
@@ -114,8 +129,7 @@ open_vnc() {
   url=$1
   echo "open $url"
 
-  if [ "$(uname)" = "Darwin" ]
-  then
+  if [ "$(uname)" = "Darwin" ]; then
     open $url
   fi
 }

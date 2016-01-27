@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import (
 	"flag"
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
 )
@@ -38,7 +40,7 @@ func init() {
 	cli.Register("version", &version{})
 }
 
-func (c *version) Run(f *flag.FlagSet) error {
+func (c *version) Run(ctx context.Context, f *flag.FlagSet) error {
 	fmt.Printf("govc %s\n", gitVersion)
 	return nil
 }

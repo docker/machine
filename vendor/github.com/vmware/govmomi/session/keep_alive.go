@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -36,11 +36,12 @@ type keepAlive struct {
 
 	// keepAlive executes a request in the background with the purpose of
 	// keeping the session active. The response for this request is discarded.
-	keepAlive func(soap.RoundTripper)
+	keepAlive func(soap.RoundTripper) error
 }
 
-func defaultKeepAlive(roundTripper soap.RoundTripper) {
-	methods.GetServiceContent(context.Background(), roundTripper)
+func defaultKeepAlive(roundTripper soap.RoundTripper) error {
+	_, _ = methods.GetCurrentTime(context.Background(), roundTripper)
+	return nil
 }
 
 // KeepAlive wraps the specified soap.RoundTripper and executes a meaningless
@@ -48,13 +49,20 @@ func defaultKeepAlive(roundTripper soap.RoundTripper) {
 // specified amount of idle time. The keep alive process only starts once a
 // user logs in and runs until the user logs out again.
 func KeepAlive(roundTripper soap.RoundTripper, idleTime time.Duration) soap.RoundTripper {
+	return KeepAliveHandler(roundTripper, idleTime, defaultKeepAlive)
+}
+
+// KeepAliveHandler works as KeepAlive() does, but the handler param can decide how to handle errors.
+// For example, if connectivity to ESX/VC is down long enough for a session to expire, a handler can choose to
+// Login() on a types.NotAuthenticated error.  If handler returns non-nil, the keep alive go routine will be stopped.
+func KeepAliveHandler(roundTripper soap.RoundTripper, idleTime time.Duration, handler func(soap.RoundTripper) error) soap.RoundTripper {
 	k := &keepAlive{
 		roundTripper:  roundTripper,
 		idleTime:      idleTime,
 		notifyRequest: make(chan struct{}),
 	}
 
-	k.keepAlive = defaultKeepAlive
+	k.keepAlive = handler
 
 	return k
 }
@@ -81,7 +89,9 @@ func (k *keepAlive) start() {
 			case <-k.notifyRequest:
 				t.Reset(k.idleTime)
 			case <-t.C:
-				k.keepAlive(k.roundTripper)
+				if err := k.keepAlive(k.roundTripper); err != nil {
+					k.stop()
+				}
 				t = time.NewTimer(k.idleTime)
 			}
 		}
@@ -107,7 +117,7 @@ func (k *keepAlive) RoundTrip(ctx context.Context, req, res soap.HasFault) error
 
 	// Start ticker on login, stop ticker on logout.
 	switch req.(type) {
-	case *methods.LoginBody:
+	case *methods.LoginBody, *methods.LoginExtensionByCertificateBody:
 		k.start()
 	case *methods.LogoutBody:
 		k.stop()

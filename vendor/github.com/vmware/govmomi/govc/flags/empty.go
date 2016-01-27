@@ -16,10 +16,17 @@ limitations under the License.
 
 package flags
 
-import "flag"
+import (
+	"flag"
+
+	"golang.org/x/net/context"
+)
 
 type EmptyFlag struct{}
 
-func (flag *EmptyFlag) Register(f *flag.FlagSet) {}
+func (flag *EmptyFlag) Register(ctx context.Context, f *flag.FlagSet) {
+}
 
-func (flag *EmptyFlag) Process() error { return nil }
+func (flag *EmptyFlag) Process(ctx context.Context) error {
+	return nil
+}

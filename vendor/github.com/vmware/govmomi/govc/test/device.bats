@@ -76,13 +76,13 @@ load test_helper
   assert_success
 
   run govc device.disconnect -vm $vm $id
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 
   run govc device.cdrom.insert -vm $vm -device $id x.iso
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 
   run govc device.remove -vm $vm $id
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 }
 
 @test "device.floppy" {
@@ -117,13 +117,13 @@ load test_helper
   assert_success
 
   run govc device.disconnect -vm $vm $id
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 
   run govc device.floppy.insert -vm $vm -device $id x.img
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 
   run govc device.remove -vm $vm $id
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 }
 
 @test "device.serial" {
@@ -165,13 +165,13 @@ load test_helper
   assert_success
 
   run govc device.disconnect -vm $vm $id
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 
   run govc device.serial.connect -vm $vm -device $id $uri
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 
   run govc device.remove -vm $vm $id
-  assert_failure "Error: device '$id' not found"
+  assert_failure "govc: device '$id' not found"
 }
 
 @test "device.scsi" {

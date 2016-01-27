@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -97,21 +97,21 @@ func NewReader(s Sinker, r io.Reader, size int64) *reader {
 // Read calls the Read function on the underlying io.Reader. Additionally,
 // every read causes a progress report to be sent to the progress reader's
 // underlying channel.
-func (p *reader) Read(b []byte) (int, error) {
-	n, err := p.r.Read(b)
+func (r *reader) Read(b []byte) (int, error) {
+	n, err := r.r.Read(b)
 	if err != nil {
 		return n, err
 	}
 
-	p.pos += int64(n)
+	r.pos += int64(n)
 	q := readerReport{
 		t:    time.Now(),
-		pos:  p.pos,
-		size: p.size,
-		bps:  &p.bps,
+		pos:  r.pos,
+		size: r.size,
+		bps:  &r.bps,
 	}
 
-	p.ch <- q
+	r.ch <- q
 
 	return n, err
 }
@@ -123,6 +123,7 @@ func (r *reader) Done(err error) {
 		t:    time.Now(),
 		pos:  r.pos,
 		size: r.size,
+		bps:  &r.bps,
 		err:  err,
 	}
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -61,6 +61,31 @@ func (m VirtualDiskManager) CopyVirtualDisk(
 	}
 
 	res, err := methods.CopyVirtualDisk_Task(ctx, m.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(m.c, res.Returnval), nil
+}
+
+// CreateVirtualDisk creates a new virtual disk.
+func (m VirtualDiskManager) CreateVirtualDisk(
+	ctx context.Context,
+	name string, datacenter *Datacenter,
+	spec types.BaseVirtualDiskSpec) (*Task, error) {
+
+	req := types.CreateVirtualDisk_Task{
+		This: m.Reference(),
+		Name: name,
+		Spec: spec,
+	}
+
+	if datacenter != nil {
+		ref := datacenter.Reference()
+		req.Datacenter = &ref
+	}
+
+	res, err := methods.CreateVirtualDisk_Task(ctx, m.c, &req)
 	if err != nil {
 		return nil, err
 	}

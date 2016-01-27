@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -51,6 +52,38 @@ type Client struct {
 	k bool // Named after curl's -k flag
 	d *debugContainer
 	t *http.Transport
+	p *url.URL
+}
+
+var schemeMatch = regexp.MustCompile(`^\w+://`)
+
+// ParseURL is wrapper around url.Parse, where Scheme defaults to "https" and Path defaults to "/sdk"
+func ParseURL(s string) (*url.URL, error) {
+	var err error
+	var u *url.URL
+
+	if s != "" {
+		// Default the scheme to https
+		if !schemeMatch.MatchString(s) {
+			s = "https://" + s
+		}
+
+		u, err = url.Parse(s)
+		if err != nil {
+			return nil, err
+		}
+
+		// Default the path to /sdk
+		if u.Path == "" {
+			u.Path = "/sdk"
+		}
+
+		if u.User == nil {
+			u.User = url.UserPassword("", "")
+		}
+	}
+
+	return u, nil
 }
 
 func NewClient(u *url.URL, insecure bool) *Client {
@@ -82,6 +115,55 @@ func NewClient(u *url.URL, insecure bool) *Client {
 	c.u.User = nil
 
 	return &c
+}
+
+// splitHostPort is similar to net.SplitHostPort,
+// but rather than return error if there isn't a ':port',
+// return an empty string for the port.
+func splitHostPort(host string) (string, string) {
+	ix := strings.LastIndex(host, ":")
+
+	if ix <= strings.LastIndex(host, "]") {
+		return host, ""
+	}
+
+	name := host[:ix]
+	port := host[ix+1:]
+
+	return name, port
+}
+
+const sdkTunnel = "sdkTunnel:8089"
+
+func (c *Client) SetCertificate(cert tls.Certificate) {
+	t := c.Client.Transport.(*http.Transport)
+
+	// Extension certificate
+	t.TLSClientConfig.Certificates = []tls.Certificate{cert}
+
+	// Proxy to vCenter host on port 80
+	host, _ := splitHostPort(c.u.Host)
+
+	// Should be no reason to change the default port other than testing
+	port := os.Getenv("GOVC_TUNNEL_PROXY_PORT")
+	if port != "" {
+		host += ":" + port
+	}
+
+	c.p = &url.URL{
+		Scheme: "http",
+		Host:   host,
+	}
+	t.Proxy = func(r *http.Request) (*url.URL, error) {
+		// Only sdk requests should be proxied
+		if r.URL.Path == "/sdk" {
+			return c.p, nil
+		}
+		return http.ProxyFromEnvironment(r)
+	}
+
+	// Rewrite url Host to use the sdk tunnel, required for a certificate request.
+	c.u.Host = sdkTunnel
 }
 
 func (c *Client) URL() *url.URL {
@@ -120,6 +202,10 @@ func (c *Client) UnmarshalJSON(b []byte) error {
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (*http.Response, error) {
+	if nil == ctx || nil == ctx.Done() { // ctx.Done() is for context.TODO()
+		return c.Client.Do(req)
+	}
+
 	var resc = make(chan *http.Response, 1)
 	var errc = make(chan error, 1)
 
@@ -230,8 +316,8 @@ func (c *Client) ParseURL(urlStr string) (*url.URL, error) {
 		return nil, err
 	}
 
-	host := strings.Split(u.Host, ":")
-	if host[0] == "*" {
+	host, _ := splitHostPort(u.Host)
+	if host == "*" {
 		// Also use Client's port, to support port forwarding
 		u.Host = c.URL().Host
 	}
@@ -244,6 +330,7 @@ type Upload struct {
 	Method        string
 	ContentLength int64
 	Headers       map[string]string
+	Ticket        *http.Cookie
 	Progress      progress.Sinker
 }
 
@@ -276,6 +363,10 @@ func (c *Client) Upload(f io.Reader, u *url.URL, param *Upload) error {
 
 	for k, v := range param.Headers {
 		req.Header.Add(k, v)
+	}
+
+	if param.Ticket != nil {
+		req.AddCookie(param.Ticket)
 	}
 
 	res, err := c.Client.Do(req)
@@ -318,6 +409,7 @@ func (c *Client) UploadFile(file string, u *url.URL, param *Upload) error {
 
 type Download struct {
 	Method   string
+	Ticket   *http.Cookie
 	Progress progress.Sinker
 }
 
@@ -342,6 +434,10 @@ func (c *Client) DownloadFile(file string, u *url.URL, param *Download) error {
 	req, err := http.NewRequest(param.Method, u.String(), nil)
 	if err != nil {
 		return err
+	}
+
+	if param.Ticket != nil {
+		req.AddCookie(param.Ticket)
 	}
 
 	res, err := c.Client.Do(req)

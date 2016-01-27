@@ -10,8 +10,7 @@ parent="smn_machine_drivers"
 
 # VMware vSphere
 
-Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. The machine must have a working vSphere ESXi installation. You can use a paid license or free 60 day trial license. Your installation may also include an optional VCenter server. The vSphere driver depends on [`govc`](https://github.com/vmware/govmomi/tree/master/govc) (must be in path) and has been tested with [vmware/govmomi@`c848630`](https://github.com/vmware/govmomi/commit/c8486300bfe19427e4f3226e3b3eac067717ef17).
-
+Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. The machine must have a working vSphere ESXi installation. You can use a paid license or free 60 day trial license. Your installation may also include an optional VCenter server.
     $ docker-machine create --driver vmwarevsphere --vmwarevsphere-username=user --vmwarevsphere-password=SECRET vm
 
 Options:
@@ -26,7 +25,7 @@ Options:
 -   `--vmwarevsphere-vcenter-port`: vSphere Port for vCenter.
 -   `--vmwarevsphere-network`: Network where the Docker VM will be attached.
 -   `--vmwarevsphere-datastore`: Datastore for Docker VM.
--   `--vmwarevsphere-datacenter`: Datacenter for Docker VM (must be set to `ha-datacenter` when connecting to a single host).
+-   `--vmwarevsphere-datacenter`: Datacenter for Docker VM.
 -   `--vmwarevsphere-pool`: Resource pool for Docker VM.
 -   `--vmwarevsphere-hostsystem`: vSphere compute resource where the docker VM will be instantiated (use <cluster>/* or <cluster>/<host> if using a cluster).
 

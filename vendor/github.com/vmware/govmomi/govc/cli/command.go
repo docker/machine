@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,50 +21,24 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"sort"
 	"text/tabwriter"
+
+	"golang.org/x/net/context"
 )
 
 type HasFlags interface {
 	// Register may be called more than once and should be idempotent.
-	Register(f *flag.FlagSet)
+	Register(ctx context.Context, f *flag.FlagSet)
 
 	// Process may be called more than once and should be idempotent.
-	Process() error
+	Process(ctx context.Context) error
 }
 
 type Command interface {
 	HasFlags
 
-	Run(f *flag.FlagSet) error
-}
-
-var hasFlagsType = reflect.TypeOf((*HasFlags)(nil)).Elem()
-
-func RegisterCommand(h HasFlags, f *flag.FlagSet) {
-	visited := make(map[interface{}]struct{})
-	Walk(h, hasFlagsType, func(v interface{}) error {
-		if _, ok := visited[v]; ok {
-			return nil
-		}
-		visited[v] = struct{}{}
-		v.(HasFlags).Register(f)
-		return nil
-	})
-}
-
-func ProcessCommand(h HasFlags) error {
-	visited := make(map[interface{}]struct{})
-	err := Walk(h, hasFlagsType, func(v interface{}) error {
-		if _, ok := visited[v]; ok {
-			return nil
-		}
-		visited[v] = struct{}{}
-		err := v.(HasFlags).Process()
-		return err
-	})
-	return err
+	Run(ctx context.Context, f *flag.FlagSet) error
 }
 
 func generalHelp() {
@@ -117,6 +91,8 @@ func commandHelp(name string, cmd Command, f *flag.FlagSet) {
 }
 
 func Run(args []string) int {
+	var err error
+
 	if len(args) == 0 {
 		generalHelp()
 		return 1
@@ -134,37 +110,33 @@ func Run(args []string) int {
 		return 1
 	}
 
-	f := flag.NewFlagSet("", flag.ContinueOnError)
-	f.SetOutput(ioutil.Discard)
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.SetOutput(ioutil.Discard)
 
-	RegisterCommand(cmd, f)
+	ctx := context.Background()
+	cmd.Register(ctx, fs)
 
-	if err := f.Parse(args[1:]); err != nil {
-		if err == flag.ErrHelp {
-			commandHelp(args[0], cmd, f)
-		} else {
-			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		}
-		return 1
+	if err = fs.Parse(args[1:]); err != nil {
+		goto error
 	}
 
-	if err := ProcessCommand(cmd); err != nil {
-		if err == flag.ErrHelp {
-			commandHelp(args[0], cmd, f)
-		} else {
-			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		}
-		return 1
+	if err = cmd.Process(ctx); err != nil {
+		goto error
 	}
 
-	if err := cmd.Run(f); err != nil {
-		if err == flag.ErrHelp {
-			commandHelp(args[0], cmd, f)
-		} else {
-			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		}
-		return 1
+	if err = cmd.Run(ctx, fs); err != nil {
+		goto error
 	}
 
 	return 0
+
+error:
+	if err == flag.ErrHelp {
+		commandHelp(args[0], cmd, fs)
+	} else {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", os.Args[0], err)
+	}
+
+	return 1
+
 }

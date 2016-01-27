@@ -1,11 +1,12 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
+
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +24,8 @@ import (
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
 	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/vim25/soap"
+	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
 )
 
@@ -43,8 +46,12 @@ func init() {
 	cli.Register("vm.power", &power{})
 }
 
-func (cmd *power) Register(f *flag.FlagSet) {
-	cmd.SearchFlag = flags.NewSearchFlag(flags.SearchVirtualMachines)
+func (cmd *power) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	cmd.ClientFlag.Register(ctx, f)
+
+	cmd.SearchFlag, ctx = flags.NewSearchFlag(ctx, flags.SearchVirtualMachines)
+	cmd.SearchFlag.Register(ctx, f)
 
 	f.BoolVar(&cmd.On, "on", false, "Power on")
 	f.BoolVar(&cmd.Off, "off", false, "Power off")
@@ -52,10 +59,16 @@ func (cmd *power) Register(f *flag.FlagSet) {
 	f.BoolVar(&cmd.Suspend, "suspend", false, "Power suspend")
 	f.BoolVar(&cmd.Reboot, "r", false, "Reboot guest")
 	f.BoolVar(&cmd.Shutdown, "s", false, "Shutdown guest")
-	f.BoolVar(&cmd.Force, "force", false, "Force (ignore state error)")
+	f.BoolVar(&cmd.Force, "force", false, "Force (ignore state error and hard shutdown/reboot if tools unavailable)")
 }
 
-func (cmd *power) Process() error {
+func (cmd *power) Process(ctx context.Context) error {
+	if err := cmd.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.SearchFlag.Process(ctx); err != nil {
+		return err
+	}
 	opts := []bool{cmd.On, cmd.Off, cmd.Reset, cmd.Suspend, cmd.Reboot, cmd.Shutdown}
 	selected := false
 
@@ -75,7 +88,18 @@ func (cmd *power) Process() error {
 	return nil
 }
 
-func (cmd *power) Run(f *flag.FlagSet) error {
+func isToolsUnavailable(err error) bool {
+	if soap.IsSoapFault(err) {
+		soapFault := soap.ToSoapFault(err)
+		if _, ok := soapFault.VimFault().(types.ToolsUnavailable); ok {
+			return ok
+		}
+	}
+
+	return false
+}
+
+func (cmd *power) Run(ctx context.Context, f *flag.FlagSet) error {
 	vms, err := cmd.VirtualMachines(f.Args())
 	if err != nil {
 		return err
@@ -100,9 +124,17 @@ func (cmd *power) Run(f *flag.FlagSet) error {
 		case cmd.Reboot:
 			fmt.Fprintf(cmd, "Reboot guest %s... ", vm.Reference())
 			err = vm.RebootGuest(context.TODO())
+
+			if err != nil && cmd.Force && isToolsUnavailable(err) {
+				task, err = vm.Reset(context.TODO())
+			}
 		case cmd.Shutdown:
 			fmt.Fprintf(cmd, "Shutdown guest %s... ", vm.Reference())
 			err = vm.ShutdownGuest(context.TODO())
+
+			if err != nil && cmd.Force && isToolsUnavailable(err) {
+				task, err = vm.PowerOff(context.TODO())
+			}
 		}
 
 		if err != nil {

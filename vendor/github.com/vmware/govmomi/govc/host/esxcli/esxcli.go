@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
 )
@@ -42,13 +44,21 @@ func (cmd *esxcli) Usage() string {
 	return "COMMAND [ARG]..."
 }
 
-func (cmd *esxcli) Register(f *flag.FlagSet) {
+func (cmd *esxcli) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.HostSystemFlag, ctx = flags.NewHostSystemFlag(ctx)
+	cmd.HostSystemFlag.Register(ctx, f)
+
 	f.BoolVar(&cmd.hints, "hints", true, "Use command info hints when formatting output")
 }
 
-func (cmd *esxcli) Process() error { return nil }
+func (cmd *esxcli) Process(ctx context.Context) error {
+	if err := cmd.HostSystemFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *esxcli) Run(f *flag.FlagSet) error {
+func (cmd *esxcli) Run(ctx context.Context, f *flag.FlagSet) error {
 	c, err := cmd.Client()
 	if err != nil {
 		return nil

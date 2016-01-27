@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,16 +39,29 @@ func init() {
 	cli.Register("vm.disk.attach", &attach{})
 }
 
-func (cmd *attach) Register(f *flag.FlagSet) {
+func (cmd *attach) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.DatastoreFlag, ctx = flags.NewDatastoreFlag(ctx)
+	cmd.DatastoreFlag.Register(ctx, f)
+	cmd.VirtualMachineFlag, ctx = flags.NewVirtualMachineFlag(ctx)
+	cmd.VirtualMachineFlag.Register(ctx, f)
+
 	f.BoolVar(&cmd.persist, "persist", true, "Persist attached disk")
 	f.BoolVar(&cmd.link, "link", true, "Link specified disk")
 	f.StringVar(&cmd.controller, "controller", "", "Disk controller")
 	f.StringVar(&cmd.disk, "disk", "", "Disk path name")
 }
 
-func (cmd *attach) Process() error { return nil }
+func (cmd *attach) Process(ctx context.Context) error {
+	if err := cmd.DatastoreFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.VirtualMachineFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *attach) Run(f *flag.FlagSet) error {
+func (cmd *attach) Run(ctx context.Context, f *flag.FlagSet) error {
 	vm, err := cmd.VirtualMachine()
 	if err != nil {
 		return err

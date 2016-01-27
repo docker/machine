@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,20 +25,40 @@ import (
 	"golang.org/x/net/context"
 )
 
+var featureUsage = "List licenses with given feature"
+
 type list struct {
 	*flags.ClientFlag
 	*flags.OutputFlag
+
+	feature string
 }
 
 func init() {
 	cli.Register("license.list", &list{})
 }
 
-func (cmd *list) Register(f *flag.FlagSet) {}
+func (cmd *list) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	cmd.ClientFlag.Register(ctx, f)
 
-func (cmd *list) Process() error { return nil }
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
 
-func (cmd *list) Run(f *flag.FlagSet) error {
+	f.StringVar(&cmd.feature, "feature", "", featureUsage)
+}
+
+func (cmd *list) Process(ctx context.Context) error {
+	if err := cmd.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cmd *list) Run(ctx context.Context, f *flag.FlagSet) error {
 	client, err := cmd.Client()
 	if err != nil {
 		return err
@@ -48,6 +68,10 @@ func (cmd *list) Run(f *flag.FlagSet) error {
 	result, err := m.List(context.TODO())
 	if err != nil {
 		return err
+	}
+
+	if cmd.feature != "" {
+		result = result.WithFeature(cmd.feature)
 	}
 
 	return cmd.WriteResult(licenseOutput(result))

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,19 +34,31 @@ type create struct {
 }
 
 func init() {
-	spec := NewResourceConfigSpecFlag()
-	spec.SetAllocation(func(a types.BaseResourceAllocationInfo) {
+	cli.Register("pool.create", &create{})
+}
+
+func (cmd *create) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.DatacenterFlag, ctx = flags.NewDatacenterFlag(ctx)
+	cmd.DatacenterFlag.Register(ctx, f)
+
+	cmd.ResourceConfigSpecFlag = NewResourceConfigSpecFlag()
+	cmd.ResourceConfigSpecFlag.SetAllocation(func(a types.BaseResourceAllocationInfo) {
 		ra := a.GetResourceAllocationInfo()
 		ra.Shares.Level = types.SharesLevelNormal
 		ra.ExpandableReservation = types.NewBool(true)
 	})
-
-	cli.Register("pool.create", &create{ResourceConfigSpecFlag: spec})
+	cmd.ResourceConfigSpecFlag.Register(ctx, f)
 }
 
-func (cmd *create) Register(f *flag.FlagSet) {}
-
-func (cmd *create) Process() error { return nil }
+func (cmd *create) Process(ctx context.Context) error {
+	if err := cmd.DatacenterFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.ResourceConfigSpecFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *create) Usage() string {
 	return "POOL..."
@@ -56,7 +68,7 @@ func (cmd *create) Description() string {
 	return "Create one or more resource POOLs.\n" + poolCreateHelp
 }
 
-func (cmd *create) Run(f *flag.FlagSet) error {
+func (cmd *create) Run(ctx context.Context, f *flag.FlagSet) error {
 	if f.NArg() == 0 {
 		return flag.ErrHelp
 	}

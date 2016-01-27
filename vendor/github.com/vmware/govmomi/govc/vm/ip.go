@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,14 +39,27 @@ func init() {
 	cli.Register("vm.ip", &ip{})
 }
 
-func (cmd *ip) Register(f *flag.FlagSet) {
-	cmd.SearchFlag = flags.NewSearchFlag(flags.SearchVirtualMachines)
+func (cmd *ip) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
+
+	cmd.SearchFlag, ctx = flags.NewSearchFlag(ctx, flags.SearchVirtualMachines)
+	cmd.SearchFlag.Register(ctx, f)
+
 	f.BoolVar(&cmd.esx, "esxcli", false, "Use esxcli instead of guest tools")
 }
 
-func (cmd *ip) Process() error { return nil }
+func (cmd *ip) Process(ctx context.Context) error {
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.SearchFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *ip) Run(f *flag.FlagSet) error {
+func (cmd *ip) Run(ctx context.Context, f *flag.FlagSet) error {
 	c, err := cmd.Client()
 	if err != nil {
 		return err

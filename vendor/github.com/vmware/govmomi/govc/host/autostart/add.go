@@ -19,6 +19,8 @@ package autostart
 import (
 	"flag"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/vim25/types"
 )
@@ -31,15 +33,23 @@ func init() {
 	cli.Register("host.autostart.add", &add{})
 }
 
-func (cmd *add) Register(f *flag.FlagSet) {}
+func (cmd *add) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.AutostartFlag, ctx = newAutostartFlag(ctx)
+	cmd.AutostartFlag.Register(ctx, f)
+}
 
-func (cmd *add) Process() error { return nil }
+func (cmd *add) Process(ctx context.Context) error {
+	if err := cmd.AutostartFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *add) Usage() string {
 	return "VM..."
 }
 
-func (cmd *add) Run(f *flag.FlagSet) error {
+func (cmd *add) Run(ctx context.Context, f *flag.FlagSet) error {
 	var powerInfo = types.AutoStartPowerInfo{
 		StartAction:      "powerOn",
 		StartDelay:       -1,

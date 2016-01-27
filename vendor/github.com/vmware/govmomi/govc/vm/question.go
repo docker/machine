@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,15 +39,21 @@ func init() {
 	cli.Register("vm.question", &question{})
 }
 
-func (cmd *question) Register(f *flag.FlagSet) {
+func (cmd *question) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.VirtualMachineFlag, ctx = flags.NewVirtualMachineFlag(ctx)
+	cmd.VirtualMachineFlag.Register(ctx, f)
+
 	f.StringVar(&cmd.answer, "answer", "", "Answer to question")
 }
 
-func (cmd *question) Process() error {
+func (cmd *question) Process(ctx context.Context) error {
+	if err := cmd.VirtualMachineFlag.Process(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (cmd *question) Run(f *flag.FlagSet) error {
+func (cmd *question) Run(ctx context.Context, f *flag.FlagSet) error {
 	c, err := cmd.Client()
 	if err != nil {
 		return err

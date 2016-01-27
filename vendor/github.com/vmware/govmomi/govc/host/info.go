@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,12 +23,14 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25/mo"
-	"golang.org/x/net/context"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
 type info struct {
@@ -41,73 +43,100 @@ func init() {
 	cli.Register("host.info", &info{})
 }
 
-func (c *info) Register(f *flag.FlagSet) {}
+func (cmd *info) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	cmd.ClientFlag.Register(ctx, f)
 
-func (c *info) Process() error { return nil }
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
 
-func (c *info) Run(f *flag.FlagSet) error {
-	client, err := c.Client()
+	cmd.HostSystemFlag, ctx = flags.NewHostSystemFlag(ctx)
+	cmd.HostSystemFlag.Register(ctx, f)
+}
+
+func (cmd *info) Process(ctx context.Context) error {
+	if err := cmd.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.HostSystemFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cmd *info) Run(ctx context.Context, f *flag.FlagSet) error {
+	c, err := cmd.Client()
 	if err != nil {
 		return err
 	}
 
-	var hosts []*object.HostSystem
+	var res infoResult
+	var props []string
+
+	if cmd.OutputFlag.JSON {
+		props = nil // Load everything
+	} else {
+		props = []string{"summary"} // Load summary
+	}
 
 	// We could do without the -host flag, leaving it for compat
-	host, err := c.HostSystemIfSpecified()
+	host, err := cmd.HostSystemIfSpecified()
 	if err != nil {
 		return err
 	}
 
 	// Default only if there is a single host
 	if host == nil && f.NArg() == 0 {
-		host, err = c.HostSystem()
+		host, err = cmd.HostSystem()
 		if err != nil {
 			return err
 		}
 	}
 
 	if host != nil {
-		hosts = append(hosts, host)
+		res.objects = append(res.objects, host)
 	} else {
-		hosts, err = c.HostSystems(f.Args())
+		res.objects, err = cmd.HostSystems(f.Args())
 		if err != nil {
 			return err
 		}
 	}
 
-	var res infoResult
-	var props []string
+	if len(res.objects) != 0 {
+		refs := make([]types.ManagedObjectReference, 0, len(res.objects))
+		for _, o := range res.objects {
+			refs = append(refs, o.Reference())
+		}
 
-	if c.OutputFlag.JSON {
-		props = nil // Load everything
-	} else {
-		props = []string{"summary"} // Load summary
-	}
-
-	for _, host := range hosts {
-		var h mo.HostSystem
-
-		pc := property.DefaultCollector(client)
-		err = pc.RetrieveOne(context.TODO(), host.Reference(), props, &h)
+		pc := property.DefaultCollector(c)
+		err = pc.Retrieve(ctx, refs, props, &res.HostSystems)
 		if err != nil {
 			return err
 		}
-
-		res.HostSystems = append(res.HostSystems, h)
 	}
 
-	return c.WriteResult(&res)
+	return cmd.WriteResult(&res)
 }
 
 type infoResult struct {
 	HostSystems []mo.HostSystem
+	objects     []*object.HostSystem
 }
 
 func (r *infoResult) Write(w io.Writer) error {
+	// Maintain order via r.objects as Property collector does not always return results in order.
+	objects := make(map[types.ManagedObjectReference]mo.HostSystem, len(r.HostSystems))
+	for _, o := range r.HostSystems {
+		objects[o.Reference()] = o
+	}
+
 	tw := tabwriter.NewWriter(os.Stdout, 2, 0, 2, ' ', 0)
 
-	for _, host := range r.HostSystems {
+	for _, o := range r.objects {
+		host := objects[o.Reference()]
 		s := host.Summary
 		h := s.Hardware
 		z := s.QuickStats
@@ -116,6 +145,7 @@ func (r *infoResult) Write(w io.Writer) error {
 		memUsage := 100 * float64(z.OverallMemoryUsage<<20) / float64(h.MemorySize)
 
 		fmt.Fprintf(tw, "Name:\t%s\n", s.Config.Name)
+		fmt.Fprintf(tw, "  Path:\t%s\n", o.InventoryPath)
 		fmt.Fprintf(tw, "  Manufacturer:\t%s\n", h.Vendor)
 		fmt.Fprintf(tw, "  Logical CPUs:\t%d CPUs @ %dMHz\n", ncpu, h.CpuMhz)
 		fmt.Fprintf(tw, "  Processor type:\t%s\n", h.CpuModel)

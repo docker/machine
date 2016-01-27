@@ -1,27 +1,35 @@
-#!/bin/bash -e
+#!/bin/sh
 
-if [ "$(uname -s)" == "Darwin" ]
-then
+set -e
+
+if [ "$(uname -s)" == "Darwin" ]; then
   PATH="/Applications/VMware Fusion.app/Contents/Library:$PATH"
   PATH="/Applications/VMware Fusion.app/Contents/Library/VMware OVF Tool:$PATH"
 fi
 
 ovf="$1"
 
-if [ -z "$ovf" ]
-then
+if [ -z "$ovf" ]; then
   ovf="./VMware-vCenter-Server-Appliance-5.5.0.10300-2000350_OVA10.ova"
 fi
 
-dir=$(readlink -nf $(dirname $0))
+# check for greadlink and gmktemp
+readlink=$(type -p greadlink readlink | head -1)
+mktemp=$(type -p gmktemp mktemp | head -1)
 
-tmp=$(mktemp -d)
+dir=$($readlink -nf $(dirname $0))
+tmp=$($mktemp -d)
 trap "rm -rf $tmp" EXIT
 
 cd $tmp
 
 echo "Converting ovf..."
-ovftool $ovf ./vcsa.vmx
+ovftool \
+  --noSSLVerify \
+  --acceptAllEulas \
+  --overwrite \
+  --powerOffTarget \
+  $ovf vcsa.vmx
 
 echo "Starting vm..."
 vmrun start vcsa.vmx nogui
@@ -41,9 +49,9 @@ vmrun -gu root -gp vmware deleteFileInGuest vcsa.vmx \
 
 echo "Configuring vCenter Server Appliance..."
 
-ssh_opts="-oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oLogLevel=quiet"
+ssh_opts="-oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -T"
 
-ssh ${ssh_opts} -i ~/.vagrant.d/insecure_private_key vagrant@$ip <<EOF
+ssh ${ssh_opts} -i ~/.vagrant.d/insecure_private_key vagrant@$ip <<EOS
 echo "Accepting EULA ..."
 sudo /usr/sbin/vpxd_servicecfg eula accept
 
@@ -55,14 +63,14 @@ sudo /usr/sbin/vpxd_servicecfg sso write embedded
 
 echo "Starting VCSA ..."
 sudo /usr/sbin/vpxd_servicecfg service start
-EOF
+EOS
 
 echo "Stopping vm..."
 vmrun stop vcsa.vmx
 
 rm -f vmware.log
 
-perl -pi -e 's/"bridged"/"nat"/' vcsa.vmx
+sed -i -e 's/"bridged"/"nat"/' vcsa.vmx
 
 echo '{"provider":"vmware_desktop"}' > ./metadata.json
 

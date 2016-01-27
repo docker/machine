@@ -22,6 +22,8 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
 )
@@ -34,11 +36,19 @@ func init() {
 	cli.Register("about", &about{})
 }
 
-func (cmd *about) Register(f *flag.FlagSet) {}
+func (cmd *about) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	cmd.ClientFlag.Register(ctx, f)
+}
 
-func (cmd *about) Process() error { return nil }
+func (cmd *about) Process(ctx context.Context) error {
+	if err := cmd.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
-func (cmd *about) Run(f *flag.FlagSet) error {
+func (cmd *about) Run(ctx context.Context, f *flag.FlagSet) error {
 	c, err := cmd.Client()
 	if err != nil {
 		return err

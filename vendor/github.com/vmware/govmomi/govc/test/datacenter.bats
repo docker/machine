@@ -75,11 +75,11 @@ load test_helper
 @test "fails when operation attempted on standalone ESX host" {
   run govc datacenter.create something
   assert_failure
-  assert_output "Error: ServerFaultCode: The operation is not supported on the object."
+  assert_output "govc: ServerFaultCode: The operation is not supported on the object."
 }
 
 @test "fails when attempting to destroy ha-datacenter" {
   run govc datacenter.destroy ha-datacenter
   assert_failure
-  assert_output "Error: The operation is not supported on the object."
+  assert_output "govc: The operation is not supported on the object."
 }
