@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -69,6 +69,11 @@ func Wait(ctx context.Context, c *Collector, obj types.ManagedObjectReference, p
 		res, err := p.WaitForUpdates(ctx, version)
 		if err != nil {
 			return err
+		}
+
+		// Retry if the result came back empty
+		if res == nil {
+			continue
 		}
 
 		version = res.Version

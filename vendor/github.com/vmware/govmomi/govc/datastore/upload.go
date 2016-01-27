@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import (
 	"errors"
 	"flag"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
 	"github.com/vmware/govmomi/vim25/soap"
@@ -34,26 +36,35 @@ func init() {
 	cli.Register("datastore.upload", &upload{})
 }
 
-func (cmd *upload) Register(f *flag.FlagSet) {}
+func (cmd *upload) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
 
-func (cmd *upload) Process() error { return nil }
+	cmd.DatastoreFlag, ctx = flags.NewDatastoreFlag(ctx)
+	cmd.DatastoreFlag.Register(ctx, f)
+}
+
+func (cmd *upload) Process(ctx context.Context) error {
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.DatastoreFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *upload) Usage() string {
 	return "LOCAL REMOTE"
 }
 
-func (cmd *upload) Run(f *flag.FlagSet) error {
+func (cmd *upload) Run(ctx context.Context, f *flag.FlagSet) error {
 	args := f.Args()
 	if len(args) != 2 {
 		return errors.New("invalid arguments")
 	}
 
-	c, err := cmd.Client()
-	if err != nil {
-		return err
-	}
-
-	u, err := cmd.DatastoreURL(args[1])
+	ds, err := cmd.Datastore()
 	if err != nil {
 		return err
 	}
@@ -65,5 +76,5 @@ func (cmd *upload) Run(f *flag.FlagSet) error {
 		defer logger.Wait()
 	}
 
-	return c.Client.UploadFile(args[0], u, &p)
+	return ds.UploadFile(context.TODO(), args[0], args[1], &p)
 }

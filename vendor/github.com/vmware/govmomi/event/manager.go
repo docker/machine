@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ func NewManager(c *vim25.Client) *Manager {
 
 		c: c,
 
+		eventCategory:   make(map[string]string),
 		eventCategoryMu: new(sync.Mutex),
 	}
 
@@ -125,7 +126,7 @@ func (m Manager) eventCategoryMap(ctx context.Context) (map[string]string, error
 	m.eventCategoryMu.Lock()
 	defer m.eventCategoryMu.Unlock()
 
-	if m.eventCategory != nil {
+	if len(m.eventCategory) != 0 {
 		return m.eventCategory, nil
 	}
 
@@ -136,8 +137,6 @@ func (m Manager) eventCategoryMap(ctx context.Context) (map[string]string, error
 	if err != nil {
 		return nil, err
 	}
-
-	m.eventCategory = make(map[string]string, len(o.Description.EventInfo))
 
 	for _, info := range o.Description.EventInfo {
 		m.eventCategory[info.Key] = info.Category

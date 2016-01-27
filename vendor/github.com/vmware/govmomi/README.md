@@ -8,7 +8,7 @@ For `govc`, a CLI built on top of govmomi, check out the [govc](./govc) director
 
 ## Compatibility
 
-This library is built for and tested against ESXi and vCenter 5.5.
+This library is built for and tested against ESXi and vCenter 5.5 and 6.0.
 
 If you're able to use it against older versions of ESXi and/or vCenter, please
 leave a note and we'll include it in this compatibility list.
@@ -22,7 +22,7 @@ The code in the `govmomi` package is a wrapper for the code that is generated fr
 It primarily provides convenience functions for working with the vSphere API.
 See [godoc.org][godoc] for documentation.
 
-[apiref]:http://pubs.vmware.com/vsphere-55/index.jsp#com.vmware.wssdk.apiref.doc/right-pane.html
+[apiref]:http://pubs.vmware.com/vsphere-60/index.jsp#com.vmware.wssdk.apiref.doc/right-pane.html
 [godoc]:http://godoc.org/github.com/vmware/govmomi
 
 ## Status

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,18 +35,26 @@ func init() {
 	cli.Register("host.portgroup.add", &add{})
 }
 
-func (cmd *add) Register(f *flag.FlagSet) {
+func (cmd *add) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.HostSystemFlag, ctx = flags.NewHostSystemFlag(ctx)
+	cmd.HostSystemFlag.Register(ctx, f)
+
 	f.StringVar(&cmd.spec.VswitchName, "vswitch", "", "vSwitch Name")
 	f.IntVar(&cmd.spec.VlanId, "vlan", 0, "VLAN ID")
 }
 
-func (cmd *add) Process() error { return nil }
+func (cmd *add) Process(ctx context.Context) error {
+	if err := cmd.HostSystemFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *add) Usage() string {
 	return "NAME"
 }
 
-func (cmd *add) Run(f *flag.FlagSet) error {
+func (cmd *add) Run(ctx context.Context, f *flag.FlagSet) error {
 	ns, err := cmd.HostNetworkSystem()
 	if err != nil {
 		return err

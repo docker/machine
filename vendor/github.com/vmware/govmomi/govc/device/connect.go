@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,15 +33,23 @@ func init() {
 	cli.Register("device.connect", &connect{})
 }
 
-func (cmd *connect) Register(f *flag.FlagSet) {}
+func (cmd *connect) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.VirtualMachineFlag, ctx = flags.NewVirtualMachineFlag(ctx)
+	cmd.VirtualMachineFlag.Register(ctx, f)
+}
 
-func (cmd *connect) Process() error { return nil }
+func (cmd *connect) Process(ctx context.Context) error {
+	if err := cmd.VirtualMachineFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *connect) Usage() string {
 	return "DEVICE..."
 }
 
-func (cmd *connect) Run(f *flag.FlagSet) error {
+func (cmd *connect) Run(ctx context.Context, f *flag.FlagSet) error {
 	vm, err := cmd.VirtualMachine()
 	if err != nil {
 		return err

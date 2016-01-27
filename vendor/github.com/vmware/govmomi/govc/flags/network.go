@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/types"
@@ -28,21 +27,33 @@ import (
 )
 
 type NetworkFlag struct {
+	common
+
 	*DatacenterFlag
 
-	register sync.Once
-	name     string
-	net      object.NetworkReference
-	adapter  string
-	address  string
+	name    string
+	net     object.NetworkReference
+	adapter string
+	address string
 }
 
-func NewNetworkFlag() *NetworkFlag {
-	return &NetworkFlag{}
+var networkFlagKey = flagKey("network")
+
+func NewNetworkFlag(ctx context.Context) (*NetworkFlag, context.Context) {
+	if v := ctx.Value(networkFlagKey); v != nil {
+		return v.(*NetworkFlag), ctx
+	}
+
+	v := &NetworkFlag{}
+	v.DatacenterFlag, ctx = NewDatacenterFlag(ctx)
+	ctx = context.WithValue(ctx, networkFlagKey, v)
+	return v, ctx
 }
 
-func (flag *NetworkFlag) Register(f *flag.FlagSet) {
-	flag.register.Do(func() {
+func (flag *NetworkFlag) Register(ctx context.Context, f *flag.FlagSet) {
+	flag.RegisterOnce(func() {
+		flag.DatacenterFlag.Register(ctx, f)
+
 		env := "GOVC_NETWORK"
 		value := os.Getenv(env)
 		flag.Set(value)
@@ -53,7 +64,14 @@ func (flag *NetworkFlag) Register(f *flag.FlagSet) {
 	})
 }
 
-func (flag *NetworkFlag) Process() error { return nil }
+func (flag *NetworkFlag) Process(ctx context.Context) error {
+	return flag.ProcessOnce(func() error {
+		if err := flag.DatacenterFlag.Process(ctx); err != nil {
+			return err
+		}
+		return nil
+	})
+}
 
 func (flag *NetworkFlag) String() string {
 	return flag.name
@@ -74,13 +92,11 @@ func (flag *NetworkFlag) Network() (object.NetworkReference, error) {
 		return nil, err
 	}
 
-	if flag.name == "" {
-		flag.net, err = finder.DefaultNetwork(context.TODO())
-	} else {
-		flag.net, err = finder.Network(context.TODO(), flag.name)
+	if flag.net, err = finder.NetworkOrDefault(context.TODO(), flag.name); err != nil {
+		return nil, err
 	}
 
-	return flag.net, err
+	return flag.net, nil
 }
 
 func (flag *NetworkFlag) Device() (types.BaseVirtualDevice, error) {

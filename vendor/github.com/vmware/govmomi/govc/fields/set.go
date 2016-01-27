@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import (
 
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
-	"github.com/vmware/govmomi/list"
 	"github.com/vmware/govmomi/object"
 	"golang.org/x/net/context"
 )
@@ -34,24 +33,25 @@ func init() {
 	cli.Register("fields.set", &set{})
 }
 
-func (cmd *set) Register(f *flag.FlagSet) {}
+func (cmd *set) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.DatacenterFlag, ctx = flags.NewDatacenterFlag(ctx)
+	cmd.DatacenterFlag.Register(ctx, f)
+}
 
-func (cmd *set) Process() error { return nil }
+func (cmd *set) Process(ctx context.Context) error {
+	if err := cmd.DatacenterFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *set) Usage() string {
 	return "KEY VALUE PATH..."
 }
 
-func (cmd *set) Run(f *flag.FlagSet) error {
+func (cmd *set) Run(ctx context.Context, f *flag.FlagSet) error {
 	if f.NArg() < 3 {
 		return flag.ErrHelp
-	}
-
-	ctx := context.TODO()
-
-	finder, err := cmd.Finder()
-	if err != nil {
-		return err
 	}
 
 	c, err := cmd.Client()
@@ -64,8 +64,6 @@ func (cmd *set) Run(f *flag.FlagSet) error {
 		return err
 	}
 
-	var objs []list.Element
-
 	args := f.Args()
 
 	key, err := m.FindKey(ctx, args[0])
@@ -75,17 +73,13 @@ func (cmd *set) Run(f *flag.FlagSet) error {
 
 	val := args[1]
 
-	for _, arg := range args[2:] {
-		es, err := finder.ManagedObjectList(ctx, arg)
-		if err != nil {
-			return err
-		}
-
-		objs = append(objs, es...)
+	objs, err := cmd.ManagedObjects(ctx, args[2:])
+	if err != nil {
+		return err
 	}
 
 	for _, ref := range objs {
-		err := m.Set(ctx, ref.Object.Reference(), key, val)
+		err := m.Set(ctx, ref, key, val)
 		if err != nil {
 			return err
 		}

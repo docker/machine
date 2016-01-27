@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,27 +20,44 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/vmware/govmomi/object"
 	"golang.org/x/net/context"
 )
 
 type HostSystemFlag struct {
+	common
+
 	*ClientFlag
 	*DatacenterFlag
 	*SearchFlag
 
-	register sync.Once
-	name     string
-	host     *object.HostSystem
-	pool     *object.ResourcePool
+	name string
+	host *object.HostSystem
+	pool *object.ResourcePool
 }
 
-func (flag *HostSystemFlag) Register(f *flag.FlagSet) {
-	flag.SearchFlag = NewSearchFlag(SearchHosts)
+var hostSystemFlagKey = flagKey("hostSystem")
 
-	flag.register.Do(func() {
+func NewHostSystemFlag(ctx context.Context) (*HostSystemFlag, context.Context) {
+	if v := ctx.Value(hostSystemFlagKey); v != nil {
+		return v.(*HostSystemFlag), ctx
+	}
+
+	v := &HostSystemFlag{}
+	v.ClientFlag, ctx = NewClientFlag(ctx)
+	v.DatacenterFlag, ctx = NewDatacenterFlag(ctx)
+	v.SearchFlag, ctx = NewSearchFlag(ctx, SearchHosts)
+	ctx = context.WithValue(ctx, hostSystemFlagKey, v)
+	return v, ctx
+}
+
+func (flag *HostSystemFlag) Register(ctx context.Context, f *flag.FlagSet) {
+	flag.RegisterOnce(func() {
+		flag.ClientFlag.Register(ctx, f)
+		flag.DatacenterFlag.Register(ctx, f)
+		flag.SearchFlag.Register(ctx, f)
+
 		env := "GOVC_HOST"
 		value := os.Getenv(env)
 		usage := fmt.Sprintf("Host system [%s]", env)
@@ -48,7 +65,20 @@ func (flag *HostSystemFlag) Register(f *flag.FlagSet) {
 	})
 }
 
-func (flag *HostSystemFlag) Process() error { return nil }
+func (flag *HostSystemFlag) Process(ctx context.Context) error {
+	return flag.ProcessOnce(func() error {
+		if err := flag.ClientFlag.Process(ctx); err != nil {
+			return err
+		}
+		if err := flag.DatacenterFlag.Process(ctx); err != nil {
+			return err
+		}
+		if err := flag.SearchFlag.Process(ctx); err != nil {
+			return err
+		}
+		return nil
+	})
+}
 
 func (flag *HostSystemFlag) HostSystemIfSpecified() (*object.HostSystem, error) {
 	if flag.host != nil {

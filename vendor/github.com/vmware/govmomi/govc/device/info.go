@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,33 +19,50 @@ package device
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
+	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
 )
 
 type info struct {
 	*flags.VirtualMachineFlag
+	*flags.OutputFlag
 }
 
 func init() {
 	cli.Register("device.info", &info{})
 }
 
-func (cmd *info) Register(f *flag.FlagSet) {}
+func (cmd *info) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.VirtualMachineFlag, ctx = flags.NewVirtualMachineFlag(ctx)
+	cmd.VirtualMachineFlag.Register(ctx, f)
 
-func (cmd *info) Process() error { return nil }
-
-func (cmd *info) Usage() string {
-	return "DEVICE..."
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
 }
 
-func (cmd *info) Run(f *flag.FlagSet) error {
+func (cmd *info) Process(ctx context.Context) error {
+	if err := cmd.VirtualMachineFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cmd *info) Usage() string {
+	return "[DEVICE]..."
+}
+
+func (cmd *info) Run(ctx context.Context, f *flag.FlagSet) error {
 	vm, err := cmd.VirtualMachine()
 	if err != nil {
 		return err
@@ -60,19 +77,41 @@ func (cmd *info) Run(f *flag.FlagSet) error {
 		return err
 	}
 
+	res := infoResult{
+		list: devices,
+	}
+
+	if f.NArg() == 0 {
+		res.Devices = devices
+	} else {
+		for _, name := range f.Args() {
+			device := devices.Find(name)
+			if device == nil {
+				return fmt.Errorf("device '%s' not found", name)
+			}
+
+			res.Devices = append(res.Devices, device)
+		}
+	}
+
+	return cmd.WriteResult(&res)
+}
+
+type infoResult struct {
+	Devices object.VirtualDeviceList
+	// need the full list of devices to lookup attached devices and controllers
+	list object.VirtualDeviceList
+}
+
+func (r *infoResult) Write(w io.Writer) error {
 	tw := tabwriter.NewWriter(os.Stdout, 2, 0, 2, ' ', 0)
 
-	for _, name := range f.Args() {
-		device := devices.Find(name)
-		if device == nil {
-			return fmt.Errorf("device '%s' not found", name)
-		}
-
+	for _, device := range r.Devices {
 		d := device.GetVirtualDevice()
 		info := d.DeviceInfo.GetDescription()
 
-		fmt.Fprintf(tw, "Name:\t%s\n", name)
-		fmt.Fprintf(tw, "  Type:\t%s\n", devices.TypeName(device))
+		fmt.Fprintf(tw, "Name:\t%s\n", r.Devices.Name(device))
+		fmt.Fprintf(tw, "  Type:\t%s\n", r.Devices.TypeName(device))
 		fmt.Fprintf(tw, "  Label:\t%s\n", info.Label)
 		fmt.Fprintf(tw, "  Summary:\t%s\n", info.Summary)
 		fmt.Fprintf(tw, "  Key:\t%d\n", d.Key)
@@ -80,12 +119,12 @@ func (cmd *info) Run(f *flag.FlagSet) error {
 		if c, ok := device.(types.BaseVirtualController); ok {
 			var attached []string
 			for _, key := range c.GetVirtualController().Device {
-				attached = append(attached, devices.Name(devices.FindByKey(key)))
+				attached = append(attached, r.Devices.Name(r.list.FindByKey(key)))
 			}
 			fmt.Fprintf(tw, "  Devices:\t%s\n", strings.Join(attached, ", "))
 		} else {
-			if c := devices.FindByKey(d.ControllerKey); c != nil {
-				fmt.Fprintf(tw, "  Controller:\t%s\n", devices.Name(c))
+			if c := r.list.FindByKey(d.ControllerKey); c != nil {
+				fmt.Fprintf(tw, "  Controller:\t%s\n", r.Devices.Name(c))
 				fmt.Fprintf(tw, "  Unit number:\t%d\n", d.UnitNumber)
 			}
 		}
@@ -107,6 +146,12 @@ func (cmd *info) Run(f *flag.FlagSet) error {
 			}
 			if b, ok := md.Backing.(*types.VirtualDiskFlatVer2BackingInfo); ok && b.Parent != nil {
 				fmt.Fprintf(tw, "  Parent:\t%s\n", b.Parent.GetVirtualDeviceFileBackingInfo().FileName)
+			}
+		case *types.VirtualSerialPort:
+			if b, ok := md.Backing.(*types.VirtualSerialPortURIBackingInfo); ok {
+				fmt.Fprintf(tw, "  Direction:\t%s\n", b.Direction)
+				fmt.Fprintf(tw, "  Service URI:\t%s\n", b.ServiceURI)
+				fmt.Fprintf(tw, "  Proxy URI:\t%s\n", b.ProxyURI)
 			}
 		}
 	}

@@ -102,6 +102,38 @@ load test_helper
   assert_success "poweredOn"
 }
 
+@test "vm.power -force" {
+  vm=$(new_id)
+  govc vm.create $vm
+
+  run govc vm.power -r $vm
+  assert_failure
+
+  run govc vm.power -r -force $vm
+  assert_success
+
+  run govc vm.power -s $vm
+  assert_failure
+
+  run govc vm.power -s -force $vm
+  assert_success
+
+  run govc vm.power -off $vm
+  assert_failure
+
+  run govc vm.power -off -force $vm
+  assert_success
+
+  run govc vm.destroy $vm
+  assert_success
+
+  run govc vm.power -off $vm
+  assert_failure
+
+  run govc vm.power -off -force $vm
+  assert_failure
+}
+
 @test "vm.create pvscsi" {
   vm=$(new_id)
   govc vm.create -on=false -disk.controller pvscsi $vm
@@ -134,15 +166,47 @@ load test_helper
   for x in $(seq $num)
   do
     local id="${prefix}-${x}"
+
+    # If VM is not found: No output, exit code==0
+    run govc vm.info $id
+    assert_success
+    [ ${#lines[@]} -eq 0 ]
+
+    # If VM is not found (using -json flag): Valid json output, exit code==0
+    run govc vm.info -json $id
+    assert_success
+    assert_line "{\"VirtualMachines\":null}"
+
     run govc vm.create -on=false $id
     assert_success
 
-    local found=$(govc vm.info $id | grep Name: | wc -l)
+    local info=$(govc vm.info -r $id)
+    local found=$(grep Name: <<<"$info" | wc -l)
     [ "$found" -eq 1 ]
+
+    # test that mo names are printed
+    found=$(grep Host: <<<"$info" | awk '{print $2}')
+    [ -n "$found" ]
+    found=$(grep Storage: <<<"$info" | awk '{print $2}')
+    [ -n "$found" ]
+    found=$(grep Network: <<<"$info" | awk '{print $2}')
+    [ -n "$found" ]
   done
 
   # test find slice
-  local found=$(govc vm.info ${prefix}-* | grep Name: | wc -l)
+  local slice=$(govc vm.info ${prefix}-*)
+  local found=$(grep Name: <<<"$slice" | wc -l)
+  [ "$found" -eq $num ]
+
+  # test -r
+  found=$(grep Storage: <<<"$slice" | wc -l)
+  [ "$found" -eq 0 ]
+  found=$(grep Network: <<<"$slice" | wc -l)
+  [ "$found" -eq 0 ]
+  slice=$(govc vm.info -r ${prefix}-*)
+  found=$(grep Storage: <<<"$slice" | wc -l)
+  [ "$found" -eq $num ]
+  found=$(grep Network: <<<"$slice" | wc -l)
   [ "$found" -eq $num ]
 
   # test extraConfig
@@ -167,7 +231,7 @@ load test_helper
   vm=$(new_id)
 
   run govc vm.create -disk enoent -on=false $vm
-  assert_failure "Error: datastore file does not exist"
+  assert_failure "govc: cannot stat '[${GOVC_DATASTORE}] enoent': No such file"
 
   run govc vm.create -disk $GOVC_TEST_VMDK -on=false $vm
   assert_success
@@ -175,15 +239,15 @@ load test_helper
   run govc device.info -vm $vm disk-1000-0
   assert_success
   assert_line "Controller: lsilogic-1000"
-  assert_line "Parent: [datastore1] $GOVC_TEST_VMDK"
-  assert_line "File: [datastore1] $vm/${vm}.vmdk"
+  assert_line "Parent: [${GOVC_DATASTORE}] $GOVC_TEST_VMDK"
+  assert_line "File: [${GOVC_DATASTORE}] $vm/${vm}.vmdk"
 }
 
 @test "vm.create scsi disk" {
   vm=$(new_id)
 
   run govc vm.create -disk enoent -on=false $vm
-  assert_failure "Error: datastore file does not exist"
+  assert_failure "govc: cannot stat '[${GOVC_DATASTORE}] enoent': No such file"
 
   run govc vm.create -disk $GOVC_TEST_VMDK -on=false -link=false $vm
   assert_success
@@ -191,8 +255,8 @@ load test_helper
   run govc device.info -vm $vm disk-1000-0
   assert_success
   assert_line "Controller: lsilogic-1000"
-  refute_line "Parent: [datastore1] $GOVC_TEST_VMDK"
-  assert_line "File: [datastore1] $GOVC_TEST_VMDK"
+  refute_line "Parent: [${GOVC_DATASTORE}] $GOVC_TEST_VMDK"
+  assert_line "File: [${GOVC_DATASTORE}] $GOVC_TEST_VMDK"
 }
 
 @test "vm.create iso" {
@@ -201,7 +265,7 @@ load test_helper
   vm=$(new_id)
 
   run govc vm.create -iso enoent -on=false $vm
-  assert_failure "Error: datastore file does not exist"
+  assert_failure "govc: cannot stat '[${GOVC_DATASTORE}] enoent': No such file"
 
   run govc vm.create -iso $GOVC_TEST_ISO -on=false $vm
   assert_success
@@ -209,7 +273,7 @@ load test_helper
   run govc device.info -vm $vm cdrom-3000
   assert_success
   assert_line "Controller: ide-200"
-  assert_line "Summary: ISO [datastore1] $GOVC_TEST_ISO"
+  assert_line "Summary: ISO [${GOVC_DATASTORE}] $GOVC_TEST_ISO"
 }
 
 @test "vm.disk.create empty vm" {
@@ -263,10 +327,10 @@ load test_helper
   assert_success
 
   run govc vm.disk.attach -vm $vm -link=false -disk enoent.vmdk
-  assert_failure "Error: File [datastore1] enoent.vmdk was not found"
+  assert_failure "govc: File [${GOVC_DATASTORE}] enoent.vmdk was not found"
 
   run govc vm.disk.attach -vm $vm -disk enoent.vmdk
-  assert_failure "Error: Invalid configuration for device '0'."
+  assert_failure "govc: Invalid configuration for device '0'."
 
   run govc vm.disk.attach -vm $vm -disk $vm/$GOVC_TEST_VMDK -controller lsilogic-1000
   assert_success

@@ -24,27 +24,49 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/vmware/govmomi/vim25/debug"
 )
 
 type DebugFlag struct {
+	common
+
 	enable bool
 }
 
-func (flag *DebugFlag) Register(f *flag.FlagSet) {
-	env := "GOVC_DEBUG"
-	enable := false
-	switch env := strings.ToLower(os.Getenv(env)); env {
-	case "1", "true":
-		enable = true
+var debugFlagKey = flagKey("debug")
+
+func NewDebugFlag(ctx context.Context) (*DebugFlag, context.Context) {
+	if v := ctx.Value(debugFlagKey); v != nil {
+		return v.(*DebugFlag), ctx
 	}
 
-	usage := fmt.Sprintf("Store debug logs [%s]", env)
-	f.BoolVar(&flag.enable, "debug", enable, usage)
+	v := &DebugFlag{}
+	ctx = context.WithValue(ctx, debugFlagKey, v)
+	return v, ctx
 }
 
-func (flag *DebugFlag) Process() error {
-	if flag.enable {
+func (flag *DebugFlag) Register(ctx context.Context, f *flag.FlagSet) {
+	flag.RegisterOnce(func() {
+		env := "GOVC_DEBUG"
+		enable := false
+		switch env := strings.ToLower(os.Getenv(env)); env {
+		case "1", "true":
+			enable = true
+		}
+
+		usage := fmt.Sprintf("Store debug logs [%s]", env)
+		f.BoolVar(&flag.enable, "debug", enable, usage)
+	})
+}
+
+func (flag *DebugFlag) Process(ctx context.Context) error {
+	if !flag.enable {
+		return nil
+	}
+
+	return flag.ProcessOnce(func() error {
 		// Base path for storing debug logs.
 		r := os.Getenv("GOVC_DEBUG_PATH")
 		if r == "" {
@@ -66,7 +88,6 @@ func (flag *DebugFlag) Process() error {
 		}
 
 		debug.SetProvider(&p)
-	}
-
-	return nil
+		return nil
+	})
 }

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,11 +18,64 @@ package importx
 
 import (
 	"archive/tar"
+	"flag"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+
+	"golang.org/x/net/context"
+
+	"github.com/vmware/govmomi/ovf"
 )
+
+// ArchiveFlag doesn't register any flags;
+// only encapsulates some common archive related functionality.
+type ArchiveFlag struct {
+	Archive
+}
+
+func newArchiveFlag(ctx context.Context) (*ArchiveFlag, context.Context) {
+	return &ArchiveFlag{}, ctx
+}
+
+func (f *ArchiveFlag) Register(ctx context.Context, fs *flag.FlagSet) {
+}
+
+func (f *ArchiveFlag) Process(ctx context.Context) error {
+	return nil
+}
+
+func (f *ArchiveFlag) ReadOvf(fpath string) ([]byte, error) {
+	r, _, err := f.Archive.Open(fpath)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	return ioutil.ReadAll(r)
+}
+
+func (f *ArchiveFlag) ReadEnvelope(fpath string) (*ovf.Envelope, error) {
+	if fpath == "" {
+		return nil, nil
+	}
+
+	r, _, err := f.Open(fpath)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	e, err := ovf.Unmarshal(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse ovf: %s", err.Error())
+	}
+
+	return e, nil
+}
 
 type Archive interface {
 	Open(string) (io.ReadCloser, int64, error)

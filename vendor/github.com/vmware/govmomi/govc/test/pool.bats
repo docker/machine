@@ -6,7 +6,7 @@ load test_helper
   path="*/Resources/$(new_id)/$(new_id)"
   run govc pool.create $path
   assert_failure
-  assert_line "Error: cannot create resource pool '$(basename ${path})': parent not found"
+  assert_line "govc: cannot create resource pool '$(basename ${path})': parent not found"
 
   id=$(new_id)
   path="*/Resources/$id"
@@ -186,9 +186,18 @@ load test_helper
 
   for path in $parent_path $child_path $grand_child_path
   do
-    run govc vm.create -on=false -pool $path $(new_id)
+    run govc vm.create -pool $path $(new_id)
     assert_success
   done
+
+  run govc pool.change -debug -mem.limit 100 -mem.expandable=false $child_path
+  assert_failure
+
+  run govc pool.change -debug -mem.limit 100 $child_path
+  assert_success
+
+  run govc pool.change -debug -mem.limit 120 -mem.expandable $child_path
+  assert_success
 
   # test with glob inventory path to pools
   parent_path="*/$parent_name"
@@ -208,7 +217,7 @@ load test_helper
   path=$(govc ls host)
 
   run govc vm.create -on=false -pool enoent $id
-  assert_failure "Error: resource pool 'enoent' not found"
+  assert_failure "govc: resource pool 'enoent' not found"
 
   run govc vm.create -on=false -pool $path $id
   assert_success
@@ -225,7 +234,7 @@ load test_helper
   unset GOVC_RESOURCE_POOL
 
   run govc vm.create -on=false -pool enoent $id
-  assert_failure "Error: resource pool 'enoent' not found"
+  assert_failure "govc: resource pool 'enoent' not found"
 
   run govc vm.create -on=false -pool $path $id
   assert_success

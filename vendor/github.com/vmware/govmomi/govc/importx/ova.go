@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package importx
 
 import (
 	"flag"
-	"path"
-	"strings"
+
+	"golang.org/x/net/context"
 
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/object"
@@ -38,9 +38,7 @@ func (cmd *ova) Usage() string {
 	return "PATH_TO_OVA"
 }
 
-func (cmd *ova) Register(f *flag.FlagSet) {}
-
-func (cmd *ova) Run(f *flag.FlagSet) error {
+func (cmd *ova) Run(ctx context.Context, f *flag.FlagSet) error {
 	fpath, err := cmd.Prepare(f)
 	if err != nil {
 		return err
@@ -54,13 +52,10 @@ func (cmd *ova) Run(f *flag.FlagSet) error {
 	}
 
 	vm := object.NewVirtualMachine(cmd.Client, *moref)
-
 	return cmd.Deploy(vm)
 }
 
 func (cmd *ova) Import(fpath string) (*types.ManagedObjectReference, error) {
-	// basename i | sed -e s/\.ova$/*.ovf/
-	ovf := strings.TrimSuffix(path.Base(fpath), path.Ext(fpath)) + ".ovf"
-
+	ovf := "*.ovf"
 	return cmd.ovfx.Import(ovf)
 }

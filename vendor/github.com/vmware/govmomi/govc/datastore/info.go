@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
+	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
@@ -41,21 +42,39 @@ func init() {
 	cli.Register("datastore.info", &info{})
 }
 
-func (cmd *info) Register(f *flag.FlagSet) {}
+func (cmd *info) Register(ctx context.Context, f *flag.FlagSet) {
+	cmd.ClientFlag, ctx = flags.NewClientFlag(ctx)
+	cmd.ClientFlag.Register(ctx, f)
 
-func (cmd *info) Process() error { return nil }
+	cmd.OutputFlag, ctx = flags.NewOutputFlag(ctx)
+	cmd.OutputFlag.Register(ctx, f)
+
+	cmd.DatacenterFlag, ctx = flags.NewDatacenterFlag(ctx)
+	cmd.DatacenterFlag.Register(ctx, f)
+}
+
+func (cmd *info) Process(ctx context.Context) error {
+	if err := cmd.ClientFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.OutputFlag.Process(ctx); err != nil {
+		return err
+	}
+	if err := cmd.DatacenterFlag.Process(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (cmd *info) Usage() string {
 	return "[PATH]..."
 }
 
-func (cmd *info) Run(f *flag.FlagSet) error {
+func (cmd *info) Run(ctx context.Context, f *flag.FlagSet) error {
 	c, err := cmd.Client()
 	if err != nil {
 		return err
 	}
-
-	ctx := context.TODO()
 
 	finder, err := cmd.Finder()
 	if err != nil {
@@ -67,16 +86,6 @@ func (cmd *info) Run(f *flag.FlagSet) error {
 		args = []string{"*"}
 	}
 
-	datastores, err := finder.DatastoreList(ctx, args[0])
-	if err != nil {
-		return err
-	}
-
-	refs := make([]types.ManagedObjectReference, 0, len(datastores))
-	for _, ds := range datastores {
-		refs = append(refs, ds.Reference())
-	}
-
 	var res infoResult
 	var props []string
 
@@ -86,10 +95,25 @@ func (cmd *info) Run(f *flag.FlagSet) error {
 		props = []string{"info", "summary"} // Load summary
 	}
 
-	pc := property.DefaultCollector(c)
-	err = pc.Retrieve(ctx, refs, props, &res.Datastores)
-	if err != nil {
-		return err
+	for _, arg := range args {
+		objects, err := finder.DatastoreList(ctx, arg)
+		if err != nil {
+			return err
+		}
+		res.objects = append(res.objects, objects...)
+	}
+
+	if len(res.objects) != 0 {
+		refs := make([]types.ManagedObjectReference, 0, len(res.objects))
+		for _, o := range res.objects {
+			refs = append(refs, o.Reference())
+		}
+
+		pc := property.DefaultCollector(c)
+		err = pc.Retrieve(ctx, refs, props, &res.Datastores)
+		if err != nil {
+			return err
+		}
 	}
 
 	return cmd.WriteResult(&res)
@@ -97,14 +121,23 @@ func (cmd *info) Run(f *flag.FlagSet) error {
 
 type infoResult struct {
 	Datastores []mo.Datastore
+	objects    []*object.Datastore
 }
 
 func (r *infoResult) Write(w io.Writer) error {
+	// Maintain order via r.objects as Property collector does not always return results in order.
+	objects := make(map[types.ManagedObjectReference]mo.Datastore, len(r.Datastores))
+	for _, o := range r.Datastores {
+		objects[o.Reference()] = o
+	}
+
 	tw := tabwriter.NewWriter(os.Stdout, 2, 0, 2, ' ', 0)
 
-	for _, ds := range r.Datastores {
+	for _, o := range r.objects {
+		ds := objects[o.Reference()]
 		s := ds.Summary
 		fmt.Fprintf(tw, "Name:\t%s\n", s.Name)
+		fmt.Fprintf(tw, "  Path:\t%s\n", o.InventoryPath)
 		fmt.Fprintf(tw, "  Type:\t%s\n", s.Type)
 		fmt.Fprintf(tw, "  URL:\t%s\n", s.Url)
 		fmt.Fprintf(tw, "  Capacity:\t%.1f GB\n", float64(s.Capacity)/(1<<30))

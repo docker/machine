@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/context"
+
+	"github.com/vmware/govmomi/govc/flags"
 	"github.com/vmware/govmomi/vim25/types"
 )
 
@@ -54,7 +57,6 @@ func NewResourceConfigSpecFlag() *ResourceConfigSpecFlag {
 
 	f.SetAllocation(func(a types.BaseResourceAllocationInfo) {
 		a.GetResourceAllocationInfo().Shares = new(types.SharesInfo)
-		a.GetResourceAllocationInfo().ExpandableReservation = types.NewBool(false)
 	})
 	return f
 }
@@ -63,9 +65,7 @@ type ResourceConfigSpecFlag struct {
 	types.ResourceConfigSpec
 }
 
-func (s *ResourceConfigSpecFlag) Process() error { return nil }
-
-func (s *ResourceConfigSpecFlag) Register(f *flag.FlagSet) {
+func (s *ResourceConfigSpecFlag) Register(ctx context.Context, f *flag.FlagSet) {
 	opts := []struct {
 		name  string
 		units string
@@ -80,16 +80,15 @@ func (s *ResourceConfigSpecFlag) Register(f *flag.FlagSet) {
 		ra := opt.GetResourceAllocationInfo()
 		shares := (*sharesInfo)(ra.Shares)
 
-		expandableReservation := false
-		if v := ra.ExpandableReservation; v != nil {
-			expandableReservation = *v
-		}
-
 		f.Int64Var(&ra.Limit, prefix+".limit", 0, opt.name+" limit in "+opt.units)
 		f.Int64Var(&ra.Reservation, prefix+".reservation", 0, opt.name+" reservation in "+opt.units)
-		f.BoolVar(ra.ExpandableReservation, prefix+".expandable", expandableReservation, opt.name+" expandable reservation")
+		f.Var(flags.NewOptionalBool(&ra.ExpandableReservation), prefix+".expandable", opt.name+" expandable reservation")
 		f.Var(shares, prefix+".shares", opt.name+" shares level or number")
 	}
+}
+
+func (s *ResourceConfigSpecFlag) Process(ctx context.Context) error {
+	return nil
 }
 
 func (s *ResourceConfigSpecFlag) SetAllocation(f func(types.BaseResourceAllocationInfo)) {
