@@ -194,35 +194,31 @@ func (provisioner *Boot2DockerProvisioner) AttemptIPContact(dockerPort int) {
 	}
 
 	if conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, dockerPort), 5*time.Second); err != nil {
-		log.Warn(`
+		log.Warnf(`
 This machine has been allocated an IP address, but Docker Machine could not
 reach it successfully.
 
 SSH for the machine should still work, but connecting to exposed ports, such as
-the Docker daemon port (usually <ip>:2376), may not work properly.
+the Docker daemon port (usually <ip>:%d), may not work properly.
 
 You may need to add the route manually, or use another related workaround.
 
 This could be due to a VPN, proxy, or host file configuration issue.
 
-You also might want to clear any VirtualBox host only interfaces you are not using.`)
+You also might want to clear any VirtualBox host only interfaces you are not using.`, engine.DefaultPort)
 	} else {
 		conn.Close()
 	}
 }
 
 func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
-	const (
-		dockerPort = 2376
-	)
-
 	var (
 		err error
 	)
 
 	defer func() {
 		if err == nil {
-			provisioner.AttemptIPContact(dockerPort)
+			provisioner.AttemptIPContact(engine.DefaultPort)
 		}
 	}()
 
@@ -241,7 +237,7 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.Options,
 
 	// b2d hosts need to wait for the daemon to be up
 	// before continuing with provisioning
-	if err = waitForDocker(provisioner, dockerPort); err != nil {
+	if err = WaitForDocker(provisioner, engine.DefaultPort); err != nil {
 		return err
 	}
 
