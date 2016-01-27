@@ -51,6 +51,8 @@ type Assertions interface {
 
 	ContainLine(index int, text string) Assertions
 
+	MatchLine(index int, template string) Assertions
+
 	EqualLine(index int, text string) Assertions
 }
 
@@ -278,6 +280,22 @@ func (dmt *dockerMachineTest) ContainLine(index int, text string) Assertions {
 
 	if !strings.Contains(dmt.lines[index], text) {
 		return dmt.failExpected("line %d to contain '%s'\nGot '%s'", index, text, dmt.lines[index])
+	}
+
+	return dmt
+}
+
+func (dmt *dockerMachineTest) MatchLine(index int, template string) Assertions {
+	if dmt.fatal {
+		return dmt
+	}
+
+	if index >= len(dmt.lines) {
+		return dmt.failExpected("at least %d lines\nGot %d", index+1, len(dmt.lines))
+	}
+
+	if !regexp.MustCompile(template).MatchString(dmt.lines[index]) {
+		return dmt.failExpected("line %d to match '%s'\nGot '%s'", index, template, dmt.lines[index])
 	}
 
 	return dmt

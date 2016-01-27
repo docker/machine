@@ -11,11 +11,22 @@ func TestLs(t *testing.T) {
 	defer test.TearDown()
 
 	test.Run("setup", func() {
-		test.Machine("create -d none --url none --engine-label app=1 testmachine5").Should().Succeed()
-		test.Machine("create -d none --url none --engine-label foo=bar --engine-label app=1 testmachine4").Should().Succeed()
-		test.Machine("create -d none --url none testmachine3").Should().Succeed()
-		test.Machine("create -d none --url none testmachine2").Should().Succeed()
-		test.Machine("create -d none --url none testmachine").Should().Succeed()
+		test.Machine("create -d none --url url5 --engine-label app=1 testmachine5").Should().Succeed()
+		test.Machine("create -d none --url url4 --engine-label foo=bar --engine-label app=1 testmachine4").Should().Succeed()
+		test.Machine("create -d none --url url3 testmachine3").Should().Succeed()
+		test.Machine("create -d none --url url2 testmachine2").Should().Succeed()
+		test.Machine("create -d none --url url1 testmachine").Should().Succeed()
+	})
+
+	test.Run("ls: no filter", func() {
+		test.Machine("ls").Should().Succeed().
+			ContainLines(6).
+			MatchLine(0, "NAME[ ]+ACTIVE[ ]+DRIVER[ ]+STATE[ ]+URL[ ]+SWARM[ ]+DOCKER[ ]+ERRORS").
+			MatchLine(1, "testmachine[ ]+-[ ]+none[ ]+Running[ ]+url1[ ]+Unknown[ ]+Unable to query docker version: .*").
+			MatchLine(2, "testmachine2[ ]+-[ ]+none[ ]+Running[ ]+url2[ ]+Unknown[ ]+Unable to query docker version: .*").
+			MatchLine(3, "testmachine3[ ]+-[ ]+none[ ]+Running[ ]+url3[ ]+Unknown[ ]+Unable to query docker version: .*").
+			MatchLine(4, "testmachine4[ ]+-[ ]+none[ ]+Running[ ]+url4[ ]+Unknown[ ]+Unable to query docker version: .*").
+			MatchLine(5, "testmachine5[ ]+-[ ]+none[ ]+Running[ ]+url5[ ]+Unknown[ ]+Unable to query docker version: .*")
 	})
 
 	test.Run("ls: filter on label", func() {
