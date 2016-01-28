@@ -123,7 +123,9 @@ func (api *Client) Create(h *host.Host) error {
 	log.Info("Running pre-create checks...")
 
 	if err := h.Driver.PreCreateCheck(); err != nil {
-		return mcnerror.ErrDuringPreCreate{err}
+		return mcnerror.ErrDuringPreCreate{
+			Cause: err,
+		}
 	}
 
 	if err := api.Save(h); err != nil {
