@@ -18,6 +18,8 @@ import (
 	"text/template"
 	"time"
 
+	"errors"
+
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -144,6 +146,9 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	if drivers.EngineInstallURLFlagSet(flags) {
+		return errors.New("--engine-install-url cannot be used with the vmwarefusion driver, use --vmwarefusion-boot2docker-url instead")
+	}
 	d.Memory = flags.Int("vmwarefusion-memory-size")
 	d.CPU = flags.Int("vmwarefusion-cpu-count")
 	d.DiskSize = flags.Int("vmwarefusion-disk-size")

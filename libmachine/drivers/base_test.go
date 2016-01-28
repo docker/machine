@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,4 +26,25 @@ func TestIP(t *testing.T) {
 		assert.Equal(t, c.expectedIP, ip)
 		assert.Equal(t, c.expectedErr, err)
 	}
+}
+
+func TestEngineInstallUrlFlagEmpty(t *testing.T) {
+	assert.False(t, EngineInstallURLFlagSet(&CheckDriverOptions{}))
+}
+
+func createDriverOptionWithEngineInstall(url string) *CheckDriverOptions {
+	return &CheckDriverOptions{
+		FlagsValues: map[string]interface{}{"engine-install-url": url},
+		CreateFlags: []mcnflag.Flag{mcnflag.StringFlag{Name: "engine-install-url", Value: ""}},
+	}
+}
+
+func TestEngineInstallUrlFlagDefault(t *testing.T) {
+	options := createDriverOptionWithEngineInstall(DefaultEngineInstallURL)
+	assert.False(t, EngineInstallURLFlagSet(options))
+}
+
+func TestEngineInstallUrlFlagSet(t *testing.T) {
+	options := createDriverOptionWithEngineInstall("https://test.docker.com")
+	assert.True(t, EngineInstallURLFlagSet(options))
 }

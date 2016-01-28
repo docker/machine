@@ -45,7 +45,7 @@ var (
 		cli.StringFlag{
 			Name:   "engine-install-url",
 			Usage:  "Custom URL to use for engine installation",
-			Value:  "https://get.docker.com",
+			Value:  drivers.DefaultEngineInstallURL,
 			EnvVar: "MACHINE_DOCKER_INSTALL_URL",
 		},
 		cli.StringSliceFlag{

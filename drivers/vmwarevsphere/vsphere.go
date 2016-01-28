@@ -21,6 +21,8 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 
+	"errors"
+
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/guest"
@@ -177,6 +179,9 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	if drivers.EngineInstallURLFlagSet(flags) {
+		return errors.New("--engine-install-url cannot be used with the vmwarevsphere driver, use --vmwarevsphere-boot2docker-url instead")
+	}
 	d.SSHUser = "docker"
 	d.SSHPort = 22
 	d.CPU = flags.Int("vmwarevsphere-cpu-count")
