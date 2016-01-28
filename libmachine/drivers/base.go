@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	DefaultSSHUser = "root"
-	DefaultSSHPort = 22
+	DefaultSSHUser          = "root"
+	DefaultSSHPort          = 22
+	DefaultEngineInstallURL = "https://get.docker.com"
 )
 
 // BaseDriver - Embed this struct into drivers to provide the common set
@@ -82,4 +83,9 @@ func (d *BaseDriver) SetSwarmConfigFromFlags(flags DriverOptions) {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
+}
+
+func EngineInstallURLFlagSet(flags DriverOptions) bool {
+	engineInstallURLFlag := flags.String("engine-install-url")
+	return engineInstallURLFlag != DefaultEngineInstallURL && engineInstallURLFlag != ""
 }
