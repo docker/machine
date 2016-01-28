@@ -75,7 +75,7 @@ func (api *Client) NewHost(driverName string, rawDriver []byte) (*host.Host, err
 				ServerKeyPath:    filepath.Join(api.GetMachinesDir(), "server-key.pem"),
 			},
 			EngineOptions: &engine.Options{
-				InstallURL:    "https://get.docker.com",
+				InstallURL:    drivers.DefaultEngineInstallURL,
 				StorageDriver: "aufs",
 				TLSVerify:     true,
 			},
