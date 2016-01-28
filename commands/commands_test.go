@@ -205,7 +205,9 @@ func TestReturnExitCode1onError(t *testing.T) {
 
 func TestReturnExitCode3onErrorDuringPreCreate(t *testing.T) {
 	command := func(commandLine CommandLine, api libmachine.API) error {
-		return mcnerror.ErrDuringPreCreate{errors.New("foo is not bar")}
+		return mcnerror.ErrDuringPreCreate{
+			Cause: errors.New("foo is not bar"),
+		}
 	}
 
 	exitCode := checkErrorCodeForCommand(command)

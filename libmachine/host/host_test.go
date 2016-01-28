@@ -69,7 +69,7 @@ func NewNetstatProvisioner() provision.Provisioner {
 
 func TestStart(t *testing.T) {
 	provision.SetDetector(&provision.FakeDetector{
-		NewNetstatProvisioner(),
+		Provisioner: NewNetstatProvisioner(),
 	})
 
 	host := &Host{
