@@ -6,7 +6,7 @@ PROJECT_URL="git@github.com:${GITHUB_USER}/${GITHUB_REPO}"
 
 function usage {
   echo "Usage: "
-  echo "   GITHUB_TOKEN=XXXXX ${0} 0.5.x"
+  echo "   GITHUB_TOKEN=XXXXX ${0} 0.6.x"
 }
 
 function display {
@@ -65,6 +65,9 @@ LAST_RELEASE_VERSION=$(git describe --abbrev=0 --tags)
 checkError "Unable to find current version tag"
 
 display "Starting release from ${LAST_RELEASE_VERSION} to ${GITHUB_VERSION} on ${PROJECT_URL} with token ${GITHUB_TOKEN}"
+if [[ "${GITHUB_USER}" == "docker" ]]; then
+    display "THIS IS A REAL RELEASE, on OFFICIAL DOCKER REPO"
+fi
 while true; do
     read -p "🐳  Do you want to proceed with this release? (y/n) > " yn
     echo ""
@@ -94,7 +97,7 @@ else
   fi
 fi
 
-eval $(docker-machine env release)
+eval "$(docker-machine env release)"
 checkError "Machine 'release' is in a weird state, aborting"
 
 if [[ -d "${RELEASE_DIR}" ]]; then
@@ -121,7 +124,7 @@ git commit -q -m"Bump version to ${VERSION}" -s
 checkError "Can't git commit the version upgrade, aborting"
 
 display "Building in-container style"
-USE_CONTAINER=true make clean validate build-x
+USE_CONTAINER=true make clean build validate build-x
 checkError "Build error, aborting"
 
 display "Generating github release"
@@ -207,7 +210,7 @@ github-release release \
 checkError "Could not create release, aborting"
 
 display "Uploading binaries"
-for file in $(ls bin/docker-machine*); do
+for file in $(ls bin/docker-machine-*); do
   display "Uploading ${file}..."
   github-release upload \
       --security-token  "${GITHUB_TOKEN}" \
