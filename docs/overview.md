@@ -1,6 +1,6 @@
 <!--[metadata]>
 +++
-title = "Overview of Machine"
+title = "Machine Overview"
 description = "Introduction and Overview of Machine"
 keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
 [menu.main]
@@ -9,105 +9,59 @@ weight=-90
 +++
 <![end-metadata]-->
 
-# Overview of Docker Machine
 
-Machine lets you create Docker hosts on your computer, on cloud providers, and
-inside your own data center. It automatically creates hosts, installs Docker on
-them, then configures the `docker` client to talk to them. A "machine" is the
-combination of a Docker host and a configured client.
+# Docker Machine Overview
 
-Once you create one or more Docker hosts, Docker Machine supplies a number of
-commands for managing them. Using these commands you can
+You can use Docker Machine to:
 
--   start, inspect, stop, and restart a host
--   upgrade the Docker client and daemon
--   configure a Docker client to talk to your host
+* Install and run Docker on Mac or Windows
+* Provision and manage multiple remote Docker hosts
+* Provision Swarm clusters
 
-### Looking for the installation docs?
+## What is Docker Machine?
+Docker Machine is a tool that lets you install Docker Engine on virtual hosts, and manage the hosts with `docker-machine` commands. You can use Machine to create Docker hosts on your local Mac or Windows box, on your company network, in your data center, or on cloud providers like AWS or Digital Ocean.
 
-For Windows or Mac, you can obtain Docker Machine by installing the [Docker
-Toolbox](https://www.docker.com/toolbox). To read instructions for installing
-Machine on Linux or for installing Machine alone without Docker Toolbox, see the
-[Machine installation instructions](install-machine.md).
+Using `docker-machine` commands, you can start, inspect, stop, and restart a managed host, upgrade the Docker client and daemon, and configure a Docker client to talk to your host.
 
-## Understand Docker Machine basic concepts
+Point the Machine CLI at a running, managed host, and you can run `docker` commands directly on that host. For example, run `docker-machine env default` to point to a host called `default`, follow on-screen instructions to complete `env` setup, and run `docker ps`, `docker run hello-world`, and so forth.
 
-Docker Machine allows you to provision Docker on virtual machines that reside
-either on your local system or on a cloud provider. Docker Machine creates a
-host on a VM and you use the Docker Engine client as needed to build images and
-create containers on the host.
+## Why should I use it?
 
-To create a virtual machine, you supply Docker Machine with the name of the
-driver you want use. The driver represents the virtual environment. For example,
-on a local Linux, Mac, or Windows system the driver is typically Oracle
-VirtualBox. For cloud providers, Docker Machine supports drivers such as AWS,
-Microsoft Azure, Digital Ocean and many more. The Docker Machine reference
-includes a complete [list of the supported drivers](drivers/index.md).
+Machine is currently the only way to run Docker on Mac or Windows, and the best way to provision multiple remote Docker hosts on various flavors of Linux.
 
-Since Docker runs on Linux, each VM that Docker Machine provisions relies on a
-base operating system. For convenience, there are default base operating
-systems. For the Oracle Virtual Box driver, this base operating system is the
-`boot2docker.iso`. For drivers used to connect to cloud providers, the base
-operating system is Ubuntu 15.10. You can change this default when you create a
-machine. The Docker Machine reference includes a complete [list of the supported
-operating systems](drivers/os-base.md).
+Docker Machine has these two broad use cases.
 
-For each machine you create, the Docker host address is the IP address of the
-Linux VM. This address is assigned by the `docker-machine create` subcommand.
-You use the `docker-machine ls` command to list the machines you have created.
-The `docker-machine ip <machine-name>` command returns a specific host's IP
-address.
+* **I want to run Docker on Mac or Windows**
 
-Before you can run a `docker` command on a machine, you configure your
-command-line to point to that machine. The `docker-machine env <machine-name>`
-subcommand outputs the configuration command you should use. When you run a
-container on the Docker host, the container's ports map to ports on the VM.
+  ![Docker Machine on Mac and Windows](img/machine-mac-win.png)
 
-For a complete list of the `docker-machine` subcommands, see the [Docker Machine
-subcommand reference](reference/index.md).
+  If you work primarily on a Mac or Windows laptop or desktop, you need Docker Machine in order to "run Docker" (that is, Docker Engine) locally. Installing Docker Machine on a Mac or Windows box provisions a local virtual machine with Docker Engine, gives you the ability to connect it, and run `docker` commands.
 
-## Crash Reporting
+*  **I want to provision Docker hosts on remote systems**
 
-Provisioning a host is a complex matter that can fail for a lot of reasons.
-Your workstation may have a wide variety of shell, network configuration, VPN,
-proxy or firewall issues.  There are also reasons from the other end of the
-chain: your cloud provider or the network in between.
+  ![Docker Machine for provisioning multiple systems](img/provision-use-case.png)
 
-To help `docker-machine` be as stable as possible, we added a monitoring of
-crashes whenever you try to `create` or `upgrade` a host. This will send, over
-HTTPS, to Bugsnag some information about your `docker-machine` version, build,
-OS, ARCH, the path to your current shell and, the history of the last command as
-you could see it with a `--debug` option.  This data is sent to help us pinpoint
-recurring issues with `docker-machine` and will only be transmitted in the case
-of a crash of `docker-machine`.
+  Docker Engine runs natively on Linux systems. If you have a Linux box as your primary system, and want to run `docker` commands, all you need to do is download and install Docker Engine. However, if you want an efficient way to provision multiple Docker hosts on a network, in the cloud or even locally, you need Docker Machine.
 
-If you wish to opt out of error reporting, you can create a `no-error-report`
-file in your `$HOME/.docker/machine` directory, and Docker Machine will disable
-this behavior.  e.g.:
+  Whether your primary system is Mac, Windows, or Linux, you can install Docker Machine on it and use `docker-machine` commands to provision and manage large numbers of Docker hosts. It automatically creates hosts, installs Docker Engine on them, then configures the `docker` clients. Each managed host ("**_machine_**") is the combination of a Docker host and a configured client.
 
-    $ mkdir -p ~/.docker/machine && touch ~/.docker/machine/no-error-report
+## What's the difference between Docker Engine and Docker Machine?
 
-Leaving the file empty is fine -- Docker Machine just checks for its presence.
+When people say "Docker" they typically mean **Docker Engine**, the client-server application made up of the Docker daemon, a REST API that specifies interfaces for interacting with the daemon, and a command line interface (CLI) client that talks to the daemon (through the REST API wrapper). Docker Engine accepts `docker` commands from the CLI, such as `docker run <image>`, `docker ps` to list running containers, `docker images` to list images, and so on.
 
-## Getting help
+![Docker Engine](img/engine.png)
 
-Docker Machine is still in its infancy and under active development. If you need
-help, would like to contribute, or simply want to talk about the project with
-like-minded individuals, we have a number of open channels for communication.
+**Docker Machine** is a tool for provisioning and managing your Dockerized hosts (hosts with Docker Engine on them). Typically, you install Docker Machine on your local system. Docker Machine has its own command line client `docker-machine` and the Docker Engine client, `docker`. You can use Machine to install Docker Engine on one or more virtual systems. These virtual systems can be local (as when you use Machine to install and run Docker Engine in VirtualBox on Mac or Windows) or remote (as when you use Machine to provision Dockerized hosts on cloud providers). The Dockerized hosts themselves can be thought of, and are sometimes referred to as, managed "**_machines_**".
 
--   To report bugs or file feature requests: please use the [issue tracker on
-    Github](https://github.com/docker/machine/issues).
--   To talk about the project with people in real time: please join the
-    `#docker-machine` channel on IRC.
--   To contribute code or documentation changes: please [submit a pull request on
-    Github](https://github.com/docker/machine/pulls).
-
-For more information and resources, please visit
-[our help page](https://docs.docker.com/project/get-help/).
+![Docker Machine](img/machine.png)
 
 ## Where to go next
 
--   Install a machine on your [local system using VirtualBox](get-started.md).
--   Install multiple machines [on your cloud provider](get-started-cloud.md).
--   [Docker Machine driver reference](drivers/index.md)
--   [Docker Machine subcommand reference](reference/index.md)
+-   [Install Docker Machine](install-machine.md)
+-   Create and run a Docker host on your [local system using VirtualBox](get-started.md)
+-   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
+- [Provision a Docker Swarm cluster with Docker Machine](https://docs.docker.com/swarm/machine-provisioning/provision-w-machine/)
+-   [Understand Machine concepts](concepts.md)
+-   <a href="https://docs.docker.com/machine/drivers/" target="_blank">Docker Machine driver reference</a>
+-   <a href="https://docs.docker.com/machine/reference/" target="_blank">Docker Machine subcommand reference</a>
+-   [Migrate from Boot2Docker to Docker Machine](migrate-to-machine.md)
