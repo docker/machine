@@ -300,38 +300,42 @@ func (v *MockCreateOperations) doCall(callSignature string) (string, error) {
 	return call.output, call.err
 }
 
+func mockCalls(t *testing.T, driver *Driver, expectedCalls []Call) {
+	mockOperations := &MockCreateOperations{
+		test:          t,
+		expectedCalls: expectedCalls,
+	}
+
+	driver.Boot2DockerURL = "http://b2d.org"
+	driver.VBoxManager = mockOperations
+	driver.b2dUpdater = mockOperations
+	driver.sshKeyGenerator = mockOperations
+	driver.diskCreator = mockOperations
+	driver.logsReader = mockOperations
+	driver.ipWaiter = mockOperations
+	driver.randomInter = mockOperations
+	driver.sleeper = mockOperations
+}
+
 func TestCreateVM(t *testing.T) {
 	shareName, shareDir := getShareDriveAndName()
 
-	operations := &MockCreateOperations{
-		test: t,
-		expectedCalls: []Call{
-			{"CopyIsoToMachineDir path default http://b2d.org", "", nil},
-			{"Generate path/machines/default/id_rsa", "", nil},
-			{"Create 20000 path/machines/default/id_rsa.pub path/machines/default/disk.vmdk", "", nil},
-			{"vbm createvm --basefolder path/machines/default --name default --register", "", nil},
-			{"vbm modifyvm default --firmware bios --bioslogofadein off --bioslogofadeout off --bioslogodisplaytime 0 --biosbootmenu disabled --ostype Linux26_64 --cpus 1 --memory 1024 --acpi on --ioapic on --rtcuseutc on --natdnshostresolver1 off --natdnsproxy1 off --cpuhotplug off --pae on --hpet on --hwvirtex on --nestedpaging on --largepages on --vtxvpid on --accelerate3d off --boot1 dvd", "", nil},
-			{"vbm modifyvm default --nic1 nat --nictype1 82540EM --cableconnected1 on", "", nil},
-			{"vbm storagectl default --name SATA --add sata --hostiocache on", "", nil},
-			{"vbm storageattach default --storagectl SATA --port 0 --device 0 --type dvddrive --medium path/machines/default/boot2docker.iso", "", nil},
-			{"vbm storageattach default --storagectl SATA --port 1 --device 0 --type hdd --medium path/machines/default/disk.vmdk", "", nil},
-			{"vbm guestproperty set default /VirtualBox/GuestAdd/SharedFolders/MountPrefix /", "", nil},
-			{"vbm guestproperty set default /VirtualBox/GuestAdd/SharedFolders/MountDir /", "", nil},
-			{"vbm sharedfolder add default --name " + shareName + " --hostpath " + shareDir + " --automount", "", nil},
-			{"vbm setextradata default VBoxInternal2/SharedFoldersEnableSymlinksCreate/" + shareName + " 1", "", nil},
-		},
-	}
-
 	driver := NewDriver("default", "path")
-	driver.Boot2DockerURL = "http://b2d.org"
-	driver.VBoxManager = operations
-	driver.b2dUpdater = operations
-	driver.sshKeyGenerator = operations
-	driver.diskCreator = operations
-	driver.logsReader = operations
-	driver.ipWaiter = operations
-	driver.randomInter = operations
-	driver.sleeper = operations
+	mockCalls(t, driver, []Call{
+		{"CopyIsoToMachineDir path default http://b2d.org", "", nil},
+		{"Generate path/machines/default/id_rsa", "", nil},
+		{"Create 20000 path/machines/default/id_rsa.pub path/machines/default/disk.vmdk", "", nil},
+		{"vbm createvm --basefolder path/machines/default --name default --register", "", nil},
+		{"vbm modifyvm default --firmware bios --bioslogofadein off --bioslogofadeout off --bioslogodisplaytime 0 --biosbootmenu disabled --ostype Linux26_64 --cpus 1 --memory 1024 --acpi on --ioapic on --rtcuseutc on --natdnshostresolver1 off --natdnsproxy1 off --cpuhotplug off --pae on --hpet on --hwvirtex on --nestedpaging on --largepages on --vtxvpid on --accelerate3d off --boot1 dvd", "", nil},
+		{"vbm modifyvm default --nic1 nat --nictype1 82540EM --cableconnected1 on", "", nil},
+		{"vbm storagectl default --name SATA --add sata --hostiocache on", "", nil},
+		{"vbm storageattach default --storagectl SATA --port 0 --device 0 --type dvddrive --medium path/machines/default/boot2docker.iso", "", nil},
+		{"vbm storageattach default --storagectl SATA --port 1 --device 0 --type hdd --medium path/machines/default/disk.vmdk", "", nil},
+		{"vbm guestproperty set default /VirtualBox/GuestAdd/SharedFolders/MountPrefix /", "", nil},
+		{"vbm guestproperty set default /VirtualBox/GuestAdd/SharedFolders/MountDir /", "", nil},
+		{"vbm sharedfolder add default --name " + shareName + " --hostpath " + shareDir + " --automount", "", nil},
+		{"vbm setextradata default VBoxInternal2/SharedFoldersEnableSymlinksCreate/" + shareName + " 1", "", nil},
+	})
 
 	err := driver.CreateVM()
 
@@ -339,59 +343,46 @@ func TestCreateVM(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	operations := &MockCreateOperations{
-		test: t,
-		expectedCalls: []Call{
-			{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
-			{"vbm list hostonlyifs", "", nil},
-			{"vbm hostonlyif create", "Interface 'VirtualBox Host-Only Ethernet Adapter' was successfully created", nil},
-			{"vbm list hostonlyifs", `
-Name:            VirtualBox Host-Only Ethernet Adapter
-GUID:            786f6276-656e-4074-8000-0a0027000000
-DHCP:            Disabled
-IPAddress:       192.168.99.1
-NetworkMask:     255.255.255.0
-IPV6Address:
-IPV6NetworkMaskPrefixLength: 0
-HardwareAddress: 0a:00:27:00:00:00
-MediumType:      Ethernet
-Status:          Up
-VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
-			{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
-			{"vbm list dhcpservers", "", nil},
-			{"vbm list dhcpservers", "", nil},
-			{"vbm dhcpserver add --netname HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.6 --netmask 255.255.255.0 --lowerip 192.168.99.100 --upperip 192.168.99.254 --enable", "", nil},
-			{"vbm modifyvm default --nic2 hostonly --nictype2 82540EM --nicpromisc2 deny --hostonlyadapter2 VirtualBox Host-Only Ethernet Adapter --cableconnected2 on", "", nil},
-			{"IGNORE CALL", "", nil},
-			{"IGNORE CALL", "", nil},
-			{"vbm startvm default --type headless", "", nil},
-			{"Read path/machines/default/default/Logs/VBox.log", "", nil},
-			{"WaitIP", "", nil},
-			{"vbm list hostonlyifs", `
-Name:            VirtualBox Host-Only Ethernet Adapter
-GUID:            786f6276-656e-4074-8000-0a0027000000
-DHCP:            Disabled
-IPAddress:       192.168.99.1
-NetworkMask:     255.255.255.0
-IPV6Address:
-IPV6NetworkMaskPrefixLength: 0
-HardwareAddress: 0a:00:27:00:00:00
-MediumType:      Ethernet
-Status:          Up
-VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
-		},
-	}
-
 	driver := NewDriver("default", "path")
-	driver.Boot2DockerURL = "http://b2d.org"
-	driver.VBoxManager = operations
-	driver.b2dUpdater = operations
-	driver.sshKeyGenerator = operations
-	driver.diskCreator = operations
-	driver.logsReader = operations
-	driver.ipWaiter = operations
-	driver.randomInter = operations
-	driver.sleeper = operations
+	mockCalls(t, driver, []Call{
+		{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
+		{"vbm list hostonlyifs", "", nil},
+		{"vbm hostonlyif create", "Interface 'VirtualBox Host-Only Ethernet Adapter' was successfully created", nil},
+		{"vbm list hostonlyifs", `
+Name:            VirtualBox Host-Only Ethernet Adapter
+GUID:            786f6276-656e-4074-8000-0a0027000000
+DHCP:            Disabled
+IPAddress:       192.168.99.1
+NetworkMask:     255.255.255.0
+IPV6Address:
+IPV6NetworkMaskPrefixLength: 0
+HardwareAddress: 0a:00:27:00:00:00
+MediumType:      Ethernet
+Status:          Up
+VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
+		{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
+		{"vbm list dhcpservers", "", nil},
+		{"vbm list dhcpservers", "", nil},
+		{"vbm dhcpserver add --netname HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.6 --netmask 255.255.255.0 --lowerip 192.168.99.100 --upperip 192.168.99.254 --enable", "", nil},
+		{"vbm modifyvm default --nic2 hostonly --nictype2 82540EM --nicpromisc2 deny --hostonlyadapter2 VirtualBox Host-Only Ethernet Adapter --cableconnected2 on", "", nil},
+		{"IGNORE CALL", "", nil},
+		{"IGNORE CALL", "", nil},
+		{"vbm startvm default --type headless", "", nil},
+		{"Read path/machines/default/default/Logs/VBox.log", "", nil},
+		{"WaitIP", "", nil},
+		{"vbm list hostonlyifs", `
+Name:            VirtualBox Host-Only Ethernet Adapter
+GUID:            786f6276-656e-4074-8000-0a0027000000
+DHCP:            Disabled
+IPAddress:       192.168.99.1
+NetworkMask:     255.255.255.0
+IPV6Address:
+IPV6NetworkMaskPrefixLength: 0
+HardwareAddress: 0a:00:27:00:00:00
+MediumType:      Ethernet
+Status:          Up
+VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
+	})
 
 	err := driver.Start()
 
@@ -399,14 +390,13 @@ VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`,
 }
 
 func TestStartWithHostOnlyAdapterCreationBug(t *testing.T) {
-	operations := &MockCreateOperations{
-		test: t,
-		expectedCalls: []Call{
-			{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
-			{"vbm list hostonlyifs", "", nil},
-			{"vbm hostonlyif create", "", errors.New("error: Failed to create the host-only adapter")},
-			{"vbm list hostonlyifs", "", nil},
-			{"vbm list hostonlyifs", `
+	driver := NewDriver("default", "path")
+	mockCalls(t, driver, []Call{
+		{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
+		{"vbm list hostonlyifs", "", nil},
+		{"vbm hostonlyif create", "", errors.New("error: Failed to create the host-only adapter")},
+		{"vbm list hostonlyifs", "", nil},
+		{"vbm list hostonlyifs", `
 Name:            VirtualBox Host-Only Ethernet Adapter
 GUID:            786f6276-656e-4074-8000-0a0027000000
 DHCP:            Disabled
@@ -418,17 +408,17 @@ HardwareAddress: 0a:00:27:00:00:00
 MediumType:      Ethernet
 Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
-			{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
-			{"vbm list dhcpservers", "", nil},
-			{"vbm list dhcpservers", "", nil},
-			{"vbm dhcpserver add --netname HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.6 --netmask 255.255.255.0 --lowerip 192.168.99.100 --upperip 192.168.99.254 --enable", "", nil},
-			{"vbm modifyvm default --nic2 hostonly --nictype2 82540EM --nicpromisc2 deny --hostonlyadapter2 VirtualBox Host-Only Ethernet Adapter --cableconnected2 on", "", nil},
-			{"IGNORE CALL", "", nil},
-			{"IGNORE CALL", "", nil},
-			{"vbm startvm default --type headless", "", nil},
-			{"Read path/machines/default/default/Logs/VBox.log", "", nil},
-			{"WaitIP", "", nil},
-			{"vbm list hostonlyifs", `
+		{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
+		{"vbm list dhcpservers", "", nil},
+		{"vbm list dhcpservers", "", nil},
+		{"vbm dhcpserver add --netname HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.6 --netmask 255.255.255.0 --lowerip 192.168.99.100 --upperip 192.168.99.254 --enable", "", nil},
+		{"vbm modifyvm default --nic2 hostonly --nictype2 82540EM --nicpromisc2 deny --hostonlyadapter2 VirtualBox Host-Only Ethernet Adapter --cableconnected2 on", "", nil},
+		{"IGNORE CALL", "", nil},
+		{"IGNORE CALL", "", nil},
+		{"vbm startvm default --type headless", "", nil},
+		{"Read path/machines/default/default/Logs/VBox.log", "", nil},
+		{"WaitIP", "", nil},
+		{"vbm list hostonlyifs", `
 Name:            VirtualBox Host-Only Ethernet Adapter
 GUID:            786f6276-656e-4074-8000-0a0027000000
 DHCP:            Disabled
@@ -440,29 +430,67 @@ HardwareAddress: 0a:00:27:00:00:00
 MediumType:      Ethernet
 Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
-			{"vbm showvminfo default --machinereadable", `VMState="running"`, nil},
-			{"vbm controlvm default acpipowerbutton", "", nil},
-			{"vbm showvminfo default --machinereadable", `VMState="stopped"`, nil},
-			{"Sleep 5s", "", nil},
-			{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
-			{"Sleep 5s", "", nil},
-			{"vbm startvm default --type headless", "", nil},
-			{"WaitIP", "", nil},
-		},
-	}
-
-	driver := NewDriver("default", "path")
-	driver.Boot2DockerURL = "http://b2d.org"
-	driver.VBoxManager = operations
-	driver.b2dUpdater = operations
-	driver.sshKeyGenerator = operations
-	driver.diskCreator = operations
-	driver.logsReader = operations
-	driver.ipWaiter = operations
-	driver.randomInter = operations
-	driver.sleeper = operations
+		{"vbm showvminfo default --machinereadable", `VMState="running"`, nil},
+		{"vbm controlvm default acpipowerbutton", "", nil},
+		{"vbm showvminfo default --machinereadable", `VMState="stopped"`, nil},
+		{"Sleep 5s", "", nil},
+		{"vbm hostonlyif ipconfig VirtualBox Host-Only Ethernet Adapter --ip 192.168.99.1 --netmask 255.255.255.0", "", nil},
+		{"Sleep 5s", "", nil},
+		{"vbm startvm default --type headless", "", nil},
+		{"WaitIP", "", nil},
+	})
 
 	err := driver.Start()
+
+	assert.NoError(t, err)
+}
+
+func TestRemoveStopped(t *testing.T) {
+	driver := NewDriver("default", "path")
+	mockCalls(t, driver, []Call{
+		{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
+		{"vbm unregistervm --delete default", "", nil},
+	})
+
+	err := driver.Remove()
+
+	assert.NoError(t, err)
+}
+
+func TestRemoveStarted(t *testing.T) {
+	driver := NewDriver("default", "path")
+	mockCalls(t, driver, []Call{
+		{"vbm showvminfo default --machinereadable", `VMState="running"`, nil},
+		{"vbm controlvm default poweroff", "", nil},
+		{"vbm unregistervm --delete default", "", nil},
+	})
+
+	err := driver.Remove()
+
+	assert.NoError(t, err)
+}
+
+func TestRemoveSaved(t *testing.T) {
+	driver := NewDriver("default", "path")
+	mockCalls(t, driver, []Call{
+		{"vbm showvminfo default --machinereadable", `VMState="saved"`, nil},
+		{"vbm unregistervm --delete default", "", nil},
+	})
+
+	err := driver.Remove()
+
+	assert.NoError(t, err)
+}
+
+func TestRemovePaused(t *testing.T) {
+	driver := NewDriver("default", "path")
+	mockCalls(t, driver, []Call{
+		{"vbm showvminfo default --machinereadable", `VMState="running"`, nil},
+		{"vbm controlvm default poweroff", "", nil},
+		{"vbm unregistervm --delete default", "", nil},
+	})
+
+	err := driver.Remove()
 
 	assert.NoError(t, err)
 }

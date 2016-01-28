@@ -615,19 +615,20 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Remove() error {
-	_, err := d.GetState()
+	s, err := d.GetState()
+	if err == ErrMachineNotExist {
+		return nil
+	}
 	if err != nil {
-		if err == ErrMachineNotExist {
-			log.Infof("machine does not exist, assuming it has been removed already")
-			return nil
+		return err
+	}
+
+	if s != state.Stopped && s != state.Saved {
+		if err := d.Kill(); err != nil {
+			return err
 		}
-		return err
 	}
-	if err := d.Kill(); err != nil {
-		return err
-	}
-	// vbox will not release it's lock immediately after the stop
-	d.sleeper.Sleep(1 * time.Second)
+
 	return d.vbm("unregistervm", "--delete", d.MachineName)
 }
 
