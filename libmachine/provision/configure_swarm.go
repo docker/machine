@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/swarm"
@@ -32,13 +33,12 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 	parts := strings.Split(u.Host, ":")
 	port := parts[1]
 
-	dockerPort := "2376"
 	dockerDir := p.GetDockerOptionsDir()
 	dockerHost := &mcndockerclient.RemoteDocker{
-		HostURL:    fmt.Sprintf("tcp://%s:%s", ip, dockerPort),
+		HostURL:    fmt.Sprintf("tcp://%s:%d", ip, engine.DefaultPort),
 		AuthOption: &authOptions,
 	}
-	advertiseInfo := fmt.Sprintf("%s:%s", ip, dockerPort)
+	advertiseInfo := fmt.Sprintf("%s:%d", ip, engine.DefaultPort)
 
 	if swarmOptions.Master {
 		advertiseMasterInfo := fmt.Sprintf("%s:%s", ip, "3376")
@@ -65,9 +65,16 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 				Name:              "always",
 				MaximumRetryCount: 0,
 			},
-			Binds:        []string{hostBind},
-			PortBindings: map[string][]dockerclient.PortBinding{"3376/tcp": {{"", port}}},
-			NetworkMode:  "host",
+			Binds: []string{hostBind},
+			PortBindings: map[string][]dockerclient.PortBinding{
+				"3376/tcp": {
+					{
+						HostIp:   "0.0.0.0",
+						HostPort: port,
+					},
+				},
+			},
+			NetworkMode: "host",
 		}
 
 		swarmMasterConfig := &dockerclient.ContainerConfig{
