@@ -12,7 +12,7 @@ $ curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker
 On Windows with git bash
 ```console
 $ if [[ ! -d "$HOME/bin" ]]; then mkdir -p "$HOME/bin"; fi && \
-curl -L https://github.com/docker/machine/releases/download/v0.6.0/docker-machine-Windows-x86_64.exe > "$HOME/bin/docker-machine.exe" && \
+curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker-machine-Windows-x86_64.exe > "$HOME/bin/docker-machine.exe" && \
 chmod +x "$HOME/bin/docker-machine.exe"
 ```
 
