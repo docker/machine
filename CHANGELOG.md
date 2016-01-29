@@ -1,5 +1,16 @@
 # Changelog
 
+# 0.6.0-rc2 (2016-01-28)
+
+- Fix issue creating Swarms
+- Fix `ls` header issue
+- Add code to wait for Docker daemon before returning from `start` / `restart`
+- Start porting integration tests to Go from BATS
+- Add Appveyor for Windows tests
+- Update CoreOS provisioner to use `docker daemon`
+- Various documentation and error message fixes
+- Add ability to create GCE machine using existing VM
+
 # 0.6.0-rc1 (2016-01-18)
 
 General
