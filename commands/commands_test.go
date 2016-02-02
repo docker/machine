@@ -200,31 +200,38 @@ func TestReturnExitCode1onError(t *testing.T) {
 
 	exitCode := checkErrorCodeForCommand(command)
 
-	assert.Equal(t, exitCode, 1)
+	assert.Equal(t, 1, exitCode)
 }
 
 func TestReturnExitCode3onErrorDuringPreCreate(t *testing.T) {
 	command := func(commandLine CommandLine, api libmachine.API) error {
-		return mcnerror.ErrDuringPreCreate{
-			Cause: errors.New("foo is not bar"),
+		return crashreport.CrashError{
+			Cause: mcnerror.ErrDuringPreCreate{
+				Cause: errors.New("foo is not bar"),
+			},
 		}
 	}
 
 	exitCode := checkErrorCodeForCommand(command)
 
-	assert.Equal(t, exitCode, 3)
+	assert.Equal(t, 3, exitCode)
 }
 
 func checkErrorCodeForCommand(command func(commandLine CommandLine, api libmachine.API) error) int {
-	var exitCode int
+	var setExitCode int
 
-	defer func(fnOsExit func(code int)) { osExit = fnOsExit }(osExit)
+	originalOSExit := osExit
+
+	defer func() {
+		osExit = originalOSExit
+	}()
+
 	osExit = func(code int) {
-		exitCode = code
+		setExitCode = code
 	}
 
 	context := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
 	runCommand(command)(context)
 
-	return exitCode
+	return setExitCode
 }
