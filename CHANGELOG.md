@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.6.0-rc3 (2016-02-01)
+
+- Exit with code 3 if error is during pre-create check
+
 # 0.6.0-rc2 (2016-01-28)
 
 - Fix issue creating Swarms
@@ -19,7 +23,7 @@ General
 - Short form of command invocations is now supported
     - `docker-machine start`, `docker-machine stop` and others will now use
       `default` as the machine name argument if one is not specified
-- Fix issue with panics in drivers 
+- Fix issue with panics in drivers
 - Machine now returns exit code 3 if the pre-create check fails.
     - This is potentially useful for scripting `docker-machine`.
 - `docker-machine provision` command added to allow re-running of provisioning
@@ -245,7 +249,7 @@ Drivers
 - Digital Ocean
 	- Support for creating Droplets with Cloud-init User Data
 - Openstack
-	- Sanitize keynames by replacing dots with underscores 
+	- Sanitize keynames by replacing dots with underscores
 - All
 	- Most base images are now set to `Ubuntu 15.10`
 	- Fix compatibility with drivers developed with docker-machine 0.5.0
@@ -311,7 +315,7 @@ Provisioners
 -   General
     -   Add pluggable driver model
     -   Clean up code to be more modular and reusable in `libmachine`
-    -   Add `--github-api-token` for situations where users are getting rate limited 
+    -   Add `--github-api-token` for situations where users are getting rate limited
         by GitHub attempting to get the current `boot2docker.iso` version
     -   Various enhancements around the Makefile and build toolchain (still an active WIP)
     -   Disable SSH multiplex explicitly in commands run with the "External" client
@@ -387,7 +391,7 @@ Provisioners
 -   Ability to import Boot2Docker instances
 -   Boot2Docker CLI migration guide (experimental)
 -   Format option for `inspect` command
--   New logging output format to improve readability and display across platforms 
+-   New logging output format to improve readability and display across platforms
 -   Updated "active" machine concept - now is implicit according to `DOCKER_HOST` environment variable.  Note: this removes the implicit "active" machine and can no longer be specified with the `active` command.  You change the "active" host by using the `env` command instead.
 -   Specify Swarm version (`--swarm-image` flag)
 
