@@ -118,7 +118,7 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.URL = flags.String("exoscale-endpoint")
+	d.URL = flags.String("exoscale-url")
 	d.APIKey = flags.String("exoscale-api-key")
 	d.APISecretKey = flags.String("exoscale-api-secret-key")
 	d.InstanceProfile = flags.String("exoscale-instance-profile")
