@@ -1,5 +1,17 @@
 # Changelog
 
+# 0.6.0-rc4 (2016-02-03)
+
+General
+
++ `env`
+    + Fix shell auto detection
+
+Drivers
+
++ `exoscale`
+    + Fix configuration of exoscale endpoint
+
 # 0.6.0-rc3 (2016-02-01)
 
 - Exit with code 3 if error is during pre-create check
