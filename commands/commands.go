@@ -164,13 +164,15 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 			if crashErr, ok := err.(crashreport.CrashError); ok {
 				crashReporter := crashreport.NewCrashReporter(mcndirs.GetBaseDir(), context.GlobalString("bugsnag-api-token"))
 				crashReporter.Send(crashErr)
+
+				if _, ok := crashErr.Cause.(mcnerror.ErrDuringPreCreate); ok {
+					osExit(3)
+					return
+				}
 			}
 
-			if _, ok := err.(mcnerror.ErrDuringPreCreate); ok {
-				osExit(3)
-			} else {
-				osExit(1)
-			}
+			osExit(1)
+			return
 		}
 	}
 }
