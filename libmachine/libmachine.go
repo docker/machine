@@ -162,11 +162,6 @@ func (api *Client) performCreate(h *host.Host) error {
 		return fmt.Errorf("Error waiting for machine to be running: %s", err)
 	}
 
-	log.Info("Machine is running, waiting for SSH to be available...")
-	if err := drivers.WaitForSSH(h.Driver); err != nil {
-		return fmt.Errorf("Error waiting for SSH: %s", err)
-	}
-
 	log.Info("Detecting operating system of created instance...")
 	provisioner, err := provision.DetectProvisioner(h.Driver)
 	if err != nil {

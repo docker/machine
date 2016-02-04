@@ -94,6 +94,11 @@ func DetectProvisioner(d drivers.Driver) (Provisioner, error) {
 }
 
 func (detector StandardDetector) DetectProvisioner(d drivers.Driver) (Provisioner, error) {
+	log.Info("Waiting for SSH to be available...")
+	if err := drivers.WaitForSSH(d); err != nil {
+		return nil, err
+	}
+
 	log.Info("Detecting the provisioner...")
 
 	osReleaseOut, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
