@@ -8,9 +8,14 @@ identifier="workw_machine"
 +++
 <![end-metadata]-->
 
+
 # Docker Machine
 
--   Install a machine on your [local system using VirtualBox](get-started.md).
--   Install multiple machines [on your cloud provider](get-started-cloud.md).
+-   [Docker Machine overview](overview.md)
+-   [Install Docker Machine](install-machine.md)
+-   Install a machine on your [local system using VirtualBox](get-started.md)
+-   Install multiple machines [on your cloud provider](get-started-cloud.md)
+-   [Machine concepts and help](concepts.md)
+-   [Migrate from Boot2Docker to Docker Machine](migrate-to-machine.md)
 -   [Docker Machine driver reference](drivers/index.md)
 -   [Docker Machine subcommand reference](reference/index.md)

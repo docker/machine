@@ -18,10 +18,7 @@ installation</a> instructions or <a
 href="https://docs.docker.com/installation/windows" target="_blank">Windows
 installation</a> instructions.
 
-If you only want Docker Machine, you can install the Machine binaries (the
-latest versions of which are located at
-<https://github.com/docker/machine/releases/> ) directly by following the
-instructions in the next section.
+If you want only Docker Machine, you can install the Machine binaries directly by following the instructions in the next section. You can find the latest versions of the binaries are on the <a href="https://github.com/docker/machine/releases/" target="_blank"> docker/machine release page</a> on GitHub.
 
 ## Installing Machine Directly
 
@@ -41,7 +38,7 @@ instructions in the next section.
         curl -L https://github.com/docker/machine/releases/download/v0.6.0/docker-machine-Windows-x86_64.exe > "$HOME/bin/docker-machine.exe" && \
         chmod +x "$HOME/bin/docker-machine.exe"
 
-    Otherwise, download one of the releases from the [release page](https://github.com/docker/machine/releases/) directly.
+    Otherwise, download one of the releases from the <a href="https://github.com/docker/machine/releases/" target="_blank"> docker/machine release page</a> directly.
 
 3.  Check the installation by displaying the Machine version:
 
@@ -64,11 +61,12 @@ prompt, add `$(__docker_machine_ps1)` to your `PS1` setting in `~/.bashrc`.
 
     PS1='[\u@\h \W$(__docker_machine_ps1)]\$ '
 
-You can find additional documentation in the comments at the
-[top of each script](https://github.com/docker/machine/tree/master/contrib/completion/bash).
+You can find additional documentation in the comments at the <a href="https://github.com/docker/machine/tree/master/contrib/completion/bash" target="_blank">top of each script</a>.
 
 ## Where to go next
 
--   [Docker Machine overview](index.md)
--   [Docker Machine driver reference](drivers/index.md)
--   [Docker Machine subcommand reference](reference/index.md)
+-   [Docker Machine overview](overview.md)
+-   Create and run a Docker host on your [local system using VirtualBox](get-started.md)
+-   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
+-   <a href="https://docs.docker.com/machine/drivers/" target="_blank">Docker Machine driver reference</a>
+-   <a href="https://docs.docker.com/machine/reference/" target="_blank">Docker Machine subcommand reference</a>
