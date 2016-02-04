@@ -57,7 +57,8 @@ Then reload your shell
     exec $SHELL -l
 
 -->
-
+<!--[metadata]>
 ## Available completions
 
 **TODO**
+<![end-metadata]-->
