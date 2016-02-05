@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.6.0 (2016-02-04)
+
++ Fix SSH wait before provisioning issue
+
 # 0.6.0-rc4 (2016-02-03)
 
 General
