@@ -5,7 +5,7 @@ description = "Understand concepts for Docker Machine, including drivers, base O
 keywords = ["docker, machine, amazonec2, azure, digitalocean, google, openstack, rackspace, softlayer, virtualbox, vmwarefusion, vmwarevcloudair, vmwarevsphere, exoscale"]
 [menu.main]
 parent="workw_machine"
-weight=3
+weight=-40
 +++
 <![end-metadata]-->
 
