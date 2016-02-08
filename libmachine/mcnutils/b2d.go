@@ -374,12 +374,17 @@ func (b *B2dUtils) UpdateISOCache(isoURL string) error {
 		}
 	}
 
+	exists := b.exists()
+
 	if isoURL != "" {
+		if exists {
+			// Warn that the b2d iso won't be updated if isoURL is set
+			log.Warnf("Boot2Docker URL was explicitly set to %q at create time, so Docker Machine cannot upgrade this machine to the latest version.", isoURL)
+		}
 		// Non-default B2D are not cached
 		return nil
 	}
 
-	exists := b.exists()
 	if !exists {
 		log.Info("No default Boot2Docker ISO found locally, downloading the latest release...")
 		return b.DownloadLatestBoot2Docker("")
