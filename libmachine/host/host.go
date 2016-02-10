@@ -76,12 +76,12 @@ func (h *Host) CreateSSHClient() (ssh.Client, error) {
 func (creator *StandardSSHClientCreator) CreateSSHClient(d drivers.Driver) (ssh.Client, error) {
 	addr, err := d.GetSSHHostname()
 	if err != nil {
-		return ssh.ExternalClient{}, err
+		return &ssh.ExternalClient{}, err
 	}
 
 	port, err := d.GetSSHPort()
 	if err != nil {
-		return ssh.ExternalClient{}, err
+		return &ssh.ExternalClient{}, err
 	}
 
 	auth := &ssh.Auth{}

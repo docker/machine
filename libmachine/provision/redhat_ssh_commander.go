@@ -20,10 +20,10 @@ func (sshCmder RedHatSSHCommander) SSHCommand(args string) (string, error) {
 	// Note: CentOS 7.0 needs multiple "-tt" to force tty allocation when ssh has
 	// no local tty.
 	switch c := client.(type) {
-	case ssh.ExternalClient:
+	case *ssh.ExternalClient:
 		c.BaseArgs = append(c.BaseArgs, "-tt")
 		client = c
-	case ssh.NativeClient:
+	case *ssh.NativeClient:
 		return c.OutputWithPty(args)
 	}
 
