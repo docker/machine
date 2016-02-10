@@ -5,7 +5,7 @@ description = "Migrate from Boot2Docker to Docker Machine"
 keywords = ["machine, commands, boot2docker, migrate, docker"]
 [menu.main]
 parent="workw_machine"
-weight=4
+weight=-30
 +++
 <![end-metadata]-->
 
