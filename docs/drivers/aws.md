@@ -71,6 +71,8 @@ You can use environment variables:
 -   `--amazonec2-monitoring`: Enable CloudWatch Monitoring.
 -   `--amazonec2-use-ebs-optimized-instance`: Create an EBS Optimized Instance, instance type must support it.
 -   `--amazonec2-ssh-keypath`: Path to Private Key file to use for instance. Matching public key with .pub extension should exist
+-   `--amazonec2-retries`:  Set retry count for recoverable failures (use -1 to disable)
+
 
 Environment variables and default values:
 
@@ -99,6 +101,7 @@ Environment variables and default values:
 | `--amazonec2-monitoring`                 | -                       | `false`          |
 | `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
 | `--amazonec2-ssh-keypath`                | `AWS_SSH_KEYPATH`       | -                |
+| `--amazonec2-retries`                    | -                       | `5`              |
 
 ## Default AMIs
 
