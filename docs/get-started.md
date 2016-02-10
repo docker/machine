@@ -5,7 +5,7 @@ description = "Get started with Docker Machine and a local VM"
 keywords = ["docker, machine, virtualbox, local"]
 [menu.main]
 parent="workw_machine"
-weight=1
+weight=-70
 +++
 <![end-metadata]-->
 
@@ -213,5 +213,5 @@ For machines other than `default`, and commands other than those listed above, y
 
 -   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
 -   [Understand Machine concepts](concepts.md)
--   <a href="https://docs.docker.com/machine/drivers/" target="_blank">Docker Machine driver reference</a>
+-   <a href="https://docs.docker.com/machine/drivers/index.md" target="_blank">Docker Machine driver reference</a>
 -   <a href="https://docs.docker.com/machine/reference/" target="_blank">Docker Machine subcommand reference</a>
