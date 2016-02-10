@@ -239,7 +239,7 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 
 	if d.VSwitch == "" {
 		if len(switches) < 1 {
-			return "", fmt.Errorf("no vswitch found")
+			return "", fmt.Errorf("no vswitch found. A valid vswitch must be available for this command to run. Check https://docs.docker.com/machine/drivers/hyper-v/")
 		}
 
 		return switches[0], nil
