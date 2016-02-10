@@ -1,5 +1,7 @@
 package sshtest
 
+import "io"
+
 type CmdResult struct {
 	Out string
 	Err error
@@ -17,5 +19,13 @@ func (fsc *FakeClient) Output(command string) (string, error) {
 
 func (fsc *FakeClient) Shell(args ...string) error {
 	fsc.ActivatedShell = args
+	return nil
+}
+
+func (fsc *FakeClient) Start(command string) (io.ReadCloser, io.ReadCloser, error) {
+	return nil, nil, nil
+}
+
+func (fsc *FakeClient) Wait() error {
 	return nil
 }
