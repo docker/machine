@@ -11,7 +11,7 @@ weight=2
 
 # Amazon Web Services (AWS) EC2 example
 
-Follow along with this example to create a Dockerized <a href="https://aws.amazon.com/" target="_blank"> Amazon Web Services (AWS)</a> EC2 instance (AMI).
+Follow along with this example to create a Dockerized <a href="https://aws.amazon.com/" target="_blank"> Amazon Web Services (AWS)</a> EC2 instance.
 
 ### Step 1. Sign up for AWS and configure credentials
 
@@ -118,7 +118,7 @@ Follow along with this example to create a Dockerized <a href="https://aws.amazo
 
 ### Step 4. Use Machine to remove the instance
 
-To remove a AMI instance and all of its containers and images, first stop the machine, then use `docker-machine rm`:
+To remove an instance and all of its containers and images, first stop the machine, then use `docker-machine rm`:
 
       $ docker-machine stop aws-sandbox
       $ docker-machine rm aws-sandbox
