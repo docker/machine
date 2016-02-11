@@ -76,3 +76,31 @@ func (fp *FakeProvisioner) SetOsReleaseInfo(info *OsRelease) {}
 func (fp *FakeProvisioner) GetOsReleaseInfo() (*OsRelease, error) {
 	return nil, nil
 }
+
+type NetstatProvisioner struct {
+	*FakeProvisioner
+}
+
+func (p *NetstatProvisioner) SSHCommand(args string) (string, error) {
+	return `Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 0.0.0.0:ssh             0.0.0.0:*               LISTEN
+tcp        0     72 192.168.25.141:ssh      192.168.25.1:63235      ESTABLISHED
+tcp        0      0 :::2376                 :::*                    LISTEN
+tcp        0      0 :::ssh                  :::*                    LISTEN
+Active UNIX domain sockets (servers and established)
+Proto RefCnt Flags       Type       State         I-Node Path
+unix  2      [ ACC ]     STREAM     LISTENING      17990 /var/run/acpid.socket
+unix  2      [ ACC ]     SEQPACKET  LISTENING      14233 /run/udev/control
+unix  2      [ ACC ]     STREAM     LISTENING      19365 /var/run/docker.sock
+unix  3      [ ]         STREAM     CONNECTED      19774
+unix  3      [ ]         STREAM     CONNECTED      19775
+unix  3      [ ]         DGRAM                     14243
+unix  3      [ ]         DGRAM                     14242`, nil
+}
+
+func NewNetstatProvisioner() Provisioner {
+	return &NetstatProvisioner{
+		&FakeProvisioner{},
+	}
+}
