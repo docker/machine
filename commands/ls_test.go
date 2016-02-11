@@ -345,7 +345,7 @@ func TestGetHostListItems(t *testing.T) {
 		{"foo", state.Running, true, "v1.9", ""},
 	}
 
-	items := getHostListItems(hosts, map[string]error{})
+	items := getHostListItems(hosts, map[string]error{}, 10*time.Second)
 
 	for i := range expected {
 		assert.Equal(t, expected[i].name, items[i].Name)
@@ -394,8 +394,7 @@ func TestGetHostListItemsEnvDockerHostUnset(t *testing.T) {
 		"baz": {state.Saved, false},
 	}
 
-	// TEST
-	items := getHostListItems(hosts, map[string]error{})
+	items := getHostListItems(hosts, map[string]error{}, 10*time.Second)
 
 	for _, item := range items {
 		expected := expected[item.Name]
@@ -458,9 +457,6 @@ func TestIsSwarmActive(t *testing.T) {
 }
 
 func TestGetHostStateTimeout(t *testing.T) {
-	defer func(timeout time.Duration) { stateTimeoutDuration = timeout }(stateTimeoutDuration)
-	stateTimeoutDuration = 1 * time.Millisecond
-
 	hosts := []*host.Host{
 		{
 			Name: "foo",
@@ -470,12 +466,12 @@ func TestGetHostStateTimeout(t *testing.T) {
 		},
 	}
 
-	hostItem := getHostListItems(hosts, nil)[0]
+	hostItem := getHostListItems(hosts, nil, time.Millisecond)[0]
 
 	assert.Equal(t, "foo", hostItem.Name)
 	assert.Equal(t, state.Timeout, hostItem.State)
 	assert.Equal(t, "Driver", hostItem.DriverName)
-	assert.Equal(t, stateTimeoutDuration, hostItem.ResponseTime)
+	assert.Equal(t, time.Millisecond, hostItem.ResponseTime)
 }
 
 func TestGetHostStateError(t *testing.T) {
@@ -488,7 +484,7 @@ func TestGetHostStateError(t *testing.T) {
 		},
 	}
 
-	hostItem := getHostListItems(hosts, nil)[0]
+	hostItem := getHostListItems(hosts, nil, 10*time.Second)[0]
 
 	assert.Equal(t, "foo", hostItem.Name)
 	assert.Equal(t, state.Error, hostItem.State)
@@ -514,7 +510,7 @@ func TestGetSomeHostInError(t *testing.T) {
 		"bar": errors.New("invalid memory address or nil pointer dereference"),
 	}
 
-	hostItems := getHostListItems(hosts, hostsInError)
+	hostItems := getHostListItems(hosts, hostsInError, 10*time.Second)
 	assert.Equal(t, 2, len(hostItems))
 
 	hostItem := hostItems[0]

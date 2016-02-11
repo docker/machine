@@ -195,6 +195,13 @@ var Commands = []cli.Command{
 		Name:   "active",
 		Usage:  "Print which machine is active",
 		Action: runCommand(cmdActive),
+		Flags: []cli.Flag{
+			cli.IntFlag{
+				Name:  "timeout, t",
+				Usage: fmt.Sprintf("Timeout in seconds, default to %ds", activeDefaultTimeout),
+				Value: activeDefaultTimeout,
+			},
+		},
 	},
 	{
 		Name:        "config",
@@ -281,7 +288,7 @@ var Commands = []cli.Command{
 			},
 			cli.IntFlag{
 				Name:  "timeout, t",
-				Usage: fmt.Sprintf("Timeout in seconds, default to %s", stateTimeoutDuration),
+				Usage: fmt.Sprintf("Timeout in seconds, default to %ds", lsDefaultTimeout),
 				Value: lsDefaultTimeout,
 			},
 			cli.StringFlag{
