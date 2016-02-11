@@ -32,8 +32,6 @@ const (
 )
 
 var (
-	stateTimeoutDuration = lsDefaultTimeout * time.Second
-
 	headers = map[string]string{
 		"Name":          "NAME",
 		"Active":        "ACTIVE",
@@ -77,9 +75,6 @@ type FilterOptions struct {
 }
 
 func cmdLs(c CommandLine, api libmachine.API) error {
-	stateTimeoutDuration = time.Duration(c.Int("timeout")) * time.Second
-	log.Debugf("ls timeout set to %s", stateTimeoutDuration)
-
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {
 		return err
@@ -119,7 +114,8 @@ func cmdLs(c CommandLine, api libmachine.API) error {
 		w = os.Stdout
 	}
 
-	items := getHostListItems(hostList, hostInError)
+	timeout := time.Duration(c.Int("timeout")) * time.Second
+	items := getHostListItems(hostList, hostInError, timeout)
 
 	swarmMasters := make(map[string]string)
 	swarmInfo := make(map[string]string)
@@ -419,7 +415,7 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	}
 }
 
-func getHostState(h *host.Host, hostListItemsChan chan<- HostListItem) {
+func getHostState(h *host.Host, hostListItemsChan chan<- HostListItem, timeout time.Duration) {
 	// This channel is used to communicate the properties we are querying
 	// about the host in the case of a successful read.
 	stateQueryChan := make(chan HostListItem)
@@ -433,22 +429,24 @@ func getHostState(h *host.Host, hostListItemsChan chan<- HostListItem) {
 		hostListItemsChan <- hli
 
 	// Otherwise, give up after a predetermined duration.
-	case <-time.After(stateTimeoutDuration):
+	case <-time.After(timeout):
 		hostListItemsChan <- HostListItem{
 			Name:         h.Name,
 			DriverName:   h.Driver.DriverName(),
 			State:        state.Timeout,
-			ResponseTime: stateTimeoutDuration,
+			ResponseTime: timeout,
 		}
 	}
 }
 
-func getHostListItems(hostList []*host.Host, hostsInError map[string]error) []HostListItem {
+func getHostListItems(hostList []*host.Host, hostsInError map[string]error, timeout time.Duration) []HostListItem {
+	log.Debugf("timeout set to %s", timeout)
+
 	hostListItems := []HostListItem{}
 	hostListItemsChan := make(chan HostListItem)
 
 	for _, h := range hostList {
-		go getHostState(h, hostListItemsChan)
+		go getHostState(h, hostListItemsChan, timeout)
 	}
 
 	for range hostList {
