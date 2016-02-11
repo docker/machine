@@ -26,12 +26,12 @@ Usage is `docker-machine provision [name]`.  Multiple names may be specified.
 
 The Machine provisioning process will:
 
-1. Set the hostname on the instance to the name Machine addresses it by (e.g.
-`default`).
-2. Install Docker if it is not present already.
-3. Generate a set of certificates (usually with the default, self-signed CA) and
-configure the daemon to accept connections over TLS.
-4. Copy the generated certificates to the server and local config directory.
-5. Configure the Docker Engine according to the options specified at create
-time.
-6. Configure and activate Swarm if applicable.
+1.  Set the hostname on the instance to the name Machine addresses it by (e.g.
+    `default`).
+2.  Install Docker if it is not present already.
+3.  Generate a set of certificates (usually with the default, self-signed CA) and
+    configure the daemon to accept connections over TLS.
+4.  Copy the generated certificates to the server and local config directory.
+5.  Configure the Docker Engine according to the options specified at create
+    time.
+6.  Configure and activate Swarm if applicable.
