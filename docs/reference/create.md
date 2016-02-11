@@ -48,7 +48,7 @@ customize.
        --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
        --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
        --engine-insecure-registry [--engine-insecure-registry option --engine-insecure-registry option]     Specify insecure registries to allow with the created engine
-       --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
+       --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use [$ENGINE_REGISTRY_MIRROR]
        --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
        --engine-storage-driver                                                                              Specify a storage driver to use with the engine
        --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
@@ -84,7 +84,7 @@ invoking the `create` help text.
        --engine-install-url "https://get.docker.com"                                                        Custom URL to use for engine installation [$MACHINE_DOCKER_INSTALL_URL]
        --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
        --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
-       --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use
+       --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use [$ENGINE_REGISTRY_MIRROR]
        --engine-storage-driver                                                                              Specify a storage driver to use with the engine
        --swarm                                                                                              Configure Machine with Swarm
        --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)

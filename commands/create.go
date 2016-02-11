@@ -59,9 +59,10 @@ var (
 			Value: &cli.StringSlice{},
 		},
 		cli.StringSliceFlag{
-			Name:  "engine-registry-mirror",
-			Usage: "Specify registry mirrors to use",
-			Value: &cli.StringSlice{},
+			Name:   "engine-registry-mirror",
+			Usage:  "Specify registry mirrors to use",
+			Value:  &cli.StringSlice{},
+			EnvVar: "ENGINE_REGISTRY_MIRROR",
 		},
 		cli.StringSliceFlag{
 			Name:  "engine-label",
