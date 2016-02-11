@@ -13,11 +13,17 @@ import (
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/hosttest"
 	"github.com/docker/machine/libmachine/mcnerror"
+	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRunActionForeachMachine(t *testing.T) {
+	defer provision.SetDetector(&provision.StandardDetector{})
+	provision.SetDetector(&provision.FakeDetector{
+		Provisioner: provision.NewNetstatProvisioner(),
+	})
+
 	// Assume a bunch of machines in randomly started or
 	// stopped states.
 	machines := []*host.Host{
