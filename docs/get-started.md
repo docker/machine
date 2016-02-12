@@ -209,6 +209,40 @@ Commands that follow this style are:
 
 For machines other than `default`, and commands other than those listed above, you must always specify the name explicitly as an argument.
 
+## Start local machines on startup
+
+In order to ensure that the Docker client is automatically configured at the start of each shell session, some users like to embed `eval $(docker-machine env default)` in their shell profiles (e.g., the `~/.bash_profile` file). However, this fails if the `default` machine is not running. If desired, you can configure your system to start the `default` machine automatically.
+
+Here is an example of how to configure this on OS X.
+
+Create a file called `com.docker.machine.default.plist` under `~/Library/LaunchAgents` with the following content:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>PATH</key>
+            <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin</string>
+        </dict>
+        <key>Label</key>
+        <string>com.docker.machine.default</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/usr/local/bin/docker-machine</string>
+            <string>start</string>
+            <string>default</string>
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+    </dict>
+</plist>
+```
+
+You can change the `default` string above to make this `LaunchAgent` start any  machine(s) you desire.
+
 ## Where to go next
 
 -   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
