@@ -16,4 +16,5 @@ type Options struct {
 	Overcommit     float64
 	ArbitraryFlags []string
 	Env            []string
+	IsExperimental bool
 }
