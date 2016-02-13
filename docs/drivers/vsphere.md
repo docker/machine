@@ -25,7 +25,7 @@ Options:
 -   `--vmwarevsphere-vcenter-port`: vSphere Port for vCenter.
 -   `--vmwarevsphere-network`: Network where the Docker VM will be attached.
 -   `--vmwarevsphere-datastore`: Datastore for Docker VM.
--   `--vmwarevsphere-datacenter`: Datacenter for Docker VM.
+-   `--vmwarevsphere-datacenter`: Datacenter for Docker VM (must be set to ha-datacenter when connecting to a single host).
 -   `--vmwarevsphere-pool`: Resource pool for Docker VM.
 -   `--vmwarevsphere-hostsystem`: vSphere compute resource where the docker VM will be instantiated (use <cluster>/* or <cluster>/<host> if using a cluster).
 
