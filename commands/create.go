@@ -116,6 +116,10 @@ var (
 			Usage: "addr to advertise for Swarm (default: detect and use the machine IP)",
 			Value: "",
 		},
+		cli.BoolFlag{
+			Name:  "swarm-experimental",
+			Usage: "Enable Swarm experimental features",
+		},
 		cli.StringSliceFlag{
 			Name:  "tls-san",
 			Usage: "Support extra SANs for TLS certs",
@@ -190,6 +194,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 			Host:           c.String("swarm-host"),
 			Strategy:       c.String("swarm-strategy"),
 			ArbitraryFlags: c.StringSlice("swarm-opt"),
+			IsExperimental: c.Bool("swarm-experimental"),
 		},
 	}
 
