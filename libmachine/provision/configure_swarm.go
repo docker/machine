@@ -50,6 +50,9 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			swarmOptions.Strategy,
 			advertiseMasterInfo,
 		)
+		if swarmOptions.IsExperimental {
+			cmd = "--experimental " + cmd
+		}
 
 		cmdMaster := strings.Fields(cmd)
 		for _, option := range swarmOptions.ArbitraryFlags {
@@ -112,6 +115,9 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			swarmOptions.Discovery,
 		},
 		HostConfig: workerHostConfig,
+	}
+	if swarmOptions.IsExperimental {
+		swarmWorkerConfig.Cmd = append([]string{"--experimental"}, swarmWorkerConfig.Cmd...)
 	}
 
 	return mcndockerclient.CreateContainer(dockerHost, swarmWorkerConfig, "swarm-agent")

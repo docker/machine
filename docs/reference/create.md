@@ -60,6 +60,7 @@ customize.
        --swarm-opt [--swarm-opt option --swarm-opt option]                                                  Define arbitrary flags for swarm
        --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
        --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
+       --swarm-experimental                                                                                 Enable Swarm experimental features
 
 Additionally, drivers can specify flags that Machine can accept as part of their
 plugin code.  These allow users to customize the provider-specific parameters of
@@ -89,6 +90,7 @@ invoking the `create` help text.
        --swarm                                                                                              Configure Machine with Swarm
        --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
        --swarm-discovery                                                                                    Discovery service to use with Swarm
+       --swarm-experimental                                                                                 Enable Swarm experimental features
        --swarm-host "tcp://0.0.0.0:3376"                                                                    ip/socket to listen on for Swarm master
        --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
        --swarm-master                                                                                       Configure Machine to be a Swarm master
@@ -197,7 +199,7 @@ specify arbitrary environment variables to be set within the engine with the syn
 
 In addition to being able to configure Docker Engine options as listed above,
 you can use Machine to specify how the created Swarm master should be
-configured). There is a `--swarm-strategy` flag, which you can use to specify
+configured. There is a `--swarm-strategy` flag, which you can use to specify
 the [scheduling strategy](https://docs.docker.com/swarm/scheduler/strategy/)
 which Docker Swarm should use (Machine defaults to the `spread` strategy).
 There is also a general purpose `--swarm-opt` option which works similar to how
@@ -205,7 +207,9 @@ the aforementioned `--engine-opt` option does, except that it specifies options
 for the `swarm manage` command (used to boot a master node) instead of the base
 command. You can use this to configure features that power users might be
 interested in, such as configuring the heartbeat interval or Swarm's willingness
-to over-commit resources.
+to over-commit resources. There is also the `--swarm-experimental` flag, that
+allows you to access [experimental features](https://github.com/docker/swarm/tree/master/experimental)
+in Docker Swarm.
 
 If you're not sure how to configure these options, it is best to not specify
 configuration at all. Docker Machine will choose sensible defaults for you and
