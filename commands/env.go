@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
+	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST_IP{{ .Delimiter }}{{ .DockerHostIP }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
 )
 
 var (
@@ -34,6 +34,7 @@ type ShellConfig struct {
 	Suffix          string
 	DockerCertPath  string
 	DockerHost      string
+	DockerHostIP    string
 	DockerTLSVerify string
 	UsageHint       string
 	MachineName     string
@@ -86,6 +87,14 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		return nil, fmt.Errorf("Error checking TLS connection: %s", err)
 	}
 
+	dockerHostIP := ""
+	if host != nil && host.Driver != nil {
+		dockerHostIP, err = host.Driver.GetIP()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	userShell, err := getShell(c.String("shell"))
 	if err != nil {
 		return nil, err
@@ -94,6 +103,7 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 	shellCfg := &ShellConfig{
 		DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), host.Name),
 		DockerHost:      dockerHost,
+		DockerHostIP:    dockerHostIP,
 		DockerTLSVerify: "1",
 		UsageHint:       defaultUsageHinter.GenerateUsageHint(userShell, os.Args),
 		MachineName:     host.Name,
