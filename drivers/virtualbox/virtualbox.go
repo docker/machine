@@ -29,6 +29,8 @@ const (
 	defaultHostOnlyNictype     = "82540EM"
 	defaultHostOnlyPromiscMode = "deny"
 	defaultDiskSize            = 20000
+	defaultDNSProxy            = true
+	defaultDNSResolver         = false
 )
 
 var (
@@ -79,6 +81,8 @@ func NewDriver(hostName, storePath string) *Driver {
 		HostOnlyCIDR:        defaultHostOnlyCIDR,
 		HostOnlyNicType:     defaultHostOnlyNictype,
 		HostOnlyPromiscMode: defaultHostOnlyPromiscMode,
+		DNSProxy:            defaultDNSProxy,
+		HostDNSResolver:     defaultDNSResolver,
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -149,9 +153,9 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "VIRTUALBOX_NO_SHARE",
 		},
 		mcnflag.BoolFlag{
-			Name:   "virtualbox-dns-proxy",
-			Usage:  "Proxy all DNS requests to the host",
-			EnvVar: "VIRTUALBOX_DNS_PROXY",
+			Name:   "virtualbox-no-dns-proxy",
+			Usage:  "Disable proxying all DNS requests to the host",
+			EnvVar: "VIRTUALBOX_NO_DNS_PROXY",
 		},
 		mcnflag.BoolFlag{
 			Name:   "virtualbox-no-vtx-check",
@@ -205,7 +209,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostOnlyNicType = flags.String("virtualbox-hostonly-nictype")
 	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
 	d.NoShare = flags.Bool("virtualbox-no-share")
-	d.DNSProxy = flags.Bool("virtualbox-dns-proxy")
+	d.DNSProxy = !flags.Bool("virtualbox-no-dns-proxy")
 	d.NoVTXCheck = flags.Bool("virtualbox-no-vtx-check")
 
 	return nil
