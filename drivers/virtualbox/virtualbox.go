@@ -248,28 +248,6 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
-// IsVTXDisabledInTheVM checks if VT-X is disabled in the started vm.
-func (d *Driver) IsVTXDisabledInTheVM() (bool, error) {
-	lines, err := d.readVBoxLog()
-	if err != nil {
-		return true, err
-	}
-
-	for _, line := range lines {
-		if strings.Contains(line, "VT-x is disabled") {
-			return true, nil
-		}
-		if strings.Contains(line, "the host CPU does NOT support HW virtualization") {
-			return true, nil
-		}
-		if strings.Contains(line, "VERR_VMX_UNABLE_TO_START_VM") {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 func (d *Driver) Create() error {
 	if err := d.CreateVM(); err != nil {
 		return err
