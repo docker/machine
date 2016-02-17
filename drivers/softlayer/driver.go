@@ -257,6 +257,10 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) GetURL() (string, error) {
+	if err := drivers.MustBeRunning(d); err != nil {
+		return "", err
+	}
+
 	ip, err := d.GetIP()
 	if err != nil {
 		return "", err
@@ -264,6 +268,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
+
 	return "tcp://" + net.JoinHostPort(ip, "2376"), nil
 }
 

@@ -238,6 +238,10 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) GetURL() (string, error) {
+	if err := drivers.MustBeRunning(d); err != nil {
+		return "", err
+	}
+
 	url := fmt.Sprintf("tcp://%s:%v", d.getHostname(), d.DockerPort)
 	return url, nil
 }
