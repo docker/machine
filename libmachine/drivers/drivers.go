@@ -93,3 +93,17 @@ func MachineInState(d Driver, desiredState state.State) func() bool {
 		return false
 	}
 }
+
+// MustBeRunning will return an error if the machine is not in a running state.
+func MustBeRunning(d Driver) error {
+	s, err := d.GetState()
+	if err != nil {
+		return err
+	}
+
+	if s != state.Running {
+		return ErrHostIsNotRunning
+	}
+
+	return nil
+}

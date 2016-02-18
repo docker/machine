@@ -133,10 +133,15 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) GetURL() (string, error) {
+	if err := drivers.MustBeRunning(d); err != nil {
+		return "", err
+	}
+
 	ip, err := d.GetIP()
 	if err != nil {
 		return "", err
 	}
+
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
