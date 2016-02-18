@@ -196,6 +196,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) GetURL() (string, error) {
+	if err := drivers.MustBeRunning(d); err != nil {
+		return "", err
+	}
+
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(d.PublicIP, strconv.Itoa(d.DockerPort))), nil
 }
 
