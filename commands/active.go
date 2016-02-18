@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/persist"
+	"github.com/docker/machine/libmachine/state"
 )
 
 const (
@@ -15,7 +16,8 @@ const (
 )
 
 var (
-	errNoActiveHost = errors.New("No active host found")
+	errNoActiveHost  = errors.New("No active host found")
+	errActiveTimeout = errors.New("Error getting active host: timeout")
 )
 
 func cmdActive(c CommandLine, api libmachine.API) error {
@@ -42,10 +44,17 @@ func cmdActive(c CommandLine, api libmachine.API) error {
 }
 
 func activeHost(items []HostListItem) (HostListItem, error) {
+	timeout := false
 	for _, item := range items {
 		if item.ActiveHost || item.ActiveSwarm {
 			return item, nil
 		}
+		if item.State == state.Timeout {
+			timeout = true
+		}
+	}
+	if timeout {
+		return HostListItem{}, errActiveTimeout
 	}
 	return HostListItem{}, errNoActiveHost
 }
