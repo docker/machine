@@ -19,13 +19,48 @@ Machine to manage.
 The driver will perform a list of tasks on create:
 
 -   If docker is not running on the host, it will be installed automatically.
--   It will generate certificates to secure the docker daemon
+-   It will update the host packages (`apt-get update`, `yum update`...).
+-   It will generate certificates to secure the docker daemon.
 -   The docker daemon will be restarted, thus all running containers will be stopped.
+-   The hostname will be changed to fit the machine name.
 
+### Example
 
-    $ docker-machine create --driver generic --generic-ip-address=203.0.113.81 vm
+To create a machine instance, specify `--driver generic`, the IP address or DNS
+name of the host and the path to the SSH private key authorized to connect
+to the host.
 
-Options:
+    $ docker-machine create \
+      --driver generic \
+      --generic-ip-address=203.0.113.81 \
+      --generic-ssh-key=~/.ssh/id_rsa \
+      vm
+
+### Password-protected SSH keys
+
+When an SSH identity is not provided (with the `--generic-ssh-key` flag),
+the SSH agent (if running) will be consulted. This makes it possible to
+easily use password-protected SSH keys.
+
+Note that this usage is _only_ supported if you're using the external SSH client,
+which is the default behaviour when the `ssh` binary is available. If you're
+using the native client (with `--native-ssh`), using the SSH agent is not yet
+supported.
+
+    $ docker-machine create \
+      --driver generic \
+      --generic-ip-address=203.0.113.81 \
+      other
+
+### Sudo privileges
+
+The user that is used to SSH into the host can be specified with
+`--generic-ssh-user` flag. This user has to be have password-less sudo
+privileges.
+If it's not the case, you need to edit the `sudoers` file and configure the user
+as a sudoer with `NOPASSWD`. See https://help.ubuntu.com/community/Sudoers.
+
+### Options
 
 -   `--generic-ip-address`: **required** IP Address of host.
 -   `--generic-ssh-key`: Path to the SSH user private key.
@@ -42,14 +77,3 @@ Environment variables and default values:
 | `--generic-ssh-key`        | `GENERIC_SSH_KEY`    | _(defers to `ssh-agent`)_ |
 | `--generic-ssh-user`       | `GENERIC_SSH_USER`   | `root`                    |
 | `--generic-ssh-port`       | `GENERIC_SSH_PORT`   | `22`                      |
-
-##### Interaction with SSH Agents
-
-When an SSH identity is not provided (with the `--generic-ssh-key` flag),
-the SSH agent (if running) will be consulted. This makes it possible to
-easily use password-protected SSH keys.
-
-Note that this usage is _only_ supported if you're using the external SSH client,
-which is the default behaviour when the `ssh` binary is available. If you're
-using the native client (with `--native-ssh`), using the SSH agent is not yet
-supported.
