@@ -31,13 +31,17 @@ Options:
 -   `--hyperv-disk-size`: Size of disk for the host in MB.
 -   `--hyperv-memory`: Size of memory for the host in MB.
 -   `--hyperv-cpu-count`: Number of CPUs for the host.
+-   `--hyperv-static-macaddress`: Hyper-V network adapter's static MAC address.
+-   `--hyperv-vlan-id`: Hyper-V network adapter's VLAN ID if any.
 
 Environment variables and default values:
 
-| CLI option                 | Environment variable     | Default                  |
-| -------------------------- | ------------------------ | ------------------------ |
-| `--hyperv-boot2docker-url` | `HYPERV_BOOT2DOCKER_URL` | _Latest boot2docker url_ |
-| `--hyperv-virtual-switch`  | `HYPERV_VIRTUAL_SWITCH`  | _first found_            |
-| `--hyperv-disk-size`       | `HYPERV_DISK_SIZE`       | `20000`                  |
-| `--hyperv-memory`          | `HYPERV_MEMORY`          | `1024`                   |
-| `--hyperv-cpu-count`       | `HYPERV_CPU_COUNT`       | `1`                      |
+| CLI option                   | Environment variable       | Default                  |
+| ---------------------------- | -------------------------- | ------------------------ |
+| `--hyperv-boot2docker-url`   | `HYPERV_BOOT2DOCKER_URL`   | _Latest boot2docker url_ |
+| `--hyperv-virtual-switch`    | `HYPERV_VIRTUAL_SWITCH`    | _first found_            |
+| `--hyperv-disk-size`         | `HYPERV_DISK_SIZE`         | `20000`                  |
+| `--hyperv-memory`            | `HYPERV_MEMORY`            | `1024`                   |
+| `--hyperv-cpu-count`         | `HYPERV_CPU_COUNT`         | `1`                      |
+| `--hyperv-static-macaddress` | `HYPERV_STATIC_MACADDRESS` | _undefined_              |
+| `--hyperv-cpu-count`         | `HYPERV_VLAN_ID`           | _undefined_              |
