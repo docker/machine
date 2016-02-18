@@ -41,7 +41,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   "generic-ssh-key",
-			Usage:  "SSH private key path (if not provided, identities in ssh-agent will be used)",
+			Usage:  "SSH public key path (if not provided, identities in ssh-agent will be used)",
 			Value:  "",
 			EnvVar: "GENERIC_SSH_KEY",
 		},

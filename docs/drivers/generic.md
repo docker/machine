@@ -28,7 +28,7 @@ The driver will perform a list of tasks on create:
 Options:
 
 -   `--generic-ip-address`: **required** IP Address of host.
--   `--generic-ssh-key`: Path to the SSH user private key.
+-   `--generic-ssh-key`: Path to the SSH user public key.
 -   `--generic-ssh-user`: SSH username used to connect.
 -   `--generic-ssh-port`: Port to use for SSH.
 
