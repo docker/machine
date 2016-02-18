@@ -489,14 +489,16 @@ func (d *Driver) Start() error {
 		log.Infof("VM not in restartable state")
 	}
 
-	// Verify that VT-X is not disabled in the started VM
-	vtxIsDisabled, err := d.IsVTXDisabledInTheVM()
-	if err != nil {
-		return fmt.Errorf("Checking if hardware virtualization is enabled failed: %s", err)
-	}
+	if !d.NoVTXCheck {
+		// Verify that VT-X is not disabled in the started VM
+		vtxIsDisabled, err := d.IsVTXDisabledInTheVM()
+		if err != nil {
+			return fmt.Errorf("Checking if hardware virtualization is enabled failed: %s", err)
+		}
 
-	if vtxIsDisabled {
-		return ErrMustEnableVTX
+		if vtxIsDisabled {
+			return ErrMustEnableVTX
+		}
 	}
 
 	log.Infof("Waiting for an IP...")
