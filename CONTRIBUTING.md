@@ -19,7 +19,7 @@ guidelines](https://github.com/docker/docker/blob/master/CONTRIBUTING.md).
 
 The requirements to build Machine are:
 
-1.  A running instance of Docker or a Golang 1.5.3 development environment
+1.  A running instance of Docker or a Golang 1.6 development environment
 2.  The `bash` shell
 3.  [Make](https://www.gnu.org/software/make/)
 
@@ -32,8 +32,8 @@ To build the `docker-machine` binary using containers, simply run:
 
 ## Local Go development environment
 
-Make sure the source code directory is under a correct directory structure to use Go 1.5 vendoring;
-example of cloning and preparing the correct environment `GOPATH`:
+Make sure the source code directory is under a correct directory structure;
+Example of cloning and preparing the correct environment `GOPATH`:
 
         mkdir docker-machine
         cd docker-machine
