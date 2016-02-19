@@ -342,7 +342,8 @@ func (d *Driver) CreateVM() error {
 		dnsProxy = "on"
 	}
 
-	if err := d.vbm("modifyvm", d.MachineName,
+	var modifyFlags = []string{
+		"modifyvm", d.MachineName,
 		"--firmware", "bios",
 		"--bioslogofadein", "off",
 		"--bioslogofadeout", "off",
@@ -364,7 +365,13 @@ func (d *Driver) CreateVM() error {
 		"--largepages", "on",
 		"--vtxvpid", "on",
 		"--accelerate3d", "off",
-		"--boot1", "dvd"); err != nil {
+		"--boot1", "dvd"}
+
+	if runtime.GOOS == "windows" && runtime.GOARCH == "386" {
+		modifyFlags = append(modifyFlags, "--longmode", "on")
+	}
+
+	if err := d.vbm(modifyFlags...); err != nil {
 		return err
 	}
 
