@@ -18,7 +18,7 @@ parent="smn_machine_subcmds"
 
        --quiet, -q                                  Enable quiet mode
        --filter [--filter option --filter option]   Filter output based on conditions provided
-       --timeout, -t                                Timeout in seconds, default to 10s
+       --timeout, -t "10"                           Timeout in seconds, default to 10s
        --format, -f                                 Pretty-print machines using a Go template
 
 ## Timeout
@@ -102,7 +102,7 @@ for all running machines:
 
 To list all machine names with their driver in a table format you can use:
 
-    $ docker-machine ls --format "table {{.Name}}: {{.DriverName}}"
+    $ docker-machine ls --format "table {{.Name}} {{.DriverName}}"
     NAME     DRIVER
     default  virtualbox
     ec2      amazonec2

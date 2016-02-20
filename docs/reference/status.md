@@ -10,7 +10,14 @@ parent="smn_machine_subcmds"
 
 # status
 
-Get the status of a machine.
+    Usage: docker-machine status [arg...]
+
+    Get the status of a machine
+
+    Description:
+       Argument is a machine name.
+
+For example:
 
     $ docker-machine status dev
     Running

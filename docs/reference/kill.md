@@ -11,7 +11,14 @@ parent="smn_machine_subcmds"
 
 # kill
 
-Kill (abruptly force stop) a machine.
+    Usage: docker-machine kill [arg...]
+
+    Kill (abruptly force stop) a machine
+
+    Description:
+       Argument(s) are one or more machine names.
+
+For example:
 
     $ docker-machine ls
     NAME   ACTIVE   DRIVER       STATE     URL

@@ -11,7 +11,14 @@ parent="smn_machine_subcmds"
 
 # stop
 
-Gracefully stop a machine.
+    Usage: docker-machine stop [arg...]
+
+    Gracefully Stop a machine
+
+    Description:
+       Argument(s) are one or more machine names.
+
+For example:
 
     $ docker-machine ls
     NAME   ACTIVE   DRIVER       STATE     URL
