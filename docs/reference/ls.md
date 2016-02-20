@@ -37,7 +37,7 @@ the -t flag for this purpose with a numerical value in seconds.
 
 ## Filtering
 
-The filtering flag (`-f` or `--filter)` format is a `key=value` pair. If there is more
+The filtering flag (`--filter`) format is a `key=value` pair. If there is more
 than one filter, then pass multiple flags (e.g. `--filter "foo=bar" --filter "bif=baz"`)
 
 The currently supported filters are:
