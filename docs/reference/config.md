@@ -10,7 +10,19 @@ parent="smn_machine_subcmds"
 
 # config
 
-Show the Docker client configuration for a machine.
+    Usage: docker-machine config [OPTIONS] [arg...]
+
+    Print the connection config for machine
+
+    Description:
+       Argument is a machine name.
+
+    Options:
+
+       --swarm      Display the Swarm config instead of the Docker daemon
+
+
+For example: 
 
     $ docker-machine config dev
     --tlsverify
