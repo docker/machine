@@ -11,7 +11,14 @@ parent="smn_machine_subcmds"
 
 # start
 
-Start a machine.
+    Usage: docker-machine start [arg...]
+
+    Start a machine
+
+    Description:
+       Argument(s) are one or more machine names.
+
+For example:
 
     $ docker-machine start dev
     Starting VM...
