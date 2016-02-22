@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
@@ -17,7 +18,8 @@ import (
 
 type Driver struct {
 	*drivers.BaseDriver
-	SSHKey string
+	EnginePort int
+	SSHKey     string
 }
 
 const (
@@ -28,6 +30,12 @@ const (
 // "docker hosts create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
+		mcnflag.IntFlag{
+			Name:   "generic-engine-port",
+			Usage:  "Docker engine port",
+			Value:  engine.DefaultPort,
+			EnvVar: "GENERIC_ENGINE_PORT",
+		},
 		mcnflag.StringFlag{
 			Name:   "generic-ip-address",
 			Usage:  "IP Address of machine",
@@ -57,6 +65,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 // NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
+		EnginePort: engine.DefaultPort,
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -89,6 +98,7 @@ func (d *Driver) GetSSHKeyPath() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.EnginePort = flags.Int("generic-engine-port")
 	d.IPAddress = flags.String("generic-ip-address")
 	d.SSHUser = flags.String("generic-ssh-user")
 	d.SSHKey = flags.String("generic-ssh-key")
@@ -142,7 +152,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.EnginePort))), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {

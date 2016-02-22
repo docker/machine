@@ -12,8 +12,9 @@ func TestSetConfigFromFlags(t *testing.T) {
 
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"generic-ip-address": "localhost",
-			"generic-ssh-key":    "path",
+			"generic-engine-port": "3000",
+			"generic-ip-address":  "localhost",
+			"generic-ssh-key":     "path",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}
