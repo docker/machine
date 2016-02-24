@@ -111,7 +111,7 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 		}
 	}
 
-	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
+	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y -o Dpkg::Options::=\"--force-confnew\" %s", packageAction, name)
 
 	log.Debugf("package: action=%s name=%s", action.String(), name)
 
