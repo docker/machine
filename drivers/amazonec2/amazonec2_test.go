@@ -4,17 +4,19 @@ import (
 	"testing"
 
 	"errors"
+	"reflect"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const (
-	testSSHPort    = 22
-	testDockerPort = 2376
-	testSwarmPort  = 3376
+	testSSHPort    = int64(22)
+	testDockerPort = int64(2376)
+	testSwarmPort  = int64(3376)
 )
 
 var (
@@ -259,4 +261,163 @@ func TestPassingBothCLIArgWorked(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foobar", driver.AccessKey)
 	assert.Equal(t, "123", driver.SecretKey)
+}
+
+var values = []string{
+	"bob",
+	"jake",
+	"jill",
+}
+
+var pointerSliceTests = []struct {
+	input    []string
+	expected []*string
+}{
+	{[]string{}, []*string{}},
+	{[]string{values[1]}, []*string{&values[1]}},
+	{[]string{values[0], values[2], values[2]}, []*string{&values[0], &values[2], &values[2]}},
+}
+
+func TestMakePointerSlice(t *testing.T) {
+	for _, tt := range pointerSliceTests {
+		actual := makePointerSlice(tt.input)
+		assert.Equal(t, tt.expected, actual)
+	}
+}
+
+var securityGroupNameTests = []struct {
+	groupName  string
+	groupNames []string
+	expected   []string
+}{
+	{groupName: "bob", expected: []string{"bob"}},
+	{groupNames: []string{"bill"}, expected: []string{"bill"}},
+	{groupName: "bob", groupNames: []string{"bill"}, expected: []string{"bob", "bill"}},
+}
+
+func TestMergeSecurityGroupName(t *testing.T) {
+	for _, tt := range securityGroupNameTests {
+		d := Driver{SecurityGroupName: tt.groupName, SecurityGroupNames: tt.groupNames}
+		assert.Equal(t, tt.expected, d.securityGroupNames())
+	}
+}
+
+var securityGroupIdTests = []struct {
+	groupId  string
+	groupIds []string
+	expected []string
+}{
+	{groupId: "id", expected: []string{"id"}},
+	{groupIds: []string{"id"}, expected: []string{"id"}},
+	{groupId: "id1", groupIds: []string{"id2"}, expected: []string{"id1", "id2"}},
+}
+
+func TestMergeSecurityGroupId(t *testing.T) {
+	for _, tt := range securityGroupIdTests {
+		d := Driver{SecurityGroupId: tt.groupId, SecurityGroupIds: tt.groupIds}
+		assert.Equal(t, tt.expected, d.securityGroupIds())
+	}
+}
+
+func matchGroupLookup(expected []string) interface{} {
+	return func(input *ec2.DescribeSecurityGroupsInput) bool {
+		actual := []string{}
+		for _, filter := range input.Filters {
+			if *filter.Name == "group-name" {
+				for _, groupName := range filter.Values {
+					actual = append(actual, *groupName)
+				}
+			}
+		}
+		return reflect.DeepEqual(expected, actual)
+	}
+}
+
+func ipPermission(port int64) *ec2.IpPermission {
+	return &ec2.IpPermission{
+		FromPort:   aws.Int64(port),
+		ToPort:     aws.Int64(port),
+		IpProtocol: aws.String("tcp"),
+		IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+	}
+}
+
+func TestConfigureSecurityGroupsEmpty(t *testing.T) {
+	recorder := fakeEC2SecurityGroupTestRecorder{}
+
+	driver := NewCustomTestDriver(&recorder)
+	err := driver.configureSecurityGroups([]string{})
+
+	assert.Nil(t, err)
+	recorder.AssertExpectations(t)
+}
+
+func TestConfigureSecurityGroupsMixed(t *testing.T) {
+	groups := []string{"existingGroup", "newGroup"}
+	recorder := fakeEC2SecurityGroupTestRecorder{}
+
+	// First, a check is made for which groups already exist.
+	initialLookupResult := ec2.DescribeSecurityGroupsOutput{SecurityGroups: []*ec2.SecurityGroup{
+		{
+			GroupName:     aws.String("existingGroup"),
+			GroupId:       aws.String("existingGroupId"),
+			IpPermissions: []*ec2.IpPermission{ipPermission(testSSHPort)},
+		},
+	}}
+	recorder.On("DescribeSecurityGroups", mock.MatchedBy(matchGroupLookup(groups))).Return(
+		&initialLookupResult, nil)
+
+	// An ingress permission is added to the existing group.
+	recorder.On("AuthorizeSecurityGroupIngress", &ec2.AuthorizeSecurityGroupIngressInput{
+		GroupId:       aws.String("existingGroupId"),
+		IpPermissions: []*ec2.IpPermission{ipPermission(testDockerPort)},
+	}).Return(
+		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
+
+	// The new security group is created.
+	recorder.On("CreateSecurityGroup", &ec2.CreateSecurityGroupInput{
+		GroupName:   aws.String("newGroup"),
+		Description: aws.String("Docker Machine"),
+		VpcId:       aws.String(""),
+	}).Return(
+		&ec2.CreateSecurityGroupOutput{GroupId: aws.String("newGroupId")}, nil)
+
+	// Ensuring the new security group exists.
+	postCreateLookupResult := ec2.DescribeSecurityGroupsOutput{SecurityGroups: []*ec2.SecurityGroup{
+		{
+			GroupName: aws.String("newGroup"),
+			GroupId:   aws.String("newGroupId"),
+		},
+	}}
+	recorder.On("DescribeSecurityGroups",
+		&ec2.DescribeSecurityGroupsInput{GroupIds: []*string{aws.String("newGroupId")}}).Return(
+		&postCreateLookupResult, nil)
+
+	// Permissions are added to the new security group.
+	recorder.On("AuthorizeSecurityGroupIngress", &ec2.AuthorizeSecurityGroupIngressInput{
+		GroupId:       aws.String("newGroupId"),
+		IpPermissions: []*ec2.IpPermission{ipPermission(testSSHPort), ipPermission(testDockerPort)},
+	}).Return(
+		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
+
+	driver := NewCustomTestDriver(&recorder)
+	err := driver.configureSecurityGroups(groups)
+
+	assert.Nil(t, err)
+	recorder.AssertExpectations(t)
+}
+
+func TestConfigureSecurityGroupsErrLookupExist(t *testing.T) {
+	groups := []string{"group"}
+	recorder := fakeEC2SecurityGroupTestRecorder{}
+
+	lookupExistErr := errors.New("lookup failed")
+	recorder.On("DescribeSecurityGroups", mock.MatchedBy(matchGroupLookup(groups))).Return(
+		nil, lookupExistErr)
+
+	driver := NewCustomTestDriver(&recorder)
+	err := driver.configureSecurityGroups(groups)
+
+	assert.Exactly(t, lookupExistErr, err)
+	recorder.AssertExpectations(t)
 }
