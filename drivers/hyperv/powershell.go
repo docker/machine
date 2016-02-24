@@ -69,6 +69,36 @@ func hypervAvailable() error {
 }
 
 func isAdministrator() (bool, error) {
+	var hypervAdmin bool
+	var windowsAdmin bool
+	var windowsErr error
+
+	hypervAdmin = isHypervAdministrator()
+
+	if hypervAdmin == true {
+		return true, nil
+	}
+
+	windowsAdmin, windowsErr = isWindowsAdministrator()
+
+	if windowsErr != nil {
+		return false, windowsErr
+	}
+
+	return windowsAdmin, nil
+}
+
+func isHypervAdministrator() bool {
+	stdout, err := cmdOut(`@([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole("Hyper-V Administrators")`)
+	if err != nil {
+		return false
+	}
+
+	resp := parseLines(stdout)
+	return resp[0] == "True"
+}
+
+func isWindowsAdministrator() (bool, error) {
 	stdout, err := cmdOut(`@([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")`)
 	if err != nil {
 		return false, err
