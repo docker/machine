@@ -19,6 +19,7 @@ import (
 	"github.com/docker/machine/drivers/hyperv"
 	"github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/drivers/openstack"
+	"github.com/docker/machine/drivers/photoncontroller"
 	"github.com/docker/machine/drivers/rackspace"
 	"github.com/docker/machine/drivers/softlayer"
 	"github.com/docker/machine/drivers/virtualbox"
@@ -185,6 +186,8 @@ func runDriver(driverName string) {
 		plugin.RegisterDriver(none.NewDriver("", ""))
 	case "openstack":
 		plugin.RegisterDriver(openstack.NewDriver("", ""))
+	case "photoncontroller":
+		plugin.RegisterDriver(photoncontroller.NewDriver(""))
 	case "rackspace":
 		plugin.RegisterDriver(rackspace.NewDriver("", ""))
 	case "softlayer":
