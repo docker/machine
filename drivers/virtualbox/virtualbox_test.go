@@ -143,6 +143,49 @@ func TestGetRandomIPinSubnet(t *testing.T) {
 	}
 }
 
+func TestGetHolyOnlyMACAddress(t *testing.T) {
+	driver := newTestDriver("default")
+	driver.VBoxManager = &VBoxManagerMock{
+		args:   "showvminfo default --machinereadable",
+		stdOut: "unrelatedfield=whatever\nhostonlyadapter2=\"vboxnet1\"\nmacaddress2=\"004488AABBCC\"\n",
+	}
+
+	result, err := driver.getHostOnlyMACAddress()
+	expected := "004488aabbcc"
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
+func TestGetHostOnlyMACAddressWhenNoHostOnlyAdapter(t *testing.T) {
+	driver := newTestDriver("default")
+	driver.VBoxManager = &VBoxManagerMock{
+		args:   "showvminfo default --machinereadable",
+		stdOut: "unrelatedfield=whatever\n",
+	}
+
+	result, err := driver.getHostOnlyMACAddress()
+	assert.Empty(t, result)
+	assert.Equal(t, err, errors.New("Machine does not have a host-only adapter"))
+}
+
+func TestParseIPForMACFromIPAddr(t *testing.T) {
+	driver := newTestDriver("default")
+
+	ipAddrOutput := "1: eth0:\n    link/ether 00:44:88:aa:bb:cc\n    inet 1.2.3.4/24\n2: eth1:\n    link/ether 11:55:99:dd:ee:ff\n   inet 5.6.7.8/24"
+
+	result, err := driver.parseIPForMACFromIPAddr(ipAddrOutput, "004488aabbcc")
+	assert.NoError(t, err)
+	assert.Equal(t, result, "1.2.3.4")
+
+	result, err = driver.parseIPForMACFromIPAddr(ipAddrOutput, "115599ddeeff")
+	assert.NoError(t, err)
+	assert.Equal(t, result, "5.6.7.8")
+
+	result, err = driver.parseIPForMACFromIPAddr(ipAddrOutput, "000000000000")
+	assert.Empty(t, result)
+	assert.Equal(t, err, errors.New("Could not find matching IP for MAC address 000000000000"))
+}
+
 func TestGetIPErrors(t *testing.T) {
 	var tests = []struct {
 		stdOut   string
