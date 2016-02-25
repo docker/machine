@@ -19,7 +19,7 @@ var (
 	CurrentBinaryIsDockerMachine = false
 	CoreDrivers                  = [...]string{"amazonec2", "azure", "digitalocean",
 		"exoscale", "generic", "google", "hyperv", "none", "openstack",
-		"rackspace", "softlayer", "virtualbox", "vmwarefusion",
+		"photoncontroller", "rackspace", "softlayer", "virtualbox", "vmwarefusion",
 		"vmwarevcloudair", "vmwarevsphere"}
 )
 
