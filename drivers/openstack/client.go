@@ -41,7 +41,8 @@ type Client interface {
 	GetPublicKey(keyPairName string) ([]byte, error)
 	CreateKeyPair(d *Driver, name string, publicKey string) error
 	DeleteKeyPair(d *Driver, name string) error
-	GetNetworkID(d *Driver) (string, error)
+	GetNetworkIDs(d *Driver) ([]string, error)
+	GetNetworkID(d *Driver, networkName string) (string, error)
 	GetFlavorID(d *Driver) (string, error)
 	GetImageID(d *Driver) (string, error)
 	AssignFloatingIP(d *Driver, floatingIP *FloatingIP) error
@@ -66,12 +67,12 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 		SecurityGroups:   d.SecurityGroups,
 		AvailabilityZone: d.AvailabilityZone,
 	}
-	if d.NetworkId != "" {
-		serverOpts.Networks = []servers.Network{
-			{
-				UUID: d.NetworkId,
-			},
+	if len(d.NetworkIds) > 0 {
+		networks := make([]servers.Network, len(d.NetworkIds))
+		for i, networkId := range d.NetworkIds {
+			networks[i] = servers.Network{UUID: networkId}
 		}
+		serverOpts.Networks = networks
 	}
 
 	log.Info("Creating machine...")
@@ -199,15 +200,23 @@ func (c *GenericClient) GetInstanceIPAddresses(d *Driver) ([]IPAddress, error) {
 	return addresses, nil
 }
 
-func (c *GenericClient) GetNetworkID(d *Driver) (string, error) {
-	return c.getNetworkID(d, d.NetworkName)
+func (c *GenericClient) GetNetworkIDs(d *Driver) ([]string, error) {
+	networkIDs := make([]string, len(d.NetworkNames))
+	for i, networkName := range d.NetworkNames {
+		id, err := c.GetNetworkID(d, networkName)
+		if err != nil {
+			return nil, err
+		}
+		networkIDs[i] = id
+	}
+	return networkIDs, nil
 }
 
 func (c *GenericClient) GetFloatingIPPoolID(d *Driver) (string, error) {
-	return c.getNetworkID(d, d.FloatingIpPool)
+	return c.GetNetworkID(d, d.FloatingIPPool)
 }
 
-func (c *GenericClient) getNetworkID(d *Driver, networkName string) (string, error) {
+func (c *GenericClient) GetNetworkID(d *Driver, networkName string) (string, error) {
 	opts := networks.ListOpts{Name: networkName}
 	pager := networks.List(c.Network, opts)
 	networkID := ""
@@ -345,7 +354,7 @@ func (c *GenericClient) AssignFloatingIP(d *Driver, floatingIP *FloatingIP) erro
 func (c *GenericClient) assignNovaFloatingIP(d *Driver, floatingIP *FloatingIP) error {
 	if floatingIP.Ip == "" {
 		f, err := compute_ips.Create(c.Compute, compute_ips.CreateOpts{
-			Pool: d.FloatingIpPool,
+			Pool: d.FloatingIPPool,
 		}).Extract()
 		if err != nil {
 			return err
@@ -363,7 +372,7 @@ func (c *GenericClient) assignNeutronFloatingIP(d *Driver, floatingIP *FloatingI
 	}
 	if floatingIP.Id == "" {
 		f, err := floatingips.Create(c.Network, floatingips.CreateOpts{
-			FloatingNetworkID: d.FloatingIpPoolId,
+			FloatingNetworkID: d.FloatingIPPoolId,
 			PortID:            portID,
 		}).Extract()
 		if err != nil {
@@ -400,7 +409,7 @@ func (c *GenericClient) getNovaNetworkFloatingIPs(d *Driver) ([]FloatingIP, erro
 		ipListing, err := compute_ips.ExtractFloatingIPs(page)
 
 		for _, ip := range ipListing {
-			if ip.InstanceID == "" && ip.Pool == d.FloatingIpPool {
+			if ip.InstanceID == "" && ip.Pool == d.FloatingIPPool {
 				ips = append(ips, FloatingIP{
 					Id:   ip.ID,
 					Ip:   ip.IP,
@@ -415,11 +424,11 @@ func (c *GenericClient) getNovaNetworkFloatingIPs(d *Driver) ([]FloatingIP, erro
 
 func (c *GenericClient) getNeutronNetworkFloatingIPs(d *Driver) ([]FloatingIP, error) {
 	log.Debug("Listing floating IPs", map[string]string{
-		"FloatingNetworkId": d.FloatingIpPoolId,
+		"FloatingNetworkId": d.FloatingIPPoolId,
 		"TenantID":          d.TenantId,
 	})
 	pager := floatingips.List(c.Network, floatingips.ListOpts{
-		FloatingNetworkID: d.FloatingIpPoolId,
+		FloatingNetworkID: d.FloatingIPPoolId,
 		TenantID:          d.TenantId,
 	})
 
@@ -449,7 +458,7 @@ func (c *GenericClient) getNeutronNetworkFloatingIPs(d *Driver) ([]FloatingIP, e
 func (c *GenericClient) GetInstancePortID(d *Driver) (string, error) {
 	pager := ports.List(c.Network, ports.ListOpts{
 		DeviceID:  d.MachineId,
-		NetworkID: d.NetworkId,
+		NetworkID: d.NetworkIds[0],
 	})
 
 	var portID string
