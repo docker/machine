@@ -35,13 +35,13 @@ type Driver struct {
 	ImageName        string
 	ImageId          string
 	KeyPairName      string
-	NetworkName      string
-	NetworkId        string
+	NetworkNames     []string
+	NetworkIds       []string
 	PrivateKeyFile   string
 	SecurityGroups   []string
-	FloatingIpPool   string
+	FloatingIPPool   string
 	ComputeNetwork   bool
-	FloatingIpPoolId string
+	FloatingIPPoolId string
 	IpVersion        int
 	client           Client
 }
@@ -150,21 +150,21 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  "",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "OS_NETWORK_ID",
-			Name:   "openstack-net-id",
-			Usage:  "OpenStack network id the machine will be connected on",
-			Value:  "",
-		},
-		mcnflag.StringFlag{
 			EnvVar: "OS_PRIVATE_KEY_FILE",
 			Name:   "openstack-private-key-file",
 			Usage:  "Private keyfile to use for SSH (absolute path)",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
+			EnvVar: "OS_NETWORK_ID",
+			Name:   "openstack-net-id",
+			Usage:  "OpenStack comma separated networks id the machine will be connected on",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
 			EnvVar: "OS_NETWORK_NAME",
 			Name:   "openstack-net-name",
-			Usage:  "OpenStack network name the machine will be connected on",
+			Usage:  "OpenStack comma separated network names the machine will be connected on",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
@@ -181,7 +181,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "OS_FLOATINGIP_POOL",
 			Name:   "openstack-floatingip-pool",
-			Usage:  "OpenStack floating IP pool to get an IP from to assign to the instance",
+			Usage:  "OpenStack floating IP pool to get an IP from to assign to the instance (first network only)",
 			Value:  "",
 		},
 		mcnflag.IntFlag{
@@ -258,12 +258,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FlavorName = flags.String("openstack-flavor-name")
 	d.ImageId = flags.String("openstack-image-id")
 	d.ImageName = flags.String("openstack-image-name")
-	d.NetworkId = flags.String("openstack-net-id")
-	d.NetworkName = flags.String("openstack-net-name")
+	if flags.String("openstack-net-id") != "" {
+		d.NetworkIds = strings.Split(flags.String("openstack-net-id"), ",")
+	}
+	if flags.String("openstack-net-name") != "" {
+		d.NetworkNames = strings.Split(flags.String("openstack-net-name"), ",")
+	}
 	if flags.String("openstack-sec-groups") != "" {
 		d.SecurityGroups = strings.Split(flags.String("openstack-sec-groups"), ",")
 	}
-	d.FloatingIpPool = flags.String("openstack-floatingip-pool")
+	d.FloatingIPPool = flags.String("openstack-floatingip-pool")
 	d.IpVersion = flags.Int("openstack-ip-version")
 	d.ComputeNetwork = flags.Bool("openstack-nova-network")
 	d.SSHUser = flags.String("openstack-ssh-user")
@@ -303,7 +307,7 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	addressType := Fixed
-	if d.FloatingIpPool != "" {
+	if d.FloatingIPPool != "" {
 		addressType = Floating
 	}
 
@@ -376,7 +380,7 @@ func (d *Driver) Create() error {
 	if err := d.waitForInstanceActive(); err != nil {
 		return err
 	}
-	if d.FloatingIpPool != "" {
+	if d.FloatingIPPool != "" {
 		if err := d.assignFloatingIP(); err != nil {
 			return err
 		}
@@ -473,8 +477,8 @@ func (d *Driver) checkConfig() error {
 		return fmt.Errorf(errorExclusiveOptions, "Image name", "Image id")
 	}
 
-	if d.NetworkName != "" && d.NetworkId != "" {
-		return fmt.Errorf(errorExclusiveOptions, "Network name", "Network id")
+	if len(d.NetworkNames) > 0 && len(d.NetworkIds) > 0 {
+		return fmt.Errorf(errorExclusiveOptions, "Network names", "Network ids")
 	}
 	if d.EndpointType != "" && (d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL") {
 		return fmt.Errorf(errorWrongEndpointType)
@@ -486,26 +490,26 @@ func (d *Driver) checkConfig() error {
 }
 
 func (d *Driver) resolveIds() error {
-	if d.NetworkName != "" && !d.ComputeNetwork {
+	if len(d.NetworkNames) > 0 && !d.ComputeNetwork {
 		if err := d.initNetwork(); err != nil {
 			return err
 		}
-
-		networkID, err := d.client.GetNetworkID(d)
-
+		networkIds, err := d.client.GetNetworkIDs(d)
 		if err != nil {
 			return err
 		}
 
-		if networkID == "" {
-			return fmt.Errorf(errorUnknownNetworkName, d.NetworkName)
+		if len(networkIds) == 0 {
+			return fmt.Errorf(errorUnknownNetworkName, strings.Join(d.NetworkNames, ",")) // TODO specific name
 		}
 
-		d.NetworkId = networkID
-		log.Debug("Found network id using its name", map[string]string{
-			"Name": d.NetworkName,
-			"ID":   d.NetworkId,
-		})
+		d.NetworkIds = networkIds
+		for i, networkName := range d.NetworkNames {
+			log.Debug("Found network id using its name", map[string]string{
+				"Name": networkName,
+				"ID":   d.NetworkIds[i],
+			})
+		}
 	}
 
 	if d.FlavorName != "" {
@@ -550,7 +554,7 @@ func (d *Driver) resolveIds() error {
 		})
 	}
 
-	if d.FloatingIpPool != "" && !d.ComputeNetwork {
+	if d.FloatingIPPool != "" && !d.ComputeNetwork {
 		if err := d.initNetwork(); err != nil {
 			return err
 		}
@@ -561,13 +565,13 @@ func (d *Driver) resolveIds() error {
 		}
 
 		if f == "" {
-			return fmt.Errorf(errorUnknownNetworkName, d.FloatingIpPool)
+			return fmt.Errorf(errorUnknownNetworkName, d.FloatingIPPool)
 		}
 
-		d.FloatingIpPoolId = f
+		d.FloatingIPPoolId = f
 		log.Debug("Found floating IP pool id using its name", map[string]string{
-			"Name": d.FloatingIpPool,
-			"ID":   d.FloatingIpPoolId,
+			"Name": d.FloatingIPPool,
+			"ID":   d.FloatingIPPoolId,
 		})
 	}
 
@@ -708,7 +712,7 @@ func (d *Driver) assignFloatingIP() error {
 
 	log.Debugf("Looking for an available floating IP", map[string]string{
 		"MachineId": d.MachineId,
-		"Pool":      d.FloatingIpPool,
+		"Pool":      d.FloatingIPPool,
 	})
 
 	for _, ip := range ips {
