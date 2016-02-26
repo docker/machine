@@ -33,7 +33,7 @@ type Driver struct {
 
 const (
 	defaultSSHPort = 22
-	defaultSSHUSer = "root"
+	defaultSSHUser = "root"
 	defaultImage   = "ubuntu-15-10-x64"
 	defaultRegion  = "nyc3"
 	defaultSize    = "512mb"
@@ -52,7 +52,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "DIGITALOCEAN_SSH_USER",
 			Name:   "digitalocean-ssh-user",
 			Usage:  "SSH username",
-			Value:  defaultSSHUSer,
+			Value:  defaultSSHUser,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "DIGITALOCEAN_SSH_PORT",
