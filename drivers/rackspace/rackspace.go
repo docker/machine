@@ -2,7 +2,6 @@ package rackspace
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/docker/machine/drivers/openstack"
 	"github.com/docker/machine/libmachine/drivers"
@@ -64,16 +63,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "OS_FLAVOR_ID",
 		},
 		mcnflag.StringFlag{
-			Name:  "rackspace-net-id",
-			Usage: "Rackspace comma separated network ids the machine will be connected on",
-			Value: "",
-		},
-		mcnflag.StringFlag{
-			Name:  "rackspace-net-name",
-			Usage: "Rackspace comma separated network names the machine will be connected on (eg, PublicNet,ServiceNet,MyNet)",
-			Value: "",
-		},
-		mcnflag.StringFlag{
 			Name:  "rackspace-ssh-user",
 			Usage: "SSH user for the newly booted machine. Set to root by default",
 			Value: defaultSSHUser,
@@ -128,12 +117,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.EndpointType = flags.String("rackspace-endpoint-type")
 	d.ImageId = flags.String("rackspace-image-id")
 	d.FlavorId = flags.String("rackspace-flavor-id")
-	if flags.String("rackspace-net-id") != "" {
-		d.NetworkIds = strings.Split(flags.String("rackspace-net-id"), ",")
-	}
-	if flags.String("rackspace-net-name") != "" {
-		d.NetworkNames = strings.Split(flags.String("rackspace-net-name"), ",")
-	}
 	d.SSHUser = flags.String("rackspace-ssh-user")
 	d.SSHPort = flags.Int("rackspace-ssh-port")
 	d.SetSwarmConfigFromFlags(flags)
