@@ -652,6 +652,67 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) getHostOnlyMACAddress() (string, error) {
+	// Return the MAC address of the host-only adapter
+	// assigned to this machine. The returned address
+	// is lower-cased and does not contain colons.
+
+	stdout, stderr, err := d.vbmOutErr("showvminfo", d.MachineName, "--machinereadable")
+	if err != nil {
+		if reMachineNotFound.FindString(stderr) != "" {
+			return "", ErrMachineNotExist
+		}
+		return "", err
+	}
+
+	// First, we get the number of the host-only interface
+	re := regexp.MustCompile(`(?m)^hostonlyadapter([\d]+)`)
+	groups := re.FindStringSubmatch(stdout)
+	if len(groups) < 2 {
+		return "", errors.New("Machine does not have a host-only adapter")
+	}
+
+	// Then we grab the MAC address based on that number
+	adapterNumber := groups[1]
+	re = regexp.MustCompile(fmt.Sprintf("(?m)^macaddress%s=\"(.*)\"", adapterNumber))
+	groups = re.FindStringSubmatch(stdout)
+	if len(groups) < 2 {
+		return "", fmt.Errorf("Could not find MAC address for adapter %v", adapterNumber)
+	}
+
+	return strings.ToLower(groups[1]), nil
+}
+
+func (d *Driver) parseIPForMACFromIPAddr(ipAddrOutput string, macAddress string) (string, error) {
+	// Given the output of "ip addr show" on the VM, return the IPv4 address
+	// of the interface with the given MAC address.
+
+	lines := strings.Split(ipAddrOutput, "\n")
+	returnNextIP := false
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		if strings.HasPrefix(line, "link") { // line contains MAC address
+			vals := strings.Split(line, " ")
+			if len(vals) >= 2 {
+				macBlock := vals[1]
+				macWithoutColons := strings.Replace(macBlock, ":", "", -1)
+				if macWithoutColons == macAddress { // we are in the correct device block
+					returnNextIP = true
+				}
+			}
+		} else if strings.HasPrefix(line, "inet") && !strings.HasPrefix(line, "inet6") && returnNextIP {
+			vals := strings.Split(line, " ")
+			if len(vals) >= 2 {
+				return vals[1][:strings.Index(vals[1], "/")], nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("Could not find matching IP for MAC address %v", macAddress)
+}
+
 func (d *Driver) GetIP() (string, error) {
 	// DHCP is used to get the IP, so virtualbox hosts don't have IPs unless
 	// they are running
@@ -663,23 +724,26 @@ func (d *Driver) GetIP() (string, error) {
 		return "", drivers.ErrHostIsNotRunning
 	}
 
-	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show dev eth1")
+	macAddress, err := d.getHostOnlyMACAddress()
+	if err != nil {
+		return "", err
+	}
+
+	log.Debugf("Host-only MAC: %s\n", macAddress)
+
+	output, err := drivers.RunSSHCommandFromDriver(d, "ip addr show")
 	if err != nil {
 		return "", err
 	}
 
 	log.Debugf("SSH returned: %s\nEND SSH\n", output)
 
-	// parse to find: inet 192.168.59.103/24 brd 192.168.59.255 scope global eth1
-	lines := strings.Split(output, "\n")
-	for _, line := range lines {
-		vals := strings.Split(strings.TrimSpace(line), " ")
-		if len(vals) >= 2 && vals[0] == "inet" {
-			return vals[1][:strings.Index(vals[1], "/")], nil
-		}
+	ipAddress, err := d.parseIPForMACFromIPAddr(output, macAddress)
+	if err != nil {
+		return "", err
 	}
 
-	return "", fmt.Errorf("No IP address found %s", output)
+	return ipAddress, nil
 }
 
 func (d *Driver) publicSSHKeyPath() string {
