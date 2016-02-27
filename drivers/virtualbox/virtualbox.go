@@ -53,6 +53,7 @@ type Driver struct {
 	CPU                 int
 	Memory              int
 	DiskSize            int
+	NatNicType          string
 	Boot2DockerURL      string
 	Boot2DockerImportVM string
 	HostDNSResolver     bool
@@ -78,6 +79,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		Memory:              defaultMemory,
 		CPU:                 defaultCPU,
 		DiskSize:            defaultDiskSize,
+		NatNicType:          defaultHostOnlyNictype,
 		HostOnlyCIDR:        defaultHostOnlyCIDR,
 		HostOnlyNicType:     defaultHostOnlyNictype,
 		HostOnlyPromiscMode: defaultHostOnlyPromiscMode,
@@ -128,6 +130,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "virtualbox-host-dns-resolver",
 			Usage:  "Use the host DNS resolver",
 			EnvVar: "VIRTUALBOX_HOST_DNS_RESOLVER",
+		},
+		mcnflag.StringFlag{
+			Name:   "virtualbox-nat-nictype",
+			Usage:  "Specify the Network Adapter Type",
+			Value:  defaultHostOnlyNictype,
+			EnvVar: "VIRTUALBOX_NAT_NICTYPE",
 		},
 		mcnflag.StringFlag{
 			Name:   "virtualbox-hostonly-cidr",
@@ -205,6 +213,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = "docker"
 	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
 	d.HostDNSResolver = flags.Bool("virtualbox-host-dns-resolver")
+	d.NatNicType = flags.String("virtualbox-nat-nictype")
 	d.HostOnlyCIDR = flags.String("virtualbox-hostonly-cidr")
 	d.HostOnlyNicType = flags.String("virtualbox-hostonly-nictype")
 	d.HostOnlyPromiscMode = flags.String("virtualbox-hostonly-nicpromisc")
@@ -377,7 +386,7 @@ func (d *Driver) CreateVM() error {
 
 	if err := d.vbm("modifyvm", d.MachineName,
 		"--nic1", "nat",
-		"--nictype1", "82540EM",
+		"--nictype1", d.NatNicType,
 		"--cableconnected1", "on"); err != nil {
 		return err
 	}
