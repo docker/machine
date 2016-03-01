@@ -15,18 +15,19 @@ import (
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	*drivers.BaseDriver
-	Zone          string
-	MachineType   string
-	MachineImage  string
-	DiskType      string
-	Address       string
-	Preemptible   bool
-	UseInternalIP bool
-	Scopes        string
-	DiskSize      int
-	Project       string
-	Tags          string
-	UseExisting   bool
+	Zone              string
+	MachineType       string
+	MachineImage      string
+	DiskType          string
+	Address           string
+	Preemptible       bool
+	UseInternalIP     bool
+	UseInternalIPOnly bool
+	Scopes            string
+	DiskSize          int
+	Project           string
+	Tags              string
+	UseExisting       bool
 }
 
 const (
@@ -112,6 +113,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "GOOGLE_USE_INTERNAL_IP",
 		},
 		mcnflag.BoolFlag{
+			Name:   "google-use-internal-ip-only",
+			Usage:  "Configure GCE instance to not have an external IP address",
+			EnvVar: "GOOGLE_USE_INTERNAL_IP_ONLY",
+		},
+		mcnflag.BoolFlag{
 			Name:   "google-use-existing",
 			Usage:  "Don't create a new VM, use an existing one",
 			EnvVar: "GOOGLE_USE_EXISTING",
@@ -170,7 +176,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.DiskType = flags.String("google-disk-type")
 		d.Address = flags.String("google-address")
 		d.Preemptible = flags.Bool("google-preemptible")
-		d.UseInternalIP = flags.Bool("google-use-internal-ip")
+		d.UseInternalIP = flags.Bool("google-use-internal-ip") || flags.Bool("google-use-internal-ip-only")
+		d.UseInternalIPOnly = flags.Bool("google-use-internal-ip-only")
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
 	}

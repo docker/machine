@@ -20,19 +20,20 @@ import (
 
 // ComputeUtil is used to wrap the raw GCE API code and store common parameters.
 type ComputeUtil struct {
-	zone          string
-	instanceName  string
-	userName      string
-	project       string
-	diskTypeURL   string
-	address       string
-	preemptible   bool
-	useInternalIP bool
-	service       *raw.Service
-	zoneURL       string
-	globalURL     string
-	SwarmMaster   bool
-	SwarmHost     string
+	zone              string
+	instanceName      string
+	userName          string
+	project           string
+	diskTypeURL       string
+	address           string
+	preemptible       bool
+	useInternalIP     bool
+	useInternalIPOnly bool
+	service           *raw.Service
+	zoneURL           string
+	globalURL         string
+	SwarmMaster       bool
+	SwarmHost         string
 }
 
 const (
@@ -57,19 +58,20 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 	}
 
 	return &ComputeUtil{
-		zone:          driver.Zone,
-		instanceName:  driver.MachineName,
-		userName:      driver.SSHUser,
-		project:       driver.Project,
-		diskTypeURL:   driver.DiskType,
-		address:       driver.Address,
-		preemptible:   driver.Preemptible,
-		useInternalIP: driver.UseInternalIP,
-		service:       service,
-		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
-		globalURL:     apiURL + driver.Project + "/global",
-		SwarmMaster:   driver.SwarmMaster,
-		SwarmHost:     driver.SwarmHost,
+		zone:              driver.Zone,
+		instanceName:      driver.MachineName,
+		userName:          driver.SSHUser,
+		project:           driver.Project,
+		diskTypeURL:       driver.DiskType,
+		address:           driver.Address,
+		preemptible:       driver.Preemptible,
+		useInternalIP:     driver.UseInternalIP,
+		useInternalIPOnly: driver.UseInternalIPOnly,
+		service:           service,
+		zoneURL:           apiURL + driver.Project + "/zones/" + driver.Zone,
+		globalURL:         apiURL + driver.Project + "/global",
+		SwarmMaster:       driver.SwarmMaster,
+		SwarmHost:         driver.SwarmHost,
 	}, nil
 }
 
@@ -235,9 +237,6 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		},
 		NetworkInterfaces: []*raw.NetworkInterface{
 			{
-				AccessConfigs: []*raw.AccessConfig{
-					{Type: "ONE_TO_ONE_NAT"},
-				},
 				Network: c.globalURL + "/networks/default",
 			},
 		},
@@ -253,6 +252,13 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		Scheduling: &raw.Scheduling{
 			Preemptible: c.preemptible,
 		},
+	}
+
+	if !c.useInternalIPOnly {
+		cfg := &raw.AccessConfig{
+			Type: "ONE_TO_ONE_NAT",
+		}
+		instance.NetworkInterfaces[0].AccessConfigs = append(instance.NetworkInterfaces[0].AccessConfigs, cfg)
 	}
 
 	if c.address != "" {
