@@ -28,6 +28,7 @@ type ComputeUtil struct {
 	address       string
 	preemptible   bool
 	useInternalIP bool
+    useInternalIPOnly bool
 	service       *raw.Service
 	zoneURL       string
 	globalURL     string
@@ -65,6 +66,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		address:       driver.Address,
 		preemptible:   driver.Preemptible,
 		useInternalIP: driver.UseInternalIP,
+        useInternalIPOnly: driver.UseInternalIPOnly,
 		service:       service,
 		zoneURL:       apiURL + driver.Project + "/zones/" + driver.Zone,
 		globalURL:     apiURL + driver.Project + "/global",
@@ -235,9 +237,6 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		},
 		NetworkInterfaces: []*raw.NetworkInterface{
 			{
-				AccessConfigs: []*raw.AccessConfig{
-					{Type: "ONE_TO_ONE_NAT"},
-				},
 				Network: c.globalURL + "/networks/default",
 			},
 		},
@@ -254,6 +253,13 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 			Preemptible: c.preemptible,
 		},
 	}
+
+    if !c.useInternalIPOnly {
+        cfg := &raw.AccessConfig{
+			Type: "ONE_TO_ONE_NAT",
+		} 
+        instance.NetworkInterfaces[0].AccessConfigs = append(instance.NetworkInterfaces[0].AccessConfigs, cfg)
+    }
 
 	if c.address != "" {
 		staticAddress, err := c.staticAddress()
