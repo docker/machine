@@ -3,6 +3,9 @@ package mcnerror
 import (
 	"errors"
 	"fmt"
+	"strings"
+
+	"github.com/docker/machine/libmachine/state"
 )
 
 var (
@@ -31,4 +34,13 @@ type ErrDuringPreCreate struct {
 
 func (e ErrDuringPreCreate) Error() string {
 	return fmt.Sprintf("Error with pre-create check: %q", e.Cause)
+}
+
+type ErrHostAlreadyInState struct {
+	Name  string
+	State state.State
+}
+
+func (e ErrHostAlreadyInState) Error() string {
+	return fmt.Sprintf("Machine %q is already %s.", e.Name, strings.ToLower(e.State.String()))
 }
