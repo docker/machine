@@ -34,7 +34,7 @@ var (
 )
 
 var (
-	sharedCreateFlags = []cli.Flag{
+	SharedCreateFlags = []cli.Flag{
 		cli.StringFlag{
 			Name: "driver, d",
 			Usage: fmt.Sprintf(
@@ -416,7 +416,7 @@ func convertMcnFlagsToCliFlags(mcnFlags []mcnflag.Flag) ([]cli.Flag, error) {
 }
 
 func addDriverFlagsToCommand(cliFlags []cli.Flag, cmd *cli.Command) *cli.Command {
-	cmd.Flags = append(sharedCreateFlags, cliFlags...)
+	cmd.Flags = append(SharedCreateFlags, cliFlags...)
 	cmd.SkipFlagParsing = false
 	cmd.Action = runCommand(cmdCreateInner)
 	sort.Sort(ByFlagName(cmd.Flags))
