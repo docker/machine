@@ -83,6 +83,7 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
+	GetOSMethod              = `.GetOS`
 )
 
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
@@ -253,6 +254,14 @@ func (c *RPCClientDriver) GetConfigRaw() ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func (c *RPCClientDriver) GetOS() string {
+	OS, err := c.rpcStringCall(GetOSMethod)
+	if err != nil {
+		log.Warnf("Error attempting call to get OS: %s", err)
+	}
+	return OS
 }
 
 // DriverName returns the name of the driver

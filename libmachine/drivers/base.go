@@ -9,6 +9,7 @@ const (
 	DefaultSSHUser          = "root"
 	DefaultSSHPort          = 22
 	DefaultEngineInstallURL = "https://get.docker.com"
+	DefaultOS               = LINUX
 )
 
 // BaseDriver - Embed this struct into drivers to provide the common set
@@ -23,6 +24,11 @@ type BaseDriver struct {
 	SwarmMaster    bool
 	SwarmHost      string
 	SwarmDiscovery string
+}
+
+// GetOS returns the OS spun up in the VM by the driver
+func (d *BaseDriver) GetOS() string {
+	return DefaultOS
 }
 
 // DriverName returns the name of the driver

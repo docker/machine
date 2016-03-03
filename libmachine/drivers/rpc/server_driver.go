@@ -158,6 +158,11 @@ func (r *RPCServerDriver) GetMachineName(_ *struct{}, reply *string) error {
 	return nil
 }
 
+func (r *RPCServerDriver) GetOS(_ *struct{}, reply *string) error {
+	*reply = r.ActualDriver.GetOS()
+	return nil
+}
+
 func (r *RPCServerDriver) GetSSHHostname(_ *struct{}, reply *string) error {
 	hostname, err := r.ActualDriver.GetSSHHostname()
 	*reply = hostname
