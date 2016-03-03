@@ -29,6 +29,7 @@ Options:
 -   `--digitalocean-userdata`: Path to file containing User Data for the droplet.
 -   `--digitalocean-ssh-user`: SSH username.
 -   `--digitalocean-ssh-port`: SSH port.
+-   `--digitalocean-ssh-key-fingerprint`: Use an existing SSH key instead of creating a new one, see [SSH keys](https://developers.digitalocean.com/documentation/v2/#ssh-keys).
 
 The DigitalOcean driver will use `ubuntu-15-10-x64` as the default image.
 
@@ -46,3 +47,4 @@ Environment variables and default values:
 | `--digitalocean-userdata`           | `DIGITALOCEAN_USERDATA`           | -                  |
 | `--digitalocean-ssh-user`           | `DIGITALOCEAN_SSH_USER`           | `root`             |
 | `--digitalocean-ssh-port`           | `DIGITALOCEAN_SSH_PORT`           | 22                 |
+| `--digitalocean-ssh-key-fingerprint`| `DIGITALOCEAN_SSH_KEY_FINGERPRINT`| -                  |
