@@ -24,6 +24,7 @@ type Driver struct {
 	Image             string
 	Region            string
 	SSHKeyID          int
+	SSHKeyFingerprint string
 	Size              string
 	IPv6              bool
 	Backups           bool
@@ -53,6 +54,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "digitalocean-ssh-user",
 			Usage:  "SSH username",
 			Value:  defaultSSHUser,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "DIGITALOCEAN_SSH_KEY_FINGERPRINT",
+			Name:   "digitalocean-ssh-key-fingerprint",
+			Usage:  "SSH key fingerprint",
 		},
 		mcnflag.IntFlag{
 			EnvVar: "DIGITALOCEAN_SSH_PORT",
@@ -133,6 +139,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UserDataFile = flags.String("digitalocean-userdata")
 	d.SSHUser = flags.String("digitalocean-ssh-user")
 	d.SSHPort = flags.Int("digitalocean-ssh-port")
+	d.SSHKeyFingerprint = flags.String("digitalocean-ssh-key-fingerprint")
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessToken == "" {
@@ -232,6 +239,14 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) createSSHKey() (*godo.Key, error) {
+	if d.SSHKeyFingerprint != "" {
+		key, resp, err := d.getClient().Keys.GetByFingerprint(d.SSHKeyFingerprint)
+		if err != nil && resp.StatusCode == 404 {
+			return nil, fmt.Errorf("Digital Ocean SSH key with fingerprint %s doesn't exist", d.SSHKeyFingerprint)
+		}
+		return key, err
+	}
+
 	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
 		return nil, err
 	}
@@ -305,11 +320,13 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) Remove() error {
 	client := d.getClient()
-	if resp, err := client.Keys.DeleteByID(d.SSHKeyID); err != nil {
-		if resp.StatusCode == 404 {
-			log.Infof("Digital Ocean SSH key doesn't exist, assuming it is already deleted")
-		} else {
-			return err
+	if d.SSHKeyFingerprint == "" {
+		if resp, err := client.Keys.DeleteByID(d.SSHKeyID); err != nil {
+			if resp.StatusCode == 404 {
+				log.Infof("Digital Ocean SSH key doesn't exist, assuming it is already deleted")
+			} else {
+				return err
+			}
 		}
 	}
 	if resp, err := client.Droplets.Delete(d.DropletID); err != nil {
