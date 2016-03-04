@@ -40,7 +40,8 @@ var (
 			Usage: fmt.Sprintf(
 				"Driver to create machine with.",
 			),
-			Value: "none",
+			Value:  "none",
+			EnvVar: "MACHINE_DRIVER",
 		},
 		cli.StringFlag{
 			Name:   "engine-install-url",
@@ -290,8 +291,12 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 	// We didn't recognize the driver name.
 	driverName := flagHackLookup("--driver")
 	if driverName == "" {
-		c.ShowHelp()
-		return nil // ?
+		//TODO: Check Environment have to include flagHackLookup function.
+		driverName = os.Getenv("MACHINE_DRIVER")
+		if driverName == "" {
+			c.ShowHelp()
+			return nil // ?
+		}
 	}
 
 	// TODO: Fix hacky JSON solution
