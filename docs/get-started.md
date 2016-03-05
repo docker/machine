@@ -38,7 +38,7 @@ The examples here show how to create and start a machine, run Docker commands, a
 
 1. Open a command shell or terminal window.
 
-    These command examples shows a Bash shell. For a different shell, such as C Shell, the same commands are the same except where noted.
+    These command examples shows a Bash shell. For a different shell, such as C Shell, the commands are the same except where noted.
 
 2. Use `docker-machine ls` to list available machines.
 
