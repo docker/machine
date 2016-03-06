@@ -1,0 +1,37 @@
+package vagrant
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/mitchellh/packer/packer"
+)
+
+func TestAWSProvider_impl(t *testing.T) {
+	var _ Provider = new(AWSProvider)
+}
+
+func TestAWSProvider_KeepInputArtifact(t *testing.T) {
+	p := new(AWSProvider)
+
+	if !p.KeepInputArtifact() {
+		t.Fatal("should keep input artifact")
+	}
+}
+
+func TestAWSProvider_ArtifactId(t *testing.T) {
+	p := new(AWSProvider)
+	ui := testUi()
+	artifact := &packer.MockArtifact{
+		IdValue: "us-east-1:ami-1234",
+	}
+
+	vagrantfile, _, err := p.Process(ui, artifact, "foo")
+	if err != nil {
+		t.Fatalf("should not have error: %s", err)
+	}
+	result := `aws.region_config "us-east-1", ami: "ami-1234"`
+	if strings.Index(vagrantfile, result) == -1 {
+		t.Fatalf("wrong substitution: %s", vagrantfile)
+	}
+}

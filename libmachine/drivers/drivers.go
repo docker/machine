@@ -65,6 +65,9 @@ type Driver interface {
 	// by RegisterCreateFlags
 	SetConfigFromFlags(opts DriverOptions) error
 
+	// Get the OS that the driver is provisioning
+	GetOS() string
+
 	// Start a host
 	Start() error
 

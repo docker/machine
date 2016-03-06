@@ -1,0 +1,14 @@
+/bin
+/local
+/pkg
+/src
+/website/.sass-cache
+/website/build
+.DS_Store
+.vagrant
+test/.env
+
+website/.bundle
+website/vendor
+
+packer-test*.log
