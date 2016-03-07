@@ -9,6 +9,8 @@
 		"github.com/docker/machine/commands/mcndirs",
 		"github.com/docker/machine/drivers/amazonec2",
 		"github.com/docker/machine/drivers/azure",
+		"github.com/docker/machine/drivers/azure/azureutil",
+		"github.com/docker/machine/drivers/azure/logutil",
 		"github.com/docker/machine/drivers/digitalocean",
 		"github.com/docker/machine/drivers/errdriver",
 		"github.com/docker/machine/drivers/exoscale",
@@ -63,39 +65,54 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
-			"Comment": "v1.1-17-g515f3ec",
-			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/compute",
+			"Comment": "v2.0.0-beta",
+			"Rev": "b4e3bc02a65dca5237084eba6e94f06a169f09c3"
 		},
 		{
-			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go/clients/imageClient",
-			"Comment": "v1.1-17-g515f3ec",
-			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/network",
+			"Comment": "v2.0.0-beta",
+			"Rev": "b4e3bc02a65dca5237084eba6e94f06a169f09c3"
 		},
 		{
-			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go/clients/locationClient",
-			"Comment": "v1.1-17-g515f3ec",
-			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/resources/resources",
+			"Comment": "v2.0.0-beta",
+			"Rev": "b4e3bc02a65dca5237084eba6e94f06a169f09c3"
 		},
 		{
-			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go/clients/storageServiceClient",
-			"Comment": "v1.1-17-g515f3ec",
-			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/resources/subscriptions",
+			"Comment": "v2.0.0-beta",
+			"Rev": "b4e3bc02a65dca5237084eba6e94f06a169f09c3"
 		},
 		{
-			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go/clients/vmClient",
-			"Comment": "v1.1-17-g515f3ec",
-			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/storage",
+			"Comment": "v2.0.0-beta",
+			"Rev": "b4e3bc02a65dca5237084eba6e94f06a169f09c3"
 		},
 		{
-			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go/core/http",
-			"Comment": "v1.1-17-g515f3ec",
-			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/storage",
+			"Comment": "v2.0.0-beta",
+			"Rev": "b4e3bc02a65dca5237084eba6e94f06a169f09c3"
 		},
 		{
-			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go/core/tls",
-			"Comment": "v1.1-17-g515f3ec",
-			"Rev": "515f3ec74ce6a5b31e934cefae997c97bd0a1b1e"
+			"ImportPath": "github.com/Azure/go-autorest/autorest",
+			"Comment": "v6.0.0",
+			"Rev": "c6f4f7f3678803fbe8975c884e80affad9d31998"
+		},
+		{
+			"ImportPath": "github.com/Azure/go-autorest/autorest/azure",
+			"Comment": "v6.0.0",
+			"Rev": "c6f4f7f3678803fbe8975c884e80affad9d31998"
+		},
+		{
+			"ImportPath": "github.com/Azure/go-autorest/autorest/date",
+			"Comment": "v6.0.0",
+			"Rev": "c6f4f7f3678803fbe8975c884e80affad9d31998"
+		},
+		{
+			"ImportPath": "github.com/Azure/go-autorest/autorest/to",
+			"Comment": "v6.0.0",
+			"Rev": "c6f4f7f3678803fbe8975c884e80affad9d31998"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
@@ -227,6 +244,11 @@
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
 			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
+		},
+		{
+			"ImportPath": "github.com/dgrijalva/jwt-go",
+			"Comment": "v2.4.0-4-gafef698",
+			"Rev": "afef698c326bfd906b11659432544e5aae441d44"
 		},
 		{
 			"ImportPath": "github.com/digitalocean/godo",
