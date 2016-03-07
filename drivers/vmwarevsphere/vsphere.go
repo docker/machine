@@ -69,6 +69,7 @@ const (
 	defaultCpus     = 2
 	defaultMemory   = 2048
 	defaultDiskSize = 20480
+	defaultSDKPort  = 443
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -107,7 +108,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "VSPHERE_VCENTER_PORT",
 			Name:   "vmwarevsphere-vcenter-port",
 			Usage:  "vSphere Port for vCenter",
-			Value:  443,
+			Value:  defaultSDKPort,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_USERNAME",
@@ -153,6 +154,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		Memory:      defaultMemory,
 		DiskSize:    defaultDiskSize,
 		SSHPassword: defaultSSHPass,
+		Port:        defaultSDKPort,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultSSHUser,
 			MachineName: hostName,
