@@ -72,7 +72,7 @@ The examples here show how to create and start a machine, run Docker commands, a
         To see how to connect Docker to this machine, run: docker-machine env default
 
       This command downloads a lightweight Linux distribution
-()<a href="https://github.com/boot2docker/boot2docker" target="_blank">boot2docker</a>) with the Docker daemon installed, and creates and starts a VirtualBox VM with Docker running.
+(<a href="https://github.com/boot2docker/boot2docker" target="_blank">boot2docker</a>) with the Docker daemon installed, and creates and starts a VirtualBox VM with Docker running.
 
 4. List available machines again to see your newly minted machine.
 
