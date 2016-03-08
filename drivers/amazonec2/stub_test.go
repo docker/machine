@@ -96,28 +96,34 @@ type fakeEC2SecurityGroupTestRecorder struct {
 	mock.Mock
 }
 
-func (f *fakeEC2SecurityGroupTestRecorder) DescribeSecurityGroups(
-	input *ec2.DescribeSecurityGroupsInput) (*ec2.DescribeSecurityGroupsOutput, error) {
-
+func (f *fakeEC2SecurityGroupTestRecorder) DescribeSecurityGroups(input *ec2.DescribeSecurityGroupsInput) (*ec2.DescribeSecurityGroupsOutput, error) {
 	result := f.Called(input)
-	value, _ := result.Get(0).(*ec2.DescribeSecurityGroupsOutput)
-	return value, result.Error(1)
+	err := result.Error(1)
+	value, ok := result.Get(0).(*ec2.DescribeSecurityGroupsOutput)
+	if !ok && err == nil {
+		return nil, errors.New("Type assertion to DescribeSecurityGroupsOutput failed")
+	}
+	return value, err
 }
 
-func (f *fakeEC2SecurityGroupTestRecorder) CreateSecurityGroup(
-	input *ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
-
+func (f *fakeEC2SecurityGroupTestRecorder) CreateSecurityGroup(input *ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
 	result := f.Called(input)
-	value, _ := result.Get(0).(*ec2.CreateSecurityGroupOutput)
-	return value, result.Error(1)
+	err := result.Error(1)
+	value, ok := result.Get(0).(*ec2.CreateSecurityGroupOutput)
+	if !ok && err == nil {
+		return nil, errors.New("Type assertion to CreateSecurityGroupOutput failed")
+	}
+	return value, err
 }
 
-func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(
-	input *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
-
+func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
 	result := f.Called(input)
-	value, _ := result.Get(0).(*ec2.AuthorizeSecurityGroupIngressOutput)
-	return value, result.Error(1)
+	err := result.Error(1)
+	value, ok := result.Get(0).(*ec2.AuthorizeSecurityGroupIngressOutput)
+	if !ok && err == nil {
+		return nil, errors.New("Type assertion to AuthorizeSecurityGroupIngressInput failed")
+	}
+	return value, err
 }
 
 func NewTestDriver() *Driver {
