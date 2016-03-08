@@ -65,6 +65,37 @@ Enabled:        No
 `
 )
 
+type mockHostInterfaces struct {
+	mockIfaces []net.Interface
+	mockAddrs  map[string]net.Addr
+}
+
+func newMockHostInterfaces() *mockHostInterfaces {
+	return &mockHostInterfaces{
+		mockAddrs: make(map[string]net.Addr),
+	}
+}
+
+func (mhi *mockHostInterfaces) Interfaces() ([]net.Interface, error) {
+	return mhi.mockIfaces, nil
+}
+
+func (mhi *mockHostInterfaces) Addrs(iface *net.Interface) ([]net.Addr, error) {
+	return []net.Addr{mhi.mockAddrs[iface.Name]}, nil
+}
+
+func (mhi *mockHostInterfaces) addMockIface(ip string, mask int, iplen int, name string, flags net.Flags) (*net.IPNet, error) {
+	iface := &net.Interface{Name: name, Flags: flags}
+	mhi.mockIfaces = append(mhi.mockIfaces, *iface)
+
+	ipnet := &net.IPNet{IP: net.ParseIP(ip), Mask: net.CIDRMask(mask, 8*iplen)}
+	if ipnet.IP == nil {
+		return nil, &net.ParseError{Type: "IP address", Text: ip}
+	}
+	mhi.mockAddrs[name] = ipnet
+	return ipnet, nil
+}
+
 // Tests that when we have a host only network which matches our expectations,
 // it gets returned correctly.
 func TestGetHostOnlyNetworkHappy(t *testing.T) {
@@ -220,8 +251,10 @@ func TestGetHostOnlyNetwork(t *testing.T) {
 		args:   "list hostonlyifs",
 		stdOut: stdOutOneHostOnlyNetwork,
 	}
+	nets, err := listHostOnlyAdapters(vbox)
+	assert.NoError(t, err)
 
-	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), vbox)
+	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), nets, vbox)
 
 	assert.NotNil(t, net)
 	assert.Equal(t, "HostInterfaceNetworking-vboxnet0", net.NetworkName)
@@ -240,10 +273,8 @@ IPAddress:       192.168.99.1
 NetworkMask:     255.255.255.0
 VBoxNetworkName: HostInterfaceNetworking-vboxnet1`,
 	}
-
-	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), vbox)
-
-	assert.Nil(t, net)
+	nets, err := listHostOnlyAdapters(vbox)
+	assert.Nil(t, nets)
 	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same IP "192.168.99.1". Please remove one.`)
 }
 
@@ -255,10 +286,8 @@ VBoxNetworkName: HostInterfaceNetworking-vboxnet0
 Name:            vboxnet0
 VBoxNetworkName: HostInterfaceNetworking-vboxnet0`,
 	}
-
-	net, err := getOrCreateHostOnlyNetwork(net.ParseIP("192.168.99.1"), parseIPv4Mask("255.255.255.0"), vbox)
-
-	assert.Nil(t, net)
+	nets, err := listHostOnlyAdapters(vbox)
+	assert.Nil(t, nets)
 	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same name "HostInterfaceNetworking-vboxnet0". Please remove one.`)
 }
 
@@ -290,4 +319,88 @@ func TestGetDHCPServers(t *testing.T) {
 	assert.Equal(t, "192.168.99.254", server.UpperIP.String())
 	assert.Equal(t, "ffffff00", server.IPv4.Mask.String())
 	assert.False(t, server.Enabled)
+}
+
+// Tests detection of a conflict between prospective vbox host-only network and an IPV6 host interface
+func TestCheckIPNetCollisionIPv6(t *testing.T) {
+	m := map[string]*net.IPNet{}
+	_, vboxHostOnly, err := net.ParseCIDR("2607:f8b0:400e:c04:ffff:ffff:ffff:ffff/64")
+	assert.Nil(t, err)
+
+	hostIP, hostNet, err := net.ParseCIDR("2001:4998:c:a06::2:4008/64")
+	assert.Nil(t, err)
+	m[hostIP.String()] = &net.IPNet{IP: hostIP, Mask: hostNet.Mask}
+
+	result, err := checkIPNetCollision(vboxHostOnly, m)
+	assert.Nil(t, err)
+	assert.False(t, result)
+
+	hostIP, hostNet, err = net.ParseCIDR("2607:f8b0:400e:c04::6a/64")
+	assert.Nil(t, err)
+	m[hostIP.String()] = &net.IPNet{IP: hostIP, Mask: hostNet.Mask}
+
+	result, err = checkIPNetCollision(vboxHostOnly, m)
+	assert.Nil(t, err)
+	assert.True(t, result)
+}
+
+// Tests detection of a conflict between prospective vbox host-only network and an IPV4 host interface
+func TestCheckIPNetCollisionIPv4(t *testing.T) {
+	m := map[string]*net.IPNet{}
+	_, vboxHostOnly, err := net.ParseCIDR("192.168.99.1/24")
+	assert.NoError(t, err)
+
+	hostIP, hostNet, err := net.ParseCIDR("10.10.10.42/24")
+	assert.NoError(t, err)
+	m[hostIP.String()] = &net.IPNet{IP: hostIP, Mask: hostNet.Mask}
+
+	result, err := checkIPNetCollision(vboxHostOnly, m)
+	assert.NoError(t, err)
+	assert.False(t, result)
+
+	hostIP, hostNet, err = net.ParseCIDR("192.168.99.22/24")
+	assert.NoError(t, err)
+	m[hostIP.String()] = &net.IPNet{IP: hostIP, Mask: hostNet.Mask}
+
+	result, err = checkIPNetCollision(vboxHostOnly, m)
+	assert.NoError(t, err)
+	assert.True(t, result)
+}
+
+// Tests functionality of listHostInterfaces and verifies only non-loopback, active and non-excluded interfaces are returned
+func TestListHostInterfaces(t *testing.T) {
+	mhi := newMockHostInterfaces()
+	excludes := map[string]*hostOnlyNetwork{}
+
+	en0, err := mhi.addMockIface("10.10.0.22", 24, net.IPv4len, "en0", net.FlagUp|net.FlagBroadcast)
+	assert.NoError(t, err)
+	_, err = mhi.addMockIface("10.10.1.11", 24, net.IPv4len, "en1", net.FlagBroadcast /*not up*/)
+	assert.NoError(t, err)
+	_, err = mhi.addMockIface("127.0.0.1", 24, net.IPv4len, "lo0", net.FlagUp|net.FlagLoopback)
+	assert.NoError(t, err)
+	en0ipv6, err := mhi.addMockIface("2001:4998:c:a06::2:4008", 64, net.IPv6len, "en0ipv6", net.FlagUp|net.FlagBroadcast)
+	assert.NoError(t, err)
+	vboxnet0, err := mhi.addMockIface("192.168.99.1", 24, net.IPv4len, "vboxnet0", net.FlagUp|net.FlagBroadcast)
+	assert.NoError(t, err)
+	notvboxnet0, err := mhi.addMockIface("192.168.99.42", 24, net.IPv4len, "en2", net.FlagUp|net.FlagBroadcast)
+	assert.NoError(t, err)
+
+	excludes["192.168.99.1/24"] = &hostOnlyNetwork{IPv4: *vboxnet0, Name: "HostInterfaceNetworking-vboxnet0"}
+
+	m, err := listHostInterfaces(mhi, excludes)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, m)
+
+	assert.Contains(t, m, "10.10.0.22/24")
+	assert.Equal(t, en0, m["10.10.0.22/24"])
+
+	assert.Contains(t, m, "2001:4998:c:a06::2:4008/64")
+	assert.Equal(t, en0ipv6, m["2001:4998:c:a06::2:4008/64"])
+
+	assert.Contains(t, m, "192.168.99.42/24")
+	assert.Equal(t, notvboxnet0, m["192.168.99.42/24"])
+
+	assert.NotContains(t, m, "10.10.1.11/24")
+	assert.NotContains(t, m, "127.0.0.1/24")
+	assert.NotContains(t, m, "192.168.99.1/24")
 }

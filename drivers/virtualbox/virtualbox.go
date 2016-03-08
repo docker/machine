@@ -38,11 +38,13 @@ var (
 	ErrMustEnableVTX            = errors.New("This computer doesn't have VT-X/AMD-v enabled. Enabling it in the BIOS is mandatory")
 	ErrNotCompatibleWithHyperV  = errors.New("Hyper-V is installed. VirtualBox won't boot a 64bits VM when Hyper-V is activated. If it's installed but deactivated, you can use --virtualbox-no-vtx-check to try anyways")
 	ErrNetworkAddrCidr          = errors.New("host-only cidr must be specified with a host address, not a network address")
+	ErrNetworkAddrCollision     = errors.New("host-only cidr conflicts with the network address of a host interface")
 )
 
 type Driver struct {
 	*drivers.BaseDriver
 	VBoxManager
+	HostInterfaces
 	b2dUpdater          B2DUpdater
 	sshKeyGenerator     SSHKeyGenerator
 	diskCreator         DiskCreator
@@ -75,6 +77,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		ipWaiter:            NewIPWaiter(),
 		randomInter:         NewRandomInter(),
 		sleeper:             NewSleeper(),
+		HostInterfaces:      NewHostInterfaces(),
 		Memory:              defaultMemory,
 		CPU:                 defaultCPU,
 		DiskSize:            defaultDiskSize,
@@ -529,6 +532,11 @@ func (d *Driver) Start() error {
 		return err
 	}
 
+	err = validateNoIPCollisions(d.HostInterfaces, network, nets)
+	if err != nil {
+		return err
+	}
+
 	hostOnlyNet := getHostOnlyAdapter(nets, ip, network.Mask)
 	if hostOnlyNet != nil {
 		// OK, we found a valid host-only adapter
@@ -768,8 +776,18 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) (*hostOnlyNetwork, err
 		return nil, err
 	}
 
+	nets, err := listHostOnlyAdapters(d.VBoxManager)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateNoIPCollisions(d.HostInterfaces, network, nets)
+	if err != nil {
+		return nil, err
+	}
+
 	log.Debugf("Searching for hostonly interface for IPv4: %s and Mask: %s", ip, network.Mask)
-	hostOnlyAdapter, err := getOrCreateHostOnlyNetwork(ip, network.Mask, d.VBoxManager)
+	hostOnlyAdapter, err := getOrCreateHostOnlyNetwork(ip, network.Mask, nets, d.VBoxManager)
 	if err != nil {
 		return nil, err
 	}
@@ -820,6 +838,32 @@ func parseAndValidateCIDR(hostOnlyCIDR string) (net.IP, *net.IPNet, error) {
 	}
 
 	return ip, network, nil
+}
+
+// validateNoIPCollisions ensures no conflicts between the host's network interfaces and the vbox host-only network that
+// will be used for machine vm instances.
+func validateNoIPCollisions(hif HostInterfaces, hostOnlyNet *net.IPNet, currHostOnlyNets map[string]*hostOnlyNetwork) error {
+	hostOnlyByCIDR := map[string]*hostOnlyNetwork{}
+	//listHostOnlyAdapters returns a map w/ virtualbox net names as key.  Rekey to CIDRs
+	for _, n := range currHostOnlyNets {
+		ipnet := net.IPNet{IP: n.IPv4.IP, Mask: n.IPv4.Mask}
+		hostOnlyByCIDR[ipnet.String()] = n
+	}
+
+	m, err := listHostInterfaces(hif, hostOnlyByCIDR)
+	if err != nil {
+		return err
+	}
+
+	collision, err := checkIPNetCollision(hostOnlyNet, m)
+	if err != nil {
+		return err
+	}
+
+	if collision {
+		return ErrNetworkAddrCollision
+	}
+	return nil
 }
 
 // Select an available port, trying the specified
