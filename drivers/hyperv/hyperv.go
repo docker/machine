@@ -428,8 +428,19 @@ func (d *Driver) generateDiskImage() (string, error) {
 	diskImage := d.ResolveStorePath("disk.vhd")
 	fixed := d.ResolveStorePath("fixed.vhd")
 
+	// Resizing vhds requires administrator priviledges
+	// incase the user is only a hyper-v admin then create the disk at the target size to avoid resizing.
+	isWindowsAdmin, err := isWindowsAdministrator()
+	if err != nil {
+		return "", err
+	}
+	fixedDiskSize := "10MB"
+	if !isWindowsAdmin {
+		fixedDiskSize = toMb(d.DiskSize)
+	}
+
 	log.Infof("Creating VHD")
-	if err := cmd("New-VHD", "-Path", quote(fixed), "-SizeBytes", "10MB", "-Fixed"); err != nil {
+	if err := cmd("New-VHD", "-Path", quote(fixed), "-SizeBytes", fixedDiskSize, "-Fixed"); err != nil {
 		return "", err
 	}
 
@@ -451,12 +462,14 @@ func (d *Driver) generateDiskImage() (string, error) {
 	}
 	file.Close()
 
-	if err := cmd("Convert-VHD", "-Path", quote(fixed), "-DestinationPath", quote(diskImage), "-VHDType", "Dynamic"); err != nil {
+	if err := cmd("Convert-VHD", "-Path", quote(fixed), "-DestinationPath", quote(diskImage), "-VHDType", "Dynamic", "-DeleteSource"); err != nil {
 		return "", err
 	}
 
-	if err := cmd("Resize-VHD", "-Path", quote(diskImage), "-SizeBytes", toMb(d.DiskSize)); err != nil {
-		return "", err
+	if isWindowsAdmin {
+		if err := cmd("Resize-VHD", "-Path", quote(diskImage), "-SizeBytes", toMb(d.DiskSize)); err != nil {
+			return "", err
+		}
 	}
 
 	return diskImage, nil
