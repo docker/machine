@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -329,6 +330,10 @@ func (d *Driver) Create() error {
 
 // Remove deletes the virtual machine and resources associated to it.
 func (d *Driver) Remove() error {
+	if err := d.checkLegacyDriver(false); err != nil {
+		return err
+	}
+
 	// NOTE(ahmetalpbalkan):
 	//   - remove attemps are best effort and if a resource is already gone, we
 	//     continue removing other resources instead of failing.
@@ -367,6 +372,10 @@ func (d *Driver) Remove() error {
 
 // GetIP returns public IP address or hostname of the machine instance.
 func (d *Driver) GetIP() (string, error) {
+	if err := d.checkLegacyDriver(true); err != nil {
+		return "", err
+	}
+
 	if d.resolvedIP == "" {
 		ip, err := d.ipAddress()
 		if err != nil {
@@ -407,6 +416,10 @@ func (d *Driver) GetURL() (string, error) {
 
 // GetState returns the state of the virtual machine role instance.
 func (d *Driver) GetState() (state.State, error) {
+	if err := d.checkLegacyDriver(true); err != nil {
+		return state.None, err
+	}
+
 	c, err := d.newAzureClient()
 	if err != nil {
 		return state.None, err
@@ -425,6 +438,10 @@ func (d *Driver) GetState() (state.State, error) {
 
 // Start issues a power on for the virtual machine instance.
 func (d *Driver) Start() error {
+	if err := d.checkLegacyDriver(true); err != nil {
+		return err
+	}
+
 	c, err := d.newAzureClient()
 	if err != nil {
 		return err
@@ -434,6 +451,10 @@ func (d *Driver) Start() error {
 
 // Stop issues a power off for the virtual machine instance.
 func (d *Driver) Stop() error {
+	if err := d.checkLegacyDriver(true); err != nil {
+		return err
+	}
+
 	c, err := d.newAzureClient()
 	if err != nil {
 		return err
@@ -445,6 +466,10 @@ func (d *Driver) Stop() error {
 
 // Restart reboots the virtual machine instance.
 func (d *Driver) Restart() error {
+	if err := d.checkLegacyDriver(true); err != nil {
+		return err
+	}
+
 	// NOTE(ahmetalpbalkan) Azure will always keep the VM in Running state
 	// during the restart operation. Hence we rely on returned async operation
 	// polling to make sure the reboot is waited upon.
@@ -461,4 +486,16 @@ func (d *Driver) Kill() error {
 	// machines, Stop() is the closest option.
 	log.Debug("Azure does not implement kill. Calling Stop instead.")
 	return d.Stop()
+}
+
+// checkLegacyDriver errors out if it encounters an Azure VM created with the
+// legacy (<=0.6.0) docker-machine Azure driver.
+func (d *Driver) checkLegacyDriver(short bool) error {
+	if d.ResourceGroup == "" {
+		if short {
+			return errors.New("New azure driver cannot manage old VMs, downgrade to v0.6.0")
+		}
+		return errors.New("New azure driver uses the new Azure Resource Manager APIs and therefore cannot manage this existing machine created with old azure driver. Please downgrade to docker-machine 0.6.0 to continue using these machines or to remove them.")
+	}
+	return nil
 }
