@@ -44,7 +44,6 @@ type Driver struct {
 	FloatingIpPoolId string
 	IpVersion        int
 	client           Client
-	PrivateIPAddress string
 }
 
 const (
@@ -307,35 +306,6 @@ func (d *Driver) GetIP() (string, error) {
 	if d.FloatingIpPool != "" {
 		addressType = Floating
 	}
-
-	// Looking for the IP address in a retry loop to deal with OpenStack latency
-	for retryCount := 0; retryCount < 200; retryCount++ {
-		addresses, err := d.client.GetInstanceIPAddresses(d)
-		if err != nil {
-			return "", err
-		}
-		for _, a := range addresses {
-			if a.AddressType == addressType && a.Version == d.IpVersion {
-				return a.Address, nil
-			}
-		}
-		time.Sleep(2 * time.Second)
-	}
-	return "", fmt.Errorf("No IP found for the machine")
-}
-
-func (d *Driver) GetPrivateIP() (string, error) {
-	if d.PrivateIPAddress != "" {
-		return d.PrivateIPAddress, nil
-	}
-
-	log.Debug("Looking for the Private IP address...", map[string]string{"MachineId": d.MachineId})
-
-	if err := d.initCompute(); err != nil {
-		return "", err
-	}
-
-	addressType := Fixed
 
 	// Looking for the IP address in a retry loop to deal with OpenStack latency
 	for retryCount := 0; retryCount < 200; retryCount++ {
@@ -781,15 +751,8 @@ func (d *Driver) lookForIPAddress() error {
 	}
 	d.IPAddress = ip
 
-	// set private ip
-	privateIp, err := d.GetPrivateIP()
-	if err != nil {
-		return err
-	}
-	d.PrivateIPAddress = ip
 	log.Debug("IP address found", map[string]string{
 		"IP":        ip,
-		"PrivateIP": privateIp,
 		"MachineId": d.MachineId,
 	})
 	return nil
