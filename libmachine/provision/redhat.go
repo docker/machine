@@ -110,7 +110,8 @@ func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.Pack
 }
 
 func installDocker(provisioner *RedHatProvisioner) error {
-	if err := provisioner.installOfficialDocker(); err != nil {
+	log.Info("Installing Docker...")
+	if err := installDockerGeneric(provisioner, provisioner.EngineOptions.InstallURL); err != nil {
 		return err
 	}
 
