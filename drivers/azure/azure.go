@@ -20,9 +20,9 @@ const (
 	defaultAzureResourceGroup   = "docker-machine"
 	defaultAzureSize            = "Standard_A2"
 	defaultAzureLocation        = "westus"
-	defaultSSHUser              = "ubuntu" // 'root' not allowed on Azure
+	defaultSSHUser              = "docker-user" // 'root' not allowed on Azure
 	defaultDockerPort           = 2376
-	defaultAzureImage           = "canonical:UbuntuServer:14.04.3-LTS:latest"
+	defaultAzureImage           = "canonical:UbuntuServer:15.10:latest"
 	defaultAzureVNet            = "docker-machine-vnet"
 	defaultAzureSubnet          = "docker-machine"
 	defaultAzureSubnetPrefix    = "192.168.0.0/16"
@@ -264,7 +264,7 @@ func (d *Driver) PreCreateCheck() (err error) {
 	if exists, err := c.VirtualMachineExists(d.ResourceGroup, d.naming().VM()); err != nil {
 		return err
 	} else if exists {
-		return fmt.Errorf("Virtual Machine with name %s already exists", d.naming().VM())
+		return fmt.Errorf("Virtual Machine with name %s already exists in resource group %q", d.naming().VM(), d.ResourceGroup)
 	}
 
 	// NOTE(ahmetalpbalkan) we could have done more checks here but Azure often

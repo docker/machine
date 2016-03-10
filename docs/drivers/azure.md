@@ -72,11 +72,11 @@ Environment variables and default values:
 | ------------------------------- | ----------------------------- | ------------------ |
 | **`--azure-subscription-id`**   | `AZURE_SUBSCRIPTION_ID`       | -                  |
 | `--azure-environment`           | `AZURE_ENVIRONMENT`           | `AzurePublicCloud` |
-| `--azure-image`                 | `AZURE_IMAGE`                 | `canonical:UbuntuServer:14.04.3-LTS:latest` |
+| `--azure-image`                 | `AZURE_IMAGE`                 | `canonical:UbuntuServer:15.10:latest` |
 | `--azure-location`              | `AZURE_LOCATION`              | `westus`           |
 | `--azure-resource-group`        | `AZURE_RESOURCE_GROUP`        | `docker-machine`   |
 | `--azure-size`                  | `AZURE_SIZE`                  | `Standard_A2`      |
-| `--azure-ssh-user`              | `AZURE_SSH_USER`              | `ubuntu`           |
+| `--azure-ssh-user`              | `AZURE_SSH_USER`              | `docker-user`      |
 | `--azure-vnet`                  | `AZURE_VNET`                  | `docker-machine`   |
 | `--azure-subnet`                | `AZURE_SUBNET`                | `docker-machine`   |
 | `--azure-subnet-prefix`         | `AZURE_SUBNET_PREFIX`         | `192.168.0.0/16`   |
