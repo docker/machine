@@ -35,11 +35,19 @@ To build the `docker-machine` binary using containers, simply run:
 Make sure the source code directory is under a correct directory structure;
 Example of cloning and preparing the correct environment `GOPATH`:
 
-        mkdir docker-machine
-        cd docker-machine
-        export GOPATH="$PWD"
-        go get github.com/docker/machine
-        cd src/github.com/docker/machine
+    $ mkdir docker-machine
+    $ cd docker-machine
+    $ export GOPATH="$PWD"
+    $ go get github.com/docker/machine
+    $ cd src/github.com/docker/machine
+
+If you want to use your existing workspace, make sure your `GOPATH` is set to
+the directory that contains your `src` directory, e.g.:
+
+    $ export GOPATH=/home/yourname/work
+    $ mkdir -p $GOPATH/src/github.com/docker
+    $ cd $GOPATH/src/github.com/docker && git clone git@github.com:docker/machine.git
+    $ cd machine        
 
 At this point, simply run:
 
