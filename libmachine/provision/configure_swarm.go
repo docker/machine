@@ -3,6 +3,7 @@ package provision
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/docker/machine/libmachine/auth"
@@ -30,15 +31,30 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		return err
 	}
 
-	parts := strings.Split(u.Host, ":")
+	enginePort := engine.DefaultPort
+	engineURL, err := p.GetDriver().GetURL()
+	if err != nil {
+		return err
+	}
+
+	parts := strings.Split(engineURL, ":")
+	if len(parts) == 3 {
+		dPort, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return err
+		}
+		enginePort = dPort
+	}
+
+	parts = strings.Split(u.Host, ":")
 	port := parts[1]
 
 	dockerDir := p.GetDockerOptionsDir()
 	dockerHost := &mcndockerclient.RemoteDocker{
-		HostURL:    fmt.Sprintf("tcp://%s:%d", ip, engine.DefaultPort),
+		HostURL:    fmt.Sprintf("tcp://%s:%d", ip, enginePort),
 		AuthOption: &authOptions,
 	}
-	advertiseInfo := fmt.Sprintf("%s:%d", ip, engine.DefaultPort)
+	advertiseInfo := fmt.Sprintf("%s:%d", ip, enginePort)
 
 	if swarmOptions.Master {
 		advertiseMasterInfo := fmt.Sprintf("%s:%s", ip, "3376")

@@ -62,6 +62,7 @@ as a sudoer with `NOPASSWD`. See https://help.ubuntu.com/community/Sudoers.
 
 ### Options
 
+-   `--generic-engine-port`: Port to use for Docker Daemon (Note: This flag will not work with boot2docker).
 -   `--generic-ip-address`: **required** IP Address of host.
 -   `--generic-ssh-key`: Path to the SSH user private key.
 -   `--generic-ssh-user`: SSH username used to connect.
@@ -73,6 +74,7 @@ Environment variables and default values:
 
 | CLI option                 | Environment variable | Default                   |
 | -------------------------- | -------------------- | ------------------------- |
+| `--generic-engine-port`    | `GENERIC_ENGINE_PORT`| `2376`                    |
 | **`--generic-ip-address`** | `GENERIC_IP_ADDRESS` | -                         |
 | `--generic-ssh-key`        | `GENERIC_SSH_KEY`    | _(defers to `ssh-agent`)_ |
 | `--generic-ssh-user`       | `GENERIC_SSH_USER`   | `root`                    |
