@@ -356,6 +356,13 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Name:            "scpi",
+		Usage:           "Copy docker images between machines",
+		Description:     "Arguments are [machine]:[repository][:tag] [machine].",
+		Action:          runCommand(cmdScpi),
+		SkipFlagParsing: true,
+	},
+	{
 		Name:        "start",
 		Usage:       "Start a machine",
 		Description: "Argument(s) are one or more machine names.",
