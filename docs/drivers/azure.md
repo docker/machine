@@ -26,7 +26,7 @@ You will need an Azure Subscription to use this Docker Machine driver.
 First time you try to create a machine, Azure driver will ask you to
 authenticate:
 
-    $ docker-machine create --driver azure <machine-name>
+    $ docker-machine create --driver azure --azure-subscription-id <subs-id> <machine-name>
     Running pre-create checks...
     Microsoft Azure: To sign in, use a web browser to open the page https://aka.ms/devicelogin.
     Enter the code [...] to authenticate.
