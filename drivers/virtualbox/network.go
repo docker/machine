@@ -35,6 +35,27 @@ type hostOnlyNetwork struct {
 	NetworkName string // referenced in DHCP.NetworkName
 }
 
+// HostInterfaces returns host network interface info.  By default delegates to net.Interfaces()
+type HostInterfaces interface {
+	Interfaces() ([]net.Interface, error)
+	Addrs(iface *net.Interface) ([]net.Addr, error)
+}
+
+func NewHostInterfaces() HostInterfaces {
+	return &defaultHostInterfaces{}
+}
+
+type defaultHostInterfaces struct {
+}
+
+func (ni *defaultHostInterfaces) Interfaces() ([]net.Interface, error) {
+	return net.Interfaces()
+}
+
+func (ni *defaultHostInterfaces) Addrs(iface *net.Interface) ([]net.Addr, error) {
+	return iface.Addrs()
+}
+
 // Save changes the configuration of the host-only network.
 func (n *hostOnlyNetwork) Save(vbox VBoxManager) error {
 	if err := n.SaveIPv4(vbox); err != nil {
@@ -158,12 +179,7 @@ func getHostOnlyAdapter(nets map[string]*hostOnlyNetwork, hostIP net.IP, netmask
 	return nil
 }
 
-func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, vbox VBoxManager) (*hostOnlyNetwork, error) {
-	nets, err := listHostOnlyAdapters(vbox)
-	if err != nil {
-		return nil, err
-	}
-
+func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, nets map[string]*hostOnlyNetwork, vbox VBoxManager) (*hostOnlyNetwork, error) {
 	// Search for an existing host-only adapter.
 	hostOnlyAdapter := getHostOnlyAdapter(nets, hostIP, netmask)
 	if hostOnlyAdapter != nil {
@@ -171,7 +187,7 @@ func getOrCreateHostOnlyNetwork(hostIP net.IP, netmask net.IPMask, vbox VBoxMana
 	}
 
 	// No existing host-only adapter found. Create a new one.
-	_, err = createHostonlyAdapter(vbox)
+	_, err := createHostonlyAdapter(vbox)
 	if err != nil {
 		// Sometimes the host-only adapter fails to create. See https://www.virtualbox.org/ticket/14040
 		// BUT, it is created in fact! So let's wait until it appears last in the list
@@ -331,6 +347,46 @@ func listDHCPServers(vbox VBoxManager) (map[string]*dhcpServer, error) {
 	}
 
 	return m, nil
+}
+
+// listHostInterfaces returns a map of net.IPNet addresses of host interfaces that are "UP" and not loopback adapters
+// and not virtualbox host-only networks (given by excludeNets), keyed by CIDR string.
+func listHostInterfaces(hif HostInterfaces, excludeNets map[string]*hostOnlyNetwork) (map[string]*net.IPNet, error) {
+	ifaces, err := hif.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+	m := map[string]*net.IPNet{}
+
+	for _, iface := range ifaces {
+		addrs, err := hif.Addrs(&iface)
+		if err != nil {
+			return nil, err
+		}
+		for _, a := range addrs {
+			switch ipnet := a.(type) {
+			case *net.IPNet:
+				_, hostOnly := excludeNets[ipnet.String()]
+				if !hostOnly && iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 {
+					m[ipnet.String()] = ipnet
+				}
+			default:
+
+			}
+		}
+	}
+	return m, nil
+}
+
+// checkIPNetCollision returns true if any host interfaces conflict with the host-only network mask passed as a parameter.
+// This works with IPv4 or IPv6 ip addresses.
+func checkIPNetCollision(hostonly *net.IPNet, hostIfaces map[string]*net.IPNet) (bool, error) {
+	for _, ifaceNet := range hostIfaces {
+		if hostonly.IP.Equal(ifaceNet.IP.Mask(ifaceNet.Mask)) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // parseIPv4Mask parses IPv4 netmask written in IP form (e.g. 255.255.255.0).

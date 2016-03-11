@@ -241,6 +241,74 @@ func TestInvalidNetworkIpCIDR(t *testing.T) {
 	assert.Nil(t, network)
 }
 
+// Tests detection of a conflict between an existing vbox host-only network and a host network interface.  This
+// scenario would happen if the docker-machine was created with the host on one network, and then the host gets
+// moved to another network (e.g. different wifi routers)
+func TestCIDRHostIFaceCollisionExisting(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args:   "list hostonlyifs",
+		stdOut: stdOutTwoHostOnlyNetwork,
+	}
+	mhi := newMockHostInterfaces()
+	_, err := mhi.addMockIface("192.168.99.42", 24, net.IPv4len, "en0", net.FlagUp|net.FlagBroadcast)
+	assert.NoError(t, err)
+
+	nets, err := listHostOnlyAdapters(vbox)
+	assert.NoError(t, err)
+	m, listErr := listHostInterfaces(mhi, nets)
+	assert.Nil(t, listErr)
+	assert.NotEmpty(t, m)
+
+	_, network, cidrErr := net.ParseCIDR("192.168.99.1/24")
+	assert.Nil(t, cidrErr)
+	err = validateNoIPCollisions(mhi, network, nets)
+	assert.Equal(t, ErrNetworkAddrCollision, err)
+}
+
+// Tests operation of validateNoIPCollisions when no conflicts exist.
+func TestCIDRHostIFaceNoCollision(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args:   "list hostonlyifs",
+		stdOut: stdOutTwoHostOnlyNetwork,
+	}
+	mhi := newMockHostInterfaces()
+	_, err := mhi.addMockIface("10.10.0.22", 24, net.IPv4len, "en0", net.FlagUp|net.FlagBroadcast)
+	assert.NoError(t, err)
+
+	nets, err := listHostOnlyAdapters(vbox)
+	assert.NoError(t, err)
+	m, listErr := listHostInterfaces(mhi, nets)
+	assert.Nil(t, listErr)
+	assert.NotEmpty(t, m)
+
+	_, network, cidrErr := net.ParseCIDR("192.168.99.1/24")
+	assert.Nil(t, cidrErr)
+	err = validateNoIPCollisions(mhi, network, nets)
+	assert.NoError(t, err)
+}
+
+// Tests detection of a conflict between a potential vbox host-only network and a host network interface.
+func TestCIDRHostIFaceCollision(t *testing.T) {
+	vbox := &VBoxManagerMock{
+		args:   "list hostonlyifs",
+		stdOut: "",
+	}
+	mhi := newMockHostInterfaces()
+	_, err := mhi.addMockIface("192.168.99.42", 24, net.IPv4len, "en0", net.FlagUp|net.FlagBroadcast)
+	assert.NoError(t, err)
+
+	nets, err := listHostOnlyAdapters(vbox)
+	assert.NoError(t, err)
+	m, listErr := listHostInterfaces(mhi, nets)
+	assert.Nil(t, listErr)
+	assert.NotEmpty(t, m)
+
+	_, network, cidrErr := net.ParseCIDR("192.168.99.1/24")
+	assert.Nil(t, cidrErr)
+	err = validateNoIPCollisions(mhi, network, nets)
+	assert.Equal(t, ErrNetworkAddrCollision, err)
+}
+
 func TestSetConfigFromFlags(t *testing.T) {
 	driver := newTestDriver("default")
 
@@ -320,6 +388,16 @@ func (v *MockCreateOperations) Sleep(d time.Duration) {
 	v.doCall("Sleep " + fmt.Sprintf("%v", d))
 }
 
+func (v *MockCreateOperations) Interfaces() ([]net.Interface, error) {
+	_, err := v.doCall("Interfaces")
+	return []net.Interface{}, err
+}
+
+func (v *MockCreateOperations) Addrs(iface *net.Interface) ([]net.Addr, error) {
+	_, err := v.doCall("Addrs " + fmt.Sprintf("%v", iface))
+	return []net.Addr{}, err
+}
+
 func (v *MockCreateOperations) expectCall(callSignature, output string, err error) {
 	v.expectedCalls = append(v.expectedCalls, Call{
 		signature: callSignature,
@@ -359,6 +437,7 @@ func mockCalls(t *testing.T, driver *Driver, expectedCalls []Call) {
 	driver.ipWaiter = mockOperations
 	driver.randomInter = mockOperations
 	driver.sleeper = mockOperations
+	driver.HostInterfaces = mockOperations
 }
 
 func TestCreateVM(t *testing.T) {
@@ -396,6 +475,7 @@ func TestStart(t *testing.T) {
 	mockCalls(t, driver, []Call{
 		{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
 		{"vbm list hostonlyifs", "", nil},
+		{"Interfaces", "", nil},
 		{"vbm hostonlyif create", "Interface 'VirtualBox Host-Only Ethernet Adapter' was successfully created", nil},
 		{"vbm list hostonlyifs", `
 Name:            VirtualBox Host-Only Ethernet Adapter
@@ -431,6 +511,7 @@ HardwareAddress: 0a:00:27:00:00:00
 MediumType:      Ethernet
 Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
+		{"Interfaces", "", nil},
 	})
 
 	err := driver.Start()
@@ -443,6 +524,7 @@ func TestStartWithHostOnlyAdapterCreationBug(t *testing.T) {
 	mockCalls(t, driver, []Call{
 		{"vbm showvminfo default --machinereadable", `VMState="poweroff"`, nil},
 		{"vbm list hostonlyifs", "", nil},
+		{"Interfaces", "", nil},
 		{"vbm hostonlyif create", "", errors.New("error: Failed to create the host-only adapter")},
 		{"vbm list hostonlyifs", "", nil},
 		{"vbm list hostonlyifs", `
@@ -479,6 +561,7 @@ HardwareAddress: 0a:00:27:00:00:00
 MediumType:      Ethernet
 Status:          Up
 VBoxNetworkName: HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter`, nil},
+		{"Interfaces", "", nil},
 		{"vbm showvminfo default --machinereadable", `VMState="running"`, nil},
 		{"vbm controlvm default acpipowerbutton", "", nil},
 		{"vbm showvminfo default --machinereadable", `VMState="stopped"`, nil},
