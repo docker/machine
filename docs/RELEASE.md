@@ -12,6 +12,10 @@ several "checklist items" which should be documented.  This document is intended
 to cover the current Docker Machine release process.  It is written for Docker
 Machine core maintainers who might find themselves performing a release.
 
+0.  The new version of `azure` driver released in 0.7.0 is not backwards compatible
+    and therefore errors out with a message saying the new driver is unsupported with
+    the new version. The commit 7b961604 should be undone prior to 0.8.0 release and
+    this notice must be removed from `docs/RELEASE.md`.
 1.  **Get a GITHUB_TOKEN** Check that you have a proper `GITHUB_TOKEN`. This
     token needs only to have the `repo` scope. The token can be created on github
     in the settings > Personal Access Token menu.
