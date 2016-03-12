@@ -64,3 +64,10 @@ func TestGetScpiHostAndImage(t *testing.T) {
 		assert.Equal(t, err, nil)
 	}
 }
+
+func TestGenerateSaveFilename(t *testing.T) {
+	assert.Equal(t, generateSaveFilename("redis:2.8.23"), "/tmp/redis__2.8.23.tar")
+	assert.Equal(t, generateSaveFilename("redis:latest"), "/tmp/redis__latest.tar")
+	assert.Equal(t, generateSaveFilename("nsqio/nsq:v0.3.6"), "/tmp/nsqio_nsq__v0.3.6.tar")
+	assert.Equal(t, generateSaveFilename("nsqio/nsq:latest"), "/tmp/nsqio_nsq__latest.tar")
+}
