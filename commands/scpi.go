@@ -3,7 +3,9 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/machine/libmachine"
@@ -135,5 +137,5 @@ func getHostArgs(hostName, machineExec string) ([]string, error) {
 
 func generateSaveFilename(srcImage string) string {
 	filename := strings.Replace(strings.Replace(srcImage, "/", "_", -1), ":", "__", -1)
-	return fmt.Sprintf("/tmp/%s.tar", filename)
+	return filepath.Join(os.TempDir(), fmt.Sprintf("%s.tar", filename))
 }

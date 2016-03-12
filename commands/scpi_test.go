@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -56,8 +58,9 @@ func TestParseScpiTargetInfo(t *testing.T) {
 }
 
 func TestGenerateSaveFilename(t *testing.T) {
-	assert.Equal(t, generateSaveFilename("redis:2.8.23"), "/tmp/redis__2.8.23.tar")
-	assert.Equal(t, generateSaveFilename("redis:latest"), "/tmp/redis__latest.tar")
-	assert.Equal(t, generateSaveFilename("nsqio/nsq:v0.3.6"), "/tmp/nsqio_nsq__v0.3.6.tar")
-	assert.Equal(t, generateSaveFilename("nsqio/nsq:latest"), "/tmp/nsqio_nsq__latest.tar")
+	tmpDir := os.TempDir()
+	assert.Equal(t, generateSaveFilename("redis:2.8.23"), filepath.Join(tmpDir, "redis__2.8.23.tar"))
+	assert.Equal(t, generateSaveFilename("redis:latest"), filepath.Join(tmpDir, "redis__latest.tar"))
+	assert.Equal(t, generateSaveFilename("nsqio/nsq:v0.3.6"), filepath.Join(tmpDir, "nsqio_nsq__v0.3.6.tar"))
+	assert.Equal(t, generateSaveFilename("nsqio/nsq:latest"), filepath.Join(tmpDir, "nsqio_nsq__latest.tar"))
 }
