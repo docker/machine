@@ -53,7 +53,8 @@ func New(env azure.Environment, subsID string, auth autorest.Authorizer) *AzureC
 }
 
 // RegisterResourceProviders registers current subscription to the specified
-// resource provider namespaces if they are not already registered.
+// resource provider namespaces if they are not already registered. Namespaces
+// are case-insensitive.
 func (a AzureClient) RegisterResourceProviders(namespaces ...string) error {
 	l, err := a.providersClient().List(nil)
 	if err != nil {
@@ -65,11 +66,11 @@ func (a AzureClient) RegisterResourceProviders(namespaces ...string) error {
 
 	m := make(map[string]bool)
 	for _, p := range *l.Value {
-		m[to.String(p.Namespace)] = to.String(p.RegistrationState) == "Registered"
+		m[strings.ToLower(to.String(p.Namespace))] = to.String(p.RegistrationState) == "Registered"
 	}
 
 	for _, ns := range namespaces {
-		registered, ok := m[ns]
+		registered, ok := m[strings.ToLower(ns)]
 		if !ok {
 			return fmt.Errorf("Unknown resource provider %q", ns)
 		}
