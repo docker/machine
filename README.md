@@ -80,10 +80,7 @@ guide which may help you to resolve of the issues you may be seeing.
 
 Note that some of the suggested solutions are only available on the Docker
 Machine master branch.  If you need them, consider compiling Docker Machine from
-source.  There are also [unofficial pre-compiled master
-binaries](https://docker-machine-builds.evanhazlett.com/latest) hosted by
-[@ehazlett](https://github.com/ehazlett).
-
+source.
 #### `docker-machine` hangs
 
 A common issue with Docker Machine is that it will hang when attempting to start
