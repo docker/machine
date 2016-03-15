@@ -46,7 +46,6 @@ const (
 	flAzurePorts           = "azure-open-port"
 	flAzurePrivateIPAddr   = "azure-private-ip-address"
 	flAzureUsePrivateIP    = "azure-use-private-ip"
-	flAzureStaticPublicIP  = "azure-static-public-ip"
 	flAzureNoPublicIP      = "azure-no-public-ip"
 )
 
@@ -72,11 +71,10 @@ type Driver struct {
 	SubnetPrefix    string
 	AvailabilitySet string
 
-	OpenPorts      []string
-	PrivateIPAddr  string
-	UsePrivateIP   bool
-	NoPublicIP     bool
-	StaticPublicIP bool
+	OpenPorts     []string
+	PrivateIPAddr string
+	UsePrivateIP  bool
+	NoPublicIP    bool
 
 	// Ephemeral fields
 	ctx        *azureutil.DeploymentContext
@@ -185,10 +183,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  flAzureNoPublicIP,
 			Usage: "Do not create a public IP address for the machine",
 		},
-		mcnflag.BoolFlag{
-			Name:  flAzureStaticPublicIP,
-			Usage: "Assign a static public IP address to the machine",
-		},
 		mcnflag.StringSliceFlag{
 			Name:  flAzurePorts,
 			Usage: "Make the specified port number accessible from the Internet",
@@ -231,7 +225,6 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.PrivateIPAddr = fl.String(flAzurePrivateIPAddr)
 	d.UsePrivateIP = fl.Bool(flAzureUsePrivateIP)
 	d.NoPublicIP = fl.Bool(flAzureNoPublicIP)
-	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
 
 	// Set flags on the BaseDriver
@@ -314,7 +307,7 @@ func (d *Driver) Create() error {
 	if d.NoPublicIP {
 		log.Info("Not creating a public IP address.")
 	} else {
-		if err := c.CreatePublicIPAddress(d.ctx, d.ResourceGroup, d.naming().IP(), d.Location, d.StaticPublicIP); err != nil {
+		if err := c.CreatePublicIPAddress(d.ctx, d.ResourceGroup, d.naming().IP(), d.Location); err != nil {
 			return err
 		}
 	}
