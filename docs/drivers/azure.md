@@ -58,6 +58,7 @@ Optional:
 - `--azure-private-ip-address`: Specify a static private IP address for the machine.
 - `--azure-use-private-ip`: Use private IP address of the machine to connect.
 - `--azure-no-public-ip`: Do not create a public IP address for the machine.
+- `--azure-static-public-ip`: Assign a static public IP address to the machine.
 - `--azure-docker-port`: Port number for Docker engine [$AZURE_DOCKER_PORT]
 - `--azure-environment`: Azure environment (e.g. `AzurePublicCloud`, `AzureChinaCloud`).
 
@@ -86,6 +87,7 @@ Environment variables and default values:
 | `--azure-private-ip-address`    | -                             | -                  |
 | `--azure-use-private-ip`        | -                             | -                  |
 | `--azure-no-public-ip`          | -                             | -                  |
+| `--azure-static-public-ip`      | -                             | -                  |
 | `--azure-docker-port`           | `AZURE_DOCKER_PORT`           | `2376`             |
 
 ## Notes
