@@ -13,17 +13,18 @@ parent="smn_machine_drivers"
 You will need an Azure Subscription to use this Docker Machine driver.
 [Sign up for a free trial.][trial]
 
-> **NOTE:** This documentation is for the new version of  Azure driver started
-> shipping with v0.7.0 and it is not backwards-compatible with the old Azure
-> driver. If you like to manage your existing Azure machines, please download
-> and use machine versions prior to v0.7.0.
+
+> **NOTE:** This documentation is for the new version of the Azure driver, which started
+> shipping with v0.7.0. This driver is not backwards-compatible with the old
+> Azure driver. If you want to continue managing your existing Azure machines, please
+> download and use machine versions prior to v0.7.0.
 
 [azure]: http://azure.microsoft.com/
 [trial]: https://azure.microsoft.com/free/
 
 ## Authentication
 
-First time you try to create a machine, Azure driver will ask you to
+The first time you try to create a machine, Azure driver will ask you to
 authenticate:
 
     $ docker-machine create --driver azure --azure-subscription-id <subs-id> <machine-name>
