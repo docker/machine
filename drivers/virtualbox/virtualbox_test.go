@@ -470,37 +470,6 @@ func TestCreateVM(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestCreateVMWithSpecificNatNicType(t *testing.T) {
-	shareName, shareDir := getShareDriveAndName()
-
-	modifyVMcommand := "vbm modifyvm default --firmware bios --bioslogofadein off --bioslogofadeout off --bioslogodisplaytime 0 --biosbootmenu disabled --ostype Linux26_64 --cpus 1 --memory 1024 --acpi on --ioapic on --rtcuseutc on --natdnshostresolver1 off --natdnsproxy1 on --cpuhotplug off --pae on --hpet on --hwvirtex on --nestedpaging on --largepages on --vtxvpid on --accelerate3d off --boot1 dvd"
-	if runtime.GOOS == "windows" && runtime.GOARCH == "386" {
-		modifyVMcommand += " --longmode on"
-	}
-
-	driver := NewDriver("default", "path")
-	driver.NatNicType = "Am79C973"
-	mockCalls(t, driver, []Call{
-		{"CopyIsoToMachineDir path default http://b2d.org", "", nil},
-		{"Generate path/machines/default/id_rsa", "", nil},
-		{"Create 20000 path/machines/default/id_rsa.pub path/machines/default/disk.vmdk", "", nil},
-		{"vbm createvm --basefolder path/machines/default --name default --register", "", nil},
-		{modifyVMcommand, "", nil},
-		{"vbm modifyvm default --nic1 nat --nictype1 Am79C973 --cableconnected1 on", "", nil},
-		{"vbm storagectl default --name SATA --add sata --hostiocache on", "", nil},
-		{"vbm storageattach default --storagectl SATA --port 0 --device 0 --type dvddrive --medium path/machines/default/boot2docker.iso", "", nil},
-		{"vbm storageattach default --storagectl SATA --port 1 --device 0 --type hdd --medium path/machines/default/disk.vmdk", "", nil},
-		{"vbm guestproperty set default /VirtualBox/GuestAdd/SharedFolders/MountPrefix /", "", nil},
-		{"vbm guestproperty set default /VirtualBox/GuestAdd/SharedFolders/MountDir /", "", nil},
-		{"vbm sharedfolder add default --name " + shareName + " --hostpath " + shareDir + " --automount", "", nil},
-		{"vbm setextradata default VBoxInternal2/SharedFoldersEnableSymlinksCreate/" + shareName + " 1", "", nil},
-	})
-
-	err := driver.CreateVM()
-
-	assert.NoError(t, err)
-}
-
 func TestStart(t *testing.T) {
 	driver := NewDriver("default", "path")
 	mockCalls(t, driver, []Call{
