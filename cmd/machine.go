@@ -11,6 +11,7 @@ import (
 	"github.com/docker/machine/commands"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/drivers/amazonec2"
+	"github.com/docker/machine/drivers/azure"
 	"github.com/docker/machine/drivers/digitalocean"
 	"github.com/docker/machine/drivers/exoscale"
 	"github.com/docker/machine/drivers/generic"
@@ -168,6 +169,8 @@ func runDriver(driverName string) {
 	switch driverName {
 	case "amazonec2":
 		plugin.RegisterDriver(amazonec2.NewDriver("", ""))
+	case "azure":
+		plugin.RegisterDriver(azure.NewDriver("", ""))
 	case "digitalocean":
 		plugin.RegisterDriver(digitalocean.NewDriver("", ""))
 	case "exoscale":
