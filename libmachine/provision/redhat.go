@@ -27,7 +27,7 @@ enabled=1
 gpgkey=https://yum.dockerproject.org/gpg
 `
 	engineConfigTemplate = `[Service]
-ExecStart=/usr/bin/docker daemon -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+ExecStart=/usr/bin/docker -d -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
 MountFlags=slave
 LimitNOFILE=1048576
 LimitNPROC=1048576
@@ -145,11 +145,9 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 	swarmOptions.Env = engineOptions.Env
 
 	// set default storage driver for redhat
-	storageDriver, err := decideStorageDriver(provisioner, "devicemapper", engineOptions.StorageDriver)
-	if err != nil {
-		return err
+	if provisioner.EngineOptions.StorageDriver == "" {
+		provisioner.EngineOptions.StorageDriver = "devicemapper"
 	}
-	provisioner.EngineOptions.StorageDriver = storageDriver
 
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
 		return err

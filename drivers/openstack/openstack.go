@@ -750,6 +750,7 @@ func (d *Driver) lookForIPAddress() error {
 		return err
 	}
 	d.IPAddress = ip
+
 	log.Debug("IP address found", map[string]string{
 		"IP":        ip,
 		"MachineId": d.MachineId,
