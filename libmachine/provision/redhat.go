@@ -26,7 +26,12 @@ priority=1
 enabled=1
 gpgkey=https://yum.dockerproject.org/gpg
 `
-	engineConfigTemplate = `[Service]
+	engineConfigTemplate = `[Unit]
+Description=Docker Application Container Engine
+After=network.target docker.socket
+Requires=docker.socket
+
+[Service]
 ExecStart=/usr/bin/docker daemon -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
 MountFlags=slave
 LimitNOFILE=1048576

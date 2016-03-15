@@ -142,13 +142,23 @@ func (a AzureClient) DeleteNetworkSecurityGroupIfExists(resourceGroup, name stri
 		func() (autorest.Response, error) { return a.securityGroupsClient().Delete(resourceGroup, name) })
 }
 
-func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup, name, location string) error {
-	log.Info("Creating public IP address...", logutil.Fields{"name": name})
+func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup, name, location string, isStatic bool) error {
+	log.Info("Creating public IP address...", logutil.Fields{
+		"name":   name,
+		"static": isStatic})
+
+	var ipType network.IPAllocationMethod
+	if isStatic {
+		ipType = network.Static
+	} else {
+		ipType = network.Dynamic
+	}
+
 	_, err := a.publicIPAddressClient().CreateOrUpdate(resourceGroup, name,
 		network.PublicIPAddress{
 			Location: to.StringPtr(location),
 			Properties: &network.PublicIPAddressPropertiesFormat{
-				PublicIPAllocationMethod: network.Dynamic,
+				PublicIPAllocationMethod: ipType,
 			},
 		})
 	if err != nil {
