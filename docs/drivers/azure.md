@@ -45,7 +45,7 @@ Required:
 
 Optional:
 
-- `--azure-image`: Azure virtual machine image. [[?][vm-image]]
+- `--azure-image`: Azure virtual machine image in the format of Publisher:Offer:Sku:Version [[?][vm-image]]
 - `--azure-location`: Azure region to create the virtual machine. [[?][location]]
 - `--azure-resource-group`: Azure Resource Group name to create the resources in.
 - `--azure-size`: Size for Azure Virtual Machine. [[?][vm-size]]
