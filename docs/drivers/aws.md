@@ -26,7 +26,7 @@ One way to configure credentials is to use the standard credential file for Amaz
     aws_access_key_id = AKID1234567890
     aws_secret_access_key = MY-SECRET-KEY
 
-On Mac OS or various flavors of Linux you can install the AWS Command Line Interface (aws cli) in the terminal and use the `aws configure` command which guide you through the creation of the credentials file.  For more information about getting started, visit the [AWS CLI documentation](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-quick-configuration).
+On Mac OS or various flavors of Linux you can install the [AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-quick-configuration) (`aws cli`) in the terminal and use the `aws configure` command which guides you through the creation of the credentials file.
 
 This is the simplest method, you can then create a new machine with:
 
@@ -153,12 +153,11 @@ To create a machine with a non-default vpc-id:
 This example assumes the VPC ID was found in the `a` availability zone. Use the`--amazonec2-zone` flag to specify a zone other than the `a` zone. For example, `--amazonec2-zone c` signifies `us-east1-c`.
 
 ## VPC Connectivity
-Machine uses ssh to complete the set up of instances in EC2 and requires the ability to access the instance directly.  
+Machine uses SSH to complete the set up of instances in EC2 and requires the ability to access the instance directly.  
 
 If you use the flag `--amazonec2-private-address-only`, you will need to ensure that you have some method of accessing the new instance from within the internal network of the VPC (e.g. a corporate VPN to the VPC, a VPN instance inside the VPC or using Docker-machine from an instance within your VPC). 
 
-## VPC Set up
-Configuration of VPCs is beyond the scope of this guide, however the first step in troubleshooting is ensuring if you are using private subnets that you follow best practices and have some form of NAT available so that the set up process can access the internet to complete set up.
+Configuration of VPCs is beyond the scope of this guide, however the first step in troubleshooting is ensuring if you are using private subnets that you follow the design guidance in the [AWS VPC User Guide](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Scenario2.html) and have some form of NAT available so that the set up process can access the internet to complete set up.
 
 ## Custom AMI and SSH username
 
