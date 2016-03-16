@@ -20,6 +20,7 @@
 		"github.com/docker/machine/drivers/hyperv",
 		"github.com/docker/machine/drivers/none",
 		"github.com/docker/machine/drivers/openstack",
+		"github.com/docker/machine/drivers/photoncontroller",
 		"github.com/docker/machine/drivers/rackspace",
 		"github.com/docker/machine/drivers/softlayer",
 		"github.com/docker/machine/drivers/virtualbox",
@@ -510,6 +511,16 @@
 			"ImportPath": "github.com/vmware/govmomi/vim25/xml",
 			"Comment": "v0.3.0-11-g20c009c",
 			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+		},
+		{
+			"ImportPath": "github.com/vmware/photon-controller-go-sdk/photon",
+			"Comment": "PROMOTED-84",
+			"Rev": "f258a6d3b306fa6c0ea92a7d78d7dbe36c9539f8"
+		},
+		{
+			"ImportPath": "github.com/vmware/photon-controller-go-sdk/photon/internal/rest",
+			"Comment": "PROMOTED-84",
+			"Rev": "f258a6d3b306fa6c0ea92a7d78d7dbe36c9539f8"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",

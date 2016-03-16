@@ -187,7 +187,7 @@ func runDriver(driverName string) {
 	case "openstack":
 		plugin.RegisterDriver(openstack.NewDriver("", ""))
 	case "photoncontroller":
-		plugin.RegisterDriver(photoncontroller.NewDriver(""))
+		plugin.RegisterDriver(photoncontroller.NewDriver("", ""))
 	case "rackspace":
 		plugin.RegisterDriver(rackspace.NewDriver("", ""))
 	case "softlayer":
