@@ -9,6 +9,7 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/opt"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/version"
 )
@@ -33,6 +34,7 @@ func init() {
 	gob.Register(new(mcnflag.StringFlag))
 	gob.Register(new(mcnflag.StringSliceFlag))
 	gob.Register(new(mcnflag.BoolFlag))
+	gob.Register(new(mcnopt.Options))
 }
 
 type RPCFlags struct {
@@ -96,6 +98,11 @@ func NewRPCServerDriver(d drivers.Driver) *RPCServerDriver {
 
 func (r *RPCServerDriver) Close(_, _ *struct{}) error {
 	r.CloseCh <- true
+	return nil
+}
+
+func (r *RPCServerDriver) SetMachineOptions(opts *mcnopt.Options, _ *struct{}) error {
+	mcnopt.SetOpts(opts)
 	return nil
 }
 

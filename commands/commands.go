@@ -13,7 +13,7 @@ import (
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
-	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/opt"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/ssh"
 )
@@ -145,20 +145,20 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 		api := libmachine.NewClient(mcndirs.GetBaseDir(), mcndirs.GetMachineCertDir())
 		defer api.Close()
 
-		if context.GlobalBool("native-ssh") {
-			api.SSHClientType = ssh.Native
+		libmachineOpts := &mcnopt.Options{
+			BaseDir:        context.GlobalString("storage-path"),
+			GithubAPIToken: context.GlobalString("github-api-token"),
 		}
-		api.GithubAPIToken = context.GlobalString("github-api-token")
-		api.Filestore.Path = context.GlobalString("storage-path")
 
-		// TODO (nathanleclaire): These should ultimately be accessed
-		// through the libmachine client by the rest of the code and
-		// not through their respective modules.  For now, however,
-		// they are also being set the way that they originally were
-		// set to preserve backwards compatibility.
-		mcndirs.BaseDir = api.Filestore.Path
-		mcnutils.GithubAPIToken = api.GithubAPIToken
-		ssh.SetDefaultClient(api.SSHClientType)
+		if context.GlobalBool("native-ssh") {
+			libmachineOpts.SSHClientType = ssh.Native
+		} else {
+			libmachineOpts.SSHClientType = ssh.External
+		}
+
+		mcnopt.SetOpts(libmachineOpts)
+
+		api.Filestore.Path = libmachineOpts.BaseDir
 
 		if err := command(&contextCommandLine{context}, api); err != nil {
 			log.Error(err)
