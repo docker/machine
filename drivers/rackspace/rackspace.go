@@ -22,6 +22,7 @@ const (
 	defaultSSHUser       = "root"
 	defaultSSHPort       = 22
 	defaultDockerInstall = "true"
+	defaultActiveTimeout = 300
 )
 
 // GetCreateFlags registers the "machine create" flags recognized by this driver, including
@@ -54,7 +55,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:  "rackspace-image-id",
-			Usage: "Rackspace image ID. Default: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)",
+			Usage: "Rackspace image ID. Default: Ubuntu 15.10 (Wily Werewolf) (PVHVM)",
 		},
 		mcnflag.StringFlag{
 			Name:   "rackspace-flavor-id",
@@ -76,6 +77,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "rackspace-docker-install",
 			Usage: "Set if docker have to be installed on the machine",
 			Value: defaultDockerInstall,
+		},
+		mcnflag.IntFlag{
+			EnvVar: "OS_ACTIVE_TIMEOUT",
+			Name:   "rackspace-active-timeout",
+			Usage:  "Rackspace active timeout",
+			Value:  defaultActiveTimeout,
 		},
 	}
 }
@@ -111,6 +118,7 @@ func missingEnvOrOption(setting, envVar, opt string) error {
 
 // SetConfigFromFlags assigns and verifies the command-line arguments presented to the driver.
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.ActiveTimeout = flags.Int("rackspace-active-timeout")
 	d.Username = flags.String("rackspace-username")
 	d.APIKey = flags.String("rackspace-api-key")
 	d.Region = flags.String("rackspace-region")
