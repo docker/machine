@@ -1,12 +1,11 @@
 package exoscale
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -29,6 +28,7 @@ type Driver struct {
 	AvailabilityZone string
 	KeyPair          string
 	PublicKey        string
+	UserDataFile     string
 	ID               string `json:"Id"`
 }
 
@@ -37,6 +37,7 @@ const (
 	defaultDiskSize         = 50
 	defaultImage            = "ubuntu-15.10"
 	defaultAvailabilityZone = "ch-gva-2"
+	defaultSSHUser          = "ubuntu"
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -88,6 +89,17 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultAvailabilityZone,
 			Usage:  "exoscale availibility zone",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "EXOSCALE_SSH_USER",
+			Name:   "exoscale-ssh-user",
+			Value:  defaultSSHUser,
+			Usage:  "Set the name of the ssh user",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "EXOSCALE_USERDATA",
+			Name:   "exoscale-userdata",
+			Usage:  "path to file with cloud-init user-data",
+		},
 	}
 }
 
@@ -109,7 +121,11 @@ func (d *Driver) GetSSHHostname() (string, error) {
 }
 
 func (d *Driver) GetSSHUsername() string {
-	return "ubuntu"
+	if d.SSHUser == "" {
+		d.SSHUser = defaultSSHUser
+	}
+
+	return d.SSHUser
 }
 
 // DriverName returns the name of the driver
@@ -130,6 +146,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 	d.SecurityGroup = strings.Join(securityGroups, ",")
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
+	d.SSHUser = flags.String("exoscale-ssh-user")
+	d.UserDataFile = flags.String("exoscale-userdata")
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.URL == "" {
@@ -137,6 +155,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 	if d.APIKey == "" || d.APISecretKey == "" {
 		return fmt.Errorf("Please specify an API key (--exoscale-api-key) and an API secret key (--exoscale-api-secret-key).")
+	}
+
+	return nil
+}
+
+func (d *Driver) PreCreateCheck() error {
+	if d.UserDataFile != "" {
+		if _, err := os.Stat(d.UserDataFile); os.IsNotExist(err) {
+			return fmt.Errorf("user-data file %s could not be found", d.UserDataFile)
+		}
 	}
 
 	return nil
@@ -226,6 +254,11 @@ func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group strin
 }
 
 func (d *Driver) Create() error {
+	userdata, err := d.getCloudInit()
+	if err != nil {
+		return err
+	}
+
 	log.Infof("Querying exoscale for the requested parameters...")
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 	topology, err := client.GetTopology()
@@ -291,11 +324,6 @@ func (d *Driver) Create() error {
 	d.KeyPair = keypairName
 
 	log.Infof("Spawn exoscale host...")
-
-	userdata, err := d.getCloudInit()
-	if err != nil {
-		return err
-	}
 	log.Debugf("Using the following cloud-init file:")
 	log.Debugf("%s", userdata)
 
@@ -422,20 +450,15 @@ func (d *Driver) waitForVM(client *egoscale.Client, jobid string) (*egoscale.Dep
 // Build a cloud-init user data string that will install and run
 // docker.
 func (d *Driver) getCloudInit() (string, error) {
-	const tpl = `#cloud-config
-manage_etc_hosts: true
-fqdn: {{ .MachineName }}
-resize_rootfs: true
-`
-	var buffer bytes.Buffer
+	if d.UserDataFile != "" {
+		buf, err := ioutil.ReadFile(d.UserDataFile)
+		if err != nil {
+			return "", err
+		}
+		return string(buf), nil
+	}
 
-	tmpl, err := template.New("cloud-init").Parse(tpl)
-	if err != nil {
-		return "", err
-	}
-	err = tmpl.Execute(&buffer, d)
-	if err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
+	return `#cloud-config
+manage_etc_hosts: true
+`, nil
 }
