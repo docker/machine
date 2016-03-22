@@ -271,29 +271,102 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	return state.Running, nil
+	client := d.getClient()
+	vm, err := client.VMs.Get(d.VMId)
+	if (err != nil) {
+		return state.Error, fmt.Errorf("Error getting VM: ", err)
+	}
+
+	if (vm.State == "STOPPED") {
+		return state.Stopped, nil
+	}
+
+	if (vm.State == "STARTED") {
+		return state.Running, nil
+	}
+
+	if (vm.State == "SUSPENDED") {
+		return state.Paused, nil
+	}
+
+	return state.Error, nil
 }
 
 func (d *Driver) Remove() error {
-	return NotLoadable{d.Name}
+	// Stop the VM before attempting delete
+	d.Stop()
+
+	client := d.getClient()
+	opTask, err := client.VMs.Delete(d.VMId)
+	if (err != nil) {
+		return fmt.Errorf("Error creating delete VM Task: ", err)
+	}
+
+	// Waiting for delete VM task completion
+	opTask, err = client.Tasks.Wait(opTask.ID)
+	if (err != nil) {
+		return fmt.Errorf("Error deleting VM: ", err)
+	}
+
+	fmt.Println("VM was deleted.")
+
+	return nil
 }
 
 func (d *Driver) Start() error {
-	return NotLoadable{d.Name}
+	client := d.getClient()
+	opTask, err := client.VMs.Start(d.VMId)
+	if (err != nil) {
+		return fmt.Errorf("Error creating start VM Task: ", err)
+	}
+
+	// Waiting for start VM task completion
+	opTask, err = client.Tasks.Wait(opTask.ID)
+	if (err != nil) {
+		return fmt.Errorf("Error starting VM: ", err)
+	}
+
+	fmt.Println("VM was started.")
+
+	return nil
 }
 
 func (d *Driver) Stop() error {
-	return NotLoadable{d.Name}
+	client := d.getClient()
+	opTask, err := client.VMs.Stop(d.VMId)
+	if (err != nil) {
+		return fmt.Errorf("Error creating stop VM task: ", err)
+	}
+
+	// Waiting for stop VM task completion
+	opTask, err = client.Tasks.Wait(opTask.ID)
+	if (err != nil) {
+		return fmt.Errorf("Error stopping VM: ", err)
+	}
+
+	fmt.Println("VM was stopped.")
+
+	return nil
 }
 
 func (d *Driver) Restart() error {
-	return NotLoadable{d.Name}
+	client := d.getClient()
+	opTask, err := client.VMs.Restart(d.VMId)
+	if (err != nil) {
+		return fmt.Errorf("Error creating restart VM task: ", err)
+	}
+
+	// Waiting for restart VM task completion
+	opTask, err = client.Tasks.Wait(opTask.ID)
+	if (err != nil) {
+		return fmt.Errorf("Error restarting VM: ", err)
+	}
+
+	fmt.Println("VM was restarted.")
+
+	return nil
 }
 
 func (d *Driver) Kill() error {
-	return NotLoadable{d.Name}
-}
-
-func (d *Driver) Upgrade() error {
-	return NotLoadable{d.Name}
+	return d.Stop()
 }
