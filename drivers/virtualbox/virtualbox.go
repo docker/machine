@@ -612,8 +612,12 @@ func (d *Driver) Stop() error {
 
 // Restart restarts a machine which is known to be running.
 func (d *Driver) Restart() error {
-	if err := d.vbm("controlvm", d.MachineName, "reset"); err != nil {
-		return err
+	if err := d.Stop(); err != nil {
+		return fmt.Errorf("Problem stopping the VM: %s", err)
+	}
+
+	if err := d.Start(); err != nil {
+		return fmt.Errorf("Problem starting the VM: %s", err)
 	}
 
 	d.IPAddress = ""
