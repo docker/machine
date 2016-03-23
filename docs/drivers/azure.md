@@ -13,7 +13,6 @@ parent="smn_machine_drivers"
 You will need an Azure Subscription to use this Docker Machine driver.
 [Sign up for a free trial.][trial]
 
-
 > **NOTE:** This documentation is for the new version of the Azure driver, which started
 > shipping with v0.7.0. This driver is not backwards-compatible with the old
 > Azure driver. If you want to continue managing your existing Azure machines, please
@@ -33,6 +32,14 @@ authenticate:
     Enter the code [...] to authenticate.
 
 After authenticating, the driver will remember your credentials up to two weeks.
+
+> **KNOWN ISSUE:** There is a known issue with Azure Active Directory causing stored
+> credentials to expire within hours rather than 14 days when the user logs in with
+> personal Microsoft Account (formerly _Live ID_) instead of an Active Directory account.
+> Currently, there is no ETA for resolution, however in the meanwhile you can
+> [create an AAD account][aad-docs] and login with that as a workaround.
+
+[aad-docs]: https://azure.microsoft.com/documentation/articles/virtual-machines-windows-create-aad-work-id/
 
 ## Options
 
