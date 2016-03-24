@@ -1,5 +1,47 @@
 # Changelog
 
+# 0.7.0-rc1 (2016-3-23)
+
+General
+- `DRIVER` environment variable now supported to supply value for `create --driver` flag
+- Update to Go 1.6
+- SSH client has been refactored
+
+Drivers
+- `azure`
+    - Driver has been completely re-written to use resource templates and a significantly easier-to-use authentication model
+- `digitalocean`
+    - New `--digitalocean-ssh-key-fingerprint` for using existing SSH keys instead of creating new ones
+- `virtualbox`
+    - Fix issue with `bootlocal.sh`
+    - New `--virtualbox-nictype` flag to set driver for NAT network
+    - More robust host-only interface collision detection
+    - Add support for running VirtualBox on a Windows 32 bit host
+    - Change default DNS passthrough handling
+- `amazonec2`
+    - Specifying multiple security groups to use is now supported
+- `exoscale`
+    - Add support for user-data
+- `hyperv`
+    - Machines can now be created by a non-administrator
+- `rackspace`
+    - New `--rackspace-active-timeout` parameter
+- `vmwarefusion`
+    - Bind mount shared folder directory by default
+- `google`
+    - New `--google-use-internal-ip-only` parameter
+
+Provisioners
+- General
+    - Support for specifying Docker engine port in some cases
+- CentOS
+    - Now defaults to using upstream `get.docker.com` script instead of custom RPMs.
+- boot2docker
+    - More robust eth* interface detection
+- Swarm
+    - Add `--swarm-experimental` parameter to enable experimental Swarm features
+
+
 # 0.6.0 (2016-02-04)
 
 + Fix SSH wait before provisioning issue
