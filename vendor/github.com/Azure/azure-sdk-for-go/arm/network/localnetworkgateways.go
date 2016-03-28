@@ -48,14 +48,16 @@ func NewLocalNetworkGatewaysClientWithBaseURI(baseURI string, subscriptionID str
 
 // CreateOrUpdate the Put LocalNetworkGateway operation creates/updates a
 // local network gateway in the specified resource group through Network
-// resource provider.
+// resource provider. This method may poll for completion. Polling can be
+// canceled by passing the cancel channel argument. The channel will be used
+// to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group.
 // localNetworkGatewayName is the name of the local network gateway.
 // parameters is parameters supplied to the Begin Create or update Local
 // Network Gateway operation through Network resource provider.
-func (client LocalNetworkGatewaysClient) CreateOrUpdate(resourceGroupName string, localNetworkGatewayName string, parameters LocalNetworkGateway) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, localNetworkGatewayName, parameters)
+func (client LocalNetworkGatewaysClient) CreateOrUpdate(resourceGroupName string, localNetworkGatewayName string, parameters LocalNetworkGateway, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, localNetworkGatewayName, parameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -75,7 +77,7 @@ func (client LocalNetworkGatewaysClient) CreateOrUpdate(resourceGroupName string
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client LocalNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupName string, localNetworkGatewayName string, parameters LocalNetworkGateway) (*http.Request, error) {
+func (client LocalNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupName string, localNetworkGatewayName string, parameters LocalNetworkGateway, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"localNetworkGatewayName": url.QueryEscape(localNetworkGatewayName),
 		"resourceGroupName":       url.QueryEscape(resourceGroupName),
@@ -86,7 +88,7 @@ func (client LocalNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupNam
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -101,8 +103,7 @@ func (client LocalNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupNam
 func (client LocalNetworkGatewaysClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -118,12 +119,15 @@ func (client LocalNetworkGatewaysClient) CreateOrUpdateResponder(resp *http.Resp
 }
 
 // Delete the Delete LocalNetworkGateway operation deletes the specifed local
-// network Gateway through Network resource provider.
+// network Gateway through Network resource provider. This method may poll
+// for completion. Polling can be canceled by passing the cancel channel
+// argument. The channel will be used to cancel polling and any outstanding
+// HTTP requests.
 //
 // resourceGroupName is the name of the resource group.
 // localNetworkGatewayName is the name of the local network gateway.
-func (client LocalNetworkGatewaysClient) Delete(resourceGroupName string, localNetworkGatewayName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, localNetworkGatewayName)
+func (client LocalNetworkGatewaysClient) Delete(resourceGroupName string, localNetworkGatewayName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, localNetworkGatewayName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "Delete", nil, "Failure preparing request")
 	}
@@ -143,7 +147,7 @@ func (client LocalNetworkGatewaysClient) Delete(resourceGroupName string, localN
 }
 
 // DeletePreparer prepares the Delete request.
-func (client LocalNetworkGatewaysClient) DeletePreparer(resourceGroupName string, localNetworkGatewayName string) (*http.Request, error) {
+func (client LocalNetworkGatewaysClient) DeletePreparer(resourceGroupName string, localNetworkGatewayName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"localNetworkGatewayName": url.QueryEscape(localNetworkGatewayName),
 		"resourceGroupName":       url.QueryEscape(resourceGroupName),
@@ -154,7 +158,7 @@ func (client LocalNetworkGatewaysClient) DeletePreparer(resourceGroupName string
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -168,8 +172,7 @@ func (client LocalNetworkGatewaysClient) DeletePreparer(resourceGroupName string
 func (client LocalNetworkGatewaysClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always

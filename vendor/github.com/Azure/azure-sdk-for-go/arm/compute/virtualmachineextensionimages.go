@@ -108,7 +108,7 @@ func (client VirtualMachineExtensionImagesClient) GetResponder(resp *http.Respon
 
 // ListTypes gets a list of virtual machine extension image types.
 //
-func (client VirtualMachineExtensionImagesClient) ListTypes(location string, publisherName string) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineExtensionImagesClient) ListTypes(location string, publisherName string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListTypesPreparer(location, publisherName)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListTypes", nil, "Failure preparing request")
@@ -157,7 +157,7 @@ func (client VirtualMachineExtensionImagesClient) ListTypesSender(req *http.Requ
 
 // ListTypesResponder handles the response to the ListTypes request. The method always
 // closes the http.Response Body.
-func (client VirtualMachineExtensionImagesClient) ListTypesResponder(resp *http.Response) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineExtensionImagesClient) ListTypesResponder(resp *http.Response) (result ListVirtualMachineImageResource, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -171,7 +171,7 @@ func (client VirtualMachineExtensionImagesClient) ListTypesResponder(resp *http.
 // ListVersions gets a list of virtual machine extension image versions.
 //
 // filter is the filter to apply on the operation.
-func (client VirtualMachineExtensionImagesClient) ListVersions(location string, publisherName string, typeParameter string, filter string, top *int32, orderBy string) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineExtensionImagesClient) ListVersions(location string, publisherName string, typeParameter string, filter string, top *int32, orderBy string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListVersionsPreparer(location, publisherName, typeParameter, filter, top, orderBy)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListVersions", nil, "Failure preparing request")
@@ -230,7 +230,7 @@ func (client VirtualMachineExtensionImagesClient) ListVersionsSender(req *http.R
 
 // ListVersionsResponder handles the response to the ListVersions request. The method always
 // closes the http.Response Body.
-func (client VirtualMachineExtensionImagesClient) ListVersionsResponder(resp *http.Response) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineExtensionImagesClient) ListVersionsResponder(resp *http.Response) (result ListVirtualMachineImageResource, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),

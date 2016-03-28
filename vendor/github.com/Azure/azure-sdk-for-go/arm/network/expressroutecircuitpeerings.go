@@ -47,14 +47,16 @@ func NewExpressRouteCircuitPeeringsClientWithBaseURI(baseURI string, subscriptio
 }
 
 // CreateOrUpdate the Put Pering operation creates/updates an peering in the
-// specified ExpressRouteCircuits
+// specified ExpressRouteCircuits This method may poll for completion.
+// Polling can be canceled by passing the cancel channel argument. The
+// channel will be used to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. circuitName is the
 // name of the express route circuit. peeringName is the name of the peering.
 // peeringParameters is parameters supplied to the create/update
 // ExpressRouteCircuit Peering operation
-func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdate(resourceGroupName string, circuitName string, peeringName string, peeringParameters ExpressRouteCircuitPeering) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, circuitName, peeringName, peeringParameters)
+func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdate(resourceGroupName string, circuitName string, peeringName string, peeringParameters ExpressRouteCircuitPeering, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, circuitName, peeringName, peeringParameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitPeeringsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -74,7 +76,7 @@ func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdate(resourceGroupName
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdatePreparer(resourceGroupName string, circuitName string, peeringName string, peeringParameters ExpressRouteCircuitPeering) (*http.Request, error) {
+func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdatePreparer(resourceGroupName string, circuitName string, peeringName string, peeringParameters ExpressRouteCircuitPeering, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"circuitName":       url.QueryEscape(circuitName),
 		"peeringName":       url.QueryEscape(peeringName),
@@ -86,7 +88,7 @@ func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdatePreparer(resourceG
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -101,8 +103,7 @@ func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdatePreparer(resourceG
 func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -118,12 +119,14 @@ func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdateResponder(resp *ht
 }
 
 // Delete the delete peering operation deletes the specified peering from the
-// ExpressRouteCircuit.
+// ExpressRouteCircuit. This method may poll for completion. Polling can be
+// canceled by passing the cancel channel argument. The channel will be used
+// to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. circuitName is the
 // name of the express route circuit. peeringName is the name of the peering.
-func (client ExpressRouteCircuitPeeringsClient) Delete(resourceGroupName string, circuitName string, peeringName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, circuitName, peeringName)
+func (client ExpressRouteCircuitPeeringsClient) Delete(resourceGroupName string, circuitName string, peeringName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, circuitName, peeringName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitPeeringsClient", "Delete", nil, "Failure preparing request")
 	}
@@ -143,7 +146,7 @@ func (client ExpressRouteCircuitPeeringsClient) Delete(resourceGroupName string,
 }
 
 // DeletePreparer prepares the Delete request.
-func (client ExpressRouteCircuitPeeringsClient) DeletePreparer(resourceGroupName string, circuitName string, peeringName string) (*http.Request, error) {
+func (client ExpressRouteCircuitPeeringsClient) DeletePreparer(resourceGroupName string, circuitName string, peeringName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"circuitName":       url.QueryEscape(circuitName),
 		"peeringName":       url.QueryEscape(peeringName),
@@ -155,7 +158,7 @@ func (client ExpressRouteCircuitPeeringsClient) DeletePreparer(resourceGroupName
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -169,8 +172,7 @@ func (client ExpressRouteCircuitPeeringsClient) DeletePreparer(resourceGroupName
 func (client ExpressRouteCircuitPeeringsClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
