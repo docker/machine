@@ -46,7 +46,7 @@ func Authenticate(env azure.Environment, subscriptionID string) (*azure.ServiceP
 	// tenant (which could have multiple subscriptions)
 	log.Debug("Looking up AAD Tenant ID.", logutil.Fields{
 		"subs": subscriptionID})
-	tenantID, err := findTenantID(env, subscriptionID)
+	tenantID, err := loadOrFindTenantID(env, subscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -173,10 +173,21 @@ func tokenFromDeviceFlow(oauthCfg azure.OAuthConfig, tokenPath, clientID, resour
 	return spt, nil
 }
 
+// azureCredsPath returns the directory the azure credentials are stored in.
+func azureCredsPath() string {
+	return filepath.Join(mcnutils.GetHomeDir(), ".docker", "machine", "credentials", "azure")
+}
+
 // tokenCachePath returns the full path the OAuth 2.0 token should be saved at
 // for given tenant ID.
 func tokenCachePath(tenantID string) string {
-	return filepath.Join(mcnutils.GetHomeDir(), ".docker", "machine", "credentials", "azure", fmt.Sprintf("%s.json", tenantID))
+	return filepath.Join(azureCredsPath(), fmt.Sprintf("%s.json", tenantID))
+}
+
+// tenantIDPath returns the full path the tenant ID for the given subscription
+// should be saved at.
+func tenantIDPath(subscriptionID string) string {
+	return filepath.Join(azureCredsPath(), fmt.Sprintf("%s.tenantid", subscriptionID))
 }
 
 // mkTokenCallback returns a callback function that can be used to save the

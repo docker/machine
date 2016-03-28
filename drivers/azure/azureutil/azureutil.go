@@ -124,7 +124,7 @@ func (a AzureClient) CreateNetworkSecurityGroup(ctx *DeploymentContext, resource
 			Properties: &network.SecurityGroupPropertiesFormat{
 				SecurityRules: rules,
 			},
-		})
+		}, nil)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (a AzureClient) DeleteNetworkSecurityGroupIfExists(resourceGroup, name stri
 			_, err := a.securityGroupsClient().Get(resourceGroup, name, "")
 			return err
 		},
-		func() (autorest.Response, error) { return a.securityGroupsClient().Delete(resourceGroup, name) })
+		func() (autorest.Response, error) { return a.securityGroupsClient().Delete(resourceGroup, name, nil) })
 }
 
 func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup, name, location string, isStatic bool) error {
@@ -160,7 +160,7 @@ func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup
 			Properties: &network.PublicIPAddressPropertiesFormat{
 				PublicIPAllocationMethod: ipType,
 			},
-		})
+		}, nil)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func (a AzureClient) DeletePublicIPAddressIfExists(resourceGroup, name string) e
 			_, err := a.publicIPAddressClient().Get(resourceGroup, name, "")
 			return err
 		},
-		func() (autorest.Response, error) { return a.publicIPAddressClient().Delete(resourceGroup, name) })
+		func() (autorest.Response, error) { return a.publicIPAddressClient().Delete(resourceGroup, name, nil) })
 }
 
 func (a AzureClient) CreateVirtualNetworkIfNotExists(resourceGroup, name, location string) error {
@@ -201,7 +201,7 @@ func (a AzureClient) CreateVirtualNetworkIfNotExists(resourceGroup, name, locati
 					AddressPrefixes: to.StringSlicePtr(defaultVnetAddressPrefixes),
 				},
 			},
-		})
+		}, nil)
 	return err
 }
 
@@ -232,7 +232,7 @@ func (a AzureClient) CreateSubnet(ctx *DeploymentContext, resourceGroup, virtual
 			Properties: &network.SubnetPropertiesFormat{
 				AddressPrefix: to.StringPtr(subnetPrefix),
 			},
-		})
+		}, nil)
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (a AzureClient) CreateNetworkInterface(ctx *DeploymentContext, resourceGrou
 				},
 			},
 		},
-	})
+	}, nil)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (a AzureClient) DeleteNetworkInterfaceIfExists(resourceGroup, name string) 
 			_, err := a.networkInterfacesClient().Get(resourceGroup, name, "")
 			return err
 		},
-		func() (autorest.Response, error) { return a.networkInterfacesClient().Delete(resourceGroup, name) })
+		func() (autorest.Response, error) { return a.networkInterfacesClient().Delete(resourceGroup, name, nil) })
 }
 
 func (a AzureClient) CreateStorageAccount(ctx *DeploymentContext, resourceGroup, location string, storageType storage.AccountType) error {
@@ -366,30 +366,16 @@ func (a AzureClient) createStorageAccount(resourceGroup, location string, storag
 			Properties: &storage.AccountPropertiesCreateParameters{
 				AccountType: storageType,
 			},
-		})
+		}, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// NOTE(ahmetalpbalkan) The following loop should eventually be deleted.
-	// Azure Storage Provider has a different polling logic than other Core RPs
-	// and that is not currently implemented in go-autorest. In this loop we are
-	// polling until the property we need is present.
-	for {
-		// Issue a GET call because polling endpoint (?monitor=true) does not respond with
-		// full storage object (has all .Properties)
-		log.Debug("Waiting for storage account to be ready.", f)
-		s, err := a.storageAccountsClient().GetProperties(resourceGroup, name)
-		if err != nil {
-			return nil, err
-		}
-		if s.Properties != nil && s.Properties.PrimaryEndpoints != nil &&
-			s.Properties.PrimaryEndpoints.Blob != nil {
-			return s.Properties, err
-		}
-		log.Debug("Storage account is not yet ready.", f)
-		time.Sleep(time.Second * 10)
+	s, err := a.storageAccountsClient().GetProperties(resourceGroup, name)
+	if err != nil {
+		return nil, err
 	}
+	return s.Properties, nil
 }
 
 func (a AzureClient) VirtualMachineExists(resourceGroup, name string) (bool, error) {
@@ -405,7 +391,7 @@ func (a AzureClient) DeleteVirtualMachineIfExists(resourceGroup, name string) er
 			vmRef = vm
 			return err
 		},
-		func() (autorest.Response, error) { return a.virtualMachinesClient().Delete(resourceGroup, name) })
+		func() (autorest.Response, error) { return a.virtualMachinesClient().Delete(resourceGroup, name, nil) })
 	if err != nil {
 		return err
 	}
@@ -530,7 +516,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 					},
 				},
 			},
-		})
+		}, nil)
 	return err
 }
 
@@ -610,7 +596,7 @@ func (a AzureClient) GetPrivateIPAddress(resourceGroup, name string) (string, er
 // the goal state (running) or times out.
 func (a AzureClient) StartVirtualMachine(resourceGroup, name string) error {
 	log.Info("Starting virtual machine.", logutil.Fields{"vm": name})
-	if _, err := a.virtualMachinesClient().Start(resourceGroup, name); err != nil {
+	if _, err := a.virtualMachinesClient().Start(resourceGroup, name, nil); err != nil {
 		return err
 	}
 	return a.waitVMPowerState(resourceGroup, name, Running, waitStartTimeout)
@@ -620,7 +606,7 @@ func (a AzureClient) StartVirtualMachine(resourceGroup, name string) error {
 // the goal state (stopped) or times out.
 func (a AzureClient) StopVirtualMachine(resourceGroup, name string) error {
 	log.Info("Stopping virtual machine.", logutil.Fields{"vm": name})
-	if _, err := a.virtualMachinesClient().PowerOff(resourceGroup, name); err != nil {
+	if _, err := a.virtualMachinesClient().PowerOff(resourceGroup, name, nil); err != nil {
 		return err
 	}
 	return a.waitVMPowerState(resourceGroup, name, Stopped, waitPowerOffTimeout)
@@ -630,7 +616,7 @@ func (a AzureClient) StopVirtualMachine(resourceGroup, name string) error {
 // the goal state (stopped) or times out.
 func (a AzureClient) RestartVirtualMachine(resourceGroup, name string) error {
 	log.Info("Restarting virtual machine.", logutil.Fields{"vm": name})
-	if _, err := a.virtualMachinesClient().Restart(resourceGroup, name); err != nil {
+	if _, err := a.virtualMachinesClient().Restart(resourceGroup, name, nil); err != nil {
 		return err
 	}
 	return a.waitVMPowerState(resourceGroup, name, Running, waitStartTimeout)

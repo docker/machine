@@ -2,11 +2,54 @@ package azureutil
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
+	"strings"
+
+	"github.com/docker/machine/libmachine/log"
 
 	"github.com/Azure/go-autorest/autorest/azure"
 )
+
+// laodOrFindTenantID figures out the AAD tenant ID of the subscription by first
+// looking at the cache file, if not exists, makes a network call to load it and
+// cache it for future use.
+func loadOrFindTenantID(env azure.Environment, subscriptionID string) (string, error) {
+	var tenantID string
+
+	// Load from cache
+	fp := tenantIDPath(subscriptionID)
+	b, err := ioutil.ReadFile(fp)
+	if err == nil {
+		tenantID = strings.TrimSpace(string(b))
+		log.Debugf("Tenant ID loaded from file: %s", fp)
+	} else {
+		if os.IsNotExist(err) {
+			log.Debugf("Tenant ID file not found: %s", fp)
+		} else {
+			return "", fmt.Errorf("Failed to load tenant ID file: %v", err)
+		}
+	}
+
+	// Handle cache miss
+	if tenantID == "" {
+		log.Debug("Making API call to find tenant ID")
+		t, err := findTenantID(env, subscriptionID)
+		if err != nil {
+			return "", err
+		}
+		tenantID = t
+
+		// Cache the result
+		if err := saveTenantID(fp, tenantID); err != nil {
+			return "", fmt.Errorf("Failed to save tenant ID: %v", err)
+		}
+		log.Debugf("Cached tenant ID to file: %s", fp)
+	}
+	return tenantID, nil
+}
 
 // findTenantID figures out the AAD tenant ID of the subscription by making an
 // unauthenticated request to the Get Subscription Details endpoint and parses
@@ -40,4 +83,8 @@ func findTenantID(env azure.Environment, subscriptionID string) (string, error) 
 		return "", fmt.Errorf("Could not find the tenant ID in header: %s %q", hdrKey, hdr)
 	}
 	return m[1], nil
+}
+
+func saveTenantID(path string, tenantID string) error {
+	return ioutil.WriteFile(path, []byte(tenantID), 0600)
 }
