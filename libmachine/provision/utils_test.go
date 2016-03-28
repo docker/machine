@@ -17,23 +17,16 @@ import (
 )
 
 var (
-	reDaemonListening = ":2376.*LISTEN"
+	reDaemonListening = ":2376\\s+.*:.*"
 )
 
 func TestMatchNetstatOutMissing(t *testing.T) {
 	nsOut := `Active Internet connections (servers and established)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State
-tcp        0      0 0.0.0.0:ssh             0.0.0.0:*               LISTEN
-tcp        0     72 192.168.25.141:ssh      192.168.25.1:63213      ESTABLISHED
-tcp        0      0 :::ssh                  :::*                    LISTEN
-Active UNIX domain sockets (servers and established)
-Proto RefCnt Flags       Type       State         I-Node Path
-unix  2      [ ACC ]     STREAM     LISTENING      17990 /var/run/acpid.socket
-unix  2      [ ACC ]     SEQPACKET  LISTENING      14233 /run/udev/control
-unix  3      [ ]         STREAM     CONNECTED      18688
-unix  3      [ ]         DGRAM                     14243
-unix  3      [ ]         STREAM     CONNECTED      18689
-unix  3      [ ]         DGRAM                     14242`
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:237             0.0.0.0:*               LISTEN
+tcp6       0      0 :::22                   :::*                    LISTEN
+tcp6       0      0 :::23760                :::*                    LISTEN`
 	if matchNetstatOut(reDaemonListening, nsOut) {
 		t.Fatal("Expected not to match the netstat output as showing the daemon listening but got a match")
 	}
@@ -42,19 +35,9 @@ unix  3      [ ]         DGRAM                     14242`
 func TestMatchNetstatOutPresent(t *testing.T) {
 	nsOut := `Active Internet connections (servers and established)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State
-tcp        0      0 0.0.0.0:ssh             0.0.0.0:*               LISTEN
-tcp        0     72 192.168.25.141:ssh      192.168.25.1:63235      ESTABLISHED
-tcp        0      0 :::2376                 :::*                    LISTEN
-tcp        0      0 :::ssh                  :::*                    LISTEN
-Active UNIX domain sockets (servers and established)
-Proto RefCnt Flags       Type       State         I-Node Path
-unix  2      [ ACC ]     STREAM     LISTENING      17990 /var/run/acpid.socket
-unix  2      [ ACC ]     SEQPACKET  LISTENING      14233 /run/udev/control
-unix  2      [ ACC ]     STREAM     LISTENING      19365 /var/run/docker.sock
-unix  3      [ ]         STREAM     CONNECTED      19774
-unix  3      [ ]         STREAM     CONNECTED      19775
-unix  3      [ ]         DGRAM                     14243
-unix  3      [ ]         DGRAM                     14242`
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp6       0      0 :::2376                 :::*                    LISTEN
+tcp6       0      0 :::22                   :::*                    LISTEN`
 	if !matchNetstatOut(reDaemonListening, nsOut) {
 		t.Fatal("Expected to match the netstat output as showing the daemon listening but didn't")
 	}
