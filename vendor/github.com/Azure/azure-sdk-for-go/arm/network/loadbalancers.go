@@ -46,13 +46,16 @@ func NewLoadBalancersClientWithBaseURI(baseURI string, subscriptionID string) Lo
 	return LoadBalancersClient{NewWithBaseURI(baseURI, subscriptionID)}
 }
 
-// CreateOrUpdate the Put LoadBalancer operation creates/updates a LoadBalancer
+// CreateOrUpdate the Put LoadBalancer operation creates/updates a
+// LoadBalancer This method may poll for completion. Polling can be canceled
+// by passing the cancel channel argument. The channel will be used to cancel
+// polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. loadBalancerName is
 // the name of the loadBalancer. parameters is parameters supplied to the
 // create/delete LoadBalancer operation
-func (client LoadBalancersClient) CreateOrUpdate(resourceGroupName string, loadBalancerName string, parameters LoadBalancer) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, loadBalancerName, parameters)
+func (client LoadBalancersClient) CreateOrUpdate(resourceGroupName string, loadBalancerName string, parameters LoadBalancer, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, loadBalancerName, parameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/LoadBalancersClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -72,7 +75,7 @@ func (client LoadBalancersClient) CreateOrUpdate(resourceGroupName string, loadB
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client LoadBalancersClient) CreateOrUpdatePreparer(resourceGroupName string, loadBalancerName string, parameters LoadBalancer) (*http.Request, error) {
+func (client LoadBalancersClient) CreateOrUpdatePreparer(resourceGroupName string, loadBalancerName string, parameters LoadBalancer, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"loadBalancerName":  url.QueryEscape(loadBalancerName),
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
@@ -83,7 +86,7 @@ func (client LoadBalancersClient) CreateOrUpdatePreparer(resourceGroupName strin
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -98,8 +101,7 @@ func (client LoadBalancersClient) CreateOrUpdatePreparer(resourceGroupName strin
 func (client LoadBalancersClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -114,12 +116,15 @@ func (client LoadBalancersClient) CreateOrUpdateResponder(resp *http.Response) (
 	return
 }
 
-// Delete the delete loadbalancer operation deletes the specified loadbalancer.
+// Delete the delete loadbalancer operation deletes the specified
+// loadbalancer. This method may poll for completion. Polling can be canceled
+// by passing the cancel channel argument. The channel will be used to cancel
+// polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. loadBalancerName is
 // the name of the loadBalancer.
-func (client LoadBalancersClient) Delete(resourceGroupName string, loadBalancerName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, loadBalancerName)
+func (client LoadBalancersClient) Delete(resourceGroupName string, loadBalancerName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, loadBalancerName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/LoadBalancersClient", "Delete", nil, "Failure preparing request")
 	}
@@ -139,7 +144,7 @@ func (client LoadBalancersClient) Delete(resourceGroupName string, loadBalancerN
 }
 
 // DeletePreparer prepares the Delete request.
-func (client LoadBalancersClient) DeletePreparer(resourceGroupName string, loadBalancerName string) (*http.Request, error) {
+func (client LoadBalancersClient) DeletePreparer(resourceGroupName string, loadBalancerName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"loadBalancerName":  url.QueryEscape(loadBalancerName),
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
@@ -150,7 +155,7 @@ func (client LoadBalancersClient) DeletePreparer(resourceGroupName string, loadB
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -164,8 +169,7 @@ func (client LoadBalancersClient) DeletePreparer(resourceGroupName string, loadB
 func (client LoadBalancersClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always

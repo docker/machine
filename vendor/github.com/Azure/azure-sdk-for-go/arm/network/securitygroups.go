@@ -47,14 +47,17 @@ func NewSecurityGroupsClientWithBaseURI(baseURI string, subscriptionID string) S
 }
 
 // CreateOrUpdate the Put NetworkSecurityGroup operation creates/updates a
-// network security groupin the specified resource group.
+// network security groupin the specified resource group. This method may
+// poll for completion. Polling can be canceled by passing the cancel channel
+// argument. The channel will be used to cancel polling and any outstanding
+// HTTP requests.
 //
 // resourceGroupName is the name of the resource group.
 // networkSecurityGroupName is the name of the network security group.
 // parameters is parameters supplied to the create/update Network Security
 // Group operation
-func (client SecurityGroupsClient) CreateOrUpdate(resourceGroupName string, networkSecurityGroupName string, parameters SecurityGroup) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, networkSecurityGroupName, parameters)
+func (client SecurityGroupsClient) CreateOrUpdate(resourceGroupName string, networkSecurityGroupName string, parameters SecurityGroup, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, networkSecurityGroupName, parameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/SecurityGroupsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -74,7 +77,7 @@ func (client SecurityGroupsClient) CreateOrUpdate(resourceGroupName string, netw
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client SecurityGroupsClient) CreateOrUpdatePreparer(resourceGroupName string, networkSecurityGroupName string, parameters SecurityGroup) (*http.Request, error) {
+func (client SecurityGroupsClient) CreateOrUpdatePreparer(resourceGroupName string, networkSecurityGroupName string, parameters SecurityGroup, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"networkSecurityGroupName": url.QueryEscape(networkSecurityGroupName),
 		"resourceGroupName":        url.QueryEscape(resourceGroupName),
@@ -85,7 +88,7 @@ func (client SecurityGroupsClient) CreateOrUpdatePreparer(resourceGroupName stri
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -100,8 +103,7 @@ func (client SecurityGroupsClient) CreateOrUpdatePreparer(resourceGroupName stri
 func (client SecurityGroupsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -117,12 +119,14 @@ func (client SecurityGroupsClient) CreateOrUpdateResponder(resp *http.Response) 
 }
 
 // Delete the Delete NetworkSecurityGroup operation deletes the specifed
-// network security group
+// network security group This method may poll for completion. Polling can be
+// canceled by passing the cancel channel argument. The channel will be used
+// to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group.
 // networkSecurityGroupName is the name of the network security group.
-func (client SecurityGroupsClient) Delete(resourceGroupName string, networkSecurityGroupName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, networkSecurityGroupName)
+func (client SecurityGroupsClient) Delete(resourceGroupName string, networkSecurityGroupName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, networkSecurityGroupName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/SecurityGroupsClient", "Delete", nil, "Failure preparing request")
 	}
@@ -142,7 +146,7 @@ func (client SecurityGroupsClient) Delete(resourceGroupName string, networkSecur
 }
 
 // DeletePreparer prepares the Delete request.
-func (client SecurityGroupsClient) DeletePreparer(resourceGroupName string, networkSecurityGroupName string) (*http.Request, error) {
+func (client SecurityGroupsClient) DeletePreparer(resourceGroupName string, networkSecurityGroupName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"networkSecurityGroupName": url.QueryEscape(networkSecurityGroupName),
 		"resourceGroupName":        url.QueryEscape(resourceGroupName),
@@ -153,7 +157,7 @@ func (client SecurityGroupsClient) DeletePreparer(resourceGroupName string, netw
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -167,8 +171,7 @@ func (client SecurityGroupsClient) DeletePreparer(resourceGroupName string, netw
 func (client SecurityGroupsClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
