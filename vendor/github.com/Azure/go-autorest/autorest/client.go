@@ -103,6 +103,12 @@ type Client struct {
 	RequestInspector  PrepareDecorator
 	ResponseInspector RespondDecorator
 
+	// PollingDelay sets the polling frequency used in absence of a Retry-After HTTP header
+	PollingDelay time.Duration
+
+	// PollingDuration sets the maximum polling time after which an error is returned.
+	PollingDuration time.Duration
+
 	// UserAgent, if not empty, will be set as the HTTP User-Agent header on all requests sent
 	// through the Do method.
 	UserAgent string
@@ -111,7 +117,7 @@ type Client struct {
 // NewClientWithUserAgent returns an instance of a Client with the UserAgent set to the passed
 // string.
 func NewClientWithUserAgent(ua string) Client {
-	c := Client{}
+	c := Client{PollingDelay: DefaultPollingDelay, PollingDuration: DefaultPollingDuration}
 	c.UserAgent = ua
 	return c
 }

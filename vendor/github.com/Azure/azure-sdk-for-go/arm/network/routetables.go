@@ -46,13 +46,15 @@ func NewRouteTablesClientWithBaseURI(baseURI string, subscriptionID string) Rout
 }
 
 // CreateOrUpdate the Put RouteTable operation creates/updates a route tablein
-// the specified resource group.
+// the specified resource group. This method may poll for completion. Polling
+// can be canceled by passing the cancel channel argument. The channel will
+// be used to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. routeTableName is the
 // name of the route table. parameters is parameters supplied to the
 // create/update Route Table operation
-func (client RouteTablesClient) CreateOrUpdate(resourceGroupName string, routeTableName string, parameters RouteTable) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, routeTableName, parameters)
+func (client RouteTablesClient) CreateOrUpdate(resourceGroupName string, routeTableName string, parameters RouteTable, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, routeTableName, parameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/RouteTablesClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -72,7 +74,7 @@ func (client RouteTablesClient) CreateOrUpdate(resourceGroupName string, routeTa
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client RouteTablesClient) CreateOrUpdatePreparer(resourceGroupName string, routeTableName string, parameters RouteTable) (*http.Request, error) {
+func (client RouteTablesClient) CreateOrUpdatePreparer(resourceGroupName string, routeTableName string, parameters RouteTable, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
 		"routeTableName":    url.QueryEscape(routeTableName),
@@ -83,7 +85,7 @@ func (client RouteTablesClient) CreateOrUpdatePreparer(resourceGroupName string,
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -98,8 +100,7 @@ func (client RouteTablesClient) CreateOrUpdatePreparer(resourceGroupName string,
 func (client RouteTablesClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -115,11 +116,14 @@ func (client RouteTablesClient) CreateOrUpdateResponder(resp *http.Response) (re
 }
 
 // Delete the Delete RouteTable operation deletes the specifed Route Table
+// This method may poll for completion. Polling can be canceled by passing
+// the cancel channel argument. The channel will be used to cancel polling
+// and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. routeTableName is the
 // name of the route table.
-func (client RouteTablesClient) Delete(resourceGroupName string, routeTableName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, routeTableName)
+func (client RouteTablesClient) Delete(resourceGroupName string, routeTableName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, routeTableName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/RouteTablesClient", "Delete", nil, "Failure preparing request")
 	}
@@ -139,7 +143,7 @@ func (client RouteTablesClient) Delete(resourceGroupName string, routeTableName 
 }
 
 // DeletePreparer prepares the Delete request.
-func (client RouteTablesClient) DeletePreparer(resourceGroupName string, routeTableName string) (*http.Request, error) {
+func (client RouteTablesClient) DeletePreparer(resourceGroupName string, routeTableName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
 		"routeTableName":    url.QueryEscape(routeTableName),
@@ -150,7 +154,7 @@ func (client RouteTablesClient) DeletePreparer(resourceGroupName string, routeTa
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -164,8 +168,7 @@ func (client RouteTablesClient) DeletePreparer(resourceGroupName string, routeTa
 func (client RouteTablesClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
