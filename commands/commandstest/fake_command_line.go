@@ -42,6 +42,11 @@ func (ff FakeFlagger) Bool(key string) bool {
 	return false
 }
 
+func (fcli *FakeCommandLine) IsSet(key string) bool {
+	_, ok := fcli.LocalFlags.Data[key]
+	return ok
+}
+
 func (fcli *FakeCommandLine) String(key string) string {
 	return fcli.LocalFlags.String(key)
 }
