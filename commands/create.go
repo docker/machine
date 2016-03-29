@@ -364,7 +364,9 @@ func getDriverOpts(c CommandLine, mcnflags []mcnflag.Flag) drivers.DriverOptions
 			// TODO: This is pretty hacky.  StringSlice is the only
 			// type so far we have to worry about which is not a
 			// Getter, though.
-			driverOpts.Values[name] = c.StringSlice(name)
+			if c.IsSet(name) {
+				driverOpts.Values[name] = c.StringSlice(name)
+			}
 		}
 	}
 
