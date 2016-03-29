@@ -42,6 +42,8 @@ type CommandLine interface {
 
 	Args() cli.Args
 
+	IsSet(name string) bool
+
 	Bool(name string) bool
 
 	Int(name string) int
