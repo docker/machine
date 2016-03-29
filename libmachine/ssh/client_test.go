@@ -43,3 +43,36 @@ func TestGetSSHCmdArgs(t *testing.T) {
 		assert.Equal(t, cmd.Args, c.expectedArgs)
 	}
 }
+
+func TestNewExternalClient(t *testing.T) {
+	cases := []struct {
+		sshBinaryPath string
+		user          string
+		host          string
+		port          int
+		auth          *Auth
+		expectedError string
+	}{
+		{
+			sshBinaryPath: "/usr/local/bin/ssh",
+			user:          "docker",
+			host:          "localhost",
+			port:          22,
+			auth:          &Auth{Keys: []string{"/tmp/private-key-not-exist"}},
+			expectedError: "stat /tmp/private-key-not-exist: no such file or directory",
+		},
+		{
+			sshBinaryPath: "/usr/local/bin/ssh",
+			user:          "docker",
+			host:          "localhost",
+			port:          22,
+			auth:          &Auth{Keys: []string{"/dev/null"}},
+			expectedError: "Permissions 0410000666 for '/dev/null' are too open.",
+		},
+	}
+
+	for _, c := range cases {
+		_, err := NewExternalClient(c.sshBinaryPath, c.user, c.host, c.port, c.auth)
+		assert.EqualError(t, err, c.expectedError)
+	}
+}
