@@ -24,7 +24,7 @@ const (
 	driverName = "photoncontroller"
 	defaultEndpoint = "https://192.0.2.2"
 	defaultAuthEndpoint = "10.146.64.236"
-	defaultSSHUser = "root"
+	defaultSSHUser = "docker"
 	defaultSSHKeyPath = "/ssh/id_rsa"
 	maxRetries = 150
 )
@@ -32,7 +32,6 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	Name           string
-	Tenant         string
 	Project        string
 	VMFlavor       string
 	DiskFlavor     string
@@ -52,15 +51,14 @@ func (e NotLoadable) Error() string {
 
 func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
-		Tenant:         "TenantsName",
-		Project:        "626ce36a-8d61-4b69-8880-81829aac7b8c",
+		Project:		"00000000-0000-0000-0000-000000000000",
 		VMFlavor:       "VMFlavor",
 		DiskFlavor:     "DiskFlavor",
-		DiskName:       "disk-10",
-		Image:          "707f566f-c3d0-44b3-8eb6-e66a087f46dc",
+		DiskName:       "DiskName",
+		Image:          "00000000-0000-0000-0000-000000000000",
 		PhotonEndpoint: defaultEndpoint,
 		BaseDriver:     &drivers.BaseDriver{
-			SSHUser:     defaultSSHUser,
+			SSHUser:	 defaultSSHUser,
 			MachineName: hostName,
 			StorePath:   storePath,
 			SSHPort:     22,
@@ -74,13 +72,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   "photon-endpoint",
 			Usage:  "Photon Controller endpoint in format: http://<ip address>:<port>",
-			Value:  defaultEndpoint,
 			EnvVar: "PHOTON_ENDPOINT",
-		},
-		mcnflag.StringFlag{
-			Name:   "photon-tenant",
-			Usage:  "Tenant name",
-			EnvVar: "PHOTON_TENANT",
 		},
 		mcnflag.StringFlag{
 			Name:   "photon-project",
@@ -167,7 +159,6 @@ func (d *Driver) GetSSHUsername() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Tenant = flags.String("photon-tenant")
 	d.Project = flags.String("photon-project")
 	d.VMFlavor = flags.String("photon-vmflavor")
 	d.DiskFlavor = flags.String("photon-diskflavor")
@@ -267,6 +258,30 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) PreCreateCheck() error {
+	if d.PhotonEndpoint == "" {
+		return fmt.Errorf("Photon controller endpoint is not provided.")
+	}
+
+	if d.Project == "" {
+		return fmt.Errorf("Project Id is not provided.")
+	}
+
+	if d.VMFlavor == "" {
+		return fmt.Errorf("VM flavor name is not provided.")
+	}
+
+	if d.DiskFlavor == "" {
+		return fmt.Errorf("Disk flavor name is not provided.")
+	}
+
+	if d.DiskName == "" {
+		return fmt.Errorf("Disk name is not provided.")
+	}
+
+	if d.Image == "" {
+		return fmt.Errorf("Image Id is not provided.")
+	}
+
 	return nil
 }
 
