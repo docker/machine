@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -25,12 +26,10 @@ func loadOrFindTenantID(env azure.Environment, subscriptionID string) (string, e
 	if err == nil {
 		tenantID = strings.TrimSpace(string(b))
 		log.Debugf("Tenant ID loaded from file: %s", fp)
+	} else if os.IsNotExist(err) {
+		log.Debugf("Tenant ID file not found: %s", fp)
 	} else {
-		if os.IsNotExist(err) {
-			log.Debugf("Tenant ID file not found: %s", fp)
-		} else {
-			return "", fmt.Errorf("Failed to load tenant ID file: %v", err)
-		}
+		return "", fmt.Errorf("Failed to load tenant ID file: %v", err)
 	}
 
 	// Handle cache miss
@@ -85,6 +84,33 @@ func findTenantID(env azure.Environment, subscriptionID string) (string, error) 
 	return m[1], nil
 }
 
+// saveTenantID performs an atomic write to the path with given tenantID contents.
 func saveTenantID(path string, tenantID string) error {
-	return ioutil.WriteFile(path, []byte(tenantID), 0600)
+	var perm os.FileMode = 0600
+
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return fmt.Errorf("Failed to create directory %s: %v", dir, err)
+	}
+
+	f, err := ioutil.TempFile(os.TempDir(), "tenantid")
+	if err != nil {
+		return fmt.Errorf("Failed to create temp file: %v", err)
+	}
+	defer f.Close()
+
+	fp := f.Name()
+	if _, err := f.Write([]byte(tenantID)); err != nil {
+		return fmt.Errorf("Failed to write tenant ID to file: %v", err)
+	}
+	f.Close()
+
+	// atomic move by rename
+	if err := os.Rename(fp, path); err != nil {
+		return fmt.Errorf("Failed to rename file: %v", err)
+	}
+	if err := os.Chmod(path, perm); err != nil {
+		return fmt.Errorf("Failed to chmod the file %s: %v", path, err)
+	}
+	return nil
 }
