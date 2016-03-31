@@ -261,44 +261,44 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		instance.NetworkInterfaces[0].AccessConfigs = append(instance.NetworkInterfaces[0].AccessConfigs, cfg)
 	}
 
-        if d.LocalSsdNum > 0 {
-                for i := 0; i < d.LocalSsdNum; i++ {
-                        localSsd := &raw.AttachedDisk{
-				AutoDelete: true,        // Cannot create local SSD without autoDelete
-				Type:       "SCRATCH",   // Again, necessary for local SSD
+	if d.LocalSsdNum > 0 {
+		for i := 0; i < d.LocalSsdNum; i++ {
+			localSsd := &raw.AttachedDisk{
+				AutoDelete: true,      // Cannot create local SSD without autoDelete
+				Type:       "SCRATCH", // Again, necessary for local SSD
 				Mode:       "READ_WRITE",
-                                Interface:  d.LocalSsdInterface,
-                                InitializeParams: &raw.AttachedDiskInitializeParams{
-                                        DiskType:    c.zoneURL + "/diskTypes/local-ssd",
-                                        // DiskSize - is a default 370 GB on gcloud
-                                        // DiskName - use the default local-ssd-N
-                                },
-                        }
-                        instance.Disks = append(instance.Disks, localSsd)
-                }
-        }
-        if d.MetadataSpec != "" {
-                metadataPairs := strings.Split(d.MetadataSpec, ",")
+				Interface:  d.LocalSsdInterface,
+				InitializeParams: &raw.AttachedDiskInitializeParams{
+					DiskType: c.zoneURL + "/diskTypes/local-ssd",
+					// DiskSize - is a default 370 GB on gcloud
+					// DiskName - use the default local-ssd-N
+				},
+			}
+			instance.Disks = append(instance.Disks, localSsd)
+		}
+	}
+	if d.MetadataSpec != "" {
+		metadataPairs := strings.Split(d.MetadataSpec, ",")
 		metadataItems := []*raw.MetadataItems{}
-		for _,metadataPair := range metadataPairs {
+		for _, metadataPair := range metadataPairs {
 			var keyFilePair = strings.Split(metadataPair, "=")
 			if len(keyFilePair) != 2 {
 				return errors.New("Invalid metadata pair specified: " + metadataPair)
 			}
-			content,err := ioutil.ReadFile(keyFilePair[1])
+			content, err := ioutil.ReadFile(keyFilePair[1])
 			if err != nil {
 				return err
 			}
 			contentStr := string(content[:])
 			metadataItems = append(metadataItems, &raw.MetadataItems{
-				Key:    keyFilePair[0],
-				Value:  &contentStr,
+				Key:   keyFilePair[0],
+				Value: &contentStr,
 			})
 		}
 		instance.Metadata = &raw.Metadata{
-			Items:    metadataItems,
+			Items: metadataItems,
 		}
-        }
+	}
 	if c.address != "" {
 		staticAddress, err := c.staticAddress()
 		if err != nil {
@@ -393,7 +393,7 @@ func (c *ComputeUtil) uploadSSHKey(instance *raw.Instance, sshKeyPath string) er
 	})
 	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
 		Fingerprint: instance.Metadata.Fingerprint,
-		Items: items,
+		Items:       items,
 	}).Do()
 
 	return c.waitForRegionalOp(op.Name)
