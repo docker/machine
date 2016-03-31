@@ -47,13 +47,15 @@ func NewExpressRouteCircuitsClientWithBaseURI(baseURI string, subscriptionID str
 }
 
 // CreateOrUpdate the Put ExpressRouteCircuit operation creates/updates a
-// ExpressRouteCircuit
+// ExpressRouteCircuit This method may poll for completion. Polling can be
+// canceled by passing the cancel channel argument. The channel will be used
+// to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. circuitName is the
 // name of the circuit. parameters is parameters supplied to the
 // create/delete ExpressRouteCircuit operation
-func (client ExpressRouteCircuitsClient) CreateOrUpdate(resourceGroupName string, circuitName string, parameters ExpressRouteCircuit) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, circuitName, parameters)
+func (client ExpressRouteCircuitsClient) CreateOrUpdate(resourceGroupName string, circuitName string, parameters ExpressRouteCircuit, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, circuitName, parameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -73,7 +75,7 @@ func (client ExpressRouteCircuitsClient) CreateOrUpdate(resourceGroupName string
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client ExpressRouteCircuitsClient) CreateOrUpdatePreparer(resourceGroupName string, circuitName string, parameters ExpressRouteCircuit) (*http.Request, error) {
+func (client ExpressRouteCircuitsClient) CreateOrUpdatePreparer(resourceGroupName string, circuitName string, parameters ExpressRouteCircuit, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"circuitName":       url.QueryEscape(circuitName),
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
@@ -84,7 +86,7 @@ func (client ExpressRouteCircuitsClient) CreateOrUpdatePreparer(resourceGroupNam
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -99,8 +101,7 @@ func (client ExpressRouteCircuitsClient) CreateOrUpdatePreparer(resourceGroupNam
 func (client ExpressRouteCircuitsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -116,12 +117,14 @@ func (client ExpressRouteCircuitsClient) CreateOrUpdateResponder(resp *http.Resp
 }
 
 // Delete the delete ExpressRouteCircuit operation deletes the specified
-// ExpressRouteCircuit.
+// ExpressRouteCircuit. This method may poll for completion. Polling can be
+// canceled by passing the cancel channel argument. The channel will be used
+// to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. circuitName is the
 // name of the express route Circuit.
-func (client ExpressRouteCircuitsClient) Delete(resourceGroupName string, circuitName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, circuitName)
+func (client ExpressRouteCircuitsClient) Delete(resourceGroupName string, circuitName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, circuitName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitsClient", "Delete", nil, "Failure preparing request")
 	}
@@ -141,7 +144,7 @@ func (client ExpressRouteCircuitsClient) Delete(resourceGroupName string, circui
 }
 
 // DeletePreparer prepares the Delete request.
-func (client ExpressRouteCircuitsClient) DeletePreparer(resourceGroupName string, circuitName string) (*http.Request, error) {
+func (client ExpressRouteCircuitsClient) DeletePreparer(resourceGroupName string, circuitName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"circuitName":       url.QueryEscape(circuitName),
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
@@ -152,7 +155,7 @@ func (client ExpressRouteCircuitsClient) DeletePreparer(resourceGroupName string
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -166,8 +169,7 @@ func (client ExpressRouteCircuitsClient) DeletePreparer(resourceGroupName string
 func (client ExpressRouteCircuitsClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always

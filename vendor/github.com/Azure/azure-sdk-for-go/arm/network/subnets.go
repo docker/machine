@@ -45,14 +45,16 @@ func NewSubnetsClientWithBaseURI(baseURI string, subscriptionID string) SubnetsC
 }
 
 // CreateOrUpdate the Put Subnet operation creates/updates a subnet in
-// thespecified virtual network
+// thespecified virtual network This method may poll for completion. Polling
+// can be canceled by passing the cancel channel argument. The channel will
+// be used to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. virtualNetworkName is
 // the name of the virtual network. subnetName is the name of the subnet.
 // subnetParameters is parameters supplied to the create/update Subnet
 // operation
-func (client SubnetsClient) CreateOrUpdate(resourceGroupName string, virtualNetworkName string, subnetName string, subnetParameters Subnet) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, virtualNetworkName, subnetName, subnetParameters)
+func (client SubnetsClient) CreateOrUpdate(resourceGroupName string, virtualNetworkName string, subnetName string, subnetParameters Subnet, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, virtualNetworkName, subnetName, subnetParameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/SubnetsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -72,7 +74,7 @@ func (client SubnetsClient) CreateOrUpdate(resourceGroupName string, virtualNetw
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client SubnetsClient) CreateOrUpdatePreparer(resourceGroupName string, virtualNetworkName string, subnetName string, subnetParameters Subnet) (*http.Request, error) {
+func (client SubnetsClient) CreateOrUpdatePreparer(resourceGroupName string, virtualNetworkName string, subnetName string, subnetParameters Subnet, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName":  url.QueryEscape(resourceGroupName),
 		"subnetName":         url.QueryEscape(subnetName),
@@ -84,7 +86,7 @@ func (client SubnetsClient) CreateOrUpdatePreparer(resourceGroupName string, vir
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -99,8 +101,7 @@ func (client SubnetsClient) CreateOrUpdatePreparer(resourceGroupName string, vir
 func (client SubnetsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -115,12 +116,15 @@ func (client SubnetsClient) CreateOrUpdateResponder(resp *http.Response) (result
 	return
 }
 
-// Delete the delete subnet operation deletes the specified subnet.
+// Delete the delete subnet operation deletes the specified subnet. This
+// method may poll for completion. Polling can be canceled by passing the
+// cancel channel argument. The channel will be used to cancel polling and
+// any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. virtualNetworkName is
 // the name of the virtual network. subnetName is the name of the subnet.
-func (client SubnetsClient) Delete(resourceGroupName string, virtualNetworkName string, subnetName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, virtualNetworkName, subnetName)
+func (client SubnetsClient) Delete(resourceGroupName string, virtualNetworkName string, subnetName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, virtualNetworkName, subnetName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/SubnetsClient", "Delete", nil, "Failure preparing request")
 	}
@@ -140,7 +144,7 @@ func (client SubnetsClient) Delete(resourceGroupName string, virtualNetworkName 
 }
 
 // DeletePreparer prepares the Delete request.
-func (client SubnetsClient) DeletePreparer(resourceGroupName string, virtualNetworkName string, subnetName string) (*http.Request, error) {
+func (client SubnetsClient) DeletePreparer(resourceGroupName string, virtualNetworkName string, subnetName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName":  url.QueryEscape(resourceGroupName),
 		"subnetName":         url.QueryEscape(subnetName),
@@ -152,7 +156,7 @@ func (client SubnetsClient) DeletePreparer(resourceGroupName string, virtualNetw
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -166,8 +170,7 @@ func (client SubnetsClient) DeletePreparer(resourceGroupName string, virtualNetw
 func (client SubnetsClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always

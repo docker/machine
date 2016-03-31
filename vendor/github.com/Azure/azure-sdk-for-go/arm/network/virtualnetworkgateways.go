@@ -48,14 +48,16 @@ func NewVirtualNetworkGatewaysClientWithBaseURI(baseURI string, subscriptionID s
 
 // CreateOrUpdate the Put VirtualNetworkGateway operation creates/updates a
 // virtual network gateway in the specified resource group through Network
-// resource provider.
+// resource provider. This method may poll for completion. Polling can be
+// canceled by passing the cancel channel argument. The channel will be used
+// to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group.
 // virtualNetworkGatewayName is the name of the virtual network gateway.
 // parameters is parameters supplied to the Begin Create or update Virtual
 // Network Gateway operation through Network resource provider.
-func (client VirtualNetworkGatewaysClient) CreateOrUpdate(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, virtualNetworkGatewayName, parameters)
+func (client VirtualNetworkGatewaysClient) CreateOrUpdate(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, virtualNetworkGatewayName, parameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
@@ -75,7 +77,7 @@ func (client VirtualNetworkGatewaysClient) CreateOrUpdate(resourceGroupName stri
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client VirtualNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway) (*http.Request, error) {
+func (client VirtualNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName":         url.QueryEscape(resourceGroupName),
 		"subscriptionId":            url.QueryEscape(client.SubscriptionID),
@@ -86,7 +88,7 @@ func (client VirtualNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupN
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -101,8 +103,7 @@ func (client VirtualNetworkGatewaysClient) CreateOrUpdatePreparer(resourceGroupN
 func (client VirtualNetworkGatewaysClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -118,12 +119,15 @@ func (client VirtualNetworkGatewaysClient) CreateOrUpdateResponder(resp *http.Re
 }
 
 // Delete the Delete VirtualNetworkGateway operation deletes the specifed
-// virtual network Gateway through Network resource provider.
+// virtual network Gateway through Network resource provider. This method may
+// poll for completion. Polling can be canceled by passing the cancel channel
+// argument. The channel will be used to cancel polling and any outstanding
+// HTTP requests.
 //
 // resourceGroupName is the name of the resource group.
 // virtualNetworkGatewayName is the name of the virtual network gateway.
-func (client VirtualNetworkGatewaysClient) Delete(resourceGroupName string, virtualNetworkGatewayName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, virtualNetworkGatewayName)
+func (client VirtualNetworkGatewaysClient) Delete(resourceGroupName string, virtualNetworkGatewayName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, virtualNetworkGatewayName, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Delete", nil, "Failure preparing request")
 	}
@@ -143,7 +147,7 @@ func (client VirtualNetworkGatewaysClient) Delete(resourceGroupName string, virt
 }
 
 // DeletePreparer prepares the Delete request.
-func (client VirtualNetworkGatewaysClient) DeletePreparer(resourceGroupName string, virtualNetworkGatewayName string) (*http.Request, error) {
+func (client VirtualNetworkGatewaysClient) DeletePreparer(resourceGroupName string, virtualNetworkGatewayName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName":         url.QueryEscape(resourceGroupName),
 		"subscriptionId":            url.QueryEscape(client.SubscriptionID),
@@ -154,7 +158,7 @@ func (client VirtualNetworkGatewaysClient) DeletePreparer(resourceGroupName stri
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -168,8 +172,7 @@ func (client VirtualNetworkGatewaysClient) DeletePreparer(resourceGroupName stri
 func (client VirtualNetworkGatewaysClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -407,14 +410,16 @@ func (client VirtualNetworkGatewaysClient) ListNextResults(lastResults VirtualNe
 
 // Reset the Reset VirtualNetworkGateway operation resets the primary of the
 // virtual network gateway in the specified resource group through Network
-// resource provider.
+// resource provider. This method may poll for completion. Polling can be
+// canceled by passing the cancel channel argument. The channel will be used
+// to cancel polling and any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group.
 // virtualNetworkGatewayName is the name of the virtual network gateway.
 // parameters is parameters supplied to the Begin Reset Virtual Network
 // Gateway operation through Network resource provider.
-func (client VirtualNetworkGatewaysClient) Reset(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway) (result autorest.Response, err error) {
-	req, err := client.ResetPreparer(resourceGroupName, virtualNetworkGatewayName, parameters)
+func (client VirtualNetworkGatewaysClient) Reset(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.ResetPreparer(resourceGroupName, virtualNetworkGatewayName, parameters, cancel)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Reset", nil, "Failure preparing request")
 	}
@@ -434,7 +439,7 @@ func (client VirtualNetworkGatewaysClient) Reset(resourceGroupName string, virtu
 }
 
 // ResetPreparer prepares the Reset request.
-func (client VirtualNetworkGatewaysClient) ResetPreparer(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway) (*http.Request, error) {
+func (client VirtualNetworkGatewaysClient) ResetPreparer(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"resourceGroupName":         url.QueryEscape(resourceGroupName),
 		"subscriptionId":            url.QueryEscape(client.SubscriptionID),
@@ -445,7 +450,7 @@ func (client VirtualNetworkGatewaysClient) ResetPreparer(resourceGroupName strin
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -460,8 +465,7 @@ func (client VirtualNetworkGatewaysClient) ResetPreparer(resourceGroupName strin
 func (client VirtualNetworkGatewaysClient) ResetSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // ResetResponder handles the response to the Reset request. The method always

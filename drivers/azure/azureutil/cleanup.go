@@ -65,7 +65,7 @@ func (c *subnetCleanup) Get(a AzureClient) (err error) {
 }
 
 func (c *subnetCleanup) Delete(a AzureClient) error {
-	_, err := a.subnetsClient().Delete(c.rg, c.vnet, c.name)
+	_, err := a.subnetsClient().Delete(c.rg, c.vnet, c.name, nil)
 	return err
 }
 
@@ -89,7 +89,7 @@ func (c *vnetCleanup) Get(a AzureClient) (err error) {
 }
 
 func (c *vnetCleanup) Delete(a AzureClient) error {
-	_, err := a.virtualNetworksClient().Delete(c.rg, c.name)
+	_, err := a.virtualNetworksClient().Delete(c.rg, c.name, nil)
 	return err
 }
 
