@@ -219,67 +219,38 @@ func (d *Driver) Create() error {
 
 	fmt.Println("VM is started.")
 
-	ipAddress := ""
-	numRetries := 0
-	for numRetries < maxRetries {
-		vmNetworksTask, err := client.VMs.GetNetworks(d.VMId)
-		if (err != nil) {
-			return fmt.Errorf("Error creating task for get VM networks: ", err)
-		}
-
-		// Waiting for get VM networks task completion
-		vmNetworksTask, err = client.Tasks.Wait(vmNetworksTask.ID)
-		if (err != nil) {
-			return fmt.Errorf("Get VM networks taks not completed: ", err)
-		}
-
-		networkConnections := vmNetworksTask.ResourceProperties.(map[string]interface{})
-		networks := networkConnections["networkConnections"].([]interface{})
-
-		for _, nt := range networks {
-			network := nt.(map[string]interface{})
-			if val, ok := network["ipAddress"]; ok && val != nil {
-				ipAddress = val.(string)
-				break
-			}
-		}
-
-		if ipAddress != "" {
-			break;
-		}
-		numRetries++
-		time.Sleep(1 * time.Second)
+	if err = d.RetrieveMachineIP(client); err != nil {
+		return err
 	}
 
-	d.IPAddress = ipAddress
-	fmt.Println("VM IP: ", d.VMId)
+	fmt.Println("VM IP: ", d.IPAddress)
 
 	return nil
 }
 
 func (d *Driver) PreCreateCheck() error {
 	if d.PhotonEndpoint == "" {
-		return fmt.Errorf("Photon controller endpoint is not provided.")
+		return fmt.Errorf("Photon controller endpoint was not specified. Use --photon-endpoint option to specify it.")
 	}
 
 	if d.Project == "" {
-		return fmt.Errorf("Project Id is not provided.")
+		return fmt.Errorf("Project Id was not provided. Use --photon-project option to specify it.")
 	}
 
 	if d.VMFlavor == "" {
-		return fmt.Errorf("VM flavor name is not provided.")
+		return fmt.Errorf("VM flavor name was not provided. Use --photon-vmflavor option to specify it.")
 	}
 
 	if d.DiskFlavor == "" {
-		return fmt.Errorf("Disk flavor name is not provided.")
+		return fmt.Errorf("Disk flavor name was not provided. Use --photon-diskflavor option to specify it.")
 	}
 
 	if d.DiskName == "" {
-		return fmt.Errorf("Disk name is not provided.")
+		return fmt.Errorf("Disk name was not provided. Use --photon-diskname option to specify it.")
 	}
 
 	if d.Image == "" {
-		return fmt.Errorf("Image Id is not provided.")
+		return fmt.Errorf("Image Id was not provided. Use --photon-image option to specify it.")
 	}
 
 	return nil
@@ -384,4 +355,52 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) Kill() error {
 	return d.Stop()
+}
+
+func (d *Driver) RetrieveMachineIP(client *photon.Client) error {
+	d.IPAddress = ""
+	numRetries := 0
+	for numRetries < maxRetries {
+		vmNetworksTask, err := client.VMs.GetNetworks(d.VMId)
+		if (err != nil) {
+			return fmt.Errorf("Error creating task for get VM networks: ", err)
+		}
+
+		// Waiting for get VM networks task completion
+		vmNetworksTask, err = client.Tasks.Wait(vmNetworksTask.ID)
+		if (err != nil) {
+			return fmt.Errorf("Get VM networks taks not completed: ", err)
+		}
+
+		networkConnections := vmNetworksTask.ResourceProperties.(map[string]interface{})
+		networks := networkConnections["networkConnections"].([]interface{})
+
+		for _, nt := range networks {
+			network := nt.(map[string]interface{})
+			networkValue, ok := network["network"]
+			if !ok || networkValue == nil || networkValue.(string) == "" {
+				continue
+			}
+
+			ipAddressValue, ok := network["ipAddress"]
+			if !ok || ipAddressValue == nil || ipAddressValue.(string) == "" {
+				continue
+			}
+
+			d.IPAddress = ipAddressValue.(string)
+			break
+		}
+
+		if d.IPAddress != "" {
+			break;
+		}
+		numRetries++
+		time.Sleep(1 * time.Second)
+	}
+
+	if d.IPAddress == "" {
+		return fmt.Errorf("Fail to retrieve VM IP.")
+	}
+
+	return nil
 }
