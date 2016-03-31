@@ -75,9 +75,9 @@ Follow along with this example to create a Dockerized <a href="https://aws.amazo
         NAME             ACTIVE   DRIVER         STATE     URL                         SWARM   DOCKER        ERRORS      
         aws-sandbox      *        amazonec2      Running   tcp://52.90.113.128:2376            v1.10.0       
         default          -        virtualbox     Running   tcp://192.168.99.100:2376           v1.10.0-rc4   
-        docker-sandbox   -        digitalocean   Running   tcp://104.131.43.236:2376           v1.9.1        
+        aws-sandbox   -        digitalocean   Running   tcp://104.131.43.236:2376           v1.9.1        
 
-    The new `aws-sandbox` instance is running, and it is the active host as indicated by the asterisk (*). When you create a new machine, your command shell automatically connects it. If for some reason your new machine is not the active host, you'll need to run `docker-machine env aws-sandbox`, followed by `eval $(docker-machine env aws-sandbox)` to connect to it.
+    The new `aws-sandbox` instance is running, and it is the active host as indicated by the asterisk (*). When you create a new machine, your command shell automatically connects to it. If for some reason your new machine is not the active host, you'll need to run `docker-machine env aws-sandbox`, followed by `eval $(docker-machine env aws-sandbox)` to connect to it.
 
 ### Step 3. Run Docker commands on the instance
 
@@ -100,7 +100,7 @@ Follow along with this example to create a Dockerized <a href="https://aws.amazo
 
     Start with something basic like `docker run hello-world`, or for a more interesting test, run a Dockerized webserver on your new remote machine.
 
-    In this example, the `-p` option is used to expose port 80 from the `nginx` container and make it accessible on port `8000` of the `docker-sandbox` host.
+    In this example, the `-p` option is used to expose port 80 from the `nginx` container and make it accessible on port `8000` of the `aws-sandbox` host.
 
         $ docker run -d -p 8000:80 --name webserver kitematic/hello-world-nginx
         Unable to find image 'kitematic/hello-world-nginx:latest' locally
@@ -122,7 +122,7 @@ To remove an instance and all of its containers and images, first stop the machi
 
       $ docker-machine stop aws-sandbox
       $ docker-machine rm aws-sandbox
-      Do you really want to remove "docker-sandbox"? (y/n): y
+      Do you really want to remove "aws-sandbox"? (y/n): y
       Successfully removed aws-sandbox
 ## Where to go next
 
