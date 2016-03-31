@@ -28,6 +28,9 @@ type Driver struct {
 	Project           string
 	Tags              string
 	UseExisting       bool
+        LocalSsdNum       int
+        LocalSsdInterface string
+        MetadataSpec      string
 }
 
 const (
@@ -38,6 +41,7 @@ const (
 	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write"
 	defaultDiskType    = "pd-standard"
 	defaultDiskSize    = 10
+        defaultLocalSsdInterface = "SCSI"
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -122,6 +126,24 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Don't create a new VM, use an existing one",
 			EnvVar: "GOOGLE_USE_EXISTING",
 		},
+		mcnflag.IntFlag{
+			Name:   "google-local-ssd-num",
+			Usage:  "GCE Local SSD number of disks.",
+			Value:  0,
+			EnvVar: "GOOGLE_LOCAL_SSD_NUM",
+		},
+		mcnflag.StringFlag{
+			Name:   "google-local-ssd-interface",
+			Usage:  "GCE Local SSD Interface type (SCSI or NVME)",
+			Value:  defaultLocalSsdInterface,
+			EnvVar: "GOOGLE_LOCAL_SSD_INTERFACE",
+		},
+		mcnflag.StringFlag{
+			Name:   "google-metadata",
+			Usage:  "GCE Machine Metadata <key>=<filename w/ val>[,<key>=<filename w/ val>]*",
+			EnvVar: "GOOGLE_METADATA",
+                        Value:  "",
+		},
 	}
 }
 
@@ -180,6 +202,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.UseInternalIPOnly = flags.Bool("google-use-internal-ip-only")
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
+                d.LocalSsdNum = flags.Int("google-local-ssd-num")
+                d.LocalSsdInterface = flags.String("google-local-ssd-interface")
+                d.MetadataSpec =  flags.String("google-metadata")
+
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
