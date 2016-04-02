@@ -55,7 +55,7 @@ supported.
 ### Sudo privileges
 
 The user that is used to SSH into the host can be specified with
-`--generic-ssh-user` flag. This user has to be have password-less sudo
+`--generic-ssh-user` flag. This user has to have password-less sudo
 privileges.
 If it's not the case, you need to edit the `sudoers` file and configure the user
 as a sudoer with `NOPASSWD`. See https://help.ubuntu.com/community/Sudoers.
