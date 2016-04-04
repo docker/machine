@@ -16,10 +16,11 @@ import (
 	"regexp"
 
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/version"
 )
 
 const (
-	defaultURL            = "https://api.github.com/repos/boot2docker/boot2docker/releases/latest"
+	defaultURL            = "https://api.github.com/repos/boot2docker/boot2docker/releases"
 	defaultISOFilename    = "boot2docker.iso"
 	defaultVolumeIDOffset = int64(0x8028)
 	defaultVolumeIDLength = 32
@@ -99,6 +100,14 @@ func (*b2dReleaseGetter) getReleaseTag(apiURL string) (string, error) {
 		apiURL = defaultURL
 	}
 
+	if !version.RC() {
+		// Just go straight to the convenience URL for "/latest" if we
+		// are a non-release candidate version.  "/latest" won't return
+		// non-RCs, so that's what we use for stable releases of
+		// Machine.
+		apiURL = apiURL + "/latest"
+	}
+
 	client := getClient()
 	req, err := getRequest(apiURL)
 	if err != nil {
@@ -110,6 +119,26 @@ func (*b2dReleaseGetter) getReleaseTag(apiURL string) (string, error) {
 	}
 	defer rsp.Body.Close()
 
+	// If we call the API endpoint
+	// "/repos/boot2docker/boot2docker/releases" without specifying
+	// "/latest", we will receive a list of releases instead of a single
+	// one, and we should decode accordingly.
+	if version.RC() {
+		var tags []struct {
+			TagName string `json:"tag_name"`
+		}
+		if err := json.NewDecoder(rsp.Body).Decode(&tags); err != nil {
+			return "", err
+		}
+		t := tags[0]
+		if t.TagName == "" {
+			return "", errGitHubAPIResponse
+		}
+		return t.TagName, nil
+	}
+
+	// Otherwise, we get back just one release, which we can decode to get
+	// the tag.
 	var t struct {
 		TagName string `json:"tag_name"`
 	}
@@ -123,16 +152,15 @@ func (*b2dReleaseGetter) getReleaseTag(apiURL string) (string, error) {
 }
 
 // getReleaseURL gets the latest release URL of Boot2Docker.
-// FIXME: find or create some other way to get the "latest release" of boot2docker since the GitHub API has a pretty low rate limit on API requests
 func (b *b2dReleaseGetter) getReleaseURL(apiURL string) (string, error) {
 	if apiURL == "" {
 		apiURL = defaultURL
 	}
 
 	// match github (enterprise) release urls:
-	// https://api.github.com/repos/../../releases/latest or
-	// https://some.github.enterprise/api/v3/repos/../../releases/latest
-	re := regexp.MustCompile("(https?)://([^/]+)(/api/v3)?/repos/([^/]+)/([^/]+)/releases/latest")
+	// https://api.github.com/repos/../../releases or
+	// https://some.github.enterprise/api/v3/repos/../../releases
+	re := regexp.MustCompile("(https?)://([^/]+)(/api/v3)?/repos/([^/]+)/([^/]+)/releases")
 	matches := re.FindStringSubmatch(apiURL)
 	if len(matches) != 6 {
 		// does not match a github releases api URL
