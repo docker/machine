@@ -12,27 +12,41 @@ import (
 	"testing"
 
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/version"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetReleaseURL(t *testing.T) {
-	ts := newTestServer(`{"tag_name": "v0.1"}`)
-	defer ts.Close()
-
 	testCases := []struct {
-		apiURL string
-		isoURL string
+		apiURL         string
+		isoURL         string
+		machineVersion string
+		response       string
 	}{
-		{ts.URL + "/repos/org/repo/releases/latest", ts.URL + "/org/repo/releases/download/v0.1/boot2docker.iso"},
-		{"http://dummy.com/boot2docker.iso", "http://dummy.com/boot2docker.iso"},
+		{"/repos/org/repo/releases/latest", "/org/repo/releases/download/v0.1/boot2docker.iso", "v0.7.0", `{"tag_name": "v0.1"}`},
+
+		// Note the difference in this one: It's an RC version.
+		{"/repos/org/repo/releases", "/org/repo/releases/download/v0.2-rc1/boot2docker.iso", "v0.7.0-rc2", `[{"tag_name": "v0.2-rc1"}, {"tag_name": "v0.1"}]`},
+
+		{"http://dummy.com/boot2docker.iso", "http://dummy.com/boot2docker.iso", "v0.7.0", `{"tag_name": "v0.1"}`},
 	}
 
 	for _, tt := range testCases {
+		testServer := newTestServer(tt.response)
+
+		// TODO: Modifying this package level variable is not elegant,
+		// but it is effective.  Ideally this should be exposed through
+		// an interface.
+		actualMachineVersion := version.Version
+		version.Version = tt.machineVersion
 		b := NewB2dUtils("/tmp/isos")
-		isoURL, err := b.getReleaseURL(tt.apiURL)
+		isoURL, err := b.getReleaseURL(testServer.URL + tt.apiURL)
 
 		assert.NoError(t, err)
-		assert.Equal(t, isoURL, tt.isoURL)
+		assert.Equal(t, testServer.URL+tt.isoURL, isoURL)
+		version.Version = actualMachineVersion
+
+		testServer.Close()
 	}
 }
 
