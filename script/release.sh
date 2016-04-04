@@ -6,7 +6,7 @@ PROJECT_URL="git@github.com:${GITHUB_USER}/${GITHUB_REPO}"
 
 function usage {
   echo "Usage: "
-  echo "   GITHUB_TOKEN=XXXXX ${0} 0.6.x"
+  echo "   GITHUB_TOKEN=XXXXX ${0} [X.Y.Z]"
 }
 
 function display {
@@ -61,7 +61,7 @@ GITHUB_VERSION="v${VERSION}"
 RELEASE_DIR="$(dirname "$(git rev-parse --show-toplevel)")/release-${VERSION}"
 GITHUB_RELEASE_FILE="github-release-${VERSION}.md"
 
-LAST_RELEASE_VERSION=$(git describe --abbrev=0 --tags)
+LAST_RELEASE_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
 checkError "Unable to find current version tag"
 
 display "Starting release from ${LAST_RELEASE_VERSION} to ${GITHUB_VERSION} on ${PROJECT_URL} with token ${GITHUB_TOKEN}"
