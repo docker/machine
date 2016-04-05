@@ -347,6 +347,14 @@ func (d *Driver) getClient() *godo.Client {
 	return godo.NewClient(client)
 }
 
+func (d *Driver) GetSSHKeyPath() string {
+	// don't set SSHKeyPath when using an existing key fingerprint
+	if d.SSHKeyPath == "" && d.SSHKeyFingerprint == "" {
+		d.SSHKeyPath = d.ResolveStorePath("id_rsa")
+	}
+	return d.SSHKeyPath
+}
+
 func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
 }
