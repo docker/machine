@@ -9,7 +9,7 @@ func TestFedoraGenerateYumRepoList(t *testing.T) {
 	info := &OsRelease{
 		ID: "fedora",
 	}
-	p := NewCentosProvisioner(nil)
+	p := NewFedoraProvisioner(nil)
 	p.SetOsReleaseInfo(info)
 
 	buf, err := generateYumRepoList(p)
