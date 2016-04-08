@@ -119,15 +119,20 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		},
 	}
 
+	cmdWorker := []string{
+		"join",
+		"--advertise",
+		advertiseInfo,
+	}
+	for _, option := range swarmOptions.ArbitraryFlags {
+		cmdWorker = append(cmdWorker, "--"+option)
+	}
+	cmdWorker = append(cmdWorker, swarmOptions.Discovery)
+
 	swarmWorkerConfig := &dockerclient.ContainerConfig{
-		Image: swarmOptions.Image,
-		Env:   swarmOptions.Env,
-		Cmd: []string{
-			"join",
-			"--advertise",
-			advertiseInfo,
-			swarmOptions.Discovery,
-		},
+		Image:      swarmOptions.Image,
+		Env:        swarmOptions.Env,
+		Cmd:        cmdWorker,
 		HostConfig: workerHostConfig,
 	}
 	if swarmOptions.IsExperimental {
