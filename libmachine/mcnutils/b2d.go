@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/version"
@@ -23,6 +24,7 @@ const (
 	defaultURL            = "https://api.github.com/repos/boot2docker/boot2docker/releases"
 	defaultISOFilename    = "boot2docker.iso"
 	defaultVolumeIDOffset = int64(0x8028)
+	versionPrefix         = "-v"
 	defaultVolumeIDLength = 32
 )
 
@@ -304,10 +306,19 @@ func (b *b2dISO) version() (string, error) {
 		return "", err
 	}
 
-	verRegex := regexp.MustCompile(`v\d+\.\d+\.\d+`)
-	ver := string(verRegex.Find(isoMetadata))
-	log.Debug("local Boot2Docker ISO version: ", ver)
-	return ver, nil
+	fullVersion := string(isoMetadata)
+
+	versionIndex := strings.Index(fullVersion, versionPrefix)
+	if versionIndex == -1 {
+		return "", fmt.Errorf("Did not find prefix %q in version string", versionPrefix)
+	}
+
+	// Original magic file string looks similar to this: "Boot2Docker-v0.1.0              "
+	// This will return "v0.1.0" given the above string
+	vers := strings.TrimSpace(fullVersion)[versionIndex+1:]
+
+	log.Debug("local Boot2Docker ISO version: ", vers)
+	return vers, nil
 }
 
 func removeFileIfExists(name string) error {

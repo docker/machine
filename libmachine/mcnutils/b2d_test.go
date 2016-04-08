@@ -72,22 +72,28 @@ func TestGetReleaseURLError(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	want := "v0.1.0"
-	isopath, off, err := newDummyISO("", defaultISOFilename, want)
-	defer removeFileIfExists(isopath)
-
-	assert.NoError(t, err)
-
-	b := &b2dISO{
-		commonIsoPath:  isopath,
-		volumeIDOffset: off,
-		volumeIDLength: defaultVolumeIDLength,
+	testCases := []string{
+		"v0.1.0",
+		"v0.2.0-rc1",
 	}
 
-	got, err := b.version()
+	for _, vers := range testCases {
+		isopath, off, err := newDummyISO("", defaultISOFilename, vers)
 
-	assert.NoError(t, err)
-	assert.Equal(t, want, string(got))
+		assert.NoError(t, err)
+
+		b := &b2dISO{
+			commonIsoPath:  isopath,
+			volumeIDOffset: off,
+			volumeIDLength: defaultVolumeIDLength,
+		}
+
+		got, err := b.version()
+
+		assert.NoError(t, err)
+		assert.Equal(t, vers, string(got))
+		removeFileIfExists(isopath)
+	}
 }
 
 func TestDownloadISO(t *testing.T) {
