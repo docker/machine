@@ -63,6 +63,7 @@ const (
 
 var (
 	baseSSHArgs = []string{
+		"-F", "/dev/null",
 		"-o", "BatchMode=yes",
 		"-o", "PasswordAuthentication=no",
 		"-o", "StrictHostKeyChecking=no",
