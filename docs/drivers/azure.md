@@ -59,12 +59,12 @@ Optional:
 - `--azure-ssh-user`: Username for SSH login.
 - `--azure-vnet`: Azure Virtual Network name to connect the virtual machine. [[?][vnet]]
 - `--azure-subnet`: Azure Subnet Name to be used within the Virtual Network.
-- `--azure-subnet-prefix`: Private CIDR block to be used for the new subnet.
+- `--azure-subnet-prefix`: Private CIDR block. Used to create subnet if it does not exist. Must match in the case that the subnet does exist.
 - `--azure-availability-set`: Azure Availability Set to place the virtual machine into. [[?][av-set]]
 - `--azure-open-port`: Make additional port number(s) accessible from the Internet [[?][nsg]]
 - `--azure-private-ip-address`: Specify a static private IP address for the machine.
-- `--azure-use-private-ip`: Use private IP address of the machine to connect.
-- `--azure-no-public-ip`: Do not create a public IP address for the machine.
+- `--azure-use-private-ip`: Use private IP address of the machine to connect. It's useful for managing Docker machines from another machine on the same network e.g. while deploying Swarm.
+- `--azure-no-public-ip`: Do not create a public IP address for the machine (implies `--azure-use-private-ip`). Should be used only when creating machines from an Azure VM within the same subnet.
 - `--azure-static-public-ip`: Assign a static public IP address to the machine.
 - `--azure-docker-port`: Port number for Docker engine [$AZURE_DOCKER_PORT]
 - `--azure-environment`: Azure environment (e.g. `AzurePublicCloud`, `AzureChinaCloud`).
