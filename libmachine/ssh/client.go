@@ -322,19 +322,6 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 	// Specify which private keys to use to authorize the SSH request.
 	for _, privateKeyPath := range auth.Keys {
 		if privateKeyPath != "" {
-			// Check each private key before use it
-			fi, err := os.Stat(privateKeyPath)
-			if err != nil {
-				// Abort if key not accessible
-				return nil, err
-			}
-			mode := fi.Mode()
-			log.Debugf("Using SSH private key: %s (%s)", privateKeyPath, mode)
-			// Private key file should have strict permissions
-			if mode != 0600 {
-				// Abort with correct message
-				return nil, fmt.Errorf("Permissions %#o for '%s' are too open.", mode, privateKeyPath)
-			}
 			args = append(args, "-i", privateKeyPath)
 		}
 	}
