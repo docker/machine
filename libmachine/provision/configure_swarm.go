@@ -93,7 +93,6 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 					},
 				},
 			},
-			NetworkMode: "host",
 		}
 
 		swarmMasterConfig := &dockerclient.ContainerConfig{
@@ -118,7 +117,6 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			Name:              "always",
 			MaximumRetryCount: 0,
 		},
-		NetworkMode: "host",
 	}
 
 	swarmWorkerConfig := &dockerclient.ContainerConfig{
