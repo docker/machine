@@ -60,18 +60,18 @@ func NewSecurityRulesClientWithBaseURI(baseURI string, subscriptionID string) Se
 func (client SecurityRulesClient) CreateOrUpdate(resourceGroupName string, networkSecurityGroupName string, securityRuleName string, securityRuleParameters SecurityRule, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, networkSecurityGroupName, securityRuleName, securityRuleParameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/SecurityRulesClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -131,18 +131,18 @@ func (client SecurityRulesClient) CreateOrUpdateResponder(resp *http.Response) (
 func (client SecurityRulesClient) Delete(resourceGroupName string, networkSecurityGroupName string, securityRuleName string, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, networkSecurityGroupName, securityRuleName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/SecurityRulesClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -199,18 +199,18 @@ func (client SecurityRulesClient) DeleteResponder(resp *http.Response) (result a
 func (client SecurityRulesClient) Get(resourceGroupName string, networkSecurityGroupName string, securityRuleName string) (result SecurityRule, err error) {
 	req, err := client.GetPreparer(resourceGroupName, networkSecurityGroupName, securityRuleName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/SecurityRulesClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -265,18 +265,18 @@ func (client SecurityRulesClient) GetResponder(resp *http.Response) (result Secu
 func (client SecurityRulesClient) List(resourceGroupName string, networkSecurityGroupName string) (result SecurityRuleListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName, networkSecurityGroupName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/SecurityRulesClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -326,7 +326,7 @@ func (client SecurityRulesClient) ListResponder(resp *http.Response) (result Sec
 func (client SecurityRulesClient) ListNextResults(lastResults SecurityRuleListResult) (result SecurityRuleListResult, err error) {
 	req, err := lastResults.SecurityRuleListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -335,12 +335,12 @@ func (client SecurityRulesClient) ListNextResults(lastResults SecurityRuleListRe
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/SecurityRulesClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/SecurityRulesClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return

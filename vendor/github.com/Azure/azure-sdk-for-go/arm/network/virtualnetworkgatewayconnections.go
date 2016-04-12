@@ -61,18 +61,18 @@ func NewVirtualNetworkGatewayConnectionsClientWithBaseURI(baseURI string, subscr
 func (client VirtualNetworkGatewayConnectionsClient) CreateOrUpdate(resourceGroupName string, virtualNetworkGatewayConnectionName string, parameters VirtualNetworkGatewayConnection, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, virtualNetworkGatewayConnectionName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -132,18 +132,18 @@ func (client VirtualNetworkGatewayConnectionsClient) CreateOrUpdateResponder(res
 func (client VirtualNetworkGatewayConnectionsClient) Delete(resourceGroupName string, virtualNetworkGatewayConnectionName string, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, virtualNetworkGatewayConnectionName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -200,18 +200,18 @@ func (client VirtualNetworkGatewayConnectionsClient) DeleteResponder(resp *http.
 func (client VirtualNetworkGatewayConnectionsClient) Get(resourceGroupName string, virtualNetworkGatewayConnectionName string) (result VirtualNetworkGatewayConnection, err error) {
 	req, err := client.GetPreparer(resourceGroupName, virtualNetworkGatewayConnectionName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -267,18 +267,18 @@ func (client VirtualNetworkGatewayConnectionsClient) GetResponder(resp *http.Res
 func (client VirtualNetworkGatewayConnectionsClient) GetSharedKey(resourceGroupName string, connectionSharedKeyName string) (result ConnectionSharedKeyResult, err error) {
 	req, err := client.GetSharedKeyPreparer(resourceGroupName, connectionSharedKeyName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "GetSharedKey", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "GetSharedKey", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSharedKeySender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "GetSharedKey", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "GetSharedKey", resp, "Failure sending request")
 	}
 
 	result, err = client.GetSharedKeyResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "GetSharedKey", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "GetSharedKey", resp, "Failure responding to request")
 	}
 
 	return
@@ -331,18 +331,18 @@ func (client VirtualNetworkGatewayConnectionsClient) GetSharedKeyResponder(resp 
 func (client VirtualNetworkGatewayConnectionsClient) List(resourceGroupName string) (result VirtualNetworkGatewayConnectionListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -391,7 +391,7 @@ func (client VirtualNetworkGatewayConnectionsClient) ListResponder(resp *http.Re
 func (client VirtualNetworkGatewayConnectionsClient) ListNextResults(lastResults VirtualNetworkGatewayConnectionListResult) (result VirtualNetworkGatewayConnectionListResult, err error) {
 	req, err := lastResults.VirtualNetworkGatewayConnectionListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -400,12 +400,12 @@ func (client VirtualNetworkGatewayConnectionsClient) ListNextResults(lastResults
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return
@@ -426,18 +426,18 @@ func (client VirtualNetworkGatewayConnectionsClient) ListNextResults(lastResults
 func (client VirtualNetworkGatewayConnectionsClient) ResetSharedKey(resourceGroupName string, virtualNetworkGatewayConnectionName string, parameters ConnectionResetSharedKey, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.ResetSharedKeyPreparer(resourceGroupName, virtualNetworkGatewayConnectionName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "ResetSharedKey", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "ResetSharedKey", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ResetSharedKeySender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "ResetSharedKey", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "ResetSharedKey", resp, "Failure sending request")
 	}
 
 	result, err = client.ResetSharedKeyResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "ResetSharedKey", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "ResetSharedKey", resp, "Failure responding to request")
 	}
 
 	return
@@ -500,18 +500,18 @@ func (client VirtualNetworkGatewayConnectionsClient) ResetSharedKeyResponder(res
 func (client VirtualNetworkGatewayConnectionsClient) SetSharedKey(resourceGroupName string, virtualNetworkGatewayConnectionName string, parameters ConnectionSharedKey, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.SetSharedKeyPreparer(resourceGroupName, virtualNetworkGatewayConnectionName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "SetSharedKey", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "SetSharedKey", nil, "Failure preparing request")
 	}
 
 	resp, err := client.SetSharedKeySender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "SetSharedKey", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "SetSharedKey", resp, "Failure sending request")
 	}
 
 	result, err = client.SetSharedKeyResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewayConnectionsClient", "SetSharedKey", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsClient", "SetSharedKey", resp, "Failure responding to request")
 	}
 
 	return

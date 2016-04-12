@@ -58,18 +58,18 @@ func NewVirtualNetworksClientWithBaseURI(baseURI string, subscriptionID string) 
 func (client VirtualNetworksClient) CreateOrUpdate(resourceGroupName string, virtualNetworkName string, parameters VirtualNetwork, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, virtualNetworkName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -127,18 +127,18 @@ func (client VirtualNetworksClient) CreateOrUpdateResponder(resp *http.Response)
 func (client VirtualNetworksClient) Delete(resourceGroupName string, virtualNetworkName string, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, virtualNetworkName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -193,18 +193,18 @@ func (client VirtualNetworksClient) DeleteResponder(resp *http.Response) (result
 func (client VirtualNetworksClient) Get(resourceGroupName string, virtualNetworkName string, expand string) (result VirtualNetwork, err error) {
 	req, err := client.GetPreparer(resourceGroupName, virtualNetworkName, expand)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -260,18 +260,18 @@ func (client VirtualNetworksClient) GetResponder(resp *http.Response) (result Vi
 func (client VirtualNetworksClient) List(resourceGroupName string) (result VirtualNetworkListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -320,7 +320,7 @@ func (client VirtualNetworksClient) ListResponder(resp *http.Response) (result V
 func (client VirtualNetworksClient) ListNextResults(lastResults VirtualNetworkListResult) (result VirtualNetworkListResult, err error) {
 	req, err := lastResults.VirtualNetworkListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -329,12 +329,12 @@ func (client VirtualNetworksClient) ListNextResults(lastResults VirtualNetworkLi
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return
@@ -345,18 +345,18 @@ func (client VirtualNetworksClient) ListNextResults(lastResults VirtualNetworkLi
 func (client VirtualNetworksClient) ListAll() (result VirtualNetworkListResult, err error) {
 	req, err := client.ListAllPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "ListAll", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "ListAll", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListAllSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "ListAll", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "ListAll", resp, "Failure sending request")
 	}
 
 	result, err = client.ListAllResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "ListAll", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "ListAll", resp, "Failure responding to request")
 	}
 
 	return
@@ -404,7 +404,7 @@ func (client VirtualNetworksClient) ListAllResponder(resp *http.Response) (resul
 func (client VirtualNetworksClient) ListAllNextResults(lastResults VirtualNetworkListResult) (result VirtualNetworkListResult, err error) {
 	req, err := lastResults.VirtualNetworkListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "ListAll", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "ListAll", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -413,12 +413,12 @@ func (client VirtualNetworksClient) ListAllNextResults(lastResults VirtualNetwor
 	resp, err := client.ListAllSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "ListAll", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "ListAll", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListAllResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworksClient", "ListAll", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworksClient", "ListAll", resp, "Failure responding to next results request request")
 	}
 
 	return

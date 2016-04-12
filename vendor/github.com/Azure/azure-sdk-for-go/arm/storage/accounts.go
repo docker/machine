@@ -49,18 +49,18 @@ func NewAccountsClientWithBaseURI(baseURI string, subscriptionID string) Account
 func (client AccountsClient) CheckNameAvailability(accountName AccountCheckNameAvailabilityParameters) (result CheckNameAvailabilityResult, err error) {
 	req, err := client.CheckNameAvailabilityPreparer(accountName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "CheckNameAvailability", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "CheckNameAvailability", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CheckNameAvailabilitySender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "CheckNameAvailability", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "CheckNameAvailability", resp, "Failure sending request")
 	}
 
 	result, err = client.CheckNameAvailabilityResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "CheckNameAvailability", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "CheckNameAvailability", resp, "Failure responding to request")
 	}
 
 	return
@@ -122,18 +122,18 @@ func (client AccountsClient) CheckNameAvailabilityResponder(resp *http.Response)
 func (client AccountsClient) Create(resourceGroupName string, accountName string, parameters AccountCreateParameters, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreatePreparer(resourceGroupName, accountName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "Create", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "Create", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "Create", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "Create", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "Create", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "Create", resp, "Failure responding to request")
 	}
 
 	return
@@ -190,18 +190,18 @@ func (client AccountsClient) CreateResponder(resp *http.Response) (result autore
 func (client AccountsClient) Delete(resourceGroupName string, accountName string) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, accountName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -257,18 +257,18 @@ func (client AccountsClient) DeleteResponder(resp *http.Response) (result autore
 func (client AccountsClient) GetProperties(resourceGroupName string, accountName string) (result Account, err error) {
 	req, err := client.GetPropertiesPreparer(resourceGroupName, accountName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "GetProperties", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "GetProperties", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetPropertiesSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "GetProperties", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "GetProperties", resp, "Failure sending request")
 	}
 
 	result, err = client.GetPropertiesResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "GetProperties", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "GetProperties", resp, "Failure responding to request")
 	}
 
 	return
@@ -319,18 +319,18 @@ func (client AccountsClient) GetPropertiesResponder(resp *http.Response) (result
 func (client AccountsClient) List() (result AccountListResult, err error) {
 	req, err := client.ListPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -383,18 +383,18 @@ func (client AccountsClient) ListResponder(resp *http.Response) (result AccountL
 func (client AccountsClient) ListByResourceGroup(resourceGroupName string) (result AccountListResult, err error) {
 	req, err := client.ListByResourceGroupPreparer(resourceGroupName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "ListByResourceGroup", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "ListByResourceGroup", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListByResourceGroupSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "ListByResourceGroup", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "ListByResourceGroup", resp, "Failure sending request")
 	}
 
 	result, err = client.ListByResourceGroupResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "ListByResourceGroup", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "ListByResourceGroup", resp, "Failure responding to request")
 	}
 
 	return
@@ -446,18 +446,18 @@ func (client AccountsClient) ListByResourceGroupResponder(resp *http.Response) (
 func (client AccountsClient) ListKeys(resourceGroupName string, accountName string) (result AccountKeys, err error) {
 	req, err := client.ListKeysPreparer(resourceGroupName, accountName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "ListKeys", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "ListKeys", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListKeysSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "ListKeys", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "ListKeys", resp, "Failure sending request")
 	}
 
 	result, err = client.ListKeysResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "ListKeys", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "ListKeys", resp, "Failure responding to request")
 	}
 
 	return
@@ -514,18 +514,18 @@ func (client AccountsClient) ListKeysResponder(resp *http.Response) (result Acco
 func (client AccountsClient) RegenerateKey(resourceGroupName string, accountName string, regenerateKey AccountRegenerateKeyParameters) (result AccountKeys, err error) {
 	req, err := client.RegenerateKeyPreparer(resourceGroupName, accountName, regenerateKey)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "RegenerateKey", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "RegenerateKey", nil, "Failure preparing request")
 	}
 
 	resp, err := client.RegenerateKeySender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "RegenerateKey", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "RegenerateKey", resp, "Failure sending request")
 	}
 
 	result, err = client.RegenerateKeyResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "RegenerateKey", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "RegenerateKey", resp, "Failure responding to request")
 	}
 
 	return
@@ -594,18 +594,18 @@ func (client AccountsClient) RegenerateKeyResponder(resp *http.Response) (result
 func (client AccountsClient) Update(resourceGroupName string, accountName string, parameters AccountUpdateParameters) (result Account, err error) {
 	req, err := client.UpdatePreparer(resourceGroupName, accountName, parameters)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "Update", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "Update", nil, "Failure preparing request")
 	}
 
 	resp, err := client.UpdateSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "storage/AccountsClient", "Update", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "storage.AccountsClient", "Update", resp, "Failure sending request")
 	}
 
 	result, err = client.UpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage/AccountsClient", "Update", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "storage.AccountsClient", "Update", resp, "Failure responding to request")
 	}
 
 	return
