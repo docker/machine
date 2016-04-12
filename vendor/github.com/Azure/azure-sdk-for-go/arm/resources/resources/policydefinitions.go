@@ -50,18 +50,18 @@ func NewPolicyDefinitionsClientWithBaseURI(baseURI string, subscriptionID string
 func (client PolicyDefinitionsClient) CreateOrUpdate(policyDefinitionName string, parameters PolicyDefinition) (result PolicyDefinition, err error) {
 	req, err := client.CreateOrUpdatePreparer(policyDefinitionName, parameters)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -113,18 +113,18 @@ func (client PolicyDefinitionsClient) CreateOrUpdateResponder(resp *http.Respons
 func (client PolicyDefinitionsClient) Delete(policyDefinitionName string) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(policyDefinitionName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -174,18 +174,18 @@ func (client PolicyDefinitionsClient) DeleteResponder(resp *http.Response) (resu
 func (client PolicyDefinitionsClient) Get(policyDefinitionName string) (result PolicyDefinition, err error) {
 	req, err := client.GetPreparer(policyDefinitionName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/PolicyDefinitionsClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.PolicyDefinitionsClient", "Get", resp, "Failure responding to request")
 	}
 
 	return

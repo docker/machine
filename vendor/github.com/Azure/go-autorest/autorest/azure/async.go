@@ -3,13 +3,12 @@ package azure
 import (
 	"bytes"
 	"fmt"
+	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/date"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/date"
 )
 
 const (
@@ -49,7 +48,7 @@ func DoPollForAsynchronous(delay time.Duration) autorest.SendDecorator {
 				}
 				if ps.hasTerminated() {
 					if !ps.hasSucceeded() {
-						err = autorest.NewError("azure", "DoPollForAsynchronous", "Polling terminated with status '%s'", ps.state)
+						err = ps
 					}
 					break
 				}
@@ -85,19 +84,14 @@ func hasTerminated(state string) bool {
 	}
 }
 
+func hasFailed(state string) bool {
+	return state == operationFailed
+}
+
 type provisioningTracker interface {
 	state() string
 	hasSucceeded() bool
 	hasTerminated() bool
-}
-
-type operationError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-func (oe operationError) Error() string {
-	return fmt.Sprintf("Azure Operation Error: Code=%q Message=%q", oe.Code, oe.Message)
 }
 
 type operationResource struct {
@@ -109,7 +103,7 @@ type operationResource struct {
 	Name            string                 `json:"name"`
 	Status          string                 `json:"status"`
 	Properties      map[string]interface{} `json:"properties"`
-	OperationError  operationError         `json:"error"`
+	OperationError  ServiceError           `json:"error"`
 	StartTime       date.Time              `json:"startTime"`
 	EndTime         date.Time              `json:"endTime"`
 	PercentComplete float64                `json:"percentComplete"`
@@ -132,7 +126,8 @@ type provisioningProperties struct {
 }
 
 type provisioningStatus struct {
-	Properties provisioningProperties `json:"properties"`
+	Properties        provisioningProperties `json:"properties,omitempty"`
+	ProvisioningError ServiceError           `json:"error,omitempty"`
 }
 
 func (ps provisioningStatus) state() string {
@@ -145,6 +140,10 @@ func (ps provisioningStatus) hasSucceeded() bool {
 
 func (ps provisioningStatus) hasTerminated() bool {
 	return hasTerminated(ps.state())
+}
+
+func (ps provisioningStatus) hasProvisioningError() bool {
+	return ps.ProvisioningError != ServiceError{}
 }
 
 type pollingResponseFormat string
@@ -169,6 +168,14 @@ func (ps pollingState) hasSucceeded() bool {
 
 func (ps pollingState) hasTerminated() bool {
 	return hasTerminated(ps.state)
+}
+
+func (ps pollingState) hasFailed() bool {
+	return hasFailed(ps.state)
+}
+
+func (ps pollingState) Error() string {
+	return fmt.Sprintf("Long running operation terminated with status '%s': Code=%q Message=%q", ps.state, ps.code, ps.message)
 }
 
 //	updatePollingState maps the operation status -- retrieved from either a provisioningState
@@ -255,6 +262,26 @@ func updatePollingState(resp *http.Response, ps *pollingState) error {
 		}
 	}
 
+	// For failed operation, check for error code and message in
+	// -- Operation resource
+	// -- Response
+	// -- Otherwise, Unknown
+	if ps.hasFailed() {
+		if ps.responseFormat == usesOperationResponse {
+			or := pt.(*operationResource)
+			ps.code = or.OperationError.Code
+			ps.message = or.OperationError.Message
+		} else {
+			p := pt.(*provisioningStatus)
+			if p.hasProvisioningError() {
+				ps.code = p.ProvisioningError.Code
+				ps.message = p.ProvisioningError.Message
+			} else {
+				ps.code = "Unknown"
+				ps.message = "None"
+			}
+		}
+	}
 	return nil
 }
 

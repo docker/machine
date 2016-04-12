@@ -59,18 +59,18 @@ func NewVirtualNetworkGatewaysClientWithBaseURI(baseURI string, subscriptionID s
 func (client VirtualNetworkGatewaysClient) CreateOrUpdate(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, virtualNetworkGatewayName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -129,18 +129,18 @@ func (client VirtualNetworkGatewaysClient) CreateOrUpdateResponder(resp *http.Re
 func (client VirtualNetworkGatewaysClient) Delete(resourceGroupName string, virtualNetworkGatewayName string, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, virtualNetworkGatewayName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -198,18 +198,18 @@ func (client VirtualNetworkGatewaysClient) DeleteResponder(resp *http.Response) 
 func (client VirtualNetworkGatewaysClient) Generatevpnclientpackage(resourceGroupName string, virtualNetworkGatewayName string, parameters VpnClientParameters) (result String, err error) {
 	req, err := client.GeneratevpnclientpackagePreparer(resourceGroupName, virtualNetworkGatewayName, parameters)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Generatevpnclientpackage", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Generatevpnclientpackage", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GeneratevpnclientpackageSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Generatevpnclientpackage", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Generatevpnclientpackage", resp, "Failure sending request")
 	}
 
 	result, err = client.GeneratevpnclientpackageResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Generatevpnclientpackage", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Generatevpnclientpackage", resp, "Failure responding to request")
 	}
 
 	return
@@ -264,18 +264,18 @@ func (client VirtualNetworkGatewaysClient) GeneratevpnclientpackageResponder(res
 func (client VirtualNetworkGatewaysClient) Get(resourceGroupName string, virtualNetworkGatewayName string) (result VirtualNetworkGateway, err error) {
 	req, err := client.GetPreparer(resourceGroupName, virtualNetworkGatewayName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -328,18 +328,18 @@ func (client VirtualNetworkGatewaysClient) GetResponder(resp *http.Response) (re
 func (client VirtualNetworkGatewaysClient) List(resourceGroupName string) (result VirtualNetworkGatewayListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -388,7 +388,7 @@ func (client VirtualNetworkGatewaysClient) ListResponder(resp *http.Response) (r
 func (client VirtualNetworkGatewaysClient) ListNextResults(lastResults VirtualNetworkGatewayListResult) (result VirtualNetworkGatewayListResult, err error) {
 	req, err := lastResults.VirtualNetworkGatewayListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -397,12 +397,12 @@ func (client VirtualNetworkGatewaysClient) ListNextResults(lastResults VirtualNe
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return
@@ -421,18 +421,18 @@ func (client VirtualNetworkGatewaysClient) ListNextResults(lastResults VirtualNe
 func (client VirtualNetworkGatewaysClient) Reset(resourceGroupName string, virtualNetworkGatewayName string, parameters VirtualNetworkGateway, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.ResetPreparer(resourceGroupName, virtualNetworkGatewayName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Reset", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Reset", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ResetSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Reset", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Reset", resp, "Failure sending request")
 	}
 
 	result, err = client.ResetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/VirtualNetworkGatewaysClient", "Reset", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Reset", resp, "Failure responding to request")
 	}
 
 	return

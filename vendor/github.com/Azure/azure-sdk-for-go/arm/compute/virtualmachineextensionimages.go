@@ -47,18 +47,18 @@ func NewVirtualMachineExtensionImagesClientWithBaseURI(baseURI string, subscript
 func (client VirtualMachineExtensionImagesClient) Get(location string, publisherName string, typeParameter string, version string) (result VirtualMachineExtensionImage, err error) {
 	req, err := client.GetPreparer(location, publisherName, typeParameter, version)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -111,18 +111,18 @@ func (client VirtualMachineExtensionImagesClient) GetResponder(resp *http.Respon
 func (client VirtualMachineExtensionImagesClient) ListTypes(location string, publisherName string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListTypesPreparer(location, publisherName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListTypes", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "ListTypes", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListTypesSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListTypes", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "ListTypes", resp, "Failure sending request")
 	}
 
 	result, err = client.ListTypesResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListTypes", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "ListTypes", resp, "Failure responding to request")
 	}
 
 	return
@@ -174,18 +174,18 @@ func (client VirtualMachineExtensionImagesClient) ListTypesResponder(resp *http.
 func (client VirtualMachineExtensionImagesClient) ListVersions(location string, publisherName string, typeParameter string, filter string, top *int32, orderBy string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListVersionsPreparer(location, publisherName, typeParameter, filter, top, orderBy)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListVersions", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "ListVersions", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListVersionsSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListVersions", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "ListVersions", resp, "Failure sending request")
 	}
 
 	result, err = client.ListVersionsResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineExtensionImagesClient", "ListVersions", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineExtensionImagesClient", "ListVersions", resp, "Failure responding to request")
 	}
 
 	return

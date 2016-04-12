@@ -70,18 +70,18 @@ func NewWithBaseURI(baseURI string, subscriptionID string) ManagementClient {
 func (client ManagementClient) CheckDNSNameAvailability(location string, domainNameLabel string) (result DNSNameAvailabilityResult, err error) {
 	req, err := client.CheckDNSNameAvailabilityPreparer(location, domainNameLabel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/ManagementClient", "CheckDNSNameAvailability", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.ManagementClient", "CheckDNSNameAvailability", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CheckDNSNameAvailabilitySender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/ManagementClient", "CheckDNSNameAvailability", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.ManagementClient", "CheckDNSNameAvailability", resp, "Failure sending request")
 	}
 
 	result, err = client.CheckDNSNameAvailabilityResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/ManagementClient", "CheckDNSNameAvailability", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.ManagementClient", "CheckDNSNameAvailability", resp, "Failure responding to request")
 	}
 
 	return

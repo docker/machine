@@ -981,7 +981,7 @@ func (b BlobStorageClient) GetBlobSASURI(container, name string, expiry time.Tim
 	if err != nil {
 		return "", err
 	}
-	signedExpiry := expiry.Format(time.RFC3339)
+	signedExpiry := expiry.UTC().Format(time.RFC3339)
 	signedResource := "b"
 
 	stringToSign, err := blobSASStringToSign(b.client.apiVersion, canonicalizedResource, signedExpiry, signedPermissions)

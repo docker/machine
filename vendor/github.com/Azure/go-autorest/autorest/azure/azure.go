@@ -33,6 +33,10 @@ type ServiceError struct {
 	Message string `json:"message"`
 }
 
+func (se ServiceError) Error() string {
+	return fmt.Sprintf("Azure Error: Code=%q Message=%q", se.Code, se.Message)
+}
+
 // RequestError describes an error response returned by Azure service.
 type RequestError struct {
 	autorest.DetailedError

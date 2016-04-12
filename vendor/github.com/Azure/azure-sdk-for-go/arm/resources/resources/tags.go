@@ -46,18 +46,18 @@ func NewTagsClientWithBaseURI(baseURI string, subscriptionID string) TagsClient 
 func (client TagsClient) CreateOrUpdate(tagName string) (result TagDetails, err error) {
 	req, err := client.CreateOrUpdatePreparer(tagName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/TagsClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.TagsClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -108,18 +108,18 @@ func (client TagsClient) CreateOrUpdateResponder(resp *http.Response) (result Ta
 func (client TagsClient) CreateOrUpdateValue(tagName string, tagValue string) (result TagValue, err error) {
 	req, err := client.CreateOrUpdateValuePreparer(tagName, tagValue)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "CreateOrUpdateValue", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "CreateOrUpdateValue", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateValueSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "CreateOrUpdateValue", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "CreateOrUpdateValue", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateValueResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/TagsClient", "CreateOrUpdateValue", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.TagsClient", "CreateOrUpdateValue", resp, "Failure responding to request")
 	}
 
 	return
@@ -171,18 +171,18 @@ func (client TagsClient) CreateOrUpdateValueResponder(resp *http.Response) (resu
 func (client TagsClient) Delete(tagName string) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(tagName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/TagsClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.TagsClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -232,18 +232,18 @@ func (client TagsClient) DeleteResponder(resp *http.Response) (result autorest.R
 func (client TagsClient) DeleteValue(tagName string, tagValue string) (result autorest.Response, err error) {
 	req, err := client.DeleteValuePreparer(tagName, tagValue)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "DeleteValue", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "DeleteValue", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteValueSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "DeleteValue", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "DeleteValue", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteValueResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/TagsClient", "DeleteValue", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.TagsClient", "DeleteValue", resp, "Failure responding to request")
 	}
 
 	return
@@ -292,18 +292,18 @@ func (client TagsClient) DeleteValueResponder(resp *http.Response) (result autor
 func (client TagsClient) List() (result TagsListResult, err error) {
 	req, err := client.ListPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/TagsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.TagsClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -351,7 +351,7 @@ func (client TagsClient) ListResponder(resp *http.Response) (result TagsListResu
 func (client TagsClient) ListNextResults(lastResults TagsListResult) (result TagsListResult, err error) {
 	req, err := lastResults.TagsListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -360,12 +360,12 @@ func (client TagsClient) ListNextResults(lastResults TagsListResult) (result Tag
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/TagsClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.TagsClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/TagsClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "resources.TagsClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return

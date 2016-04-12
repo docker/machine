@@ -55,18 +55,18 @@ func NewRoutesClientWithBaseURI(baseURI string, subscriptionID string) RoutesCli
 func (client RoutesClient) CreateOrUpdate(resourceGroupName string, routeTableName string, routeName string, routeParameters Route, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, routeTableName, routeName, routeParameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/RoutesClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.RoutesClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -125,18 +125,18 @@ func (client RoutesClient) CreateOrUpdateResponder(resp *http.Response) (result 
 func (client RoutesClient) Delete(resourceGroupName string, routeTableName string, routeName string, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, routeTableName, routeName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/RoutesClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.RoutesClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -192,18 +192,18 @@ func (client RoutesClient) DeleteResponder(resp *http.Response) (result autorest
 func (client RoutesClient) Get(resourceGroupName string, routeTableName string, routeName string) (result Route, err error) {
 	req, err := client.GetPreparer(resourceGroupName, routeTableName, routeName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/RoutesClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.RoutesClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -258,18 +258,18 @@ func (client RoutesClient) GetResponder(resp *http.Response) (result Route, err 
 func (client RoutesClient) List(resourceGroupName string, routeTableName string) (result RouteListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName, routeTableName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/RoutesClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.RoutesClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -319,7 +319,7 @@ func (client RoutesClient) ListResponder(resp *http.Response) (result RouteListR
 func (client RoutesClient) ListNextResults(lastResults RouteListResult) (result RouteListResult, err error) {
 	req, err := lastResults.RouteListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -328,12 +328,12 @@ func (client RoutesClient) ListNextResults(lastResults RouteListResult) (result 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/RoutesClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.RoutesClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/RoutesClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.RoutesClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return

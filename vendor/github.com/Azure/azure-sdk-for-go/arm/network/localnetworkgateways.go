@@ -59,18 +59,18 @@ func NewLocalNetworkGatewaysClientWithBaseURI(baseURI string, subscriptionID str
 func (client LocalNetworkGatewaysClient) CreateOrUpdate(resourceGroupName string, localNetworkGatewayName string, parameters LocalNetworkGateway, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, localNetworkGatewayName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -129,18 +129,18 @@ func (client LocalNetworkGatewaysClient) CreateOrUpdateResponder(resp *http.Resp
 func (client LocalNetworkGatewaysClient) Delete(resourceGroupName string, localNetworkGatewayName string, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, localNetworkGatewayName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -195,18 +195,18 @@ func (client LocalNetworkGatewaysClient) DeleteResponder(resp *http.Response) (r
 func (client LocalNetworkGatewaysClient) Get(resourceGroupName string, localNetworkGatewayName string) (result LocalNetworkGateway, err error) {
 	req, err := client.GetPreparer(resourceGroupName, localNetworkGatewayName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -259,18 +259,18 @@ func (client LocalNetworkGatewaysClient) GetResponder(resp *http.Response) (resu
 func (client LocalNetworkGatewaysClient) List(resourceGroupName string) (result LocalNetworkGatewayListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -319,7 +319,7 @@ func (client LocalNetworkGatewaysClient) ListResponder(resp *http.Response) (res
 func (client LocalNetworkGatewaysClient) ListNextResults(lastResults LocalNetworkGatewayListResult) (result LocalNetworkGatewayListResult, err error) {
 	req, err := lastResults.LocalNetworkGatewayListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -328,12 +328,12 @@ func (client LocalNetworkGatewaysClient) ListNextResults(lastResults LocalNetwor
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/LocalNetworkGatewaysClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return

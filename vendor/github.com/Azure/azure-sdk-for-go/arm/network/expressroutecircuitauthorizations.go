@@ -59,18 +59,18 @@ func NewExpressRouteCircuitAuthorizationsClientWithBaseURI(baseURI string, subsc
 func (client ExpressRouteCircuitAuthorizationsClient) CreateOrUpdate(resourceGroupName string, circuitName string, authorizationName string, authorizationParameters ExpressRouteCircuitAuthorization, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, circuitName, authorizationName, authorizationParameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -131,18 +131,18 @@ func (client ExpressRouteCircuitAuthorizationsClient) CreateOrUpdateResponder(re
 func (client ExpressRouteCircuitAuthorizationsClient) Delete(resourceGroupName string, circuitName string, authorizationName string, cancel <-chan struct{}) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, circuitName, authorizationName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -199,18 +199,18 @@ func (client ExpressRouteCircuitAuthorizationsClient) DeleteResponder(resp *http
 func (client ExpressRouteCircuitAuthorizationsClient) Get(resourceGroupName string, circuitName string, authorizationName string) (result ExpressRouteCircuitAuthorization, err error) {
 	req, err := client.GetPreparer(resourceGroupName, circuitName, authorizationName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -265,18 +265,18 @@ func (client ExpressRouteCircuitAuthorizationsClient) GetResponder(resp *http.Re
 func (client ExpressRouteCircuitAuthorizationsClient) List(resourceGroupName string, circuitName string) (result AuthorizationListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName, circuitName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -326,7 +326,7 @@ func (client ExpressRouteCircuitAuthorizationsClient) ListResponder(resp *http.R
 func (client ExpressRouteCircuitAuthorizationsClient) ListNextResults(lastResults AuthorizationListResult) (result AuthorizationListResult, err error) {
 	req, err := lastResults.AuthorizationListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -335,12 +335,12 @@ func (client ExpressRouteCircuitAuthorizationsClient) ListNextResults(lastResult
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return
