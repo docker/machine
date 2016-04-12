@@ -51,18 +51,18 @@ func NewDeploymentOperationsClientWithBaseURI(baseURI string, subscriptionID str
 func (client DeploymentOperationsClient) Get(resourceGroupName string, deploymentName string, operationID string) (result DeploymentOperation, err error) {
 	req, err := client.GetPreparer(resourceGroupName, deploymentName, operationID)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -117,18 +117,18 @@ func (client DeploymentOperationsClient) GetResponder(resp *http.Response) (resu
 func (client DeploymentOperationsClient) List(resourceGroupName string, deploymentName string, top *int32) (result DeploymentOperationsListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName, deploymentName, top)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -181,7 +181,7 @@ func (client DeploymentOperationsClient) ListResponder(resp *http.Response) (res
 func (client DeploymentOperationsClient) ListNextResults(lastResults DeploymentOperationsListResult) (result DeploymentOperationsListResult, err error) {
 	req, err := lastResults.DeploymentOperationsListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -190,12 +190,12 @@ func (client DeploymentOperationsClient) ListNextResults(lastResults DeploymentO
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentOperationsClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentOperationsClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return
