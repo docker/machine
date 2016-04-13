@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"regexp"
 	"text/template"
 
 	"github.com/docker/machine/libmachine/auth"
@@ -39,6 +40,8 @@ LimitNPROC=1048576
 LimitCORE=infinity
 Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
 `
+
+	majorVersionRE = regexp.MustCompile(`^(\d+)(\..*)?`)
 )
 
 type PackageListInfo struct {
@@ -168,7 +171,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 	}
 
 	// update OS -- this is needed for libdevicemapper and the docker install
-	if _, err := provisioner.SSHCommand("sudo yum -y update"); err != nil {
+	if _, err := provisioner.SSHCommand("sudo -E yum -y update"); err != nil {
 		return err
 	}
 
@@ -246,6 +249,13 @@ func generateYumRepoList(provisioner Provisioner) (*bytes.Buffer, error) {
 	case "fedora":
 		packageListInfo.OsRelease = "fedora"
 		packageListInfo.OsReleaseVersion = "22"
+	case "ol":
+		packageListInfo.OsRelease = "oraclelinux"
+		v := majorVersionRE.FindStringSubmatch(releaseInfo.Version)
+		if v == nil {
+			return nil, fmt.Errorf("unable to determine major version of %s", releaseInfo.Version)
+		}
+		packageListInfo.OsReleaseVersion = v[1]
 	default:
 		return nil, ErrUnknownYumOsRelease
 	}
