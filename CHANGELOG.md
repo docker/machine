@@ -1,10 +1,10 @@
 # Changelog
 
-# 0.7.0-rc1 (2016-3-23)
+# 0.7.0 (2016-4-13)
 
 General
 - `DRIVER` environment variable now supported to supply value for `create --driver` flag
-- Update to Go 1.6
+- Update to Go 1.6.1
 - SSH client has been refactored
 
 Drivers
