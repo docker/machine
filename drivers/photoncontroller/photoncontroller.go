@@ -30,12 +30,11 @@ const (
 	defaultDiskFlavor		= "DiskFlavor"
 	defaultImage			= "00000000-0000-0000-0000-000000000000"
 	defaultDiskName			= "boot-disk"
-	defaultBootDiskSizeGB	= 2
+	defaultBootDiskSize		= 2
 	defaultEndpoint			= "https://192.0.2.2"
 	defaultAuthEndpoint		= ""
 	defaultSSHUser			= "docker"
 	defaultSSHPort			= 22
-	defaultSSHKeyPath		= "/data/id_rsa"
 )
 
 type Driver struct {
@@ -46,7 +45,7 @@ type Driver struct {
 	DiskFlavor     	string
 	Image          	string
 	DiskName       	string
-	BootDiskSizeGB 	int
+	BootDiskSize 	int
 	VMId           	string
 	ISOPath 	   	string
 	SSHUserPassword	string
@@ -68,14 +67,13 @@ func NewDriver(hostName, storePath string) *Driver {
 		DiskFlavor:     defaultDiskFlavor,
 		Image:          defaultImage,
 		DiskName:       defaultDiskName,
-		BootDiskSizeGB: defaultBootDiskSizeGB,
+		BootDiskSize: 	defaultBootDiskSize,
 		PhotonEndpoint: defaultEndpoint,
 		BaseDriver:     &drivers.BaseDriver{
 			SSHUser:	 defaultSSHUser,
 			MachineName: hostName,
 			StorePath:   storePath,
 			SSHPort:     defaultSSHPort,
-			SSHKeyPath:  defaultSSHKeyPath,
 		},
 	}
 }
@@ -105,19 +103,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   "photon-image",
 			Usage:  "Image Id",
-			EnvVar: "PHOTON_IMAGE_ID",
+			EnvVar: "PHOTON_IMAGE",
 		},
 		mcnflag.StringFlag{
 			Name:   "photon-diskname",
 			Usage:  "Disk name",
 			Value:  defaultDiskName,
-			EnvVar: "PHOTON_DISK_Name",
+			EnvVar: "PHOTON_DISK_NAME",
 		},
 		mcnflag.IntFlag{
-			Name:   "photon-bootdisksizegb",
-			Usage:  "Boot Disk Size GB",
-			Value:  defaultBootDiskSizeGB,
-			EnvVar: "PHOTON_Boot_Disk_Size_GB",
+			Name:   "photon-bootdisksize",
+			Usage:  "Boot disk size in GB",
+			Value:  defaultBootDiskSize,
+			EnvVar: "PHOTON_BOOT_DISK_SIZE",
 		},
 		mcnflag.StringFlag{
 			Name:   "photon-iso-path",
@@ -132,7 +130,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   "photon-ssh-keypath",
 			Usage:  "SSH key path",
-			Value:  defaultSSHKeyPath,
 			EnvVar: "PHOTON_SSH_KEYPATH",
 		},
 		mcnflag.StringFlag{
@@ -206,7 +203,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskFlavor = flags.String("photon-diskflavor")
 	d.Image = flags.String("photon-image")
 	d.DiskName = flags.String("photon-diskname")
-	d.BootDiskSizeGB = flags.Int("photon-bootdisksizegb")
+	d.BootDiskSize = flags.Int("photon-bootdisksize")
 	d.ISOPath = flags.String("photon-iso-path")
 	d.SSHUserPassword = flags.String("photon-ssh-user-password")
 	d.PhotonEndpoint = flags.String("photon-endpoint")
@@ -225,7 +222,7 @@ func (d *Driver) Create() error {
 		SourceImageID: d.Image,
 		AttachedDisks: []photon.AttachedDisk{
 			photon.AttachedDisk{
-				CapacityGB: d.BootDiskSizeGB,
+				CapacityGB: d.BootDiskSize,
 				Flavor:     d.DiskFlavor,
 				Kind:       "ephemeral-disk",
 				Name:       d.DiskName,
@@ -313,6 +310,10 @@ func (d *Driver) PreCreateCheck() error {
 
 	if d.Image == "" {
 		return fmt.Errorf("Image Id was not provided. Use --photon-image option to specify it.")
+	}
+
+	if d.SSHKeyPath == "" {
+		return fmt.Errorf("SSH key paht was not provided. Use --photon-ssh-keypath option to specify it.")
 	}
 
 	if d.ISOPath == "" && d.SSHUserPassword == "" {
