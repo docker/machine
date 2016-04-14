@@ -6,6 +6,8 @@ General
 - `DRIVER` environment variable now supported to supply value for `create --driver` flag
 - Update to Go 1.6.1
 - SSH client has been refactored
+- RC versions of Machine will now create and upgrade to boot2docker RCs instead
+  of stable versions if available
 
 Drivers
 - `azure`
