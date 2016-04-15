@@ -188,6 +188,11 @@ func (r *RPCServerDriver) GetSSHUsername(_ *struct{}, reply *string) error {
 	return nil
 }
 
+func (r *RPCServerDriver) GetSSHConfigFile(_ *struct{}, reply *string) error {
+	*reply = r.ActualDriver.GetSSHConfigFile()
+	return nil
+}
+
 func (r *RPCServerDriver) GetURL(_ *struct{}, reply *string) error {
 	info, err := r.ActualDriver.GetURL()
 	*reply = info

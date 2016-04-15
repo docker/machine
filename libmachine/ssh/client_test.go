@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,43 +64,78 @@ func TestNewExternalClient(t *testing.T) {
 		user          string
 		host          string
 		port          int
-		auth          *Auth
 		perm          os.FileMode
+		keys          []string
+		configFile    string
 		expectedError string
 		skipOS        string
 	}{
 		{
-			auth:          &Auth{Keys: []string{"/tmp/private-key-not-exist"}},
+			sshBinaryPath: "/usr/local/bin/ssh",
+			user:          "docker",
+			host:          "localhost",
+			port:          22,
+			keys:          []string{"/tmp/private-key-not-exist"},
+			configFile:    "/dev/null",
 			expectedError: "stat /tmp/private-key-not-exist: no such file or directory",
 			skipOS:        "none",
 		},
 		{
-			auth:   &Auth{Keys: []string{keyFilename}},
-			perm:   0400,
-			skipOS: "windows",
+			keys:       []string{keyFilename},
+			configFile: "/dev/null",
+			perm:       0400,
+			skipOS:     "windows",
 		},
 		{
-			auth:          &Auth{Keys: []string{keyFilename}},
+			keys:          []string{keyFilename},
+			configFile:    "/dev/null",
 			perm:          0100,
 			expectedError: fmt.Sprintf("'%s' is not readable", keyFilename),
 			skipOS:        "windows",
 		},
 		{
-			auth:          &Auth{Keys: []string{keyFilename}},
+			keys:          []string{keyFilename},
+			configFile:    "/dev/null",
 			perm:          0644,
 			expectedError: fmt.Sprintf("permissions 0644 for '%s' are too open", keyFilename),
 			skipOS:        "windows",
 		},
+		{
+			sshBinaryPath: "/usr/local/bin/ssh",
+			user:          "docker",
+			host:          "localhost",
+			port:          22,
+			keys:          []string{},
+			configFile:    "/dev/zero",
+			expectedError: "",
+			skipOS:        "none",
+		},
+		{
+			sshBinaryPath: "/usr/local/bin/ssh",
+			user:          "docker",
+			host:          "localhost",
+			port:          22,
+			keys:          []string{},
+			configFile:    "/tmp/does/not/exist",
+			expectedError: "stat /tmp/does/not/exist: no such file or directory",
+			skipOS:        "none",
+		},
 	}
 
 	for _, c := range cases {
+		options := &Options{
+			Keys:       c.keys,
+			ConfigFile: c.configFile,
+		}
 		if runtime.GOOS != c.skipOS {
 			keyFile.Chmod(c.perm)
-			_, err := NewExternalClient(c.sshBinaryPath, c.user, c.host, c.port, c.auth)
-			if c.expectedError != "" {
-				assert.EqualError(t, err, c.expectedError)
+			cli, err := NewExternalClient(c.sshBinaryPath, c.user, c.host, c.port, options)
+			if c.expectedError == "" {
+				assert.Nil(t, err)
+				argsStr := strings.Join(cli.BaseArgs, " ")
+				assert.Contains(t, argsStr, fmt.Sprintf("-F %s", c.configFile))
 			} else {
-				assert.Equal(t, err, nil)
+				assert.EqualError(t, err, c.expectedError)
 			}
 		}
 	}
