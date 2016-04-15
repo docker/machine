@@ -46,9 +46,10 @@ type NativeClient struct {
 	openSession *ssh.Session
 }
 
-type Auth struct {
-	Passwords []string
-	Keys      []string
+type Options struct {
+	Passwords  []string
+	Keys       []string
+	ConfigFile string
 }
 
 type ClientType string
@@ -64,7 +65,6 @@ const (
 
 var (
 	baseSSHArgs = []string{
-		"-F", "/dev/null",
 		"-o", "PasswordAuthentication=no",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
@@ -89,30 +89,30 @@ func SetDefaultClient(clientType ClientType) {
 	}
 }
 
-func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
+func NewClient(user string, host string, port int, options *Options) (Client, error) {
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
 		log.Debug("SSH binary not found, using native Go implementation")
-		client, err := NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, options)
 		log.Debug(client)
 		return client, err
 	}
 
 	if defaultClientType == Native {
 		log.Debug("Using SSH client type: native")
-		client, err := NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, options)
 		log.Debug(client)
 		return client, err
 	}
 
 	log.Debug("Using SSH client type: external")
-	client, err := NewExternalClient(sshBinaryPath, user, host, port, auth)
+	client, err := NewExternalClient(sshBinaryPath, user, host, port, options)
 	log.Debug(client)
 	return client, err
 }
 
-func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
-	config, err := NewNativeConfig(user, auth)
+func NewNativeClient(user, host string, port int, options *Options) (Client, error) {
+	config, err := NewNativeConfig(user, options)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting config for native Go SSH: %s", err)
 	}
@@ -124,12 +124,12 @@ func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
 	}, nil
 }
 
-func NewNativeConfig(user string, auth *Auth) (ssh.ClientConfig, error) {
+func NewNativeConfig(user string, options *Options) (ssh.ClientConfig, error) {
 	var (
 		authMethods []ssh.AuthMethod
 	)
 
-	for _, k := range auth.Keys {
+	for _, k := range options.Keys {
 		key, err := ioutil.ReadFile(k)
 		if err != nil {
 			return ssh.ClientConfig{}, err
@@ -143,7 +143,7 @@ func NewNativeConfig(user string, auth *Auth) (ssh.ClientConfig, error) {
 		authMethods = append(authMethods, ssh.PublicKeys(privateKey))
 	}
 
-	for _, p := range auth.Passwords {
+	for _, p := range options.Passwords {
 		authMethods = append(authMethods, ssh.Password(p))
 	}
 
@@ -306,21 +306,26 @@ func (client *NativeClient) Shell(args ...string) error {
 	return nil
 }
 
-func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (*ExternalClient, error) {
+func NewExternalClient(sshBinaryPath, user, host string, port int, options *Options) (*ExternalClient, error) {
 	client := &ExternalClient{
 		BinaryPath: sshBinaryPath,
 	}
 
-	args := append(baseSSHArgs, fmt.Sprintf("%s@%s", user, host))
+	args := append(baseSSHArgs, "-F", options.ConfigFile)
+	if _, err := os.Stat(options.ConfigFile); err != nil {
+		// Abort if config file not accessible
+		return nil, err
+	}
+	args = append(args, fmt.Sprintf("%s@%s", user, host))
 
 	// If no identities are explicitly provided, also look at the identities
 	// offered by ssh-agent
-	if len(auth.Keys) > 0 {
+	if len(options.Keys) > 0 {
 		args = append(args, "-o", "IdentitiesOnly=yes")
 	}
 
 	// Specify which private keys to use to authorize the SSH request.
-	for _, privateKeyPath := range auth.Keys {
+	for _, privateKeyPath := range options.Keys {
 		if privateKeyPath != "" {
 			// Check each private key before use it
 			fi, err := os.Stat(privateKeyPath)

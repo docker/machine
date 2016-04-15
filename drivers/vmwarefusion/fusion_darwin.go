@@ -140,6 +140,13 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+func (d *Driver) GetSSHConfigFile() string {
+	if d.SSHConfigFile == "" {
+		d.SSHConfigFile = "/dev/null"
+	}
+	return d.SSHConfigFile
+}
+
 // DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "vmwarefusion"

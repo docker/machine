@@ -79,6 +79,7 @@ const (
 	GetSSHKeyPathMethod      = `.GetSSHKeyPath`
 	GetSSHPortMethod         = `.GetSSHPort`
 	GetSSHUsernameMethod     = `.GetSSHUsername`
+	GetSSHConfigFileMethod   = `.GetSSHConfigFile`
 	GetStateMethod           = `.GetState`
 	PreCreateCheckMethod     = `.PreCreateCheck`
 	CreateMethod             = `.Create`
@@ -339,6 +340,15 @@ func (c *RPCClientDriver) GetSSHUsername() string {
 	}
 
 	return username
+}
+
+func (c *RPCClientDriver) GetSSHConfigFile() string {
+	configFile, err := c.rpcStringCall(GetSSHConfigFileMethod)
+	if err != nil {
+		log.Warnf("Error attempting call to get SSH config file: %s", err)
+	}
+
+	return configFile
 }
 
 func (c *RPCClientDriver) GetState() (state.State, error) {

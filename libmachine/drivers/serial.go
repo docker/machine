@@ -101,6 +101,12 @@ func (d *SerialDriver) GetSSHUsername() string {
 	return d.Driver.GetSSHUsername()
 }
 
+func (d *SerialDriver) GetSSHConfigFile() string {
+	d.Lock()
+	defer d.Unlock()
+	return d.Driver.GetSSHConfigFile()
+}
+
 // GetURL returns a Docker compatible host URL for connecting to this host
 // e.g. tcp://1.2.3.4:2376
 func (d *SerialDriver) GetURL() (string, error) {
