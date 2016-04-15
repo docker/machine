@@ -72,6 +72,10 @@ func (d *Driver) GetSSHUsername() string {
 	return ""
 }
 
+func (d *Driver) GetSSHConfigFile() string {
+	return "/dev/null"
+}
+
 func (d *Driver) GetState() (state.State, error) {
 	return d.MockState, nil
 }

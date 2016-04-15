@@ -19,6 +19,7 @@ type BaseDriver struct {
 	SSHUser        string
 	SSHPort        int
 	SSHKeyPath     string
+	SSHConfigFile  string
 	StorePath      string
 	SwarmMaster    bool
 	SwarmHost      string
@@ -49,6 +50,14 @@ func (d *BaseDriver) GetSSHKeyPath() string {
 		d.SSHKeyPath = d.ResolveStorePath("id_rsa")
 	}
 	return d.SSHKeyPath
+}
+
+// GetSSHConfigFile returns the ssh config file; default is /dev/null
+func (d *BaseDriver) GetSSHConfigFile() string {
+	if d.SSHConfigFile == "" {
+		d.SSHConfigFile = "/dev/null"
+	}
+	return d.SSHConfigFile
 }
 
 // GetSSHPort returns the ssh port, 22 if not specified
