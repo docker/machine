@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -59,6 +60,17 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  drivers.DefaultSSHPort,
 			EnvVar: "GENERIC_SSH_PORT",
 		},
+		mcnflag.StringFlag{
+			Name:   "generic-ssh-config-file",
+			Usage:  "SSH config file",
+			Value:  "",
+			EnvVar: "GENERIC_SSH_CONFIG_FILE",
+		},
+		mcnflag.BoolFlag{
+			Name:   "generic-use-user-ssh-config",
+			Usage:  "Use the user SSH config file in ~/.ssh/config",
+			EnvVar: "GENERIC_USE_USER_SSH_CONFIG",
+		},
 	}
 }
 
@@ -86,6 +98,13 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+func (d *Driver) GetSSHConfigFile() string {
+	if d.SSHConfigFile == "" {
+		d.SSHConfigFile = "/dev/null"
+	}
+	return d.SSHConfigFile
+}
+
 func (d *Driver) GetSSHKeyPath() string {
 	if d.SSHKey == "" {
 		return ""
@@ -108,6 +127,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return errors.New("generic driver requires the --generic-ip-address option")
 	}
 
+	if flags.Bool("generic-use-user-ssh-config") {
+		if d.SSHConfigFile != "" {
+			return errors.New("--generic-ssh-config-file not allowed with --generic-use-user-ssh-config")
+		}
+
+		d.SSHConfigFile = filepath.Join(os.Getenv("HOME"), ".ssh", "config")
+	} else {
+		d.SSHConfigFile = flags.String("generic-ssh-config-file")
+	}
+
 	return nil
 }
 
@@ -115,6 +144,11 @@ func (d *Driver) PreCreateCheck() error {
 	if d.SSHKey != "" {
 		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
 			return fmt.Errorf("Ssh key does not exist: %q", d.SSHKey)
+		}
+	}
+	if d.SSHConfigFile != "" {
+		if _, err := os.Stat(d.SSHConfigFile); os.IsNotExist(err) {
+			return fmt.Errorf("Ssh config file does not exist: %q", d.SSHConfigFile)
 		}
 	}
 
@@ -156,9 +190,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	address := net.JoinHostPort(d.IPAddress, strconv.Itoa(d.SSHPort))
-
-	_, err := net.DialTimeout("tcp", address, defaultTimeout)
+	_, err := drivers.RunSSHCommandFromDriver(d, "/bin/true")
 	if err != nil {
 		return state.Stopped, nil
 	}
