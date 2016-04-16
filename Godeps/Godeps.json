@@ -514,13 +514,13 @@
 		},
 		{
 			"ImportPath": "github.com/vmware/photon-controller-go-sdk/photon",
-			"Comment": "PROMOTED-84",
-			"Rev": "f258a6d3b306fa6c0ea92a7d78d7dbe36c9539f8"
+			"Comment": "PROMOTED-124",
+			"Rev": "f7732f16cdeda827e5b5913e763af0df44c0308f"
 		},
 		{
-			"ImportPath": "github.com/vmware/photon-controller-go-sdk/photon/internal/rest",
-			"Comment": "PROMOTED-84",
-			"Rev": "f258a6d3b306fa6c0ea92a7d78d7dbe36c9539f8"
+			"ImportPath": "github.com/vmware/photon-controller-go-sdk/photon/lightwave",
+			"Comment": "PROMOTED-124",
+			"Rev": "f7732f16cdeda827e5b5913e763af0df44c0308f"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",

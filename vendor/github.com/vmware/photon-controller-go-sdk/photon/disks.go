@@ -11,8 +11,6 @@ package photon
 
 import (
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for disks API.
@@ -24,7 +22,7 @@ var diskUrl string = "/disks/"
 
 // Gets a PersistentDisk for the disk with specified ID.
 func (api *DisksAPI) Get(diskID string) (disk *PersistentDisk, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+diskUrl+diskID, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+diskUrl+diskID, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -40,7 +38,7 @@ func (api *DisksAPI) Get(diskID string) (disk *PersistentDisk, err error) {
 
 // Deletes a disk with the specified ID.
 func (api *DisksAPI) Delete(diskID string) (task *Task, err error) {
-	res, err := rest.Delete(api.client.httpClient, api.client.Endpoint+diskUrl+diskID, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Delete(api.client.Endpoint+diskUrl+diskID, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -56,7 +54,7 @@ func (api *DisksAPI) GetTasks(id string, options *TaskGetOptions) (result *TaskL
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}

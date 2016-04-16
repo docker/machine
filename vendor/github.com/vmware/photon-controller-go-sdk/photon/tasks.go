@@ -12,8 +12,6 @@ package photon
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for tasks API.
@@ -25,7 +23,7 @@ var taskUrl string = "/tasks"
 
 // Gets a task by ID.
 func (api *TasksAPI) Get(id string) (task *Task, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+taskUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+taskUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -41,7 +39,7 @@ func (api *TasksAPI) GetAll(options *TaskGetOptions) (result *TaskList, err erro
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}

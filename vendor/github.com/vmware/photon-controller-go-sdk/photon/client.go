@@ -12,6 +12,8 @@ package photon
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -20,9 +22,9 @@ import (
 // Represents stateless context needed to call photon APIs.
 type Client struct {
 	options           ClientOptions
-	httpClient        *http.Client
+	restClient        *restClient
+	logger            *log.Logger
 	Endpoint          string
-	AuthEndpoint      string
 	Status            *StatusAPI
 	Tenants           *TenantsAPI
 	Tasks             *TasksAPI
@@ -79,7 +81,7 @@ type ClientOptions struct {
 
 // Creates a new photon client with specified options. If options
 // is nil, default options will be used.
-func NewClient(endpoint string, authEndpoint string, options *ClientOptions) (c *Client) {
+func NewClient(endpoint string, options *ClientOptions, logger *log.Logger) (c *Client) {
 	defaultOptions := &ClientOptions{
 		TaskPollTimeout:   30 * time.Minute,
 		TaskPollDelay:     100 * time.Millisecond,
@@ -108,6 +110,10 @@ func NewClient(endpoint string, authEndpoint string, options *ClientOptions) (c 
 		defaultOptions.IgnoreCertificate = options.IgnoreCertificate
 	}
 
+	if logger == nil {
+		logger = createPassThroughLogger()
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: defaultOptions.IgnoreCertificate,
@@ -115,9 +121,14 @@ func NewClient(endpoint string, authEndpoint string, options *ClientOptions) (c 
 	}
 
 	endpoint = strings.TrimRight(endpoint, "/")
-	authEndpoint = strings.TrimRight(authEndpoint, "/")
 
-	c = &Client{Endpoint: endpoint, AuthEndpoint: authEndpoint, httpClient: &http.Client{Transport: tr}}
+	restClient := &restClient{
+		httpClient: &http.Client{Transport: tr},
+		logger:     logger,
+	}
+
+	c = &Client{Endpoint: endpoint, restClient: restClient, logger: logger}
+
 	// Ensure a copy of options is made, rather than using a pointer
 	// which may change out from underneath if misused by the caller.
 	c.options = *defaultOptions
@@ -142,8 +153,13 @@ func NewClient(endpoint string, authEndpoint string, options *ClientOptions) (c 
 // Creates a new photon client with specified options and http.Client.
 // Useful for functional testing where http calls must be mocked out.
 // If options is nil, default options will be used.
-func NewTestClient(endpoint string, authEndpoint string, options *ClientOptions, httpClient *http.Client) (c *Client) {
-	c = NewClient(endpoint, authEndpoint, options)
-	c.httpClient = httpClient
+func NewTestClient(endpoint string, options *ClientOptions, httpClient *http.Client) (c *Client) {
+	c = NewClient(endpoint, options, nil)
+	c.restClient.httpClient = httpClient
 	return
+}
+
+func createPassThroughLogger() (l *log.Logger) {
+	// ioutil.Discard makes all logging operation be a no-op.
+	return log.New(ioutil.Discard, "", log.LstdFlags)
 }

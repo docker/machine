@@ -17,8 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Reads an error out of the HTTP response, or does nothing if
@@ -92,13 +90,13 @@ func getQueryString(options interface{}) string {
 }
 
 // Sets security groups for a given entity (deployment/tenant/project)
-func setSecurityGroups(client *Client, entityUrl string, securityGroups *SecurityGroups) (task *Task, err error) {
+func setSecurityGroups(client *Client, entityUrl string, securityGroups *SecurityGroupsSpec) (task *Task, err error) {
 	body, err := json.Marshal(securityGroups)
 	if err != nil {
 		return
 	}
 	url := entityUrl + "/set_security_groups"
-	res, err := rest.Post(client.httpClient,
+	res, err := client.restClient.Post(
 		url,
 		"application/json",
 		bytes.NewReader(body),

@@ -12,8 +12,6 @@ package photon
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for availability zones API.
@@ -29,7 +27,7 @@ func (api *AvailabilityZonesAPI) Create(availabilityzoneSpec *AvailabilityZoneCr
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+availabilityzoneUrl,
 		"application/json",
 		bytes.NewReader(body),
@@ -44,7 +42,7 @@ func (api *AvailabilityZonesAPI) Create(availabilityzoneSpec *AvailabilityZoneCr
 
 // Gets availability zone with the specified ID.
 func (api *AvailabilityZonesAPI) Get(id string) (availabilityzone *AvailabilityZone, err error) {
-	res, err := rest.Get(api.client.httpClient, api.getEntityUrl(id), api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.getEntityUrl(id), api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -61,7 +59,7 @@ func (api *AvailabilityZonesAPI) Get(id string) (availabilityzone *AvailabilityZ
 // Returns all availability zones on an photon instance.
 func (api *AvailabilityZonesAPI) GetAll() (result *AvailabilityZones, err error) {
 	uri := api.client.Endpoint + availabilityzoneUrl
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -73,7 +71,7 @@ func (api *AvailabilityZonesAPI) GetAll() (result *AvailabilityZones, err error)
 
 // Deletes the availability zone with specified ID.
 func (api *AvailabilityZonesAPI) Delete(id string) (task *Task, err error) {
-	res, err := rest.Delete(api.client.httpClient, api.client.Endpoint+availabilityzoneUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Delete(api.client.Endpoint+availabilityzoneUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -89,7 +87,7 @@ func (api *AvailabilityZonesAPI) GetTasks(id string, options *TaskGetOptions) (r
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}

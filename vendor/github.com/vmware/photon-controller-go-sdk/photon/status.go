@@ -11,8 +11,6 @@ package photon
 
 import (
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for status API.
@@ -24,7 +22,7 @@ var statusUrl string = "/status"
 
 // Returns the status of an photon endpoint.
 func (api *StatusAPI) Get() (status *Status, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+statusUrl, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+statusUrl, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}

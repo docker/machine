@@ -1,6 +1,5 @@
 /*
- * Docker machine driver for VMware's Photon Controller
- * Photon Controller: http://vmware.github.io/photon-controller/
+ * Docker machine driver for VMware's Photon Controller: http://vmware.github.io/photon-controller
  */
 
 package photoncontroller
@@ -24,32 +23,32 @@ import (
 )
 
 const (
-	driverName				= "photoncontroller"
-	defaultProject			= "00000000-0000-0000-0000-000000000000"
-	defaultVMFlavor			= "VMFlavor"
-	defaultDiskFlavor		= "DiskFlavor"
-	defaultImage			= "00000000-0000-0000-0000-000000000000"
-	defaultDiskName			= "boot-disk"
-	defaultBootDiskSize		= 2
-	defaultEndpoint			= "https://192.0.2.2"
-	defaultAuthEndpoint		= ""
-	defaultSSHUser			= "docker"
-	defaultSSHPort			= 22
+	driverName          = "photoncontroller"
+	defaultProject      = "00000000-0000-0000-0000-000000000000"
+	defaultVMFlavor     = "VMFlavor"
+	defaultDiskFlavor   = "DiskFlavor"
+	defaultImage        = "00000000-0000-0000-0000-000000000000"
+	defaultDiskName     = "boot-disk"
+	defaultBootDiskSize = 2
+	defaultEndpoint     = "https://192.0.2.2"
+	defaultAuthEndpoint = ""
+	defaultSSHUser      = "docker"
+	defaultSSHPort      = 22
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	Name           	string
-	Project        	string
-	VMFlavor       	string
-	DiskFlavor     	string
-	Image          	string
-	DiskName       	string
-	BootDiskSize 	int
-	VMId           	string
-	ISOPath 	   	string
-	SSHUserPassword	string
-	PhotonEndpoint 	string
+	Name            string
+	Project         string
+	VMFlavor        string
+	DiskFlavor      string
+	Image           string
+	DiskName        string
+	BootDiskSize    int
+	VMId            string
+	ISOPath         string
+	SSHUserPassword string
+	PhotonEndpoint  string
 }
 
 type NotLoadable struct {
@@ -62,15 +61,15 @@ func (e NotLoadable) Error() string {
 
 func NewDriver(hostName, storePath string) *Driver {
 	return &Driver{
-		Project:		defaultProject,
+		Project:        defaultProject,
 		VMFlavor:       defaultVMFlavor,
 		DiskFlavor:     defaultDiskFlavor,
 		Image:          defaultImage,
 		DiskName:       defaultDiskName,
-		BootDiskSize: 	defaultBootDiskSize,
+		BootDiskSize:   defaultBootDiskSize,
 		PhotonEndpoint: defaultEndpoint,
-		BaseDriver:     &drivers.BaseDriver{
-			SSHUser:	 defaultSSHUser,
+		BaseDriver: &drivers.BaseDriver{
+			SSHUser:     defaultSSHUser,
 			MachineName: hostName,
 			StorePath:   storePath,
 			SSHPort:     defaultSSHPort,
@@ -142,7 +141,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 }
 
 func (d *Driver) getClient() *photon.Client {
-	return photon.NewClient(d.PhotonEndpoint, defaultAuthEndpoint, nil)
+	return photon.NewClient(d.PhotonEndpoint, nil, nil)
 }
 
 // DriverName returns the name of the driver
@@ -216,12 +215,12 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 }
 
 func (d *Driver) Create() error {
-	vmSpec := &photon.VmCreateSpec {
+	vmSpec := &photon.VmCreateSpec{
 		Name:          d.MachineName,
 		Flavor:        d.VMFlavor,
 		SourceImageID: d.Image,
 		AttachedDisks: []photon.AttachedDisk{
-			photon.AttachedDisk{
+			{
 				CapacityGB: d.BootDiskSize,
 				Flavor:     d.DiskFlavor,
 				Kind:       "ephemeral-disk",
@@ -236,57 +235,32 @@ func (d *Driver) Create() error {
 
 	// Creating VM task
 	vmCreateTask, err := client.Projects.CreateVM(d.Project, vmSpec)
-	if (err != nil) {
-		return fmt.Errorf("Error creating VM Task: ", err)
+	if err != nil {
+		return fmt.Errorf("Error creating VM Task: %s", err.Error())
 	}
 
 	// Waiting for create VM task completion
 	vmCreateTask, err = client.Tasks.Wait(vmCreateTask.ID)
-	if (err != nil) {
-		return fmt.Errorf("Error creating VM: ", err)
+	if err != nil {
+		return fmt.Errorf("Error creating VM: %s", err.Error())
 	}
 
 	d.VMId = vmCreateTask.Entity.ID
-	fmt.Println("VM was created with Id: ", d.VMId)
+	log.Info("VM was created with Id: ", d.VMId)
 
-	if (d.ISOPath != "") {
+	if d.ISOPath != "" {
 		// Creating task to attach ISO to VM. This is used to enable SSH access using public key defined in ISO.
 		// Note: This relies on cloud-init ISO and that contains user-data.txt to configure it.
-		attachISOTask, err := client.VMs.AttachISO(d.VMId, d.ISOPath)
-		if (err != nil) {
-			return fmt.Errorf("Attach ISO to VM task not completed in time: ", err)
+		if err = d.AttachISO(client); err != nil {
+			return fmt.Errorf("Error attaching ISO to VM: %s", err.Error())
 		}
 
-		// Waiting for attach ISO to VM task completion
-		attachISOTask, err = client.Tasks.Wait(attachISOTask.ID)
-		if (err != nil) {
-			return fmt.Errorf("Error attaching ISO to VM: ", err)
-		}
-
-		fmt.Println("ISO is attached to VM.")
+		log.Info("ISO is attached to VM.")
 	}
 
-	vmStartTask, err := client.VMs.Start(d.VMId)
-	if (err != nil) {
-		return fmt.Errorf("Starting VM task not completed in time: ", err)
-	}
-
-	// Waiting for start VM task completion
-	vmStartTask, err = client.Tasks.Wait(vmStartTask.ID)
-	if (err != nil) {
-		return fmt.Errorf("Error starting VM: ", err)
-	}
-
-	d.waitForVM()
-	fmt.Println("VM is started.")
-	fmt.Println("VM IP: ", d.IPAddress)
-
-	if (d.ISOPath == "") {
-		err = d.CopyPublicSSHKey()
-		if (err != nil) {
-			return fmt.Errorf("Error in copying ssh key ", err)
-		}
-	}
+	d.Start()
+	log.Info("VM is started.")
+	log.Info("VM IP: ", d.IPAddress)
 
 	return nil
 }
@@ -301,7 +275,7 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	if d.VMFlavor == "" {
-		return fmt.Errorf("VM flavor name was not provided. Use --photon-vmflavor option to specify it.")
+		return fmt.Errorf("VM flavor name was not provided. Use --photon-vmflavor option to specify it")
 	}
 
 	if d.DiskFlavor == "" {
@@ -313,7 +287,7 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	if d.SSHKeyPath == "" {
-		return fmt.Errorf("SSH key paht was not provided. Use --photon-ssh-keypath option to specify it.")
+		return fmt.Errorf("SSH key paht was not provided. Use --photon-ssh-keypath option to specify it")
 	}
 
 	if d.ISOPath == "" && d.SSHUserPassword == "" {
@@ -326,19 +300,19 @@ func (d *Driver) PreCreateCheck() error {
 func (d *Driver) GetState() (state.State, error) {
 	client := d.getClient()
 	vm, err := client.VMs.Get(d.VMId)
-	if (err != nil) {
-		return state.Error, fmt.Errorf("Error getting VM: ", err)
+	if err != nil {
+		return state.Error, fmt.Errorf("Error getting VM: %s", err.Error())
 	}
 
-	if (vm.State == "STOPPED") {
+	if vm.State == "STOPPED" {
 		return state.Stopped, nil
 	}
 
-	if (vm.State == "STARTED") {
+	if vm.State == "STARTED" {
 		return state.Running, nil
 	}
 
-	if (vm.State == "SUSPENDED") {
+	if vm.State == "SUSPENDED" {
 		return state.Paused, nil
 	}
 
@@ -351,14 +325,14 @@ func (d *Driver) Remove() error {
 
 	client := d.getClient()
 	opTask, err := client.VMs.Delete(d.VMId)
-	if (err != nil) {
-		return fmt.Errorf("Error creating delete VM Task: ", err)
+	if err != nil {
+		return fmt.Errorf("Error creating delete VM Task: %s", err.Error())
 	}
 
 	// Waiting for delete VM task completion
 	opTask, err = client.Tasks.Wait(opTask.ID)
-	if (err != nil) {
-		return fmt.Errorf("Error deleting VM: ", err)
+	if err != nil {
+		return fmt.Errorf("Error deleting VM: %s", err.Error())
 	}
 
 	return nil
@@ -367,17 +341,23 @@ func (d *Driver) Remove() error {
 func (d *Driver) Start() error {
 	client := d.getClient()
 	opTask, err := client.VMs.Start(d.VMId)
-	if (err != nil) {
-		return fmt.Errorf("Error creating start VM Task: ", err)
+	if err != nil {
+		return fmt.Errorf("Error creating start VM Task: %s", err.Error())
 	}
 
 	// Waiting for start VM task completion
 	opTask, err = client.Tasks.Wait(opTask.ID)
-	if (err != nil) {
-		return fmt.Errorf("Error starting VM: ", err)
+	if err != nil {
+		return fmt.Errorf("Error starting VM: %s", err.Error())
 	}
 
 	d.waitForVM()
+
+	// This is required for boot2docker image on startup as it has no persistent storage.
+	if d.ISOPath == "" {
+		log.Infof("Setting up SSH key for %s [%s]", d.MachineName, d.IPAddress)
+		d.SetupSSHKey()
+	}
 
 	return nil
 }
@@ -385,14 +365,14 @@ func (d *Driver) Start() error {
 func (d *Driver) Stop() error {
 	client := d.getClient()
 	opTask, err := client.VMs.Stop(d.VMId)
-	if (err != nil) {
-		return fmt.Errorf("Error creating stop VM task: ", err)
+	if err != nil {
+		return fmt.Errorf("Error creating stop VM task: %s", err.Error())
 	}
 
 	// Waiting for stop VM task completion
 	opTask, err = client.Tasks.Wait(opTask.ID)
-	if (err != nil) {
-		return fmt.Errorf("Error stopping VM: ", err)
+	if err != nil {
+		return fmt.Errorf("Error stopping VM: %s", err.Error())
 	}
 
 	return nil
@@ -401,17 +381,22 @@ func (d *Driver) Stop() error {
 func (d *Driver) Restart() error {
 	client := d.getClient()
 	opTask, err := client.VMs.Restart(d.VMId)
-	if (err != nil) {
-		return fmt.Errorf("Error creating restart VM task: ", err)
+	if err != nil {
+		return fmt.Errorf("Error creating restart VM task: %s", err.Error())
 	}
 
 	// Waiting for restart VM task completion
 	opTask, err = client.Tasks.Wait(opTask.ID)
-	if (err != nil) {
-		return fmt.Errorf("Error restarting VM: ", err)
+	if err != nil {
+		return fmt.Errorf("Error restarting VM: %s", err.Error())
 	}
 
 	d.waitForVM()
+
+	// This is required for boot2docker image on startup as it has no persistent storage.
+	if d.ISOPath == "" {
+		d.SetupSSHKey()
+	}
 
 	return nil
 }
@@ -426,16 +411,16 @@ func (d *Driver) RetrieveMachineIP() bool {
 
 	// Creating task to get VM networks
 	vmNetworksTask, err := client.VMs.GetNetworks(d.VMId)
-	if (err != nil) {
-		log.Debug("Error creating task for get VM networks: ", err)
-		return false;
+	if err != nil {
+		log.Debug("Error creating task for get VM networks: %s", err.Error())
+		return false
 	}
 
 	// Waiting for get VM networks task completion
 	vmNetworksTask, err = client.Tasks.Wait(vmNetworksTask.ID)
-	if (err != nil) {
-		log.Debug("Get VM networks taks not completed: ", err)
-		return false;
+	if err != nil {
+		log.Debug("Get VM networks taks not completed: %s", err.Error())
+		return false
 	}
 
 	// Retrieving IP address for the VM
@@ -490,15 +475,34 @@ func (d *Driver) waitForVM() error {
 	return nil
 }
 
-func (d *Driver)CopyPublicSSHKey() error {
+func (d *Driver) AttachISO(client *photon.Client) error {
+	file, err := os.Open(d.ISOPath)
+	if err != nil {
+		return err
+	}
+
+	attachISOTask, err := client.VMs.AttachISO(d.VMId, file, d.ISOPath)
+	if err != nil {
+		return fmt.Errorf("Attach ISO to VM task not completed in time: %s", err.Error())
+	}
+
+	// Waiting for attach ISO to VM task completion
+	attachISOTask, err = client.Tasks.Wait(attachISOTask.ID)
+	if err != nil {
+		return fmt.Errorf("Error attaching ISO to VM: %s", err.Error())
+	}
+
+	return nil
+}
+
+func (d *Driver) SetupSSHKey() error {
 	var keyfh *os.File
 	var keycontent []byte
 	var err error
-	log.Infof("Copying public SSH key to %s [%s]", d.MachineName, d.IPAddress)
 
 	// create .ssh folder in users home
 	if err = executeSSHCommand(fmt.Sprintf("mkdir -p /home/%s/.ssh", d.SSHUser), d); err != nil {
-	return err
+		return err
 	}
 
 	// read generated public ssh key
@@ -512,7 +516,7 @@ func (d *Driver)CopyPublicSSHKey() error {
 	}
 
 	// add public ssh key to authorized_keys
-	if err := executeSSHCommand(fmt.Sprintf("echo '%s' > /home/%s/.ssh/authorized_keys", string(keycontent), d.SSHUser), d); err != nil {
+	if err := executeSSHCommand(fmt.Sprintf("echo '%s' >> /home/%s/.ssh/authorized_keys", string(keycontent), d.SSHUser), d); err != nil {
 		return err
 	}
 

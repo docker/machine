@@ -12,8 +12,6 @@ package photon
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for networks API.
@@ -34,7 +32,7 @@ func (api *NetworksAPI) Create(networkSpec *NetworkCreateSpec) (task *Task, err 
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+networkUrl,
 		"application/json",
 		bytes.NewBuffer(body),
@@ -49,7 +47,7 @@ func (api *NetworksAPI) Create(networkSpec *NetworkCreateSpec) (task *Task, err 
 
 // Deletes a network with specified ID.
 func (api *NetworksAPI) Delete(id string) (task *Task, err error) {
-	res, err := rest.Delete(api.client.httpClient, api.client.Endpoint+networkUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Delete(api.client.Endpoint+networkUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -60,7 +58,7 @@ func (api *NetworksAPI) Delete(id string) (task *Task, err error) {
 
 // Gets a network with the specified ID.
 func (api *NetworksAPI) Get(id string) (network *Network, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+networkUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+networkUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -80,7 +78,7 @@ func (api *NetworksAPI) GetAll(options *NetworkGetOptions) (result *Networks, er
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 
 	result = &Networks{}
 	err = json.Unmarshal(res, result)

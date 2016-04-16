@@ -12,8 +12,6 @@ package photon
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for tenants API.
@@ -36,7 +34,7 @@ var tenantUrl string = "/tenants"
 // Returns all tenants on an photon instance.
 func (api *TenantsAPI) GetAll() (result *Tenants, err error) {
 	uri := api.client.Endpoint + tenantUrl
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -52,7 +50,7 @@ func (api *TenantsAPI) Create(tenantSpec *TenantCreateSpec) (task *Task, err err
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+tenantUrl,
 		"application/json",
 		bytes.NewReader(body),
@@ -67,7 +65,7 @@ func (api *TenantsAPI) Create(tenantSpec *TenantCreateSpec) (task *Task, err err
 
 // Deletes the tenant with specified ID. Any projects, VMs, disks, etc., owned by the tenant must be deleted first.
 func (api *TenantsAPI) Delete(id string) (task *Task, err error) {
-	res, err := rest.Delete(api.client.httpClient, api.client.Endpoint+tenantUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Delete(api.client.Endpoint+tenantUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -82,7 +80,7 @@ func (api *TenantsAPI) CreateResourceTicket(tenantId string, spec *ResourceTicke
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+tenantUrl+"/"+tenantId+"/resource-tickets",
 		"application/json",
 		bytes.NewReader(body),
@@ -102,7 +100,7 @@ func (api *TenantsAPI) GetResourceTickets(tenantId string, options *ResourceTick
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -118,7 +116,7 @@ func (api *TenantsAPI) CreateProject(tenantId string, spec *ProjectCreateSpec) (
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+tenantUrl+"/"+tenantId+"/projects",
 		"application/json",
 		bytes.NewReader(body),
@@ -138,7 +136,7 @@ func (api *TenantsAPI) GetProjects(tenantId string, options *ProjectGetOptions) 
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -155,7 +153,7 @@ func (api *TenantsAPI) GetTasks(id string, options *TaskGetOptions) (result *Tas
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -167,7 +165,7 @@ func (api *TenantsAPI) GetTasks(id string, options *TaskGetOptions) (result *Tas
 
 // Gets a tenant with the specified ID.
 func (api *TenantsAPI) Get(id string) (tenant *Tenant, err error) {
-	res, err := rest.Get(api.client.httpClient, api.getEntityUrl(id), api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.getEntityUrl(id), api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -182,7 +180,7 @@ func (api *TenantsAPI) Get(id string) (tenant *Tenant, err error) {
 }
 
 // Set security groups for this tenant, overwriting any existing ones.
-func (api *TenantsAPI) SetSecurityGroups(id string, securityGroups *SecurityGroups) (task *Task, err error) {
+func (api *TenantsAPI) SetSecurityGroups(id string, securityGroups *SecurityGroupsSpec) (*Task, error) {
 	return setSecurityGroups(api.client, api.getEntityUrl(id), securityGroups)
 }
 

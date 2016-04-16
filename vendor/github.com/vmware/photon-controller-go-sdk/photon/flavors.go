@@ -12,8 +12,6 @@ package photon
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for flavors API.
@@ -35,7 +33,7 @@ func (api *FlavorsAPI) Create(spec *FlavorCreateSpec) (task *Task, err error) {
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+flavorUrl,
 		"application/json",
 		bytes.NewReader(body),
@@ -50,7 +48,7 @@ func (api *FlavorsAPI) Create(spec *FlavorCreateSpec) (task *Task, err error) {
 
 // Gets details of flavor with specified ID.
 func (api *FlavorsAPI) Get(flavorID string) (flavor *Flavor, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+flavorUrl+"/"+flavorID, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+flavorUrl+"/"+flavorID, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -70,7 +68,7 @@ func (api *FlavorsAPI) GetAll(options *FlavorGetOptions) (flavors *FlavorList, e
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -82,7 +80,7 @@ func (api *FlavorsAPI) GetAll(options *FlavorGetOptions) (flavors *FlavorList, e
 
 // Deletes flavor with specified ID.
 func (api *FlavorsAPI) Delete(flavorID string) (task *Task, err error) {
-	res, err := rest.Delete(api.client.httpClient, api.client.Endpoint+flavorUrl+"/"+flavorID, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Delete(api.client.Endpoint+flavorUrl+"/"+flavorID, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -99,7 +97,7 @@ func (api *FlavorsAPI) GetTasks(id string, options *TaskGetOptions) (result *Tas
 		uri += getQueryString(options)
 	}
 
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}

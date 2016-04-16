@@ -12,8 +12,6 @@ package photon
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for clusters API.
@@ -25,7 +23,7 @@ var clusterUrl string = "/clusters/"
 
 // Deletes a cluster with specified ID.
 func (api *ClustersAPI) Delete(id string) (task *Task, err error) {
-	res, err := rest.Delete(api.client.httpClient, api.client.Endpoint+clusterUrl+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Delete(api.client.Endpoint+clusterUrl+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -36,7 +34,7 @@ func (api *ClustersAPI) Delete(id string) (task *Task, err error) {
 
 // Gets a cluster with the specified ID.
 func (api *ClustersAPI) Get(id string) (cluster *Cluster, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+clusterUrl+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+clusterUrl+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -53,7 +51,7 @@ func (api *ClustersAPI) Get(id string) (cluster *Cluster, err error) {
 // Gets vms for clusters with the specified ID
 func (api *ClustersAPI) GetVMs(id string) (result *VMs, err error) {
 	uri := api.client.Endpoint + clusterUrl + id + "/vms"
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -69,7 +67,7 @@ func (api *ClustersAPI) Resize(id string, resize *ClusterResizeOperation) (task 
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+clusterUrl+id+"/resize",
 		"application/json",
 		bytes.NewReader(body),

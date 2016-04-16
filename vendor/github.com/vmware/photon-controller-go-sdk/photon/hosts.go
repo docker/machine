@@ -12,8 +12,6 @@ package photon
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/vmware/photon-controller-go-sdk/photon/internal/rest"
 )
 
 // Contains functionality for hosts API.
@@ -29,7 +27,7 @@ func (api *HostsAPI) Create(hostSpec *HostCreateSpec, deploymentId string) (task
 	if err != nil {
 		return
 	}
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+deploymentUrl+"/"+deploymentId+hostUrl,
 		"application/json",
 		bytes.NewBuffer(body),
@@ -44,7 +42,7 @@ func (api *HostsAPI) Create(hostSpec *HostCreateSpec, deploymentId string) (task
 
 // Deletes a host with specified ID.
 func (api *HostsAPI) Delete(id string) (task *Task, err error) {
-	res, err := rest.Delete(api.client.httpClient, api.client.Endpoint+hostUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Delete(api.client.Endpoint+hostUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -55,7 +53,7 @@ func (api *HostsAPI) Delete(id string) (task *Task, err error) {
 
 // Returns all hosts
 func (api *HostsAPI) GetAll() (result *Hosts, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+hostUrl, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+hostUrl, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -71,7 +69,7 @@ func (api *HostsAPI) GetAll() (result *Hosts, err error) {
 
 // Gets a host with the specified ID.
 func (api *HostsAPI) Get(id string) (host *Host, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+hostUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+hostUrl+"/"+id, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -92,7 +90,7 @@ func (api *HostsAPI) SetAvailabilityZone(id string, availabilityZone *HostSetAva
 		return
 	}
 
-	res, err := rest.Post(api.client.httpClient,
+	res, err := api.client.restClient.Post(
 		api.client.Endpoint+hostUrl+"/"+id+"/set_availability_zone",
 		"application/json",
 		bytes.NewBuffer(body),
@@ -114,7 +112,7 @@ func (api *HostsAPI) GetTasks(id string, options *TaskGetOptions) (result *TaskL
 	if options != nil {
 		uri += getQueryString(options)
 	}
-	res, err := rest.GetList(api.client.httpClient, api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.GetList(api.client.Endpoint, uri, api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
@@ -126,7 +124,7 @@ func (api *HostsAPI) GetTasks(id string, options *TaskGetOptions) (result *TaskL
 
 // Gets all the vms with the specified deployment ID.
 func (api *HostsAPI) GetVMs(id string) (result *VMs, err error) {
-	res, err := rest.Get(api.client.httpClient, api.client.Endpoint+hostUrl+"/"+id+"/vms", api.client.options.TokenOptions.AccessToken)
+	res, err := api.client.restClient.Get(api.client.Endpoint+hostUrl+"/"+id+"/vms", api.client.options.TokenOptions.AccessToken)
 	if err != nil {
 		return
 	}
