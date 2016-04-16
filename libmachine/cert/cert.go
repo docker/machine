@@ -7,10 +7,13 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"net"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"errors"
@@ -243,11 +246,14 @@ func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth
 		return false, err
 	}
 
-	dialer := &net.Dialer{
-		Timeout: time.Second * 2,
-	}
+	url := fmt.Sprintf("https://%s/_ping", strings.Replace(addr, "tcp://", "", 1))
 
-	_, err = tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
+	transport := &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: tlsConfig,
+	}
+	client := &http.Client{Transport: transport}
+	_, err = client.Get(url)
 	if err != nil {
 		return false, err
 	}
