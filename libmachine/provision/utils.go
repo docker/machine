@@ -284,7 +284,7 @@ func getFilesystemType(p Provisioner, directory string) (string, error) {
 func checkDaemonUp(p Provisioner, dockerPort int) func() bool {
 	reDaemonListening := fmt.Sprintf(":%d\\s+.*:.*", dockerPort)
 	return func() bool {
-		if p.GetDriver().GetOS() == drivers.WINDOWS {
+		if p.GetDriver() != nil && p.GetDriver().GetOS() == drivers.WINDOWS {
 			return true
 		}
 

@@ -43,6 +43,11 @@ func (d *Driver) GetMachineName() string {
 	return d.MockName
 }
 
+func (d *Driver) GetOS() string {
+	fmt.Printf("getos called")
+	return drivers.LINUX
+}
+
 func (d *Driver) GetIP() (string, error) {
 	if d.MockState == state.Error {
 		return "", fmt.Errorf("Unable to get ip")
@@ -69,6 +74,14 @@ func (d *Driver) GetSSHPort() (int, error) {
 }
 
 func (d *Driver) GetSSHUsername() string {
+	return ""
+}
+
+func (d *Driver) GetWinRMUsername() string {
+	return ""
+}
+
+func (d *Driver) GetWinRMPassword() string {
 	return ""
 }
 
