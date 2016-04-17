@@ -26,6 +26,11 @@ func NewDriver(Name string) drivers.Driver {
 	}
 }
 
+// GetOS returns the OS the driver is spinning up in the VM
+func (d *Driver) GetOS() string {
+	return drivers.DefaultOS
+}
+
 // DriverName returns the name of the driver
 func (d *Driver) DriverName() string {
 	return "not-found"
@@ -68,6 +73,14 @@ func (d *Driver) GetSSHPort() (int, error) {
 }
 
 func (d *Driver) GetSSHUsername() string {
+	return ""
+}
+
+func (d *Driver) GetWinRMUsername() string {
+	return ""
+}
+
+func (d *Driver) GetWinRMPassword() string {
 	return ""
 }
 

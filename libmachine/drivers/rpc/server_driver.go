@@ -158,6 +158,11 @@ func (r *RPCServerDriver) GetMachineName(_ *struct{}, reply *string) error {
 	return nil
 }
 
+func (r *RPCServerDriver) GetOS(_ *struct{}, reply *string) error {
+	*reply = r.ActualDriver.GetOS()
+	return nil
+}
+
 func (r *RPCServerDriver) GetSSHHostname(_ *struct{}, reply *string) error {
 	hostname, err := r.ActualDriver.GetSSHHostname()
 	*reply = hostname
@@ -178,6 +183,16 @@ func (r *RPCServerDriver) GetSSHPort(_ *struct{}, reply *int) error {
 
 func (r *RPCServerDriver) GetSSHUsername(_ *struct{}, reply *string) error {
 	*reply = r.ActualDriver.GetSSHUsername()
+	return nil
+}
+
+func (r *RPCServerDriver) GetWinRMUsername(_ *struct{}, reply *string) error {
+	*reply = r.ActualDriver.GetWinRMUsername()
+	return nil
+}
+
+func (r *RPCServerDriver) GetWinRMPassword(_ *struct{}, reply *string) error {
+	*reply = r.ActualDriver.GetWinRMPassword()
 	return nil
 }
 

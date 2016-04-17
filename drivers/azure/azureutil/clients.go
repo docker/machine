@@ -126,6 +126,15 @@ func (a AzureClient) virtualMachinesClient() compute.VirtualMachinesClient {
 	return c
 }
 
+func (a AzureClient) virtualMachineExtensionsClient() compute.VirtualMachineExtensionsClient {
+	c := compute.NewVirtualMachineExtensionsClientWithBaseURI(a.env.ResourceManagerEndpoint, a.subscriptionID)
+	c.Authorizer = a.auth
+	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
+	c.RequestInspector = withInspection()
+	c.ResponseInspector = byInspecting()
+	return c
+}
+
 func (a AzureClient) availabilitySetsClient() compute.AvailabilitySetsClient {
 	c := compute.NewAvailabilitySetsClientWithBaseURI(a.env.ResourceManagerEndpoint, a.subscriptionID)
 	c.Authorizer = a.auth

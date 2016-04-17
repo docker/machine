@@ -101,6 +101,12 @@ func (detector StandardDetector) DetectProvisioner(d drivers.Driver) (Provisione
 
 	log.Info("Detecting the provisioner...")
 
+	if d.GetOS() == drivers.WINDOWS {
+		p := provisioners[drivers.WINDOWS]
+		provisioner := p.New(d)
+		return provisioner, nil
+	}
+
 	osReleaseOut, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
 	if err != nil {
 		return nil, fmt.Errorf("Error getting SSH command: %s", err)
