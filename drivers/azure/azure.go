@@ -36,13 +36,10 @@ const (
 	flAzureSubscriptionID  = "azure-subscription-id"
 	flAzureResourceGroup   = "azure-resource-group"
 	flAzureSSHUser         = "azure-ssh-user"
-	flAzureWinRMUser       = "azure-winrm-user"
-	flAzureWinRMPassword   = "azure-winrm-password"
 	flAzureDockerPort      = "azure-docker-port"
 	flAzureLocation        = "azure-location"
 	flAzureSize            = "azure-size"
 	flAzureImage           = "azure-image"
-	flAzureOS              = "azure-os"
 	flAzureVNet            = "azure-vnet"
 	flAzureSubnet          = "azure-subnet"
 	flAzureSubnetPrefix    = "azure-subnet-prefix"
@@ -52,11 +49,17 @@ const (
 	flAzureUsePrivateIP    = "azure-use-private-ip"
 	flAzureStaticPublicIP  = "azure-static-public-ip"
 	flAzureNoPublicIP      = "azure-no-public-ip"
+
+	flAzureOS = "azure-os"
+	// Windows only flags
+	flAzureWinRMUser     = "azure-winrm-user"
+	flAzureWinRMPassword = "azure-winrm-password"
 )
 
 const (
 	driverName = "azure"
 	sshPort    = 22
+	winRMPort  = 5986
 )
 
 // Driver represents Azure Docker Machine Driver.
@@ -132,13 +135,13 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureWinRMUser,
-			Usage:  "Username for WinRM login",
+			Usage:  "(Windows only) Username for WinRM login",
 			EnvVar: "AZURE_WINRM_USER",
 			Value:  defaultWinRMUser,
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureWinRMPassword,
-			Usage:  "Password for WinRM login",
+			Usage:  "(Windows only) Password for WinRM login",
 			EnvVar: "AZURE_WINRM_PASSWORD",
 			Value:  "",
 		},
@@ -168,7 +171,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:  flAzureOS,
-			Usage: "OS for the Azure VM (Windows|Linux)",
+			Usage: "OS for the Azure VM (windows|linux)",
 			Value: drivers.LINUX,
 		},
 		mcnflag.StringFlag{
@@ -258,9 +261,9 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
 	d.OS = fl.String(flAzureOS)
-	if d.OS == "windows" {
-		// Open WinRM port
-		d.OpenPorts = append(d.OpenPorts, "5986")
+
+	if !(d.OS == drivers.WINDOWS || d.OS == drivers.LINUX) {
+		return errors.New("Invalid OS specified")
 	}
 
 	// Set flags on the BaseDriver
@@ -374,6 +377,8 @@ func (d *Driver) Create() error {
 		if err := c.CreateVirtualMachineExtension(d.OS, d.ResourceGroup, d.naming().VM(), d.Location); err != nil {
 			return err
 		}
+	} else {
+		return errors.New("Invalid OS specified")
 	}
 
 	return nil

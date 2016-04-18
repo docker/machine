@@ -160,9 +160,6 @@ func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup
 			Location: to.StringPtr(location),
 			Properties: &network.PublicIPAddressPropertiesFormat{
 				PublicIPAllocationMethod: ipType,
-				DNSSettings: &network.PublicIPAddressDNSSettings{
-					DomainNameLabel: to.StringPtr(name),
-				},
 			},
 		}, nil)
 	if err != nil {
@@ -495,6 +492,8 @@ func (a AzureClient) CreateVirtualMachine(os, resourceGroup, name, location, siz
 			AdminPassword:        to.StringPtr(password),
 			WindowsConfiguration: &compute.WindowsConfiguration{},
 		}
+	} else {
+		return errors.New("Invalid OS specified")
 	}
 	_, err = a.virtualMachinesClient().CreateOrUpdate(resourceGroup, name,
 		compute.VirtualMachine{
@@ -536,33 +535,28 @@ func (a AzureClient) CreateVirtualMachine(os, resourceGroup, name, location, siz
 }
 
 func (a AzureClient) CreateVirtualMachineExtension(os, resourceGroup, name, location string) error {
-	fqdn, err := a.GetFQDN(resourceGroup, name+"-ip")
-	if err != nil {
-		return err
-	}
-
+	log.Debug("Adding CustomScriptExtension to the VM")
 	vmExtension := compute.VirtualMachineExtension{
 		Type:     to.StringPtr("Microsoft.Compute/virtualMachines/extensions"),
-		Name:     to.StringPtr("winrm"),
 		Location: to.StringPtr(location),
 		Properties: &compute.VirtualMachineExtensionProperties{
-			Publisher:          to.StringPtr("Microsoft.Compute"),
-			Type:               to.StringPtr("CustomScriptExtension"),
-			TypeHandlerVersion: to.StringPtr("1.4"),
+			Publisher:               to.StringPtr("Microsoft.Compute"),
+			Type:                    to.StringPtr("CustomScriptExtension"),
+			TypeHandlerVersion:      to.StringPtr("1.0"),
+			AutoUpgradeMinorVersion: to.BoolPtr(true),
 			Settings: &map[string]interface{}{
 				"fileUris": []string{
-					"https://raw.githubusercontent.com/ppadala/machine/azure-windows/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/ConfigureWinRM.ps1",
-					"https://raw.githubusercontent.com/ppadala/machine/azure-windows/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/makecert.exe",
-					"https://raw.githubusercontent.com/ppadala/machine/azure-windows/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/winrmconf.cmd",
+					"https://raw.githubusercontent.com/docker/machine/master/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/ConfigureWinRM.ps1",
+					"https://raw.githubusercontent.com/docker/machine/master/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/makecert.exe",
+					"https://raw.githubusercontent.com/docker/machine/master/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/winrmconf.cmd",
 				},
-				"commandToExecute": "powershell -ExecutionPolicy Unrestricted -file ConfigureWinRM.ps1 " + fqdn,
+				"commandToExecute": "powershell -ExecutionPolicy Unrestricted -file ConfigureWinRM.ps1 " + name,
 			},
 		},
 	}
 
-	log.Debug("Creating VM extensions")
-	_, err = a.virtualMachineExtensionsClient().CreateOrUpdate(
-		resourceGroup, name, "winrm", vmExtension, nil)
+	_, err := a.virtualMachineExtensionsClient().CreateOrUpdate(
+		resourceGroup, name, "CustomScriptExtension-winrm", vmExtension, nil)
 	return err
 }
 
@@ -631,20 +625,6 @@ func (a AzureClient) GetPrivateIPAddress(resourceGroup, name string) (string, er
 		return "", nil
 	}
 	return to.String((*nic.Properties.IPConfigurations)[0].Properties.PrivateIPAddress), nil
-}
-
-func (a AzureClient) GetFQDN(resourceGroup, name string) (string, error) {
-	f := logutil.Fields{"name": name}
-	log.Debug("Querying FQDN", f)
-	ip, err := a.publicIPAddressClient().Get(resourceGroup, name, "")
-	if err != nil {
-		return "", err
-	}
-	if ip.Properties == nil {
-		log.Debug("publicIP.Properties is nil. Could not determine FQDN", f)
-		return "", nil
-	}
-	return to.String(ip.Properties.DNSSettings.Fqdn), nil
 }
 
 // StartVirtualMachine starts the virtual machine and waits until it reaches
