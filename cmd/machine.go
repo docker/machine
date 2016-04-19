@@ -158,6 +158,17 @@ func main() {
 			Usage:  "BugSnag API token for crash reporting",
 			Value:  "",
 		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_SSH_CONFIG_FILE",
+			Name:   "ssh-config-file",
+			Usage:  "Use the specified SSH config file",
+			Value:  "",
+		},
+		cli.BoolFlag{
+			EnvVar: "MACHINE_USE_USER_SSH_CONFIG",
+			Name:   "use-user-ssh-config",
+			Usage:  "Use the user's SSH config file (~/.ssh/config)",
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {

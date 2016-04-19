@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -15,13 +14,15 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	EnginePort int
-	SSHKey     string
+	EnginePort    int
+	SSHKey        string
+	SSHConfigFile string
 }
 
 const (
@@ -99,13 +100,6 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
-func (d *Driver) GetSSHConfigFile() string {
-	if d.SSHConfigFile == "" {
-		d.SSHConfigFile = "/dev/null"
-	}
-	return d.SSHConfigFile
-}
-
 func (d *Driver) GetSSHKeyPath() string {
 	return d.SSHKeyPath
 }
@@ -119,16 +113,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if d.IPAddress == "" {
 		return errors.New("generic driver requires the --generic-ip-address option")
-	}
-
-	if flags.Bool("generic-use-user-ssh-config") {
-		if d.SSHConfigFile != "" {
-			return errors.New("--generic-ssh-config-file not allowed with --generic-use-user-ssh-config")
-		}
-
-		d.SSHConfigFile = filepath.Join(os.Getenv("HOME"), ".ssh", "config")
-	} else {
-		d.SSHConfigFile = flags.String("generic-ssh-config-file")
 	}
 
 	return nil
@@ -185,8 +169,15 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.EnginePort))), nil
 }
 
+func (d *Driver) runSSHCommand(command string) (string, error) {
+	options := &ssh.Options{
+		ConfigFile: d.SSHConfigFile,
+	}
+	return drivers.RunSSHCommandFromDriverWithOptions(d, command, options)
+}
+
 func (d *Driver) GetState() (state.State, error) {
-	_, err := drivers.RunSSHCommandFromDriver(d, "/bin/true")
+	_, err := d.runSSHCommand("/bin/true")
 	if err != nil {
 		return state.Stopped, nil
 	}
@@ -203,7 +194,7 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Restart() error {
-	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now")
+	_, err := d.runSSHCommand("sudo shutdown -r now")
 	return err
 }
 

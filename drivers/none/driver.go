@@ -67,10 +67,6 @@ func (d *Driver) GetSSHUsername() string {
 	return ""
 }
 
-func (d *Driver) GetSSHConfigFile() string {
-	return "/dev/null"
-}
-
 func (d *Driver) GetURL() (string, error) {
 	return d.URL, nil
 }

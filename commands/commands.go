@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -148,12 +149,21 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 		libmachineOpts := &mcnopt.Options{
 			BaseDir:        context.GlobalString("storage-path"),
 			GithubAPIToken: context.GlobalString("github-api-token"),
+			SSHConfigFile:  context.GlobalString("ssh-config-file"),
 		}
 
 		if context.GlobalBool("native-ssh") {
 			libmachineOpts.SSHClientType = ssh.Native
 		} else {
 			libmachineOpts.SSHClientType = ssh.External
+		}
+
+		if context.GlobalBool("use-user-ssh-config") {
+			if libmachineOpts.SSHConfigFile != "" {
+				log.Error("--ssh-config-file not allowed with --use-user-ssh-config")
+				osExit(1)
+			}
+			libmachineOpts.SSHConfigFile = filepath.Join(os.Getenv("HOME"), ".ssh", "config")
 		}
 
 		mcnopt.SetOpts(libmachineOpts)

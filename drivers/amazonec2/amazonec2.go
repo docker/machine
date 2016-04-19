@@ -713,13 +713,6 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
-func (d *Driver) GetSSHConfigFile() string {
-	if d.SSHConfigFile == "" {
-		d.SSHConfigFile = "/dev/null"
-	}
-	return d.SSHConfigFile
-}
-
 func (d *Driver) Start() error {
 	_, err := d.getClient().StartInstances(&ec2.StartInstancesInput{
 		InstanceIds: []*string{&d.InstanceId},

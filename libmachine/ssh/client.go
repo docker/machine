@@ -75,6 +75,7 @@ var (
 		"-o", "ControlPath=none",
 	}
 	defaultClientType = External
+	defaultConfigFile = "/dev/null"
 )
 
 func SetDefaultClient(clientType ClientType) {
@@ -89,7 +90,15 @@ func SetDefaultClient(clientType ClientType) {
 	}
 }
 
+func SetConfigFile(configFile string) {
+	defaultConfigFile = configFile
+}
+
 func NewClient(user string, host string, port int, options *Options) (Client, error) {
+	if options.ConfigFile == "" {
+		options.ConfigFile = defaultConfigFile
+	}
+
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
 		log.Debug("SSH binary not found, using native Go implementation")
@@ -311,11 +320,11 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, options *Opti
 		BinaryPath: sshBinaryPath,
 	}
 
-	args := append(baseSSHArgs, "-F", options.ConfigFile)
 	if _, err := os.Stat(options.ConfigFile); err != nil {
 		// Abort if config file not accessible
 		return nil, err
 	}
+	args := append(baseSSHArgs, "-F", options.ConfigFile)
 	args = append(args, fmt.Sprintf("%s@%s", user, host))
 
 	// If no identities are explicitly provided, also look at the identities

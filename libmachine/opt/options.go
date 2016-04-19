@@ -10,12 +10,14 @@ type Options struct {
 	BaseDir        string
 	SSHClientType  ssh.ClientType
 	GithubAPIToken string
+	SSHConfigFile  string
 }
 
 var (
 	defaultOptions = &Options{
 		SSHClientType: ssh.External,
 		BaseDir:       mcndirs.GetBaseDir(),
+		SSHConfigFile: "/dev/null",
 	}
 )
 
@@ -31,4 +33,5 @@ func SetOpts(opts *Options) {
 	mcndirs.BaseDir = opts.BaseDir
 	mcnutils.GithubAPIToken = opts.GithubAPIToken
 	ssh.SetDefaultClient(opts.SSHClientType)
+	ssh.SetConfigFile(opts.SSHConfigFile)
 }
