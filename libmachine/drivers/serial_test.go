@@ -29,18 +29,17 @@ func (l *MockLocker) Unlock() {
 }
 
 type MockDriver struct {
-	calls         *CallRecorder
-	driverName    string
-	flags         []mcnflag.Flag
-	ip            string
-	machineName   string
-	sshHostname   string
-	sshKeyPath    string
-	sshPort       int
-	sshUsername   string
-	sshConfigFile string
-	url           string
-	state         state.State
+	calls       *CallRecorder
+	driverName  string
+	flags       []mcnflag.Flag
+	ip          string
+	machineName string
+	sshHostname string
+	sshKeyPath  string
+	sshPort     int
+	sshUsername string
+	url         string
+	state       state.State
 }
 
 func (d *MockDriver) Create() error {
@@ -86,11 +85,6 @@ func (d *MockDriver) GetSSHPort() (int, error) {
 func (d *MockDriver) GetSSHUsername() string {
 	d.calls.record("GetSSHUsername")
 	return d.sshUsername
-}
-
-func (d *MockDriver) GetSSHConfigFile() string {
-	d.calls.record("GetSSHConfigFile")
-	return d.sshConfigFile
 }
 
 func (d *MockDriver) GetURL() (string, error) {

@@ -9,6 +9,10 @@ import (
 )
 
 func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
+	return GetSSHClientFromDriverWithOptions(d, &ssh.Options{})
+}
+
+func GetSSHClientFromDriverWithOptions(d Driver, options *ssh.Options) (ssh.Client, error) {
 	address, err := d.GetSSHHostname()
 	if err != nil {
 		return nil, err
@@ -19,9 +23,6 @@ func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 		return nil, err
 	}
 
-	options := &ssh.Options{
-		ConfigFile: d.GetSSHConfigFile(),
-	}
 	if d.GetSSHKeyPath() != "" {
 		options.Keys = []string{d.GetSSHKeyPath()}
 	}
@@ -32,7 +33,11 @@ func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 }
 
 func RunSSHCommandFromDriver(d Driver, command string) (string, error) {
-	client, err := GetSSHClientFromDriver(d)
+	return RunSSHCommandFromDriverWithOptions(d, command, &ssh.Options{})
+}
+
+func RunSSHCommandFromDriverWithOptions(d Driver, command string, options *ssh.Options) (string, error) {
+	client, err := GetSSHClientFromDriverWithOptions(d, options)
 	if err != nil {
 		return "", err
 	}
@@ -52,10 +57,10 @@ output  : %s
 	return output, nil
 }
 
-func sshAvailableFunc(d Driver) func() bool {
+func sshAvailableFunc(d Driver, options *ssh.Options) func() bool {
 	return func() bool {
 		log.Debug("Getting to WaitForSSH function...")
-		if _, err := RunSSHCommandFromDriver(d, "exit 0"); err != nil {
+		if _, err := RunSSHCommandFromDriverWithOptions(d, "exit 0", options); err != nil {
 			log.Debugf("Error getting ssh command 'exit 0' : %s", err)
 			return false
 		}
@@ -64,8 +69,12 @@ func sshAvailableFunc(d Driver) func() bool {
 }
 
 func WaitForSSH(d Driver) error {
+	return waitForSSHWithOptions(d, &ssh.Options{})
+}
+
+func waitForSSHWithOptions(d Driver, options *ssh.Options) error {
 	// Try to dial SSH for 30 seconds before timing out.
-	if err := mcnutils.WaitFor(sshAvailableFunc(d)); err != nil {
+	if err := mcnutils.WaitFor(sshAvailableFunc(d, options)); err != nil {
 		return fmt.Errorf("Too many retries waiting for SSH to be available.  Last error: %s", err)
 	}
 	return nil
