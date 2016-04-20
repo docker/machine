@@ -459,6 +459,6 @@ func (d *Driver) getCloudInit() (string, error) {
 	}
 
 	return `#cloud-config
-manage_etc_hosts: true
+manage_etc_hosts: localhost
 `, nil
 }
