@@ -15,10 +15,12 @@ import (
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcndockerclient"
+	"github.com/docker/machine/libmachine/opt"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
@@ -337,6 +339,16 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	currentState := state.None
 	dockerVersion := "Unknown"
 	hostError := ""
+
+	opts := *mcnopt.Opts()
+	if h.HostOptions != nil {
+		if h.HostOptions.SSHOptions != nil {
+			opts.SSHConfigFile = h.HostOptions.SSHOptions.ConfigFile
+		} else {
+			opts.SSHConfigFile = ""
+		}
+		rpcdriver.SetMachineOptions(h.Driver, &opts)
+	}
 
 	url, err := h.URL()
 

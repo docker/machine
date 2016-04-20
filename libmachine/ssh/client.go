@@ -93,14 +93,25 @@ func SetDefaultClient(clientType ClientType) {
 	}
 }
 
+func getConfigFile(ConfigFile string) string {
+	if ConfigFile == "" {
+		return "/dev/null"
+	}
+	return ConfigFile
+}
+
 func SetConfigFile(configFile string) {
-	defaultConfigFile = configFile
+	log.Debugf("ssh.SetConfigFile(%q)", configFile)
+	defaultConfigFile = getConfigFile(configFile)
 }
 
 func NewClient(user string, host string, port int, options *Options) (Client, error) {
 	if options.ConfigFile == "" {
 		options.ConfigFile = defaultConfigFile
+	} else {
+		log.Debugf("ssh.NewClient with options: %q", options)
 	}
+	log.Debugf("Creating new client with config file %q", options.ConfigFile)
 
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
@@ -382,6 +393,7 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, options *Opti
 	// Set which port to use for SSH.
 	args = append(args, "-p", fmt.Sprintf("%d", port))
 
+	log.Debugf("Returning external ssh client with args: %q", args)
 	client.BaseArgs = args
 
 	return client, nil

@@ -52,6 +52,7 @@ type Options struct {
 	EngineOptions *engine.Options
 	SwarmOptions  *swarm.Options
 	AuthOptions   *auth.Options
+	SSHOptions    *ssh.Options
 }
 
 type Metadata struct {

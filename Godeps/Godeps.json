@@ -50,6 +50,7 @@
 		"github.com/docker/machine/libmachine/mcnerror",
 		"github.com/docker/machine/libmachine/mcnflag",
 		"github.com/docker/machine/libmachine/mcnutils",
+		"github.com/docker/machine/libmachine/opt",
 		"github.com/docker/machine/libmachine/persist",
 		"github.com/docker/machine/libmachine/persist/persisttest",
 		"github.com/docker/machine/libmachine/provider",

@@ -33,5 +33,10 @@ func SetOpts(opts *Options) {
 	mcndirs.BaseDir = opts.BaseDir
 	mcnutils.GithubAPIToken = opts.GithubAPIToken
 	ssh.SetDefaultClient(opts.SSHClientType)
-	ssh.SetConfigFile(opts.SSHConfigFile)
+	SetSSHConfigFile(opts.SSHConfigFile)
+}
+
+func SetSSHConfigFile(SSHConfigFile string) {
+	defaultOptions.SSHConfigFile = SSHConfigFile
+	ssh.SetConfigFile(SSHConfigFile)
 }
