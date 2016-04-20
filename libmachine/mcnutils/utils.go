@@ -63,11 +63,7 @@ func CopyFile(src, dst string) error {
 		return err
 	}
 
-	if err := os.Chmod(dst, fi.Mode()); err != nil {
-		return err
-	}
-
-	return nil
+	return os.Chmod(dst, fi.Mode())
 }
 
 func WaitForSpecificOrError(f func() (bool, error), maxAttempts int, waitInterval time.Duration) error {
