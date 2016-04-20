@@ -49,7 +49,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   "generic-ssh-key",
-			Usage:  "SSH private key path (if not provided, identities in ssh-agent will be used)",
+			Usage:  "SSH private key path (if not provided, default SSH key will be used)",
 			Value:  "",
 			EnvVar: "GENERIC_SSH_KEY",
 		},
@@ -123,8 +123,7 @@ func (d *Driver) PreCreateCheck() error {
 
 func (d *Driver) Create() error {
 	if d.SSHKey == "" {
-		log.Info("No SSH key specified. Connecting to this machine now and in the" +
-			" future will require the ssh agent to contain the appropriate key.")
+		log.Info("No SSH key specified. Assuming an existing key at the default location.")
 	} else {
 		log.Info("Importing SSH key...")
 		// TODO: validate the key is a valid key
