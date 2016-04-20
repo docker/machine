@@ -26,6 +26,8 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/opt"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -78,6 +80,17 @@ var (
 			Name:  "engine-env",
 			Usage: "Specify environment variables to set in the engine",
 			Value: &cli.StringSlice{},
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_SSH_CONFIG_FILE",
+			Name:   "ssh-config-file",
+			Usage:  "Use the specified SSH config file",
+			Value:  "",
+		},
+		cli.BoolFlag{
+			EnvVar: "MACHINE_USE_USER_SSH_CONFIG",
+			Name:   "use-user-ssh-config",
+			Usage:  "Use the user's SSH config file (~/.ssh/config)",
 		},
 		cli.BoolFlag{
 			Name:  "swarm",
@@ -165,6 +178,41 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
+	sshConfigFile := c.String("ssh-config-file")
+	if c.Bool("use-user-ssh-config") {
+		if sshConfigFile != "" {
+			return fmt.Errorf("--ssh-config-file not allowed with --use-user-ssh-config")
+		}
+		sshConfigFile = filepath.Join(os.Getenv("HOME"), ".ssh", "config")
+	}
+	if sshConfigFile == "" {
+		sshConfigFile = "/dev/null"
+	}
+
+	rpcDriver, ok := h.Driver.(*rpcdriver.RPCClientDriver)
+	if ok {
+		libmachineOpts, err := rpcDriver.GetMachineOptions()
+		if err == nil {
+			log.Debugf("Setting SSHConfigFile = %q", sshConfigFile)
+			libmachineOpts.SSHConfigFile = sshConfigFile
+			mcnopt.SetOpts(libmachineOpts)
+			log.Debugf("About to SetMachineOptions(%q)", libmachineOpts)
+			err = rpcDriver.SetMachineOptions(libmachineOpts)
+			if err != nil {
+				return fmt.Errorf("Error setting machine options: %s", err)
+			}
+			libmachineOpts, err = rpcDriver.GetMachineOptions()
+			if err != nil {
+				return fmt.Errorf("Error getting machine options (2): %s", err)
+			}
+			log.Debugf("libmachineOpts: %q", libmachineOpts)
+		} else {
+			return fmt.Errorf("Error getting machine options: %s", err)
+		}
+	} else {
+		log.Warn("Failed to cast driver to RPCClientDriver")
+	}
+
 	h.HostOptions = &host.Options{
 		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
@@ -198,7 +246,12 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 			ArbitraryFlags: c.StringSlice("swarm-opt"),
 			IsExperimental: c.Bool("swarm-experimental"),
 		},
+		SSHOptions: &ssh.Options{
+			ConfigFile: sshConfigFile,
+		},
 	}
+
+	log.Debugf("Set host config, including SSHOptions.ConfigFile = %q", sshConfigFile)
 
 	exists, err := api.Exists(h.Name)
 	if err != nil {

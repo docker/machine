@@ -88,6 +88,7 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
+	GetMachineOptionsMethod  = `.GetMachineOptions`
 	SetMachineOptionsMethod  = `.SetMachineOptions`
 )
 
@@ -176,19 +177,8 @@ func (f *DefaultRPCClientDriverFactory) NewRPCClientDriver(driverName string, ra
 	}
 	log.Debug("Using API Version ", serverVersion)
 
-	if err := c.Client.Call(SetMachineOptionsMethod, mcnopt.Opts(), nil); err != nil {
-		if !optionWarningMessageShown {
-			// TODO: Should this merit an API version bump?
-			log.Warnf(`
-WARNING: Plugin %q does not implement support for configurable machine options.
-
-Most functionality should still work, but due to a known issue, configuration
-(such as MACHINE_NATIVE_SSH or MACHINE_GITHUB_API_TOKEN or their corresponding
-flags) may not work.  See https://github.com/docker/machine/issues/3181 for
-more details.
-`, driverName)
-			optionWarningMessageShown = true
-		}
+	if err := c.SetMachineOptions(mcnopt.Opts()); err != nil {
+		showOptionsWarningMessage(driverName)
 	}
 
 	go func(c *RPCClientDriver) {
@@ -381,4 +371,33 @@ func (c *RPCClientDriver) Kill() error {
 
 func (c *RPCClientDriver) Upgrade() error {
 	return c.Client.Call(UpgradeMethod, struct{}{}, nil)
+}
+
+func (c *RPCClientDriver) GetMachineOptions() (*mcnopt.Options, error) {
+	options := &mcnopt.Options{}
+
+	if err := c.Client.Call(GetMachineOptionsMethod, struct{}{}, options); err != nil {
+		return nil, err
+	}
+
+	return options, nil
+}
+
+func (c *RPCClientDriver) SetMachineOptions(options *mcnopt.Options) error {
+	return c.Client.Call(SetMachineOptionsMethod, options, nil)
+}
+
+func showOptionsWarningMessage(driverName string) {
+	if !optionWarningMessageShown {
+		// TODO: Should this merit an API version bump?
+		log.Warnf(`
+WARNING: Plugin %q does not implement support for configurable machine options.
+
+Most functionality should still work, but due to a known issue, configuration
+(such as MACHINE_NATIVE_SSH or MACHINE_GITHUB_API_TOKEN or their corresponding
+flags) may not work.  See https://github.com/docker/machine/issues/3181 for
+more details.
+`, driverName)
+		optionWarningMessageShown = true
+	}
 }

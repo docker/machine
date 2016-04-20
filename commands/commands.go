@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -146,10 +145,28 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 		api := libmachine.NewClient(mcndirs.GetBaseDir(), mcndirs.GetMachineCertDir())
 		defer api.Close()
 
+		commandLine := &contextCommandLine{context}
+
+		// Check for help flag, in case command uses SkipFlagParsing
+		firstArg := commandLine.Args().First()
+		if firstArg == "-help" || firstArg == "--help" || firstArg == "-h" {
+			commandLine.ShowHelp()
+			return
+		}
+
+		sshConfigFile := ""
+		target, err := targetHost(commandLine, api)
+		if err == nil {
+			h, err := api.Load(target)
+			if err == nil && h.HostOptions.SSHOptions != nil {
+				sshConfigFile = h.HostOptions.SSHOptions.ConfigFile
+			}
+		}
+
 		libmachineOpts := &mcnopt.Options{
 			BaseDir:        context.GlobalString("storage-path"),
 			GithubAPIToken: context.GlobalString("github-api-token"),
-			SSHConfigFile:  context.GlobalString("ssh-config-file"),
+			SSHConfigFile:  sshConfigFile,
 		}
 
 		if context.GlobalBool("native-ssh") {
@@ -158,19 +175,11 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 			libmachineOpts.SSHClientType = ssh.External
 		}
 
-		if context.GlobalBool("use-user-ssh-config") {
-			if libmachineOpts.SSHConfigFile != "" {
-				log.Error("--ssh-config-file not allowed with --use-user-ssh-config")
-				osExit(1)
-			}
-			libmachineOpts.SSHConfigFile = filepath.Join(os.Getenv("HOME"), ".ssh", "config")
-		}
-
 		mcnopt.SetOpts(libmachineOpts)
 
 		api.Filestore.Path = libmachineOpts.BaseDir
 
-		if err := command(&contextCommandLine{context}, api); err != nil {
+		if err := command(commandLine, api); err != nil {
 			log.Error(err)
 
 			if crashErr, ok := err.(crashreport.CrashError); ok {

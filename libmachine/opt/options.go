@@ -2,6 +2,7 @@ package mcnopt
 
 import (
 	"github.com/docker/machine/commands/mcndirs"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 )
@@ -27,6 +28,8 @@ func Opts() *Options {
 
 func SetOpts(opts *Options) {
 	defaultOptions = opts
+
+	log.Debugf("mcnopt.SetOpts(%q)", opts)
 
 	// TODO: Ideally this would not be scattered state across several
 	// modules, but rather presented through a uniform interface.

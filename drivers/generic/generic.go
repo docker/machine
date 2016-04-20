@@ -14,15 +14,13 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
-	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	EnginePort    int
-	SSHKey        string
-	SSHConfigFile string
+	EnginePort int
+	SSHKey     string
 }
 
 const (
@@ -61,17 +59,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "SSH port",
 			Value:  drivers.DefaultSSHPort,
 			EnvVar: "GENERIC_SSH_PORT",
-		},
-		mcnflag.StringFlag{
-			Name:   "generic-ssh-config-file",
-			Usage:  "SSH config file",
-			Value:  "",
-			EnvVar: "GENERIC_SSH_CONFIG_FILE",
-		},
-		mcnflag.BoolFlag{
-			Name:   "generic-use-user-ssh-config",
-			Usage:  "Use the user SSH config file in ~/.ssh/config",
-			EnvVar: "GENERIC_USE_USER_SSH_CONFIG",
 		},
 	}
 }
@@ -126,11 +113,6 @@ func (d *Driver) PreCreateCheck() error {
 
 		// TODO: validate the key is a valid key
 	}
-	if d.SSHConfigFile != "" {
-		if _, err := os.Stat(d.SSHConfigFile); os.IsNotExist(err) {
-			return fmt.Errorf("Ssh config file does not exist: %q", d.SSHConfigFile)
-		}
-	}
 
 	return nil
 }
@@ -169,15 +151,8 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.EnginePort))), nil
 }
 
-func (d *Driver) runSSHCommand(command string) (string, error) {
-	options := &ssh.Options{
-		ConfigFile: d.SSHConfigFile,
-	}
-	return drivers.RunSSHCommandFromDriverWithOptions(d, command, options)
-}
-
 func (d *Driver) GetState() (state.State, error) {
-	_, err := d.runSSHCommand("/bin/true")
+	_, err := drivers.RunSSHCommandFromDriver(d, "/bin/true")
 	if err != nil {
 		return state.Stopped, nil
 	}
@@ -194,7 +169,7 @@ func (d *Driver) Stop() error {
 }
 
 func (d *Driver) Restart() error {
-	_, err := d.runSSHCommand("sudo shutdown -r now")
+	_, err := drivers.RunSSHCommandFromDriver(d, "sudo shutdown -r now")
 	return err
 }
 
