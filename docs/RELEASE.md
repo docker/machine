@@ -34,7 +34,8 @@ Machine core maintainers who might find themselves performing a release.
     the `CHANGELOG.md` file in the repository.
 5.  **Update the Documentation** -- Ensure that the `docs` branch on GitHub
     (which the Docker docs team uses to deploy from) is up to date with the
-    changes to be deployed from the release branch / master.
+    changes to be deployed from the release branch / master.  Make sure to
+    update `docs/install-machine.md` to have the correct version as well.
 6.  **Verify the Installation** -- Copy and paste the suggested commands in the
     installation notes to ensure that they work properly.  Best of all, grab an
     (uninvolved) buddy and have them try it.  `docker-machine -v` should give
