@@ -179,7 +179,9 @@ func ConfigureAuth(p Provisioner) error {
 
 	log.Info("Setting Docker configuration on the remote daemon...")
 
-	if _, err = p.SSHCommand(fmt.Sprintf("printf %%s \"%s\" | sudo tee %s", dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
+	if _, err = p.SSHCommand(fmt.Sprintf("sudo mkdir -p %s && printf %%s \"%s\" | sudo tee %s",
+		path.Dir(dkrcfg.EngineOptionsPath),
+		dkrcfg.EngineOptions, dkrcfg.EngineOptionsPath)); err != nil {
 		return err
 	}
 
