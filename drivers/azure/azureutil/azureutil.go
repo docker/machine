@@ -33,7 +33,7 @@ var (
 	// Private IPv4 address space per RFC 1918.
 	defaultVnetAddressPrefixes = []string{
 		"192.168.0.0/16",
-		"10.0.0.0/6",
+		"10.0.0.0/8",
 		"172.16.0.0/12"}
 
 	// Polling interval for VM power state check.
