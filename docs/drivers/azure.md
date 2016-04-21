@@ -66,7 +66,7 @@ Optional:
 - `--azure-use-private-ip`: Use private IP address of the machine to connect. It's useful for managing Docker machines from another machine on the same network e.g. while deploying Swarm.
 - `--azure-no-public-ip`: Do not create a public IP address for the machine (implies `--azure-use-private-ip`). Should be used only when creating machines from an Azure VM within the same subnet.
 - `--azure-static-public-ip`: Assign a static public IP address to the machine.
-- `--azure-docker-port`: Port number for Docker engine [$AZURE_DOCKER_PORT]
+- `--azure-docker-port`: Port number for Docker engine.
 - `--azure-environment`: Azure environment (e.g. `AzurePublicCloud`, `AzureChinaCloud`).
 
 [vm-image]: https://azure.microsoft.com/en-us/documentation/articles/resource-groups-vm-searching/
