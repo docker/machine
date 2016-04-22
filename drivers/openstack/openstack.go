@@ -37,6 +37,7 @@ type Driver struct {
 	KeyPairName      string
 	NetworkName      string
 	NetworkId        string
+	UserData         []byte
 	PrivateKeyFile   string
 	SecurityGroups   []string
 	FloatingIpPool   string
@@ -162,6 +163,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  "",
 		},
 		mcnflag.StringFlag{
+			EnvVar: "OS_USER_DATA_FILE",
+			Name:   "openstack-user-data-file",
+			Usage:  "File containing an openstack userdata script",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
 			EnvVar: "OS_NETWORK_NAME",
 			Name:   "openstack-net-name",
 			Usage:  "OpenStack network name the machine will be connected on",
@@ -270,6 +277,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = flags.Int("openstack-ssh-port")
 	d.KeyPairName = flags.String("openstack-keypair-name")
 	d.PrivateKeyFile = flags.String("openstack-private-key-file")
+
+	if flags.String("openstack-user-data-file") != "" {
+		userData, err := ioutil.ReadFile(flags.String("openstack-user-data-file"))
+		if err == nil {
+			d.UserData = userData
+		} else {
+			return err
+		}
+	}
+
 	d.SetSwarmConfigFromFlags(flags)
 
 	return d.checkConfig()
