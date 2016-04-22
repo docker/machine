@@ -401,3 +401,24 @@ more details.
 		optionWarningMessageShown = true
 	}
 }
+
+func GetMachineOptions(d drivers.Driver) (*mcnopt.Options, error) {
+	rpcDriver, ok := d.(*RPCClientDriver)
+	if ok {
+		return rpcDriver.GetMachineOptions()
+	} else {
+		return nil, fmt.Errorf("Failed to cast driver to RPCClientDriver")
+	}
+}
+
+func SetMachineOptions(d drivers.Driver, opts *mcnopt.Options) error {
+	if opts == nil {
+		opts = mcnopt.Opts()
+	}
+	rpcDriver, ok := d.(*RPCClientDriver)
+	if ok {
+		return rpcDriver.SetMachineOptions(opts)
+	} else {
+		return fmt.Errorf("Failed to cast driver to RPCClientDriver")
+	}
+}

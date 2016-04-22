@@ -1,23 +1,27 @@
 package dockerclient
 
 import (
-	"crypto/tls"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/docker/go-connections/sockets"
 )
 
-func newHTTPClient(u *url.URL, tlsConfig *tls.Config, timeout time.Duration) *http.Client {
-	httpTransport := &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: tlsConfig,
-	}
-
+func newHTTPClient(u *url.URL, httpTransport *http.Transport, timeout time.Duration) (*http.Client, error) {
 	switch u.Scheme {
 	default:
-		httpTransport.Dial = func(proto, addr string) (net.Conn, error) {
-			return net.DialTimeout(proto, addr, timeout)
+		if httpTransport.Dial == nil {
+			directDialer := &net.Dialer{
+				Timeout: timeout,
+			}
+
+			proxyDialer, err := sockets.DialerFromEnvironment(directDialer)
+			if err != nil {
+				return nil, err
+			}
+			httpTransport.Dial = proxyDialer.Dial
 		}
 	case "unix":
 		socketPath := u.Path
@@ -30,5 +34,5 @@ func newHTTPClient(u *url.URL, tlsConfig *tls.Config, timeout time.Duration) *ht
 		u.Host = "unix.sock"
 		u.Path = ""
 	}
-	return &http.Client{Transport: httpTransport}
+	return &http.Client{Transport: httpTransport}, nil
 }

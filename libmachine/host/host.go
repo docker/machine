@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
+	"github.com/docker/machine/libmachine/proxy"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
@@ -53,6 +54,7 @@ type Options struct {
 	SwarmOptions  *swarm.Options
 	AuthOptions   *auth.Options
 	SSHOptions    *ssh.Options
+	ProxyOptions  *proxy.Options
 }
 
 type Metadata struct {
@@ -221,4 +223,11 @@ func (h *Host) Provision() error {
 	}
 
 	return provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
+}
+
+func (h *Host) GetSocksProxy() string {
+	if h.HostOptions != nil && h.HostOptions.ProxyOptions != nil {
+		return h.HostOptions.ProxyOptions.SocksProxy
+	}
+	return ""
 }

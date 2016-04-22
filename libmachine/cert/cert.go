@@ -18,6 +18,7 @@ import (
 
 	"errors"
 
+	"github.com/docker/go-connections/sockets"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/log"
 )
@@ -248,10 +249,15 @@ func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth
 
 	url := fmt.Sprintf("https://%s/_ping", strings.Replace(addr, "tcp://", "", 1))
 
+	log.Debugf("ValidateCertificate: env.ALL_PROXY: %q", os.Getenv("ALL_PROXY"))
 	transport := &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: tlsConfig,
 	}
+	proxyDialer, err := sockets.DialerFromEnvironment(&net.Dialer{})
+	if err != nil {
+		return false, err
+	}
+	transport.Dial = proxyDialer.Dial
 	client := &http.Client{Transport: transport}
 	_, err = client.Get(url)
 	if err != nil {

@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/docker/machine",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v62",
 	"Packages": [
 		"github.com/docker/machine",
 		"github.com/docker/machine/cmd",
@@ -48,6 +49,7 @@
 		"github.com/docker/machine/libmachine/mcnerror",
 		"github.com/docker/machine/libmachine/mcnflag",
 		"github.com/docker/machine/libmachine/mcnutils",
+		"github.com/docker/machine/libmachine/opt",
 		"github.com/docker/machine/libmachine/persist",
 		"github.com/docker/machine/libmachine/persist/persisttest",
 		"github.com/docker/machine/libmachine/provider",
@@ -55,6 +57,7 @@
 		"github.com/docker/machine/libmachine/provision/pkgaction",
 		"github.com/docker/machine/libmachine/provision/provisiontest",
 		"github.com/docker/machine/libmachine/provision/serviceaction",
+		"github.com/docker/machine/libmachine/proxy",
 		"github.com/docker/machine/libmachine/shell",
 		"github.com/docker/machine/libmachine/ssh",
 		"github.com/docker/machine/libmachine/ssh/sshtest",
@@ -113,6 +116,16 @@
 			"ImportPath": "github.com/Azure/go-autorest/autorest/to",
 			"Comment": "v7.0.4",
 			"Rev": "b01ec2b60f95678fa759f796bac3c6b9bceaead4"
+		},
+		{
+			"ImportPath": "github.com/Microsoft/go-winio",
+			"Comment": "v0.3.3",
+			"Rev": "3b8b3c98b207f95fe0cd6c7c311a9ac497ba7c0f"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.10.0-14-g081307d",
+			"Rev": "081307d9bc1364753142d5962fc1d795c742baaf"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
@@ -261,6 +274,11 @@
 			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
 		{
+			"ImportPath": "github.com/docker/go-connections/sockets",
+			"Comment": "v0.2.0-4-g5b7154b",
+			"Rev": "5b7154ba2efe13ff86ae8830a9e7cb120b080d6e"
+		},
+		{
 			"ImportPath": "github.com/docker/go-units",
 			"Comment": "v0.1.0-21-g0bbddae",
 			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
@@ -286,6 +304,11 @@
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
 			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
+		},
+		{
+			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
+			"Comment": "v0.1.0-33-g1d2bea3",
+			"Rev": "1d2bea3d46ddbf845269266a29859cf5d9a95649"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
@@ -525,11 +548,15 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "4f2fc6c1e69d41baf187332ee08fbd2b296f21ed"
+			"Rev": "815d315ead425c4365077d904a2331ee9e179820"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context/ctxhttp",
-			"Rev": "4f2fc6c1e69d41baf187332ee08fbd2b296f21ed"
+			"Rev": "815d315ead425c4365077d904a2331ee9e179820"
+		},
+		{
+			"ImportPath": "golang.org/x/net/proxy",
+			"Rev": "815d315ead425c4365077d904a2331ee9e179820"
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
@@ -550,6 +577,10 @@
 		{
 			"ImportPath": "golang.org/x/oauth2/jwt",
 			"Rev": "442624c9ec9243441e83b374a9e22ac549b5c51d"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "d9157a9621b69ad1d8d77a1933590c416593f24f"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/windows/registry",

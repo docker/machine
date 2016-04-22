@@ -155,11 +155,17 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 		}
 
 		sshConfigFile := ""
+		socksProxy := ""
 		target, err := targetHost(commandLine, api)
 		if err == nil {
 			h, err := api.Load(target)
-			if err == nil && h.HostOptions.SSHOptions != nil {
-				sshConfigFile = h.HostOptions.SSHOptions.ConfigFile
+			if err == nil {
+				if h.HostOptions.SSHOptions != nil {
+					sshConfigFile = h.HostOptions.SSHOptions.ConfigFile
+				}
+				if h.HostOptions.ProxyOptions != nil {
+					socksProxy = h.HostOptions.ProxyOptions.SocksProxy
+				}
 			}
 		}
 
@@ -167,6 +173,7 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 			BaseDir:        context.GlobalString("storage-path"),
 			GithubAPIToken: context.GlobalString("github-api-token"),
 			SSHConfigFile:  sshConfigFile,
+			SocksProxy:     socksProxy,
 		}
 
 		if context.GlobalBool("native-ssh") {
@@ -175,6 +182,7 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 			libmachineOpts.SSHClientType = ssh.External
 		}
 
+		log.Debugf("libmachineOpts: %q", libmachineOpts)
 		mcnopt.SetOpts(libmachineOpts)
 
 		api.Filestore.Path = libmachineOpts.BaseDir
@@ -265,12 +273,6 @@ var Commands = []cli.Command{
 			cli.BoolFlag{
 				Name:  "no-proxy",
 				Usage: "Add machine IP to NO_PROXY environment variable",
-			},
-			cli.StringFlag{
-				Name:   "use-socks-proxy",
-				Usage:  "Use the provided socks proxy URL to tunnel trafic ",
-				Value:  "127.0.0.1:5000",
-				EnvVar: "MACHINE_ENV_USE_SOCKSPROXY",
 			},
 		},
 	},

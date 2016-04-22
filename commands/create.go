@@ -27,6 +27,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/opt"
+	"github.com/docker/machine/libmachine/proxy"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/swarm"
 )
@@ -140,6 +141,12 @@ var (
 			Usage: "Support extra SANs for TLS certs",
 			Value: &cli.StringSlice{},
 		},
+		cli.StringFlag{
+			Name:   "use-socks-proxy",
+			Usage:  "Use the provided socks proxy URL to tunnel trafic ",
+			Value:  "",
+			EnvVar: "MACHINE_USE_SOCKS_PROXY",
+		},
 	}
 )
 
@@ -189,28 +196,19 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		sshConfigFile = "/dev/null"
 	}
 
-	rpcDriver, ok := h.Driver.(*rpcdriver.RPCClientDriver)
-	if ok {
-		libmachineOpts, err := rpcDriver.GetMachineOptions()
-		if err == nil {
-			log.Debugf("Setting SSHConfigFile = %q", sshConfigFile)
-			libmachineOpts.SSHConfigFile = sshConfigFile
-			mcnopt.SetOpts(libmachineOpts)
-			log.Debugf("About to SetMachineOptions(%q)", libmachineOpts)
-			err = rpcDriver.SetMachineOptions(libmachineOpts)
-			if err != nil {
-				return fmt.Errorf("Error setting machine options: %s", err)
-			}
-			libmachineOpts, err = rpcDriver.GetMachineOptions()
-			if err != nil {
-				return fmt.Errorf("Error getting machine options (2): %s", err)
-			}
-			log.Debugf("libmachineOpts: %q", libmachineOpts)
-		} else {
-			return fmt.Errorf("Error getting machine options: %s", err)
+	socksProxy := c.String("use-socks-proxy")
+
+	libmachineOpts, err := rpcdriver.GetMachineOptions(h.Driver)
+	if err == nil {
+		libmachineOpts.SSHConfigFile = sshConfigFile
+		libmachineOpts.SocksProxy = socksProxy
+		mcnopt.SetOpts(libmachineOpts)
+		err = rpcdriver.SetMachineOptions(h.Driver, libmachineOpts)
+		if err != nil {
+			return fmt.Errorf("Error setting machine options: %s", err)
 		}
 	} else {
-		log.Warn("Failed to cast driver to RPCClientDriver")
+		log.Warn(err)
 	}
 
 	h.HostOptions = &host.Options{
@@ -248,6 +246,9 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		},
 		SSHOptions: &ssh.Options{
 			ConfigFile: sshConfigFile,
+		},
+		ProxyOptions: &proxy.Options{
+			SocksProxy: socksProxy,
 		},
 	}
 

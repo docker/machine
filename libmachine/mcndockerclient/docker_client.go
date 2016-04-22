@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/docker/machine/libmachine/cert"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/samalba/dockerclient"
 )
 
@@ -19,7 +20,10 @@ func DockerClient(dockerHost DockerHost) (*dockerclient.DockerClient, error) {
 		return nil, fmt.Errorf("Unable to read TLS config: %s", err)
 	}
 
-	return dockerclient.NewDockerClient(url, tlsConfig)
+	socksProxy := dockerHost.GetSocksProxy()
+	log.Debugf("DockerClient: SOCKS proxy: %q", socksProxy)
+
+	return dockerclient.NewDockerClientProxy(url, tlsConfig, socksProxy)
 }
 
 // CreateContainer creates a docker container.

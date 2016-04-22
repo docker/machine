@@ -16,14 +16,21 @@ type AuthOptionser interface {
 	AuthOptions() *auth.Options
 }
 
+type SocksProxyer interface {
+	// returns "<host>:<port>" string, or ""
+	GetSocksProxy() string
+}
+
 type DockerHost interface {
 	URLer
 	AuthOptionser
+	SocksProxyer
 }
 
 type RemoteDocker struct {
 	HostURL    string
 	AuthOption *auth.Options
+	SocksProxy string
 }
 
 // URL returns the Docker host URL
@@ -38,4 +45,8 @@ func (rd *RemoteDocker) URL() (string, error) {
 // AuthOptions returns the authOptions
 func (rd *RemoteDocker) AuthOptions() *auth.Options {
 	return rd.AuthOption
+}
+
+func (rd *RemoteDocker) GetSocksProxy() string {
+	return rd.SocksProxy
 }

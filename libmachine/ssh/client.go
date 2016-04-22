@@ -90,9 +90,16 @@ func SetDefaultClient(clientType ClientType) {
 	}
 }
 
+func getConfigFile(ConfigFile string) string {
+	if ConfigFile == "" {
+		return "/dev/null"
+	}
+	return ConfigFile
+}
+
 func SetConfigFile(configFile string) {
 	log.Debugf("ssh.SetConfigFile(%q)", configFile)
-	defaultConfigFile = configFile
+	defaultConfigFile = getConfigFile(configFile)
 }
 
 func NewClient(user string, host string, port int, options *Options) (Client, error) {

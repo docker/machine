@@ -8,12 +8,15 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 const (
@@ -50,7 +53,15 @@ func NewDockerClient(daemonUrl string, tlsConfig *tls.Config) (*DockerClient, er
 	return NewDockerClientTimeout(daemonUrl, tlsConfig, time.Duration(defaultTimeout))
 }
 
+func NewDockerClientProxy(daemonUrl string, tlsConfig *tls.Config, socksProxy string) (*DockerClient, error) {
+	return NewDockerClientTimeoutProxy(daemonUrl, tlsConfig, time.Duration(defaultTimeout), socksProxy)
+}
+
 func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout time.Duration) (*DockerClient, error) {
+	return NewDockerClientTimeoutProxy(daemonUrl, tlsConfig, timeout, "")
+}
+
+func NewDockerClientTimeoutProxy(daemonUrl string, tlsConfig *tls.Config, timeout time.Duration, socksProxy string) (*DockerClient, error) {
 	u, err := url.Parse(daemonUrl)
 	if err != nil {
 		return nil, err
@@ -62,7 +73,26 @@ func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout tim
 			u.Scheme = "https"
 		}
 	}
-	httpClient := newHTTPClient(u, tlsConfig, timeout)
+	httpTransport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+	directDialer := &net.Dialer{
+		Timeout: timeout,
+	}
+	if socksProxy != "" {
+		proxyURL, err := url.Parse(fmt.Sprintf("socks5://%s", socksProxy))
+		if err == nil {
+			proxyDialer, err := proxy.FromURL(proxyURL, directDialer)
+			if err == nil {
+				httpTransport.Dial = proxyDialer.Dial
+			}
+		}
+	}
+	httpClient, err := newHTTPClient(u, httpTransport, timeout)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DockerClient{u, httpClient, tlsConfig, 0, nil}, nil
 }
 
