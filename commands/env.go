@@ -83,6 +83,11 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		return nil, err
 	}
 
+	machineSocksProxy := ""
+	if host.HostOptions != nil && host.HostOptions.ProxyOptions != nil {
+		machineSocksProxy = host.HostOptions.ProxyOptions.SocksProxy
+	}
+
 	dockerHost, _, err := check.DefaultConnChecker.Check(host, c.Bool("swarm"))
 	if err != nil {
 		return nil, fmt.Errorf("Error checking TLS connection: %s", err)
@@ -113,8 +118,17 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		// Empty the other proxy variables to ensure coherency for end user minds
 		shellCfg.NoProxyVar, _ = findProxyEnvVarFromEnv("no_proxy")
 		shellCfg.NoProxyValue = ""
-
+	} else if machineSocksProxy != "" {
+		shellCfg.SocksProxyVar = "ALL_PROXY"
+		shellCfg.SocksProxyValue = fmt.Sprintf("socks5://%s", machineSocksProxy)
 	} else {
+		socksProxyVar, socksProxyValue := findProxyEnvVarFromEnv("all_proxy")
+		if socksProxyValue != "" {
+			log.Warnf("Unsetting existing env var %s", socksProxyVar)
+			shellCfg.SocksProxyVar = socksProxyVar
+			shellCfg.SocksProxyValue = ""
+		}
+
 		if c.Bool("no-proxy") {
 			ip, err := host.Driver.GetIP()
 			if err != nil {
