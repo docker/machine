@@ -28,7 +28,7 @@ $ docker-machine create -d azure --azure-subscription-id="SUB_ID" --azure-subscr
 ```
 
 To see a list of providers and review the options available to a provider, see
-the [Docker Machine driver reference](../index.md).
+the reference for that driver.
 
 In addition to the provider, you have the option of identifying a base operating
 system. It is an option because Docker Machine has defaults for both local and
