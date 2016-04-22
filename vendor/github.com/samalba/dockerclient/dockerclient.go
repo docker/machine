@@ -80,7 +80,7 @@ func NewDockerClientTimeoutProxy(daemonUrl string, tlsConfig *tls.Config, timeou
 		Timeout: timeout,
 	}
 	if socksProxy != "" {
-		proxyURL, err := url.Parse(fmt.Sprintf("socks5://%s", socksProxy))
+		proxyURL, err := url.Parse(socksProxy)
 		if err == nil {
 			proxyDialer, err := proxy.FromURL(proxyURL, directDialer)
 			if err == nil {

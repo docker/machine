@@ -21,6 +21,9 @@ func DockerClient(dockerHost DockerHost) (*dockerclient.DockerClient, error) {
 	}
 
 	socksProxy := dockerHost.GetSocksProxy()
+	if socksProxy != "" {
+		socksProxy = fmt.Sprintf("socks5://%s", socksProxy)
+	}
 	log.Debugf("DockerClient: SOCKS proxy: %q", socksProxy)
 
 	return dockerclient.NewDockerClientProxy(url, tlsConfig, socksProxy)
