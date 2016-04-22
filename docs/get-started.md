@@ -247,5 +247,5 @@ You can change the `default` string above to make this `LaunchAgent` start any  
 
 -   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
 -   [Understand Machine concepts](concepts.md)
--   <a href="https://docs.docker.com/machine/drivers/index.md" target="_blank">Docker Machine driver reference</a>
+-   <a href="https://docs.docker.com/machine/drivers/" target="_blank">Docker Machine driver reference</a>
 -   <a href="https://docs.docker.com/machine/reference/" target="_blank">Docker Machine subcommand reference</a>
