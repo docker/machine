@@ -748,16 +748,23 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Remove() error {
+	multierr := mcnutils.MultiError{
+		Errs: []error{},
+	}
+
 	if err := d.terminate(); err != nil {
-		return fmt.Errorf("unable to terminate instance: %s", err)
+		multierr.Errs = append(multierr.Errs, err)
 	}
 
-	// remove keypair
 	if err := d.deleteKeyPair(); err != nil {
-		return fmt.Errorf("unable to remove key pair: %s", err)
+		multierr.Errs = append(multierr.Errs, err)
 	}
 
-	return nil
+	if len(multierr.Errs) == 0 {
+		return nil
+	}
+
+	return multierr
 }
 
 func (d *Driver) getInstance() (*ec2.Instance, error) {
