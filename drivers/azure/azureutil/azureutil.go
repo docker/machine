@@ -546,9 +546,9 @@ func (a AzureClient) CreateVirtualMachineExtension(os, resourceGroup, name, loca
 			AutoUpgradeMinorVersion: to.BoolPtr(true),
 			Settings: &map[string]interface{}{
 				"fileUris": []string{
-					"https://raw.githubusercontent.com/docker/machine/master/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/ConfigureWinRM.ps1",
-					"https://raw.githubusercontent.com/docker/machine/master/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/makecert.exe",
-					"https://raw.githubusercontent.com/docker/machine/master/vendor/github.com/Azure/azure-quickstart-templates/201-vm-winrm-windows/winrmconf.cmd",
+					"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/ConfigureWinRM.ps1",
+					"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/makecert.exe",
+					"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/winrmconf.cmd",
 				},
 				"commandToExecute": "powershell -ExecutionPolicy Unrestricted -file ConfigureWinRM.ps1 " + name,
 			},
