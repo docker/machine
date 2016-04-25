@@ -8,6 +8,7 @@ type Options struct {
 	IsSwarm            bool
 	Address            string
 	Discovery          string
+	Agent              bool
 	Master             bool
 	Host               string
 	Image              string
