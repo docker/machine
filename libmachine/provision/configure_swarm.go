@@ -112,32 +112,38 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		}
 	}
 
-	workerHostConfig := dockerclient.HostConfig{
-		RestartPolicy: dockerclient.RestartPolicy{
-			Name:              "always",
-			MaximumRetryCount: 0,
-		},
-	}
+	if swarmOptions.Agent {
+		workerHostConfig := dockerclient.HostConfig{
+			RestartPolicy: dockerclient.RestartPolicy{
+				Name:              "always",
+				MaximumRetryCount: 0,
+			},
+		}
 
-	cmdWorker := []string{
-		"join",
-		"--advertise",
-		advertiseInfo,
-	}
-	for _, option := range swarmOptions.ArbitraryJoinFlags {
-		cmdWorker = append(cmdWorker, "--"+option)
-	}
-	cmdWorker = append(cmdWorker, swarmOptions.Discovery)
+		cmdWorker := []string{
+			"join",
+			"--advertise",
+			advertiseInfo,
+		}
+		for _, option := range swarmOptions.ArbitraryJoinFlags {
+			cmdWorker = append(cmdWorker, "--"+option)
+		}
+		cmdWorker = append(cmdWorker, swarmOptions.Discovery)
 
-	swarmWorkerConfig := &dockerclient.ContainerConfig{
-		Image:      swarmOptions.Image,
-		Env:        swarmOptions.Env,
-		Cmd:        cmdWorker,
-		HostConfig: workerHostConfig,
-	}
-	if swarmOptions.IsExperimental {
-		swarmWorkerConfig.Cmd = append([]string{"--experimental"}, swarmWorkerConfig.Cmd...)
-	}
+		swarmWorkerConfig := &dockerclient.ContainerConfig{
+			Image:      swarmOptions.Image,
+			Env:        swarmOptions.Env,
+			Cmd:        cmdWorker,
+			HostConfig: workerHostConfig,
+		}
+		if swarmOptions.IsExperimental {
+			swarmWorkerConfig.Cmd = append([]string{"--experimental"}, swarmWorkerConfig.Cmd...)
+		}
 
-	return mcndockerclient.CreateContainer(dockerHost, swarmWorkerConfig, "swarm-agent")
+		err = mcndockerclient.CreateContainer(dockerHost, swarmWorkerConfig, "swarm-agent")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
