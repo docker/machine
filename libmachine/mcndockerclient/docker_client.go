@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/docker/machine/libmachine/cert"
-	"github.com/docker/machine/libmachine/log"
 	"github.com/samalba/dockerclient"
 )
 
@@ -24,7 +23,6 @@ func DockerClient(dockerHost DockerHost) (*dockerclient.DockerClient, error) {
 	if socksProxy != "" {
 		socksProxy = fmt.Sprintf("socks5://%s", socksProxy)
 	}
-	log.Debugf("DockerClient: SOCKS proxy: %q", socksProxy)
 
 	return dockerclient.NewDockerClientProxy(url, tlsConfig, socksProxy)
 }

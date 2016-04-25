@@ -249,7 +249,6 @@ func (xcg *X509CertGenerator) ValidateCertificate(addr string, authOptions *auth
 
 	url := fmt.Sprintf("https://%s/_ping", strings.Replace(addr, "tcp://", "", 1))
 
-	log.Debugf("ValidateCertificate: env.ALL_PROXY: %q", os.Getenv("ALL_PROXY"))
 	transport := &http.Transport{
 		TLSClientConfig: tlsConfig,
 	}

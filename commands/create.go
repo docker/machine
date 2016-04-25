@@ -252,8 +252,6 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		},
 	}
 
-	log.Debugf("Set host config, including SSHOptions.ConfigFile = %q", sshConfigFile)
-
 	exists, err := api.Exists(h.Name)
 	if err != nil {
 		return fmt.Errorf("Error checking if host exists: %s", err)

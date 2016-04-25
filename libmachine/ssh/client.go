@@ -98,17 +98,13 @@ func getConfigFile(ConfigFile string) string {
 }
 
 func SetConfigFile(configFile string) {
-	log.Debugf("ssh.SetConfigFile(%q)", configFile)
 	defaultConfigFile = getConfigFile(configFile)
 }
 
 func NewClient(user string, host string, port int, options *Options) (Client, error) {
 	if options.ConfigFile == "" {
 		options.ConfigFile = defaultConfigFile
-	} else {
-		log.Debugf("ssh.NewClient with options: %q", options)
 	}
-	log.Debugf("Creating new client with config file %q", options.ConfigFile)
 
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {

@@ -182,7 +182,6 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 			libmachineOpts.SSHClientType = ssh.External
 		}
 
-		log.Debugf("libmachineOpts: %q", libmachineOpts)
 		mcnopt.SetOpts(libmachineOpts)
 
 		api.Filestore.Path = libmachineOpts.BaseDir
