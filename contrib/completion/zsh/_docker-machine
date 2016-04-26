@@ -1,0 +1,561 @@
+#compdef docker-machine
+# Description
+# -----------
+#  zsh completion for docker-machine
+#  https://github.com/leonhartX/docker-machine-zsh-completion
+# -------------------------------------------------------------------------
+# Version
+# -------
+#  0.1.0
+# -------------------------------------------------------------------------
+# Authors
+# -------
+#  * Ke Xu <leonhartx.k@gmail.com>
+# -------------------------------------------------------------------------
+# Inspiration
+# -----------
+#  * @sdurrheimer docker-compose-zsh-completion https://github.com/sdurrheimer/docker-compose-zsh-completion
+#  * @ilkka _docker-machine
+
+
+__docker-machine_get_hosts() {
+    [[ $PREFIX = -* ]] && return 1
+    local state
+    declare -a hosts
+    state=$1; shift
+    if [[ $state != all ]]; then
+        hosts=(${(f)"$(_call_program commands docker-machine ls -q --filter state=$state)"})
+    else
+        hosts=(${(f)"$(_call_program commands docker-machine ls -q)"})
+    fi
+    _describe 'host' hosts "$@" && ret=0
+    return ret
+}
+
+__docker-machine_hosts_with_state() {
+    declare -a hosts
+    hosts=(${(f)"$(_call_program commands docker-machine ls -f '{{.Name}}\:{{.DriverName}}\({{.State}}\)\ {{.URL}}')"})
+    _describe 'host' hosts
+}
+
+__docker-machine_hosts_all() {
+    __docker-machine_get_hosts all "$@"
+}
+
+__docker-machine_hosts_running() {
+    __docker-machine_get_hosts Running "$@"
+}
+
+__docker-machine_get_swarm() {
+    declare -a swarms
+    swarms=(${(f)"$(_call_program commands docker-machine ls -f {{.Swarm}} | awk '{print $1}')"})
+    _describe 'swarm' swarms
+}
+
+__docker-machine_hosts_and_files() {
+    _alternative "hosts:host:__docker-machine_hosts_all -qS ':'" 'files:files:_path_files'
+}
+
+__docker-machine_filters() {
+    [[ $PREFIX = -* ]] && return 1
+    integer ret=1
+
+    if compset -P '*='; then
+        case "${${words[-1]%=*}#*=}" in
+            (driver)
+                _describe -t driver-filter-opts "driver filter" opts_driver && ret=0
+                ;;
+            (swarm)
+                __docker-machine_get_swarm && ret=0
+                ;;
+            (state)
+                opts_state=('Running' 'Paused' 'Saved' 'Stopped' 'Stopping' 'Starting' 'Error')
+                _describe -t state-filter-opts "state filter" opts_state && ret=0
+                ;;
+            (name)
+                __docker-machine_hosts_all && ret=0
+                ;;
+            (label)
+                _message 'label' && ret=0
+                ;;
+            *)
+                _message 'value' && ret=0
+                ;;
+        esac
+    else
+        opts=('driver' 'swarm' 'state' 'name' 'label')
+        _describe -t filter-opts "filter" opts -qS "=" && ret=0
+    fi
+    return ret
+}
+
+__get_swarm_discovery() {
+    declare -a masters serivces
+    local service
+    services=()
+    masters=($(docker-machine ls -f {{.Swarm}} |grep '(master)' |awk '{print $1}'))
+    for master in $masters; do
+         service=${${${(f)"$(_call_program commands docker-machine inspect -f '{{.HostOptions.SwarmOptions.Discovery}}:{{.Name}}' $master)"}/:/\\:}}
+         services=($services $service)
+    done
+    _describe -t services "swarm service" services && ret=0
+    return ret
+}
+
+__get_create_argument() {
+    typeset -g docker_machine_driver
+    if [[ CURRENT -le 2 ]]; then
+        docker_machine_driver="none"
+    elif [[ CURRENT > 2 && $words[CURRENT-2] = '-d' || $words[CURRENT-2] = '--driver' ]]; then
+        docker_machine_driver=$words[CURRENT-1]
+    elif [[ $words[CURRENT-1] =~ '^(-d|--driver)=' ]]; then
+        docker_machine_driver=${${words[CURRENT-1]}/*=/}
+    fi
+    local opts_provider
+    local -a opts_common opts_amazonec2 opts_azure opts_digitalocean opts_exoscale opts_generic opts_google opts_hyperv opts_openstack opts_rackspace opts_softlayer opts_virtualbox opts_vmwarefusion opts_vmwarevcloudair opts_vmwarevsphere
+    opts_common=(
+        $opts_help \
+        '(--driver -d)'{--driver=,-d=}'[Driver to create machine with]:dirver:->driver-option' \
+        '--engine-install-url=[Custom URL to use for engine installation]:url' \
+        '*--engine-opt=[Specify arbitrary flags to include with the created engine in the form flag=value]:flag' \
+        '*--engine-insecure-registry=[Specify insecure registries to allow with the created engine]:registry' \
+        '*--engine-registry-mirror=[Specify registry mirrors to use]:mirror' \
+        '*--engine-label=[Specify labels for the created engine]:label' \
+        '--engine-storage-driver=[Specify a storage driver to use with the engine]:storage-driver:->storage-driver-option' \
+        '*--engine-env=[Specify environment variables to set in the engine]:environment' \
+        '--swarm[Configure Machine with Swarm]' \
+        '--swarm-image=[Specify Docker image to use for Swarm]:image' \
+        '--swarm-master[Configure Machine to be a Swarm master]' \
+        '--swarm-discovery=[Discovery service to use with Swarm]:service:->swarm-service' \
+        '--swarm-strategy=[Define a default scheduling strategy for Swarm]:strategy:(spread binpack random)' \
+        '*--swarm-opt=[Define arbitrary flags for swarm]:flag' \
+        '--swarm-host=[ip/socket to listen on for Swarm master]:host' \
+        '--swarm-addr=[addr to advertise for Swarm (default: detect and use the machine IP)]:address' \
+        '--swarm-experimental[Enable Swarm experimental features]' \
+        '*--tls-san=[Support extra SANs for TLS certs]:option'
+    )
+    opts_amazonec2=(
+        '--amazonec2-access-key[AWS Access Key]:' \
+        '--amazonec2-ami[AWS machine image \[$AWS_AMI\]]:' \
+        '--amazonec2-device-name[AWS root device name \[$AWS_DEVICE_NAME\]]:' \
+        '--amazonec2-iam-instance-profile[AWS IAM Instance Profile \[$AWS_INSTANCE_PROFILE\]]:' \
+        '--amazonec2-instance-type[AWS instance type \[$AWS_INSTANCE_TYPE\]]:' \
+        '--amazonec2-monitoring[Set this flag to enable CloudWatch monitoring]' \
+        '--amazonec2-private-address-only[Only use a private IP address]' \
+        '--amazonec2-region[AWS region \[$AWS_DEFAULT_REGION\]]:' \
+        '--amazonec2-request-spot-instance[Set this flag to request spot instance]' \
+        '--amazonec2-retries[Set retry count for recoverable failures (use -1 to disable)]:' \
+        '--amazonec2-root-size "16"[AWS root disk size (in GB) \[$AWS_ROOT_SIZE\]]:' \
+        '--amazonec2-secret-key[AWS Secret Key \[$AWS_SECRET_ACCESS_KEY\]]:' \
+        '*--amazonec2-security-group[AWS VPC security group \[$AWS_SECURITY_GROUP\]]:' \
+        '--amazonec2-session-token[AWS Session Token \[$AWS_SESSION_TOKEN\]]:' \
+        '--amazonec2-spot-price[AWS spot instance bid price (in dollar)]:' \
+        '--amazonec2-ssh-keypath[SSH Key for Instance \[$AWS_SSH_KEYPATH\]]:' \
+        '--amazonec2-ssh-user[Set the name of the ssh user \[$AWS_SSH_USER\]]:' \
+        '--amazonec2-subnet-id[AWS VPC subnet id \[$AWS_SUBNET_ID\]]:' \
+        '--amazonec2-tags[AWS Tags (e.g. key1,value1,key2,value2) \[$AWS_TAGS\]]:' \
+        '--amazonec2-use-ebs-optimized-instance[Create an EBS optimized instance]' \
+        '--amazonec2-use-private-address[Force the usage of private IP address]' \
+        '--amazonec2-volume-type "gp2"[Amazon EBS volume type \[$AWS_VOLUME_TYPE\]]:' \
+        '--amazonec2-vpc-id[AWS VPC id \[$AWS_VPC_ID\]]:' \
+        '--amazonec2-zone[AWS zone for instance (i.e. a,b,c,d,e) \[$AWS_ZONE\]]:'
+    )
+    opts_azure=(
+        '--azure-availability-set[Azure Availability Set to place the virtual machine into \[$AZURE_AVAILABILITY_SET\]]:' \
+        '--azure-docker-port[Port number for Docker engine \[$AZURE_DOCKER_PORT\]]:' \
+        '--azure-environment[Azure environment (e.g. AzurePublicCloud, AzureChinaCloud) \[$AZURE_ENVIRONMENT\]]:' \
+        '--azure-image[Azure virtual machine OS image \[$AZURE_IMAGE\]]:' \
+        '--azure-location[Azure region to create the virtual machine \[$AZURE_LOCATION\]]:' \
+        '--azure-no-public-ip[Do not create a public IP address for the machine]' \
+        '*--azure-open-port[Make the specified port number accessible from the Internet]:' \
+        '--azure-private-ip-address[Specify a static private IP address for the machine]:' \
+        '--azure-resource-group[Azure Resource Group name (will be created if missing) \[$AZURE_RESOURCE_GROUP\]]:' \
+        '--azure-size[Size for Azure Virtual Machine \[$AZURE_SIZE\]]:' \
+        '--azure-ssh-user[Username for SSH login \[$AZURE_SSH_USER\]]:' \
+        '--azure-static-public-ip[Assign a static public IP address to the machine]' \
+        '--azure-subnet[Azure Subnet Name to be used within the Virtual Network \[$AZURE_SUBNET\]]:' \
+        '--azure-subnet-prefix[Private CIDR block to be used for the new subnet, should comply RFC 1918 \[$AZURE_SUBNET_PREFIX\]]:' \
+        '--azure-subscription-id[Azure Subscription ID \[$AZURE_SUBSCRIPTION_ID\]]:' \
+        '--azure-use-private-ip[Use private IP address of the machine to connect]' \
+        '--azure-vnet[Azure Virtual Network name to connect the virtual machine \[$AZURE_VNET\]]:'
+    )
+    opts_digitalocean=(
+        '--digitalocean-access-token[Digital Ocean access token \[$DIGITALOCEAN_ACCESS_TOKEN\]]:' \
+        '--digitalocean-backups[enable backups for droplet \[$DIGITALOCEAN_BACKUPS\]]' \
+        '--digitalocean-image[Digital Ocean Image \[$DIGITALOCEAN_IMAGE\]]:' \
+        '--digitalocean-ipv6[enable ipv6 for droplet \[$DIGITALOCEAN_IPV6\]]' \
+        '--digitalocean-private-networking[enable private networking for droplet \[$DIGITALOCEAN_PRIVATE_NETWORKING\]]' \
+        '--digitalocean-region[Digital Ocean region \[$DIGITALOCEAN_REGION\]]:' \
+        '--digitalocean-size[Digital Ocean size \[$DIGITALOCEAN_SIZE\]]:' \
+        '--digitalocean-ssh-key-fingerprint[SSH key fingerprint \[$DIGITALOCEAN_SSH_KEY_FINGERPRINT\]]:' \
+        '--digitalocean-ssh-port[SSH port \[$DIGITALOCEAN_SSH_PORT\]]:' \
+        '--digitalocean-ssh-user[SSH username \[$DIGITALOCEAN_SSH_USER\]]:' \
+        '--digitalocean-userdata[path to file with cloud-init user-data \[$DIGITALOCEAN_USERDATA\]]:'
+    )
+    opts_exoscale=(
+        '--exoscale-api-key[exoscale API key \[$EXOSCALE_API_KEY\]]:' \
+        '--exoscale-api-secret-key[exoscale API secret key \[$EXOSCALE_API_SECRET\]]:' \
+        '--exoscale-availability-zone[exoscale availibility zone \[$EXOSCALE_AVAILABILITY_ZONE\]]:' \
+        '--exoscale-disk-size[exoscale disk size (10, 50, 100, 200, 400) \[$EXOSCALE_DISK_SIZE\]]:' \
+        '--exoscale-image[exoscale image template \[$EXSOCALE_IMAGE\]]:' \
+        '--exoscale-instance-profile[exoscale instance profile (small, medium, large, ...) \[$EXOSCALE_INSTANCE_PROFILE\]]:' \
+        '*--exoscale-security-group[exoscale security group \[$EXOSCALE_SECURITY_GROUP\]]:' \
+        '--exoscale-ssh-user[Set the name of the ssh user \[$EXOSCALE_SSH_USER\]]:' \
+        '--exoscale-url[exoscale API endpoint \[$EXOSCALE_ENDPOINT\]]:' \
+        '--exoscale-userdata[path to file with cloud-init user-data \[$EXOSCALE_USERDATA\]]:'
+    )
+    opts_generic=(
+        '--generic-engine-port[Docker engine port \[$GENERIC_ENGINE_PORT\]]:' \
+        '--generic-ip-address[IP Address of machine \[$GENERIC_IP_ADDRESS\]]:' \
+        '--generic-ssh-key[SSH private key path (if not provided, identities in ssh-agent will be used) \[$GENERIC_SSH_KEY\]]:' \
+        '--generic-ssh-port[SSH port \[$GENERIC_SSH_PORT\]]:' \
+        '--generic-ssh-user[SSH user \[$GENERIC_SSH_USER\]]:'
+    )
+    opts_google=(
+        '--google-address[GCE Instance External IP \[$GOOGLE_ADDRESS\]]:' \
+        '--google-disk-size[GCE Instance Disk Size (in GB) \[$GOOGLE_DISK_SIZE\]]:' \
+        '--google-disk-type[GCE Instance Disk type \[$GOOGLE_DISK_TYPE\]]:' \
+        '--google-machine-image[GCE Machine Image Absolute URL \[$GOOGLE_MACHINE_IMAGE\]]:' \
+        '--google-machine-type[GCE Machine Type \[$GOOGLE_MACHINE_TYPE\]]:' \
+        '--google-preemptible[GCE Instance Preemptibility \[$GOOGLE_PREEMPTIBLE\]]:' \
+        '--google-project[GCE Project \[$GOOGLE_PROJECT\]]:' \
+        '--google-scopes[GCE Scopes (comma-separated if multiple scopes) \[$GOOGLE_SCOPES\]]:' \
+        '--google-tags[GCE Instance Tags (comma-separated) \[$GOOGLE_TAGS\]]:' \
+        "--google-use-existing[Don't create a new VM, use an existing one \[\$GOOGLE_USE_EXISTING\]]" \
+        '--google-use-internal-ip[Use internal GCE Instance IP rather than public one \[$GOOGLE_USE_INTERNAL_IP\]]' \
+        '--google-use-internal-ip-only[Configure GCE instance to not have an external IP address \[$GOOGLE_USE_INTERNAL_IP_ONLY\]]' \
+        '--google-username[GCE User Name \[$GOOGLE_USERNAME\]]:' \
+        '--google-zone[GCE Zone \[$GOOGLE_ZONE\]]:'
+    )
+    opts_hyperv=(
+        '--hyperv-boot2docker-url[URL of the boot2docker ISO. Defaults to the latest available version. \[$HYPERV_BOOT2DOCKER_URL\]]:' \
+        '--hyperv-cpu-count[number of CPUs for the machine \[$HYPERV_CPU_COUNT\]]:' \
+        '--hyperv-disk-size[Maximum size of dynamically expanding disk in MB. \[$HYPERV_DISK_SIZE\]]:' \
+        '--hyperv-memory[Memory size for host in MB. \[$HYPERV_MEMORY\]]:' \
+        "--hyperv-static-macaddress[Hyper-V network adapter's static MAC address. \[\$HYPERV_STATIC_MACADDRESS\]]:" \
+        '--hyperv-virtual-switch[Virtual switch name. Defaults to first found. \[$HYPERV_VIRTUAL_SWITCH\]]:' \
+        "--hyperv-vlan-id[Hyper-V network adapter's VLAN ID if any \[\$HYPERV_VLAN_ID\]]:"
+    )
+    opts_openstack=(
+        '--openstack-active-timeout[OpenStack active timeout \[$OS_ACTIVE_TIMEOUT\]]:' \
+        '--openstack-auth-url[OpenStack authentication URL \[$OS_AUTH_URL\]]:' \
+        '--openstack-availability-zone[OpenStack availability zone \[$OS_AVAILABILITY_ZONE\]]:' \
+        '--openstack-domain-id[OpenStack domain ID (identity v3 only) \[$OS_DOMAIN_ID\]]:' \
+        '--openstack-domain-name[OpenStack domain name (identity v3 only) \[$OS_DOMAIN_NAME\]]:' \
+        '--openstack-endpoint-type[OpenStack endpoint type (adminURL, internalURL or publicURL) \[$OS_ENDPOINT_TYPE\]]:' \
+        '--openstack-flavor-id[OpenStack flavor id to use for the instance \[$OS_FLAVOR_ID\]]:' \
+        '--openstack-flavor-name[OpenStack flavor name to use for the instance \[$OS_FLAVOR_NAME\]]:' \
+        '--openstack-floatingip-pool[OpenStack floating IP pool to get an IP from to assign to the instance \[$OS_FLOATINGIP_POOL\]]:' \
+        '--openstack-image-id[OpenStack image id to use for the instance \[$OS_IMAGE_ID\]]:' \
+        '--openstack-image-name[OpenStack image name to use for the instance \[$OS_IMAGE_NAME\]]:' \
+        '--openstack-insecure[Disable TLS credential checking. \[$OS_INSECURE\]]' \
+        '--openstack-ip-version[OpenStack version of IP address assigned for the machine \[$OS_IP_VERSION\]]:' \
+        '--openstack-keypair-name[OpenStack keypair to use to SSH to the instance \[$OS_KEYPAIR_NAME\]]:' \
+        '--openstack-net-id[OpenStack network id the machine will be connected on \[$OS_NETWORK_ID\]]:' \
+        '--openstack-net-name[OpenStack network name the machine will be connected on \[$OS_NETWORK_NAME\]]:' \
+        '--openstack-nova-network[Use the nova networking services instead of neutron. \[$OS_NOVA_NETWORK\]]' \
+        '--openstack-password[OpenStack password \[$OS_PASSWORD\]]:' \
+        '--openstack-private-key-file[Private keyfile to use for SSH (absolute path) \[$OS_PRIVATE_KEY_FILE\]]:' \
+        '--openstack-region[OpenStack region name \[$OS_REGION_NAME\]]:' \
+        '--openstack-sec-groups[OpenStack comma separated security groups for the machine \[$OS_SECURITY_GROUPS\]]:' \
+        '--openstack-ssh-port[OpenStack SSH port \[$OS_SSH_PORT\]]:' \
+        '--openstack-ssh-user[OpenStack SSH user \[$OS_SSH_USER\]]:' \
+        '--openstack-tenant-id[OpenStack tenant id \[$OS_TENANT_ID\]]:' \
+        '--openstack-tenant-name[OpenStack tenant name \[$OS_TENANT_NAME\]]:' \
+        '--openstack-username[OpenStack username \[$OS_USERNAME\]]'
+    )
+    opts_rackspace=(
+        '--rackspace-active-timeout[Rackspace active timeout \[$OS_ACTIVE_TIMEOUT\]]:' \
+        '--rackspace-api-key[Rackspace API key \[$OS_API_KEY\]]:' \
+        '--rackspace-docker-install[Set if docker have to be installed on the machine]:' \
+        '--rackspace-endpoint-type[Rackspace endpoint type (adminURL, internalURL or the default publicURL) \[$OS_ENDPOINT_TYPE\]]:' \
+        '--rackspace-flavor-id[Rackspace flavor ID. Default: General Purpose 1GB \[$OS_FLAVOR_ID\]]:' \
+        '--rackspace-image-id[Rackspace image ID. Default: Ubuntu 15.10 (Wily Werewolf) (PVHVM)]:' \
+        '--rackspace-region[Rackspace region name \[$OS_REGION_NAME\]]:' \
+        '--rackspace-ssh-port[SSH port for the newly booted machine. Set to 22 by default]:' \
+        '--rackspace-ssh-user[SSH user for the newly booted machine. Set to root by default]:' \
+        '--rackspace-username[Rackspace account username \[$OS_USERNAME\]]:'
+    )
+    opts_softlayer=(
+        '--softlayer-api-endpoint[softlayer api endpoint to use \[$SOFTLAYER_API_ENDPOINT\]]:' \
+        '--softlayer-api-key[softlayer user API key \[$SOFTLAYER_API_KEY\]]:' \
+        "--softlayer-cpu[number of CPU's for the machine \[\$SOFTLAYER_CPU\]]:" \
+        '--softlayer-disk-size[Disk size for machine, a value of 0 uses the default size on softlayer \[$SOFTLAYER_DISK_SIZE\]]:' \
+        '--softlayer-domain[domain name for machine \[$SOFTLAYER_DOMAIN\]]:' \
+        '--softlayer-hostname[hostname for the machine - defaults to machine name \[$SOFTLAYER_HOSTNAME\]]:' \
+        '--softlayer-hourly-billing[set hourly billing for machine - on by default \[$SOFTLAYER_HOURLY_BILLING\]]' \
+        '--softlayer-image[OS image for machine \[$SOFTLAYER_IMAGE\]]:' \
+        '--softlayer-local-disk[use machine local disk instead of softlayer SAN \[$SOFTLAYER_LOCAL_DISK\]]' \
+        '--softlayer-memory[Memory in MB for machine \[$SOFTLAYER_MEMORY\]]:' \
+        '--softlayer-private-net-only[Use only private networking \[$SOFTLAYER_PRIVATE_NET\]]' \
+        '--softlayer-private-vlan-id[\[$SOFTLAYER_PRIVATE_VLAN_ID\]]:' \
+        '--softlayer-public-vlan-id[\[$SOFTLAYER_PUBLIC_VLAN_ID\]]:' \
+        '--softlayer-region[softlayer region for machine \[$SOFTLAYER_REGION\]]:' \
+        '--softlayer-user[softlayer user account name \[$SOFTLAYER_USER\]]:'
+    )
+    opts_virtualbox=(
+        '--virtualbox-boot2docker-url[The URL of the boot2docker image. Defaults to the latest available version \[$VIRTUALBOX_BOOT2DOCKER_URL\]]:' \
+        '--virtualbox-cpu-count[number of CPUs for the machine (-1 to use the number of CPUs available) \[$VIRTUALBOX_CPU_COUNT\]]:' \
+        '--virtualbox-disk-size[Size of disk for host in MB \[$VIRTUALBOX_DISK_SIZE\]]:' \
+        '--virtualbox-host-dns-resolver[Use the host DNS resolver \[$VIRTUALBOX_HOST_DNS_RESOLVER\]]' \
+        '--virtualbox-hostonly-cidr[Specify the Host Only CIDR \[$VIRTUALBOX_HOSTONLY_CIDR\]]:' \
+        '--virtualbox-hostonly-nicpromisc[Specify the Host Only Network Adapter Promiscuous Mode \[$VIRTUALBOX_HOSTONLY_NIC_PROMISC\]]:' \
+        '--virtualbox-hostonly-nictype[Specify the Host Only Network Adapter Type \[$VIRTUALBOX_HOSTONLY_NIC_TYPE\]]:' \
+        '--virtualbox-import-boot2docker-vm[The name of a Boot2Docker VM to import \[$VIRTUALBOX_BOOT2DOCKER_IMPORT_VM\]]:' \
+        '--virtualbox-memory[Size of memory for host in MB \[$VIRTUALBOX_MEMORY_SIZE\]]:' \
+        '--virtualbox-nat-nictype[Specify the Network Adapter Type \[$VIRTUALBOX_NAT_NICTYPE\]]:' \
+        '--virtualbox-no-dns-proxy[Disable proxying all DNS requests to the host \[$VIRTUALBOX_NO_DNS_PROXY\]]' \
+        '--virtualbox-no-share[Disable the mount of your home directory \[$VIRTUALBOX_NO_SHARE\]]' \
+        '--virtualbox-no-vtx-check[Disable checking for the availability of hardware virtualization before the vm is started \[$VIRTUALBOX_NO_VTX_CHECK\]]'
+    )
+    opts_vmwarefusion=(
+        '--vmwarefusion-boot2docker-url[Fusion URL for boot2docker image \[$FUSION_BOOT2DOCKER_URL\]]:' \
+        '--vmwarefusion-configdrive-url[Fusion URL for cloud-init configdrive \[$FUSION_CONFIGDRIVE_URL\]]:' \
+        '--vmwarefusion-cpu-count[number of CPUs for the machine (-1 to use the number of CPUs available) \[$FUSION_CPU_COUNT\]]:' \
+        '--vmwarefusion-disk-size[Fusion size of disk for host VM (in MB) \[$FUSION_DISK_SIZE\]]:' \
+        '--vmwarefusion-memory-size[Fusion size of memory for host VM (in MB) \[$FUSION_MEMORY_SIZE\]]:' \
+        '--vmwarefusion-no-share[Disable the mount of your home directory \[$FUSION_NO_SHARE\]]' \
+        '--vmwarefusion-ssh-password[SSH password \[$FUSION_SSH_PASSWORD\]]:' \
+        '--vmwarefusion-ssh-user[SSH user \[$FUSION_SSH_USER\]]:'
+    )
+    opts_vmwarevcloudair=(
+        '--vmwarevcloudair-catalog[vCloud Air Catalog (default is Public Catalog) \[$VCLOUDAIR_CATALOG\]]:' \
+        '--vmwarevcloudair-catalogitem[vCloud Air Catalog Item (default is Ubuntu Precise) \[$VCLOUDAIR_CATALOGITEM\]]:' \
+        '--vmwarevcloudair-computeid[vCloud Air Compute ID (if using Dedicated Cloud) \[$VCLOUDAIR_COMPUTEID\]]:' \
+        '--vmwarevcloudair-cpu-count[vCloud Air VM Cpu Count (default 1) \[$VCLOUDAIR_CPU_COUNT\]]:' \
+        '--vmwarevcloudair-docker-port[vCloud Air Docker port \[$VCLOUDAIR_DOCKER_PORT\]]:' \
+        '--vmwarevcloudair-edgegateway[vCloud Air Org Edge Gateway (Default is <vdcid>) \[$VCLOUDAIR_EDGEGATEWAY\]]:' \
+        '--vmwarevcloudair-memory-size[vCloud Air VM Memory Size in MB (default 2048) \[$VCLOUDAIR_MEMORY_SIZE\]]:' \
+        '--vmwarevcloudair-orgvdcnetwork[vCloud Air Org VDC Network (Default is <vdcid>-default-routed) \[$VCLOUDAIR_ORGVDCNETWORK\]]:' \
+        '--vmwarevcloudair-password[vCloud Air password \[$VCLOUDAIR_PASSWORD\]]:' \
+        '--vmwarevcloudair-publicip[vCloud Air Org Public IP to use \[$VCLOUDAIR_PUBLICIP\]]:' \
+        '--vmwarevcloudair-ssh-port[vCloud Air SSH port \[$VCLOUDAIR_SSH_PORT\]]:' \
+        '--vmwarevcloudair-username[vCloud Air username \[$VCLOUDAIR_USERNAME\]]:' \
+        '--vmwarevcloudair-vdcid[vCloud Air VDC ID \[$VCLOUDAIR_VDCID\]]:'
+    )
+    opts_vmwarevsphere=(
+        '--vmwarevsphere-boot2docker-url[vSphere URL for boot2docker image \[$VSPHERE_BOOT2DOCKER_URL\]]:' \
+        '--vmwarevsphere-cpu-count[vSphere CPU number for docker VM \[$VSPHERE_CPU_COUNT\]]:' \
+        '--vmwarevsphere-datacenter[vSphere datacenter for docker VM \[$VSPHERE_DATACENTER\]]:' \
+        '--vmwarevsphere-datastore[vSphere datastore for docker VM \[$VSPHERE_DATASTORE\]]:' \
+        '--vmwarevsphere-disk-size[vSphere size of disk for docker VM (in MB) \[$VSPHERE_DISK_SIZE\]]:' \
+        '--vmwarevsphere-hostsystem[vSphere compute resource where the docker VM will be instantiated (use <cluster>/* or <cluster>/<host> if using a cluster) \[$VSPHERE_HOSTSYSTEM\]]:' \
+        '--vmwarevsphere-memory-size[vSphere size of memory for docker VM (in MB) \[$VSPHERE_MEMORY_SIZE\]]:' \
+        '--vmwarevsphere-network[vSphere network where the docker VM will be attached \[$VSPHERE_NETWORK\]]:' \
+        '--vmwarevsphere-password[vSphere password \[$VSPHERE_PASSWORD\]]:' \
+        '--vmwarevsphere-pool[vSphere resource pool for docker VM \[$VSPHERE_POOL\]]:' \
+        '--vmwarevsphere-username[vSphere username \[$VSPHERE_USERNAME\]]:' \
+        '--vmwarevsphere-vcenter[vSphere IP/hostname for vCenter \[$VSPHERE_VCENTER\]]:' \
+        '--vmwarevsphere-vcenter-port[vSphere Port for vCenter \[$VSPHERE_VCENTER_PORT\]]:'
+    )
+
+    opts_provider="opts_${docker_machine_driver}"
+    _arguments \
+        ${(P)opts_provider} \
+        $opts_common && ret=0
+
+    case $state in
+        (driver-option)
+            _describe -t driver-option "driver" opts_driver && ret=0
+            ;;
+        (storage-driver-option)
+            _describe -t storage-driver-option "storage driver" opts_storage_driver && ret=0
+            ;;
+        (swarm-service)
+            __get_swarm_discovery && ret=0
+            ;;
+    esac
+    return ret
+}
+
+
+__docker-machine_subcommand() {
+    local opts_help="(- :)"{-h,--help}"[Print usage]"
+    local -a opts_only_host opts_driver opts_storage_driver opts_stragery
+    opts_only_host=(
+        "$opts_help"
+        "*:host:__docker-machine_hosts_all"
+    )
+    opts_driver=('amazonec2' 'azure' 'digitalocean' 'exoscale' 'generic' 'google' 'hyperv' 'none' 'openstack' 'rackspace' 'softlayer' 'virtualbox' 'vmwarefusion' 'vmwarevcloudair' 'vmwarevsphere')
+    opts_storage_driver=('overlay' 'aufs' 'btrfs' 'devicemapper' 'vfs' 'zfs')
+    integer ret=1
+
+    case "$words[1]" in
+        (active)
+            _arguments \
+                $opts_help \
+                '(--timeout -t)'{--timeout=,-t=}'[Timeout in seconds, default to 10s]:seconds' && ret=0
+            ;;
+        (config)
+            _arguments \
+                $opts_help \
+                '--swarm[Display the Swarm config instead of the Docker daemon]' \
+                "*:host:__docker-machine_hosts_all" && ret=0
+            ;;
+        (create)
+            __get_create_argument
+           ;;
+        (env)
+            _arguments \
+                $opts_help \
+                '--swarm[Display the Swarm config instead of the Docker daemon]' \
+                '--shell=[Force environment to be configured for a specified shell: \[fish, cmd, powershell\], default is auto-detect]:shell' \
+                '(--unset -u)'{--unset,-u}'[Unset variables instead of setting them]' \
+                '--no-proxy[Add machine IP to NO_PROXY environment variable]' \
+                '*:host:__docker-machine_hosts_running' && ret=0
+            ;;
+        (help)
+            _arguments ':subcommand:__docker-machine_commands' && ret=0
+            ;;
+        (inspect)
+            _arguments \
+                $opts_help \
+                '(--format -f)'{--format=,-f=}'[Format the output using the given go template]:template' \
+                '*:host:__docker-machine_hosts_all' && ret=0
+            ;;
+        (ip)
+            _arguments \
+                $opts_help \
+                '*:host:__docker-machine_hosts_running' && ret=0
+            ;;
+        (kill)
+             _arguments \
+                $opts_help \
+                '*:host:__docker-machine_hosts_with_state' && ret=0
+            ;;
+        (ls)
+            _arguments \
+                $opts_help \
+                '(--quiet -q)'{--quiet,-q}'[Enable quiet mode]' \
+                '*--filter=[Filter output based on conditions provided]:filter:->filter-options' \
+                '(--timeout -t)'{--timeout=,-t=}'[Timeout in seconds, default to 10s]:seconds' \
+                '(--format -f)'{--format=,-f=}'[Pretty-print machines using a Go template]:template' && ret=0
+            case $state in
+                (filter-options)
+                    __docker-machine_filters && ret=0
+                    ;;
+            esac
+            ;;
+        (provision)
+            _arguments $opts_only_host && ret=0
+            ;;
+        (regenerate-certs)
+            _arguments \
+                $opts_help \
+                '(--force -f)'{--force,-f}'[Force rebuild and do not prompt]' \
+                '*:host:__docker-machine_hosts_all' && ret=0
+            ;;
+        (restart)
+            _arguments \
+                $opts_help \
+                '*:host:__docker-machine_hosts_with_state' && ret=0
+            ;;
+        (rm)
+            _arguments \
+                $opts_help \
+                '(--force -f)'{--force,-f}'[Remove local configuration even if machine cannot be removed, also implies an automatic yes (`-y`)]' \
+                '-y[Assumes automatic yes to proceed with remove, without prompting further user confirmation]' \
+                '*:host:__docker-machine_hosts_with_state' && ret=0
+            ;;
+        (scp)
+            _arguments \
+                $opts_help \
+                '(--recursive -r)'{--recursive,-r}'[Copy files recursively (required to copy directories))]' \
+                '*:files:__docker-machine_hosts_and_files' && ret=0
+            ;;
+        (ssh)
+            _arguments \
+                $opts_help \
+                '*:host:__docker-machine_hosts_running' && ret=0
+            ;;
+        (start)
+            _arguments \
+                $opts_help \
+                '*:host:__docker-machine_hosts_with_state' && ret=0
+            ;;
+        (status)
+            _arguments $opts_only_host && ret=0
+            ;;
+        (stop)
+            _arguments \
+                $opts_help \
+                '*:host:__docker-machine_hosts_with_state' && ret=0
+            ;;
+        (upgrade)
+            _arguments $opts_only_host && ret=0
+            ;;
+        (url)
+            _arguments \
+                $opts_help \
+                '*:host:__docker-machine_hosts_running' && ret=0
+            ;;
+    esac
+
+    return ret
+}
+
+
+__docker-machine_commands() {
+    local cache_policy
+
+    zstyle -s ":completion:${curcontext}:" cache-policy cache_policy
+    if [[ -z "$cache_policy" ]]; then
+        zstyle ":completion:${curcontext}:" cache-policy __docker-machine_caching_policy
+    fi
+
+    if ( [[ ${+_docker_machine_subcommands} -eq 0 ]] || _cache_invalid docker_machine_subcommands) \
+        && ! _retrieve_cache docker_machine_subcommands;
+    then
+        local -a lines
+        lines=(${(f)"$(_call_program commands docker-machine 2>&1)"})
+        _docker_machine_subcommands=(${${${lines[$((${lines[(i)Commands:]} + 1)),${lines[(I)  *]}]}## #}/$'\t'##/:})
+        (( $#_docker_machine_subcommands > 0 )) && _store_cache docker_machine_subcommands _docker_machine_subcommands
+    fi
+    _describe -t docker-machine-commands "docker-machine command" _docker_machine_subcommands
+}
+
+__docker-machine_caching_policy() {
+    oldp=( "$1"(Nmh+1) )
+    (( $#oldp ))
+}
+
+_docker-machine() {
+    if [[ $service != docker-machine ]]; then
+        _call_function - _$service
+        return
+    fi
+
+    local curcontext="$curcontext" state line
+    integer ret=1
+    typeset -A opt_args
+
+    _arguments -C \
+        "(- :)"{-h,--help}"[Show help]" \
+        "(-D --debug)"{-D,--debug}"[Enable debug mode]" \
+        '(-s --stroage-path)'{-s,--storage-path}'[Configures storage path]:file:_files' \
+        '--tls-ca-cert[CA to verify remotes against]:file:_files' \
+        '--tls-ca-key[Private key to generate certificates]:file:_files' \
+        '--tls-client-cert[Client cert to use for TLS]:file:_files' \
+        '--tls-client-key[Private key used in client TLS auth]:file:_files' \
+        '--github-api-token[Token to use for requests to the Github API]' \
+        '--native-ssh[Use the native (Go-based) SSH implementation.]' \
+        '--bugsnag-api-token[BugSnag API token for crash reporting]' \
+        '(- :)'{-v,--version}'[Print the version]' \
+        "(-): :->command" \
+        "(-)*:: :->option-or-argument" && ret=0
+
+    case $state in
+        (command)
+            __docker-machine_commands && ret=0
+            ;;
+        (option-or-argument)
+            curcontext=${curcontext%:*:*}:docker-machine-$words[1]:
+            __docker-machine_subcommand && ret=0
+            ret=0
+            ;;
+    esac
+
+    return ret
+}
+
+_docker-machine "$@"
