@@ -87,7 +87,7 @@ Environment='DOCKER_OPTS=--host=tcp://0.0.0.0:{{.DockerPort}} --tlsverify --tlsc
 
 	return &DockerOptions{
 		EngineOptions:     engineCfg.String(),
-		EngineOptionsPath: "/etc/systemd/system/docker.service.d/machine.conf",
+		EngineOptionsPath: provisioner.DaemonOptionsFile,
 	}, nil
 }
 
