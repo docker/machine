@@ -17,7 +17,10 @@ identifier="workw_machine"
 -   Install multiple machines [on your cloud provider](get-started-cloud.md)
 -   [Digital Ocean Example](examples/ocean.md)
 -   [AWS Example](examples/aws.md)
+-   [Microsoft Azure Example][azure-tutorial]
 -   [Machine concepts and help](concepts.md)
 -   [Migrate from Boot2Docker to Docker Machine](migrate-to-machine.md)
 -   [Docker Machine driver reference](drivers/index.md)
 -   [Docker Machine subcommand reference](reference/index.md)
+
+[azure-tutorial]: https://azure.microsoft.com/documentation/articles/virtual-machines-linux-docker-machine/

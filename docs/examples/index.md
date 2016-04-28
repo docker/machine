@@ -15,3 +15,6 @@ weight="-50"
 
 -   [Digital Ocean Example](ocean.md)
 -   [AWS Example](aws.md)
+-   [Microsoft Azure Example][azure-tutorial]
+
+[azure-tutorial]: https://azure.microsoft.com/documentation/articles/virtual-machines-linux-docker-machine/
