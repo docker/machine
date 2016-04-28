@@ -124,7 +124,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		"--advertise",
 		advertiseInfo,
 	}
-	for _, option := range swarmOptions.ArbitraryFlags {
+	for _, option := range swarmOptions.ArbitraryJoinFlags {
 		cmdWorker = append(cmdWorker, "--"+option)
 	}
 	cmdWorker = append(cmdWorker, swarmOptions.Discovery)
