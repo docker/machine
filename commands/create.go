@@ -81,7 +81,7 @@ var (
 		},
 		cli.BoolFlag{
 			Name:  "swarm",
-			Usage: "Configure Machine with Swarm",
+			Usage: "Configure Machine to join a Swarm cluster",
 		},
 		cli.StringFlag{
 			Name:   "swarm-image",
@@ -193,8 +193,9 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 			InstallURL:       c.String("engine-install-url"),
 		},
 		SwarmOptions: &swarm.Options{
-			IsSwarm:            c.Bool("swarm"),
+			IsSwarm:            c.Bool("swarm") || c.Bool("swarm-master"),
 			Image:              c.String("swarm-image"),
+			Agent:              c.Bool("swarm"),
 			Master:             c.Bool("swarm-master"),
 			Discovery:          c.String("swarm-discovery"),
 			Address:            c.String("swarm-addr"),
