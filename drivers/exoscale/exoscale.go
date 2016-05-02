@@ -25,6 +25,7 @@ type Driver struct {
 	DiskSize         int
 	Image            string
 	SecurityGroup    string
+	AffinityGroup    string
 	AvailabilityZone string
 	KeyPair          string
 	PublicKey        string
@@ -100,6 +101,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "exoscale-userdata",
 			Usage:  "path to file with cloud-init user-data",
 		},
+		mcnflag.StringSliceFlag{
+			EnvVar: "EXOSCALE_AFFINITY_GROUP",
+			Name:   "exoscale-affinity-group",
+			Value:  []string{},
+			Usage:  "exoscale affinity group",
+		},
 	}
 }
 
@@ -145,6 +152,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		securityGroups = []string{"docker-machine"}
 	}
 	d.SecurityGroup = strings.Join(securityGroups, ",")
+	affinityGroups := flags.StringSlice("exoscale-affinity-group")
+	if len(affinityGroups) == 0 {
+		affinityGroups = []string{"docker-machine"}
+	}
+	d.AffinityGroup = strings.Join(affinityGroups, ",")
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
 	d.SSHUser = flags.String("exoscale-ssh-user")
 	d.UserDataFile = flags.String("exoscale-userdata")
@@ -253,6 +265,28 @@ func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group strin
 	return sg, nil
 }
 
+func (d *Driver) createDefaultAffinityGroup(client *egoscale.Client, group string) (string, error) {
+	jobid, err := client.CreateAffinityGroup(group)
+	if err != nil {
+		return "", err
+	}
+	var resp *egoscale.QueryAsyncJobResultResponse
+	for i := 0; i <= 10; i++ {
+		resp, err = client.PollAsyncJob(jobid)
+		if err != nil {
+			fmt.Printf("got error: %+v\n", err)
+		}
+
+		if (resp.Jobstatus == 1) {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	affinitygroups, err := client.GetAffinityGroups()
+	agid := affinitygroups[group]
+	return agid, nil
+}
+
 func (d *Driver) Create() error {
 	userdata, err := d.getCloudInit()
 	if err != nil {
@@ -311,6 +345,23 @@ func (d *Driver) Create() error {
 		sgs[idx] = sg
 	}
 
+    // Affinity Groups
+    affinityGroups := strings.Split(d.AffinityGroup, ",")
+    ags := make([]string, len(affinityGroups))
+    for idx, group := range affinityGroups {
+    	ag, ok := topology.AffinityGroups[group]
+    	if !ok {
+    		log.Infof("Affinity Group %v does not exist, create it",
+    			group)
+    		ag, err = d.createDefaultAffinityGroup(client, group)
+    		if err != nil {
+    			return err
+    		}
+    	}
+    	log.Debugf("Affinity group %v = %s", group, ag)
+    	ags[idx] = group
+    }
+
 	log.Infof("Generate an SSH keypair...")
 	keypairName := fmt.Sprintf("docker-machine-%s", d.MachineName)
 	kpresp, err := client.CreateKeypair(keypairName)
@@ -335,6 +386,7 @@ func (d *Driver) Create() error {
 		Zone:            zone,
 		Keypair:         d.KeyPair,
 		Name:            d.MachineName,
+		AffinityGroups:  ags,
 	}
 
 	cvmresp, err := client.CreateVirtualMachine(machineProfile)
