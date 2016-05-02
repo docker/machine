@@ -295,7 +295,7 @@
 		},
 		{
 			"ImportPath": "github.com/pyr/egoscale/src/egoscale",
-			"Rev": "347f81398d2ea1f3eebf1cd27ee3183669e34819"
+			"Rev": "906e88e3bb9cf8c559e45e248db1d09578acf47f"
 		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
