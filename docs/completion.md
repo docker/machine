@@ -13,7 +13,7 @@ weight=99
 # Command-line Completion
 
 Docker Machine comes with [command completion](http://en.wikipedia.org/wiki/Command-line_completion)
-for the bash shell.
+for the bash and zsh shell.
 
 ## Installing Command Completion
 
@@ -31,18 +31,13 @@ Place the completion scripts in `/etc/bash_completion.d/` (`` `brew --prefix`/et
 
 Completion will be available upon next login.
 
-<!--
-### Zsh
 
-**Note: there does not seem to be any Zsh completion file yet, but when there is, documentation could look like this.**
+### Zsh
 
 Place the completion scripts in your `/path/to/zsh/completion`, using e.g. `~/.zsh/completion/`
 
     mkdir -p ~/.zsh/completion
-    files=(docker-machine docker-machine-wrapper docker-machine-prompt)
-    for f in "${files[@]}"; do
-      curl -L https://raw.githubusercontent.com/docker/machine/v$(docker-machine --version | tr -ds ',' ' ' | awk 'NR==1{print $(3)}')/contrib/completion/zsh/$f > ~/.zsh/completion/_$f
-    done
+    curl -L https://raw.githubusercontent.com/docker/machine/v$(docker-machine --version | tr -ds ',' ' ' | awk 'NR==1{print $(3)}')/contrib/completion/zsh/_docker-machine > ~/.zsh/completion/_docker-machine
 
 Include the directory in your `$fpath`, e.g. by adding in `~/.zshrc`
 
@@ -56,7 +51,7 @@ Then reload your shell
 
     exec $SHELL -l
 
--->
+
 <!--[metadata]>
 ## Available completions
 
