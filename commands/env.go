@@ -134,6 +134,10 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		shellCfg.Prefix = "SET "
 		shellCfg.Suffix = "\n"
 		shellCfg.Delimiter = "="
+	case "tcsh":
+		shellCfg.Prefix = "setenv "
+		shellCfg.Suffix = "\";\n"
+		shellCfg.Delimiter = " \""
 	case "emacs":
 		shellCfg.Prefix = "(setenv \""
 		shellCfg.Suffix = "\")\n"
@@ -182,6 +186,10 @@ func shellCfgUnset(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 		shellCfg.Prefix = "(setenv \""
 		shellCfg.Suffix = ")\n"
 		shellCfg.Delimiter = "\" nil"
+	case "tcsh":
+		shellCfg.Prefix = "unsetenv "
+		shellCfg.Suffix = ";\n"
+		shellCfg.Delimiter = ""
 	default:
 		shellCfg.Prefix = "unset "
 		shellCfg.Suffix = "\n"
@@ -249,6 +257,9 @@ func (g *EnvUsageHintGenerator) GenerateUsageHint(userShell string, args []strin
 	case "emacs":
 		cmd = fmt.Sprintf("(with-temp-buffer (shell-command \"%s\" (current-buffer)) (eval-buffer))", commandLine)
 		comment = ";;"
+	case "tcsh":
+		cmd = fmt.Sprintf("eval `%s`", commandLine)
+		comment = ":"
 	default:
 		cmd = fmt.Sprintf("eval $(%s)", commandLine)
 	}
