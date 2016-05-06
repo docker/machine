@@ -15,10 +15,12 @@ import (
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/drivers/rpc"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcndockerclient"
+	"github.com/docker/machine/libmachine/opt"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
@@ -338,6 +340,21 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 	dockerVersion := "Unknown"
 	hostError := ""
 
+	opts := *mcnopt.Opts()
+	if h.HostOptions != nil {
+		if h.HostOptions.SSHOptions != nil {
+			opts.SSHConfigFile = h.HostOptions.SSHOptions.ConfigFile
+		} else {
+			opts.SSHConfigFile = ""
+		}
+		if h.HostOptions.ProxyOptions != nil {
+			opts.SocksProxy = h.HostOptions.ProxyOptions.SocksProxy
+		} else {
+			opts.SocksProxy = ""
+		}
+		rpcdriver.SetMachineOptions(h.Driver, &opts)
+	}
+
 	url, err := h.URL()
 
 	// PERFORMANCE: if we have the url, it's ok to assume the host is running
@@ -358,6 +375,7 @@ func attemptGetHostState(h *host.Host, stateQueryChan chan<- HostListItem) {
 		dockerHost := &mcndockerclient.RemoteDocker{
 			HostURL:    url,
 			AuthOption: h.AuthOptions(),
+			SocksProxy: opts.SocksProxy,
 		}
 		dockerVersion, err = mcndockerclient.DockerVersion(dockerHost)
 

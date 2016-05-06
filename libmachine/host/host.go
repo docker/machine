@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
+	"github.com/docker/machine/libmachine/proxy"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
@@ -52,6 +53,8 @@ type Options struct {
 	EngineOptions *engine.Options
 	SwarmOptions  *swarm.Options
 	AuthOptions   *auth.Options
+	SSHOptions    *ssh.Options
+	ProxyOptions  *proxy.Options
 }
 
 type Metadata struct {
@@ -83,12 +86,12 @@ func (creator *StandardSSHClientCreator) CreateSSHClient(d drivers.Driver) (ssh.
 		return &ssh.ExternalClient{}, err
 	}
 
-	auth := &ssh.Auth{}
+	options := &ssh.Options{}
 	if d.GetSSHKeyPath() != "" {
-		auth.Keys = []string{d.GetSSHKeyPath()}
+		options.Keys = []string{d.GetSSHKeyPath()}
 	}
 
-	return ssh.NewClient(d.GetSSHUsername(), addr, port, auth)
+	return ssh.NewClient(d.GetSSHUsername(), addr, port, options)
 }
 
 func (h *Host) runActionForState(action func() error, desiredState state.State) error {
@@ -220,4 +223,11 @@ func (h *Host) Provision() error {
 	}
 
 	return provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
+}
+
+func (h *Host) GetSocksProxy() string {
+	if h.HostOptions != nil && h.HostOptions.ProxyOptions != nil {
+		return h.HostOptions.ProxyOptions.SocksProxy
+	}
+	return ""
 }

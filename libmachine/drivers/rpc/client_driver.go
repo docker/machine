@@ -12,6 +12,7 @@ import (
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/opt"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/version"
 )
@@ -55,6 +56,10 @@ type InternalClient struct {
 	rpcServiceName string
 }
 
+var (
+	optionWarningMessageShown = false
+)
+
 const (
 	RPCServiceNameV0 = `RpcServerDriver`
 	RPCServiceNameV1 = `RPCServerDriver`
@@ -83,6 +88,8 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
+	GetMachineOptionsMethod  = `.GetMachineOptions`
+	SetMachineOptionsMethod  = `.SetMachineOptions`
 )
 
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
@@ -169,6 +176,10 @@ func (f *DefaultRPCClientDriverFactory) NewRPCClientDriver(driverName string, ra
 		return nil, fmt.Errorf("Driver binary uses an incompatible API version (%d)", serverVersion)
 	}
 	log.Debug("Using API Version ", serverVersion)
+
+	if err := c.SetMachineOptions(mcnopt.Opts()); err != nil {
+		showOptionsWarningMessage(driverName)
+	}
 
 	go func(c *RPCClientDriver) {
 		for {
@@ -360,4 +371,52 @@ func (c *RPCClientDriver) Kill() error {
 
 func (c *RPCClientDriver) Upgrade() error {
 	return c.Client.Call(UpgradeMethod, struct{}{}, nil)
+}
+
+func (c *RPCClientDriver) GetMachineOptions() (*mcnopt.Options, error) {
+	options := &mcnopt.Options{}
+
+	if err := c.Client.Call(GetMachineOptionsMethod, struct{}{}, options); err != nil {
+		return nil, err
+	}
+
+	return options, nil
+}
+
+func (c *RPCClientDriver) SetMachineOptions(options *mcnopt.Options) error {
+	return c.Client.Call(SetMachineOptionsMethod, options, nil)
+}
+
+func showOptionsWarningMessage(driverName string) {
+	if !optionWarningMessageShown {
+		// TODO: Should this merit an API version bump?
+		log.Warnf(`
+WARNING: Plugin %q does not implement support for configurable machine options.
+
+Most functionality should still work, but due to a known issue, configuration
+(such as MACHINE_NATIVE_SSH or MACHINE_GITHUB_API_TOKEN or their corresponding
+flags) may not work.  See https://github.com/docker/machine/issues/3181 for
+more details.
+`, driverName)
+		optionWarningMessageShown = true
+	}
+}
+
+func GetMachineOptions(d drivers.Driver) (*mcnopt.Options, error) {
+	rpcDriver, ok := d.(*RPCClientDriver)
+	if ok {
+		return rpcDriver.GetMachineOptions()
+	}
+	return nil, fmt.Errorf("Failed to cast driver to RPCClientDriver")
+}
+
+func SetMachineOptions(d drivers.Driver, opts *mcnopt.Options) error {
+	if opts == nil {
+		opts = mcnopt.Opts()
+	}
+	rpcDriver, ok := d.(*RPCClientDriver)
+	if ok {
+		return rpcDriver.SetMachineOptions(opts)
+	}
+	return fmt.Errorf("Failed to cast driver to RPCClientDriver")
 }

@@ -19,7 +19,12 @@ func DockerClient(dockerHost DockerHost) (*dockerclient.DockerClient, error) {
 		return nil, fmt.Errorf("Unable to read TLS config: %s", err)
 	}
 
-	return dockerclient.NewDockerClient(url, tlsConfig)
+	socksProxy := dockerHost.GetSocksProxy()
+	if socksProxy != "" {
+		socksProxy = fmt.Sprintf("socks5://%s", socksProxy)
+	}
+
+	return dockerclient.NewDockerClientProxy(url, tlsConfig, socksProxy)
 }
 
 // CreateContainer creates a docker container.

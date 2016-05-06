@@ -1,7 +1,9 @@
 package ssh
 
 import (
+	"fmt"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,7 +53,8 @@ func TestNewExternalClient(t *testing.T) {
 		user          string
 		host          string
 		port          int
-		auth          *Auth
+		keys          []string
+		configFile    string
 		expectedError string
 		skipOS        string
 	}{
@@ -60,7 +63,8 @@ func TestNewExternalClient(t *testing.T) {
 			user:          "docker",
 			host:          "localhost",
 			port:          22,
-			auth:          &Auth{Keys: []string{"/tmp/private-key-not-exist"}},
+			keys:          []string{"/tmp/private-key-not-exist"},
+			configFile:    "/dev/null",
 			expectedError: "stat /tmp/private-key-not-exist: no such file or directory",
 			skipOS:        "none",
 		},
@@ -69,16 +73,47 @@ func TestNewExternalClient(t *testing.T) {
 			user:          "docker",
 			host:          "localhost",
 			port:          22,
-			auth:          &Auth{Keys: []string{"/dev/null"}},
+			keys:          []string{"/dev/null"},
+			configFile:    "/dev/null",
 			expectedError: "Permissions 0410000666 for '/dev/null' are too open.",
 			skipOS:        "windows",
+		},
+		{
+			sshBinaryPath: "/usr/local/bin/ssh",
+			user:          "docker",
+			host:          "localhost",
+			port:          22,
+			keys:          []string{},
+			configFile:    "/dev/zero",
+			expectedError: "",
+			skipOS:        "none",
+		},
+		{
+			sshBinaryPath: "/usr/local/bin/ssh",
+			user:          "docker",
+			host:          "localhost",
+			port:          22,
+			keys:          []string{},
+			configFile:    "/tmp/does/not/exist",
+			expectedError: "stat /tmp/does/not/exist: no such file or directory",
+			skipOS:        "none",
 		},
 	}
 
 	for _, c := range cases {
+		options := &Options{
+			Keys:       c.keys,
+			ConfigFile: c.configFile,
+		}
 		if runtime.GOOS != c.skipOS {
-			_, err := NewExternalClient(c.sshBinaryPath, c.user, c.host, c.port, c.auth)
-			assert.EqualError(t, err, c.expectedError)
+			cli, err := NewExternalClient(c.sshBinaryPath, c.user, c.host, c.port, options)
+			if c.expectedError == "" {
+				assert.Nil(t, err)
+				argsStr := strings.Join(cli.BaseArgs, " ")
+				assert.Contains(t, argsStr, fmt.Sprintf("-F %s", c.configFile))
+			} else {
+				assert.EqualError(t, err, c.expectedError)
+			}
 		}
 	}
 }

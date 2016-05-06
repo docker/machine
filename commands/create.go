@@ -26,6 +26,9 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/opt"
+	"github.com/docker/machine/libmachine/proxy"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -78,6 +81,17 @@ var (
 			Name:  "engine-env",
 			Usage: "Specify environment variables to set in the engine",
 			Value: &cli.StringSlice{},
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_SSH_CONFIG_FILE",
+			Name:   "ssh-config-file",
+			Usage:  "Use the specified SSH config file",
+			Value:  "",
+		},
+		cli.BoolFlag{
+			EnvVar: "MACHINE_USE_USER_SSH_CONFIG",
+			Name:   "use-user-ssh-config",
+			Usage:  "Use the user's SSH config file (~/.ssh/config)",
 		},
 		cli.BoolFlag{
 			Name:  "swarm",
@@ -132,6 +146,12 @@ var (
 			Usage: "Support extra SANs for TLS certs",
 			Value: &cli.StringSlice{},
 		},
+		cli.StringFlag{
+			Name:   "use-socks-proxy",
+			Usage:  "Use the provided socks proxy URL to tunnel trafic ",
+			Value:  "",
+			EnvVar: "MACHINE_USE_SOCKS_PROXY",
+		},
 	}
 )
 
@@ -170,6 +190,32 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
+	sshConfigFile := c.String("ssh-config-file")
+	if c.Bool("use-user-ssh-config") {
+		if sshConfigFile != "" {
+			return fmt.Errorf("--ssh-config-file not allowed with --use-user-ssh-config")
+		}
+		sshConfigFile = filepath.Join(os.Getenv("HOME"), ".ssh", "config")
+	}
+	if sshConfigFile == "" {
+		sshConfigFile = "/dev/null"
+	}
+
+	socksProxy := c.String("use-socks-proxy")
+
+	libmachineOpts, err := rpcdriver.GetMachineOptions(h.Driver)
+	if err == nil {
+		libmachineOpts.SSHConfigFile = sshConfigFile
+		libmachineOpts.SocksProxy = socksProxy
+		mcnopt.SetOpts(libmachineOpts)
+		err = rpcdriver.SetMachineOptions(h.Driver, libmachineOpts)
+		if err != nil {
+			return fmt.Errorf("Error setting machine options: %s", err)
+		}
+	} else {
+		log.Warn(err)
+	}
+
 	h.HostOptions = &host.Options{
 		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
@@ -204,6 +250,12 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 			ArbitraryFlags:     c.StringSlice("swarm-opt"),
 			ArbitraryJoinFlags: c.StringSlice("swarm-join-opt"),
 			IsExperimental:     c.Bool("swarm-experimental"),
+		},
+		SSHOptions: &ssh.Options{
+			ConfigFile: sshConfigFile,
+		},
+		ProxyOptions: &proxy.Options{
+			SocksProxy: socksProxy,
 		},
 	}
 
