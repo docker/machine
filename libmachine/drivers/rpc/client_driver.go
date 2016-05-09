@@ -391,7 +391,8 @@ func (c *RPCClientDriver) SetMachineOptions(options *mcnopt.Options) error {
 }
 
 func showOptionsWarningMessage(driverName string) {
-	if !optionWarningMessageShown {
+	// XXX: remove driver filter if machine opts support is added to ci-test driver
+	if driverName != "ci-test" && !optionWarningMessageShown {
 		// TODO: Should this merit an API version bump?
 		log.Warnf(`
 WARNING: Plugin %q does not implement support for configurable machine options.
