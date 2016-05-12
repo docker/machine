@@ -27,6 +27,7 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/guest"
 	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
@@ -218,6 +219,52 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
+func (d *Driver) WaitForConfiguredNICIP(v *object.VirtualMachine, ctx context.Context) (string, error) {
+	var nicIP string
+
+	p := property.DefaultCollector(v.Client())
+	err := property.Wait(ctx, p, v.Reference(), []string{"guest.net"}, func(pc []types.PropertyChange) bool {
+		for _, c := range pc {
+			if c.Name != "guest.net" {
+				continue
+			}
+			if c.Op != types.PropertyChangeOpAssign {
+				continue
+			}
+			if c.Val == nil {
+				continue
+			}
+
+			nics := c.Val.(types.ArrayOfGuestNicInfo).GuestNicInfo
+			for _, nic := range nics {
+				if nic.MacAddress == "" || nic.IpConfig == nil || len(nic.IpConfig.IpAddress) == 0 || nic.DeviceConfigId <= 0 {
+					// Ignore incomplete or non-VM Devices
+					continue
+				}
+
+				// Default to first address, but prefer ipv4 style address if present
+				nicIP = nic.IpConfig.IpAddress[0].IpAddress
+				for _, ip := range nic.IpConfig.IpAddress {
+					if net.ParseIP(ip.IpAddress).To4() != nil {
+						nicIP = ip.IpAddress
+						break
+					}
+				}
+			}
+
+			return true
+		}
+
+		return false
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return nicIP, nil
+}
+
 func (d *Driver) GetIP() (string, error) {
 	status, err := d.GetState()
 	if status != state.Running {
@@ -239,7 +286,7 @@ func (d *Driver) GetIP() (string, error) {
 		return "", err
 	}
 
-	rawIP, err := vm.WaitForIP(ctx)
+	rawIP, err := d.WaitForConfiguredNICIP(vm, ctx)
 	if err != nil {
 		return "", err
 	}
