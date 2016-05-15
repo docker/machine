@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015-2016 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -115,4 +115,9 @@ func (c *Client) Valid() bool {
 	}
 
 	return true
+}
+
+// IsVC returns true if we are connected to a vCenter
+func (c *Client) IsVC() bool {
+	return c.ServiceContent.About.ApiType == "VirtualCenter"
 }
