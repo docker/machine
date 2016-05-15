@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015-2016 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -130,7 +130,7 @@ func (d Datastore) ServiceTicket(ctx context.Context, path string, method string
 	}
 
 	// If connected to VC, the ticket request must be for an ESX host.
-	if d.c.ServiceContent.About.ApiType == "VirtualCenter" {
+	if d.c.IsVC() {
 		hosts, err := d.AttachedHosts(ctx)
 		if err != nil {
 			return nil, nil, err
@@ -220,7 +220,16 @@ func (d Datastore) UploadFile(ctx context.Context, file string, path string, par
 	return d.Client().UploadFile(file, u, p)
 }
 
-// DownloadFile via soap.Upload with an http service ticket
+// Download via soap.Download with an http service ticket
+func (d Datastore) Download(ctx context.Context, path string, param *soap.Download) (io.ReadCloser, int64, error) {
+	u, p, err := d.downloadTicket(ctx, path, param)
+	if err != nil {
+		return nil, 0, err
+	}
+	return d.Client().Download(u, p)
+}
+
+// DownloadFile via soap.Download with an http service ticket
 func (d Datastore) DownloadFile(ctx context.Context, path string, file string, param *soap.Download) error {
 	u, p, err := d.downloadTicket(ctx, path, param)
 	if err != nil {
@@ -269,6 +278,34 @@ func (d Datastore) AttachedHosts(ctx context.Context) ([]*HostSystem, error) {
 	return hosts, nil
 }
 
+// AttachedHosts returns hosts that have this Datastore attached, accessible and writable and are members of the given cluster.
+func (d Datastore) AttachedClusterHosts(ctx context.Context, cluster *ComputeResource) ([]*HostSystem, error) {
+	var hosts []*HostSystem
+
+	clusterHosts, err := cluster.Hosts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	attachedHosts, err := d.AttachedHosts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(map[types.ManagedObjectReference]bool)
+	for _, host := range attachedHosts {
+		refs[host.Reference()] = true
+	}
+
+	for _, host := range clusterHosts {
+		if refs[host.Reference()] {
+			hosts = append(hosts, host)
+		}
+	}
+
+	return hosts, nil
+}
+
 func (d Datastore) Stat(ctx context.Context, file string) (types.BaseFileInfo, error) {
 	b, err := d.Browser(ctx)
 	if err != nil {
@@ -277,8 +314,10 @@ func (d Datastore) Stat(ctx context.Context, file string) (types.BaseFileInfo, e
 
 	spec := types.HostDatastoreBrowserSearchSpec{
 		Details: &types.FileQueryFlags{
-			FileType:  true,
-			FileOwner: types.NewBool(true), // TODO: omitempty is generated, but seems to be required
+			FileType:     true,
+			FileSize:     true,
+			Modification: true,
+			FileOwner:    types.NewBool(true),
 		},
 		MatchPattern: []string{path.Base(file)},
 	}
@@ -310,4 +349,14 @@ func (d Datastore) Stat(ctx context.Context, file string) (types.BaseFileInfo, e
 
 	return res.File[0], nil
 
+}
+
+// Type returns the type of file system volume.
+func (d Datastore) Type(ctx context.Context) (types.HostFileSystemVolumeFileSystemType, error) {
+	var mds mo.Datastore
+
+	if err := d.Properties(ctx, d.Reference(), []string{"summary.type"}, &mds); err != nil {
+		return types.HostFileSystemVolumeFileSystemType(""), err
+	}
+	return types.HostFileSystemVolumeFileSystemType(mds.Summary.Type), nil
 }
