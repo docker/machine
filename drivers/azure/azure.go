@@ -21,6 +21,7 @@ const (
 	defaultAzureSize            = "Standard_A2"
 	defaultAzureLocation        = "westus"
 	defaultSSHUser              = "docker-user" // 'root' not allowed on Azure
+	defaultWinRMUser            = "docker-user"
 	defaultDockerPort           = 2376
 	defaultAzureImage           = "canonical:UbuntuServer:15.10:latest"
 	defaultAzureVNet            = "docker-machine-vnet"
@@ -48,11 +49,17 @@ const (
 	flAzureUsePrivateIP    = "azure-use-private-ip"
 	flAzureStaticPublicIP  = "azure-static-public-ip"
 	flAzureNoPublicIP      = "azure-no-public-ip"
+
+	flAzureOS = "azure-os"
+	// Windows only flags
+	flAzureWinRMUser     = "azure-winrm-user"
+	flAzureWinRMPassword = "azure-winrm-password"
 )
 
 const (
 	driverName = "azure"
 	sshPort    = 22
+	winRMPort  = 5986
 )
 
 // Driver represents Azure Docker Machine Driver.
@@ -67,6 +74,7 @@ type Driver struct {
 	Location        string
 	Size            string
 	Image           string
+	OS              string
 	VirtualNetwork  string
 	SubnetName      string
 	SubnetPrefix    string
@@ -125,6 +133,18 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "AZURE_SSH_USER",
 			Value:  defaultSSHUser,
 		},
+		mcnflag.StringFlag{
+			Name:   flAzureWinRMUser,
+			Usage:  "(Windows only) Username for WinRM login",
+			EnvVar: "AZURE_WINRM_USER",
+			Value:  defaultWinRMUser,
+		},
+		mcnflag.StringFlag{
+			Name:   flAzureWinRMPassword,
+			Usage:  "(Windows only) Password for WinRM login",
+			EnvVar: "AZURE_WINRM_PASSWORD",
+			Value:  "",
+		},
 		mcnflag.IntFlag{
 			Name:   flAzureDockerPort,
 			Usage:  "Port number for Docker engine",
@@ -148,6 +168,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Azure virtual machine OS image",
 			EnvVar: "AZURE_IMAGE",
 			Value:  defaultAzureImage,
+		},
+		mcnflag.StringFlag{
+			Name:  flAzureOS,
+			Usage: "OS for the Azure VM (windows|linux)",
+			Value: drivers.LINUX,
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureVNet,
@@ -208,6 +233,8 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 		flag   string
 	}{
 		{&d.BaseDriver.SSHUser, flAzureSSHUser},
+		{&d.BaseDriver.WinRMUser, flAzureWinRMUser},
+		{&d.BaseDriver.WinRMPassword, flAzureWinRMPassword},
 		{&d.SubscriptionID, flAzureSubscriptionID},
 		{&d.ResourceGroup, flAzureResourceGroup},
 		{&d.Location, flAzureLocation},
@@ -233,6 +260,11 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.NoPublicIP = fl.Bool(flAzureNoPublicIP)
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
+	d.OS = fl.String(flAzureOS)
+
+	if !(d.OS == drivers.WINDOWS || d.OS == drivers.LINUX) {
+		return errors.New("Invalid OS specified")
+	}
 
 	// Set flags on the BaseDriver
 	d.BaseDriver.SSHPort = sshPort
@@ -325,13 +357,30 @@ func (d *Driver) Create() error {
 	if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, defaultStorageType); err != nil {
 		return err
 	}
-	if err := d.generateSSHKey(d.ctx); err != nil {
-		return err
+
+	if d.OS != drivers.WINDOWS {
+		if err := d.generateSSHKey(d.ctx); err != nil {
+			return err
+		}
 	}
-	if err := c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
-		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, d.ctx.StorageAccount); err != nil {
-		return err
+
+	if d.OS == drivers.LINUX {
+		if err := c.CreateVirtualMachine(d.OS, d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
+			d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, "", d.ctx.SSHPublicKey, d.Image, d.ctx.StorageAccount); err != nil {
+			return err
+		}
+	} else if d.OS == drivers.WINDOWS {
+		if err := c.CreateVirtualMachine(d.OS, d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
+			d.ctx.NetworkInterfaceID, d.BaseDriver.WinRMUser, d.BaseDriver.WinRMPassword, d.ctx.SSHPublicKey, d.Image, d.ctx.StorageAccount); err != nil {
+			return err
+		}
+		if err := c.CreateVirtualMachineExtension(d.OS, d.ResourceGroup, d.naming().VM(), d.Location); err != nil {
+			return err
+		}
+	} else {
+		return errors.New("Invalid OS specified")
 	}
+
 	return nil
 }
 
@@ -397,6 +446,10 @@ func (d *Driver) GetIP() (string, error) {
 // GetSSHHostname returns an IP address or hostname for the machine instance.
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
+}
+
+func (d *Driver) GetOS() string {
+	return d.OS
 }
 
 // GetURL returns a socket address to connect to Docker engine of the machine

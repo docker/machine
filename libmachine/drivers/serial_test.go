@@ -29,17 +29,19 @@ func (l *MockLocker) Unlock() {
 }
 
 type MockDriver struct {
-	calls       *CallRecorder
-	driverName  string
-	flags       []mcnflag.Flag
-	ip          string
-	machineName string
-	sshHostname string
-	sshKeyPath  string
-	sshPort     int
-	sshUsername string
-	url         string
-	state       state.State
+	calls         *CallRecorder
+	driverName    string
+	flags         []mcnflag.Flag
+	ip            string
+	machineName   string
+	sshHostname   string
+	sshKeyPath    string
+	sshPort       int
+	sshUsername   string
+	winrmUsername string
+	winrmPassword string
+	url           string
+	state         state.State
 }
 
 func (d *MockDriver) Create() error {
@@ -50,6 +52,11 @@ func (d *MockDriver) Create() error {
 func (d *MockDriver) DriverName() string {
 	d.calls.record("DriverName")
 	return d.driverName
+}
+
+func (d *MockDriver) GetOS() string {
+	d.calls.record("GetOS")
+	return LINUX
 }
 
 func (d *MockDriver) GetCreateFlags() []mcnflag.Flag {
@@ -85,6 +92,16 @@ func (d *MockDriver) GetSSHPort() (int, error) {
 func (d *MockDriver) GetSSHUsername() string {
 	d.calls.record("GetSSHUsername")
 	return d.sshUsername
+}
+
+func (d *MockDriver) GetWinRMUsername() string {
+	d.calls.record("GetWinRMUsername")
+	return d.winrmUsername
+}
+
+func (d *MockDriver) GetWinRMPassword() string {
+	d.calls.record("GetWinRMPassword")
+	return d.winrmPassword
 }
 
 func (d *MockDriver) GetURL() (string, error) {

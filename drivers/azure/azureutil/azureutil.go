@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/docker/machine/drivers/azure/logutil"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
@@ -445,8 +446,8 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 	return err
 }
 
-func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, availabilitySetID, networkInterfaceID,
-	username, sshPublicKey, imageName string, storageAccount *storage.AccountProperties) error {
+func (a AzureClient) CreateVirtualMachine(os, resourceGroup, name, location, size, availabilitySetID, networkInterfaceID,
+	username, password, sshPublicKey, imageName string, storageAccount *storage.AccountProperties) error {
 	log.Info("Creating virtual machine.", logutil.Fields{
 		"name":     name,
 		"location": location,
@@ -467,6 +468,33 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 	log.Debugf("OS disk blob will be placed at: %s", osDiskBlobURL)
 	log.Debugf("SSH key will be placed at: %s", sshKeyPath)
 
+	var osProfile *compute.OSProfile
+	if os == drivers.LINUX {
+		osProfile = &compute.OSProfile{
+			ComputerName:  to.StringPtr(name),
+			AdminUsername: to.StringPtr(username),
+			LinuxConfiguration: &compute.LinuxConfiguration{
+				DisablePasswordAuthentication: to.BoolPtr(true),
+				SSH: &compute.SSHConfiguration{
+					PublicKeys: &[]compute.SSHPublicKey{
+						{
+							Path:    to.StringPtr(sshKeyPath),
+							KeyData: to.StringPtr(sshPublicKey),
+						},
+					},
+				},
+			},
+		}
+	} else if os == drivers.WINDOWS {
+		osProfile = &compute.OSProfile{
+			ComputerName:         to.StringPtr(name),
+			AdminUsername:        to.StringPtr(username),
+			AdminPassword:        to.StringPtr(password),
+			WindowsConfiguration: &compute.WindowsConfiguration{},
+		}
+	} else {
+		return errors.New("Invalid OS specified")
+	}
 	_, err = a.virtualMachinesClient().CreateOrUpdate(resourceGroup, name,
 		compute.VirtualMachine{
 			Location: to.StringPtr(location),
@@ -484,21 +512,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 						},
 					},
 				},
-				OsProfile: &compute.OSProfile{
-					ComputerName:  to.StringPtr(name),
-					AdminUsername: to.StringPtr(username),
-					LinuxConfiguration: &compute.LinuxConfiguration{
-						DisablePasswordAuthentication: to.BoolPtr(true),
-						SSH: &compute.SSHConfiguration{
-							PublicKeys: &[]compute.SSHPublicKey{
-								{
-									Path:    to.StringPtr(sshKeyPath),
-									KeyData: to.StringPtr(sshPublicKey),
-								},
-							},
-						},
-					},
-				},
+				OsProfile: osProfile,
 				StorageProfile: &compute.StorageProfile{
 					ImageReference: &compute.ImageReference{
 						Publisher: to.StringPtr(img.publisher),
@@ -517,6 +531,32 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 				},
 			},
 		}, nil)
+	return err
+}
+
+func (a AzureClient) CreateVirtualMachineExtension(os, resourceGroup, name, location string) error {
+	log.Debug("Adding CustomScriptExtension to the VM")
+	vmExtension := compute.VirtualMachineExtension{
+		Type:     to.StringPtr("Microsoft.Compute/virtualMachines/extensions"),
+		Location: to.StringPtr(location),
+		Properties: &compute.VirtualMachineExtensionProperties{
+			Publisher:               to.StringPtr("Microsoft.Compute"),
+			Type:                    to.StringPtr("CustomScriptExtension"),
+			TypeHandlerVersion:      to.StringPtr("1.0"),
+			AutoUpgradeMinorVersion: to.BoolPtr(true),
+			Settings: &map[string]interface{}{
+				"fileUris": []string{
+					"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/ConfigureWinRM.ps1",
+					"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/makecert.exe",
+					"https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-winrm-windows/winrmconf.cmd",
+				},
+				"commandToExecute": "powershell -ExecutionPolicy Unrestricted -file ConfigureWinRM.ps1 " + name,
+			},
+		},
+	}
+
+	_, err := a.virtualMachineExtensionsClient().CreateOrUpdate(
+		resourceGroup, name, "CustomScriptExtension-winrm", vmExtension, nil)
 	return err
 }
 

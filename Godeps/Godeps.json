@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/docker/machine",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v62",
 	"Packages": [
 		"github.com/docker/machine",
 		"github.com/docker/machine/cmd",
@@ -266,6 +267,15 @@
 			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 		},
 		{
+			"ImportPath": "github.com/dylanmei/iso8601",
+			"Comment": "v0.1.0",
+			"Rev": "2075bf119b58e5576c6ed9f867b8f3d17f2e54d4"
+		},
+		{
+			"ImportPath": "github.com/dylanmei/winrmtest",
+			"Rev": "025617847eb2cf9bd1d851bc3b22ed28e6245ce5"
+		},
+		{
 			"ImportPath": "github.com/go-ini/ini",
 			"Comment": "v0-56-g03e0e7d",
 			"Rev": "03e0e7d51a13a91c765d8d0161246bc14a38001a"
@@ -279,13 +289,82 @@
 			"Rev": "30f7a39f4a218feb5325f3aebc60c32a572a8274"
 		},
 		{
+			"ImportPath": "github.com/hashicorp/errwrap",
+			"Rev": "7554cd9344cec97297fa6649b055a8c98c2a1e55"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-multierror",
+			"Rev": "d30f09973e19c1dfcd120b2d9c4f168e68d6b5d5"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-version",
+			"Rev": "2e7f5ea8e27bb3fdf9baa0881d16757ac4637332"
+		},
+		{
 			"ImportPath": "github.com/jmespath/go-jmespath",
 			"Comment": "0.2.2",
 			"Rev": "3433f3ea46d9f8019119e7dd41274e112a2359a9"
 		},
 		{
+			"ImportPath": "github.com/masterzen/simplexml/dom",
+			"Rev": "95ba30457eb1121fa27753627c774c7cd4e90083"
+		},
+		{
+			"ImportPath": "github.com/masterzen/winrm/soap",
+			"Rev": "0752679bd57bbca1cb1d66717611afe48a013836"
+		},
+		{
+			"ImportPath": "github.com/masterzen/winrm/winrm",
+			"Rev": "0752679bd57bbca1cb1d66717611afe48a013836"
+		},
+		{
+			"ImportPath": "github.com/masterzen/xmlpath",
+			"Rev": "13f4951698adc0fa9c1dda3e275d489a24201161"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/iochan",
+			"Rev": "87b45ffd0e9581375c491fef3d32130bb15c5bd7"
+		},
+		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
-			"Rev": "740c764bc6149d3f1806231418adb9f52c11bcbf"
+			"Rev": "d2dd0262208475919e1a362f675cfc0e7c10e905"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/packer/common/uuid",
+			"Comment": "v0.10.0-45-ge868f9b",
+			"Rev": "e868f9b69c995cf8a681847aa67e9be286243630"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/packer/communicator/winrm",
+			"Comment": "v0.10.0-45-ge868f9b",
+			"Rev": "e868f9b69c995cf8a681847aa67e9be286243630"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/packer/packer",
+			"Comment": "v0.10.0-45-ge868f9b",
+			"Rev": "e868f9b69c995cf8a681847aa67e9be286243630"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/packer/template",
+			"Comment": "v0.10.0-45-ge868f9b",
+			"Rev": "e868f9b69c995cf8a681847aa67e9be286243630"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/packer/template/interpolate",
+			"Comment": "v0.10.0-45-ge868f9b",
+			"Rev": "e868f9b69c995cf8a681847aa67e9be286243630"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/reflectwalk",
+			"Rev": "eecf4c70c626c7cfbb95c90195bc34d386c74ac6"
+		},
+		{
+			"ImportPath": "github.com/nu7hatch/gouuid",
+			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+		},
+		{
+			"ImportPath": "github.com/packer-community/winrmcp/winrmcp",
+			"Rev": "606243c91c0b1da7c23d1c054f13078217441a3b"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
@@ -398,6 +477,11 @@
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
 			"Rev": "f661dd4754aa5c52da85d04b5871ee0e11f4b59c"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Comment": "v1.0.0",
+			"Rev": "f9ab0dce87d815821e221626b772e3475a0d2749"
 		},
 		{
 			"ImportPath": "github.com/skarademir/naturalsort",

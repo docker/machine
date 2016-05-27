@@ -74,6 +74,8 @@ const (
 	GetSSHKeyPathMethod      = `.GetSSHKeyPath`
 	GetSSHPortMethod         = `.GetSSHPort`
 	GetSSHUsernameMethod     = `.GetSSHUsername`
+	GetWinRMUsernameMethod   = `.GetWinRMUsername`
+	GetWinRMPasswordMethod   = `.GetWinRMPassword`
 	GetStateMethod           = `.GetState`
 	PreCreateCheckMethod     = `.PreCreateCheck`
 	CreateMethod             = `.Create`
@@ -83,6 +85,7 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
+	GetOSMethod              = `.GetOS`
 )
 
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
@@ -255,6 +258,14 @@ func (c *RPCClientDriver) GetConfigRaw() ([]byte, error) {
 	return data, nil
 }
 
+func (c *RPCClientDriver) GetOS() string {
+	OS, err := c.rpcStringCall(GetOSMethod)
+	if err != nil {
+		log.Warnf("Error attempting call to get OS: %s", err)
+	}
+	return OS
+}
+
 // DriverName returns the name of the driver
 func (c *RPCClientDriver) DriverName() string {
 	driverName, err := c.rpcStringCall(DriverNameMethod)
@@ -318,6 +329,24 @@ func (c *RPCClientDriver) GetSSHUsername() string {
 	}
 
 	return username
+}
+
+func (c *RPCClientDriver) GetWinRMUsername() string {
+	username, err := c.rpcStringCall(GetWinRMUsernameMethod)
+	if err != nil {
+		log.Warnf("Error attempting call to get WinRM username: %s", err)
+	}
+
+	return username
+}
+
+func (c *RPCClientDriver) GetWinRMPassword() string {
+	password, err := c.rpcStringCall(GetWinRMPasswordMethod)
+	if err != nil {
+		log.Warnf("Error attempting call to get WinRM password: %s", err)
+	}
+
+	return password
 }
 
 func (c *RPCClientDriver) GetState() (state.State, error) {
