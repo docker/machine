@@ -63,6 +63,7 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 		Name:             d.MachineName,
 		FlavorRef:        d.FlavorId,
 		ImageRef:         d.ImageId,
+		UserData:         d.UserData,
 		SecurityGroups:   d.SecurityGroups,
 		AvailabilityZone: d.AvailabilityZone,
 	}

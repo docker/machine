@@ -1,6 +1,9 @@
 package ssh
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"runtime"
 	"testing"
 
@@ -46,39 +49,58 @@ func TestGetSSHCmdArgs(t *testing.T) {
 }
 
 func TestNewExternalClient(t *testing.T) {
+	keyFile, err := ioutil.TempFile("", "docker-machine-tests-dummy-private-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer keyFile.Close()
+
+	keyFilename := keyFile.Name()
+	defer os.Remove(keyFilename)
+
 	cases := []struct {
 		sshBinaryPath string
 		user          string
 		host          string
 		port          int
 		auth          *Auth
+		perm          os.FileMode
 		expectedError string
 		skipOS        string
 	}{
 		{
-			sshBinaryPath: "/usr/local/bin/ssh",
-			user:          "docker",
-			host:          "localhost",
-			port:          22,
 			auth:          &Auth{Keys: []string{"/tmp/private-key-not-exist"}},
 			expectedError: "stat /tmp/private-key-not-exist: no such file or directory",
 			skipOS:        "none",
 		},
 		{
-			sshBinaryPath: "/usr/local/bin/ssh",
-			user:          "docker",
-			host:          "localhost",
-			port:          22,
-			auth:          &Auth{Keys: []string{"/dev/null"}},
-			expectedError: "Permissions 0410000666 for '/dev/null' are too open.",
+			auth:   &Auth{Keys: []string{keyFilename}},
+			perm:   0400,
+			skipOS: "windows",
+		},
+		{
+			auth:          &Auth{Keys: []string{keyFilename}},
+			perm:          0100,
+			expectedError: fmt.Sprintf("'%s' is not readable", keyFilename),
+			skipOS:        "windows",
+		},
+		{
+			auth:          &Auth{Keys: []string{keyFilename}},
+			perm:          0644,
+			expectedError: fmt.Sprintf("permissions 0644 for '%s' are too open", keyFilename),
 			skipOS:        "windows",
 		},
 	}
 
 	for _, c := range cases {
 		if runtime.GOOS != c.skipOS {
+			keyFile.Chmod(c.perm)
 			_, err := NewExternalClient(c.sshBinaryPath, c.user, c.host, c.port, c.auth)
-			assert.EqualError(t, err, c.expectedError)
+			if c.expectedError != "" {
+				assert.EqualError(t, err, c.expectedError)
+			} else {
+				assert.Equal(t, err, nil)
+			}
 		}
 	}
 }
