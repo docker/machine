@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/docker/machine",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v66",
 	"Packages": [
 		"github.com/docker/machine",
 		"github.com/docker/machine/cmd",
@@ -230,6 +231,7 @@
 		},
 		{
 			"ImportPath": "github.com/bugsnag/panicwrap",
+			"Comment": "1.0.0",
 			"Rev": "e5f9854865b9778a45169fc249e99e338d4d6f27"
 		},
 		{
@@ -238,7 +240,7 @@
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-179-g0302d39",
+			"Comment": "v1.11.0-6-g0302d39",
 			"Rev": "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
 		},
 		{
@@ -433,83 +435,83 @@
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/find",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/guest",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/list",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/object",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/property",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/session",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/task",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25/debug",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25/methods",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25/mo",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25/progress",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25/soap",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25/types",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "github.com/vmware/govmomi/vim25/xml",
-			"Comment": "v0.3.0-11-g20c009c",
-			"Rev": "20c009ce9c493f0c714a9fffa5bda5fb84df2b6c"
+			"Comment": "v0.1.0-454-g9051bd6",
+			"Rev": "9051bd6b44125d9472e0c148b5965692ab283d4a"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
