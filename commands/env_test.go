@@ -77,6 +77,12 @@ func TestHints(t *testing.T) {
 		{"emacs", []string{"./machine", "env", "--shell=emacs", "--swarm", "default"}, ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --swarm default\" (current-buffer)) (eval-buffer))\n"},
 		{"emacs", []string{"./machine", "env", "--shell=emacs", "--no-proxy", "--swarm", "default"}, ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --no-proxy --swarm default\" (current-buffer)) (eval-buffer))\n"},
 		{"emacs", []string{"./machine", "env", "--shell=emacs", "--unset"}, ";; Run this command to configure your shell: \n;; (with-temp-buffer (shell-command \"./machine env --shell=emacs --unset\" (current-buffer)) (eval-buffer))\n"},
+
+		{"tcsh", []string{"./machine", "env", "--shell=tcsh", "default"}, ": Run this command to configure your shell: \n: eval `./machine env --shell=tcsh default`\n"},
+		{"tcsh", []string{"./machine", "env", "--shell=tcsh", "--no-proxy", "default"}, ": Run this command to configure your shell: \n: eval `./machine env --shell=tcsh --no-proxy default`\n"},
+		{"tcsh", []string{"./machine", "env", "--shell=tcsh", "--swarm", "default"}, ": Run this command to configure your shell: \n: eval `./machine env --shell=tcsh --swarm default`\n"},
+		{"tcsh", []string{"./machine", "env", "--shell=tcsh", "--no-proxy", "--swarm", "default"}, ": Run this command to configure your shell: \n: eval `./machine env --shell=tcsh --no-proxy --swarm default`\n"},
+		{"tcsh", []string{"./machine", "env", "--shell=tcsh", "--unset"}, ": Run this command to configure your shell: \n: eval `./machine env --shell=tcsh --unset`\n"},
 	}
 
 	for _, test := range tests {

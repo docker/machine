@@ -25,7 +25,7 @@ a particular machine.
     Options:
 
        --swarm	Display the Swarm config instead of the Docker daemon
-       --shell 	Force environment to be configured for a specified shell: [fish, cmd, powershell], default is sh/bash
+       --shell 	Force environment to be configured for a specified shell: [fish, cmd, powershell, tcsh], default is sh/bash
        --unset, -u	Unset variables instead of setting them
        --no-proxy	Add machine IP to NO_PROXY environment variable
 
