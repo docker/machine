@@ -15,6 +15,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/libmachine/drivers"
@@ -255,13 +258,28 @@ func NewDriver(hostName, storePath string) *Driver {
 
 func (d *Driver) buildClient() Ec2Client {
 	config := aws.NewConfig()
+	sess := session.New()
 	alogger := AwsLogger()
 	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	creds := credentials.NewChainCredentials([]credentials.Provider{
+		&credentials.StaticProvider{Value: credentials.Value{
+			AccessKeyID:     d.AccessKey,
+			SecretAccessKey: d.SecretKey,
+			SessionToken:    d.SessionToken,
+		}},
+		&credentials.EnvProvider{},
+		&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
+		&ec2rolecreds.EC2RoleProvider{
+			Client: ec2metadata.New(sess),
+		},
+	})
+	config = config.WithCredentials(creds)
+
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	config = config.WithMaxRetries(d.RetryCount)
-	return ec2.New(session.New(config))
+	sess.Config = config
+	return ec2.New(sess)
 }
 
 func (d *Driver) getClient() Ec2Client {
@@ -306,26 +324,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
 	d.SetSwarmConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
-
-	if d.AccessKey == "" && d.SecretKey == "" {
-		credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
-		if err != nil {
-			log.Debug("Could not load credentials from ~/.aws/credentials")
-		} else {
-			log.Debug("Successfully loaded credentials from ~/.aws/credentials")
-			d.AccessKey = credentials.AccessKeyID
-			d.SecretKey = credentials.SecretAccessKey
-			d.SessionToken = credentials.SessionToken
-		}
-	}
-
-	if d.AccessKey == "" {
-		return errorMissingAccessKeyOption
-	}
-
-	if d.SecretKey == "" {
-		return errorMissingSecretKeyOption
-	}
 
 	if d.VpcId == "" {
 		d.VpcId, err = d.getDefaultVPCId()
