@@ -78,7 +78,7 @@ like-minded individuals, we have a number of open channels for communication.
     Github](https://github.com/docker/machine/pulls).
 
 For more information and resources, please visit
-[our help page](https://docs.docker.com/project/get-help/).
+[our help page](/opensource/get-help.md).
 
 ## Where to go next
 

@@ -140,4 +140,4 @@ If you create a host with Docker Machine, but remove it through the cloud provid
 -   [Understand Machine concepts](../concepts.md)
 -   [Docker Machine driver reference](../drivers/index.md)
 -   [Docker Machine subcommand reference](../reference/index.md)
--   [Provision a Docker Swarm cluster with Docker Machine](https://docs.docker.com/swarm/provision-with-machine/)
+-   [Provision a Docker Swarm cluster with Docker Machine](/swarm/provision-with-machine.md)
