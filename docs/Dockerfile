@@ -1,9 +1,9 @@
 FROM docs/base:oss
-MAINTAINER Mary Anthony <mary@docker.com> (@moxiegirl)
+MAINTAINER Docker Docs <docs@docker.com>
 
 env PROJECT=machine
 
 # To get the git info for this repo
 COPY . /src
-RUN rm -r /docs/content/$PROJECT/
+RUN rm -rf /docs/content/$PROJECT/
 COPY . /docs/content/$PROJECT/
