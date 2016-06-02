@@ -20,6 +20,7 @@ type Driver struct {
 	AuthUrl          string
 	ActiveTimeout    int
 	Insecure         bool
+	CaCert           string
 	DomainID         string
 	DomainName       string
 	Username         string
@@ -65,6 +66,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "OS_INSECURE",
 			Name:   "openstack-insecure",
 			Usage:  "Disable TLS credential checking.",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_CACERT",
+			Name:   "openstack-cacert",
+			Usage:  "CA certificate bundle to verify against",
+			Value:  "",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "OS_DOMAIN_ID",
@@ -252,6 +259,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AuthUrl = flags.String("openstack-auth-url")
 	d.ActiveTimeout = flags.Int("openstack-active-timeout")
 	d.Insecure = flags.Bool("openstack-insecure")
+	d.CaCert = flags.String("openstack-cacert")
 	d.DomainID = flags.String("openstack-domain-id")
 	d.DomainName = flags.String("openstack-domain-name")
 	d.Username = flags.String("openstack-username")
