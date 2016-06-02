@@ -25,6 +25,7 @@ Options:
 
 -   `--openstack-active-timeout`: The timeout in seconds until the OpenStack instance must be active.
 -   `--openstack-availability-zone`: The availability zone in which to launch the server.
+-   `--openstack-cacert`: The CA certificate bundle to verify against.
 -   `--openstack-domain-name` or `--openstack-domain-id`: Domain to use for authentication (Keystone v3 only).
 -   `--openstack-endpoint-type`: Endpoint type can be `internalURL`, `adminURL` on `publicURL`. If is a helper for the driver
     to choose the right URL in the OpenStack service catalog. If not provided the default id `publicURL`
@@ -52,6 +53,7 @@ Environment variables and default values:
 | `--openstack-active-timeout`    | `OS_ACTIVE_TIMEOUT`    | `200`       |
 | `--openstack-auth-url`          | `OS_AUTH_URL`          | -           |
 | `--openstack-availability-zone` | `OS_AVAILABILITY_ZONE` | -           |
+| `--openstack-cacert`            | `OS_CACERT             | -           |
 | `--openstack-domain-id`         | `OS_DOMAIN_ID`         | -           |
 | `--openstack-domain-name`       | `OS_DOMAIN_NAME`       | -           |
 | `--openstack-endpoint-type`     | `OS_ENDPOINT_TYPE`     | `publicURL` |
