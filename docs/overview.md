@@ -60,7 +60,7 @@ When people say "Docker" they typically mean **Docker Engine**, the client-serve
 -   [Install Docker Machine](install-machine.md)
 -   Create and run a Docker host on your [local system using VirtualBox](get-started.md)
 -   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
--   [Provision a Docker Swarm cluster with Docker Machine](https://docs.docker.com/swarm/provision-with-machine/)
+-   [Provision a Docker Swarm cluster with Docker Machine](/swarm/provision-with-machine.md)
 -   [Understand Machine concepts](concepts.md)
 -   [Docker Machine driver reference](drivers/index.md)
 -   [Docker Machine subcommand reference](reference/index.md)

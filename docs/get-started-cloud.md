@@ -84,4 +84,4 @@ Docker Machine can also provision <a href="https://docs.docker.com/swarm/overvie
 -   [Understand Machine concepts](concepts.md)
 -   [Docker Machine driver reference](drivers/index.md)
 -   [Docker Machine subcommand reference](reference/index.md)
--   [Provision a Docker Swarm cluster with Docker Machine](https://docs.docker.com/swarm/provision-with-machine/)
+-   [Provision a Docker Swarm cluster with Docker Machine](/swarm/provision-with-machine.md)
