@@ -129,4 +129,4 @@ To remove an instance and all of its containers and images, first stop the machi
 -   [Understand Machine concepts](../concepts.md)
 -   [Docker Machine driver reference](../drivers/index.md)
 -   [Docker Machine subcommand reference](../reference/index.md)
--   [Provision a Docker Swarm cluster with Docker Machine](https://docs.docker.com/swarm/provision-with-machine/)
+-   [Provision a Docker Swarm cluster with Docker Machine](/swarm/provision-with-machine.md)
