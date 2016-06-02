@@ -106,4 +106,4 @@ required for internet access.
 
 You may also want to visit the [documentation on setting `HTTP_PROXY` for the
 created daemon using the `--engine-env` flag for `docker-machine
-create`](https://docs.docker.com/machine/reference/create/#specifying-configuration-options-for-the-created-docker-engine).
+create`](/machine/reference/create.md#specifying-configuration-options-for-the-created-docker-engine).
