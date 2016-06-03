@@ -119,7 +119,7 @@ As part of the process of creation, Docker Machine installs Docker and
 configures it with some sensible defaults. For instance, it allows connection
 from the outside world over TCP with TLS-based encryption and defaults to AUFS
 as the [storage
-driver](/engine/reference/commandline/dockerd.md#daemon-storage-driver-option)
+driver](/engine/reference/commandline/daemon.md#daemon-storage-driver-option)
 when available.
 
 There are several cases where the user might want to set options for the created
