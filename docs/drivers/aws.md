@@ -81,7 +81,7 @@ Environment variables and default values:
 | `--amazonec2-access-key`                 | `AWS_ACCESS_KEY_ID`     | -                |
 | `--amazonec2-secret-key`                 | `AWS_SECRET_ACCESS_KEY` | -                |
 | `--amazonec2-session-token`              | `AWS_SESSION_TOKEN`     | -                |
-| `--amazonec2-ami`                        | `AWS_AMI`               | `ami-5f709f34`   |
+| `--amazonec2-ami`                        | `AWS_AMI`               | `ami-13be557e`   |
 | `--amazonec2-region`                     | `AWS_DEFAULT_REGION`    | `us-east-1`      |
 | `--amazonec2-vpc-id`                     | `AWS_VPC_ID`            | -                |
 | `--amazonec2-zone`                       | `AWS_ZONE`              | `a`              |
@@ -105,21 +105,22 @@ Environment variables and default values:
 
 ## Default AMIs
 
-By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10.
+By default, the Amazon EC2 driver will use a daily image of Ubuntu 16.04 LTS (Ubuntu 15.10 for cn-north-1).
 
 | Region         | AMI ID       |
 | -------------- | ------------ |
-| ap-northeast-1 | ami-b36d4edd |
-| ap-southeast-1 | ami-1069af73 |
-| ap-southeast-2 | ami-1d336a7e |
+| ap-northeast-1 | ami-5d38d93c |
+| ap-northeast-2 | ami-a3915acd |
+| ap-southeast-1 | ami-a35284c0 |
+| ap-southeast-2 | ami-f4361997 |
 | cn-north-1     | ami-79eb2214 |
-| eu-west-1      | ami-8aa67cf9 |
-| eu-central-1   | ami-ab0210c7 |
-| sa-east-1      | ami-185de774 |
-| us-east-1      | ami-26d5af4c |
-| us-west-1      | ami-9cbcd2fc |
-| us-west-2      | ami-16b1a077 |
-| us-gov-west-1  | ami-b0bad893 |
+| eu-west-1      | ami-7a138709 |
+| eu-central-1   | ami-f9e30f96 |
+| sa-east-1      | ami-0d5dd561 |
+| us-east-1      | ami-13be557e |
+| us-west-1      | ami-84423ae4 |
+| us-west-2      | ami-06b94666 |
+| us-gov-west-1  | ami-8f4df2ee |
 
 ## Security Group
 
