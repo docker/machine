@@ -29,7 +29,7 @@ const (
 	driverName               = "amazonec2"
 	ipRange                  = "0.0.0.0/0"
 	machineSecurityGroupName = "docker-machine"
-	defaultAmiId             = "ami-615cb725"
+	defaultAmiId             = "ami-13be557e"
 	defaultRegion            = "us-east-1"
 	defaultInstanceType      = "t2.micro"
 	defaultDeviceName        = "/dev/sda1"
