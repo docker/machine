@@ -44,7 +44,6 @@ type Driver struct {
 	CPU            int
 	ISO            string
 	Boot2DockerURL string
-	CPUS           int
 
 	SSHPassword    string
 	ConfigDriveISO string
@@ -56,7 +55,7 @@ const (
 	defaultSSHUser  = B2DUser
 	defaultSSHPass  = B2DPass
 	defaultDiskSize = 20000
-	defaultCpus     = 1
+	defaultCPU      = 1
 	defaultMemory   = 1024
 )
 
@@ -116,7 +115,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
-		CPUS:        defaultCpus,
+		CPU:         defaultCPU,
 		Memory:      defaultMemory,
 		DiskSize:    defaultDiskSize,
 		SSHPassword: defaultSSHPass,
