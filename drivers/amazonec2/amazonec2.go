@@ -48,6 +48,7 @@ const (
 var (
 	dockerPort                  = 2376
 	swarmPort                   = 3376
+	errorNoPrivateSSHKey        = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
 	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
 	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
 	errorNoVPCIdFound           = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
@@ -55,15 +56,17 @@ var (
 
 type Driver struct {
 	*drivers.BaseDriver
-	clientFactory    func() Ec2Client
-	awsCredentials   awsCredentials
-	Id               string
-	AccessKey        string
-	SecretKey        string
-	SessionToken     string
-	Region           string
-	AMI              string
-	SSHKeyID         int
+	clientFactory  func() Ec2Client
+	awsCredentials awsCredentials
+	Id             string
+	AccessKey      string
+	SecretKey      string
+	SessionToken   string
+	Region         string
+	AMI            string
+	SSHKeyID       int
+	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
+	ExistingKey      bool
 	KeyName          string
 	InstanceId       string
 	InstanceType     string
@@ -221,6 +224,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "SSH Key for Instance",
 			EnvVar: "AWS_SSH_KEYPATH",
 		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-keypair-name",
+			Usage:  "AWS keypair to use; requires --amazonec2-ssh-keypath",
+			EnvVar: "AWS_KEYPAIR_NAME",
+		},
 		mcnflag.IntFlag{
 			Name:  "amazonec2-retries",
 			Usage: "Set retry count for recoverable failures (use -1 to disable)",
@@ -304,8 +312,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
+	d.KeyName = flags.String("amazonec2-keypair-name")
+	d.ExistingKey = flags.String("amazonec2-keypair-name") != ""
 	d.SetSwarmConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
+
+	if d.KeyName != "" && d.SSHPrivateKeyPath == "" {
+		return errorNoPrivateSSHKey
+	}
 
 	if d.AccessKey == "" && d.SecretKey == "" {
 		credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
@@ -383,19 +397,35 @@ func (d *Driver) DriverName() string {
 
 func (d *Driver) checkPrereqs() error {
 	// check for existing keypair
+	keyName := d.KeyName
+	keyShouldExist := true
+	if keyName == "" {
+		keyName = d.MachineName
+		keyShouldExist = false
+	}
+
 	key, err := d.getClient().DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
-		KeyNames: []*string{&d.MachineName},
+		KeyNames: []*string{&keyName},
 	})
 	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == keypairNotFoundCode {
-			// Not a real error for 'NotFound' since we're checking existance anyways
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == keypairNotFoundCode && keyShouldExist {
+				return fmt.Errorf("There is no keypair with the name %s. Please verify the key name provided.", keyName)
+			}
+			if awsErr.Code() == keypairNotFoundCode && !keyShouldExist {
+				// Not a real error for 'NotFound' since we're checking existance
+			}
 		} else {
 			return err
 		}
 	}
 
+	// In case we got a result with an empty set of keys
 	if err == nil && len(key.KeyPairs) != 0 {
-		return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name.", d.MachineName)
+		if !keyShouldExist {
+			return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name.", d.MachineName)
+		}
+		// otherwise we found the key: success
 	}
 
 	regionZone := d.Region + d.Zone
@@ -756,8 +786,10 @@ func (d *Driver) Remove() error {
 		multierr.Errs = append(multierr.Errs, err)
 	}
 
-	if err := d.deleteKeyPair(); err != nil {
-		multierr.Errs = append(multierr.Errs, err)
+	if !d.ExistingKey {
+		if err := d.deleteKeyPair(); err != nil {
+			multierr.Errs = append(multierr.Errs, err)
+		}
 	}
 
 	if len(multierr.Errs) == 0 {
@@ -797,7 +829,6 @@ func (d *Driver) waitForInstance() error {
 }
 
 func (d *Driver) createKeyPair() error {
-
 	keyPath := ""
 
 	if d.SSHPrivateKeyPath == "" {
@@ -807,12 +838,16 @@ func (d *Driver) createKeyPair() error {
 		}
 		keyPath = d.GetSSHKeyPath()
 	} else {
-		log.Debugf("Using ExistingKeyPair: %s", d.SSHPrivateKeyPath)
+		log.Debugf("Using SSHPrivateKeyPath: %s", d.SSHPrivateKeyPath)
 		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath, d.GetSSHKeyPath()); err != nil {
 			return err
 		}
 		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
 			return err
+		}
+		if d.KeyName != "" {
+			log.Debugf("Using existing EC2 key pair: %s", d.KeyName)
+			return nil
 		}
 		keyPath = d.SSHPrivateKeyPath
 	}
