@@ -99,7 +99,13 @@ func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration)
 }
 
 func WaitFor(f func() bool) error {
-	return WaitForSpecific(f, 60, 3*time.Second)
+	i, err := strconv.Atoi(os.Getenv("MAX_ATTEMPTS"))
+    	if err != nil {
+        	return WaitForSpecific(f, 60, 3*time.Second)
+    	}
+    	return WaitForSpecific(f, i, 3*time.Second)
+
+	
 }
 
 // TruncateID returns a shorten id
