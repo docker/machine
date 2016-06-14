@@ -120,7 +120,7 @@ display "Bump version number to ${VERSION}"
 # Why 'sed' and then 'mv' instead of 'sed -i'?  BSD / GNU sed compatibility.
 # Macs have BSD sed by default, Linux has GNU sed.  See
 # http://unix.stackexchange.com/questions/92895/how-to-achieve-portability-with-sed-i-in-place-editing
-sed -e "s/Version = \".*-dev\"/Version = \"${VERSION}\"/g" version/version.go >version/version.go.new
+sed -e "s/Version = \".*\"$/Version = \"${VERSION}\"/g" version/version.go >version/version.go.new
 checkError "Unable to change version in version/version.go"
 mv -- version/version.go.new version/version.go
 
