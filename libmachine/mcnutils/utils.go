@@ -101,7 +101,7 @@ func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration)
 func WaitFor(f func() bool) error {
 	i, err := strconv.Atoi(os.Getenv("MAX_ATTEMPTS"))
     	if err != nil {
-        	return WaitForSpecific(f, 60, 3*time.Second)
+                i=60
     	}
     	return WaitForSpecific(f, i, 3*time.Second)
 
