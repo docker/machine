@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	testSSHPort    = int64(22)
-	testDockerPort = int64(2376)
-	testSwarmPort  = int64(3376)
+	testSSHPort            = int64(22)
+	testDockerPort         = int64(2376)
+	testSwarmPort          = int64(3376)
+	testOverlayNetworkPort = int64(4789)
 )
 
 var (
@@ -32,7 +33,7 @@ func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
 
 	perms := driver.configureSecurityGroupPermissions(securityGroup)
 
-	assert.Len(t, perms, 2)
+	assert.Len(t, perms, 3)
 }
 
 func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
@@ -48,7 +49,7 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 
 	perms := driver.configureSecurityGroupPermissions(group)
 
-	assert.Len(t, perms, 1)
+	assert.Len(t, perms, 2)
 	assert.Equal(t, testDockerPort, *perms[0].FromPort)
 }
 
@@ -65,7 +66,7 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 
 	perms := driver.configureSecurityGroupPermissions(group)
 
-	assert.Len(t, perms, 1)
+	assert.Len(t, perms, 2)
 	assert.Equal(t, testSSHPort, *perms[0].FromPort)
 }
 
@@ -87,7 +88,8 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 
 	perms := driver.configureSecurityGroupPermissions(group)
 
-	assert.Empty(t, perms)
+	assert.Len(t, perms, 1)
+	assert.Equal(t, testOverlayNetworkPort, *perms[0].FromPort)
 }
 
 func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
@@ -109,8 +111,25 @@ func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
 
 	perms := driver.configureSecurityGroupPermissions(group)
 
-	assert.Len(t, perms, 1)
+	assert.Len(t, perms, 2)
 	assert.Equal(t, testSwarmPort, *perms[0].FromPort)
+}
+
+func TestConfigureSecurityGroupPermissionsOverlayNetworkPort(t *testing.T) {
+	driver := NewTestDriver()
+	group := securityGroup
+	group.IpPermissions = []*ec2.IpPermission{
+		{
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64((testOverlayNetworkPort)),
+			ToPort:     aws.Int64((testOverlayNetworkPort)),
+		},
+	}
+
+	perms := driver.configureSecurityGroupPermissions(group)
+
+	assert.Len(t, perms, 2)
+	assert.Equal(t, testSSHPort, *perms[0].FromPort)
 }
 
 func TestValidateAwsRegionValid(t *testing.T) {
@@ -342,6 +361,15 @@ func ipPermission(port int64) *ec2.IpPermission {
 	}
 }
 
+func ipPermissionUDP(port int64) *ec2.IpPermission {
+	return &ec2.IpPermission{
+		FromPort:   aws.Int64(port),
+		ToPort:     aws.Int64(port),
+		IpProtocol: aws.String("udp"),
+		IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+	}
+}
+
 func TestConfigureSecurityGroupsEmpty(t *testing.T) {
 	recorder := fakeEC2SecurityGroupTestRecorder{}
 
@@ -370,7 +398,7 @@ func TestConfigureSecurityGroupsMixed(t *testing.T) {
 	// An ingress permission is added to the existing group.
 	recorder.On("AuthorizeSecurityGroupIngress", &ec2.AuthorizeSecurityGroupIngressInput{
 		GroupId:       aws.String("existingGroupId"),
-		IpPermissions: []*ec2.IpPermission{ipPermission(testDockerPort)},
+		IpPermissions: []*ec2.IpPermission{ipPermission(testDockerPort), ipPermissionUDP(testOverlayNetworkPort)},
 	}).Return(
 		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
 
@@ -396,7 +424,7 @@ func TestConfigureSecurityGroupsMixed(t *testing.T) {
 	// Permissions are added to the new security group.
 	recorder.On("AuthorizeSecurityGroupIngress", &ec2.AuthorizeSecurityGroupIngressInput{
 		GroupId:       aws.String("newGroupId"),
-		IpPermissions: []*ec2.IpPermission{ipPermission(testSSHPort), ipPermission(testDockerPort)},
+		IpPermissions: []*ec2.IpPermission{ipPermission(testSSHPort), ipPermission(testDockerPort), ipPermissionUDP(testOverlayNetworkPort)},
 	}).Return(
 		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
 

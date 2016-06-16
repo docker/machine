@@ -48,6 +48,7 @@ const (
 var (
 	dockerPort                  = 2376
 	swarmPort                   = 3376
+	overlayNetworkPort          = 4789
 	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
 	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
 	errorNoVPCIdFound           = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
@@ -986,6 +987,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) []*
 	hasSshPort := false
 	hasDockerPort := false
 	hasSwarmPort := false
+	hasOverlayNetworkPort := false
 	for _, p := range group.IpPermissions {
 		if p.FromPort != nil {
 			switch *p.FromPort {
@@ -995,6 +997,8 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) []*
 				hasDockerPort = true
 			case int64(swarmPort):
 				hasSwarmPort = true
+			case int64(overlayNetworkPort):
+				hasOverlayNetworkPort = true
 			}
 		}
 	}
@@ -1024,6 +1028,15 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) []*
 			IpProtocol: aws.String("tcp"),
 			FromPort:   aws.Int64(int64(swarmPort)),
 			ToPort:     aws.Int64(int64(swarmPort)),
+			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+		})
+	}
+
+	if !hasOverlayNetworkPort {
+		perms = append(perms, &ec2.IpPermission{
+			IpProtocol: aws.String("udp"),
+			FromPort:   aws.Int64(int64(overlayNetworkPort)),
+			ToPort:     aws.Int64(int64(overlayNetworkPort)),
 			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 		})
 	}
