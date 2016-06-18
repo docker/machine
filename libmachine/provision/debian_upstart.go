@@ -9,42 +9,41 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
-	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
 func init() {
 	Register("Debian", &RegisteredProvisioner{
-		New: NewDebianProvisioner,
+		New: NewDebianUpstartProvisioner,
 	})
 }
 
-func NewDebianProvisioner(d drivers.Driver) Provisioner {
-	return &DebianProvisioner{
-		NewSystemdProvisioner("debian", d),
+func NewDebianUpstartProvisioner(d drivers.Driver) Provisioner {
+	return &DebianUpstartProvisioner{
+		NewUpstartProvisioner("debian", d),
 	}
 }
 
-type DebianProvisioner struct {
-	SystemdProvisioner
+type DebianUpstartProvisioner struct {
+	UpstartProvisioner
 }
 
-func (provisioner *DebianProvisioner) String() string {
-	return "debian"
+func (provisioner *DebianUpstartProvisioner) String() string {
+	return "debian(upstart)"
 }
 
-func (provisioner *DebianProvisioner) CompatibleWithHost() bool {
+func (provisioner *DebianUpstartProvisioner) CompatibleWithHost() bool {
 	isDebian := provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID
 	if !isDebian {
 		return false
 	}
 	if _, err := provisioner.SSHCommand("sudo which systemctl"); err != nil {
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
-func (provisioner *DebianProvisioner) Package(name string, action pkgaction.PackageAction) error {
+func (provisioner *DebianUpstartProvisioner) Package(name string, action pkgaction.PackageAction) error {
 	var packageAction string
 
 	updateMetadata := true
@@ -68,6 +67,25 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 		}
 	}
 
+	// handle the new docker-engine package; we can probably remove this
+	// after we have a few versions
+	if action == pkgaction.Upgrade && name == "docker-engine" {
+		// run the force remove on the existing lxc-docker package
+		// and remove the existing apt source list
+
+		commands := []string{
+			"rm /etc/apt/sources.list.d/docker.list || true",
+			"apt-get remove -y lxc-docker || true",
+		}
+
+		for _, cmd := range commands {
+			command := fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive %s", cmd)
+			if _, err := provisioner.SSHCommand(command); err != nil {
+				return err
+			}
+		}
+	}
+
 	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
 
 	log.Debugf("package: action=%s name=%s", action.String(), name)
@@ -79,7 +97,7 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 	return nil
 }
 
-func (provisioner *DebianProvisioner) dockerDaemonResponding() bool {
+func (provisioner *DebianUpstartProvisioner) dockerDaemonResponding() bool {
 	log.Debug("checking docker daemon")
 
 	if out, err := provisioner.SSHCommand("sudo docker version"); err != nil {
@@ -92,7 +110,7 @@ func (provisioner *DebianProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
+func (provisioner *DebianUpstartProvisioner) Provision(swarmOptions swarm.Options, authOptions auth.Options, engineOptions engine.Options) error {
 	provisioner.SwarmOptions = swarmOptions
 	provisioner.AuthOptions = authOptions
 	provisioner.EngineOptions = engineOptions
@@ -141,12 +159,6 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.Options, auth
 
 	log.Debug("configuring swarm")
 	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
-		return err
-	}
-
-	// enable in systemd
-	log.Debug("enabling docker in systemd")
-	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
 		return err
 	}
 
