@@ -17,12 +17,12 @@ func TestFedoraGenerateYumRepoList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m, err := regexp.MatchString(".*fedora/22.*", buf.String())
+	m, err := regexp.MatchString(".*fedora/23.*", buf.String())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if !m {
-		t.Fatalf("expected match for fedora/22")
+		t.Fatalf("expected match for fedora/23")
 	}
 }
