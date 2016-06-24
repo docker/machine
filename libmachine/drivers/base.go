@@ -88,7 +88,7 @@ func (d *BaseDriver) ResolveStorePath(file string) string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, file)
 }
 
-// SetExtraConfigFromFlags configures the driver for extra params as swarm or maxattampt
+// SetExtraConfigFromFlags configures the driver for extra params as swarm or max attempts
 func (d *BaseDriver) SetExtraConfigFromFlags(flags DriverOptions) {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
