@@ -43,6 +43,7 @@ type NativeClient struct {
 	Config      ssh.ClientConfig
 	Hostname    string
 	Port        int
+	MaxAttempt  int
 	openSession *ssh.Session
 }
 
@@ -89,18 +90,18 @@ func SetDefaultClient(clientType ClientType) {
 	}
 }
 
-func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
+func NewClient(user string, host string, port int, maxAttempt int, auth *Auth) (Client, error) {
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
 		log.Debug("SSH binary not found, using native Go implementation")
-		client, err := NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, maxAttempt, auth)
 		log.Debug(client)
 		return client, err
 	}
 
 	if defaultClientType == Native {
 		log.Debug("Using SSH client type: native")
-		client, err := NewNativeClient(user, host, port, auth)
+		client, err := NewNativeClient(user, host, port, maxAttempt, auth)
 		log.Debug(client)
 		return client, err
 	}
@@ -111,16 +112,17 @@ func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
 	return client, err
 }
 
-func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
+func NewNativeClient(user, host string, port int, maxAttempt int, auth *Auth) (Client, error) {
 	config, err := NewNativeConfig(user, auth)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting config for native Go SSH: %s", err)
 	}
 
 	return &NativeClient{
-		Config:   config,
-		Hostname: host,
-		Port:     port,
+		Config:     config,
+		Hostname:   host,
+		Port:       port,
+		MaxAttempt: maxAttempt,
 	}, nil
 }
 
@@ -162,7 +164,7 @@ func (client *NativeClient) dialSuccess() bool {
 }
 
 func (client *NativeClient) session(command string) (*ssh.Session, error) {
-	if err := mcnutils.WaitFor(client.dialSuccess); err != nil {
+	if err := mcnutils.WaitFor(client.dialSuccess, client.MaxAttempt); err != nil {
 		return nil, fmt.Errorf("Error attempting SSH client dial: %s", err)
 	}
 

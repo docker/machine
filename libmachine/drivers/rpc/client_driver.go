@@ -74,6 +74,7 @@ const (
 	GetSSHKeyPathMethod      = `.GetSSHKeyPath`
 	GetSSHPortMethod         = `.GetSSHPort`
 	GetSSHUsernameMethod     = `.GetSSHUsername`
+	GetMaxAttempt            = `.GetMaxAttempt`
 	GetStateMethod           = `.GetState`
 	PreCreateCheckMethod     = `.PreCreateCheck`
 	CreateMethod             = `.Create`
@@ -283,6 +284,17 @@ func (c *RPCClientDriver) GetMachineName() string {
 	}
 
 	return name
+}
+
+func (c *RPCClientDriver) GetMaxAttempt() int {
+	var maxAttempt int
+
+	if err := c.Client.Call(GetMaxAttempt, struct{}{}, &maxAttempt); err != nil {
+		return 0
+	}
+
+	return maxAttempt
+
 }
 
 func (c *RPCClientDriver) GetIP() (string, error) {

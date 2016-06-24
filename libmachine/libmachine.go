@@ -158,7 +158,7 @@ func (api *Client) performCreate(h *host.Host) error {
 	}
 
 	log.Info("Waiting for machine to be running, this may take a few minutes...")
-	if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
+	if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running), h.Driver.GetMaxAttempt()); err != nil {
 		return fmt.Errorf("Error waiting for machine to be running: %s", err)
 	}
 

@@ -180,7 +180,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 		return err
 	}
 
-	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
+	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding, provisioner.Driver.GetMaxAttempt()); err != nil {
 		return err
 	}
 

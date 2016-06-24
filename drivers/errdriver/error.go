@@ -51,6 +51,10 @@ func (d *Driver) GetMachineName() string {
 	return d.Name
 }
 
+func (d *Driver) GetMaxAttempt() int {
+	return d.GetMaxAttempt()
+}
+
 func (d *Driver) GetIP() (string, error) {
 	return "1.2.3.4", NotLoadable{d.Name}
 }

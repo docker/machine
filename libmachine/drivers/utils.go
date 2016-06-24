@@ -28,7 +28,7 @@ func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 		}
 	}
 
-	client, err := ssh.NewClient(d.GetSSHUsername(), address, port, auth)
+	client, err := ssh.NewClient(d.GetSSHUsername(), address, port, d.GetMaxAttempt(), auth)
 	return client, err
 
 }
@@ -67,7 +67,7 @@ func sshAvailableFunc(d Driver) func() bool {
 
 func WaitForSSH(d Driver) error {
 	// Try to dial SSH for 30 seconds before timing out.
-	if err := mcnutils.WaitFor(sshAvailableFunc(d)); err != nil {
+	if err := mcnutils.WaitFor(sshAvailableFunc(d), d.GetMaxAttempt()); err != nil {
 		return fmt.Errorf("Too many retries waiting for SSH to be available.  Last error: %s", err)
 	}
 	return nil

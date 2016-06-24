@@ -221,7 +221,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("virtualbox-memory")
 	d.DiskSize = flags.Int("virtualbox-disk-size")
 	d.Boot2DockerURL = flags.String("virtualbox-boot2docker-url")
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 	d.SSHUser = "docker"
 	d.Boot2DockerImportVM = flags.String("virtualbox-import-boot2docker-vm")
 	d.HostDNSResolver = flags.Bool("virtualbox-host-dns-resolver")

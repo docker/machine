@@ -155,7 +155,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UserPassword = flags.String("vmwarevcloudair-password")
 	d.VDCID = flags.String("vmwarevcloudair-vdcid")
 	d.PublicIP = flags.String("vmwarevcloudair-publicip")
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 
 	// Check for required Params
 	if d.UserName == "" || d.UserPassword == "" || d.VDCID == "" || d.PublicIP == "" {

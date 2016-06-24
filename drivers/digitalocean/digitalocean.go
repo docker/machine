@@ -140,7 +140,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("digitalocean-ssh-user")
 	d.SSHPort = flags.Int("digitalocean-ssh-port")
 	d.SSHKeyFingerprint = flags.String("digitalocean-ssh-key-fingerprint")
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")

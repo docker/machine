@@ -304,7 +304,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
 
 	if d.AccessKey == "" && d.SecretKey == "" {
@@ -608,7 +608,7 @@ func (d *Driver) Create() error {
 	d.InstanceId = *instance.InstanceId
 
 	log.Debug("waiting for ip address to become available")
-	if err := mcnutils.WaitFor(d.instanceIpAvailable); err != nil {
+	if err := mcnutils.WaitFor(d.instanceIpAvailable, d.GetMaxAttempt()); err != nil {
 		return err
 	}
 
@@ -789,7 +789,7 @@ func (d *Driver) instanceIsRunning() bool {
 }
 
 func (d *Driver) waitForInstance() error {
-	if err := mcnutils.WaitFor(d.instanceIsRunning); err != nil {
+	if err := mcnutils.WaitFor(d.instanceIsRunning, d.GetMaxAttempt()); err != nil {
 		return err
 	}
 
@@ -959,7 +959,7 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 			}
 			// wait until created (dat eventual consistency)
 			log.Debugf("waiting for group (%s) to become available", *group.GroupId)
-			if err := mcnutils.WaitFor(d.securityGroupAvailableFunc(*group.GroupId)); err != nil {
+			if err := mcnutils.WaitFor(d.securityGroupAvailableFunc(*group.GroupId), d.GetMaxAttempt()); err != nil {
 				return err
 			}
 		}

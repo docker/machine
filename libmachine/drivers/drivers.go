@@ -29,6 +29,9 @@ type Driver interface {
 	// GetMachineName returns the name of the machine
 	GetMachineName() string
 
+	// GetMaxAttempt returns the number of attempt during waiting period
+	GetMaxAttempt() int
+
 	// GetSSHHostname returns hostname for use with ssh
 	GetSSHHostname() (string, error)
 

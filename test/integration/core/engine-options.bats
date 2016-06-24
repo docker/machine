@@ -11,6 +11,7 @@ use_disposable_machine
     --engine-insecure-registry registry.myco.com \
     --engine-env=TEST=VALUE \
     --engine-opt log-driver=none \
+    --engine-max-attempts 100 \
     $NAME
   echo "$output"
   [ $status -eq 0 ]

@@ -183,7 +183,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 
 	return nil
 }

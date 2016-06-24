@@ -127,7 +127,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FlavorId = flags.String("rackspace-flavor-id")
 	d.SSHUser = flags.String("rackspace-ssh-user")
 	d.SSHPort = flags.Int("rackspace-ssh-port")
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 
 	if d.Region == "" {
 		return missingEnvOrOption("Region", "OS_REGION_NAME", "--rackspace-region")

@@ -105,7 +105,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.MacAddr = flags.String("hyperv-static-macaddress")
 	d.VLanID = flags.Int("hyperv-vlan-id")
 	d.SSHUser = "docker"
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 
 	return nil
 }

@@ -68,6 +68,10 @@ func (d *Driver) GetSSHPort() (int, error) {
 	return 0, nil
 }
 
+func (d *Driver) GetMaxAttempt() int {
+	return 60
+}
+
 func (d *Driver) GetSSHUsername() string {
 	return ""
 }

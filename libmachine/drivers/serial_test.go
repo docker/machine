@@ -39,6 +39,7 @@ type MockDriver struct {
 	sshPort     int
 	sshUsername string
 	url         string
+	maxAttempt  int
 	state       state.State
 }
 
@@ -60,6 +61,14 @@ func (d *MockDriver) GetCreateFlags() []mcnflag.Flag {
 func (d *MockDriver) GetIP() (string, error) {
 	d.calls.record("GetIP")
 	return d.ip, nil
+}
+
+// GetMachineName returns the machine name
+func (d *MockDriver) GetMaxAttempt() int {
+	if d.maxAttempt == 0 {
+		d.maxAttempt = DefaultSSHPort
+	}
+	return d.maxAttempt
 }
 
 func (d *MockDriver) GetMachineName() string {
