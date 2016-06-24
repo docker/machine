@@ -66,7 +66,7 @@ func (d *MockDriver) GetIP() (string, error) {
 // GetMachineName returns the machine name
 func (d *MockDriver) GetMaxAttempt() int {
 	if d.maxAttempt == 0 {
-		d.maxAttempt = DefaultSSHPort
+		d.maxAttempt = DefaultMaxAttempt
 	}
 	return d.maxAttempt
 }

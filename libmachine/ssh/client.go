@@ -90,18 +90,18 @@ func SetDefaultClient(clientType ClientType) {
 	}
 }
 
-func NewClient(user string, host string, port int, maxAttempt int, auth *Auth) (Client, error) {
+func NewClient(user string, host string, port int, auth *Auth) (Client, error) {
 	sshBinaryPath, err := exec.LookPath("ssh")
 	if err != nil {
 		log.Debug("SSH binary not found, using native Go implementation")
-		client, err := NewNativeClient(user, host, port, maxAttempt, auth)
+		client, err := NewNativeClient(user, host, port, auth)
 		log.Debug(client)
 		return client, err
 	}
 
 	if defaultClientType == Native {
 		log.Debug("Using SSH client type: native")
-		client, err := NewNativeClient(user, host, port, maxAttempt, auth)
+		client, err := NewNativeClient(user, host, port, auth)
 		log.Debug(client)
 		return client, err
 	}
@@ -112,17 +112,16 @@ func NewClient(user string, host string, port int, maxAttempt int, auth *Auth) (
 	return client, err
 }
 
-func NewNativeClient(user, host string, port int, maxAttempt int, auth *Auth) (Client, error) {
+func NewNativeClient(user, host string, port int, auth *Auth) (Client, error) {
 	config, err := NewNativeConfig(user, auth)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting config for native Go SSH: %s", err)
 	}
 
 	return &NativeClient{
-		Config:     config,
-		Hostname:   host,
-		Port:       port,
-		MaxAttempt: maxAttempt,
+		Config:   config,
+		Hostname: host,
+		Port:     port,
 	}, nil
 }
 

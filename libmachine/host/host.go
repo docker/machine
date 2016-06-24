@@ -88,7 +88,7 @@ func (creator *StandardSSHClientCreator) CreateSSHClient(d drivers.Driver) (ssh.
 		auth.Keys = []string{d.GetSSHKeyPath()}
 	}
 
-	return ssh.NewClient(d.GetSSHUsername(), addr, port, d.GetMaxAttempt(), auth)
+	return ssh.NewClient(d.GetSSHUsername(), addr, port, auth)
 }
 
 func (h *Host) runActionForState(action func() error, desiredState state.State) error {

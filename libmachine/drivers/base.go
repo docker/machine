@@ -9,7 +9,7 @@ const (
 	DefaultSSHUser          = "root"
 	DefaultSSHPort          = 22
 	DefaultEngineInstallURL = "https://get.docker.com"
-	MaxAttempt              = 60
+	DefaultMaxAttempt       = 60
 )
 
 // BaseDriver - Embed this struct into drivers to provide the common set
@@ -40,7 +40,7 @@ func (d *BaseDriver) GetMachineName() string {
 // GetMaxAttempt returns the maximum attempt
 func (d *BaseDriver) GetMaxAttempt() int {
 	if d.MaxAttempt == 0 {
-		d.MaxAttempt = DefaultSSHPort
+		d.MaxAttempt = DefaultMaxAttempt
 	}
 	return d.MaxAttempt
 }
@@ -93,7 +93,7 @@ func (d *BaseDriver) SetExtraConfigFromFlags(flags DriverOptions) {
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
 	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.MaxAttempt = flags.Int("engine-max-attempts")
+	d.MaxAttempt = flags.Int("max-attempts")
 }
 
 func EngineInstallURLFlagSet(flags DriverOptions) bool {
