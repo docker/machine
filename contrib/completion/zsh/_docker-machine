@@ -132,6 +132,7 @@ __get_create_argument() {
         '--swarm-discovery=[Discovery service to use with Swarm]:service:->swarm-service' \
         '--swarm-strategy=[Define a default scheduling strategy for Swarm]:strategy:(spread binpack random)' \
         '*--swarm-opt=[Define arbitrary flags for swarm]:flag' \
+        '*--swarm-join-opt=[Define arbitrary flags for Swarm join]:flag' \
         '--swarm-host=[ip/socket to listen on for Swarm master]:host' \
         '--swarm-addr=[addr to advertise for Swarm (default: detect and use the machine IP)]:address' \
         '--swarm-experimental[Enable Swarm experimental features]' \
