@@ -26,7 +26,7 @@ const (
 	defaultAzureVNet            = "docker-machine-vnet"
 	defaultAzureSubnet          = "docker-machine"
 	defaultAzureSubnetPrefix    = "192.168.0.0/16"
-	defaultStorageType          = storage.StandardLRS
+	defaultStorageType          = string(storage.StandardLRS)
 	defaultAzureAvailabilitySet = "docker-machine"
 )
 
@@ -48,6 +48,7 @@ const (
 	flAzureUsePrivateIP    = "azure-use-private-ip"
 	flAzureStaticPublicIP  = "azure-static-public-ip"
 	flAzureNoPublicIP      = "azure-no-public-ip"
+	flAzureStorageType     = "azure-storage-type"
 )
 
 const (
@@ -71,6 +72,7 @@ type Driver struct {
 	SubnetName      string
 	SubnetPrefix    string
 	AvailabilitySet string
+	StorageType     string
 
 	OpenPorts      []string
 	PrivateIPAddr  string
@@ -177,6 +179,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  flAzurePrivateIPAddr,
 			Usage: "Specify a static private IP address for the machine",
 		},
+		mcnflag.StringFlag{
+			Name:   flAzureStorageType,
+			Usage:  "Type of Storage Account to host the OS Disk for the machine",
+			EnvVar: "AZURE_STORAGE_TYPE",
+			Value:  defaultStorageType,
+		},
 		mcnflag.BoolFlag{
 			Name:  flAzureUsePrivateIP,
 			Usage: "Use private IP address of the machine to connect",
@@ -217,6 +225,7 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 		{&d.SubnetName, flAzureSubnet},
 		{&d.SubnetPrefix, flAzureSubnetPrefix},
 		{&d.AvailabilitySet, flAzureAvailabilitySet},
+		{&d.StorageType, flAzureStorageType},
 	}
 	for _, f := range flags {
 		*f.target = fl.String(f.flag)
@@ -322,7 +331,7 @@ func (d *Driver) Create() error {
 		d.ctx.PublicIPAddressID, d.ctx.SubnetID, d.ctx.NetworkSecurityGroupID, d.PrivateIPAddr); err != nil {
 		return err
 	}
-	if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, defaultStorageType); err != nil {
+	if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, storage.AccountType(d.StorageType)); err != nil {
 		return err
 	}
 	if err := d.generateSSHKey(d.ctx); err != nil {

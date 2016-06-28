@@ -357,7 +357,9 @@ func (a AzureClient) createStorageAccount(resourceGroup, location string, storag
 	name := randomAzureStorageAccountName() // if it's not random enough, then you're unlucky
 	f := logutil.Fields{
 		"name":     name,
-		"location": location}
+		"location": location,
+		"type":     storageType,
+	}
 
 	log.Info("Creating storage account.", f)
 	_, err := a.storageAccountsClient().Create(resourceGroup, name,
