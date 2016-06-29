@@ -20,6 +20,7 @@ type Driver struct {
 	MachineImage      string
 	DiskType          string
 	Address           string
+	Network           string
 	Preemptible       bool
 	UseInternalIP     bool
 	UseInternalIPOnly bool
@@ -38,6 +39,7 @@ const (
 	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
 	defaultDiskType    = "pd-standard"
 	defaultDiskSize    = 10
+	defaultNetwork     = "default"
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -92,6 +94,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "GOOGLE_DISK_TYPE",
 		},
 		mcnflag.StringFlag{
+			Name:   "google-network",
+			Usage:  "Specify network in which to provision vm",
+			Value:  defaultNetwork,
+			EnvVar: "GOOGLE_NETWORK",
+		},
+		mcnflag.StringFlag{
 			Name:   "google-address",
 			Usage:  "GCE Instance External IP",
 			EnvVar: "GOOGLE_ADDRESS",
@@ -133,6 +141,7 @@ func NewDriver(machineName string, storePath string) *Driver {
 		DiskSize:     defaultDiskSize,
 		MachineType:  defaultMachineType,
 		MachineImage: defaultImageName,
+		Network:      defaultNetwork,
 		Scopes:       defaultScopes,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultUser,
@@ -175,6 +184,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.DiskSize = flags.Int("google-disk-size")
 		d.DiskType = flags.String("google-disk-type")
 		d.Address = flags.String("google-address")
+		d.Network = flags.String("google-network")
 		d.Preemptible = flags.Bool("google-preemptible")
 		d.UseInternalIP = flags.Bool("google-use-internal-ip") || flags.Bool("google-use-internal-ip-only")
 		d.UseInternalIPOnly = flags.Bool("google-use-internal-ip-only")

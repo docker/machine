@@ -26,6 +26,7 @@ type ComputeUtil struct {
 	project           string
 	diskTypeURL       string
 	address           string
+	network           string
 	preemptible       bool
 	useInternalIP     bool
 	useInternalIPOnly bool
@@ -64,6 +65,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		project:           driver.Project,
 		diskTypeURL:       driver.DiskType,
 		address:           driver.Address,
+		network:           driver.Network,
 		preemptible:       driver.Preemptible,
 		useInternalIP:     driver.UseInternalIP,
 		useInternalIPOnly: driver.UseInternalIPOnly,
