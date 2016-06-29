@@ -239,7 +239,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		},
 		NetworkInterfaces: []*raw.NetworkInterface{
 			{
-				Network: c.globalURL + "/networks/default",
+				Network: c.globalURL + "/networks/" + d.Network,
 			},
 		},
 		Tags: &raw.Tags{
