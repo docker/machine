@@ -35,7 +35,7 @@ const (
 	defaultZone        = "us-central1-a"
 	defaultUser        = "docker-user"
 	defaultMachineType = "n1-standard-1"
-	defaultImageName   = "projects/ubuntu-os-cloud/global/images/ubuntu-1510-wily-v20160627"
+	defaultImageName   = "ubuntu-os-cloud/global/images/ubuntu-1510-wily-v20160627"
 	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
 	defaultDiskType    = "pd-standard"
 	defaultDiskSize    = 10
