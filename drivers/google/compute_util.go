@@ -172,7 +172,7 @@ func (c *ComputeUtil) portsUsed() ([]string, error) {
 }
 
 // openFirewallPorts configures the firewall to open docker and swarm ports.
-func (c *ComputeUtil) openFirewallPorts() error {
+func (c *ComputeUtil) openFirewallPorts(d *Driver) error {
 	log.Infof("Opening firewall ports")
 
 	create := false
@@ -184,6 +184,7 @@ func (c *ComputeUtil) openFirewallPorts() error {
 			Allowed:      []*raw.FirewallAllowed{},
 			SourceRanges: []string{"0.0.0.0/0"},
 			TargetTags:   []string{firewallTargetTag},
+			Network:      c.globalURL + "/networks/" + d.Network,
 		}
 	}
 
@@ -276,7 +277,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	if disk == nil || err != nil {
 		instance.Disks[0].InitializeParams = &raw.AttachedDiskInitializeParams{
 			DiskName:    c.diskName(),
-			SourceImage: d.MachineImage,
+			SourceImage: c.globalURL + "/projects/" + d.MachineImage,
 			// The maximum supported disk size is 1000GB, the cast should be fine.
 			DiskSizeGb: int64(d.DiskSize),
 			DiskType:   c.diskType(),
