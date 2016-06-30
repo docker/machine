@@ -112,6 +112,9 @@ func (r *BugsnagCrashReporter) noReportFileExist() bool {
 }
 
 func addFile(path string, metaData *bugsnag.MetaData) {
+	if path == "" {
+		return
+	}
 	file, err := os.Open(path)
 	if err != nil {
 		log.Debug(err)
