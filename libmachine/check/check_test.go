@@ -24,7 +24,7 @@ func (fcg FakeCertGenerator) GenerateCACertificate(certFile, keyFile, org string
 	return nil
 }
 
-func (fcg FakeCertGenerator) GenerateCert(hosts []string, certFile, keyFile, caFile, caKeyFile, org string, bits int) error {
+func (fcg FakeCertGenerator) GenerateCert(opts *cert.Options) error {
 	return nil
 }
 
