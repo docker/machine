@@ -263,6 +263,26 @@ func TestPassingBothCLIArgWorked(t *testing.T) {
 	assert.Equal(t, "123", driver.SecretKey)
 }
 
+func TestLoadingFromRoleCredentialsWorked(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentials = &roleCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                   "test",
+			"amazonec2-region":       "us-east-1",
+			"amazonec2-zone":         "e",
+			"amazonec2-use-iam-role": true,
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "access", driver.AccessKey)
+	assert.Equal(t, "secret", driver.SecretKey)
+	assert.Equal(t, "token", driver.SessionToken)
+}
+
 var values = []string{
 	"bob",
 	"jake",

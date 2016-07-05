@@ -48,8 +48,8 @@ const (
 var (
 	dockerPort                  = 2376
 	swarmPort                   = 3376
-	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
-	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
+	errorMissingAccessKeyOption = errors.New("amazonec2 driver requires the --amazonec2-access-key option, proper credentials in ~/.aws/credentials, or use of --amazonec2-use-iam-role on an EC2 instance")
+	errorMissingSecretKeyOption = errors.New("amazonec2 driver requires the --amazonec2-secret-key option, proper credentials in ~/.aws/credentials, or use of --amazonec2-use-iam-role on an EC2 instance")
 	errorNoVPCIdFound           = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
 )
 
@@ -93,6 +93,7 @@ type Driver struct {
 	UsePrivateIP            bool
 	UseEbsOptimizedInstance bool
 	Monitoring              bool
+	UseIAMRole              bool
 	SSHPrivateKeyPath       string
 	RetryCount              int
 }
@@ -216,6 +217,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "amazonec2-use-ebs-optimized-instance",
 			Usage: "Create an EBS optimized instance",
 		},
+		mcnflag.BoolFlag{
+			Name:  "amazonec2-use-iam-role",
+			Usage: "Use this instance's own IAM role",
+		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-ssh-keypath",
 			Usage:  "SSH Key for Instance",
@@ -303,19 +308,32 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
+	d.UseIAMRole = flags.Bool("amazonec2-use-iam-role")
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
 	d.SetSwarmConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
 
 	if d.AccessKey == "" && d.SecretKey == "" {
-		credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
-		if err != nil {
-			log.Debug("Could not load credentials from ~/.aws/credentials")
+		if d.UseIAMRole {
+			credentials, err := d.awsCredentials.NewRoleCredentials().Get()
+			if err != nil {
+				log.Debug("Could not load credentials from IAM role")
+			} else {
+				log.Debug("Successfully loaded credentials from IAM role")
+				d.AccessKey = credentials.AccessKeyID
+				d.SecretKey = credentials.SecretAccessKey
+				d.SessionToken = credentials.SessionToken
+			}
 		} else {
-			log.Debug("Successfully loaded credentials from ~/.aws/credentials")
-			d.AccessKey = credentials.AccessKeyID
-			d.SecretKey = credentials.SecretAccessKey
-			d.SessionToken = credentials.SessionToken
+			credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
+			if err != nil {
+				log.Debug("Could not load credentials from ~/.aws/credentials")
+			} else {
+				log.Debug("Successfully loaded credentials from ~/.aws/credentials")
+				d.AccessKey = credentials.AccessKeyID
+				d.SecretKey = credentials.SecretAccessKey
+				d.SessionToken = credentials.SessionToken
+			}
 		}
 	}
 
