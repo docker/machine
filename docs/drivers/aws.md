@@ -46,6 +46,12 @@ You can use environment variables:
     $ export AWS_SECRET_ACCESS_KEY=MY-SECRET-KEY
     $ docker-machine create --driver amazonec2 aws01
 
+### Instance IAM role
+
+If run on an EC2 instance with its own IAM role, you can use this by using the `--amazonec2-use-iam-role` flag on the command line:
+
+    $ docker-machine create --driver amazonec2 --amazonec2-use-iam-role aws01
+
 ## Options
 
 -   `--amazonec2-access-key`: Your access key id for the Amazon Web Services API.
@@ -72,6 +78,7 @@ You can use environment variables:
 -   `--amazonec2-use-ebs-optimized-instance`: Create an EBS Optimized Instance, instance type must support it.
 -   `--amazonec2-ssh-keypath`: Path to Private Key file to use for instance. Matching public key with .pub extension should exist
 -   `--amazonec2-retries`:  Set retry count for recoverable failures (use -1 to disable)
+-   `--amazonec2-use-iam-role`: Use the IAM role of the EC2 instance that docker-machine is run on
 
 
 Environment variables and default values:
@@ -102,6 +109,7 @@ Environment variables and default values:
 | `--amazonec2-use-ebs-optimized-instance` | -                       | `false`          |
 | `--amazonec2-ssh-keypath`                | `AWS_SSH_KEYPATH`       | -                |
 | `--amazonec2-retries`                    | -                       | `5`              |
+| `--amazonec2-use-iam-role`               | -                       | `false`          |
 
 ## Default AMIs
 
