@@ -46,7 +46,17 @@ PRETTY_NAME="CentOS Linux 7 (Core)"
 ANSI_COLOR="0;31"
 HOME_URL="https://www.centos.org/"
 BUG_REPORT_URL="https://bugs.centos.org/"
-
+`)
+		fedora = []byte(`NAME=Fedora
+VERSION="23 (Twenty Three)"
+ID=fedora
+VERSION_ID=23
+VARIANT="Server Edition"
+VARIANT_ID=server
+PRETTY_NAME="Fedora 23 (Twenty Three)"
+ANSI_COLOR="0;34"
+HOME_URL="https://fedoraproject.org/"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
 `)
 	)
 
@@ -135,6 +145,28 @@ BUG_REPORT_URL="https://bugs.centos.org/"
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
 		t.Fatal("Error with centos osr parsing: structs do not match")
+	}
+
+	osr, err = NewOsRelease(fedora)
+	if err != nil {
+		t.Fatalf("Unexpected error parsing os release: %s", err)
+	}
+
+	expectedOsr = OsRelease{
+		Name:         "Fedora",
+		Version:      "23 (Twenty Three)",
+		ID:           "fedora",
+		PrettyName:   "Fedora 23 (Twenty Three)",
+		Variant:      "Server Edition",
+		VariantID:    "server",
+		AnsiColor:    "0;34",
+		VersionID:    "23",
+		HomeURL:      "https://fedoraproject.org/",
+		BugReportURL: "https://bugzilla.redhat.com/",
+	}
+
+	if !reflect.DeepEqual(*osr, expectedOsr) {
+		t.Fatal("Error with fedora osr parsing: structs do not match")
 	}
 }
 
