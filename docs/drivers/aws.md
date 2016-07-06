@@ -105,7 +105,7 @@ Environment variables and default values:
 
 ## Default AMIs
 
-By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
+By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10.
 
 | Region         | AMI ID       |
 | -------------- | ------------ |
