@@ -76,6 +76,10 @@ func (provisioner *GenericProvisioner) GetAuthOptions() auth.Options {
 	return provisioner.AuthOptions
 }
 
+func (provisioner *GenericProvisioner) GetSwarmOptions() swarm.Options {
+	return provisioner.SwarmOptions
+}
+
 func (provisioner *GenericProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }

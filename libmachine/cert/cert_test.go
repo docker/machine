@@ -56,7 +56,18 @@ func TestGenerateCert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := GenerateCert([]string{}, certPath, keyPath, caCertPath, caKeyPath, testOrg, bits); err != nil {
+	opts := &Options{
+		Hosts:       []string{},
+		CertFile:    certPath,
+		CAKeyFile:   caKeyPath,
+		CAFile:      caCertPath,
+		KeyFile:     keyPath,
+		Org:         testOrg,
+		Bits:        bits,
+		SwarmMaster: false,
+	}
+
+	if err := GenerateCert(opts); err != nil {
 		t.Fatal(err)
 	}
 
