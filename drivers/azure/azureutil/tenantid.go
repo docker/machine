@@ -93,7 +93,7 @@ func saveTenantID(path string, tenantID string) error {
 		return fmt.Errorf("Failed to create directory %s: %v", dir, err)
 	}
 
-	f, err := ioutil.TempFile(os.TempDir(), "tenantid")
+	f, err := ioutil.TempFile(dir, "tenantid")
 	if err != nil {
 		return fmt.Errorf("Failed to create temp file: %v", err)
 	}
@@ -107,7 +107,7 @@ func saveTenantID(path string, tenantID string) error {
 
 	// atomic move by rename
 	if err := os.Rename(fp, path); err != nil {
-		return fmt.Errorf("Failed to rename file: %v", err)
+		return fmt.Errorf("Failed to rename file. src=%s dst=%s error=%v", fp, path, err)
 	}
 	if err := os.Chmod(path, perm); err != nil {
 		return fmt.Errorf("Failed to chmod the file %s: %v", path, err)
