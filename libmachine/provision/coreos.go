@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
+	"github.com/docker/machine/libmachine/provision/serviceaction"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -64,22 +65,11 @@ func (provisioner *CoreOSProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
-	engineConfigTmpl := `[Unit]
-Description=Docker Socket for the API
-After=docker.socket early-docker.target network.target
-Requires=docker.socket early-docker.target
-
-[Service]
-Environment=TMPDIR=/var/tmp
-EnvironmentFile=-/run/flannel_docker_opts.env
-MountFlags=slave
-LimitNOFILE=1048576
-LimitNPROC=1048576
-ExecStart=/usr/lib/coreos/dockerd daemon --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:{{.DockerPort}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}}{{ range .EngineOptions.Labels }} --label {{.}}{{ end }}{{ range .EngineOptions.InsecureRegistry }} --insecure-registry {{.}}{{ end }}{{ range .EngineOptions.RegistryMirror }} --registry-mirror {{.}}{{ end }}{{ range .EngineOptions.ArbitraryFlags }} --{{.}}{{ end }} \$DOCKER_OPTS \$DOCKER_OPT_BIP \$DOCKER_OPT_MTU \$DOCKER_OPT_IPMASQ
-Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
-
-[Install]
-WantedBy=multi-user.target
+	engineConfigTmpl := `[Service]
+Environment='DOCKER_OPTS=--host=tcp://0.0.0.0:{{.DockerPort}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}}{{ range .EngineOptions.Labels }} --label {{.}}{{ end }}{{ range .EngineOptions.InsecureRegistry }} --insecure-registry {{.}}{{ end }}{{ range .EngineOptions.RegistryMirror }} --registry-mirror {{.}}{{ end }}{{ range .EngineOptions.ArbitraryFlags }} --{{.}}{{ end }}'
+{{range .EngineOptions.Env}}
+{{ printf "Environment=%q" . }}
+{{end}}
 `
 
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
@@ -128,6 +118,11 @@ func (provisioner *CoreOSProvisioner) Provision(swarmOptions swarm.Options, auth
 
 	log.Debug("Configuring swarm")
 	if err := configureSwarm(provisioner, swarmOptions, provisioner.AuthOptions); err != nil {
+		return err
+	}
+
+	log.Debug("enabling docker in systemd")
+	if err := provisioner.Service("docker", serviceaction.Enable); err != nil {
 		return err
 	}
 

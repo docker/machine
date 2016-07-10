@@ -22,7 +22,7 @@ func NewSystemdProvisioner(osReleaseID string, d drivers.Driver) SystemdProvisio
 		GenericProvisioner{
 			SSHCommander:      GenericSSHCommander{Driver: d},
 			DockerOptionsDir:  "/etc/docker",
-			DaemonOptionsFile: "/etc/systemd/system/docker.service",
+			DaemonOptionsFile: "/etc/systemd/system/docker.service.d/machine.conf",
 			OsReleaseID:       osReleaseID,
 			Packages: []string{
 				"curl",
@@ -41,15 +41,11 @@ func (p *SystemdProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptio
 	p.EngineOptions.Labels = append(p.EngineOptions.Labels, driverNameLabel)
 
 	engineConfigTmpl := `[Service]
-ExecStart=/usr/bin/docker daemon -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
-MountFlags=slave
-LimitNOFILE=1048576
-LimitNPROC=1048576
-LimitCORE=infinity
-Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
-
-[Install]
-WantedBy=multi-user.target
+ExecStart=
+ExecStart=/usr/bin/docker daemon -H fd:// -H tcp://0.0.0.0:{{.DockerPort}} --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+{{range .EngineOptions.Env}}
+{{ printf "Environment=%q" . }}
+{{end}}
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {

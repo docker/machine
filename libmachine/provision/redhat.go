@@ -27,19 +27,6 @@ priority=1
 enabled=1
 gpgkey=https://yum.dockerproject.org/gpg
 `
-	engineConfigTemplate = `[Unit]
-Description=Docker Application Container Engine
-After=network.target docker.socket
-Requires=docker.socket
-
-[Service]
-ExecStart=/usr/bin/docker daemon -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
-MountFlags=slave
-LimitNOFILE=1048576
-LimitNPROC=1048576
-LimitCORE=infinity
-Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
-`
 
 	majorVersionRE = regexp.MustCompile(`^(\d+)(\..*)?`)
 )
@@ -199,38 +186,6 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 	}
 
 	return nil
-}
-
-func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
-	var (
-		engineCfg  bytes.Buffer
-		configPath = provisioner.DaemonOptionsFile
-	)
-
-	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
-	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
-
-	// systemd / redhat will not load options if they are on newlines
-	// instead, it just continues with a different set of options; yeah...
-	t, err := template.New("engineConfig").Parse(engineConfigTemplate)
-	if err != nil {
-		return nil, err
-	}
-
-	engineConfigContext := EngineConfigContext{
-		DockerPort:       dockerPort,
-		AuthOptions:      provisioner.AuthOptions,
-		EngineOptions:    provisioner.EngineOptions,
-		DockerOptionsDir: provisioner.DockerOptionsDir,
-	}
-
-	t.Execute(&engineCfg, engineConfigContext)
-
-	daemonOptsDir := configPath
-	return &DockerOptions{
-		EngineOptions:     engineCfg.String(),
-		EngineOptionsPath: daemonOptsDir,
-	}, nil
 }
 
 func generateYumRepoList(provisioner Provisioner) (*bytes.Buffer, error) {
