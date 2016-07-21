@@ -58,6 +58,16 @@ ANSI_COLOR="0;34"
 HOME_URL="https://fedoraproject.org/"
 BUG_REPORT_URL="https://bugzilla.redhat.com/"
 `)
+		raspbian = []byte(`PRETTY_NAME="Raspbian GNU/Linux 8 (jessie)"
+NAME="Raspbian GNU/Linux"
+VERSION_ID="8"
+VERSION="8 (jessie)"
+ID=raspbian
+ID_LIKE=debian
+HOME_URL="http://www.raspbian.org/"
+SUPPORT_URL="http://www.raspbian.org/RaspbianForums"
+BUG_REPORT_URL="http://www.raspbian.org/RaspbianBugs"
+`)
 	)
 
 	osr, err := NewOsRelease(ubuntuTrusty)
@@ -167,6 +177,27 @@ BUG_REPORT_URL="https://bugzilla.redhat.com/"
 
 	if !reflect.DeepEqual(*osr, expectedOsr) {
 		t.Fatal("Error with fedora osr parsing: structs do not match")
+	}
+
+	osr, err = NewOsRelease(raspbian)
+	if err != nil {
+		t.Fatalf("Unexpected error parsing os release: %s", err)
+	}
+
+	expectedOsr = OsRelease{
+		PrettyName:   "Raspbian GNU/Linux 8 (jessie)",
+		Name:         "Raspbian GNU/Linux",
+		VersionID:    "8",
+		Version:      "8 (jessie)",
+		ID:           "raspbian",
+		IDLike:       "debian",
+		HomeURL:      "http://www.raspbian.org/",
+		SupportURL:   "http://www.raspbian.org/RaspbianForums",
+		BugReportURL: "http://www.raspbian.org/RaspbianBugs",
+	}
+
+	if !reflect.DeepEqual(*osr, expectedOsr) {
+		t.Fatal("Error with raspbian osr parsing: structs do not match")
 	}
 }
 
