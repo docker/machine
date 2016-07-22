@@ -16,6 +16,7 @@ weight=90
 -   [Microsoft Azure](azure.md)
 -   [Digital Ocean](digital-ocean.md)
 -   [Exoscale](exoscale.md)
+-   [GoDaddy Cloud Servers](godaddy.md)
 -   [Google Compute Engine](gce.md)
 -   [Generic](generic.md)
 -   [Microsoft Hyper-V](hyper-v.md)

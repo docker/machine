@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/docker/machine",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v66",
+	"GodepVersion": "v74",
 	"Packages": [
 		"github.com/docker/machine",
 		"github.com/docker/machine/cmd",
@@ -17,6 +17,8 @@
 		"github.com/docker/machine/drivers/exoscale",
 		"github.com/docker/machine/drivers/fakedriver",
 		"github.com/docker/machine/drivers/generic",
+		"github.com/docker/machine/drivers/godaddy",
+		"github.com/docker/machine/drivers/godaddy/cloud",
 		"github.com/docker/machine/drivers/google",
 		"github.com/docker/machine/drivers/hyperv",
 		"github.com/docker/machine/drivers/none",
@@ -246,6 +248,11 @@
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
 			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
+		},
+		{
+			"ImportPath": "github.com/dghubble/sling",
+			"Comment": "v1.0-22-g9da07f0",
+			"Rev": "9da07f0db0226d82803fc7374dba08506d29da00"
 		},
 		{
 			"ImportPath": "github.com/dgrijalva/jwt-go",
