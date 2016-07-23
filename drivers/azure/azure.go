@@ -183,7 +183,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureCustomData,
-			EnvVar: "AZURE_CUSTOM_DATA",
+			EnvVar: "AZURE_CUSTOM_DATA_FILE",
 			Usage:  "Path to file with custom-data",
 		},
 		mcnflag.StringFlag{
