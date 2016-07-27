@@ -35,7 +35,7 @@ type Driver struct {
 const (
 	defaultSSHPort = 22
 	defaultSSHUser = "root"
-	defaultImage   = "15621816" // Ubuntu 15.10 x86_64
+	defaultImage   = "ubuntu-16-04-x64"
 	defaultRegion  = "nyc3"
 	defaultSize    = "512mb"
 )
