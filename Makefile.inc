@@ -22,7 +22,7 @@ ifeq ($(TARGET_OS),)
 endif
 
 ifeq ($(TARGET_ARCH),)
-  TARGET_ARCH := amd64 386
+  TARGET_ARCH := amd64 arm 386
 endif
 
 # Output prefix, defaults to local directory if not specified
