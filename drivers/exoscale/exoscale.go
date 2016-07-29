@@ -277,7 +277,7 @@ func (d *Driver) createDefaultAffinityGroup(client *egoscale.Client, group strin
 			fmt.Printf("got error: %+v\n", err)
 		}
 
-		if (resp.Jobstatus == 1) {
+		if resp.Jobstatus == 1 {
 			break
 		}
 		time.Sleep(5 * time.Second)
@@ -345,22 +345,22 @@ func (d *Driver) Create() error {
 		sgs[idx] = sg
 	}
 
-    // Affinity Groups
-    affinityGroups := strings.Split(d.AffinityGroup, ",")
-    ags := make([]string, len(affinityGroups))
-    for idx, group := range affinityGroups {
-    	ag, ok := topology.AffinityGroups[group]
-    	if !ok {
-    		log.Infof("Affinity Group %v does not exist, create it",
-    			group)
-    		ag, err = d.createDefaultAffinityGroup(client, group)
-    		if err != nil {
-    			return err
-    		}
-    	}
-    	log.Debugf("Affinity group %v = %s", group, ag)
-    	ags[idx] = group
-    }
+	// Affinity Groups
+	affinityGroups := strings.Split(d.AffinityGroup, ",")
+	ags := make([]string, len(affinityGroups))
+	for idx, group := range affinityGroups {
+		ag, ok := topology.AffinityGroups[group]
+		if !ok {
+			log.Infof("Affinity Group %v does not exist, create it",
+				group)
+			ag, err = d.createDefaultAffinityGroup(client, group)
+			if err != nil {
+				return err
+			}
+		}
+		log.Debugf("Affinity group %v = %s", group, ag)
+		ags[idx] = group
+	}
 
 	log.Infof("Generate an SSH keypair...")
 	keypairName := fmt.Sprintf("docker-machine-%s", d.MachineName)

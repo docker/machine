@@ -32,6 +32,8 @@ Options:
 
 If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule. Moreover, if you want to use Swarm, also add TCP port 3376.
 
+There is a limit to the number of docker machines that an anti-affinity group can have.  This can be worked around by specifying an additional anti-affinity group using `--exoscale-affinity-group=docker-machineX`
+
 Environment variables and default values:
 
 | CLI option                      | Environment variable         | Default                           |

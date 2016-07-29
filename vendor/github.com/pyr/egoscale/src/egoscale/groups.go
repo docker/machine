@@ -103,3 +103,15 @@ func (exo *Client) CreateSecurityGroupWithRules(name string, ingress []SecurityG
 
 	return &r.Wrapped, nil
 }
+
+func (exo *Client) DeleteSecurityGroup(name string) (error) {
+	params := url.Values{}
+	params.Set("name", name)
+
+	resp, err := exo.Request("deleteSecurityGroup", params); if err != nil {
+		return err
+	}
+
+	fmt.Printf("## response: %+v\n", resp)
+	return nil
+}
