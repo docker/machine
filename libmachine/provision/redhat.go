@@ -29,16 +29,23 @@ gpgkey=https://yum.dockerproject.org/gpg
 `
 	engineConfigTemplate = `[Unit]
 Description=Docker Application Container Engine
-After=network.target docker.socket
-Requires=docker.socket
+After=network.target
 
 [Service]
+Type=notify
 ExecStart=/usr/bin/docker daemon -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+ExecReload=/bin/kill -s HUP $MAINPID
 MountFlags=slave
-LimitNOFILE=1048576
-LimitNPROC=1048576
+LimitNOFILE=infinity
+LimitNPROC=infinity
 LimitCORE=infinity
+TimeoutStartSec=0
+Delegate=yes
+KillMode=process
 Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
+
+[Install]
+WantedBy=multi-user.target
 `
 
 	majorVersionRE = regexp.MustCompile(`^(\d+)(\..*)?`)
