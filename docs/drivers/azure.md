@@ -69,6 +69,7 @@ Optional:
 - `--azure-docker-port`: Port number for Docker engine.
 - `--azure-environment`: Azure environment (e.g. `AzurePublicCloud`, `AzureChinaCloud`).
 - `--azure-storage-type`: Type of Azure Storage account hosting the OS disk of the machine (e.g. `Standard_LRS`, `Premium_LRS`).
+- `--azure-custom-data`: Path to the CustomData file.
 
 [vm-image]: https://azure.microsoft.com/en-us/documentation/articles/resource-groups-vm-searching/
 [location]: https://azure.microsoft.com/en-us/regions/
@@ -92,6 +93,7 @@ Environment variables and default values:
 | `--azure-subnet-prefix`         | `AZURE_SUBNET_PREFIX`         | `192.168.0.0/16`   |
 | `--azure-availability-set`      | `AZURE_AVAILABILITY_SET`      | `docker-machine`   |
 | `--azure-storage-type`          | `AZURE_STORAGE_TYPE`          | `Standard_LRS`     |
+| `--azure-custom-data`           | `AZURE_CUSTOM_DATA_FILE`      | -                  |
 | `--azure-open-port`             | -                             | -                  |
 | `--azure-private-ip-address`    | -                             | -                  |
 | `--azure-use-private-ip`        | -                             | -                  |
