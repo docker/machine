@@ -199,7 +199,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	d.Pool = flags.String("vmwarevsphere-pool")
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 
 	d.ISO = d.ResolveStorePath(isoFilename)
 

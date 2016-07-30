@@ -103,7 +103,7 @@ func (h *Host) runActionForState(action func() error, desiredState state.State) 
 		return err
 	}
 
-	return mcnutils.WaitFor(drivers.MachineInState(h.Driver, desiredState))
+	return mcnutils.WaitFor(drivers.MachineInState(h.Driver, desiredState), h.Driver.GetMaxAttempt())
 }
 
 func (h *Host) WaitForDocker() error {
@@ -156,7 +156,7 @@ func (h *Host) Restart() error {
 		if err := h.Driver.Restart(); err != nil {
 			return err
 		}
-		if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
+		if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running), h.Driver.GetMaxAttempt()); err != nil {
 			return err
 		}
 	}

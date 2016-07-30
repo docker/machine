@@ -51,6 +51,7 @@ customize.
        --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use [$ENGINE_REGISTRY_MIRROR]
        --engine-label [--engine-label option --engine-label option]                                         Specify labels for the created engine
        --engine-storage-driver                                                                              Specify a storage driver to use with the engine
+       --max-attempts                                                                                       Specify the number of attempts allowed on waiting period
        --engine-env [--engine-env option --engine-env option]                                               Specify environment variables to set in the engine
        --swarm                                                                                              Configure Machine with Swarm
        --swarm-image "swarm:latest"                                                                         Specify Docker image to use for Swarm [$MACHINE_SWARM_IMAGE]
@@ -87,6 +88,7 @@ invoking the `create` help text.
        --engine-opt [--engine-opt option --engine-opt option]                                               Specify arbitrary flags to include with the created engine in the form flag=value
        --engine-registry-mirror [--engine-registry-mirror option --engine-registry-mirror option]           Specify registry mirrors to use [$ENGINE_REGISTRY_MIRROR]
        --engine-storage-driver                                                                              Specify a storage driver to use with the engine
+       --max-attempts                                                                                       Specify the number of attempts allowed on waiting period
        --swarm                                                                                              Configure Machine with Swarm
        --swarm-addr                                                                                         addr to advertise for Swarm (default: detect and use the machine IP)
        --swarm-discovery                                                                                    Discovery service to use with Swarm

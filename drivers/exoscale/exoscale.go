@@ -148,7 +148,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
 	d.SSHUser = flags.String("exoscale-ssh-user")
 	d.UserDataFile = flags.String("exoscale-userdata")
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 
 	if d.URL == "" {
 		d.URL = "https://api.exoscale.ch/compute"

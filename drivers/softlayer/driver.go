@@ -217,7 +217,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		ApiKey:   flags.String("softlayer-api-key"),
 	}
 
-	d.SetSwarmConfigFromFlags(flags)
+	d.SetExtraConfigFromFlags(flags)
 	d.SSHUser = "root"
 	d.SSHPort = 22
 

@@ -72,7 +72,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 		return err
 	}
 
-	if err := mcnutils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Stopped)); err != nil {
+	if err := mcnutils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Stopped), provisioner.Driver.GetMaxAttempt()); err != nil {
 		return err
 	}
 
@@ -92,7 +92,7 @@ func (provisioner *Boot2DockerProvisioner) upgradeIso() error {
 		return err
 	}
 
-	return mcnutils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Running))
+	return mcnutils.WaitFor(drivers.MachineInState(provisioner.Driver, state.Running), provisioner.Driver.GetMaxAttempt())
 }
 
 func (provisioner *Boot2DockerProvisioner) Package(name string, action pkgaction.PackageAction) error {

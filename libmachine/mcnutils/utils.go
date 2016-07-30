@@ -98,8 +98,8 @@ func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration)
 	}, maxAttempts, waitInterval)
 }
 
-func WaitFor(f func() bool) error {
-	return WaitForSpecific(f, 60, 3*time.Second)
+func WaitFor(f func() bool, maxAttempts int) error {
+	return WaitForSpecific(f, maxAttempts, 3*time.Second)
 }
 
 // TruncateID returns a shorten id

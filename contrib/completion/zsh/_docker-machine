@@ -125,6 +125,7 @@ __get_create_argument() {
         '*--engine-registry-mirror=[Specify registry mirrors to use]:mirror' \
         '*--engine-label=[Specify labels for the created engine]:label' \
         '--engine-storage-driver=[Specify a storage driver to use with the engine]:storage-driver:->storage-driver-option' \
+        '*--max-attempts=[Specify the number of attempts allowed on waiting period]:environment' \
         '*--engine-env=[Specify environment variables to set in the engine]:environment' \
         '--swarm[Configure Machine with Swarm]' \
         '--swarm-image=[Specify Docker image to use for Swarm]:image' \

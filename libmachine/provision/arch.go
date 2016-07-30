@@ -129,7 +129,7 @@ func (provisioner *ArchProvisioner) Provision(swarmOptions swarm.Options, authOp
 	}
 
 	log.Debug("Waiting for docker daemon")
-	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
+	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding, provisioner.Driver.GetMaxAttempt()); err != nil {
 		return err
 	}
 

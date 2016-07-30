@@ -245,7 +245,7 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 
 	// Set flags on the BaseDriver
 	d.BaseDriver.SSHPort = sshPort
-	d.SetSwarmConfigFromFlags(fl)
+	d.SetExtraConfigFromFlags(fl)
 
 	log.Debug("Set configuration from flags.")
 	return nil

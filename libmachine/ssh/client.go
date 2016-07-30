@@ -43,6 +43,7 @@ type NativeClient struct {
 	Config      ssh.ClientConfig
 	Hostname    string
 	Port        int
+	MaxAttempt  int
 	openSession *ssh.Session
 }
 
@@ -162,7 +163,7 @@ func (client *NativeClient) dialSuccess() bool {
 }
 
 func (client *NativeClient) session(command string) (*ssh.Session, error) {
-	if err := mcnutils.WaitFor(client.dialSuccess); err != nil {
+	if err := mcnutils.WaitFor(client.dialSuccess, client.MaxAttempt); err != nil {
 		return nil, fmt.Errorf("Error attempting SSH client dial: %s", err)
 	}
 

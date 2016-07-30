@@ -117,7 +117,7 @@ func (provisioner *DebianProvisioner) Provision(swarmOptions swarm.Options, auth
 	}
 
 	log.Debug("waiting for docker daemon")
-	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding); err != nil {
+	if err := mcnutils.WaitFor(provisioner.dockerDaemonResponding, provisioner.Driver.GetMaxAttempt()); err != nil {
 		return err
 	}
 
