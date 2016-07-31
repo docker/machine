@@ -51,6 +51,10 @@ func (c *cliCredentials) NewSharedCredentials(filename, profile string) *credent
 	return credentials.NewCredentials(&errorProvider{})
 }
 
+func (c *cliCredentials) NewRoleCredentials() *credentials.Credentials {
+	return credentials.NewCredentials(&errorProvider{})
+}
+
 type fileCredentials struct{}
 
 func (c *fileCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
@@ -58,6 +62,24 @@ func (c *fileCredentials) NewStaticCredentials(id, secret, token string) *creden
 }
 
 func (c *fileCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
+	return credentials.NewCredentials(&okProvider{"access", "secret", "token"})
+}
+
+func (c *fileCredentials) NewRoleCredentials() *credentials.Credentials {
+	return credentials.NewCredentials(&errorProvider{})
+}
+
+type roleCredentials struct{}
+
+func (c *roleCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
+	return nil
+}
+
+func (c *roleCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
+	return credentials.NewCredentials(&errorProvider{})
+}
+
+func (c *roleCredentials) NewRoleCredentials() *credentials.Credentials {
 	return credentials.NewCredentials(&okProvider{"access", "secret", "token"})
 }
 
