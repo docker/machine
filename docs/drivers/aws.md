@@ -59,6 +59,7 @@ You can use environment variables:
 -   `--amazonec2-security-group`: AWS VPC security group name.
 -   `--amazonec2-tags`: AWS extra tag key-value pairs (comma-separated, e.g. key1,value1,key2,value2).
 -   `--amazonec2-instance-type`: The instance type to run.
+-   `--amazonec2-keypair-name`: AWS keypair to use; requires --amazonec2-ssh-keypath
 -   `--amazonec2-device-name`: The root device name of the instance.
 -   `--amazonec2-root-size`: The root disk size of the instance (in GB).
 -   `--amazonec2-volume-type`: The Amazon EBS volume type to be attached to the instance.
@@ -89,6 +90,7 @@ Environment variables and default values:
 | `--amazonec2-security-group`             | `AWS_SECURITY_GROUP`    | `docker-machine` |
 | `--amazonec2-tags`                       | `AWS_TAGS`              | -                |
 | `--amazonec2-instance-type`              | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
+| `--amazonec2-keypair-name`               | `AWS_KEYPAIR_NAME`      | -                |
 | `--amazonec2-device-name`                | `AWS_DEVICE_NAME`       | `/dev/sda1`      |
 | `--amazonec2-root-size`                  | `AWS_ROOT_SIZE`         | `16`             |
 | `--amazonec2-volume-type`                | `AWS_VOLUME_TYPE`       | `gp2`            |
