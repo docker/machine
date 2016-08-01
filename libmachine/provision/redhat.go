@@ -255,7 +255,7 @@ func generateYumRepoList(provisioner Provisioner) (*bytes.Buffer, error) {
 		packageListInfo.OsReleaseVersion = "7"
 	case "fedora":
 		packageListInfo.OsRelease = "fedora"
-		packageListInfo.OsReleaseVersion = "23"
+		packageListInfo.OsReleaseVersion = "24"
 	case "ol":
 		packageListInfo.OsRelease = "oraclelinux"
 		v := majorVersionRE.FindStringSubmatch(releaseInfo.Version)

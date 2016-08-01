@@ -17,7 +17,7 @@ func TestFedoraGenerateYumRepoList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m, err := regexp.MatchString(".*fedora/23.*", buf.String())
+	m, err := regexp.MatchString(".*fedora/24.*", buf.String())
 	if err != nil {
 		t.Fatal(err)
 	}
