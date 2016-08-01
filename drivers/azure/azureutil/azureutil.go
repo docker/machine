@@ -448,7 +448,7 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 }
 
 func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, availabilitySetID, networkInterfaceID,
-	username, sshPublicKey, imageName string, storageAccount *storage.AccountProperties) error {
+	username, sshPublicKey, imageName, customData string, storageAccount *storage.AccountProperties) error {
 	log.Info("Creating virtual machine.", logutil.Fields{
 		"name":     name,
 		"location": location,
@@ -469,6 +469,26 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 	log.Debugf("OS disk blob will be placed at: %s", osDiskBlobURL)
 	log.Debugf("SSH key will be placed at: %s", sshKeyPath)
 
+	var osProfile = &compute.OSProfile{
+		ComputerName:  to.StringPtr(name),
+		AdminUsername: to.StringPtr(username),
+		LinuxConfiguration: &compute.LinuxConfiguration{
+			DisablePasswordAuthentication: to.BoolPtr(true),
+			SSH: &compute.SSHConfiguration{
+				PublicKeys: &[]compute.SSHPublicKey{
+					{
+						Path:    to.StringPtr(sshKeyPath),
+						KeyData: to.StringPtr(sshPublicKey),
+					},
+				},
+			},
+		},
+	}
+
+	if customData != "" {
+		osProfile.CustomData = to.StringPtr(customData)
+	}
+
 	_, err = a.virtualMachinesClient().CreateOrUpdate(resourceGroup, name,
 		compute.VirtualMachine{
 			Location: to.StringPtr(location),
@@ -486,21 +506,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 						},
 					},
 				},
-				OsProfile: &compute.OSProfile{
-					ComputerName:  to.StringPtr(name),
-					AdminUsername: to.StringPtr(username),
-					LinuxConfiguration: &compute.LinuxConfiguration{
-						DisablePasswordAuthentication: to.BoolPtr(true),
-						SSH: &compute.SSHConfiguration{
-							PublicKeys: &[]compute.SSHPublicKey{
-								{
-									Path:    to.StringPtr(sshKeyPath),
-									KeyData: to.StringPtr(sshPublicKey),
-								},
-							},
-						},
-					},
-				},
+				OsProfile: osProfile,
 				StorageProfile: &compute.StorageProfile{
 					ImageReference: &compute.ImageReference{
 						Publisher: to.StringPtr(img.publisher),

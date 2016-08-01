@@ -1,10 +1,13 @@
 package azure
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 
 	"github.com/docker/machine/drivers/azure/azureutil"
 	"github.com/docker/machine/libmachine/drivers"
@@ -49,6 +52,7 @@ const (
 	flAzureStaticPublicIP  = "azure-static-public-ip"
 	flAzureNoPublicIP      = "azure-no-public-ip"
 	flAzureStorageType     = "azure-storage-type"
+	flAzureCustomData      = "azure-custom-data"
 )
 
 const (
@@ -79,6 +83,8 @@ type Driver struct {
 	UsePrivateIP   bool
 	NoPublicIP     bool
 	StaticPublicIP bool
+
+	CustomDataFile string
 
 	// Ephemeral fields
 	ctx        *azureutil.DeploymentContext
@@ -176,6 +182,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultAzureAvailabilitySet,
 		},
 		mcnflag.StringFlag{
+			Name:   flAzureCustomData,
+			EnvVar: "AZURE_CUSTOM_DATA_FILE",
+			Usage:  "Path to file with custom-data",
+		},
+		mcnflag.StringFlag{
 			Name:  flAzurePrivateIPAddr,
 			Usage: "Specify a static private IP address for the machine",
 		},
@@ -242,6 +253,7 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.NoPublicIP = fl.Bool(flAzureNoPublicIP)
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
+	d.CustomDataFile = fl.String(flAzureCustomData)
 
 	// Set flags on the BaseDriver
 	d.BaseDriver.SSHPort = sshPort
@@ -256,6 +268,12 @@ func (d *Driver) DriverName() string { return driverName }
 
 // PreCreateCheck validates if driver values are valid to create the machine.
 func (d *Driver) PreCreateCheck() (err error) {
+	if d.CustomDataFile != "" {
+		if _, err := os.Stat(d.CustomDataFile); os.IsNotExist(err) {
+			return fmt.Errorf("custom-data file %s could not be found", d.CustomDataFile)
+		}
+	}
+
 	c, err := d.newAzureClient()
 	if err != nil {
 		return err
@@ -305,6 +323,15 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	var customData string
+	if d.CustomDataFile != "" {
+		buf, err := ioutil.ReadFile(d.CustomDataFile)
+		if err != nil {
+			return err
+		}
+		customData = base64.StdEncoding.EncodeToString(buf)
+	}
+
 	if err := c.CreateResourceGroup(d.ResourceGroup, d.Location); err != nil {
 		return err
 	}
@@ -338,7 +365,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 	if err := c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
-		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, d.ctx.StorageAccount); err != nil {
+		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount); err != nil {
 		return err
 	}
 	return nil
