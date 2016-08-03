@@ -167,7 +167,8 @@ __get_create_argument() {
 
 
 __docker-machine_subcommand() {
-    local opts_help="(- :)"{-h,--help}"[Print usage]"
+    local -a opts_help
+    opts_help=("(- :)--help[Print usage]")
     local -a opts_only_host opts_driver opts_storage_driver opts_stragery
     opts_only_host=(
         "$opts_help"
