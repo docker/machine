@@ -18,7 +18,7 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 	}
 
 	log.Info(fmt.Sprintf("About to remove %s", strings.Join(c.Args(), ", ")))
-        log.Warn("WARNING: This action will delete both local reference and remote instance.")
+	log.Warn("WARNING: This action will delete both local reference and remote instance.")
 
 	force := c.Bool("force")
 	confirm := c.Bool("y")
