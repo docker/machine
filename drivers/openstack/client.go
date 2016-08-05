@@ -2,7 +2,9 @@ package openstack
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -532,6 +534,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 	log.Debug("Authenticating...", map[string]interface{}{
 		"AuthUrl":    d.AuthUrl,
 		"Insecure":   d.Insecure,
+		"CaCert":     d.CaCert,
 		"DomainID":   d.DomainID,
 		"DomainName": d.DomainName,
 		"Username":   d.Username,
@@ -555,21 +558,45 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		return err
 	}
 
-	provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%d", version.APIVersion))
+	c.Provider = provider
 
-	if d.Insecure {
-		// Configure custom TLS settings.
-		config := &tls.Config{InsecureSkipVerify: true}
-		transport := &http.Transport{TLSClientConfig: config}
-		provider.HTTPClient.Transport = transport
-	}
+	c.Provider.UserAgent.Prepend(fmt.Sprintf("docker-machine/v%d", version.APIVersion))
 
-	err = openstack.Authenticate(provider, opts)
+	err = c.SetTLSConfig(d)
 	if err != nil {
 		return err
 	}
 
-	c.Provider = provider
+	err = openstack.Authenticate(c.Provider, opts)
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (c *GenericClient) SetTLSConfig(d *Driver) error {
+
+	config := &tls.Config{}
+	config.InsecureSkipVerify = d.Insecure
+
+	if d.CaCert != "" {
+		// Use custom CA certificate(s) for root of trust
+		certpool := x509.NewCertPool()
+		pem, err := ioutil.ReadFile(d.CaCert)
+		if err != nil {
+			log.Error("Unable to read specified CA certificate(s)")
+			return err
+		}
+
+		ok := certpool.AppendCertsFromPEM(pem)
+		if !ok {
+			return fmt.Errorf("Ill-formed CA certificate(s) PEM file")
+		}
+		config.RootCAs = certpool
+	}
+
+	transport := &http.Transport{TLSClientConfig: config}
+	c.Provider.HTTPClient.Transport = transport
 	return nil
 }
