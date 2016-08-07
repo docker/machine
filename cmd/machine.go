@@ -15,6 +15,7 @@ import (
 	"github.com/docker/machine/drivers/digitalocean"
 	"github.com/docker/machine/drivers/exoscale"
 	"github.com/docker/machine/drivers/generic"
+	"github.com/docker/machine/drivers/godaddy"
 	"github.com/docker/machine/drivers/google"
 	"github.com/docker/machine/drivers/hyperv"
 	"github.com/docker/machine/drivers/none"
@@ -177,6 +178,8 @@ func runDriver(driverName string) {
 		plugin.RegisterDriver(exoscale.NewDriver("", ""))
 	case "generic":
 		plugin.RegisterDriver(generic.NewDriver("", ""))
+	case "godaddy":
+		plugin.RegisterDriver(godaddy.NewDriver("", ""))
 	case "google":
 		plugin.RegisterDriver(google.NewDriver("", ""))
 	case "hyperv":
