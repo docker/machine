@@ -23,6 +23,7 @@ type HostSpec struct {
 	Datacenter                     Datacenter        `json:"datacenter"`
 	SshKeys                        []*SSHKey         `json:"sshKeys"`
 	BlockDevices                   []BlockDevice     `json:"blockDevices"`
+	NetworkMaxSpeeds               []NetworkMaxSpeed `json:"networkComponents"`
 	InstallScript                  string            `json:"postInstallScriptUri"`
 	PrivateNetOnly                 bool              `json:"privateNetworkOnlyFlag"`
 	Os                             string            `json:"operatingSystemReferenceCode"`
@@ -31,6 +32,10 @@ type HostSpec struct {
 	PrimaryNetworkComponent        *NetworkComponent `json:"primaryNetworkComponent,omitempty"`
 	PrimaryBackendNetworkComponent *NetworkComponent `json:"primaryBackendNetworkComponent,omitempty"`
 }
+
+type NetworkMaxSpeed struct {
+	MaxSpeed    int  `json:"maxSpeed"`
+ }
 
 type NetworkComponent struct {
 	NetworkVLAN *NetworkVLAN `json:"networkVlan"`
