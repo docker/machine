@@ -361,14 +361,16 @@ func (d *Driver) getIP() (string, error) {
 			continue
 		}
 
+        // if docker daemon is expected to run on private IP
+        // it will overwrite settings from PrivateNet
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 			os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
 		}
 
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "true" {
-			return d.getClient().VirtualGuest().GetPrivateIP(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPrivateIP(d.Id)
 		} else {
-			return d.getClient().VirtualGuest().GetPublicIP(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPublicIP(d.Id)
 		}
 
 		// not a perfect regex, but should be just fine for our needs
