@@ -53,6 +53,8 @@ const (
 	flAzureNoPublicIP      = "azure-no-public-ip"
 	flAzureStorageType     = "azure-storage-type"
 	flAzureCustomData      = "azure-custom-data"
+	flAzureClientID        = "azure-client-id"
+	flAzureClientSecret    = "azure-client-secret"
 )
 
 const (
@@ -63,6 +65,9 @@ const (
 // Driver represents Azure Docker Machine Driver.
 type Driver struct {
 	*drivers.BaseDriver
+
+	ClientID     string // service principal account name
+	ClientSecret string // service principal account password
 
 	Environment    string
 	SubscriptionID string
@@ -83,7 +88,6 @@ type Driver struct {
 	UsePrivateIP   bool
 	NoPublicIP     bool
 	StaticPublicIP bool
-
 	CustomDataFile string
 
 	// Ephemeral fields
@@ -212,6 +216,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  flAzurePorts,
 			Usage: "Make the specified port number accessible from the Internet",
 		},
+		mcnflag.StringFlag{
+			Name:   flAzureClientID,
+			Usage:  "Azure Service Principal Account ID (optional, browser auth is used if not specified)",
+			EnvVar: "AZURE_CLIENT_ID",
+		},
+		mcnflag.StringFlag{
+			Name:   flAzureClientSecret,
+			Usage:  "Azure Service Principal Account password (optional, browser auth is used if not specified)",
+			EnvVar: "AZURE_CLIENT_SECRET",
+		},
 	}
 }
 
@@ -254,6 +268,9 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
 	d.CustomDataFile = fl.String(flAzureCustomData)
+
+	d.ClientID = fl.String(flAzureClientID)
+	d.ClientSecret = fl.String(flAzureClientSecret)
 
 	// Set flags on the BaseDriver
 	d.BaseDriver.SSHPort = sshPort
