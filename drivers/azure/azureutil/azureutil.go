@@ -181,7 +181,9 @@ func (a AzureClient) DeletePublicIPAddressIfExists(resourceGroup, name string) e
 func (a AzureClient) CreateVirtualNetworkIfNotExists(resourceGroup, name, location string) error {
 	f := logutil.Fields{
 		"name":     name,
-		"location": location}
+		"rg":       resourceGroup,
+		"location": location,
+	}
 
 	log.Info("Querying if virtual network already exists.", f)
 

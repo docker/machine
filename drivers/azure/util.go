@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/arm/network"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -172,4 +173,14 @@ func machineStateForVMPowerState(ps azureutil.VMPowerState) state.State {
 	}
 	log.Warnf("Azure PowerState %q does not map to a docker-machine state.", ps)
 	return state.None
+}
+
+// parseVirtualNetwork parses Virtual Network input format "[resourcegroup:]name"
+// into Resource Group (uses provided one if omitted) and Virtual Network Name
+func parseVirtualNetwork(name string, defaultRG string) (string, string) {
+	l := strings.SplitN(name, ":", 2)
+	if len(l) == 2 {
+		return l[0], l[1]
+	}
+	return defaultRG, name
 }

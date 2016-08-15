@@ -57,7 +57,8 @@ Optional:
 - `--azure-resource-group`: Azure Resource Group name to create the resources in.
 - `--azure-size`: Size for Azure Virtual Machine. [[?][vm-size]]
 - `--azure-ssh-user`: Username for SSH login.
-- `--azure-vnet`: Azure Virtual Network name to connect the virtual machine. [[?][vnet]]
+- `--azure-vnet`: Azure Virtual Network name to connect the virtual machine.
+  [[?][vnet]] To specify a Virtual Network from another resource group, use `resourcegroup:vnet-name` format. 
 - `--azure-subnet`: Azure Subnet Name to be used within the Virtual Network.
 - `--azure-subnet-prefix`: Private CIDR block. Used to create subnet if it does not exist. Must match in the case that the subnet does exist.
 - `--azure-availability-set`: Azure Availability Set to place the virtual machine into. [[?][av-set]]
