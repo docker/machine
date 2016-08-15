@@ -163,7 +163,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureVNet,
-			Usage:  "Azure Virtual Network name to connect the virtual machine",
+			Usage:  "Azure Virtual Network name to connect the virtual machine (in [resourcegroup:]name format)",
 			EnvVar: "AZURE_VNET",
 			Value:  defaultAzureVNet,
 		},
@@ -358,10 +358,11 @@ func (d *Driver) Create() error {
 	if err := c.CreateNetworkSecurityGroup(d.ctx, d.ResourceGroup, d.naming().NSG(), d.Location, d.ctx.FirewallRules); err != nil {
 		return err
 	}
-	if err := c.CreateVirtualNetworkIfNotExists(d.ResourceGroup, d.VirtualNetwork, d.Location); err != nil {
+	vnetResourceGroup, vNetName := parseVirtualNetwork(d.VirtualNetwork, d.ResourceGroup)
+	if err := c.CreateVirtualNetworkIfNotExists(vnetResourceGroup, vNetName, d.Location); err != nil {
 		return err
 	}
-	if err := c.CreateSubnet(d.ctx, d.ResourceGroup, d.VirtualNetwork, d.SubnetName, d.SubnetPrefix); err != nil {
+	if err := c.CreateSubnet(d.ctx, vnetResourceGroup, vNetName, d.SubnetName, d.SubnetPrefix); err != nil {
 		return err
 	}
 	if d.NoPublicIP {
