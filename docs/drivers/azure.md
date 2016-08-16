@@ -37,12 +37,16 @@ authenticate:
 
 ## Authentication (service principal account)
 
-1. Create an Azure Service Principal account ([described here][sp]) to get a
+1. Create an Azure Service Principal account ([described here][sp-1] or [here][sp-2]) to get a
    `client_id` and `client_secret`
 2. Use `azure role assignment create` command to give your service account
    `Owner` or `Contributor` roles on your subscription (see article above).
 3. Pass `--azure-client-id` and `--azure-client-secret` arguments (or
-   environment variables) to to `docker-machine`.
+   environment variables) to `docker-machine create`.
+
+    $ docker-machine create --driver azure --azure-subscription-id <subs-id> \
+        --azure-client-id <client-id> --azure-client-secret <client-secret> \
+        <machine-name>
 
 Azure Service Principal Account credentials are recommended for headless
 applications (such as CI/CD systems).
@@ -51,7 +55,8 @@ The Service Principal Account password created through the `azure ad app create`
 command is valid for 1 year by default, you can use `--end-date` argument to
 specify accounts that last longer.
 
-[sp]: https://www.packer.io/docs/builders/azure-setup.html
+[sp-1]: https://azure.microsoft.com/documentation/articles/resource-group-authenticate-service-principal-cli/
+[sp-2]: https://www.packer.io/docs/builders/azure-setup.html
 
 ## Options
 
