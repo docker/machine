@@ -40,7 +40,16 @@ func (d *Driver) newAzureClient() (*azureutil.AzureClient, error) {
 		return nil, fmt.Errorf("Invalid Azure environment: %q", d.Environment)
 	}
 
-	servicePrincipalToken, err := azureutil.Authenticate(env, d.SubscriptionID)
+	var auth azureutil.AuthFunc
+	if d.ClientID != "" && d.ClientSecret != "" { // use Service Principal auth
+		log.Debug("Using Azure service principal authentication.")
+		auth = azureutil.ServicePrincipalAuth(d.ClientID, d.ClientSecret)
+	} else { // use browser-based device auth
+		log.Debug("Using Azure device flow authentication.")
+		auth = azureutil.DeviceFlowAuth
+	}
+
+	servicePrincipalToken, err := azureutil.Authenticate(env, d.SubscriptionID, auth)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating Azure client: %v", err)
 	}

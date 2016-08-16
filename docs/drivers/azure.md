@@ -21,7 +21,7 @@ You will need an Azure Subscription to use this Docker Machine driver.
 [azure]: http://azure.microsoft.com/
 [trial]: https://azure.microsoft.com/free/
 
-## Authentication
+## Authentication (browser-based)
 
 The first time you try to create a machine, Azure driver will ask you to
 authenticate:
@@ -31,15 +31,32 @@ authenticate:
     Microsoft Azure: To sign in, use a web browser to open the page https://aka.ms/devicelogin.
     Enter the code [...] to authenticate.
 
-After authenticating, the driver will remember your credentials up to two weeks.
+- Browser based authentication **credentials expire in 2 weeks**.
+- Once your credentials expire, you will be prompted to log in again.
+- This is practical for daily use; but not recommended for headless applications.
 
-> **KNOWN ISSUE:** There is a known issue with Azure Active Directory causing stored
-> credentials to expire within hours rather than 14 days when the user logs in with
-> personal Microsoft Account (formerly _Live ID_) instead of an Active Directory account.
-> Currently, there is no ETA for resolution, however in the meanwhile you can
-> [create an AAD account][aad-docs] and login with that as a workaround.
+## Authentication (service principal account)
 
-[aad-docs]: https://azure.microsoft.com/documentation/articles/virtual-machines-windows-create-aad-work-id/
+1. Create an Azure Service Principal account ([described here][sp-1] or [here][sp-2]) to get a
+   `client_id` and `client_secret`
+2. Use `azure role assignment create` command to give your service account
+   `Owner` or `Contributor` roles on your subscription (see article above).
+3. Pass `--azure-client-id` and `--azure-client-secret` arguments (or
+   environment variables) to `docker-machine create`.
+
+    $ docker-machine create --driver azure --azure-subscription-id <subs-id> \
+        --azure-client-id <client-id> --azure-client-secret <client-secret> \
+        <machine-name>
+
+Azure Service Principal Account credentials are recommended for headless
+applications (such as CI/CD systems).
+
+The Service Principal Account password created through the `azure ad app create`
+command is valid for 1 year by default, you can use `--end-date` argument to
+specify accounts that last longer.
+
+[sp-1]: https://azure.microsoft.com/documentation/articles/resource-group-authenticate-service-principal-cli/
+[sp-2]: https://www.packer.io/docs/builders/azure-setup.html
 
 ## Options
 
@@ -52,6 +69,8 @@ Required:
 
 Optional:
 
+- `--azure-client-id`: Azure Service Principal Account ID (for headless authentication)
+- `--azure-client-secret`: Azure Service Principal Account password (for headless authentication)
 - `--azure-image`: Azure virtual machine image in the format of Publisher:Offer:Sku:Version [[?][vm-image]]
 - `--azure-location`: Azure region to create the virtual machine. [[?][location]]
 - `--azure-resource-group`: Azure Resource Group name to create the resources in.
@@ -82,6 +101,8 @@ Environment variables and default values:
 | CLI option                      | Environment variable          | Default            |
 | ------------------------------- | ----------------------------- | ------------------ |
 | **`--azure-subscription-id`**   | `AZURE_SUBSCRIPTION_ID`       | -                  |
+| `--azure-client-id`             | `AZURE_CLIENT_ID`             | -                  |
+| `--azure-client-secret`         | `AZURE_CLIENT_SECRET`         | -                  |
 | `--azure-environment`           | `AZURE_ENVIRONMENT`           | `AzurePublicCloud` |
 | `--azure-image`                 | `AZURE_IMAGE`                 | `canonical:UbuntuServer:15.10:latest` |
 | `--azure-location`              | `AZURE_LOCATION`              | `westus`           |
