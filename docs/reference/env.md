@@ -62,11 +62,11 @@ values in the format which `fish` expects:
     # Run this command to configure your shell:
     # eval "$(docker-machine env overlay)"
 
-If you are on Windows and using either Powershell or `cmd.exe`, `docker-machine env`
+If you are on Windows and using either PowerShell or `cmd.exe`, `docker-machine env`
  Docker Machine should now detect your shell automatically. If the automagic detection does not work you
   can still override it using the `--shell` flag for `docker-machine env`.
 
-For Powershell:
+For PowerShell:
 
     $ docker-machine.exe env --shell powershell dev
     $Env:DOCKER_TLS_VERIFY = "1"
