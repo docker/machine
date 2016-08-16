@@ -80,6 +80,7 @@ type Driver struct {
 	SecurityGroupName  string
 	SecurityGroupNames []string
 
+	OpenPorts               []string
 	Tags                    string
 	ReservationId           string
 	DeviceName              string
@@ -153,6 +154,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "AWS VPC security group",
 			Value:  []string{defaultSecurityGroup},
 			EnvVar: "AWS_SECURITY_GROUP",
+		},
+		mcnflag.StringSliceFlag{
+			Name:  "amazonec2-open-port",
+			Usage: "Make the specified port number accessible from the Internet",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-tags",
@@ -316,6 +321,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ExistingKey = flags.String("amazonec2-keypair-name") != ""
 	d.SetSwarmConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
+	d.OpenPorts = flags.StringSlice("amazonec2-open-port")
 
 	if d.KeyName != "" && d.SSHPrivateKeyPath == "" {
 		return errorNoPrivateSSHKey
@@ -1000,7 +1006,10 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 		}
 		d.SecurityGroupIds = append(d.SecurityGroupIds, *group.GroupId)
 
-		perms := d.configureSecurityGroupPermissions(group)
+		perms, err := d.configureSecurityGroupPermissions(group)
+		if err != nil {
+			return err
+		}
 
 		if len(perms) != 0 {
 			log.Debugf("authorizing group %s with permissions: %v", groupNames, perms)
@@ -1017,7 +1026,7 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 	return nil
 }
 
-func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) []*ec2.IpPermission {
+func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]*ec2.IpPermission, error) {
 	hasSshPort := false
 	hasDockerPort := false
 	hasSwarmPort := false
@@ -1063,9 +1072,22 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) []*
 		})
 	}
 
+	for _, port := range d.OpenPorts {
+		n, err := strconv.Atoi(port)
+		if err != nil {
+			return nil, fmt.Errorf("invalid port number %s: %s", port, err)
+		}
+		perms = append(perms, &ec2.IpPermission{
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(int64(n)),
+			ToPort:     aws.Int64(int64(n)),
+			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+		})
+	}
+
 	log.Debugf("configuring security group authorization for %s", ipRange)
 
-	return perms
+	return perms, nil
 }
 
 func (d *Driver) deleteKeyPair() error {

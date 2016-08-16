@@ -57,6 +57,7 @@ You can use environment variables:
 -   `--amazonec2-zone`: The AWS zone to launch the instance in (i.e. one of a,b,c,d,e).
 -   `--amazonec2-subnet-id`: AWS VPC subnet id.
 -   `--amazonec2-security-group`: AWS VPC security group name.
+-   `--amazonec2-open-port`: Make additional port number(s) accessible from the Internet.
 -   `--amazonec2-tags`: AWS extra tag key-value pairs (comma-separated, e.g. key1,value1,key2,value2).
 -   `--amazonec2-instance-type`: The instance type to run.
 -   `--amazonec2-keypair-name`: AWS keypair to use; requires --amazonec2-ssh-keypath
@@ -88,6 +89,7 @@ Environment variables and default values:
 | `--amazonec2-zone`                       | `AWS_ZONE`              | `a`              |
 | `--amazonec2-subnet-id`                  | `AWS_SUBNET_ID`         | -                |
 | `--amazonec2-security-group`             | `AWS_SECURITY_GROUP`    | `docker-machine` |
+| `--amazonec2-open-port`                  | -                       | -                |
 | `--amazonec2-tags`                       | `AWS_TAGS`              | -                |
 | `--amazonec2-instance-type`              | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
 | `--amazonec2-keypair-name`               | `AWS_KEYPAIR_NAME`      | -                |
@@ -134,7 +136,8 @@ Note that a security group will be created and associated to the host. This secu
 -   swarm (3376/tcp), only if the node is a swarm master
 
 If you specify a security group yourself using the `--amazonec2-security-group` flag, the above ports will be checked and opened and the security group modified.
-If you want more ports to be opened, like application specific ports, use the aws console and modify the configuration manually.
+If you want more ports to be opened, like application specific ports, you can use the `--amazonec2-open-port` flag to
+pass a list of port numbers to be opened or use the aws console and modify the configuration manually.
 
 ## VPC ID
 
@@ -159,7 +162,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 ## VPC Connectivity
 Machine uses SSH to complete the set up of instances in EC2 and requires the ability to access the instance directly.  
 
-If you use the flag `--amazonec2-private-address-only`, you will need to ensure that you have some method of accessing the new instance from within the internal network of the VPC (e.g. a corporate VPN to the VPC, a VPN instance inside the VPC or using Docker-machine from an instance within your VPC). 
+If you use the flag `--amazonec2-private-address-only`, you will need to ensure that you have some method of accessing the new instance from within the internal network of the VPC (e.g. a corporate VPN to the VPC, a VPN instance inside the VPC or using Docker-machine from an instance within your VPC).
 
 Configuration of VPCs is beyond the scope of this guide, however the first step in troubleshooting is ensuring if you are using private subnets that you follow the design guidance in the [AWS VPC User Guide](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Scenario2.html) and have some form of NAT available so that the set up process can access the internet to complete set up.
 
