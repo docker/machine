@@ -96,18 +96,22 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 
 func TestConfigureSecurityGroupPermissionsOpenPorts(t *testing.T) {
 	driver := NewTestDriver()
-	driver.OpenPorts = []string{"8888", "8080"}
+	driver.OpenPorts = []string{"8888/tcp", "8080/udp", "9090"}
 	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
 
 	assert.NoError(t, err)
-	assert.Len(t, perms, 4)
+	assert.Len(t, perms, 5)
 	assert.Equal(t, aws.Int64(int64(8888)), perms[2].ToPort)
+	assert.Equal(t, aws.String("tcp"), perms[2].IpProtocol)
 	assert.Equal(t, aws.Int64(int64(8080)), perms[3].ToPort)
+	assert.Equal(t, aws.String("udp"), perms[3].IpProtocol)
+	assert.Equal(t, aws.Int64(int64(9090)), perms[4].ToPort)
+	assert.Equal(t, aws.String("tcp"), perms[4].IpProtocol)
 }
 
 func TestConfigureSecurityGroupPermissionsInvalidOpenPorts(t *testing.T) {
 	driver := NewTestDriver()
-	driver.OpenPorts = []string{"2222", "abc1"}
+	driver.OpenPorts = []string{"2222/tcp", "abc1"}
 	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
 
 	assert.Error(t, err)

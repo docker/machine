@@ -1102,15 +1102,15 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 		})
 	}
 
-	for _, port := range d.OpenPorts {
-		n, err := strconv.Atoi(port)
+	for _, p := range d.OpenPorts {
+		port, protocol, err := splitPortProto(p)
 		if err != nil {
-			return nil, fmt.Errorf("invalid port number %s: %s", port, err)
+			return nil, err
 		}
 		perms = append(perms, &ec2.IpPermission{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(int64(n)),
-			ToPort:     aws.Int64(int64(n)),
+			IpProtocol: aws.String(protocol),
+			FromPort:   aws.Int64(int64(port)),
+			ToPort:     aws.Int64(int64(port)),
 			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 		})
 	}
@@ -1118,6 +1118,20 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	log.Debugf("configuring security group authorization for %s", ipRange)
 
 	return perms, nil
+}
+
+func splitPortProto(raw string) (port int, protocol string, err error) {
+	parts := strings.Split(raw, "/")
+	if len(parts) == 1 {
+		protocol = "tcp"
+	} else {
+		protocol = parts[1]
+	}
+	port, err = strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid port number %s: %s", parts[0], err)
+	}
+	return port, protocol, nil
 }
 
 func (d *Driver) deleteKeyPair() error {
