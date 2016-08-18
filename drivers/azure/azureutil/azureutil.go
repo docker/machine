@@ -194,7 +194,7 @@ func (a AzureClient) CreateVirtualNetworkIfNotExists(resourceGroup, name, locati
 		return nil
 	}
 
-	log.Debug("Creating virtual network.", f)
+	log.Info("Creating virtual network.", f)
 	_, err := a.virtualNetworksClient().CreateOrUpdate(resourceGroup, name,
 		network.VirtualNetwork{
 			Location: to.StringPtr(location),
