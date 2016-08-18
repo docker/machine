@@ -105,7 +105,7 @@ Environment variables and default values:
 | `--azure-client-id`             | `AZURE_CLIENT_ID`             | -                  |
 | `--azure-client-secret`         | `AZURE_CLIENT_SECRET`         | -                  |
 | `--azure-environment`           | `AZURE_ENVIRONMENT`           | `AzurePublicCloud` |
-| `--azure-image`                 | `AZURE_IMAGE`                 | `canonical:UbuntuServer:15.10:latest` |
+| `--azure-image`                 | `AZURE_IMAGE`                 | `canonical:UbuntuServer:16.04.0-LTS:latest` |
 | `--azure-location`              | `AZURE_LOCATION`              | `westus`           |
 | `--azure-resource-group`        | `AZURE_RESOURCE_GROUP`        | `docker-machine`   |
 | `--azure-size`                  | `AZURE_SIZE`                  | `Standard_A2`      |
