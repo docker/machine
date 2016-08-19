@@ -103,6 +103,8 @@ func TestGetScpCmd(t *testing.T) {
 		baseSSHArgs,
 		"-3",
 		"-r",
+		"-o",
+		"IdentitiesOnly=yes",
 		"-i",
 		"/fake/keypath/id_rsa",
 		"/tmp/foo",
