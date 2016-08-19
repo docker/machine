@@ -17,7 +17,6 @@ var (
 
 	// TODO: possibly move this to ssh package
 	baseSSHArgs = []string{
-		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
@@ -97,6 +96,11 @@ func getScpCmd(src, dest string, recursive bool, hostInfoLoader HostInfoLoader) 
 		sshArgs = append(sshArgs, "-r")
 	}
 
+	// Don't use ssh-agent if both hosts have explicit ssh keys
+	if !missesExplicitSSHKey(srcHost) && !missesExplicitSSHKey(destHost) {
+		sshArgs = append(sshArgs, "-o", "IdentitiesOnly=yes")
+	}
+
 	// Append needed -i / private key flags to command.
 	sshArgs = append(sshArgs, srcOpts...)
 	sshArgs = append(sshArgs, destOpts...)
@@ -117,6 +121,10 @@ func getScpCmd(src, dest string, recursive bool, hostInfoLoader HostInfoLoader) 
 	cmd := exec.Command(cmdPath, sshArgs...)
 	log.Debug(*cmd)
 	return cmd, nil
+}
+
+func missesExplicitSSHKey(hostInfo HostInfo) bool {
+	return hostInfo != nil && hostInfo.GetSSHKeyPath() == ""
 }
 
 func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (HostInfo, string, []string, error) {
