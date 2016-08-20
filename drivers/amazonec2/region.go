@@ -8,22 +8,22 @@ type region struct {
 	AmiId string
 }
 
-// Release 16.04 LTS 20160516.1
+// Release 16.04 LTS 20160815
 // See https://cloud-images.ubuntu.com/locator/ec2/
 var regionDetails map[string]*region = map[string]*region{
-	"ap-northeast-1":  {"ami-5d38d93c"},
-	"ap-northeast-2":  {"ami-a3915acd"},
-	"ap-southeast-1":  {"ami-a35284c0"},
-	"ap-southeast-2":  {"ami-f4361997"},
-	"ap-south-1":      {"ami-f7513b98"},
-	"cn-north-1":      {"ami-79eb2214"}, // 15.10 20151116.1
-	"eu-west-1":       {"ami-7a138709"},
-	"eu-central-1":    {"ami-f9e30f96"},
-	"sa-east-1":       {"ami-0d5dd561"},
-	"us-east-1":       {"ami-13be557e"},
-	"us-west-1":       {"ami-84423ae4"},
-	"us-west-2":       {"ami-06b94666"},
-	"us-gov-west-1":   {"ami-8f4df2ee"},
+	"ap-northeast-1":  {"ami-51f13330"},
+	"ap-northeast-2":  {"ami-a3915acd"}, // 20160516.1
+	"ap-southeast-1":  {"ami-fec51c9d"},
+	"ap-southeast-2":  {"ami-a78ebac4"},
+	"ap-south-1":      {"ami-7e94fe11"}, // 20160627
+	"cn-north-1":      {"ami-2c3bf141"}, // 20160610
+	"eu-central-1":    {"ami-004abc6f"},
+	"eu-west-1":       {"ami-c06b1eb3"},
+	"sa-east-1":       {"ami-a674e2ca"},
+	"us-east-1":       {"ami-c60b90d1"},
+	"us-west-1":       {"ami-1bf0b37b"},
+	"us-west-2":       {"ami-f701cb97"},
+	"us-gov-west-1":   {"ami-76f34a17"},
 	"custom-endpoint": {""},
 }
 
