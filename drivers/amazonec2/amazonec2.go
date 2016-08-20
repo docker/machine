@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/docker/machine/drivers/util"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -1103,7 +1104,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	}
 
 	for _, p := range d.OpenPorts {
-		port, protocol, err := splitPortProto(p)
+		port, protocol, err := util.SplitPortProto(p)
 		if err != nil {
 			return nil, err
 		}
@@ -1118,20 +1119,6 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	log.Debugf("configuring security group authorization for %s", ipRange)
 
 	return perms, nil
-}
-
-func splitPortProto(raw string) (port int, protocol string, err error) {
-	parts := strings.Split(raw, "/")
-	if len(parts) == 1 {
-		protocol = "tcp"
-	} else {
-		protocol = parts[1]
-	}
-	port, err = strconv.Atoi(parts[0])
-	if err != nil {
-		return 0, "", fmt.Errorf("invalid port number %s: %s", parts[0], err)
-	}
-	return port, protocol, nil
 }
 
 func (d *Driver) deleteKeyPair() error {
