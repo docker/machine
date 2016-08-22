@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/docker/machine/drivers/driverutil"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -1103,14 +1104,15 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	}
 
 	for _, p := range d.OpenPorts {
-		port, protocol, err := splitPortProto(p)
+		port, protocol := driverutil.SplitPortProto(p)
+		portNum, err := strconv.ParseInt(port, 10, 0)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid port number %s: %s", port, err)
 		}
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String(protocol),
-			FromPort:   aws.Int64(int64(port)),
-			ToPort:     aws.Int64(int64(port)),
+			FromPort:   aws.Int64(portNum),
+			ToPort:     aws.Int64(portNum),
 			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 		})
 	}
@@ -1118,20 +1120,6 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	log.Debugf("configuring security group authorization for %s", ipRange)
 
 	return perms, nil
-}
-
-func splitPortProto(raw string) (port int, protocol string, err error) {
-	parts := strings.Split(raw, "/")
-	if len(parts) == 1 {
-		protocol = "tcp"
-	} else {
-		protocol = parts[1]
-	}
-	port, err = strconv.Atoi(parts[0])
-	if err != nil {
-		return 0, "", fmt.Errorf("invalid port number %s: %s", parts[0], err)
-	}
-	return port, protocol, nil
 }
 
 func (d *Driver) deleteKeyPair() error {
