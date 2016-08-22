@@ -308,10 +308,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return err
 	}
 
-	if d.Endpoint != "" {
-		region = ""
-	}
-
 	image := flags.String("amazonec2-ami")
 	if len(image) == 0 {
 		image = regionDetails[region].AmiId
@@ -350,7 +346,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
 
-	if d.DisableSSL && d.Endpoint != "" {
+	if d.DisableSSL && d.Endpoint == "" {
 		return errorDisableSSLWithoutCustomEndpoint
 	}
 
@@ -465,7 +461,7 @@ func (d *Driver) checkPrereqs() error {
 		// otherwise we found the key: success
 	}
 
-	regionZone := d.Region + d.Zone
+	regionZone := d.getRegionZone()
 	if d.SubnetId == "" {
 		filters := []*ec2.Filter{
 			{
@@ -577,7 +573,7 @@ func (d *Driver) Create() error {
 		AssociatePublicIpAddress: aws.Bool(!d.PrivateIPOnly),
 	}}
 
-	regionZone := d.Region + d.Zone
+	regionZone := d.getRegionZone()
 	log.Debugf("launching instance in subnet %s", d.SubnetId)
 
 	var instance *ec2.Instance
@@ -1148,6 +1144,13 @@ func (d *Driver) getDefaultVPCId() (string, error) {
 	}
 
 	return "", errors.New("No default-vpc attribute")
+}
+
+func (d *Driver) getRegionZone() string {
+	if d.Endpoint == "" {
+		return d.Region + d.Zone
+	}
+	return d.Zone
 }
 
 func generateId() string {
