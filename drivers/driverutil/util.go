@@ -5,7 +5,7 @@ import "strings"
 // SplitPortProto splits a string in the format port/protocol, defaulting
 // protocol to "tcp" if not provided.
 func SplitPortProto(raw string) (port string, protocol string, err error) {
-	parts := strings.Split(raw, "/")
+	parts := strings.SplitN(raw, "/", 2)
 	if len(parts) == 1 {
 		protocol = "tcp"
 	} else {
