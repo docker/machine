@@ -9,14 +9,13 @@ import (
 func TestSplitPortProtocol(t *testing.T) {
 	tests := []struct {
 		raw           string
-		expectedPort  int
+		expectedPort  string
 		expectedProto string
 		expectedErr   bool
 	}{
-		{"8080/tcp", 8080, "tcp", false},
-		{"90/udp", 90, "udp", false},
-		{"80", 80, "tcp", false},
-		{"abc", 0, "", true},
+		{"8080/tcp", "8080", "tcp", false},
+		{"90/udp", "90", "udp", false},
+		{"80", "80", "tcp", false},
 	}
 
 	for _, tc := range tests {

@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/arm/network"
@@ -128,11 +127,10 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 	// extra port numbers requested by user
 	basePri := 1000
 	for i, p := range extraPorts {
-		n, protocol, err := driverutil.SplitPortProto(p)
+		port, protocol, err := driverutil.SplitPortProto(p)
 		if err != nil {
 			return nil, err
 		}
-		port := strconv.Itoa(n)
 		proto, err := parseSecurityRuleProtocol(protocol)
 		if err != nil {
 			return nil, err
