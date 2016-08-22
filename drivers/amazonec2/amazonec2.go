@@ -1105,14 +1105,14 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 
 	for _, p := range d.OpenPorts {
 		port, protocol := driverutil.SplitPortProto(p)
-		portNum, err := strconv.Atoi(port)
+		portNum, err := strconv.ParseInt(port, 10, 0)
 		if err != nil {
 			return nil, fmt.Errorf("invalid port number %s: %s", port, err)
 		}
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String(protocol),
-			FromPort:   aws.Int64(int64(portNum)),
-			ToPort:     aws.Int64(int64(portNum)),
+			FromPort:   aws.Int64(portNum),
+			ToPort:     aws.Int64(portNum),
 			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 		})
 	}
