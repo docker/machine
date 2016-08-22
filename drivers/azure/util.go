@@ -127,13 +127,10 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 	// extra port numbers requested by user
 	basePri := 1000
 	for i, p := range extraPorts {
-		port, protocol, err := driverutil.SplitPortProto(p)
-		if err != nil {
-			return nil, err
-		}
+		port, protocol := driverutil.SplitPortProto(p)
 		proto, err := parseSecurityRuleProtocol(protocol)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot parse security rule protocol: %v", err)
 		}
 		log.Debugf("User-requested port to be opened on NSG: %v/%s", port, proto)
 		r := mkRule(basePri+i, fmt.Sprintf("Port%s%sAllowAny", port, proto), "User requested port to be accessible from Internet via docker-machine", "*", port, proto)

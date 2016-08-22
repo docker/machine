@@ -1104,10 +1104,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	}
 
 	for _, p := range d.OpenPorts {
-		port, protocol, err := driverutil.SplitPortProto(p)
-		if err != nil {
-			return nil, err
-		}
+		port, protocol := driverutil.SplitPortProto(p)
 		portNum, err := strconv.Atoi(port)
 		if err != nil {
 			return nil, fmt.Errorf("invalid port number %s: %s", port, err)

@@ -4,13 +4,10 @@ import "strings"
 
 // SplitPortProto splits a string in the format port/protocol, defaulting
 // protocol to "tcp" if not provided.
-func SplitPortProto(raw string) (port string, protocol string, err error) {
+func SplitPortProto(raw string) (port string, protocol string) {
 	parts := strings.SplitN(raw, "/", 2)
 	if len(parts) == 1 {
-		protocol = "tcp"
-	} else {
-		protocol = parts[1]
+		return parts[0], "tcp"
 	}
-	port = parts[0]
-	return port, protocol, nil
+	return parts[0], parts[1]
 }
