@@ -11,21 +11,15 @@ func TestSplitPortProtocol(t *testing.T) {
 		raw           string
 		expectedPort  string
 		expectedProto string
-		expectedErr   bool
 	}{
-		{"8080/tcp", "8080", "tcp", false},
-		{"90/udp", "90", "udp", false},
-		{"80", "80", "tcp", false},
+		{"8080/tcp", "8080", "tcp"},
+		{"90/udp", "90", "udp"},
+		{"80", "80", "tcp"},
 	}
 
 	for _, tc := range tests {
-		port, proto, err := SplitPortProto(tc.raw)
+		port, proto := SplitPortProto(tc.raw)
 		assert.Equal(t, tc.expectedPort, port)
 		assert.Equal(t, tc.expectedProto, proto)
-		if tc.expectedErr {
-			assert.Error(t, err)
-		} else {
-			assert.NoError(t, err)
-		}
 	}
 }
