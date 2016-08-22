@@ -17,7 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/docker/machine/drivers/util"
+	"github.com/docker/machine/drivers/driverutil"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -1104,7 +1104,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	}
 
 	for _, p := range d.OpenPorts {
-		port, protocol, err := util.SplitPortProto(p)
+		port, protocol, err := driverutil.SplitPortProto(p)
 		if err != nil {
 			return nil, err
 		}

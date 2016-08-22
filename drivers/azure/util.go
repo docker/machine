@@ -13,7 +13,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/docker/machine/drivers/azure/azureutil"
 	"github.com/docker/machine/drivers/azure/logutil"
-	"github.com/docker/machine/drivers/util"
+	"github.com/docker/machine/drivers/driverutil"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
@@ -128,7 +128,7 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 	// extra port numbers requested by user
 	basePri := 1000
 	for i, p := range extraPorts {
-		n, protocol, err := util.SplitPortProto(p)
+		n, protocol, err := driverutil.SplitPortProto(p)
 		if err != nil {
 			return nil, err
 		}
