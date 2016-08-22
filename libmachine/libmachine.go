@@ -17,7 +17,6 @@ import (
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
-	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/provision"
 	"github.com/docker/machine/libmachine/ssh"
@@ -158,7 +157,7 @@ func (api *Client) performCreate(h *host.Host) error {
 	}
 
 	log.Info("Waiting for machine to be running, this may take a few minutes...")
-	if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
+	if err := drivers.WaitFor(drivers.MachineInState(h.Driver, state.Running), h.Driver); err != nil {
 		return fmt.Errorf("Error waiting for machine to be running: %s", err)
 	}
 

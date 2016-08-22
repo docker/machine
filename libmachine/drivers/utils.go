@@ -2,6 +2,9 @@ package drivers
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
@@ -67,8 +70,23 @@ func sshAvailableFunc(d Driver) func() bool {
 
 func WaitForSSH(d Driver) error {
 	// Try to dial SSH for 30 seconds before timing out.
-	if err := mcnutils.WaitFor(sshAvailableFunc(d)); err != nil {
+	if err := WaitFor(sshAvailableFunc(d), d); err != nil {
 		return fmt.Errorf("Too many retries waiting for SSH to be available.  Last error: %s", err)
 	}
 	return nil
+}
+
+// WaitFor is similar to mcnutils.WaitFor except for the fact
+// that max attempts are not static. They'll depend on the
+// presence of an env var or the driver type.
+func WaitFor(f func() bool, d Driver) error {
+	maxAttempts, err := strconv.Atoi(os.Getenv("MACHINE_MAX_ATTEMPTS"))
+	if err != nil || maxAttempts < 1 {
+		if d.DriverName() == "generic" {
+			maxAttempts = 5
+		} else {
+			maxAttempts = 60
+		}
+	}
+	return mcnutils.WaitForSpecific(f, maxAttempts, 3*time.Second)
 }
