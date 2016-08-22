@@ -189,6 +189,45 @@ func TestDefaultVPCIsMissing(t *testing.T) {
 	assert.Empty(t, vpc)
 }
 
+func TestGetRegionZoneForDefaultEndpoint(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentials = &fileCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":             "test",
+			"amazonec2-region": "us-east-1",
+			"amazonec2-zone":   "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	regionZone := driver.getRegionZone()
+
+	assert.Equal(t, "us-east-1e", regionZone)
+	assert.NoError(t, err)
+}
+
+func TestGetRegionZoneForCustomEndpoint(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentials = &fileCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":               "test",
+			"amazonec2-endpoint": "https://someurl",
+			"amazonec2-region":   "custom-endpoint",
+			"amazonec2-zone":     "custom-zone",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	regionZone := driver.getRegionZone()
+
+	assert.Equal(t, "custom-zone", regionZone)
+	assert.NoError(t, err)
+}
+
 func TestDescribeAccountAttributeFails(t *testing.T) {
 	driver := NewDriver("machineFoo", "path")
 	driver.clientFactory = func() Ec2Client {
@@ -290,6 +329,24 @@ func TestPassingBothCLIArgWorked(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foobar", driver.AccessKey)
 	assert.Equal(t, "123", driver.SecretKey)
+}
+
+func TestEndpointIsMandatoryWhenSSLDisabled(t *testing.T) {
+	driver := NewTestDriver()
+	driver.awsCredentials = &cliCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                         "test",
+			"amazonec2-access-key":         "foobar",
+			"amazonec2-region":             "us-east-1",
+			"amazonec2-zone":               "e",
+			"amazonec2-insecure-transport": true,
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, err, errorDisableSSLWithoutCustomEndpoint)
 }
 
 var values = []string{
