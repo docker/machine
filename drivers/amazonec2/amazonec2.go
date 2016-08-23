@@ -490,7 +490,7 @@ func (d *Driver) checkPrereqs() error {
 		// try to find default
 		if len(subnets.Subnets) > 1 {
 			for _, subnet := range subnets.Subnets {
-				if *subnet.DefaultForAz {
+				if subnet.DefaultForAz != nil && *subnet.DefaultForAz {
 					d.SubnetId = *subnet.SubnetId
 					break
 				}
