@@ -158,6 +158,12 @@ func main() {
 			Usage:  "BugSnag API token for crash reporting",
 			Value:  "",
 		},
+		cli.IntFlag{
+			EnvVar: "MACHINE_MAX_ATTEMPTS",
+			Name:   "max-attempts",
+			Usage:  "Max attempts when waiting for the machine to be available",
+			Value:  0,
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {

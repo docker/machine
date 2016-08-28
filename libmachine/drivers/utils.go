@@ -2,14 +2,14 @@ package drivers
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 )
+
+var MaxAttempts int
 
 func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 	address, err := d.GetSSHHostname()
@@ -80,13 +80,12 @@ func WaitForSSH(d Driver) error {
 // that max attempts are not static. They'll depend on the
 // presence of an env var or the driver type.
 func WaitFor(f func() bool, d Driver) error {
-	maxAttempts, err := strconv.Atoi(os.Getenv("MACHINE_MAX_ATTEMPTS"))
-	if err != nil || maxAttempts < 1 {
+	if MaxAttempts < 1 {
 		if d.DriverName() == "generic" {
-			maxAttempts = 5
+			MaxAttempts = 5
 		} else {
-			maxAttempts = 60
+			MaxAttempts = 60
 		}
 	}
-	return mcnutils.WaitForSpecific(f, maxAttempts, 3*time.Second)
+	return mcnutils.WaitForSpecific(f, MaxAttempts, 3*time.Second)
 }
