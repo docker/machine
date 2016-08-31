@@ -10,6 +10,7 @@ import (
 type MockHostInfo struct {
 	name        string
 	ip          string
+	sshPort     int
 	sshUsername string
 	sshKeyPath  string
 }
@@ -20,6 +21,10 @@ func (h *MockHostInfo) GetMachineName() string {
 
 func (h *MockHostInfo) GetIP() (string, error) {
 	return h.ip, nil
+}
+
+func (h *MockHostInfo) GetSSHPort() (int, error) {
+	return h.sshPort, nil
 }
 
 func (h *MockHostInfo) GetSSHUsername() string {
@@ -93,6 +98,7 @@ func TestRemoteLocation(t *testing.T) {
 func TestGetScpCmd(t *testing.T) {
 	hostInfoLoader := MockHostInfoLoader{MockHostInfo{
 		ip:          "12.34.56.78",
+		sshPort:     234,
 		sshUsername: "root",
 		sshKeyPath:  "/fake/keypath/id_rsa",
 	}}
@@ -105,6 +111,8 @@ func TestGetScpCmd(t *testing.T) {
 		"-r",
 		"-o",
 		"IdentitiesOnly=yes",
+		"-P",
+		"234",
 		"-i",
 		"/fake/keypath/id_rsa",
 		"/tmp/foo",
