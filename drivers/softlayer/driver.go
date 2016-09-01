@@ -290,7 +290,7 @@ func (d *Driver) GetIP() (string, error) {
 		return d.getClient().VirtualGuest().GetPrivateIP(d.Id)
 	}
 
-	// Note: customized for IBM SoftLayer to bind on private IP only
+	// Note: a flag to have Docker Daemon bind on private IP
 	if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 		os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
 	}
@@ -363,9 +363,7 @@ func (d *Driver) getIP() (string, error) {
 			continue
 		}
 
-		// Note: customized for IBM SoftLayer to bind on private IP only
-		// if docker daemon is expected to run on private IP
-		// it will overwrite settings from PrivateNet
+		// Note: a flag to have Docker Daemon bind on private IP
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 			os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
 		}
