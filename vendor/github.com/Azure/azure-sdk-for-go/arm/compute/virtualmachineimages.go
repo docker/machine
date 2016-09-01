@@ -47,18 +47,18 @@ func NewVirtualMachineImagesClientWithBaseURI(baseURI string, subscriptionID str
 func (client VirtualMachineImagesClient) Get(location string, publisherName string, offer string, skus string, version string) (result VirtualMachineImage, err error) {
 	req, err := client.GetPreparer(location, publisherName, offer, skus, version)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -110,21 +110,21 @@ func (client VirtualMachineImagesClient) GetResponder(resp *http.Response) (resu
 // List gets a list of virtual machine images.
 //
 // filter is the filter to apply on the operation.
-func (client VirtualMachineImagesClient) List(location string, publisherName string, offer string, skus string, filter string, top *int32, orderby string) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) List(location string, publisherName string, offer string, skus string, filter string, top *int32, orderby string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListPreparer(location, publisherName, offer, skus, filter, top, orderby)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -170,7 +170,7 @@ func (client VirtualMachineImagesClient) ListSender(req *http.Request) (*http.Re
 
 // ListResponder handles the response to the List request. The method always
 // closes the http.Response Body.
-func (client VirtualMachineImagesClient) ListResponder(resp *http.Response) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) ListResponder(resp *http.Response) (result ListVirtualMachineImageResource, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -183,21 +183,21 @@ func (client VirtualMachineImagesClient) ListResponder(resp *http.Response) (res
 
 // ListOffers gets a list of virtual machine image offers.
 //
-func (client VirtualMachineImagesClient) ListOffers(location string, publisherName string) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) ListOffers(location string, publisherName string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListOffersPreparer(location, publisherName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListOffers", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListOffers", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListOffersSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListOffers", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListOffers", resp, "Failure sending request")
 	}
 
 	result, err = client.ListOffersResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListOffers", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListOffers", resp, "Failure responding to request")
 	}
 
 	return
@@ -232,7 +232,7 @@ func (client VirtualMachineImagesClient) ListOffersSender(req *http.Request) (*h
 
 // ListOffersResponder handles the response to the ListOffers request. The method always
 // closes the http.Response Body.
-func (client VirtualMachineImagesClient) ListOffersResponder(resp *http.Response) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) ListOffersResponder(resp *http.Response) (result ListVirtualMachineImageResource, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -245,21 +245,21 @@ func (client VirtualMachineImagesClient) ListOffersResponder(resp *http.Response
 
 // ListPublishers gets a list of virtual machine image publishers.
 //
-func (client VirtualMachineImagesClient) ListPublishers(location string) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) ListPublishers(location string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListPublishersPreparer(location)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListPublishers", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListPublishers", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListPublishersSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListPublishers", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListPublishers", resp, "Failure sending request")
 	}
 
 	result, err = client.ListPublishersResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListPublishers", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListPublishers", resp, "Failure responding to request")
 	}
 
 	return
@@ -293,7 +293,7 @@ func (client VirtualMachineImagesClient) ListPublishersSender(req *http.Request)
 
 // ListPublishersResponder handles the response to the ListPublishers request. The method always
 // closes the http.Response Body.
-func (client VirtualMachineImagesClient) ListPublishersResponder(resp *http.Response) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) ListPublishersResponder(resp *http.Response) (result ListVirtualMachineImageResource, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -306,21 +306,21 @@ func (client VirtualMachineImagesClient) ListPublishersResponder(resp *http.Resp
 
 // ListSkus gets a list of virtual machine image skus.
 //
-func (client VirtualMachineImagesClient) ListSkus(location string, publisherName string, offer string) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) ListSkus(location string, publisherName string, offer string) (result ListVirtualMachineImageResource, err error) {
 	req, err := client.ListSkusPreparer(location, publisherName, offer)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListSkus", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListSkus", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSkusSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListSkus", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListSkus", resp, "Failure sending request")
 	}
 
 	result, err = client.ListSkusResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "compute/VirtualMachineImagesClient", "ListSkus", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "compute.VirtualMachineImagesClient", "ListSkus", resp, "Failure responding to request")
 	}
 
 	return
@@ -356,7 +356,7 @@ func (client VirtualMachineImagesClient) ListSkusSender(req *http.Request) (*htt
 
 // ListSkusResponder handles the response to the ListSkus request. The method always
 // closes the http.Response Body.
-func (client VirtualMachineImagesClient) ListSkusResponder(resp *http.Response) (result VirtualMachineImageResourceList, err error) {
+func (client VirtualMachineImagesClient) ListSkusResponder(resp *http.Response) (result ListVirtualMachineImageResource, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),

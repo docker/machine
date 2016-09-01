@@ -66,18 +66,18 @@ func NewWithBaseURI(baseURI string, subscriptionID string) ManagementClient {
 func (client ManagementClient) CheckExistence(resourceGroupName string, resourceProviderNamespace string, parentResourcePath string, resourceType string, resourceName string, apiVersion string) (result autorest.Response, err error) {
 	req, err := client.CheckExistencePreparer(resourceGroupName, resourceProviderNamespace, parentResourcePath, resourceType, resourceName, apiVersion)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "CheckExistence", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "CheckExistence", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CheckExistenceSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "CheckExistence", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "CheckExistence", resp, "Failure sending request")
 	}
 
 	result, err = client.CheckExistenceResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ManagementClient", "CheckExistence", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.ManagementClient", "CheckExistence", resp, "Failure responding to request")
 	}
 
 	return
@@ -135,18 +135,18 @@ func (client ManagementClient) CheckExistenceResponder(resp *http.Response) (res
 func (client ManagementClient) CreateOrUpdate(resourceGroupName string, resourceProviderNamespace string, parentResourcePath string, resourceType string, resourceName string, apiVersion string, parameters GenericResource) (result GenericResource, err error) {
 	req, err := client.CreateOrUpdatePreparer(resourceGroupName, resourceProviderNamespace, parentResourcePath, resourceType, resourceName, apiVersion, parameters)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ManagementClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.ManagementClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
@@ -205,18 +205,18 @@ func (client ManagementClient) CreateOrUpdateResponder(resp *http.Response) (res
 func (client ManagementClient) Delete(resourceGroupName string, resourceProviderNamespace string, parentResourcePath string, resourceType string, resourceName string, apiVersion string) (result autorest.Response, err error) {
 	req, err := client.DeletePreparer(resourceGroupName, resourceProviderNamespace, parentResourcePath, resourceType, resourceName, apiVersion)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ManagementClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.ManagementClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
@@ -273,18 +273,18 @@ func (client ManagementClient) DeleteResponder(resp *http.Response) (result auto
 func (client ManagementClient) Get(resourceGroupName string, resourceProviderNamespace string, parentResourcePath string, resourceType string, resourceName string, apiVersion string) (result GenericResource, err error) {
 	req, err := client.GetPreparer(resourceGroupName, resourceProviderNamespace, parentResourcePath, resourceType, resourceName, apiVersion)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ManagementClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.ManagementClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -340,18 +340,18 @@ func (client ManagementClient) GetResponder(resp *http.Response) (result Generic
 func (client ManagementClient) List(filter string, top *int32) (result ResourceListResult, err error) {
 	req, err := client.ListPreparer(filter, top)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ManagementClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.ManagementClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -405,7 +405,7 @@ func (client ManagementClient) ListResponder(resp *http.Response) (result Resour
 func (client ManagementClient) ListNextResults(lastResults ResourceListResult) (result ResourceListResult, err error) {
 	req, err := lastResults.ResourceListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -414,44 +414,47 @@ func (client ManagementClient) ListNextResults(lastResults ResourceListResult) (
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ManagementClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "resources.ManagementClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return
 }
 
 // MoveResources begin moving resources.To determine whether the operation has
-// finished processing the request, call GetLongRunningOperationStatus.
+// finished processing the request, call GetLongRunningOperationStatus. This
+// method may poll for completion. Polling can be canceled by passing the
+// cancel channel argument. The channel will be used to cancel polling and
+// any outstanding HTTP requests.
 //
 // sourceResourceGroupName is source resource group name. parameters is move
 // resources' parameters.
-func (client ManagementClient) MoveResources(sourceResourceGroupName string, parameters MoveInfo) (result autorest.Response, err error) {
-	req, err := client.MoveResourcesPreparer(sourceResourceGroupName, parameters)
+func (client ManagementClient) MoveResources(sourceResourceGroupName string, parameters MoveInfo, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.MoveResourcesPreparer(sourceResourceGroupName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "MoveResources", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "MoveResources", nil, "Failure preparing request")
 	}
 
 	resp, err := client.MoveResourcesSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/ManagementClient", "MoveResources", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.ManagementClient", "MoveResources", resp, "Failure sending request")
 	}
 
 	result, err = client.MoveResourcesResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ManagementClient", "MoveResources", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.ManagementClient", "MoveResources", resp, "Failure responding to request")
 	}
 
 	return
 }
 
 // MoveResourcesPreparer prepares the MoveResources request.
-func (client ManagementClient) MoveResourcesPreparer(sourceResourceGroupName string, parameters MoveInfo) (*http.Request, error) {
+func (client ManagementClient) MoveResourcesPreparer(sourceResourceGroupName string, parameters MoveInfo, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"sourceResourceGroupName": url.QueryEscape(sourceResourceGroupName),
 		"subscriptionId":          url.QueryEscape(client.SubscriptionID),
@@ -461,7 +464,7 @@ func (client ManagementClient) MoveResourcesPreparer(sourceResourceGroupName str
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -476,8 +479,7 @@ func (client ManagementClient) MoveResourcesPreparer(sourceResourceGroupName str
 func (client ManagementClient) MoveResourcesSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // MoveResourcesResponder handles the response to the MoveResources request. The method always

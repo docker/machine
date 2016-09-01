@@ -73,25 +73,6 @@ func (provisioner *UbuntuSystemdProvisioner) Package(name string, action pkgacti
 		}
 	}
 
-	// handle the new docker-engine package; we can probably remove this
-	// after we have a few versions
-	if action == pkgaction.Upgrade && name == "docker-engine" {
-		// run the force remove on the existing lxc-docker package
-		// and remove the existing apt source list
-
-		commands := []string{
-			"rm /etc/apt/sources.list.d/docker.list || true",
-			"apt-get remove -y lxc-docker || true",
-		}
-
-		for _, cmd := range commands {
-			command := fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive %s", cmd)
-			if _, err := provisioner.SSHCommand(command); err != nil {
-				return err
-			}
-		}
-	}
-
 	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
 
 	log.Debugf("package: action=%s name=%s", action.String(), name)

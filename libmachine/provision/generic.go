@@ -47,9 +47,9 @@ func (provisioner *GenericProvisioner) SetHostname(hostname string) error {
 
 	// ubuntu/debian use 127.0.1.1 for non "localhost" loopback hostnames: https://www.debian.org/doc/manuals/debian-reference/ch05.en.html#_the_hostname_resolution
 	if _, err := provisioner.SSHCommand(fmt.Sprintf(`
-		if ! grep -xq .*%s /etc/hosts; then
-			if grep -xq 127.0.1.1.* /etc/hosts; then 
-				sudo sed -i 's/^127.0.1.1.*/127.0.1.1 %s/g' /etc/hosts; 
+		if ! grep -xq '.*\s%s' /etc/hosts; then
+			if grep -xq '127.0.1.1\s.*' /etc/hosts; then
+				sudo sed -i 's/^127.0.1.1\s.*/127.0.1.1 %s/g' /etc/hosts;
 			else 
 				echo '127.0.1.1 %s' | sudo tee -a /etc/hosts; 
 			fi
@@ -76,6 +76,10 @@ func (provisioner *GenericProvisioner) GetAuthOptions() auth.Options {
 	return provisioner.AuthOptions
 }
 
+func (provisioner *GenericProvisioner) GetSwarmOptions() swarm.Options {
+	return provisioner.SwarmOptions
+}
+
 func (provisioner *GenericProvisioner) SetOsReleaseInfo(info *OsRelease) {
 	provisioner.OsReleaseInfo = info
 }
@@ -94,7 +98,7 @@ func (provisioner *GenericProvisioner) GenerateDockerOptions(dockerPort int) (*D
 
 	engineConfigTmpl := `
 DOCKER_OPTS='
--H tcp://0.0.0.0:{{.DockerPort}}
+-H tcp://{{.BindIP}}:{{.DockerPort}}
 -H unix:///var/run/docker.sock
 --storage-driver {{.EngineOptions.StorageDriver}}
 --tlsverify
@@ -110,12 +114,22 @@ DOCKER_OPTS='
 {{range .EngineOptions.Env}}export \"{{ printf "%q" . }}\"
 {{end}}
 `
+	bindIP, err := provisioner.GetDriver().GetIP()
+	if err != nil {
+		return nil, err
+	}
+
+	if provisioner.Driver.DriverName() != "softlayer" {
+		bindIP = "0.0.0.0"
+	}
+
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {
 		return nil, err
 	}
 
 	engineConfigContext := EngineConfigContext{
+		BindIP:        bindIP,
 		DockerPort:    dockerPort,
 		AuthOptions:   provisioner.AuthOptions,
 		EngineOptions: provisioner.EngineOptions,

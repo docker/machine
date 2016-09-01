@@ -49,18 +49,18 @@ func NewProviderOperationDetailsClientWithBaseURI(baseURI string, subscriptionID
 func (client ProviderOperationDetailsClient) List(resourceProviderNamespace string, apiVersion string) (result ResourceProviderOperationDetailListResult, err error) {
 	req, err := client.ListPreparer(resourceProviderNamespace, apiVersion)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ProviderOperationDetailsClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.ProviderOperationDetailsClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/ProviderOperationDetailsClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.ProviderOperationDetailsClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ProviderOperationDetailsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.ProviderOperationDetailsClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -109,7 +109,7 @@ func (client ProviderOperationDetailsClient) ListResponder(resp *http.Response) 
 func (client ProviderOperationDetailsClient) ListNextResults(lastResults ResourceProviderOperationDetailListResult) (result ResourceProviderOperationDetailListResult, err error) {
 	req, err := lastResults.ResourceProviderOperationDetailListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/ProviderOperationDetailsClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.ProviderOperationDetailsClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -118,12 +118,12 @@ func (client ProviderOperationDetailsClient) ListNextResults(lastResults Resourc
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/ProviderOperationDetailsClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.ProviderOperationDetailsClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/ProviderOperationDetailsClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "resources.ProviderOperationDetailsClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return

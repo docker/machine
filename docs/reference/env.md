@@ -25,7 +25,7 @@ a particular machine.
     Options:
 
        --swarm	Display the Swarm config instead of the Docker daemon
-       --shell 	Force environment to be configured for a specified shell: [fish, cmd, powershell], default is sh/bash
+       --shell 	Force environment to be configured for a specified shell: [fish, cmd, powershell, tcsh], default is sh/bash
        --unset, -u	Unset variables instead of setting them
        --no-proxy	Add machine IP to NO_PROXY environment variable
 
@@ -62,11 +62,11 @@ values in the format which `fish` expects:
     # Run this command to configure your shell:
     # eval "$(docker-machine env overlay)"
 
-If you are on Windows and using either Powershell or `cmd.exe`, `docker-machine env`
+If you are on Windows and using either PowerShell or `cmd.exe`, `docker-machine env`
  Docker Machine should now detect your shell automatically. If the automagic detection does not work you
   can still override it using the `--shell` flag for `docker-machine env`.
 
-For Powershell:
+For PowerShell:
 
     $ docker-machine.exe env --shell powershell dev
     $Env:DOCKER_TLS_VERIFY = "1"
@@ -106,4 +106,4 @@ required for internet access.
 
 You may also want to visit the [documentation on setting `HTTP_PROXY` for the
 created daemon using the `--engine-env` flag for `docker-machine
-create`](https://docs.docker.com/machine/reference/create/#specifying-configuration-options-for-the-created-docker-engine).
+create`](/machine/reference/create.md#specifying-configuration-options-for-the-created-docker-engine).

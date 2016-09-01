@@ -1,4 +1,4 @@
-FROM golang:1.6
+FROM golang:1.7.0
 
 RUN go get  github.com/golang/lint/golint \
             github.com/mattn/goveralls \

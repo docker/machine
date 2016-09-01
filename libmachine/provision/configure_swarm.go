@@ -86,22 +86,21 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			},
 			Binds: []string{hostBind},
 			PortBindings: map[string][]dockerclient.PortBinding{
-				"3376/tcp": {
+				fmt.Sprintf("%s/tcp", port): {
 					{
 						HostIp:   "0.0.0.0",
 						HostPort: port,
 					},
 				},
 			},
-			NetworkMode: "host",
 		}
 
 		swarmMasterConfig := &dockerclient.ContainerConfig{
 			Image: swarmOptions.Image,
 			Env:   swarmOptions.Env,
 			ExposedPorts: map[string]struct{}{
-				"2375/tcp": {},
-				"3376/tcp": {},
+				"2375/tcp":                  {},
+				fmt.Sprintf("%s/tcp", port): {},
 			},
 			Cmd:        cmdMaster,
 			HostConfig: masterHostConfig,
@@ -113,28 +112,38 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		}
 	}
 
-	workerHostConfig := dockerclient.HostConfig{
-		RestartPolicy: dockerclient.RestartPolicy{
-			Name:              "always",
-			MaximumRetryCount: 0,
-		},
-		NetworkMode: "host",
-	}
+	if swarmOptions.Agent {
+		workerHostConfig := dockerclient.HostConfig{
+			RestartPolicy: dockerclient.RestartPolicy{
+				Name:              "always",
+				MaximumRetryCount: 0,
+			},
+		}
 
-	swarmWorkerConfig := &dockerclient.ContainerConfig{
-		Image: swarmOptions.Image,
-		Env:   swarmOptions.Env,
-		Cmd: []string{
+		cmdWorker := []string{
 			"join",
 			"--advertise",
 			advertiseInfo,
-			swarmOptions.Discovery,
-		},
-		HostConfig: workerHostConfig,
-	}
-	if swarmOptions.IsExperimental {
-		swarmWorkerConfig.Cmd = append([]string{"--experimental"}, swarmWorkerConfig.Cmd...)
-	}
+		}
+		for _, option := range swarmOptions.ArbitraryJoinFlags {
+			cmdWorker = append(cmdWorker, "--"+option)
+		}
+		cmdWorker = append(cmdWorker, swarmOptions.Discovery)
 
-	return mcndockerclient.CreateContainer(dockerHost, swarmWorkerConfig, "swarm-agent")
+		swarmWorkerConfig := &dockerclient.ContainerConfig{
+			Image:      swarmOptions.Image,
+			Env:        swarmOptions.Env,
+			Cmd:        cmdWorker,
+			HostConfig: workerHostConfig,
+		}
+		if swarmOptions.IsExperimental {
+			swarmWorkerConfig.Cmd = append([]string{"--experimental"}, swarmWorkerConfig.Cmd...)
+		}
+
+		err = mcndockerclient.CreateContainer(dockerHost, swarmWorkerConfig, "swarm-agent")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

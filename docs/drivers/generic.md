@@ -33,29 +33,13 @@ to the host.
     $ docker-machine create \
       --driver generic \
       --generic-ip-address=203.0.113.81 \
-      --generic-ssh-key=~/.ssh/id_rsa \
+      --generic-ssh-key ~/.ssh/id_rsa \
       vm
-
-### Password-protected SSH keys
-
-When an SSH identity is not provided (with the `--generic-ssh-key` flag),
-the SSH agent (if running) will be consulted. This makes it possible to
-easily use password-protected SSH keys.
-
-Note that this usage is _only_ supported if you're using the external SSH client,
-which is the default behaviour when the `ssh` binary is available. If you're
-using the native client (with `--native-ssh`), using the SSH agent is not yet
-supported.
-
-    $ docker-machine create \
-      --driver generic \
-      --generic-ip-address=203.0.113.81 \
-      other
 
 ### Sudo privileges
 
 The user that is used to SSH into the host can be specified with
-`--generic-ssh-user` flag. This user has to be have password-less sudo
+`--generic-ssh-user` flag. This user has to have password-less sudo
 privileges.
 If it's not the case, you need to edit the `sudoers` file and configure the user
 as a sudoer with `NOPASSWD`. See https://help.ubuntu.com/community/Sudoers.
@@ -76,6 +60,6 @@ Environment variables and default values:
 | -------------------------- | -------------------- | ------------------------- |
 | `--generic-engine-port`    | `GENERIC_ENGINE_PORT`| `2376`                    |
 | **`--generic-ip-address`** | `GENERIC_IP_ADDRESS` | -                         |
-| `--generic-ssh-key`        | `GENERIC_SSH_KEY`    | _(defers to `ssh-agent`)_ |
+| `--generic-ssh-key`        | `GENERIC_SSH_KEY`    | -                         |
 | `--generic-ssh-user`       | `GENERIC_SSH_USER`   | `root`                    |
 | `--generic-ssh-port`       | `GENERIC_SSH_PORT`   | `22`                      |

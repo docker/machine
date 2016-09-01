@@ -50,18 +50,18 @@ func NewUsagesClientWithBaseURI(baseURI string, subscriptionID string) UsagesCli
 func (client UsagesClient) List(location string) (result UsagesListResult, err error) {
 	req, err := client.ListPreparer(location)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/UsagesClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "network.UsagesClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/UsagesClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "network.UsagesClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/UsagesClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "network.UsagesClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -110,7 +110,7 @@ func (client UsagesClient) ListResponder(resp *http.Response) (result UsagesList
 func (client UsagesClient) ListNextResults(lastResults UsagesListResult) (result UsagesListResult, err error) {
 	req, err := lastResults.UsagesListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "network/UsagesClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "network.UsagesClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -119,12 +119,12 @@ func (client UsagesClient) ListNextResults(lastResults UsagesListResult) (result
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "network/UsagesClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "network.UsagesClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "network/UsagesClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "network.UsagesClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return

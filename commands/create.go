@@ -81,7 +81,7 @@ var (
 		},
 		cli.BoolFlag{
 			Name:  "swarm",
-			Usage: "Configure Machine with Swarm",
+			Usage: "Configure Machine to join a Swarm cluster",
 		},
 		cli.StringFlag{
 			Name:   "swarm-image",
@@ -105,7 +105,12 @@ var (
 		},
 		cli.StringSliceFlag{
 			Name:  "swarm-opt",
-			Usage: "Define arbitrary flags for swarm",
+			Usage: "Define arbitrary flags for Swarm master",
+			Value: &cli.StringSlice{},
+		},
+		cli.StringSliceFlag{
+			Name:  "swarm-join-opt",
+			Usage: "Define arbitrary flags for Swarm join",
 			Value: &cli.StringSlice{},
 		},
 		cli.StringFlag{
@@ -188,15 +193,17 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 			InstallURL:       c.String("engine-install-url"),
 		},
 		SwarmOptions: &swarm.Options{
-			IsSwarm:        c.Bool("swarm"),
-			Image:          c.String("swarm-image"),
-			Master:         c.Bool("swarm-master"),
-			Discovery:      c.String("swarm-discovery"),
-			Address:        c.String("swarm-addr"),
-			Host:           c.String("swarm-host"),
-			Strategy:       c.String("swarm-strategy"),
-			ArbitraryFlags: c.StringSlice("swarm-opt"),
-			IsExperimental: c.Bool("swarm-experimental"),
+			IsSwarm:            c.Bool("swarm") || c.Bool("swarm-master"),
+			Image:              c.String("swarm-image"),
+			Agent:              c.Bool("swarm"),
+			Master:             c.Bool("swarm-master"),
+			Discovery:          c.String("swarm-discovery"),
+			Address:            c.String("swarm-addr"),
+			Host:               c.String("swarm-host"),
+			Strategy:           c.String("swarm-strategy"),
+			ArbitraryFlags:     c.StringSlice("swarm-opt"),
+			ArbitraryJoinFlags: c.StringSlice("swarm-join-opt"),
+			IsExperimental:     c.Bool("swarm-experimental"),
 		},
 	}
 

@@ -142,7 +142,7 @@ func (m FileManager) InitiateFileTransferToGuest(ctx context.Context, auth types
 	return res.Returnval, nil
 }
 
-func (m FileManager) ListFiles(ctx context.Context, auth types.BaseGuestAuthentication, filePath string, index int, maxResults int, matchPattern string) (*types.GuestListFileInfo, error) {
+func (m FileManager) ListFiles(ctx context.Context, auth types.BaseGuestAuthentication, filePath string, index int32, maxResults int32, matchPattern string) (*types.GuestListFileInfo, error) {
 	req := types.ListFilesInGuest{
 		This:         m.Reference(),
 		Vm:           m.vm,

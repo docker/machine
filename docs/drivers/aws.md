@@ -57,8 +57,10 @@ You can use environment variables:
 -   `--amazonec2-zone`: The AWS zone to launch the instance in (i.e. one of a,b,c,d,e).
 -   `--amazonec2-subnet-id`: AWS VPC subnet id.
 -   `--amazonec2-security-group`: AWS VPC security group name.
+-   `--amazonec2-open-port`: Make additional port number(s) accessible from the Internet.
 -   `--amazonec2-tags`: AWS extra tag key-value pairs (comma-separated, e.g. key1,value1,key2,value2).
 -   `--amazonec2-instance-type`: The instance type to run.
+-   `--amazonec2-keypair-name`: AWS keypair to use; requires --amazonec2-ssh-keypath
 -   `--amazonec2-device-name`: The root device name of the instance.
 -   `--amazonec2-root-size`: The root disk size of the instance (in GB).
 -   `--amazonec2-volume-type`: The Amazon EBS volume type to be attached to the instance.
@@ -81,14 +83,16 @@ Environment variables and default values:
 | `--amazonec2-access-key`                 | `AWS_ACCESS_KEY_ID`     | -                |
 | `--amazonec2-secret-key`                 | `AWS_SECRET_ACCESS_KEY` | -                |
 | `--amazonec2-session-token`              | `AWS_SESSION_TOKEN`     | -                |
-| `--amazonec2-ami`                        | `AWS_AMI`               | `ami-5f709f34`   |
+| `--amazonec2-ami`                        | `AWS_AMI`               | `ami-c60b90d1`   |
 | `--amazonec2-region`                     | `AWS_DEFAULT_REGION`    | `us-east-1`      |
 | `--amazonec2-vpc-id`                     | `AWS_VPC_ID`            | -                |
 | `--amazonec2-zone`                       | `AWS_ZONE`              | `a`              |
 | `--amazonec2-subnet-id`                  | `AWS_SUBNET_ID`         | -                |
 | `--amazonec2-security-group`             | `AWS_SECURITY_GROUP`    | `docker-machine` |
+| `--amazonec2-open-port`                  | -                       | -                |
 | `--amazonec2-tags`                       | `AWS_TAGS`              | -                |
 | `--amazonec2-instance-type`              | `AWS_INSTANCE_TYPE`     | `t2.micro`       |
+| `--amazonec2-keypair-name`               | `AWS_KEYPAIR_NAME`      | -                |
 | `--amazonec2-device-name`                | `AWS_DEVICE_NAME`       | `/dev/sda1`      |
 | `--amazonec2-root-size`                  | `AWS_ROOT_SIZE`         | `16`             |
 | `--amazonec2-volume-type`                | `AWS_VOLUME_TYPE`       | `gp2`            |
@@ -105,21 +109,23 @@ Environment variables and default values:
 
 ## Default AMIs
 
-By default, the Amazon EC2 driver will use a daily image of Ubuntu 15.10 LTS.
+By default, the Amazon EC2 driver will use a daily image of Ubuntu 16.04 LTS.
 
 | Region         | AMI ID       |
 | -------------- | ------------ |
-| ap-northeast-1 | ami-b36d4edd |
-| ap-southeast-1 | ami-1069af73 |
-| ap-southeast-2 | ami-1d336a7e |
-| cn-north-1     | ami-79eb2214 |
-| eu-west-1      | ami-8aa67cf9 |
-| eu-central-1   | ami-ab0210c7 |
-| sa-east-1      | ami-185de774 |
-| us-east-1      | ami-26d5af4c |
-| us-west-1      | ami-9cbcd2fc |
-| us-west-2      | ami-16b1a077 |
-| us-gov-west-1  | ami-b0bad893 |
+| ap-northeast-1 | ami-51f13330 |
+| ap-northeast-2 | ami-a3915acd |
+| ap-southeast-1 | ami-fec51c9d |
+| ap-southeast-2 | ami-a78ebac4 |
+| ap-south-1     | ami-7e94fe11 |
+| cn-north-1     | ami-2c3bf141 |
+| eu-central-1   | ami-004abc6f |
+| eu-west-1      | ami-c06b1eb3 |
+| sa-east-1      | ami-a674e2ca |
+| us-east-1      | ami-c60b90d1 |
+| us-west-1      | ami-1bf0b37b |
+| us-west-2      | ami-f701cb97 |
+| us-gov-west-1  | ami-76f34a17 |
 
 ## Security Group
 
@@ -130,7 +136,8 @@ Note that a security group will be created and associated to the host. This secu
 -   swarm (3376/tcp), only if the node is a swarm master
 
 If you specify a security group yourself using the `--amazonec2-security-group` flag, the above ports will be checked and opened and the security group modified.
-If you want more ports to be opened, like application specific ports, use the aws console and modify the configuration manually.
+If you want more ports to be opened, like application specific ports, you can use the `--amazonec2-open-port` flag to
+pass a list of port numbers to be opened or use the aws console and modify the configuration manually.
 
 ## VPC ID
 
@@ -155,7 +162,7 @@ This example assumes the VPC ID was found in the `a` availability zone. Use the`
 ## VPC Connectivity
 Machine uses SSH to complete the set up of instances in EC2 and requires the ability to access the instance directly.  
 
-If you use the flag `--amazonec2-private-address-only`, you will need to ensure that you have some method of accessing the new instance from within the internal network of the VPC (e.g. a corporate VPN to the VPC, a VPN instance inside the VPC or using Docker-machine from an instance within your VPC). 
+If you use the flag `--amazonec2-private-address-only`, you will need to ensure that you have some method of accessing the new instance from within the internal network of the VPC (e.g. a corporate VPN to the VPC, a VPN instance inside the VPC or using Docker-machine from an instance within your VPC).
 
 Configuration of VPCs is beyond the scope of this guide, however the first step in troubleshooting is ensuring if you are using private subnets that you follow the design guidance in the [AWS VPC User Guide](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Scenario2.html) and have some form of NAT available so that the set up process can access the internet to complete set up.
 

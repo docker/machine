@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"regexp"
 	"text/template"
 
 	"github.com/docker/machine/libmachine/auth"
@@ -28,17 +29,26 @@ gpgkey=https://yum.dockerproject.org/gpg
 `
 	engineConfigTemplate = `[Unit]
 Description=Docker Application Container Engine
-After=network.target docker.socket
-Requires=docker.socket
+After=network.target
 
 [Service]
-ExecStart=/usr/bin/docker daemon -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+Type=notify
+ExecStart=/usr/bin/docker daemon -H tcp://{{.BindIP}}:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+ExecReload=/bin/kill -s HUP $MAINPID
 MountFlags=slave
-LimitNOFILE=1048576
-LimitNPROC=1048576
+LimitNOFILE=infinity
+LimitNPROC=infinity
 LimitCORE=infinity
+TimeoutStartSec=0
+Delegate=yes
+KillMode=process
 Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
+
+[Install]
+WantedBy=multi-user.target
 `
+
+	majorVersionRE = regexp.MustCompile(`^(\d+)(\..*)?`)
 )
 
 type PackageListInfo struct {
@@ -168,7 +178,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 	}
 
 	// update OS -- this is needed for libdevicemapper and the docker install
-	if _, err := provisioner.SSHCommand("sudo yum -y update"); err != nil {
+	if _, err := provisioner.SSHCommand("sudo -E yum -y update"); err != nil {
 		return err
 	}
 
@@ -207,6 +217,15 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
+	bindIP, err := provisioner.GetDriver().GetIP()
+	if err != nil {
+		return nil, err
+	}
+
+	if provisioner.Driver.DriverName() != "softlayer" {
+		bindIP = "0.0.0.0"
+	}
+
 	// systemd / redhat will not load options if they are on newlines
 	// instead, it just continues with a different set of options; yeah...
 	t, err := template.New("engineConfig").Parse(engineConfigTemplate)
@@ -215,6 +234,7 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	}
 
 	engineConfigContext := EngineConfigContext{
+		BindIP:           bindIP,
 		DockerPort:       dockerPort,
 		AuthOptions:      provisioner.AuthOptions,
 		EngineOptions:    provisioner.EngineOptions,
@@ -245,7 +265,14 @@ func generateYumRepoList(provisioner Provisioner) (*bytes.Buffer, error) {
 		packageListInfo.OsReleaseVersion = "7"
 	case "fedora":
 		packageListInfo.OsRelease = "fedora"
-		packageListInfo.OsReleaseVersion = "22"
+		packageListInfo.OsReleaseVersion = "24"
+	case "ol":
+		packageListInfo.OsRelease = "oraclelinux"
+		v := majorVersionRE.FindStringSubmatch(releaseInfo.Version)
+		if v == nil {
+			return nil, fmt.Errorf("unable to determine major version of %s", releaseInfo.Version)
+		}
+		packageListInfo.OsReleaseVersion = v[1]
 	default:
 		return nil, ErrUnknownYumOsRelease
 	}

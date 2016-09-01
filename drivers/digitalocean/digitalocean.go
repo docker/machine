@@ -35,7 +35,7 @@ type Driver struct {
 const (
 	defaultSSHPort = 22
 	defaultSSHUser = "root"
-	defaultImage   = "ubuntu-15-10-x64"
+	defaultImage   = "ubuntu-16-04-x64"
 	defaultRegion  = "nyc3"
 	defaultSize    = "512mb"
 )
@@ -345,6 +345,14 @@ func (d *Driver) getClient() *godo.Client {
 	client := oauth2.NewClient(oauth2.NoContext, tokenSource)
 
 	return godo.NewClient(client)
+}
+
+func (d *Driver) GetSSHKeyPath() string {
+	// don't set SSHKeyPath when using an existing key fingerprint
+	if d.SSHKeyPath == "" && d.SSHKeyFingerprint == "" {
+		d.SSHKeyPath = d.ResolveStorePath("id_rsa")
+	}
+	return d.SSHKeyPath
 }
 
 func (d *Driver) publicSSHKeyPath() string {

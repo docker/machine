@@ -239,13 +239,26 @@ func (d *Driver) GetIP() (string, error) {
 		return "", err
 	}
 
-	rawIP, err := vm.WaitForIP(ctx)
+	configuredMacIPs, err := vm.WaitForNetIP(ctx, false)
 	if err != nil {
 		return "", err
 	}
 
-	ip := strings.Trim(strings.Split(rawIP, "\n")[0], " ")
-	return ip, nil
+	for _, ips := range configuredMacIPs {
+		if len(ips) >= 0 {
+			// Prefer IPv4 address, but fall back to first/IPv6
+			preferredIP := ips[0]
+			for _, ip := range ips {
+				if net.ParseIP(ip).To4() != nil {
+					preferredIP = ip
+					break
+				}
+			}
+			return preferredIP, nil
+		}
+	}
+
+	return "", errors.New("No IP despite waiting for one - check DHCP status")
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -404,7 +417,7 @@ func (d *Driver) Create() error {
 		Name:     d.MachineName,
 		GuestId:  "otherLinux64Guest",
 		Files:    &types.VirtualMachineFileInfo{VmPathName: fmt.Sprintf("[%s]", dss.Name())},
-		NumCPUs:  d.CPU,
+		NumCPUs:  int32(d.CPU),
 		MemoryMB: int64(d.Memory),
 	}
 
@@ -455,7 +468,8 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	disk := devices.CreateDisk(controller, dss.Path(fmt.Sprintf("%s/%s.vmdk", d.MachineName, d.MachineName)))
+	disk := devices.CreateDisk(controller, dss.Reference(),
+		dss.Path(fmt.Sprintf("%s/%s.vmdk", d.MachineName, d.MachineName)))
 
 	// Convert MB to KB
 	disk.CapacityInKB = int64(d.DiskSize) * 1024
@@ -864,8 +878,8 @@ type FileAttrFlag struct {
 }
 
 func (f *FileAttrFlag) SetPerms(owner, group, perms int) {
-	f.OwnerId = owner
-	f.GroupId = group
+	f.OwnerId = int32(owner)
+	f.GroupId = int32(group)
 	f.Permissions = int64(perms)
 }
 

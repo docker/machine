@@ -1,10 +1,13 @@
 package azure
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 
 	"github.com/docker/machine/drivers/azure/azureutil"
 	"github.com/docker/machine/libmachine/drivers"
@@ -22,11 +25,11 @@ const (
 	defaultAzureLocation        = "westus"
 	defaultSSHUser              = "docker-user" // 'root' not allowed on Azure
 	defaultDockerPort           = 2376
-	defaultAzureImage           = "canonical:UbuntuServer:15.10:latest"
+	defaultAzureImage           = "canonical:UbuntuServer:16.04.0-LTS:latest"
 	defaultAzureVNet            = "docker-machine-vnet"
 	defaultAzureSubnet          = "docker-machine"
 	defaultAzureSubnetPrefix    = "192.168.0.0/16"
-	defaultStorageType          = storage.StandardLRS
+	defaultStorageType          = string(storage.StandardLRS)
 	defaultAzureAvailabilitySet = "docker-machine"
 )
 
@@ -48,6 +51,10 @@ const (
 	flAzureUsePrivateIP    = "azure-use-private-ip"
 	flAzureStaticPublicIP  = "azure-static-public-ip"
 	flAzureNoPublicIP      = "azure-no-public-ip"
+	flAzureStorageType     = "azure-storage-type"
+	flAzureCustomData      = "azure-custom-data"
+	flAzureClientID        = "azure-client-id"
+	flAzureClientSecret    = "azure-client-secret"
 )
 
 const (
@@ -58,6 +65,9 @@ const (
 // Driver represents Azure Docker Machine Driver.
 type Driver struct {
 	*drivers.BaseDriver
+
+	ClientID     string // service principal account name
+	ClientSecret string // service principal account password
 
 	Environment    string
 	SubscriptionID string
@@ -71,12 +81,14 @@ type Driver struct {
 	SubnetName      string
 	SubnetPrefix    string
 	AvailabilitySet string
+	StorageType     string
 
 	OpenPorts      []string
 	PrivateIPAddr  string
 	UsePrivateIP   bool
 	NoPublicIP     bool
 	StaticPublicIP bool
+	CustomDataFile string
 
 	// Ephemeral fields
 	ctx        *azureutil.DeploymentContext
@@ -151,7 +163,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureVNet,
-			Usage:  "Azure Virtual Network name to connect the virtual machine",
+			Usage:  "Azure Virtual Network name to connect the virtual machine (in [resourcegroup:]name format)",
 			EnvVar: "AZURE_VNET",
 			Value:  defaultAzureVNet,
 		},
@@ -174,8 +186,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultAzureAvailabilitySet,
 		},
 		mcnflag.StringFlag{
+			Name:   flAzureCustomData,
+			EnvVar: "AZURE_CUSTOM_DATA_FILE",
+			Usage:  "Path to file with custom-data",
+		},
+		mcnflag.StringFlag{
 			Name:  flAzurePrivateIPAddr,
 			Usage: "Specify a static private IP address for the machine",
+		},
+		mcnflag.StringFlag{
+			Name:   flAzureStorageType,
+			Usage:  "Type of Storage Account to host the OS Disk for the machine",
+			EnvVar: "AZURE_STORAGE_TYPE",
+			Value:  defaultStorageType,
 		},
 		mcnflag.BoolFlag{
 			Name:  flAzureUsePrivateIP,
@@ -192,6 +215,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringSliceFlag{
 			Name:  flAzurePorts,
 			Usage: "Make the specified port number accessible from the Internet",
+		},
+		mcnflag.StringFlag{
+			Name:   flAzureClientID,
+			Usage:  "Azure Service Principal Account ID (optional, browser auth is used if not specified)",
+			EnvVar: "AZURE_CLIENT_ID",
+		},
+		mcnflag.StringFlag{
+			Name:   flAzureClientSecret,
+			Usage:  "Azure Service Principal Account password (optional, browser auth is used if not specified)",
+			EnvVar: "AZURE_CLIENT_SECRET",
 		},
 	}
 }
@@ -217,6 +250,7 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 		{&d.SubnetName, flAzureSubnet},
 		{&d.SubnetPrefix, flAzureSubnetPrefix},
 		{&d.AvailabilitySet, flAzureAvailabilitySet},
+		{&d.StorageType, flAzureStorageType},
 	}
 	for _, f := range flags {
 		*f.target = fl.String(f.flag)
@@ -233,6 +267,10 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.NoPublicIP = fl.Bool(flAzureNoPublicIP)
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
+	d.CustomDataFile = fl.String(flAzureCustomData)
+
+	d.ClientID = fl.String(flAzureClientID)
+	d.ClientSecret = fl.String(flAzureClientSecret)
 
 	// Set flags on the BaseDriver
 	d.BaseDriver.SSHPort = sshPort
@@ -247,6 +285,12 @@ func (d *Driver) DriverName() string { return driverName }
 
 // PreCreateCheck validates if driver values are valid to create the machine.
 func (d *Driver) PreCreateCheck() (err error) {
+	if d.CustomDataFile != "" {
+		if _, err := os.Stat(d.CustomDataFile); os.IsNotExist(err) {
+			return fmt.Errorf("custom-data file %s could not be found", d.CustomDataFile)
+		}
+	}
+
 	c, err := d.newAzureClient()
 	if err != nil {
 		return err
@@ -296,6 +340,15 @@ func (d *Driver) Create() error {
 		return err
 	}
 
+	var customData string
+	if d.CustomDataFile != "" {
+		buf, err := ioutil.ReadFile(d.CustomDataFile)
+		if err != nil {
+			return err
+		}
+		customData = base64.StdEncoding.EncodeToString(buf)
+	}
+
 	if err := c.CreateResourceGroup(d.ResourceGroup, d.Location); err != nil {
 		return err
 	}
@@ -305,10 +358,11 @@ func (d *Driver) Create() error {
 	if err := c.CreateNetworkSecurityGroup(d.ctx, d.ResourceGroup, d.naming().NSG(), d.Location, d.ctx.FirewallRules); err != nil {
 		return err
 	}
-	if err := c.CreateVirtualNetworkIfNotExists(d.ResourceGroup, d.VirtualNetwork, d.Location); err != nil {
+	vnetResourceGroup, vNetName := parseVirtualNetwork(d.VirtualNetwork, d.ResourceGroup)
+	if err := c.CreateVirtualNetworkIfNotExists(vnetResourceGroup, vNetName, d.Location); err != nil {
 		return err
 	}
-	if err := c.CreateSubnet(d.ctx, d.ResourceGroup, d.VirtualNetwork, d.SubnetName, d.SubnetPrefix); err != nil {
+	if err := c.CreateSubnet(d.ctx, vnetResourceGroup, vNetName, d.SubnetName, d.SubnetPrefix); err != nil {
 		return err
 	}
 	if d.NoPublicIP {
@@ -322,14 +376,14 @@ func (d *Driver) Create() error {
 		d.ctx.PublicIPAddressID, d.ctx.SubnetID, d.ctx.NetworkSecurityGroupID, d.PrivateIPAddr); err != nil {
 		return err
 	}
-	if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, defaultStorageType); err != nil {
+	if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, storage.AccountType(d.StorageType)); err != nil {
 		return err
 	}
 	if err := d.generateSSHKey(d.ctx); err != nil {
 		return err
 	}
 	if err := c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
-		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, d.ctx.StorageAccount); err != nil {
+		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount); err != nil {
 		return err
 	}
 	return nil

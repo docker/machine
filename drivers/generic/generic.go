@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path"
 	"strconv"
 	"time"
 
@@ -49,7 +50,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   "generic-ssh-key",
-			Usage:  "SSH private key path (if not provided, identities in ssh-agent will be used)",
+			Usage:  "SSH private key path (if not provided, default SSH key will be used)",
 			Value:  "",
 			EnvVar: "GENERIC_SSH_KEY",
 		},
@@ -87,13 +88,6 @@ func (d *Driver) GetSSHUsername() string {
 }
 
 func (d *Driver) GetSSHKeyPath() string {
-	if d.SSHKey == "" {
-		return ""
-	}
-
-	if d.SSHKeyPath == "" {
-		d.SSHKeyPath = d.ResolveStorePath("id_rsa")
-	}
 	return d.SSHKeyPath
 }
 
@@ -114,8 +108,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 func (d *Driver) PreCreateCheck() error {
 	if d.SSHKey != "" {
 		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
-			return fmt.Errorf("Ssh key does not exist: %q", d.SSHKey)
+			return fmt.Errorf("SSH key does not exist: %q", d.SSHKey)
 		}
+
+		// TODO: validate the key is a valid key
 	}
 
 	return nil
@@ -123,17 +119,17 @@ func (d *Driver) PreCreateCheck() error {
 
 func (d *Driver) Create() error {
 	if d.SSHKey == "" {
-		log.Info("No SSH key specified. Connecting to this machine now and in the" +
-			" future will require the ssh agent to contain the appropriate key.")
+		log.Info("No SSH key specified. Assuming an existing key at the default location.")
 	} else {
 		log.Info("Importing SSH key...")
-		// TODO: validate the key is a valid key
-		if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
-			return fmt.Errorf("unable to copy ssh key: %s", err)
+
+		d.SSHKeyPath = d.ResolveStorePath(path.Base(d.SSHKey))
+		if err := copySSHKey(d.SSHKey, d.SSHKeyPath); err != nil {
+			return err
 		}
 
-		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
-			return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+		if err := copySSHKey(d.SSHKey+".pub", d.SSHKeyPath+".pub"); err != nil {
+			log.Infof("Couldn't copy SSH public key : %s", err)
 		}
 	}
 
@@ -184,5 +180,17 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Remove() error {
+	return nil
+}
+
+func copySSHKey(src, dst string) error {
+	if err := mcnutils.CopyFile(src, dst); err != nil {
+		return fmt.Errorf("unable to copy ssh key: %s", err)
+	}
+
+	if err := os.Chmod(dst, 0600); err != nil {
+		return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+	}
+
 	return nil
 }

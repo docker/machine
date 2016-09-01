@@ -6,7 +6,7 @@ PROJECT_URL="git@github.com:${GITHUB_USER}/${GITHUB_REPO}"
 
 function usage {
   echo "Usage: "
-  echo "   GITHUB_TOKEN=XXXXX ${0} 0.6.x"
+  echo "   GITHUB_TOKEN=XXXXX ${0} [X.Y.Z]"
 }
 
 function display {
@@ -61,7 +61,7 @@ GITHUB_VERSION="v${VERSION}"
 RELEASE_DIR="$(dirname "$(git rev-parse --show-toplevel)")/release-${VERSION}"
 GITHUB_RELEASE_FILE="github-release-${VERSION}.md"
 
-LAST_RELEASE_VERSION=$(git describe --abbrev=0 --tags)
+LAST_RELEASE_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
 checkError "Unable to find current version tag"
 
 display "Starting release from ${LAST_RELEASE_VERSION} to ${GITHUB_VERSION} on ${PROJECT_URL} with token ${GITHUB_TOKEN}"
@@ -120,7 +120,7 @@ display "Bump version number to ${VERSION}"
 # Why 'sed' and then 'mv' instead of 'sed -i'?  BSD / GNU sed compatibility.
 # Macs have BSD sed by default, Linux has GNU sed.  See
 # http://unix.stackexchange.com/questions/92895/how-to-achieve-portability-with-sed-i-in-place-editing
-sed -e "s/Version = \".*-dev\"/Version = \"${VERSION}\"/g" version/version.go >version/version.go.new
+sed -e "s/Version = \".*\"$/Version = \"${VERSION}\"/g" version/version.go >version/version.go.new
 checkError "Unable to change version in version/version.go"
 mv -- version/version.go.new version/version.go
 

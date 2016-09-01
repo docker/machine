@@ -30,8 +30,9 @@ var (
 func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
 	driver := NewTestDriver()
 
-	perms := driver.configureSecurityGroupPermissions(securityGroup)
+	perms, err := driver.configureSecurityGroupPermissions(securityGroup)
 
+	assert.Nil(t, err)
 	assert.Len(t, perms, 2)
 }
 
@@ -46,8 +47,9 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 		},
 	}
 
-	perms := driver.configureSecurityGroupPermissions(group)
+	perms, err := driver.configureSecurityGroupPermissions(group)
 
+	assert.Nil(t, err)
 	assert.Len(t, perms, 1)
 	assert.Equal(t, testDockerPort, *perms[0].FromPort)
 }
@@ -63,8 +65,9 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 		},
 	}
 
-	perms := driver.configureSecurityGroupPermissions(group)
+	perms, err := driver.configureSecurityGroupPermissions(group)
 
+	assert.Nil(t, err)
 	assert.Len(t, perms, 1)
 	assert.Equal(t, testSSHPort, *perms[0].FromPort)
 }
@@ -85,9 +88,34 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 		},
 	}
 
-	perms := driver.configureSecurityGroupPermissions(group)
+	perms, err := driver.configureSecurityGroupPermissions(group)
 
+	assert.Nil(t, err)
 	assert.Empty(t, perms)
+}
+
+func TestConfigureSecurityGroupPermissionsOpenPorts(t *testing.T) {
+	driver := NewTestDriver()
+	driver.OpenPorts = []string{"8888/tcp", "8080/udp", "9090"}
+	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
+
+	assert.NoError(t, err)
+	assert.Len(t, perms, 5)
+	assert.Equal(t, aws.Int64(int64(8888)), perms[2].ToPort)
+	assert.Equal(t, aws.String("tcp"), perms[2].IpProtocol)
+	assert.Equal(t, aws.Int64(int64(8080)), perms[3].ToPort)
+	assert.Equal(t, aws.String("udp"), perms[3].IpProtocol)
+	assert.Equal(t, aws.Int64(int64(9090)), perms[4].ToPort)
+	assert.Equal(t, aws.String("tcp"), perms[4].IpProtocol)
+}
+
+func TestConfigureSecurityGroupPermissionsInvalidOpenPorts(t *testing.T) {
+	driver := NewTestDriver()
+	driver.OpenPorts = []string{"2222/tcp", "abc1"}
+	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
+
+	assert.Error(t, err)
+	assert.Nil(t, perms)
 }
 
 func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
@@ -107,8 +135,9 @@ func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
 		},
 	}
 
-	perms := driver.configureSecurityGroupPermissions(group)
+	perms, err := driver.configureSecurityGroupPermissions(group)
 
+	assert.Nil(t, err)
 	assert.Len(t, perms, 1)
 	assert.Equal(t, testSwarmPort, *perms[0].FromPort)
 }
@@ -158,6 +187,45 @@ func TestDefaultVPCIsMissing(t *testing.T) {
 
 	assert.EqualError(t, err, "No default-vpc attribute")
 	assert.Empty(t, vpc)
+}
+
+func TestGetRegionZoneForDefaultEndpoint(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentials = &fileCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":             "test",
+			"amazonec2-region": "us-east-1",
+			"amazonec2-zone":   "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	regionZone := driver.getRegionZone()
+
+	assert.Equal(t, "us-east-1e", regionZone)
+	assert.NoError(t, err)
+}
+
+func TestGetRegionZoneForCustomEndpoint(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentials = &fileCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":               "test",
+			"amazonec2-endpoint": "https://someurl",
+			"amazonec2-region":   "custom-endpoint",
+			"amazonec2-zone":     "custom-zone",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	regionZone := driver.getRegionZone()
+
+	assert.Equal(t, "custom-zone", regionZone)
+	assert.NoError(t, err)
 }
 
 func TestDescribeAccountAttributeFails(t *testing.T) {
@@ -261,6 +329,24 @@ func TestPassingBothCLIArgWorked(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foobar", driver.AccessKey)
 	assert.Equal(t, "123", driver.SecretKey)
+}
+
+func TestEndpointIsMandatoryWhenSSLDisabled(t *testing.T) {
+	driver := NewTestDriver()
+	driver.awsCredentials = &cliCredentials{}
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                         "test",
+			"amazonec2-access-key":         "foobar",
+			"amazonec2-region":             "us-east-1",
+			"amazonec2-zone":               "e",
+			"amazonec2-insecure-transport": true,
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, err, errorDisableSSLWithoutCustomEndpoint)
 }
 
 var values = []string{

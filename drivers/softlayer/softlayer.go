@@ -31,11 +31,10 @@ type HostSpec struct {
 	LocalDisk                      bool              `json:"localDiskFlag"`
 	PrimaryNetworkComponent        *NetworkComponent `json:"primaryNetworkComponent,omitempty"`
 	PrimaryBackendNetworkComponent *NetworkComponent `json:"primaryBackendNetworkComponent,omitempty"`
-
 }
 
 type NetworkMaxSpeed struct {
-	MaxSpeed    int  `json:"maxSpeed"`
+	MaxSpeed int `json:"maxSpeed"`
 }
 
 type NetworkComponent struct {

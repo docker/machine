@@ -520,6 +520,12 @@ func (client ListUsagesResult) ListUsagesResultPreparer() (*http.Request, error)
 		autorest.WithBaseURL(to.String(client.NextLink)))
 }
 
+// ListVirtualMachineImageResource is
+type ListVirtualMachineImageResource struct {
+	autorest.Response `json:"-"`
+	Value             *[]VirtualMachineImageResource `json:"value,omitempty"`
+}
+
 // LongRunningOperationProperties is compute-specific operation properties,
 // including output
 type LongRunningOperationProperties struct {
@@ -803,12 +809,6 @@ type VirtualMachineImageResource struct {
 	Name     *string             `json:"name,omitempty"`
 	Location *string             `json:"location,omitempty"`
 	Tags     *map[string]*string `json:"tags,omitempty"`
-}
-
-// VirtualMachineImageResourceList is
-type VirtualMachineImageResourceList struct {
-	autorest.Response `json:"-"`
-	Value             *VirtualMachineImageResource `json:"value,omitempty"`
 }
 
 // VirtualMachineInstanceView is the instance view of a virtual machine.

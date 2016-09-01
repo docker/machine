@@ -91,10 +91,29 @@ func findVBoxInstallDirInRegistry() (string, error) {
 }
 
 func getShareDriveAndName() (string, string) {
-	return "c/Users", "c:\\Users"
+	return "c/Users", "\\\\?\\c:\\Users"
 }
 
 func isHyperVInstalled() bool {
+	// check if hyper-v is installed
 	_, err := exec.LookPath("vmms.exe")
-	return err == nil
+	if err != nil {
+		errmsg := "Hyper-V is not installed."
+		log.Debugf(errmsg, err)
+		return false
+	}
+
+	// check to see if a hypervisor is present. if hyper-v is installed and enabled,
+	// display an error explaining the incompatibility between virtualbox and hyper-v.
+	output, err := cmdOutput("wmic", "computersystem", "get", "hypervisorpresent")
+
+	if err != nil {
+		errmsg := "Could not check to see if Hyper-V is running."
+		log.Debugf(errmsg, err)
+		return false
+	}
+
+	enabled := strings.Contains(output, "TRUE")
+	return enabled
+
 }

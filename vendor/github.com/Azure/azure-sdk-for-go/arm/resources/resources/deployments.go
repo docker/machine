@@ -49,18 +49,18 @@ func NewDeploymentsClientWithBaseURI(baseURI string, subscriptionID string) Depl
 func (client DeploymentsClient) Cancel(resourceGroupName string, deploymentName string) (result autorest.Response, err error) {
 	req, err := client.CancelPreparer(resourceGroupName, deploymentName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Cancel", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Cancel", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CancelSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Cancel", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Cancel", resp, "Failure sending request")
 	}
 
 	result, err = client.CancelResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Cancel", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Cancel", resp, "Failure responding to request")
 	}
 
 	return
@@ -112,18 +112,18 @@ func (client DeploymentsClient) CancelResponder(resp *http.Response) (result aut
 func (client DeploymentsClient) CheckExistence(resourceGroupName string, deploymentName string) (result autorest.Response, err error) {
 	req, err := client.CheckExistencePreparer(resourceGroupName, deploymentName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "CheckExistence", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "CheckExistence", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CheckExistenceSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "CheckExistence", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "CheckExistence", resp, "Failure sending request")
 	}
 
 	result, err = client.CheckExistenceResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "CheckExistence", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "CheckExistence", resp, "Failure responding to request")
 	}
 
 	return
@@ -168,33 +168,36 @@ func (client DeploymentsClient) CheckExistenceResponder(resp *http.Response) (re
 	return
 }
 
-// CreateOrUpdate create a named template deployment using a template.
+// CreateOrUpdate create a named template deployment using a template. This
+// method may poll for completion. Polling can be canceled by passing the
+// cancel channel argument. The channel will be used to cancel polling and
+// any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. The name is case
 // insensitive. deploymentName is the name of the deployment. parameters is
 // additional parameters supplied to the operation.
-func (client DeploymentsClient) CreateOrUpdate(resourceGroupName string, deploymentName string, parameters Deployment) (result autorest.Response, err error) {
-	req, err := client.CreateOrUpdatePreparer(resourceGroupName, deploymentName, parameters)
+func (client DeploymentsClient) CreateOrUpdate(resourceGroupName string, deploymentName string, parameters Deployment, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.CreateOrUpdatePreparer(resourceGroupName, deploymentName, parameters, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "CreateOrUpdate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "CreateOrUpdate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "CreateOrUpdate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "CreateOrUpdate", resp, "Failure sending request")
 	}
 
 	result, err = client.CreateOrUpdateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "CreateOrUpdate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "CreateOrUpdate", resp, "Failure responding to request")
 	}
 
 	return
 }
 
 // CreateOrUpdatePreparer prepares the CreateOrUpdate request.
-func (client DeploymentsClient) CreateOrUpdatePreparer(resourceGroupName string, deploymentName string, parameters Deployment) (*http.Request, error) {
+func (client DeploymentsClient) CreateOrUpdatePreparer(resourceGroupName string, deploymentName string, parameters Deployment, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"deploymentName":    url.QueryEscape(deploymentName),
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
@@ -205,7 +208,7 @@ func (client DeploymentsClient) CreateOrUpdatePreparer(resourceGroupName string,
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -220,8 +223,7 @@ func (client DeploymentsClient) CreateOrUpdatePreparer(resourceGroupName string,
 func (client DeploymentsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -237,32 +239,35 @@ func (client DeploymentsClient) CreateOrUpdateResponder(resp *http.Response) (re
 }
 
 // Delete begin deleting deployment.To determine whether the operation has
-// finished processing the request, call GetLongRunningOperationStatus.
+// finished processing the request, call GetLongRunningOperationStatus. This
+// method may poll for completion. Polling can be canceled by passing the
+// cancel channel argument. The channel will be used to cancel polling and
+// any outstanding HTTP requests.
 //
 // resourceGroupName is the name of the resource group. The name is case
 // insensitive. deploymentName is the name of the deployment to be deleted.
-func (client DeploymentsClient) Delete(resourceGroupName string, deploymentName string) (result autorest.Response, err error) {
-	req, err := client.DeletePreparer(resourceGroupName, deploymentName)
+func (client DeploymentsClient) Delete(resourceGroupName string, deploymentName string, cancel <-chan struct{}) (result autorest.Response, err error) {
+	req, err := client.DeletePreparer(resourceGroupName, deploymentName, cancel)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Delete", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Delete", nil, "Failure preparing request")
 	}
 
 	resp, err := client.DeleteSender(req)
 	if err != nil {
 		result.Response = resp
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Delete", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Delete", resp, "Failure sending request")
 	}
 
 	result, err = client.DeleteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Delete", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Delete", resp, "Failure responding to request")
 	}
 
 	return
 }
 
 // DeletePreparer prepares the Delete request.
-func (client DeploymentsClient) DeletePreparer(resourceGroupName string, deploymentName string) (*http.Request, error) {
+func (client DeploymentsClient) DeletePreparer(resourceGroupName string, deploymentName string, cancel <-chan struct{}) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"deploymentName":    url.QueryEscape(deploymentName),
 		"resourceGroupName": url.QueryEscape(resourceGroupName),
@@ -273,7 +278,7 @@ func (client DeploymentsClient) DeletePreparer(resourceGroupName string, deploym
 		"api-version": APIVersion,
 	}
 
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare(&http.Request{Cancel: cancel},
 		autorest.AsJSON(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL(client.BaseURI),
@@ -287,8 +292,7 @@ func (client DeploymentsClient) DeletePreparer(resourceGroupName string, deploym
 func (client DeploymentsClient) DeleteSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client,
 		req,
-		azure.DoPollForAsynchronous(autorest.DefaultPollingDuration,
-			autorest.DefaultPollingDelay))
+		azure.DoPollForAsynchronous(client.PollingDelay))
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -310,18 +314,18 @@ func (client DeploymentsClient) DeleteResponder(resp *http.Response) (result aut
 func (client DeploymentsClient) Get(resourceGroupName string, deploymentName string) (result DeploymentExtended, err error) {
 	req, err := client.GetPreparer(resourceGroupName, deploymentName)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Get", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Get", nil, "Failure preparing request")
 	}
 
 	resp, err := client.GetSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Get", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Get", resp, "Failure sending request")
 	}
 
 	result, err = client.GetResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Get", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Get", resp, "Failure responding to request")
 	}
 
 	return
@@ -375,18 +379,18 @@ func (client DeploymentsClient) GetResponder(resp *http.Response) (result Deploy
 func (client DeploymentsClient) List(resourceGroupName string, filter string, top *int32) (result DeploymentListResult, err error) {
 	req, err := client.ListPreparer(resourceGroupName, filter, top)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "List", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "List", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "List", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "List", resp, "Failure sending request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "List", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "List", resp, "Failure responding to request")
 	}
 
 	return
@@ -441,7 +445,7 @@ func (client DeploymentsClient) ListResponder(resp *http.Response) (result Deplo
 func (client DeploymentsClient) ListNextResults(lastResults DeploymentListResult) (result DeploymentListResult, err error) {
 	req, err := lastResults.DeploymentListResultPreparer()
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "List", nil, "Failure preparing next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "List", nil, "Failure preparing next results request request")
 	}
 	if req == nil {
 		return
@@ -450,12 +454,12 @@ func (client DeploymentsClient) ListNextResults(lastResults DeploymentListResult
 	resp, err := client.ListSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "List", resp, "Failure sending next results request request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "List", resp, "Failure sending next results request request")
 	}
 
 	result, err = client.ListResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "List", resp, "Failure responding to next results request request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "List", resp, "Failure responding to next results request request")
 	}
 
 	return
@@ -469,18 +473,18 @@ func (client DeploymentsClient) ListNextResults(lastResults DeploymentListResult
 func (client DeploymentsClient) Validate(resourceGroupName string, deploymentName string, parameters Deployment) (result DeploymentValidateResult, err error) {
 	req, err := client.ValidatePreparer(resourceGroupName, deploymentName, parameters)
 	if err != nil {
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Validate", nil, "Failure preparing request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Validate", nil, "Failure preparing request")
 	}
 
 	resp, err := client.ValidateSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		return result, autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Validate", resp, "Failure sending request")
+		return result, autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Validate", resp, "Failure sending request")
 	}
 
 	result, err = client.ValidateResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "resources/DeploymentsClient", "Validate", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "resources.DeploymentsClient", "Validate", resp, "Failure responding to request")
 	}
 
 	return

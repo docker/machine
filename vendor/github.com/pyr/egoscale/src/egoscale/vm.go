@@ -22,6 +22,9 @@ func (exo *Client) CreateVirtualMachine(p MachineProfile) (string, error) {
 	if len(p.Keypair) > 0 {
 		params.Set("keypair", p.Keypair)
 	}
+	if len(p.AffinityGroups) > 0 {
+		params.Set("affinitygroupnames", strings.Join(p.AffinityGroups, ","))
+	}
 
 	params.Set("securitygroupids", strings.Join(p.SecurityGroups, ","))
 

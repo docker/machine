@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/docker/docker/pkg/term"
@@ -63,7 +64,7 @@ const (
 
 var (
 	baseSSHArgs = []string{
-		"-o", "BatchMode=yes",
+		"-F", "/dev/null",
 		"-o", "PasswordAuthentication=no",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
@@ -327,12 +328,17 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth) (
 				// Abort if key not accessible
 				return nil, err
 			}
-			mode := fi.Mode()
-			log.Debugf("Using SSH private key: %s (%s)", privateKeyPath, mode)
-			// Private key file should have strict permissions
-			if mode != 0600 {
-				// Abort with correct message
-				return nil, fmt.Errorf("Permissions %#o for '%s' are too open.", mode, privateKeyPath)
+			if runtime.GOOS != "windows" {
+				mode := fi.Mode()
+				log.Debugf("Using SSH private key: %s (%s)", privateKeyPath, mode)
+				// Private key file should have strict permissions
+				perm := mode.Perm()
+				if perm&0400 == 0 {
+					return nil, fmt.Errorf("'%s' is not readable", privateKeyPath)
+				}
+				if perm&0077 != 0 {
+					return nil, fmt.Errorf("permissions %#o for '%s' are too open", perm, privateKeyPath)
+				}
 			}
 			args = append(args, "-i", privateKeyPath)
 		}

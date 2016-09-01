@@ -28,29 +28,29 @@ type Driver struct {
 }
 
 type deviceConfig struct {
-	DiskSize      int
-	Cpu           int
-	Hostname      string
-	Domain        string
-	Region        string
-	Memory        int
-	Image         string
-	HourlyBilling bool
-	LocalDisk     bool
-	PrivateNet    bool
-	PublicVLAN    int
-	PrivateVLAN   int
-	NetworkMaxSpeed  int
+	DiskSize        int
+	Cpu             int
+	Hostname        string
+	Domain          string
+	Region          string
+	Memory          int
+	Image           string
+	HourlyBilling   bool
+	LocalDisk       bool
+	PrivateNet      bool
+	PublicVLAN      int
+	PrivateVLAN     int
+	NetworkMaxSpeed int
 }
 
 const (
-	defaultMemory        = 1024
-	defaultDiskSize      = 0
-	defaultRegion        = "dal01"
-	defaultCpus          = 1
-	defaultImage         = "UBUNTU_LATEST"
-	defaultPublicVLANIP  = 0
-	defaultPrivateVLANIP = 0
+	defaultMemory          = 1024
+	defaultDiskSize        = 0
+	defaultRegion          = "dal01"
+	defaultCpus            = 1
+	defaultImage           = "UBUNTU_LATEST"
+	defaultPublicVLANIP    = 0
+	defaultPrivateVLANIP   = 0
 	defaultNetworkMaxSpeed = 100
 )
 
@@ -60,15 +60,15 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			Endpoint: APIEndpoint,
 		},
 		deviceConfig: &deviceConfig{
-			HourlyBilling: true,
-			DiskSize:      defaultDiskSize,
-			Image:         defaultImage,
-			Memory:        defaultMemory,
-			Cpu:           defaultCpus,
-			Region:        defaultRegion,
-			PrivateVLAN:   defaultPrivateVLANIP,
-			PublicVLAN:    defaultPublicVLANIP,
-			NetworkMaxSpeed:  defaultNetworkMaxSpeed,
+			HourlyBilling:   true,
+			DiskSize:        defaultDiskSize,
+			Image:           defaultImage,
+			Memory:          defaultMemory,
+			Cpu:             defaultCpus,
+			Region:          defaultRegion,
+			PrivateVLAN:     defaultPrivateVLANIP,
+			PublicVLAN:      defaultPublicVLANIP,
+			NetworkMaxSpeed: defaultNetworkMaxSpeed,
 		},
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
@@ -247,7 +247,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		Region:          flags.String("softlayer-region"),
 		PublicVLAN:      flags.Int("softlayer-public-vlan-id"),
 		PrivateVLAN:     flags.Int("softlayer-private-vlan-id"),
-		NetworkMaxSpeed: flags.Int("softlayer-network-max-speed"), 
+		NetworkMaxSpeed: flags.Int("softlayer-network-max-speed"),
 	}
 
 	if d.deviceConfig.Hostname == "" {
@@ -290,7 +290,7 @@ func (d *Driver) GetIP() (string, error) {
 		return d.getClient().VirtualGuest().GetPrivateIP(d.Id)
 	}
 
-    // Note: customized for IBM SoftLayer to bind on private IP only
+	// Note: customized for IBM SoftLayer to bind on private IP only
 	if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 		os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
 	}
@@ -364,14 +364,16 @@ func (d *Driver) getIP() (string, error) {
 		}
 
 		// Note: customized for IBM SoftLayer to bind on private IP only
+		// if docker daemon is expected to run on private IP
+		// it will overwrite settings from PrivateNet
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 			os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
 		}
 
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "true" {
-			return d.getClient().VirtualGuest().GetPrivateIP(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPrivateIP(d.Id)
 		} else {
-			return d.getClient().VirtualGuest().GetPublicIP(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPublicIP(d.Id)
 		}
 
 		// not a perfect regex, but should be just fine for our needs

@@ -1,11 +1,41 @@
 # Changelog
 
-# 0.7.0-rc1 (2016-3-23)
+# 0.8.0 (2016-6-14)
+
+General
+- Fix issue with plugin heartbeat log repeating on disconnect
+- Add `tcsh` support to `env --shell`
+- Add `zsh` completion scripts
+- Bump Go version to 1.6.2
+
+Drivers
+- `amazonec2`
+    - Workaround to prevent orphaned SSH keys
+- `virtualbox`
+    - Add option for VM UI type (`--virtualbox-ui-type`)
+- `vmwarefusion`
+    - Fix CPU option inconsistency
+- `openstack`
+    - Expose user data parameter (`--openstack-user-data-file`)
+- `generic`
+    - Copy public key to created Machine directory
+
+Provisioners
+- Add Oracle Enterprise Linux support
+- Fix port binding of Swarm master
+- Add ability to create a manager instance which does not get scheduled on
+- Introduce `--swarm-join-opt` to pass options to agent nodes
+- Various SSH-related fixes
+- Fix state for upgrade path
+
+# 0.7.0 (2016-4-13)
 
 General
 - `DRIVER` environment variable now supported to supply value for `create --driver` flag
-- Update to Go 1.6
+- Update to Go 1.6.1
 - SSH client has been refactored
+- RC versions of Machine will now create and upgrade to boot2docker RCs instead
+  of stable versions if available
 
 Drivers
 - `azure`

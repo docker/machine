@@ -74,7 +74,7 @@ To generate your access token:
         default          -        virtualbox     Running   tcp://192.168.99.100:2376
         docker-sandbox   *        digitalocean   Running   tcp://45.55.139.48:2376
 
-    The new `docker-sandbox` machine is running, and it is the active host as indicated by the asterisk (*). When you create a new machine, your command shell automatically connects it. If for some reason your new machine is not the active host, you'll need to run `docker-machine env aws-sandbox`, followed by `eval $(docker-machine env docker-sandbox)` to connect to it.
+    The new `docker-sandbox` machine is running, and it is the active host as indicated by the asterisk (*). When you create a new machine, your command shell automatically connects to it. If for some reason your new machine is not the active host, you'll need to run `docker-machine env docker-sandbox`, followed by `eval $(docker-machine env docker-sandbox)` to connect to it.
 
 ### Step 4. Run Docker commands on the Droplet
 
@@ -140,4 +140,4 @@ If you create a host with Docker Machine, but remove it through the cloud provid
 -   [Understand Machine concepts](../concepts.md)
 -   [Docker Machine driver reference](../drivers/index.md)
 -   [Docker Machine subcommand reference](../reference/index.md)
--   [Provision a Docker Swarm cluster with Docker Machine](https://docs.docker.com/swarm/provision-with-machine/)
+-   [Provision a Docker Swarm cluster with Docker Machine](/swarm/provision-with-machine.md)

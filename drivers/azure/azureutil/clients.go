@@ -2,6 +2,7 @@ package azureutil
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/docker/machine/version"
 
@@ -31,6 +32,7 @@ func subscriptionsClient(baseURI string) subscriptions.Client {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -40,6 +42,7 @@ func (a AzureClient) providersClient() resources.ProvidersClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -49,6 +52,7 @@ func (a AzureClient) resourceGroupsClient() resources.GroupsClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -58,6 +62,7 @@ func (a AzureClient) securityGroupsClient() network.SecurityGroupsClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -67,6 +72,7 @@ func (a AzureClient) virtualNetworksClient() network.VirtualNetworksClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -76,6 +82,7 @@ func (a AzureClient) subnetsClient() network.SubnetsClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -85,6 +92,7 @@ func (a AzureClient) networkInterfacesClient() network.InterfacesClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -94,6 +102,7 @@ func (a AzureClient) publicIPAddressClient() network.PublicIPAddressesClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -103,6 +112,7 @@ func (a AzureClient) storageAccountsClient() storage.AccountsClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -112,6 +122,7 @@ func (a AzureClient) virtualMachinesClient() compute.VirtualMachinesClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }
 
@@ -121,5 +132,6 @@ func (a AzureClient) availabilitySetsClient() compute.AvailabilitySetsClient {
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()
+	c.PollingDelay = time.Second * 5
 	return c
 }

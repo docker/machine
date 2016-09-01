@@ -25,17 +25,23 @@ Using `docker-machine` commands, you can start, inspect, stop, and restart a man
 
 Point the Machine CLI at a running, managed host, and you can run `docker` commands directly on that host. For example, run `docker-machine env default` to point to a host called `default`, follow on-screen instructions to complete `env` setup, and run `docker ps`, `docker run hello-world`, and so forth.
 
+Machine _was_ the _only_ way to run Docker on Mac or Windows previous to Docker v1.12. Starting with the beta program and Docker v1.12, [Docker for Mac](/docker-for-mac/index.md) and [Docker for Windows](/docker-for-windows/index.md) are available as native apps and the better choice for this use case on newer desktops and laptops. We encourage you to try out these new apps. The installers for Docker for Mac and Docker for Windows include Docker Machine, along with Docker Compose.
+
+If you aren't sure where to begin, see [Get Started with Docker](/engine/getstarted/index.md), which helps you choose the right app for your system and guides you through a brief end-to-end tutorial on Docker.
+
 ## Why should I use it?
 
-Machine is currently the only way to run Docker on Mac or Windows, and the best way to provision multiple remote Docker hosts on various flavors of Linux.
+Docker Machine enables you to provision multiple remote Docker hosts on various flavors of Linux.
+
+Additionally, Machine allows you to run Docker on older Mac or Windows systems, as described in the previous topic.
 
 Docker Machine has these two broad use cases.
 
-* **I want to run Docker on Mac or Windows**
+* **I have an older desktop system and want to run Docker on Mac or Windows**
 
   ![Docker Machine on Mac and Windows](img/machine-mac-win.png)
 
-  If you work primarily on a Mac or Windows laptop or desktop, you need Docker Machine in order to "run Docker" (that is, Docker Engine) locally. Installing Docker Machine on a Mac or Windows box provisions a local virtual machine with Docker Engine, gives you the ability to connect it, and run `docker` commands.
+  If you work primarily on an older Mac or Windows laptop or desktop that doesn't meet the requirements for the new [Docker for Mac](/docker-for-mac/index.md) and [Docker for Windows](/docker-for-windows/index.md) apps, then you need Docker Machine in order to "run Docker" (that is, Docker Engine) locally. Installing Docker Machine on a Mac or Windows box with the [Docker Toolbox](/toolbox/overview.md) installer provisions a local virtual machine with Docker Engine, gives you the ability to connect it, and run `docker` commands.
 
 *  **I want to provision Docker hosts on remote systems**
 
@@ -60,7 +66,7 @@ When people say "Docker" they typically mean **Docker Engine**, the client-serve
 -   [Install Docker Machine](install-machine.md)
 -   Create and run a Docker host on your [local system using VirtualBox](get-started.md)
 -   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
--   [Provision a Docker Swarm cluster with Docker Machine](https://docs.docker.com/swarm/provision-with-machine/)
+-   [Provision a Docker Swarm cluster with Docker Machine](/swarm/provision-with-machine.md)
 -   [Understand Machine concepts](concepts.md)
 -   [Docker Machine driver reference](drivers/index.md)
 -   [Docker Machine subcommand reference](reference/index.md)
