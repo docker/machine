@@ -34,7 +34,9 @@ import (
 )
 
 const (
-	isoFilename = "boot2docker.iso"
+	// dockerBridgeIP is the default IP address of the docker0 bridge.
+	dockerBridgeIP = "172.17.0.1"
+	isoFilename    = "boot2docker.iso"
 	// B2DUser is the guest User for tools login
 	B2DUser = "docker"
 	// B2DPass is the guest Pass for tools login
@@ -249,7 +251,11 @@ func (d *Driver) GetIP() (string, error) {
 			// Prefer IPv4 address, but fall back to first/IPv6
 			preferredIP := ips[0]
 			for _, ip := range ips {
-				if net.ParseIP(ip).To4() != nil {
+				// In addition to non IPv4 addresses, try to filter
+				// out link local addresses and the default address of
+				// the Docker0 bridge
+				netIP := net.ParseIP(ip)
+				if netIP.To4() != nil && netIP.IsGlobalUnicast() && !netIP.Equal(net.ParseIP(dockerBridgeIP)) {
 					preferredIP = ip
 					break
 				}
