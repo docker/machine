@@ -290,7 +290,6 @@ func (d *Driver) GetIP() (string, error) {
 		return d.getClient().VirtualGuest().GetPrivateIP(d.Id)
 	}
 
-
 	// Note: a flag to have Docker Daemon bind on private IP
 	if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 		os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
