@@ -364,7 +364,6 @@ func (d *Driver) getIP() (string, error) {
 			continue
 		}
 
-
 		// Note: customized for IBM SoftLayer to bind on private IP only
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 			os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
