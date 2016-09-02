@@ -364,15 +364,16 @@ func (d *Driver) getIP() (string, error) {
 			continue
 		}
 
+
 		// Note: customized for IBM SoftLayer to bind on private IP only
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "" {
 			os.Setenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP", "false")
 		}
 
 		if os.Getenv("SOFTLAYER_DOCKER_ON_PRIVATE_IP") == "true" {
-			return d.getClient().VirtualGuest().GetPrivateIP(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPrivateIP(d.Id)
 		} else {
-			return d.getClient().VirtualGuest().GetPublicIP(d.Id)
+			ip, err = d.getClient().VirtualGuest().GetPublicIP(d.Id)
 		}
 
 		// not a perfect regex, but should be just fine for our needs
