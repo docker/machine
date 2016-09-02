@@ -47,13 +47,8 @@ type NetworkMaxSpeed struct {
 }
 
 type NetworkMaxSpeed struct {
-<<<<<<< HEAD
-	MaxSpeed    int  `json:"maxSpeed"`
- }
-=======
 	MaxSpeed int `json:"maxSpeed"`
 }
->>>>>>> eddd459596e0a2ef05d3514f08b315079a545d82
 
 type NetworkComponent struct {
 	NetworkVLAN *NetworkVLAN `json:"networkVlan"`
