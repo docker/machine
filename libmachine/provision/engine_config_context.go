@@ -6,6 +6,7 @@ import (
 )
 
 type EngineConfigContext struct {
+	BindIP           string
 	DockerPort       int
 	AuthOptions      auth.Options
 	EngineOptions    engine.Options

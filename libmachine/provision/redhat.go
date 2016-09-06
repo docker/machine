@@ -33,7 +33,11 @@ After=network.target
 
 [Service]
 Type=notify
+<<<<<<< HEAD
 ExecStart=/usr/bin/docker daemon -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+=======
+ExecStart=/usr/bin/docker daemon -H tcp://{{.BindIP}}:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+>>>>>>> eddd459596e0a2ef05d3514f08b315079a545d82
 ExecReload=/bin/kill -s HUP $MAINPID
 MountFlags=slave
 LimitNOFILE=infinity
@@ -217,6 +221,15 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
+	bindIP, err := provisioner.GetDriver().GetIP()
+	if err != nil {
+		return nil, err
+	}
+
+	if provisioner.Driver.DriverName() != "softlayer" {
+		bindIP = "0.0.0.0"
+	}
+
 	// systemd / redhat will not load options if they are on newlines
 	// instead, it just continues with a different set of options; yeah...
 	t, err := template.New("engineConfig").Parse(engineConfigTemplate)
@@ -225,6 +238,7 @@ func (provisioner *RedHatProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	}
 
 	engineConfigContext := EngineConfigContext{
+		BindIP:           bindIP,
 		DockerPort:       dockerPort,
 		AuthOptions:      provisioner.AuthOptions,
 		EngineOptions:    provisioner.EngineOptions,
