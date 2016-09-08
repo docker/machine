@@ -1,7 +1,6 @@
 package provision
 
 import (
-	"regexp"
 	"testing"
 
 	"github.com/docker/machine/drivers/fakedriver"
