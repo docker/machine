@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	mathrand "math/rand"
 	"net"
 	"net/url"
 	"strconv"
@@ -91,6 +92,7 @@ type Driver struct {
 	IamInstanceProfile      string
 	VpcId                   string
 	SubnetId                string
+	SubnetIds               []string
 	Zone                    string
 	keyPath                 string
 	RequestSpotInstance     bool
@@ -322,7 +324,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SpotPrice = flags.String("amazonec2-spot-price")
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
-	d.SubnetId = flags.String("amazonec2-subnet-id")
+	d.SubnetIds = strings.Split(flags.String("amazonec2-subnet-id"), ",")
+	if len(d.SubnetIds) == 1 && d.SubnetIds[0] == "" {
+		d.SubnetIds = make([]string, 0)
+	}
 	d.SecurityGroupNames = flags.StringSlice("amazonec2-security-group")
 	d.Tags = flags.String("amazonec2-tags")
 	zone := flags.String("amazonec2-zone")
@@ -381,15 +386,15 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		}
 	}
 
-	if d.SubnetId == "" && d.VpcId == "" {
+	if len(d.SubnetIds) == 0 && d.VpcId == "" {
 		return errorNoVPCIdFound
 	}
 
-	if d.SubnetId != "" && d.VpcId != "" {
+	if len(d.SubnetIds) > 0 && d.VpcId != "" {
 		subnetFilter := []*ec2.Filter{
 			{
 				Name:   aws.String("subnet-id"),
-				Values: []*string{&d.SubnetId},
+				Values: makePointerSlice(d.SubnetIds),
 			},
 		}
 
@@ -400,8 +405,29 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 			return err
 		}
 
-		if *subnets.Subnets[0].VpcId != d.VpcId {
-			return fmt.Errorf("SubnetId: %s does not belong to VpcId: %s", d.SubnetId, d.VpcId)
+		mathrand.Seed(time.Now().UnixNano())
+		d.SubnetId = d.SubnetIds[mathrand.Intn(len(d.SubnetIds))]
+		var chosen_az string
+		subnets_in_vpc := false
+		for _, subnet := range subnets.Subnets {
+			if *subnet.VpcId != d.VpcId {
+				log.Warnf("SubnetId: %s does not belong to VpcId: %s", *subnet.SubnetId, d.VpcId)
+			} else {
+				subnets_in_vpc = true
+			}
+			if *subnet.SubnetId == d.SubnetId {
+				az := *subnet.AvailabilityZone
+				chosen_az = az[len(az)-1:]
+			}
+		}
+		if !subnets_in_vpc {
+			return fmt.Errorf("SubnetIds: %s do not belong to VpcId: %s", strings.Join(d.SubnetIds[:], ","), d.VpcId)
+		}
+		log.Infof("Chosen subnet: %s", d.SubnetId)
+
+		if d.Zone != chosen_az {
+			log.Warnf("Subnet %s is in AZ %s. Overriding previous choice of AZ %s.", d.SubnetId, chosen_az, d.Zone)
+			d.Zone = chosen_az
 		}
 	}
 

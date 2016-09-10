@@ -55,7 +55,7 @@ You can use environment variables:
 -   `--amazonec2-region`: The region to use when launching the instance.
 -   `--amazonec2-vpc-id`: Your VPC ID to launch the instance in.
 -   `--amazonec2-zone`: The AWS zone to launch the instance in (i.e. one of a,b,c,d,e).
--   `--amazonec2-subnet-id`: AWS VPC subnet id.
+-   `--amazonec2-subnet-id`: AWS VPC subnet id (possibly several, comma-separated, e.g. subnet-aaaaaa,subnet-bbbbbb)..
 -   `--amazonec2-security-group`: AWS VPC security group name.
 -   `--amazonec2-open-port`: Make additional port number(s) accessible from the Internet.
 -   `--amazonec2-tags`: AWS extra tag key-value pairs (comma-separated, e.g. key1,value1,key2,value2).
@@ -165,6 +165,16 @@ Machine uses SSH to complete the set up of instances in EC2 and requires the abi
 If you use the flag `--amazonec2-private-address-only`, you will need to ensure that you have some method of accessing the new instance from within the internal network of the VPC (e.g. a corporate VPN to the VPC, a VPN instance inside the VPC or using Docker-machine from an instance within your VPC).
 
 Configuration of VPCs is beyond the scope of this guide, however the first step in troubleshooting is ensuring if you are using private subnets that you follow the design guidance in the [AWS VPC User Guide](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Scenario2.html) and have some form of NAT available so that the set up process can access the internet to complete set up.
+
+## Subnet choice
+
+When creating several machines, you may want to have them spread over several avaibility zones. One way to do this is to specify several subnets (one for each AZ) while creating the machines:
+
+    $ docker-machine create --driver amazonec2 --amazonec2-vpc-id vpc-****** --amazonec2-subnet-id subnet-******,subnet-****** aws02
+
+This way, each machine you create will be randomly assigned to one of the specified subnets, spreading your workload over several avaibility zones.
+
+Choosing a subnet with the `--amazonec2-subnet-id` may override your avaibility zone choice.
 
 ## Custom AMI and SSH username
 
