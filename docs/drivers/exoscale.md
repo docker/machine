@@ -1,7 +1,7 @@
 <!--[metadata]>
 +++
-title = "exoscale"
-description = "exoscale driver for machine"
+title = "Exoscale"
+description = "Exoscale driver for machine"
 keywords = ["machine, exoscale, driver"]
 [menu.main]
 parent="smn_machine_drivers"
@@ -10,7 +10,7 @@ parent="smn_machine_drivers"
 
 # Exoscale
 
-Create machines on [exoscale](https://www.exoscale.ch/).
+Create machines on [Exoscale](https://www.exoscale.ch/).
 
 Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
 
@@ -23,7 +23,7 @@ Options:
 -   `--exoscale-api-secret-key`: **required** Your API secret key.
 -   `--exoscale-instance-profile`: Instance profile.
 -   `--exoscale-disk-size`: Disk size for the host in GB (10, 50, 100, 200, 400).
--   `--exoscale-image`: Image template (e.g. ubuntu-14.04, ubuntu-15.10).
+-   `--exoscale-image`: Image template (e.g. ubuntu-16.04, ubuntu-15.10).
 -   `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
 -   `--exoscale-availability-zone`: Exoscale availability zone.
 -   `--exoscale-ssh-user`: SSH username, which must match the default SSH user for the used image.
@@ -43,9 +43,9 @@ Environment variables and default values:
 | **`--exoscale-api-secret-key`** | `EXOSCALE_API_SECRET`        | -                                 |
 | `--exoscale-instance-profile`   | `EXOSCALE_INSTANCE_PROFILE`  | `small`                           |
 | `--exoscale-disk-size`          | `EXOSCALE_DISK_SIZE`         | `50`                              |
-| `--exoscale-image`              | `EXOSCALE_IMAGE`             | `ubuntu-15.10`                    |
+| `--exoscale-image`              | `EXOSCALE_IMAGE`             | `ubuntu-16.04`                    |
 | `--exoscale-security-group`     | `EXOSCALE_SECURITY_GROUP`    | `docker-machine`                  |
-| `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-gva-2`                        |
+| `--exoscale-availability-zone`  | `EXOSCALE_AVAILABILITY_ZONE` | `ch-dk-2`                         |
 | `--exoscale-ssh-user`           | `EXOSCALE_SSH_USER`          | `ubuntu`                          |
 | `--exoscale-userdata`           | `EXOSCALE_USERDATA`          | -                                 |
 | `--exoscale-affinity-group`     | `EXOSCALE_AFFINITY_GROUP`    | `docker-machine`                  |
