@@ -16,25 +16,21 @@ To create machines on [Amazon Web Services](http://aws.amazon.com), you must sup
 
 ## Configuring credentials
 
-Before using the amazonec2 driver, ensure that you've configured credentials.
+Before using the amazonec2 driver, ensure that you've configured credentials. The driver uses Amazon's default credentials chain
+to lookup credentials unless they are explicitly provided on the command line. The credential chain uses the following providers
+to authenticate with AWS:
 
-### AWS credential file
+1.  Command line flags
+1.  Environment variables
+1.  AWS credentials file
+1.  ECS Task Role
+1.  EC2 Instance Role
 
-One way to configure credentials is to use the standard credential file for Amazon AWS `~/.aws/credentials` file, which might look like:
-
-    [default]
-    aws_access_key_id = AKID1234567890
-    aws_secret_access_key = MY-SECRET-KEY
-
-On Mac OS or various flavors of Linux you can install the [AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-quick-configuration) (`aws cli`) in the terminal and use the `aws configure` command which guides you through the creation of the credentials file.
-
-This is the simplest method, you can then create a new machine with:
-
-    $ docker-machine create --driver amazonec2 aws01
-
+For more information, see the [AWS SDK for Go Developer's Guide](http://docs.aws.amazon.com/sdk-for-go/v1/developerguide/configuring-sdk.html).
+ 
 ### Command line flags
 
-Alternatively, you can use the flags `--amazonec2-access-key` and `--amazonec2-secret-key` on the command line:
+The first way to specify credentials is with the flags `--amazonec2-access-key` and `--amazonec2-secret-key` on the command line:
 
     $ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C*******  aws01
 
@@ -45,6 +41,31 @@ You can use environment variables:
     $ export AWS_ACCESS_KEY_ID=AKID1234567890
     $ export AWS_SECRET_ACCESS_KEY=MY-SECRET-KEY
     $ docker-machine create --driver amazonec2 aws01
+
+### AWS credentials file
+
+You can also configure the standard credential file for Amazon AWS, `~/.aws/credentials`, which might look like:
+
+    [default]
+    aws_access_key_id = AKID1234567890
+    aws_secret_access_key = MY-SECRET-KEY
+
+On Mac OS or various flavors of Linux you can install the [AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-quick-configuration)
+(`aws cli`) in the terminal and use the `aws configure` command which guides you through the creation of the credentials file.
+
+This is the simplest method. You can then create a new machine with:
+
+    $ docker-machine create --driver amazonec2 aws01
+
+### ECS Task Role
+
+When you deploy tasks and services on Amazon's EC2 Container Service (ECS) platform, you can specify an IAM role
+at the container level. The amazonec2 driver will use the injected credentials if they are found.
+
+### EC2 Instance Role
+
+If you are running docker-machine from an existing EC2 instance, the amazonec2 driver will use the credentials for the IAM role
+assigned to the instance if they are configured.
 
 ## Options
 
