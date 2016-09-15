@@ -50,6 +50,7 @@ var (
 	dockerPort                           = 2376
 	swarmPort                            = 3376
 	errorNoPrivateSSHKey                 = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
+	errorMissingCredentials              = errors.New("amazonec2 driver requires AWS credentials configured with the --amazonec2-access-key and --amazonec2-secret-key options, environment variables, ~/.aws/credentials, or an instance role")
 	errorMissingAccessKeyOption          = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
 	errorMissingSecretKeyOption          = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
 	errorNoVPCIdFound                    = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
@@ -273,7 +274,6 @@ func NewDriver(hostName, storePath string) *Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
-		awsCredentials: &defaultAWSCredentials{},
 	}
 
 	driver.clientFactory = driver.buildClient
@@ -285,7 +285,7 @@ func (d *Driver) buildClient() Ec2Client {
 	config := aws.NewConfig()
 	alogger := AwsLogger()
 	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	config = config.WithCredentials(d.awsCredentials.GetCredentials())
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	config = config.WithMaxRetries(d.RetryCount)
@@ -354,25 +354,31 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return errorNoPrivateSSHKey
 	}
 
-	if d.AccessKey == "" && d.SecretKey == "" {
-		credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
-		if err != nil {
-			log.Debug("Could not load credentials from ~/.aws/credentials")
-		} else {
-			log.Debug("Successfully loaded credentials from ~/.aws/credentials")
-			d.AccessKey = credentials.AccessKeyID
-			d.SecretKey = credentials.SecretAccessKey
-			d.SessionToken = credentials.SessionToken
-		}
+	d.awsCredentials = NewAWSCredentials(d.AccessKey, d.SecretKey, d.SessionToken, "", "")
+	creds := d.awsCredentials.GetCredentials()
+	if creds == nil {
+		return errorMissingCredentials
 	}
 
-	if d.AccessKey == "" {
-		return errorMissingAccessKeyOption
-	}
+	//if d.AccessKey == "" && d.SecretKey == "" {
+	//	credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
+	//	if err != nil {
+	//		log.Debug("Could not load credentials from ~/.aws/credentials")
+	//	} else {
+	//		log.Debug("Successfully loaded credentials from ~/.aws/credentials")
+	//		d.AccessKey = credentials.AccessKeyID
+	//		d.SecretKey = credentials.SecretAccessKey
+	//		d.SessionToken = credentials.SessionToken
+	//	}
+	//}
 
-	if d.SecretKey == "" {
-		return errorMissingSecretKeyOption
-	}
+	//if d.AccessKey == "" {
+	//	return errorMissingAccessKeyOption
+	//}
+	//
+	//if d.SecretKey == "" {
+	//	return errorMissingSecretKeyOption
+	//}
 
 	if d.VpcId == "" {
 		d.VpcId, err = d.getDefaultVPCId()
