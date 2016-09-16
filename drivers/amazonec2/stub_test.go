@@ -41,6 +41,59 @@ func (p *okProvider) IsExpired() bool {
 	return true
 }
 
+type fallbackCredentials struct{}
+
+func (c *fallbackCredentials) Credentials() *credentials.Credentials {
+	return credentials.NewStaticCredentials("fallback_access", "fallback_secret", "fallback_token")
+}
+
+type errorFallbackCredentials struct{}
+
+func (c *errorFallbackCredentials) Credentials() *credentials.Credentials {
+	return credentials.NewCredentials(&errorProvider{})
+}
+
+type testFileCredentialsProvider struct {
+	fileProvider credentials.Provider
+	staticError  bool
+}
+
+func NewTestFileCredentialsProvider(id, secret, token string) *testFileCredentialsProvider {
+	return &testFileCredentialsProvider{
+		fileProvider: okProvider{id, secret, token},
+		staticError: false,
+	}
+}
+
+func NewTestFileCredentialsProviderWithStaticError(id, secret, token string) *testFileCredentialsProvider {
+	return &testFileCredentialsProvider{
+		fileProvider: okProvider{id, secret, token},
+		staticError: true,
+	}
+}
+
+func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string) *credentials.Provider {
+	if c.staticError {
+		return &errorProvider{}
+	} else {
+		return &okProvider{id, secret, token}
+	}
+}
+
+func (c *testFileCredentialsProvider) NewSharedProvider(filename, profile string) *credentials.Provider {
+	return &c.fileProvider
+}
+
+type errorCredentialsProvider struct{}
+
+func (c *errorCredentialsProvider) NewStaticProvider(id, secret, token string) *credentials.Provider {
+	return &errorProvider{}
+}
+
+func (c *errorCredentialsProvider) NewSharedProvider(filename, profile string) *credentials.Provider {
+	return &errorProvider{}
+}
+
 type cliCredentials struct{}
 
 func (c *cliCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
@@ -128,12 +181,16 @@ func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *
 
 func NewTestDriver() *Driver {
 	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2{}
+	}
 	return driver
 }
 
 func NewCustomTestDriver(ec2Client Ec2Client) *Driver {
 	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return ec2Client }
+	driver.clientFactory = func() Ec2Client {
+		return ec2Client
+	}
 	return driver
 }

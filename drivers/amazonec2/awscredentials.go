@@ -6,15 +6,23 @@ import (
 )
 
 type awsCredentials interface {
-	GetCredentials() *credentials.Credentials
+	Credentials() *credentials.Credentials
+}
+
+type ProviderFactory interface {
+	NewStaticProvider(id, secret, token string) *credentials.Provider
+
+	NewSharedProvider(filename, profile string) *credentials.Provider
 }
 
 type defaultAWSCredentials struct {
-	AccessKey    string
-	SecretKey    string
-	SessionToken string
-	File         string
-	Profile      string
+	AccessKey        string
+	SecretKey        string
+	SessionToken     string
+	File             string
+	Profile          string
+	providerFactory  ProviderFactory
+	fallbackProvider awsCredentials
 }
 
 func NewAWSCredentials(id, secret, token, filename, profile string) *defaultAWSCredentials {
@@ -24,28 +32,48 @@ func NewAWSCredentials(id, secret, token, filename, profile string) *defaultAWSC
 		SessionToken: token,
 		File: filename,
 		Profile: profile,
+		fallbackProvider: AwsDefaultCredentialsProvider{},
+		providerFactory: defaultProviderFactory{},
 	}
 	return &creds
 }
 
-func (c *defaultAWSCredentials) GetCredentials() *credentials.Credentials {
+func (c *defaultAWSCredentials) Credentials() *credentials.Credentials {
 	providers := []credentials.Provider{}
 	if c.AccessKey != "" && c.SecretKey != "" {
-		providers = append(providers, &credentials.StaticProvider{Value: credentials.Value{
-			AccessKeyID: c.AccessKey,
-			SecretAccessKey: c.SecretKey,
-			SessionToken: c.SessionToken,
-		}})
+		providers = append(providers, c.providerFactory.NewStaticProvider(c.AccessKey, c.SecretKey, c.SessionToken))
 	}
 	if c.File != "" || c.Profile != "" {
-		providers = append(providers, &credentials.SharedCredentialsProvider{
-			Filename: c.File,
-			Profile: c.Profile,
-		})
+		providers = append(providers, c.providerFactory.NewStaticProvider(c.File, c.Profile))
 	}
-	defaultCreds, err := session.New().Config.Credentials.Get()
-	if err == nil {
-		providers = append(providers, &credentials.StaticProvider{Value: defaultCreds})
+	if c.fallbackProvider != nil {
+		fallbackCreds, err := c.fallbackProvider.Credentials().Get()
+		if err == nil {
+			providers = append(providers, &credentials.StaticProvider{Value: fallbackCreds})
+		}
 	}
 	return credentials.NewChainCredentials(providers)
+}
+
+type AwsDefaultCredentialsProvider struct{}
+
+func (c *AwsDefaultCredentialsProvider) Credentials() *credentials.Credentials {
+	return session.New().Config.Credentials
+}
+
+type defaultProviderFactory struct{}
+
+func (c *defaultProviderFactory) NewStaticProvider(id, secret, token string) *credentials.Provider {
+	return &credentials.StaticProvider{Value: credentials.Value{
+		AccessKeyID: id,
+		SecretAccessKey: secret,
+		SessionToken: token,
+	}}
+}
+
+func (c *defaultProviderFactory) NewSharedProvider(filename, profile string) *credentials.Provider {
+	return &credentials.SharedCredentialsProvider{
+		Filename: filename,
+		Profile: profile,
+	}
 }
