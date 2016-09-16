@@ -72,7 +72,7 @@ func NewTestFileCredentialsProviderWithStaticError(id, secret, token string) *te
 	}
 }
 
-func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string) *credentials.Provider {
+func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
 	if c.staticError {
 		return &errorProvider{}
 	} else {
@@ -80,17 +80,17 @@ func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string
 	}
 }
 
-func (c *testFileCredentialsProvider) NewSharedProvider(filename, profile string) *credentials.Provider {
+func (c *testFileCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
 	return &c.fileProvider
 }
 
 type errorCredentialsProvider struct{}
 
-func (c *errorCredentialsProvider) NewStaticProvider(id, secret, token string) *credentials.Provider {
+func (c *errorCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
 	return &errorProvider{}
 }
 
-func (c *errorCredentialsProvider) NewSharedProvider(filename, profile string) *credentials.Provider {
+func (c *errorCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
 	return &errorProvider{}
 }
 

@@ -275,7 +275,6 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 
 	driver.clientFactory = driver.buildClient
-	driver.defaultCredentialsProvider = AwsDefaultCredentialsProvider{}
 
 	return driver
 }
