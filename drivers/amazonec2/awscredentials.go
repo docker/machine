@@ -27,13 +27,13 @@ type defaultAWSCredentials struct {
 
 func NewAWSCredentials(id, secret, token, filename, profile string) *defaultAWSCredentials {
 	creds := defaultAWSCredentials{
-		AccessKey: id,
-		SecretKey: secret,
-		SessionToken: token,
-		Filename: filename,
-		Profile: profile,
+		AccessKey:        id,
+		SecretKey:        secret,
+		SessionToken:     token,
+		Filename:         filename,
+		Profile:          profile,
 		fallbackProvider: &AwsDefaultCredentialsProvider{},
-		providerFactory: &defaultProviderFactory{},
+		providerFactory:  &defaultProviderFactory{},
 	}
 	return &creds
 }
@@ -65,15 +65,15 @@ type defaultProviderFactory struct{}
 
 func (c *defaultProviderFactory) NewStaticProvider(id, secret, token string) credentials.Provider {
 	return &credentials.StaticProvider{Value: credentials.Value{
-		AccessKeyID: id,
+		AccessKeyID:     id,
 		SecretAccessKey: secret,
-		SessionToken: token,
+		SessionToken:    token,
 	}}
 }
 
 func (c *defaultProviderFactory) NewSharedProvider(filename, profile string) credentials.Provider {
 	return &credentials.SharedCredentialsProvider{
 		Filename: filename,
-		Profile: profile,
+		Profile:  profile,
 	}
 }

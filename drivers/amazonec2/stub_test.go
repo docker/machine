@@ -60,15 +60,15 @@ type testFileCredentialsProvider struct {
 
 func NewTestFileCredentialsProvider(id, secret, token string) *testFileCredentialsProvider {
 	return &testFileCredentialsProvider{
-		fileProvider: okProvider{id, secret, token},
-		staticError: false,
+		fileProvider: &okProvider{id, secret, token},
+		staticError:  false,
 	}
 }
 
 func NewTestFileCredentialsProviderWithStaticError(id, secret, token string) *testFileCredentialsProvider {
 	return &testFileCredentialsProvider{
-		fileProvider: okProvider{id, secret, token},
-		staticError: true,
+		fileProvider: &okProvider{id, secret, token},
+		staticError:  true,
 	}
 }
 
@@ -81,7 +81,7 @@ func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string
 }
 
 func (c *testFileCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
-	return &c.fileProvider
+	return c.fileProvider
 }
 
 type errorCredentialsProvider struct{}
