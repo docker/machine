@@ -47,10 +47,18 @@ func (c *fallbackCredentials) Credentials() *credentials.Credentials {
 	return credentials.NewStaticCredentials("fallback_access", "fallback_secret", "fallback_token")
 }
 
+func NewValidAwsCredentials() awsCredentials {
+	return &fallbackCredentials{}
+}
+
 type errorFallbackCredentials struct{}
 
 func (c *errorFallbackCredentials) Credentials() *credentials.Credentials {
 	return credentials.NewCredentials(&errorProvider{})
+}
+
+func NewErrorAwsCredentials() awsCredentials {
+	return &errorFallbackCredentials{}
 }
 
 type testFileCredentialsProvider struct {
@@ -92,26 +100,6 @@ func (c *errorCredentialsProvider) NewStaticProvider(id, secret, token string) c
 
 func (c *errorCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
 	return &errorProvider{}
-}
-
-type cliCredentials struct{}
-
-func (c *cliCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
-	return credentials.NewCredentials(&okProvider{id, secret, token})
-}
-
-func (c *cliCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
-	return credentials.NewCredentials(&errorProvider{})
-}
-
-type fileCredentials struct{}
-
-func (c *fileCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
-	return nil
-}
-
-func (c *fileCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
-	return credentials.NewCredentials(&okProvider{"access", "secret", "token"})
 }
 
 type fakeEC2WithDescribe struct {

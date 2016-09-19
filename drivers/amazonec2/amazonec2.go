@@ -57,15 +57,15 @@ var (
 
 type Driver struct {
 	*drivers.BaseDriver
-	clientFactory  func() Ec2Client
-	awsCredentials awsCredentials
-	Id             string
-	AccessKey      string
-	SecretKey      string
-	SessionToken   string
-	Region         string
-	AMI            string
-	SSHKeyID       int
+	clientFactory         func() Ec2Client
+	awsCredentialsFactory func() awsCredentials
+	Id                    string
+	AccessKey             string
+	SecretKey             string
+	SessionToken          string
+	Region                string
+	AMI                   string
+	SSHKeyID              int
 	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
 	ExistingKey      bool
 	KeyName          string
@@ -275,6 +275,7 @@ func NewDriver(hostName, storePath string) *Driver {
 	}
 
 	driver.clientFactory = driver.buildClient
+	driver.awsCredentialsFactory = driver.buildCredentials
 
 	return driver
 }
@@ -283,7 +284,7 @@ func (d *Driver) buildClient() Ec2Client {
 	config := aws.NewConfig()
 	alogger := AwsLogger()
 	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(d.awsCredentials.Credentials())
+	config = config.WithCredentials(d.awsCredentialsFactory().Credentials())
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	config = config.WithMaxRetries(d.RetryCount)
@@ -292,6 +293,10 @@ func (d *Driver) buildClient() Ec2Client {
 		config = config.WithDisableSSL(d.DisableSSL)
 	}
 	return ec2.New(session.New(config))
+}
+
+func (d *Driver) buildCredentials() awsCredentials {
+	return NewAWSCredentials(d.AccessKey, d.SecretKey, d.SessionToken, "", "")
 }
 
 func (d *Driver) getClient() Ec2Client {
@@ -352,8 +357,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return errorNoPrivateSSHKey
 	}
 
-	d.awsCredentials = NewAWSCredentials(d.AccessKey, d.SecretKey, d.SessionToken, "", "")
-	_, err = d.awsCredentials.Credentials().Get()
+	_, err = d.awsCredentialsFactory().Credentials().Get()
 	if err != nil {
 		return errorMissingCredentials
 	}
