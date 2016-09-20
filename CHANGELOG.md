@@ -1,5 +1,13 @@
 # Changelog
 
+Provisioners
+- Fix issue with generated systemd service file on RedHat family distros
+Drivers
+- `azure`
+    - Bump Ubuntu image to 16.04
+    - Update docs with updated default parameters
+    - Change logging slightly
+
 # 0.8.0 (2016-6-14)
 
 General
