@@ -23,7 +23,7 @@ Options:
 -   `--exoscale-api-secret-key`: **required** Your API secret key.
 -   `--exoscale-instance-profile`: Instance profile.
 -   `--exoscale-disk-size`: Disk size for the host in GB (10, 50, 100, 200, 400).
--   `--exoscale-image`: Image template (eg. ubuntu-14.04, ubuntu-15.10).
+-   `--exoscale-image`: Image template (e.g. ubuntu-14.04, ubuntu-15.10).
 -   `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
 -   `--exoscale-availability-zone`: Exoscale availability zone.
 -   `--exoscale-ssh-user`: SSH username, which must match the default SSH user for the used image.
