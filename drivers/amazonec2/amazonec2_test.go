@@ -11,6 +11,9 @@ import (
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 const (
@@ -506,4 +509,50 @@ func TestConfigureSecurityGroupsErrLookupExist(t *testing.T) {
 
 	assert.Exactly(t, lookupExistErr, err)
 	recorder.AssertExpectations(t)
+}
+
+func TestBase64UserDataIsEmptyIfNoFileProvided(t *testing.T) {
+	driver := NewTestDriver()
+
+	userdata, err := driver.Base64UserData()
+
+	assert.NoError(t, err)
+	assert.Empty(t, userdata)
+}
+
+func TestBase64UserDataGeneratesErrorIfFileNotFound(t *testing.T) {
+	dir, err := ioutil.TempDir("", "awsuserdata")
+	assert.NoError(t, err, "Unable to create temporary directory.")
+
+	defer os.RemoveAll(dir)
+	userdata_path := filepath.Join(dir, "does-not-exist.yml")
+
+	driver := NewTestDriver()
+	driver.UserDataFile = userdata_path
+
+	_, ud_err := driver.Base64UserData()
+	assert.Equal(t, ud_err, errorReadingUserData)
+}
+
+func TestBase64UserDataIsCorrectWhenFileProvided(t *testing.T) {
+	dir, err := ioutil.TempDir("", "awsuserdata")
+	assert.NoError(t, err, "Unable to create temporary directory.")
+
+	defer os.RemoveAll(dir)
+
+	userdata_path := filepath.Join(dir, "test-userdata.yml")
+
+	content := []byte("#cloud-config\nhostname: userdata-test\nfqdn: userdata-test.amazonec2.driver\n")
+	contentBase64 := "I2Nsb3VkLWNvbmZpZwpob3N0bmFtZTogdXNlcmRhdGEtdGVzdApmcWRuOiB1c2VyZGF0YS10ZXN0LmFtYXpvbmVjMi5kcml2ZXIK"
+
+	err = ioutil.WriteFile(userdata_path, content, 0666)
+	assert.NoError(t, err, "Unable to create temporary userdata file.")
+
+	driver := NewTestDriver()
+	driver.UserDataFile = userdata_path
+
+	userdata, ud_err := driver.Base64UserData()
+
+	assert.NoError(t, ud_err)
+	assert.Equal(t, contentBase64, userdata)
 }
