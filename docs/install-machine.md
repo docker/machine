@@ -66,7 +66,7 @@ You can find additional documentation in the comments at the <a href="https://gi
 ## Where to go next
 
 -   [Docker Machine overview](overview.md)
--   Create and run a Docker host on your [local system using VirtualBox](get-started.md)
+-   Create and run a Docker host on your [local system using virtualization](get-started.md)
 -   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
 -   <a href="https://docs.docker.com/machine/drivers/" target="_blank">Docker Machine driver reference</a>
 -   <a href="https://docs.docker.com/machine/reference/" target="_blank">Docker Machine subcommand reference</a>

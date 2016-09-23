@@ -14,9 +14,11 @@ Create machines on [exoscale](https://www.exoscale.ch/).
 
 Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
 
+## Usage
+
     $ docker-machine create --driver exoscale --exoscale-api-key=API --exoscale-api-secret-key=SECRET vm
 
-Options:
+## Options
 
 -   `--exoscale-url`: Your API endpoint.
 -   `--exoscale-api-key`: **required** Your API key.
@@ -31,7 +33,9 @@ Options:
 
 If a custom security group is provided, you need to ensure that you allow TCP ports 22 and 2376 in an ingress rule. Moreover, if you want to use Swarm, also add TCP port 3376.
 
-Environment variables and default values:
+There is a limit to the number of docker machines that an anti-affinity group can have.  This can be worked around by specifying an additional anti-affinity group using `--exoscale-affinity-group=docker-machineX`
+
+#### Environment variables and default values
 
 | CLI option                      | Environment variable         | Default                           |
 | ------------------------------- | ---------------------------- | --------------------------------- |

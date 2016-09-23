@@ -15,9 +15,11 @@ Create Docker machines on [Digital Ocean](https://www.digitalocean.com/).
 You need to create a personal access token under "Apps & API" in the Digital Ocean
 Control Panel and pass that to `docker-machine create` with the `--digitalocean-access-token` option.
 
+## Usage
+
     $ docker-machine create --driver digitalocean --digitalocean-access-token=aa9399a2175a93b17b1c86c807e08d3fc4b79876545432a629602f61cf6ccd6b test-this
 
-Options:
+## Options
 
 -   `--digitalocean-access-token`: **required** Your personal access token for the Digital Ocean API.
 -   `--digitalocean-image`: The name of the Digital Ocean image to use.
@@ -33,7 +35,7 @@ Options:
 
 The DigitalOcean driver will use `ubuntu-15-10-x64` as the default image.
 
-Environment variables and default values:
+####  Environment variables and default values
 
 | CLI option                          | Environment variable              | Default            |
 | ----------------------------------- | --------------------------------- | ------------------ |

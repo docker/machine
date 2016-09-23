@@ -12,9 +12,11 @@ parent="smn_machine_drivers"
 
 Creates machines on [vCloud Air](http://vcloud.vmware.com) subscription service. You need an account within an existing subscription of vCloud Air VPC or Dedicated Cloud.
 
+## Usage
+
     $ docker-machine create --driver vmwarevcloudair --vmwarevcloudair-username=user --vmwarevcloudair-password=SECRET vm
 
-Options:
+## Options
 
 -   `--vmwarevcloudair-username`: **required** vCloud Air Username.
 -   `--vmwarevcloudair-password`: **required** vCloud Air Password.
@@ -33,7 +35,7 @@ Options:
 
 The VMware vCloud Air driver will use the `Ubuntu Server 12.04 LTS (amd64 20140927)` image by default.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                        | Environment variable      | Default                                    |
 | --------------------------------- | ------------------------- | ------------------------------------------ |
