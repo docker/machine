@@ -77,7 +77,7 @@ Optional:
 - `--azure-size`: Size for Azure Virtual Machine. [[?][vm-size]]
 - `--azure-ssh-user`: Username for SSH login.
 - `--azure-vnet`: Azure Virtual Network name to connect the virtual machine.
-  [[?][vnet]] To specify a Virtual Network from another resource group, use `resourcegroup:vnet-name` format. 
+  [[?][vnet]] To specify a Virtual Network from another resource group, use `resourcegroup:vnet-name` format.
 - `--azure-subnet`: Azure Subnet Name to be used within the Virtual Network.
 - `--azure-subnet-prefix`: Private CIDR block. Used to create subnet if it does not exist. Must match in the case that the subnet does exist.
 - `--azure-availability-set`: Azure Availability Set to place the virtual machine into. [[?][av-set]]
@@ -97,7 +97,7 @@ Optional:
 [vnet]:     https://azure.microsoft.com/en-us/documentation/articles/virtual-networks-overview/
 [av-set]:   https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-manage-availability/
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                      | Environment variable          | Default            |
 | ------------------------------- | ----------------------------- | ------------------ |
@@ -140,7 +140,7 @@ after the last machine using these resources is removed.
 Each machine is created with a public dynamic IP address for external
 connectivity. All its ports (except Docker and SSH) are closed by default. You
 can use `--azure-open-port` argument to specify multiple port numbers to be
-accessible from Internet. 
+accessible from Internet.
 
 Once the machine is created, you can modify [Network Security Group][nsg]
 rules and open ports of the machine from the [Azure Portal][portal].

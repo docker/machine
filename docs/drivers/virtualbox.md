@@ -15,6 +15,8 @@ This driver requires VirtualBox 5+ to be installed on your host.
 Using VirtualBox 4.3+ should work but will give you a warning. Older versions
 will refuse to work.
 
+## Usage
+
     $ docker-machine create --driver=virtualbox vbox-test
 
 You can create an entirely new machine or you can convert a Boot2Docker VM into
@@ -27,7 +29,7 @@ The size of the VM's disk can be configured this way:
 
     $ docker-machine create -d virtualbox --virtualbox-disk-size "100000" large
 
-Options:
+## Options
 
 -   `--virtualbox-memory`: Size of memory for the host in MB.
 -   `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
@@ -69,7 +71,7 @@ to `.254`.  For example, a specified CIDR of `192.168.24.1/24` would have a
 DHCP server between `192.168.24.2-25`, a lower bound of `192.168.24.100` and
 upper bound of `192.168.24.254`.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                           | Environment variable               | Default                  |
 | ------------------------------------ | ---------------------------------- | ------------------------ |
