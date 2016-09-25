@@ -133,7 +133,9 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 			return nil, fmt.Errorf("cannot parse security rule protocol: %v", err)
 		}
 		log.Debugf("User-requested port to be opened on NSG: %v/%s", port, proto)
-		r := mkRule(basePri+i, fmt.Sprintf("Port%s%sAllowAny", port, proto), "User requested port to be accessible from Internet via docker-machine", "*", port, proto)
+		name := fmt.Sprintf("Port%s-%sAllowAny", port, proto)
+		name = strings.Replace(name, "*", "Asterisk", -1)
+		r := mkRule(basePri+i, name, "User requested port to be accessible from Internet via docker-machine", "*", port, proto)
 		rl = append(rl, r)
 	}
 	log.Debugf("Total NSG rules: %d", len(rl))
