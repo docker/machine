@@ -161,7 +161,9 @@ func (d *Driver) ipAddress() (ip string, err error) {
 		ip, err = c.GetPrivateIPAddress(d.ResourceGroup, d.naming().NIC())
 	} else {
 		ipType = "Public"
-		ip, err = c.GetPublicIPAddress(d.ResourceGroup, d.naming().IP())
+		ip, err = c.GetPublicIPAddress(d.ResourceGroup,
+			d.naming().IP(),
+			d.DNSLabel != "")
 	}
 
 	log.Debugf("Retrieving %s IP address...", ipType)
