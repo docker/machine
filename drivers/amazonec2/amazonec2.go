@@ -296,7 +296,7 @@ func (d *Driver) buildClient() Ec2Client {
 }
 
 func (d *Driver) buildCredentials() awsCredentials {
-	return NewAWSCredentials(d.AccessKey, d.SecretKey, d.SessionToken, "", "")
+	return NewAWSCredentials(d.AccessKey, d.SecretKey, d.SessionToken)
 }
 
 func (d *Driver) getClient() Ec2Client {
