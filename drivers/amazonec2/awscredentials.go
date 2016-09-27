@@ -11,27 +11,21 @@ type awsCredentials interface {
 
 type ProviderFactory interface {
 	NewStaticProvider(id, secret, token string) credentials.Provider
-
-	NewSharedProvider(filename, profile string) credentials.Provider
 }
 
 type defaultAWSCredentials struct {
 	AccessKey        string
 	SecretKey        string
 	SessionToken     string
-	Filename         string
-	Profile          string
 	providerFactory  ProviderFactory
 	fallbackProvider awsCredentials
 }
 
-func NewAWSCredentials(id, secret, token, filename, profile string) *defaultAWSCredentials {
+func NewAWSCredentials(id, secret, token string) *defaultAWSCredentials {
 	creds := defaultAWSCredentials{
 		AccessKey:        id,
 		SecretKey:        secret,
 		SessionToken:     token,
-		Filename:         filename,
-		Profile:          profile,
 		fallbackProvider: &AwsDefaultCredentialsProvider{},
 		providerFactory:  &defaultProviderFactory{},
 	}
@@ -42,9 +36,6 @@ func (c *defaultAWSCredentials) Credentials() *credentials.Credentials {
 	providers := []credentials.Provider{}
 	if c.AccessKey != "" && c.SecretKey != "" {
 		providers = append(providers, c.providerFactory.NewStaticProvider(c.AccessKey, c.SecretKey, c.SessionToken))
-	}
-	if c.Filename != "" || c.Profile != "" {
-		providers = append(providers, c.providerFactory.NewSharedProvider(c.Filename, c.Profile))
 	}
 	if c.fallbackProvider != nil {
 		fallbackCreds, err := c.fallbackProvider.Credentials().Get()
@@ -69,11 +60,4 @@ func (c *defaultProviderFactory) NewStaticProvider(id, secret, token string) cre
 		SecretAccessKey: secret,
 		SessionToken:    token,
 	}}
-}
-
-func (c *defaultProviderFactory) NewSharedProvider(filename, profile string) credentials.Provider {
-	return &credentials.SharedCredentialsProvider{
-		Filename: filename,
-		Profile:  profile,
-	}
 }

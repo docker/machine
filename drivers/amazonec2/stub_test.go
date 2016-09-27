@@ -61,44 +61,40 @@ func NewErrorAwsCredentials() awsCredentials {
 	return &errorFallbackCredentials{}
 }
 
-type testFileCredentialsProvider struct {
-	fileProvider credentials.Provider
-	staticError  bool
-}
-
-func NewTestFileCredentialsProvider(id, secret, token string) *testFileCredentialsProvider {
-	return &testFileCredentialsProvider{
-		fileProvider: &okProvider{id, secret, token},
-		staticError:  false,
-	}
-}
-
-func NewTestFileCredentialsProviderWithStaticError(id, secret, token string) *testFileCredentialsProvider {
-	return &testFileCredentialsProvider{
-		fileProvider: &okProvider{id, secret, token},
-		staticError:  true,
-	}
-}
-
-func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
-	if c.staticError {
-		return &errorProvider{}
-	} else {
-		return &okProvider{id, secret, token}
-	}
-}
-
-func (c *testFileCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
-	return c.fileProvider
-}
+//type testFileCredentialsProvider struct {
+//	fileProvider credentials.Provider
+//	staticError  bool
+//}
+//
+//func NewTestFileCredentialsProvider(id, secret, token string) *testFileCredentialsProvider {
+//	return &testFileCredentialsProvider{
+//		fileProvider: &okProvider{id, secret, token},
+//		staticError:  false,
+//	}
+//}
+//
+//func NewTestFileCredentialsProviderWithStaticError(id, secret, token string) *testFileCredentialsProvider {
+//	return &testFileCredentialsProvider{
+//		fileProvider: &okProvider{id, secret, token},
+//		staticError:  true,
+//	}
+//}
+//
+//func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
+//	if c.staticError {
+//		return &errorProvider{}
+//	} else {
+//		return &okProvider{id, secret, token}
+//	}
+//}
+//
+//func (c *testFileCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
+//	return c.fileProvider
+//}
 
 type errorCredentialsProvider struct{}
 
 func (c *errorCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
-	return &errorProvider{}
-}
-
-func (c *errorCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
 	return &errorProvider{}
 }
 

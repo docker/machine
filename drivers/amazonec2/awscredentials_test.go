@@ -6,7 +6,7 @@ import (
 )
 
 func TestAccessKeyIsMandatoryWhenSystemCredentialsAreNotPresent(t *testing.T) {
-	awsCreds := NewAWSCredentials("", "", "", "", "")
+	awsCreds := NewAWSCredentials("", "", "")
 	awsCreds.fallbackProvider = nil
 
 	_, err := awsCreds.Credentials().Get()
@@ -14,7 +14,7 @@ func TestAccessKeyIsMandatoryWhenSystemCredentialsAreNotPresent(t *testing.T) {
 }
 
 func TestAccessKeyIsMandatoryEvenIfSecretKeyIsPassedWhenSystemCredentialsAreNotPresent(t *testing.T) {
-	awsCreds := NewAWSCredentials("", "secret", "", "", "")
+	awsCreds := NewAWSCredentials("", "secret", "")
 	awsCreds.fallbackProvider = nil
 
 	_, err := awsCreds.Credentials().Get()
@@ -22,7 +22,7 @@ func TestAccessKeyIsMandatoryEvenIfSecretKeyIsPassedWhenSystemCredentialsAreNotP
 }
 
 func TestSecretKeyIsMandatoryWhenSystemCredentialsAreNotPresent(t *testing.T) {
-	awsCreds := NewAWSCredentials("access", "", "", "", "")
+	awsCreds := NewAWSCredentials("access", "", "")
 	awsCreds.fallbackProvider = nil
 
 	_, err := awsCreds.Credentials().Get()
@@ -30,7 +30,7 @@ func TestSecretKeyIsMandatoryWhenSystemCredentialsAreNotPresent(t *testing.T) {
 }
 
 func TestFallbackCredentialsAreLoadedWhenAccessKeyAndSecretKeyAreMissing(t *testing.T) {
-	awsCreds := NewAWSCredentials("", "", "", "", "")
+	awsCreds := NewAWSCredentials("", "", "")
 	awsCreds.fallbackProvider = &fallbackCredentials{}
 
 	creds, err := awsCreds.Credentials().Get()
@@ -42,7 +42,7 @@ func TestFallbackCredentialsAreLoadedWhenAccessKeyAndSecretKeyAreMissing(t *test
 }
 
 func TestFallbackCredentialsAreLoadedWhenAccessKeyIsMissing(t *testing.T) {
-	awsCreds := NewAWSCredentials("", "secret", "", "", "")
+	awsCreds := NewAWSCredentials("", "secret", "")
 	awsCreds.fallbackProvider = &fallbackCredentials{}
 
 	creds, err := awsCreds.Credentials().Get()
@@ -54,7 +54,7 @@ func TestFallbackCredentialsAreLoadedWhenAccessKeyIsMissing(t *testing.T) {
 }
 
 func TestFallbackCredentialsAreLoadedWhenSecretKeyIsMissing(t *testing.T) {
-	awsCreds := NewAWSCredentials("access", "", "", "", "")
+	awsCreds := NewAWSCredentials("access", "", "")
 	awsCreds.fallbackProvider = &fallbackCredentials{}
 
 	creds, err := awsCreds.Credentials().Get()
@@ -66,7 +66,7 @@ func TestFallbackCredentialsAreLoadedWhenSecretKeyIsMissing(t *testing.T) {
 }
 
 func TestOptionCredentialsAreLoadedWhenAccessKeyAndSecretKeyAreProvided(t *testing.T) {
-	awsCreds := NewAWSCredentials("access", "secret", "", "", "")
+	awsCreds := NewAWSCredentials("access", "secret", "")
 	awsCreds.fallbackProvider = &fallbackCredentials{}
 
 	creds, err := awsCreds.Credentials().Get()
@@ -77,73 +77,8 @@ func TestOptionCredentialsAreLoadedWhenAccessKeyAndSecretKeyAreProvided(t *testi
 	assert.Equal(t, "", creds.SessionToken)
 }
 
-func TestCredentialsAreLoadedFromFileWhenFilenameIsProvided(t *testing.T) {
-	awsCreds := NewAWSCredentials("", "", "", "my/aws/credentials", "")
-	awsCreds.fallbackProvider = &fallbackCredentials{}
-	awsCreds.providerFactory = NewTestFileCredentialsProvider("access", "secret", "")
-
-	creds, err := awsCreds.Credentials().Get()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "access", creds.AccessKeyID)
-	assert.Equal(t, "secret", creds.SecretAccessKey)
-	assert.Equal(t, "", creds.SessionToken)
-}
-
-func TestCredentialsAreLoadedFromFileWhenProfileIsProvided(t *testing.T) {
-	awsCreds := NewAWSCredentials("", "", "", "", "non-default-profile")
-	awsCreds.fallbackProvider = &fallbackCredentials{}
-	awsCreds.providerFactory = NewTestFileCredentialsProvider("access", "secret", "")
-
-	creds, err := awsCreds.Credentials().Get()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "access", creds.AccessKeyID)
-	assert.Equal(t, "secret", creds.SecretAccessKey)
-	assert.Equal(t, "", creds.SessionToken)
-}
-
-func TestCredentialsAreLoadedFromFileWhenFilenameAndProfileAreProvided(t *testing.T) {
-	awsCreds := NewAWSCredentials("", "", "", "my/aws/credentials", "non-default-profile")
-	awsCreds.fallbackProvider = &fallbackCredentials{}
-	awsCreds.providerFactory = NewTestFileCredentialsProvider("access", "secret", "")
-
-	creds, err := awsCreds.Credentials().Get()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "access", creds.AccessKeyID)
-	assert.Equal(t, "secret", creds.SecretAccessKey)
-	assert.Equal(t, "", creds.SessionToken)
-}
-
-func TestOptionCredentialsAreLoadedEvenIfFilenameAndProfileAreProvided(t *testing.T) {
-	awsCreds := NewAWSCredentials("access", "secret", "token", "my/aws/credentials", "non-default-profile")
-	awsCreds.fallbackProvider = &fallbackCredentials{}
-	awsCreds.providerFactory = NewTestFileCredentialsProvider("foo", "bar", "")
-
-	creds, err := awsCreds.Credentials().Get()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "access", creds.AccessKeyID)
-	assert.Equal(t, "secret", creds.SecretAccessKey)
-	assert.Equal(t, "token", creds.SessionToken)
-}
-
-func TestCredentialsAreLoadedFromFileIfStaticCredentialsGenerateError(t *testing.T) {
-	awsCreds := NewAWSCredentials("foo", "bar", "", "my/aws/credentials", "non-default-profile")
-	awsCreds.fallbackProvider = &fallbackCredentials{}
-	awsCreds.providerFactory = NewTestFileCredentialsProviderWithStaticError("access", "secret", "")
-
-	creds, err := awsCreds.Credentials().Get()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "access", creds.AccessKeyID)
-	assert.Equal(t, "secret", creds.SecretAccessKey)
-	assert.Equal(t, "", creds.SessionToken)
-}
-
-func TestFallbackCredentialsAreLoadedIfBothStaticAndSharedCredentialsGenerateError(t *testing.T) {
-	awsCreds := NewAWSCredentials("access", "secret", "token", "my/aws/credentials", "non-default-profile")
+func TestFallbackCredentialsAreLoadedIfStaticCredentialsGenerateError(t *testing.T) {
+	awsCreds := NewAWSCredentials("access", "secret", "token")
 	awsCreds.fallbackProvider = &fallbackCredentials{}
 	awsCreds.providerFactory = &errorCredentialsProvider{}
 
@@ -156,7 +91,7 @@ func TestFallbackCredentialsAreLoadedIfBothStaticAndSharedCredentialsGenerateErr
 }
 
 func TestErrorGeneratedWhenAllProvidersGenerateErrors(t *testing.T) {
-	awsCreds := NewAWSCredentials("access", "secret", "token", "my/aws/credentials", "non-default-profile")
+	awsCreds := NewAWSCredentials("access", "secret", "token")
 	awsCreds.fallbackProvider = &errorFallbackCredentials{}
 	awsCreds.providerFactory = &errorCredentialsProvider{}
 
