@@ -41,24 +41,65 @@ func (p *okProvider) IsExpired() bool {
 	return true
 }
 
-type cliCredentials struct{}
+type fallbackCredentials struct{}
 
-func (c *cliCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
-	return credentials.NewCredentials(&okProvider{id, secret, token})
+func (c *fallbackCredentials) Credentials() *credentials.Credentials {
+	return credentials.NewStaticCredentials("fallback_access", "fallback_secret", "fallback_token")
 }
 
-func (c *cliCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
+func NewValidAwsCredentials() awsCredentials {
+	return &fallbackCredentials{}
+}
+
+type errorFallbackCredentials struct{}
+
+func (c *errorFallbackCredentials) Credentials() *credentials.Credentials {
 	return credentials.NewCredentials(&errorProvider{})
 }
 
-type fileCredentials struct{}
-
-func (c *fileCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
-	return nil
+func NewErrorAwsCredentials() awsCredentials {
+	return &errorFallbackCredentials{}
 }
 
-func (c *fileCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
-	return credentials.NewCredentials(&okProvider{"access", "secret", "token"})
+type testFileCredentialsProvider struct {
+	fileProvider credentials.Provider
+	staticError  bool
+}
+
+func NewTestFileCredentialsProvider(id, secret, token string) *testFileCredentialsProvider {
+	return &testFileCredentialsProvider{
+		fileProvider: &okProvider{id, secret, token},
+		staticError:  false,
+	}
+}
+
+func NewTestFileCredentialsProviderWithStaticError(id, secret, token string) *testFileCredentialsProvider {
+	return &testFileCredentialsProvider{
+		fileProvider: &okProvider{id, secret, token},
+		staticError:  true,
+	}
+}
+
+func (c *testFileCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
+	if c.staticError {
+		return &errorProvider{}
+	} else {
+		return &okProvider{id, secret, token}
+	}
+}
+
+func (c *testFileCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
+	return c.fileProvider
+}
+
+type errorCredentialsProvider struct{}
+
+func (c *errorCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
+	return &errorProvider{}
+}
+
+func (c *errorCredentialsProvider) NewSharedProvider(filename, profile string) credentials.Provider {
+	return &errorProvider{}
 }
 
 type fakeEC2WithDescribe struct {
@@ -128,12 +169,16 @@ func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *
 
 func NewTestDriver() *Driver {
 	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2{}
+	}
 	return driver
 }
 
 func NewCustomTestDriver(ec2Client Ec2Client) *Driver {
 	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return ec2Client }
+	driver.clientFactory = func() Ec2Client {
+		return ec2Client
+	}
 	return driver
 }
