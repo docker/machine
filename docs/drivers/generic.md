@@ -54,7 +54,7 @@ as a sudoer with `NOPASSWD`. See https://help.ubuntu.com/community/Sudoers.
 
 > **Note**: You must use a base operating system supported by Machine.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                 | Environment variable | Default                   |
 | -------------------------- | -------------------- | ------------------------- |
