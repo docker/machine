@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/docker/machine/drivers/azure/logutil"
 	"github.com/docker/machine/libmachine/log"
 
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -19,6 +20,9 @@ import (
 // cache it for future use.
 func loadOrFindTenantID(env azure.Environment, subscriptionID string) (string, error) {
 	var tenantID string
+
+	log.Debug("Looking up AAD Tenant ID.", logutil.Fields{
+		"subs": subscriptionID})
 
 	// Load from cache
 	fp := tenantIDPath(subscriptionID)
@@ -47,6 +51,9 @@ func loadOrFindTenantID(env azure.Environment, subscriptionID string) (string, e
 		}
 		log.Debugf("Cached tenant ID to file: %s", fp)
 	}
+	log.Debug("Found AAD Tenant ID.", logutil.Fields{
+		"tenant": tenantID,
+		"subs":   subscriptionID})
 	return tenantID, nil
 }
 
