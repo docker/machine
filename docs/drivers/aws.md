@@ -76,14 +76,14 @@ You can use environment variables:
 -   `--amazonec2-retries`:  Set retry count for recoverable failures (use -1 to disable)
 
 
-Environment variables and default values:
+#### Environment variables and default values:
 
 | CLI option                               | Environment variable    | Default          |
 | ---------------------------------------- | ----------------------- | ---------------- |
 | `--amazonec2-access-key`                 | `AWS_ACCESS_KEY_ID`     | -                |
 | `--amazonec2-secret-key`                 | `AWS_SECRET_ACCESS_KEY` | -                |
 | `--amazonec2-session-token`              | `AWS_SESSION_TOKEN`     | -                |
-| `--amazonec2-ami`                        | `AWS_AMI`               | `ami-13be557e`   |
+| `--amazonec2-ami`                        | `AWS_AMI`               | `ami-c60b90d1`   |
 | `--amazonec2-region`                     | `AWS_DEFAULT_REGION`    | `us-east-1`      |
 | `--amazonec2-vpc-id`                     | `AWS_VPC_ID`            | -                |
 | `--amazonec2-zone`                       | `AWS_ZONE`              | `a`              |
@@ -109,23 +109,23 @@ Environment variables and default values:
 
 ## Default AMIs
 
-By default, the Amazon EC2 driver will use a daily image of Ubuntu 16.04 LTS (Ubuntu 15.10 for cn-north-1).
+By default, the Amazon EC2 driver will use a daily image of Ubuntu 16.04 LTS.
 
 | Region         | AMI ID       |
 | -------------- | ------------ |
-| ap-northeast-1 | ami-5d38d93c |
+| ap-northeast-1 | ami-51f13330 |
 | ap-northeast-2 | ami-a3915acd |
-| ap-southeast-1 | ami-a35284c0 |
-| ap-southeast-2 | ami-f4361997 |
-| ap-south-1     | ami-f7513b98 |
-| cn-north-1     | ami-79eb2214 |
-| eu-west-1      | ami-7a138709 |
-| eu-central-1   | ami-f9e30f96 |
-| sa-east-1      | ami-0d5dd561 |
-| us-east-1      | ami-13be557e |
-| us-west-1      | ami-84423ae4 |
-| us-west-2      | ami-06b94666 |
-| us-gov-west-1  | ami-8f4df2ee |
+| ap-southeast-1 | ami-fec51c9d |
+| ap-southeast-2 | ami-a78ebac4 |
+| ap-south-1     | ami-7e94fe11 |
+| cn-north-1     | ami-2c3bf141 |
+| eu-central-1   | ami-004abc6f |
+| eu-west-1      | ami-c06b1eb3 |
+| sa-east-1      | ami-a674e2ca |
+| us-east-1      | ami-c60b90d1 |
+| us-west-1      | ami-1bf0b37b |
+| us-west-2      | ami-f701cb97 |
+| us-gov-west-1  | ami-76f34a17 |
 
 ## Security Group
 

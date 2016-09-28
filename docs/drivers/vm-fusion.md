@@ -12,9 +12,11 @@ parent="smn_machine_drivers"
 
 Creates machines locally on [VMware Fusion](http://www.vmware.com/products/fusion). Requires VMware Fusion to be installed.
 
+## Usage
+
     $ docker-machine create --driver vmwarefusion vm
 
-Options:
+## Options
 
 -   `--vmwarefusion-boot2docker-url`: URL for boot2docker image.
 -   `--vmwarefusion-cpu-count`: Number of CPUs for the machine (-1 to use the number of CPUs available)
@@ -25,7 +27,7 @@ Options:
 The VMware Fusion driver uses the latest boot2docker image.
 See [frapposelli/boot2docker](https://github.com/frapposelli/boot2docker/tree/vmware-64bit)
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                       | Environment variable     | Default                  |
 | -------------------------------- | ------------------------ | ------------------------ |

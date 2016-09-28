@@ -142,7 +142,7 @@ func (a AzureClient) DeleteNetworkSecurityGroupIfExists(resourceGroup, name stri
 		func() (autorest.Response, error) { return a.securityGroupsClient().Delete(resourceGroup, name, nil) })
 }
 
-func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup, name, location string, isStatic bool) error {
+func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup, name, location string, isStatic bool, dnsLabel string) error {
 	log.Info("Creating public IP address.", logutil.Fields{
 		"name":   name,
 		"static": isStatic})
@@ -154,11 +154,19 @@ func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup
 		ipType = network.Dynamic
 	}
 
+	var dns *network.PublicIPAddressDNSSettings
+	if dnsLabel != "" {
+		dns = &network.PublicIPAddressDNSSettings{
+			DomainNameLabel: to.StringPtr(dnsLabel),
+		}
+	}
+
 	_, err := a.publicIPAddressClient().CreateOrUpdate(resourceGroup, name,
 		network.PublicIPAddress{
 			Location: to.StringPtr(location),
 			Properties: &network.PublicIPAddressPropertiesFormat{
 				PublicIPAllocationMethod: ipType,
+				DNSSettings:              dns,
 			},
 		}, nil)
 	if err != nil {
@@ -564,8 +572,9 @@ func (a AzureClient) CleanupAvailabilitySetIfExists(resourceGroup, name string) 
 }
 
 // GetPublicIPAddress attempts to get public IP address from the Public IP
-// resource. If IP address is not allocated yet, returns empty string.
-func (a AzureClient) GetPublicIPAddress(resourceGroup, name string) (string, error) {
+// resource. If IP address is not allocated yet, returns empty string. If
+// useFqdn is set to true, the a FQDN hostname will be returned.
+func (a AzureClient) GetPublicIPAddress(resourceGroup, name string, useFqdn bool) (string, error) {
 	f := logutil.Fields{"name": name}
 	log.Debug("Querying public IP address.", f)
 	ip, err := a.publicIPAddressClient().Get(resourceGroup, name, "")
@@ -575,6 +584,14 @@ func (a AzureClient) GetPublicIPAddress(resourceGroup, name string) (string, err
 	if ip.Properties == nil {
 		log.Debug("publicIP.Properties is nil. Could not determine IP address", f)
 		return "", nil
+	}
+
+	if useFqdn { // return FQDN value on public IP
+		log.Debug("Will attempt to return FQDN.", f)
+		if ip.Properties.DNSSettings == nil || ip.Properties.DNSSettings.Fqdn == nil {
+			return "", errors.New("FQDN not found on public IP address")
+		}
+		return to.String(ip.Properties.DNSSettings.Fqdn), nil
 	}
 	return to.String(ip.Properties.IPAddress), nil
 }

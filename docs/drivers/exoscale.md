@@ -14,16 +14,18 @@ Create machines on [exoscale](https://www.exoscale.ch/).
 
 Get your API key and API secret key from [API details](https://portal.exoscale.ch/account/api) and pass them to `machine create` with the `--exoscale-api-key` and `--exoscale-api-secret-key` options.
 
+## Usage
+
     $ docker-machine create --driver exoscale --exoscale-api-key=API --exoscale-api-secret-key=SECRET vm
 
-Options:
+## Options
 
 -   `--exoscale-url`: Your API endpoint.
 -   `--exoscale-api-key`: **required** Your API key.
 -   `--exoscale-api-secret-key`: **required** Your API secret key.
 -   `--exoscale-instance-profile`: Instance profile.
 -   `--exoscale-disk-size`: Disk size for the host in GB (10, 50, 100, 200, 400).
--   `--exoscale-image`: Image template (eg. ubuntu-14.04, ubuntu-15.10).
+-   `--exoscale-image`: Image template (e.g. ubuntu-14.04, ubuntu-15.10).
 -   `--exoscale-security-group`: Security group. It will be created if it doesn't exist.
 -   `--exoscale-availability-zone`: Exoscale availability zone.
 -   `--exoscale-ssh-user`: SSH username, which must match the default SSH user for the used image.
@@ -34,7 +36,7 @@ If a custom security group is provided, you need to ensure that you allow TCP po
 
 There is a limit to the number of docker machines that an anti-affinity group can have.  This can be worked around by specifying an additional anti-affinity group using `--exoscale-affinity-group=docker-machineX`
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                      | Environment variable         | Default                           |
 | ------------------------------- | ---------------------------- | --------------------------------- |

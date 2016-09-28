@@ -51,6 +51,7 @@ const (
 	flAzureUsePrivateIP    = "azure-use-private-ip"
 	flAzureStaticPublicIP  = "azure-static-public-ip"
 	flAzureNoPublicIP      = "azure-no-public-ip"
+	flAzureDNSLabel        = "azure-dns"
 	flAzureStorageType     = "azure-storage-type"
 	flAzureCustomData      = "azure-custom-data"
 	flAzureClientID        = "azure-client-id"
@@ -87,6 +88,7 @@ type Driver struct {
 	PrivateIPAddr  string
 	UsePrivateIP   bool
 	NoPublicIP     bool
+	DNSLabel       string
 	StaticPublicIP bool
 	CustomDataFile string
 
@@ -212,6 +214,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  flAzureStaticPublicIP,
 			Usage: "Assign a static public IP address to the machine",
 		},
+		mcnflag.StringFlag{
+			Name:   flAzureDNSLabel,
+			Usage:  "A unique DNS label for the public IP adddress",
+			EnvVar: "AZURE_DNS_LABEL",
+		},
 		mcnflag.StringSliceFlag{
 			Name:  flAzurePorts,
 			Usage: "Make the specified port number accessible from the Internet",
@@ -267,6 +274,7 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.NoPublicIP = fl.Bool(flAzureNoPublicIP)
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
+	d.DNSLabel = fl.String(flAzureDNSLabel)
 	d.CustomDataFile = fl.String(flAzureCustomData)
 
 	d.ClientID = fl.String(flAzureClientID)
@@ -368,7 +376,7 @@ func (d *Driver) Create() error {
 	if d.NoPublicIP {
 		log.Info("Not creating a public IP address.")
 	} else {
-		if err := c.CreatePublicIPAddress(d.ctx, d.ResourceGroup, d.naming().IP(), d.Location, d.StaticPublicIP); err != nil {
+		if err := c.CreatePublicIPAddress(d.ctx, d.ResourceGroup, d.naming().IP(), d.Location, d.StaticPublicIP, d.DNSLabel); err != nil {
 			return err
 		}
 	}

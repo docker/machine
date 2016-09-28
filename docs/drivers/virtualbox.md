@@ -15,6 +15,8 @@ This driver requires VirtualBox 5+ to be installed on your host.
 Using VirtualBox 4.3+ should work but will give you a warning. Older versions
 will refuse to work.
 
+## Usage
+
     $ docker-machine create --driver=virtualbox vbox-test
 
 You can create an entirely new machine or you can convert a Boot2Docker VM into
@@ -27,7 +29,7 @@ The size of the VM's disk can be configured this way:
 
     $ docker-machine create -d virtualbox --virtualbox-disk-size "100000" large
 
-Options:
+## Options
 
 -   `--virtualbox-memory`: Size of memory for the host in MB.
 -   `--virtualbox-cpu-count`: Number of CPUs to use to create the VM. Defaults to single CPU.
@@ -38,6 +40,7 @@ Options:
 -   `--virtualbox-hostonly-cidr`: The CIDR of the host only adapter.
 -   `--virtualbox-hostonly-nictype`: Host Only Network Adapter Type. Possible values are are '82540EM' (Intel PRO/1000), 'Am79C973' (PCnet-FAST III) and 'virtio' Paravirtualized network adapter.
 -   `--virtualbox-hostonly-nicpromisc`: Host Only Network Adapter Promiscuous Mode. Possible options are deny , allow-vms, allow-all
+-   `--virtualbox-hostonly-no-dhcp`: Disable the Host Only DHCP Server
 -   `--virtualbox-no-share`: Disable the mount of your home directory
 -   `--virtualbox-no-dns-proxy`: Disable proxying all DNS requests to the host (Boolean value, default to false)
 -   `--virtualbox-no-vtx-check`: Disable checking for the availability of hardware virtualization before the vm is started
@@ -68,7 +71,7 @@ to `.254`.  For example, a specified CIDR of `192.168.24.1/24` would have a
 DHCP server between `192.168.24.2-25`, a lower bound of `192.168.24.100` and
 upper bound of `192.168.24.254`.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                           | Environment variable               | Default                  |
 | ------------------------------------ | ---------------------------------- | ------------------------ |
@@ -81,6 +84,7 @@ Environment variables and default values:
 | `--virtualbox-hostonly-cidr`         | `VIRTUALBOX_HOSTONLY_CIDR`         | `192.168.99.1/24`        |
 | `--virtualbox-hostonly-nictype`      | `VIRTUALBOX_HOSTONLY_NIC_TYPE`     | `82540EM`                |
 | `--virtualbox-hostonly-nicpromisc`   | `VIRTUALBOX_HOSTONLY_NIC_PROMISC`  | `deny`                   |
+| `--virtualbox-hostonly-no-dhcp`      | `VIRTUALBOX_HOSTONLY_NO_DHCP`      | `false`                  |
 | `--virtualbox-no-share`              | `VIRTUALBOX_NO_SHARE`              | `false`                  |
 | `--virtualbox-no-dns-proxy`          | `VIRTUALBOX_NO_DNS_PROXY`          | `false`                  |
 | `--virtualbox-no-vtx-check`          | `VIRTUALBOX_NO_VTX_CHECK`          | `false`                  |

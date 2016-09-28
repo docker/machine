@@ -11,9 +11,12 @@ parent="smn_machine_drivers"
 # VMware vSphere
 
 Creates machines on a [VMware vSphere](http://www.vmware.com/products/vsphere) Virtual Infrastructure. The machine must have a working vSphere ESXi installation. You can use a paid license or free 60 day trial license. Your installation may also include an optional VCenter server.
+
+## Usage
+
     $ docker-machine create --driver vmwarevsphere --vmwarevsphere-username=user --vmwarevsphere-password=SECRET vm
 
-Options:
+## Options
 
 -   `--vmwarevsphere-username`: **required** vSphere Username.
 -   `--vmwarevsphere-password`: **required** vSphere Password.
@@ -31,7 +34,7 @@ Options:
 
 The VMware vSphere driver uses the latest boot2docker image.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                        | Environment variable      | Default                  |
 | --------------------------------- | ------------------------- | ------------------------ |

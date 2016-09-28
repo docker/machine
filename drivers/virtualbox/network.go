@@ -286,7 +286,7 @@ func addHostOnlyDHCPServer(ifname string, d dhcpServer, vbox VBoxManager) error 
 	command := "add"
 	if dhcp, ok := dhcps[name]; ok {
 		command = "modify"
-		if (dhcp.IPv4.IP.Equal(d.IPv4.IP)) && (dhcp.IPv4.Mask.String() == d.IPv4.Mask.String()) && (dhcp.LowerIP.Equal(d.LowerIP)) && (dhcp.UpperIP.Equal(d.UpperIP)) && dhcp.Enabled {
+		if (dhcp.IPv4.IP.Equal(d.IPv4.IP)) && (dhcp.IPv4.Mask.String() == d.IPv4.Mask.String()) && (dhcp.LowerIP.Equal(d.LowerIP)) && (dhcp.UpperIP.Equal(d.UpperIP)) && (dhcp.Enabled == d.Enabled) {
 			// dhcp is up to date
 			return nil
 		}

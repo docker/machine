@@ -42,9 +42,22 @@ func (fs *FakeStore) Load(name string) (*host.Host, error) {
 }
 
 func (fs *FakeStore) Remove(name string) error {
-	return fs.RemoveErr
+	if fs.RemoveErr != nil {
+		return fs.RemoveErr
+	}
+	for i, h := range fs.Hosts {
+		if h.Name == name {
+			fs.Hosts = append(fs.Hosts[:i], fs.Hosts[i+1:]...)
+			return nil
+		}
+	}
+	return nil
 }
 
 func (fs *FakeStore) Save(host *host.Host) error {
+	if fs.SaveErr == nil {
+		fs.Hosts = append(fs.Hosts, host)
+		return nil
+	}
 	return fs.SaveErr
 }

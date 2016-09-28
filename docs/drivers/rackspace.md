@@ -12,9 +12,11 @@ parent="smn_machine_drivers"
 
 Create machines on [Rackspace cloud](http://www.rackspace.com/cloud)
 
+## Usage
+
     $ docker-machine create --driver rackspace --rackspace-username=user --rackspace-api-key=KEY --rackspace-region=region vm
 
-Options:
+## Options
 
 -   `--rackspace-username`: **required** Rackspace account username.
 -   `--rackspace-api-key`: **required** Rackspace API key.
@@ -28,7 +30,7 @@ Options:
 
 The Rackspace driver will use `59a3fadd-93e7-4674-886a-64883e17115f` (Ubuntu 15.10) by default.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                   | Environment variable | Default                                |
 | ---------------------------- | -------------------- | -------------------------------------- |

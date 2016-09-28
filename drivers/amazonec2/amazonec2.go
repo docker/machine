@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/docker/machine/drivers/driverutil"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -29,7 +30,7 @@ const (
 	driverName               = "amazonec2"
 	ipRange                  = "0.0.0.0/0"
 	machineSecurityGroupName = "docker-machine"
-	defaultAmiId             = "ami-13be557e"
+	defaultAmiId             = "ami-c60b90d1"
 	defaultRegion            = "us-east-1"
 	defaultInstanceType      = "t2.micro"
 	defaultDeviceName        = "/dev/sda1"
@@ -307,10 +308,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return err
 	}
 
-	if d.Endpoint != "" {
-		region = ""
-	}
-
 	image := flags.String("amazonec2-ami")
 	if len(image) == 0 {
 		image = regionDetails[region].AmiId
@@ -349,7 +346,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
 
-	if d.DisableSSL && d.Endpoint != "" {
+	if d.DisableSSL && d.Endpoint == "" {
 		return errorDisableSSLWithoutCustomEndpoint
 	}
 
@@ -464,7 +461,7 @@ func (d *Driver) checkPrereqs() error {
 		// otherwise we found the key: success
 	}
 
-	regionZone := d.Region + d.Zone
+	regionZone := d.getRegionZone()
 	if d.SubnetId == "" {
 		filters := []*ec2.Filter{
 			{
@@ -493,7 +490,7 @@ func (d *Driver) checkPrereqs() error {
 		// try to find default
 		if len(subnets.Subnets) > 1 {
 			for _, subnet := range subnets.Subnets {
-				if *subnet.DefaultForAz {
+				if subnet.DefaultForAz != nil && *subnet.DefaultForAz {
 					d.SubnetId = *subnet.SubnetId
 					break
 				}
@@ -576,7 +573,7 @@ func (d *Driver) Create() error {
 		AssociatePublicIpAddress: aws.Bool(!d.PrivateIPOnly),
 	}}
 
-	regionZone := d.Region + d.Zone
+	regionZone := d.getRegionZone()
 	log.Debugf("launching instance in subnet %s", d.SubnetId)
 
 	var instance *ec2.Instance
@@ -1103,14 +1100,15 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	}
 
 	for _, p := range d.OpenPorts {
-		port, protocol, err := splitPortProto(p)
+		port, protocol := driverutil.SplitPortProto(p)
+		portNum, err := strconv.ParseInt(port, 10, 0)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid port number %s: %s", port, err)
 		}
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String(protocol),
-			FromPort:   aws.Int64(int64(port)),
-			ToPort:     aws.Int64(int64(port)),
+			FromPort:   aws.Int64(portNum),
+			ToPort:     aws.Int64(portNum),
 			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 		})
 	}
@@ -1118,20 +1116,6 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 	log.Debugf("configuring security group authorization for %s", ipRange)
 
 	return perms, nil
-}
-
-func splitPortProto(raw string) (port int, protocol string, err error) {
-	parts := strings.Split(raw, "/")
-	if len(parts) == 1 {
-		protocol = "tcp"
-	} else {
-		protocol = parts[1]
-	}
-	port, err = strconv.Atoi(parts[0])
-	if err != nil {
-		return 0, "", fmt.Errorf("invalid port number %s: %s", parts[0], err)
-	}
-	return port, protocol, nil
 }
 
 func (d *Driver) deleteKeyPair() error {
@@ -1160,6 +1144,13 @@ func (d *Driver) getDefaultVPCId() (string, error) {
 	}
 
 	return "", errors.New("No default-vpc attribute")
+}
+
+func (d *Driver) getRegionZone() string {
+	if d.Endpoint == "" {
+		return d.Region + d.Zone
+	}
+	return d.Zone
 }
 
 func generateId() string {

@@ -29,6 +29,8 @@ type HostInfo interface {
 
 	GetIP() (string, error)
 
+	GetSSHPort() (int, error)
+
 	GetSSHUsername() string
 
 	GetSSHKeyPath() string
@@ -148,6 +150,11 @@ func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (HostIn
 	}
 
 	args := []string{}
+	port, err := hostInfo.GetSSHPort()
+	if err == nil && port > 0 {
+		args = append(args, "-P", fmt.Sprintf("%v", port))
+	}
+
 	if hostInfo.GetSSHKeyPath() != "" {
 		args = append(args, "-i", hostInfo.GetSSHKeyPath())
 	}

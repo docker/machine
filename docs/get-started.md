@@ -11,16 +11,84 @@ weight=-70
 
 # Get started with Docker Machine and a local VM
 
-Let's take a look at using `docker-machine` for creating, using, and managing a
-Docker host inside of <a href=
-"https://www.virtualbox.org/" target="_blank">VirtualBox</a>.
+Let's take a look at using `docker-machine` to create, use and manage a
+Docker host inside of a local virtual machine.
 
-## Prerequisites
+## Prerequisite Information
 
-* Make sure  you have <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank">the latest VirtualBox</a> correctly installed
-on your system. If you used <a href="https://www.docker.com/products/docker-toolbox" target="_blank">Toolbox</a> for <a href="https://docs.docker.com/engine/installation/mac/" target="_blank">Mac</a> or <a href="https://docs.docker.com/engine/installation/windows/" target="_blank">Windows</a> to install Docker Machine, VirtualBox is automatically installed.
+With the advent of [Docker for Mac](/docker-for-mac/index.md) and [Docker for
+Windows](/docker-for-windows/index.md) as replacements for [Docker
+Toolbox](/toolbox/overview.md), we recommend that you use these for your primary
+Docker workflows.
 
-* If you used the Quickstart Terminal to launch your first machine and set your terminal environment to point to it, a default machine was automatically created. If this is the case, you can still follow along with these steps, but create another machine and name it something other than "default" (e.g., staging or sandbox).
+However, Docker Machine is still available to create and manage machines for
+power users or multi-node experimentation. Both Docker for Mac and Docker for
+Windows include the newest version of Docker Machine, so when you install either
+of these, you get `docker-machine`.
+
+The new solutions come with their own native virtualization solutions rather
+than using Oracle VirtualBox, so there are new considerations to keep in mind
+when using Machine to create local VMs. Docker for Mac allows for the creation
+of additional `docker-machine` based `virtualbox` machines without issue, but in
+the case of Docker for Windows, you will need to use the `hyperv` driver
+instead.
+
+
+#### If you are using Docker for Windows
+
+Docker for Windows uses [Microsoft
+Hyper-V](https://msdn.microsoft.com/en-us/virtualization/hyperv_on_windows/windows_welcome)
+for virtualization, and Hyper-V and Oracle VirtualBox are incompatible.
+Therefore, you cannot run the two solutions simultaneously. But you can still
+use `docker-machine` to create local VMs by using the Microsoft Hyper-V driver.
+
+* If you are using Docker for Windows, the only prequisite is to have Docker for Windows installed. You will use the Microsoft `hyperv` driver to create
+local machines. (See the [Docker Machine driver for Microsoft
+Hyper-V](drivers/hyper-v.md).)
+
+#### If you are using Docker for Mac
+
+Docker for Mac uses [HyperKit](https://github.com/docker/HyperKit/), a
+lightweight OS X virtualization solution built on top of the
+[Hypervisor.framework](https://developer.apple.com/reference/hypervisor) in OS X
+10.10 Yosemite and higher.
+
+Currently, there is no `docker-machine create` driver for HyperKit, so you will
+use `virtualbox` driver to create local machines. (See the [Docker Machine
+driver for Oracle VirtualBox](drivers/virtualbox.md).) Note that you can run
+both HyperKit and Oracle VirtualBox on the same system. To learn more, see
+[Docker for Mac vs. Docker Toolbox](/docker-for-mac/docker-toolbox/).
+
+* Make sure you have <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank">the latest VirtualBox</a> correctly installed on your system
+(either as part of an earlier Toolbox install, or manual install).
+
+#### If you are using Docker Toolbox
+
+Docker for Mac and Docker for Windows both require newer versions of their
+respective operating systems, so users with older OS versions must use Docker
+Toolbox.
+
+* If you are using Docker Toolbox on either Mac or an older version Windows system (without Hyper-V), you will use the `virtualbox` driver to create
+a local machine based on Oracle <a href= "https://www.virtualbox.org/"
+target="_blank">VirtualBox</a>. (See the [Docker Machine driver for Oracle
+VirtualBox](drivers/virtualbox.md) )
+<br />
+* If you are using Docker Toolbox on a Windows system that has Hyper-V but cannot run Docker for Windows (for example Windows 8 Pro), you must use the
+`hyperv` driver to create local machines. (See the [Docker Machine driver for
+Microsoft Hyper-V](drivers/hyper-v.md).)
+<br />
+* Make sure you have <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank">the latest VirtualBox</a> correctly installed on your system. If
+you used <a href="https://www.docker.com/products/docker-toolbox"
+target="_blank">Toolbox</a> for <a
+href="https://docs.docker.com/engine/installation/mac/" target="_blank">Mac</a>
+or <a href="https://docs.docker.com/engine/installation/windows/"
+target="_blank">Windows</a> to install Docker Machine, VirtualBox is
+automatically installed.
+<br />
+* If you used the Quickstart Terminal to launch your first machine and set your terminal environment to point to it, a default machine was automatically
+created. If this is the case, you can still follow along with these steps, but
+create another machine and name it something other than "default" (e.g., staging
+or sandbox).
 
 ##  Use Machine to run Docker containers
 
@@ -49,30 +117,36 @@ The examples here show how to create and start a machine, run Docker commands, a
 
 3. Create a machine.
 
-    Run the `docker-machine create` command, passing the string `virtualbox` to the `--driver` flag. The final argument is the name of the machine. If this is your first machine, name it `default`. If you already have a "default" machine, choose another name for this new machine.
+    Run the `docker-machine create` command, pass the appropriate driver to the
+`--driver` flag and provide a machine name. If this is your first machine, name
+it `default` as shown in the example. If you already have a "default" machine,
+choose another name for this new machine.
 
-        $ docker-machine create --driver virtualbox default
-        Running pre-create checks...
-        Creating machine...
-        (staging) Copying /Users/ripley/.docker/machine/cache/boot2docker.iso to /Users/ripley/.docker/machine/machines/default/boot2docker.iso...
-        (staging) Creating VirtualBox VM...
-        (staging) Creating SSH key...
-        (staging) Starting the VM...
-        (staging) Waiting for an IP...
-        Waiting for machine to be running, this may take a few minutes...
-        Machine is running, waiting for SSH to be available...
-        Detecting operating system of created instance...
-        Detecting the provisioner...
-        Provisioning with boot2docker...
-        Copying certs to the local machine directory...
-        Copying certs to the remote machine...
-        Setting Docker configuration on the remote daemon...
-        Checking connection to Docker...
-        Docker is up and running!
-        To see how to connect Docker to this machine, run: docker-machine env default
+    * If you are using Toolbox on Mac, Toolbox on older Windows systems without Hyper-V, or Docker for Mac, use `virtualbox` as the driver, as shown in this example. (The Docker Machine VirtualBox driver reference is [here](drivers/virtualbox.md).) (See [prerequisites](#prerequisite-information) above to learn more.)
 
-      This command downloads a lightweight Linux distribution
-(<a href="https://github.com/boot2docker/boot2docker" target="_blank">boot2docker</a>) with the Docker daemon installed, and creates and starts a VirtualBox VM with Docker running.
+    * On Docker for Windows systems that support Hyper-V, use the `hyperv` driver as shown in the [Docker Machine Microsoft Hyper-V driver reference](drivers/hyper-v.md). (See [prerequisites](#prerequisite-information) above to learn more.)
+
+            $ docker-machine create --driver virtualbox default
+            Running pre-create checks...
+            Creating machine...
+            (staging) Copying /Users/ripley/.docker/machine/cache/boot2docker.iso to /Users/ripley/.docker/machine/machines/default/boot2docker.iso...
+            (staging) Creating VirtualBox VM...
+            (staging) Creating SSH key...
+            (staging) Starting the VM...
+            (staging) Waiting for an IP...
+            Waiting for machine to be running, this may take a few minutes...
+            Machine is running, waiting for SSH to be available...
+            Detecting operating system of created instance...
+            Detecting the provisioner...
+            Provisioning with boot2docker...
+            Copying certs to the local machine directory...
+            Copying certs to the remote machine...
+            Setting Docker configuration on the remote daemon...
+            Checking connection to Docker...
+            Docker is up and running!
+            To see how to connect Docker to this machine, run: docker-machine env default
+
+      This command downloads a lightweight Linux distribution (<a href="https://github.com/boot2docker/boot2docker" target="_blank">boot2docker</a>) with the Docker daemon installed, and creates and starts a VirtualBox VM with Docker running.
 
 4. List available machines again to see your newly minted machine.
 
@@ -211,7 +285,11 @@ For machines other than `default`, and commands other than those listed above, y
 
 ## Start local machines on startup
 
-In order to ensure that the Docker client is automatically configured at the start of each shell session, some users like to embed `eval $(docker-machine env default)` in their shell profiles (e.g., the `~/.bash_profile` file). However, this fails if the `default` machine is not running. If desired, you can configure your system to start the `default` machine automatically.
+In order to ensure that the Docker client is automatically configured at the
+start of each shell session, some users like to embed `eval $(docker-machine env
+default)` in their shell profiles (e.g., the `~/.bash_profile` file). However,
+this fails if the `default` machine is not running. If desired, you can
+configure your system to start the `default` machine automatically.
 
 Here is an example of how to configure this on OS X.
 
@@ -247,5 +325,7 @@ You can change the `default` string above to make this `LaunchAgent` start any  
 
 -   Provision multiple Docker hosts [on your cloud provider](get-started-cloud.md)
 -   [Understand Machine concepts](concepts.md)
--   <a href="https://docs.docker.com/machine/drivers/" target="_blank">Docker Machine driver reference</a>
--   <a href="https://docs.docker.com/machine/reference/" target="_blank">Docker Machine subcommand reference</a>
+- [Docker Machine list of reference pages for all supported drivers](/machine/drivers/index.md)
+- [Docker Machine driver for Oracle VirtualBox](drivers/virtualbox.md)
+- [Docker Machine driver for Microsoft Hyper-V](drivers/hyper-v.md)
+- [`docker-machine` command line reference](reference/index.md)
