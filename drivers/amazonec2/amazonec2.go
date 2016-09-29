@@ -40,6 +40,7 @@ const (
 	defaultSecurityGroup     = machineSecurityGroupName
 	defaultSSHUser           = "ubuntu"
 	defaultSpotPrice         = "0.50"
+	defaultBlockDurationMinutes = 0
 )
 
 const (
@@ -95,6 +96,7 @@ type Driver struct {
 	keyPath                 string
 	RequestSpotInstance     bool
 	SpotPrice               string
+	BlockDurationMinutes    int64
 	PrivateIPOnly           bool
 	UsePrivateIP            bool
 	UseEbsOptimizedInstance bool
@@ -212,6 +214,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage: "AWS spot instance bid price (in dollar)",
 			Value: defaultSpotPrice,
 		},
+		mcnflag.IntFlag{
+			Name:  "amazonec2-block-duration-minutes",
+			Usage: "AWS spot instance duration in minutes (60, 120, 180, 240, 300, or 360)",
+			Value: defaultBlockDurationMinutes,
+		},
 		mcnflag.BoolFlag{
 			Name:  "amazonec2-private-address-only",
 			Usage: "Only use a private IP address",
@@ -260,14 +267,15 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 func NewDriver(hostName, storePath string) *Driver {
 	id := generateId()
 	driver := &Driver{
-		Id:                 id,
-		AMI:                defaultAmiId,
-		Region:             defaultRegion,
-		InstanceType:       defaultInstanceType,
-		RootSize:           defaultRootSize,
-		Zone:               defaultZone,
-		SecurityGroupNames: []string{defaultSecurityGroup},
-		SpotPrice:          defaultSpotPrice,
+		Id:                   id,
+		AMI:                  defaultAmiId,
+		Region:               defaultRegion,
+		InstanceType:         defaultInstanceType,
+		RootSize:             defaultRootSize,
+		Zone:                 defaultZone,
+		SecurityGroupNames:   []string{defaultSecurityGroup},
+		SpotPrice:            defaultSpotPrice,
+		BlockDurationMinutes: defaultBlockDurationMinutes,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultSSHUser,
 			MachineName: hostName,
@@ -320,6 +328,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.AMI = image
 	d.RequestSpotInstance = flags.Bool("amazonec2-request-spot-instance")
 	d.SpotPrice = flags.String("amazonec2-spot-price")
+	d.BlockDurationMinutes = int64(flags.Int("amazonec2-block-duration-minutes"))
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
 	d.SubnetId = flags.String("amazonec2-subnet-id")
@@ -579,7 +588,7 @@ func (d *Driver) Create() error {
 	var instance *ec2.Instance
 
 	if d.RequestSpotInstance {
-		spotInstanceRequest, err := d.getClient().RequestSpotInstances(&ec2.RequestSpotInstancesInput{
+		req := ec2.RequestSpotInstancesInput{
 			LaunchSpecification: &ec2.RequestSpotLaunchSpecification{
 				ImageId: &d.AMI,
 				Placement: &ec2.SpotPlacement{
@@ -597,7 +606,12 @@ func (d *Driver) Create() error {
 			},
 			InstanceCount: aws.Int64(1),
 			SpotPrice:     &d.SpotPrice,
-		})
+		}
+		if d.BlockDurationMinutes != 0 {
+			req.BlockDurationMinutes = &d.BlockDurationMinutes
+		}
+
+		spotInstanceRequest, err := d.getClient().RequestSpotInstances(&req)
 		if err != nil {
 			return fmt.Errorf("Error request spot instance: %s", err)
 		}
