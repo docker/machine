@@ -15,9 +15,11 @@ Create machines on [Softlayer](http://softlayer.com).
 You need to generate an API key in the softlayer control panel.
 [Retrieve your API key](http://knowledgelayer.softlayer.com/procedure/retrieve-your-api-key)
 
+## Usage
+
     $ docker-machine create --driver softlayer --softlayer-user=user --softlayer-api-key=KEY --softlayer-domain=domain vm
 
-Options:
+## Options
 
 -   `--softlayer-memory`: Memory for host in MB.
 -   `--softlayer-disk-size`: A value of `0` will set the SoftLayer default.
@@ -37,7 +39,7 @@ Options:
 
 The SoftLayer driver will use `UBUNTU_LATEST` as the image type by default.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                     | Environment variable        | Default                     |
 | ------------------------------ | --------------------------- | --------------------------- |

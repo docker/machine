@@ -97,7 +97,7 @@ assigned to the instance if they are configured.
 -   `--amazonec2-retries`:  Set retry count for recoverable failures (use -1 to disable)
 
 
-Environment variables and default values:
+#### Environment variables and default values:
 
 | CLI option                               | Environment variable    | Default          |
 | ---------------------------------------- | ----------------------- | ---------------- |

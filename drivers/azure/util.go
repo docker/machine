@@ -42,20 +42,24 @@ func (d *Driver) newAzureClient() (*azureutil.AzureClient, error) {
 		return nil, fmt.Errorf("Invalid Azure environment: %q", d.Environment)
 	}
 
-	var auth azureutil.AuthFunc
+	var (
+		token *azure.ServicePrincipalToken
+		err   error
+	)
 	if d.ClientID != "" && d.ClientSecret != "" { // use Service Principal auth
 		log.Debug("Using Azure service principal authentication.")
-		auth = azureutil.ServicePrincipalAuth(d.ClientID, d.ClientSecret)
+		token, err = azureutil.AuthenticateServicePrincipal(env, d.SubscriptionID, d.ClientID, d.ClientSecret)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to authenticate using service principal credentials: %+v", err)
+		}
 	} else { // use browser-based device auth
 		log.Debug("Using Azure device flow authentication.")
-		auth = azureutil.DeviceFlowAuth
+		token, err = azureutil.AuthenticateDeviceFlow(env, d.SubscriptionID)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating Azure client: %v", err)
+		}
 	}
-
-	servicePrincipalToken, err := azureutil.Authenticate(env, d.SubscriptionID, auth)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating Azure client: %v", err)
-	}
-	return azureutil.New(env, d.SubscriptionID, servicePrincipalToken), nil
+	return azureutil.New(env, d.SubscriptionID, token), nil
 }
 
 // generateSSHKey creates a ssh key pair locally and saves the public key file
@@ -133,7 +137,9 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 			return nil, fmt.Errorf("cannot parse security rule protocol: %v", err)
 		}
 		log.Debugf("User-requested port to be opened on NSG: %v/%s", port, proto)
-		r := mkRule(basePri+i, fmt.Sprintf("Port%s%sAllowAny", port, proto), "User requested port to be accessible from Internet via docker-machine", "*", port, proto)
+		name := fmt.Sprintf("Port%s-%sAllowAny", port, proto)
+		name = strings.Replace(name, "*", "Asterisk", -1)
+		r := mkRule(basePri+i, name, "User requested port to be accessible from Internet via docker-machine", "*", port, proto)
 		rl = append(rl, r)
 	}
 	log.Debugf("Total NSG rules: %d", len(rl))
@@ -159,7 +165,9 @@ func (d *Driver) ipAddress() (ip string, err error) {
 		ip, err = c.GetPrivateIPAddress(d.ResourceGroup, d.naming().NIC())
 	} else {
 		ipType = "Public"
-		ip, err = c.GetPublicIPAddress(d.ResourceGroup, d.naming().IP())
+		ip, err = c.GetPublicIPAddress(d.ResourceGroup,
+			d.naming().IP(),
+			d.DNSLabel != "")
 	}
 
 	log.Debugf("Retrieving %s IP address...", ipType)

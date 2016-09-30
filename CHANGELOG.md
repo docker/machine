@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.8.2 (2016-8-26)
+
+- Update Go version to 1.7.1
+
+# 0.8.1 (2016-8-20)
+
 Provisioners
 - Fix issue with generated systemd service file on RedHat family distros
 Drivers

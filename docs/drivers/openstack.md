@@ -18,10 +18,11 @@ Mandatory:
 -   `--openstack-flavor-id` or `--openstack-flavor-name`: Identify the flavor that will be used for the machine.
 -   `--openstack-image-id` or `--openstack-image-name`: Identify the image that will be used for the machine.
 
+## Usage
 
     $ docker-machine create --driver openstack vm
 
-Options:
+## Options
 
 -   `--openstack-active-timeout`: The timeout in seconds until the OpenStack instance must be active.
 -   `--openstack-availability-zone`: The availability zone in which to launch the server.
@@ -46,7 +47,7 @@ Options:
 -   `--openstack-ssh-user`: The username to use for SSH into the machine. If not provided `root` will be used.
 -   `--openstack-tenant-name` or `--openstack-tenant-id`: Identify the tenant in which the machine will be created.
 
-Environment variables and default values:
+#### Environment variables and default values
 
 | CLI option                      | Environment variable   | Default     |
 | ------------------------------- | ---------------------- | ----------- |
