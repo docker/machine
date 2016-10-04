@@ -15,6 +15,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/drivers/driverutil"
@@ -284,8 +286,16 @@ func NewDriver(hostName, storePath string) *Driver {
 func (d *Driver) buildClient() Ec2Client {
 	config := aws.NewConfig()
 	alogger := AwsLogger()
+
+	var creds *credentials.Credentials
+	if d.AccessKey == "" || d.SecretKey == "" { // Credentials not stored in docker machine config - use default
+		creds = defaults.Get().Config.Credentials
+	} else { // Credentials were stored in docker machine config
+		creds = d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken)
+	}
+
 	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	config = config.WithCredentials(creds)
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	config = config.WithMaxRetries(d.RetryCount)

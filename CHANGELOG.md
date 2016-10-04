@@ -9,6 +9,8 @@
 Provisioners
 - Fix issue with generated systemd service file on RedHat family distros
 Drivers
+- `amazonec2`
+    - In case no credentials are stored in `config.json`, use defaults as per [AWS SDK](http://github.com/aws/aws-sdk/go)
 - `azure`
     - Bump Ubuntu image to 16.04
     - Update docs with updated default parameters
