@@ -1,6 +1,6 @@
 # Docker Machine
 
-![](/docs/img/logo.png)
+![](https://docs.docker.com/machine/img/logo.png)
 
 Machine lets you create Docker hosts on your computer, on cloud providers, and
 inside your own data center. It creates servers, installs Docker on them, then
