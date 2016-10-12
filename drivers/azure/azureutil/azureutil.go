@@ -56,7 +56,7 @@ func New(env azure.Environment, subsID string, auth autorest.Authorizer) *AzureC
 // resource provider namespaces if they are not already registered. Namespaces
 // are case-insensitive.
 func (a AzureClient) RegisterResourceProviders(namespaces ...string) error {
-	l, err := a.providersClient().List(nil)
+	l, err := a.providersClient().List(nil, "")
 	if err != nil {
 		return err
 	}
@@ -315,13 +315,13 @@ func (a AzureClient) DeleteNetworkInterfaceIfExists(resourceGroup, name string) 
 		func() (autorest.Response, error) { return a.networkInterfacesClient().Delete(resourceGroup, name, nil) })
 }
 
-func (a AzureClient) CreateStorageAccount(ctx *DeploymentContext, resourceGroup, location string, storageType storage.AccountType) error {
+func (a AzureClient) CreateStorageAccount(ctx *DeploymentContext, resourceGroup, location string, storageType storage.SkuName) error {
 	s, err := a.findOrCreateStorageAccount(resourceGroup, location, storageType)
 	ctx.StorageAccount = s
 	return err
 }
 
-func (a AzureClient) findOrCreateStorageAccount(resourceGroup, location string, storageType storage.AccountType) (*storage.AccountProperties, error) {
+func (a AzureClient) findOrCreateStorageAccount(resourceGroup, location string, storageType storage.SkuName) (*storage.AccountProperties, error) {
 	prefix := storageAccountPrefix
 	if s, err := a.findStorageAccount(resourceGroup, location, prefix, storageType); err != nil {
 		return nil, err
@@ -331,13 +331,13 @@ func (a AzureClient) findOrCreateStorageAccount(resourceGroup, location string, 
 
 	log.Debug("No eligible storage account found.", logutil.Fields{
 		"location": location,
-		"type":     storageType})
+		"sku":      storageType})
 	return a.createStorageAccount(resourceGroup, location, storageType)
 }
 
-func (a AzureClient) findStorageAccount(resourceGroup, location, prefix string, storageType storage.AccountType) (*storage.AccountProperties, error) {
+func (a AzureClient) findStorageAccount(resourceGroup, location, prefix string, storageType storage.SkuName) (*storage.AccountProperties, error) {
 	f := logutil.Fields{
-		"type":     storageType,
+		"sku":      storageType,
 		"prefix":   prefix,
 		"location": location}
 	log.Debug("Querying existing storage accounts.", f)
@@ -350,11 +350,15 @@ func (a AzureClient) findStorageAccount(resourceGroup, location, prefix string, 
 		for _, v := range *l.Value {
 			log.Debug("Iterating...", logutil.Fields{
 				"name":     to.String(v.Name),
-				"type":     storageType,
+				"sku":      storageType,
 				"location": to.String(v.Location),
 			})
-			if to.String(v.Location) == location && v.Properties.AccountType == storageType && strings.HasPrefix(to.String(v.Name), prefix) {
+			if to.String(v.Location) == location && v.Sku.Name == storageType && strings.HasPrefix(to.String(v.Name), prefix) {
 				log.Debug("Found eligible storage account.", logutil.Fields{"name": to.String(v.Name)})
+				log.Info("Using existing storage account.", logutil.Fields{
+					"name": to.String(v.Name),
+					"sku":  storageType,
+				})
 				return v.Properties, nil
 			}
 		}
@@ -363,21 +367,20 @@ func (a AzureClient) findStorageAccount(resourceGroup, location, prefix string, 
 	return nil, err
 }
 
-func (a AzureClient) createStorageAccount(resourceGroup, location string, storageType storage.AccountType) (*storage.AccountProperties, error) {
+func (a AzureClient) createStorageAccount(resourceGroup, location string, storageType storage.SkuName) (*storage.AccountProperties, error) {
 	name := randomAzureStorageAccountName() // if it's not random enough, then you're unlucky
+
 	f := logutil.Fields{
 		"name":     name,
 		"location": location,
-		"type":     storageType,
+		"sku":      storageType,
 	}
 
 	log.Info("Creating storage account.", f)
 	_, err := a.storageAccountsClient().Create(resourceGroup, name,
 		storage.AccountCreateParameters{
 			Location: to.StringPtr(location),
-			Properties: &storage.AccountPropertiesCreateParameters{
-				AccountType: storageType,
-			},
+			Sku:      &storage.Sku{Name: storageType},
 		}, nil)
 	if err != nil {
 		return nil, err
@@ -435,12 +438,15 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 		"account":     storageAccount,
 		"storageBase": blobServiceBaseURL,
 	})
-	keys, err := a.storageAccountsClient().ListKeys(resourceGroup, storageAccount)
+	resp, err := a.storageAccountsClient().ListKeys(resourceGroup, storageAccount)
 	if err != nil {
 		return err
 	}
 
-	storageAccountKey := to.String(keys.Key1)
+	if resp.Keys == nil || len(*resp.Keys) < 1 {
+		return errors.New("Returned storage keys list response does not contain any keys")
+	}
+	storageAccountKey := to.String(((*resp.Keys)[0]).Value)
 	bs, err := blobstorage.NewClient(storageAccount, storageAccountKey, blobServiceBaseURL, defaultStorageAPIVersion, true)
 	if err != nil {
 		return fmt.Errorf("Error constructing blob storage client :%v", err)

@@ -384,7 +384,7 @@ func (d *Driver) Create() error {
 		d.ctx.PublicIPAddressID, d.ctx.SubnetID, d.ctx.NetworkSecurityGroupID, d.PrivateIPAddr); err != nil {
 		return err
 	}
-	if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, storage.AccountType(d.StorageType)); err != nil {
+	if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, storage.SkuName(d.StorageType)); err != nil {
 		return err
 	}
 	if err := d.generateSSHKey(d.ctx); err != nil {
