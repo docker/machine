@@ -1,4 +1,4 @@
-# COVERAGE_OUTPUT dir is a temp dir (OSX/Linux compatible), unless explicitly specified through env COVERAGE_DIR
+# COVERAGE_OUTPUT dir is a temp dir (OSX/Linux compatible), unless explicitly specified through env COVERAGE_DIR
 COVERAGE_OUTPUT := $(COVERAGE_DIR)
 ifeq ($(COVERAGE_OUTPUT),)
 	COVERAGE_OUTPUT := $(shell mktemp -d 2>/dev/null || mktemp -d -t machine-coverage)
@@ -9,7 +9,7 @@ COVERAGE_PROFILE := $(COVERAGE_OUTPUT)/profile.out
 COVERAGE_HTML := $(COVERAGE_OUTPUT)/index.html
 COVERAGE_MODE := set
 
-# Goveralls dependency
+# Goveralls dependency
 GOVERALLS_BIN := $(GOPATH)/bin/goveralls
 GOVERALLS := $(shell [ -x $(GOVERALLS_BIN) ] && echo $(GOVERALLS_BIN) || echo '')
 
