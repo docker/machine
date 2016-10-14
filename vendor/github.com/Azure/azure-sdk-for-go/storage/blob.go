@@ -55,7 +55,51 @@ type ContainerListResponse struct {
 type Blob struct {
 	Name       string         `xml:"Name"`
 	Properties BlobProperties `xml:"Properties"`
-	// TODO (ahmetalpbalkan) Metadata
+	Metadata   BlobMetadata   `xml:"Metadata"`
+}
+
+// BlobMetadata is a set of custom name/value pairs.
+//
+// See https://msdn.microsoft.com/en-us/library/azure/dd179404.aspx
+type BlobMetadata map[string]string
+
+type blobMetadataEntries struct {
+	Entries []blobMetadataEntry `xml:",any"`
+}
+type blobMetadataEntry struct {
+	XMLName xml.Name
+	Value   string `xml:",chardata"`
+}
+
+// UnmarshalXML converts the xml:Metadata into Metadata map
+func (bm *BlobMetadata) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var entries blobMetadataEntries
+	if err := d.DecodeElement(&entries, &start); err != nil {
+		return err
+	}
+	for _, entry := range entries.Entries {
+		if *bm == nil {
+			*bm = make(BlobMetadata)
+		}
+		(*bm)[strings.ToLower(entry.XMLName.Local)] = entry.Value
+	}
+	return nil
+}
+
+// MarshalXML implements the xml.Marshaler interface. It encodes
+// metadata name/value pairs as they would appear in an Azure
+// ListBlobs response.
+func (bm BlobMetadata) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
+	entries := make([]blobMetadataEntry, 0, len(bm))
+	for k, v := range bm {
+		entries = append(entries, blobMetadataEntry{
+			XMLName: xml.Name{Local: http.CanonicalHeaderKey(k)},
+			Value:   v,
+		})
+	}
+	return enc.EncodeElement(blobMetadataEntries{
+		Entries: entries,
+	}, start)
 }
 
 // BlobProperties contains various properties of a blob
@@ -67,6 +111,8 @@ type BlobProperties struct {
 	ContentLength         int64    `xml:"Content-Length"`
 	ContentType           string   `xml:"Content-Type"`
 	ContentEncoding       string   `xml:"Content-Encoding"`
+	CacheControl          string   `xml:"Cache-Control"`
+	ContentLanguage       string   `xml:"Cache-Language"`
 	BlobType              BlobType `xml:"x-ms-blob-blob-type"`
 	SequenceNumber        int64    `xml:"x-ms-blob-sequence-number"`
 	CopyID                string   `xml:"CopyId"`
@@ -75,6 +121,17 @@ type BlobProperties struct {
 	CopyProgress          string   `xml:"CopyProgress"`
 	CopyCompletionTime    string   `xml:"CopyCompletionTime"`
 	CopyStatusDescription string   `xml:"CopyStatusDescription"`
+	LeaseStatus           string   `xml:"LeaseStatus"`
+}
+
+// BlobHeaders contains various properties of a blob and is an entry
+// in SetBlobProperties
+type BlobHeaders struct {
+	ContentMD5      string `header:"x-ms-blob-content-md5"`
+	ContentLanguage string `header:"x-ms-blob-content-language"`
+	ContentEncoding string `header:"x-ms-blob-content-encoding"`
+	ContentType     string `header:"x-ms-blob-content-type"`
+	CacheControl    string `header:"x-ms-blob-cache-control"`
 }
 
 // BlobListResponse contains the response fields from ListBlobs call.
@@ -429,7 +486,6 @@ func (b BlobStorageClient) ListBlobs(container string, params ListBlobsParameter
 func (b BlobStorageClient) BlobExists(container, name string) (bool, error) {
 	verb := "HEAD"
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), url.Values{})
-
 	headers := b.client.getStandardHeaders()
 	resp, err := b.client.exec(verb, uri, headers, nil)
 	if resp != nil {
@@ -457,7 +513,7 @@ func (b BlobStorageClient) GetBlobURL(container, name string) string {
 //
 // See https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx
 func (b BlobStorageClient) GetBlob(container, name string) (io.ReadCloser, error) {
-	resp, err := b.getBlobRange(container, name, "")
+	resp, err := b.getBlobRange(container, name, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -472,8 +528,8 @@ func (b BlobStorageClient) GetBlob(container, name string) (io.ReadCloser, error
 // string must be in a format like "0-", "10-100" as defined in HTTP 1.1 spec.
 //
 // See https://msdn.microsoft.com/en-us/library/azure/dd179440.aspx
-func (b BlobStorageClient) GetBlobRange(container, name, bytesRange string) (io.ReadCloser, error) {
-	resp, err := b.getBlobRange(container, name, bytesRange)
+func (b BlobStorageClient) GetBlobRange(container, name, bytesRange string, extraHeaders map[string]string) (io.ReadCloser, error) {
+	resp, err := b.getBlobRange(container, name, bytesRange, extraHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -484,7 +540,7 @@ func (b BlobStorageClient) GetBlobRange(container, name, bytesRange string) (io.
 	return resp.body, nil
 }
 
-func (b BlobStorageClient) getBlobRange(container, name, bytesRange string) (*storageResponse, error) {
+func (b BlobStorageClient) getBlobRange(container, name, bytesRange string, extraHeaders map[string]string) (*storageResponse, error) {
 	verb := "GET"
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), url.Values{})
 
@@ -492,6 +548,11 @@ func (b BlobStorageClient) getBlobRange(container, name, bytesRange string) (*st
 	if bytesRange != "" {
 		headers["Range"] = fmt.Sprintf("bytes=%s", bytesRange)
 	}
+
+	for k, v := range extraHeaders {
+		headers[k] = v
+	}
+
 	resp, err := b.client.exec(verb, uri, headers, nil)
 	if err != nil {
 		return nil, err
@@ -540,6 +601,9 @@ func (b BlobStorageClient) GetBlobProperties(container, name string) (*BlobPrope
 		ContentMD5:            resp.headers.Get("Content-MD5"),
 		ContentLength:         contentLength,
 		ContentEncoding:       resp.headers.Get("Content-Encoding"),
+		ContentType:           resp.headers.Get("Content-Type"),
+		CacheControl:          resp.headers.Get("Cache-Control"),
+		ContentLanguage:       resp.headers.Get("Content-Language"),
 		SequenceNumber:        sequenceNum,
 		CopyCompletionTime:    resp.headers.Get("x-ms-copy-completion-time"),
 		CopyStatusDescription: resp.headers.Get("x-ms-copy-status-description"),
@@ -548,7 +612,36 @@ func (b BlobStorageClient) GetBlobProperties(container, name string) (*BlobPrope
 		CopySource:            resp.headers.Get("x-ms-copy-source"),
 		CopyStatus:            resp.headers.Get("x-ms-copy-status"),
 		BlobType:              BlobType(resp.headers.Get("x-ms-blob-type")),
+		LeaseStatus:           resp.headers.Get("x-ms-lease-status"),
 	}, nil
+}
+
+// SetBlobProperties replaces the BlobHeaders for the specified blob.
+//
+// Some keys may be converted to Camel-Case before sending. All keys
+// are returned in lower case by GetBlobProperties. HTTP header names
+// are case-insensitive so case munging should not matter to other
+// applications either.
+//
+// See https://msdn.microsoft.com/en-us/library/azure/ee691966.aspx
+func (b BlobStorageClient) SetBlobProperties(container, name string, blobHeaders BlobHeaders) error {
+	params := url.Values{"comp": {"properties"}}
+	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), params)
+	headers := b.client.getStandardHeaders()
+
+	extraHeaders := headersFromStruct(blobHeaders)
+
+	for k, v := range extraHeaders {
+		headers[k] = v
+	}
+
+	resp, err := b.client.exec("PUT", uri, headers, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.body.Close()
+
+	return checkRespCode(resp.statusCode, []int{http.StatusOK})
 }
 
 // SetBlobMetadata replaces the metadata for the specified blob.
@@ -559,12 +652,16 @@ func (b BlobStorageClient) GetBlobProperties(container, name string) (*BlobPrope
 // applications either.
 //
 // See https://msdn.microsoft.com/en-us/library/azure/dd179414.aspx
-func (b BlobStorageClient) SetBlobMetadata(container, name string, metadata map[string]string) error {
+func (b BlobStorageClient) SetBlobMetadata(container, name string, metadata map[string]string, extraHeaders map[string]string) error {
 	params := url.Values{"comp": {"metadata"}}
 	uri := b.client.getEndpoint(blobServiceName, pathForBlob(container, name), params)
 	headers := b.client.getStandardHeaders()
 	for k, v := range metadata {
 		headers[userDefinedMetadataHeaderPrefix+k] = v
+	}
+
+	for k, v := range extraHeaders {
+		headers[k] = v
 	}
 
 	resp, err := b.client.exec("PUT", uri, headers, nil)
@@ -978,9 +1075,24 @@ func (b BlobStorageClient) GetBlobSASURI(container, name string, expiry time.Tim
 		blobURL           = b.GetBlobURL(container, name)
 	)
 	canonicalizedResource, err := b.client.buildCanonicalizedResource(blobURL)
+
 	if err != nil {
 		return "", err
 	}
+
+	// "The canonicalizedresouce portion of the string is a canonical path to the signed resource.
+	// It must include the service name (blob, table, queue or file) for version 2015-02-21 or
+	// later, the storage account name, and the resource name, and must be URL-decoded.
+	// -- https://msdn.microsoft.com/en-us/library/azure/dn140255.aspx
+
+	// We need to replace + with %2b first to avoid being treated as a space (which is correct for query strings, but not the path component).
+	canonicalizedResource = strings.Replace(canonicalizedResource, "+", "%2b", -1)
+
+	canonicalizedResource, err = url.QueryUnescape(canonicalizedResource)
+	if err != nil {
+		return "", err
+	}
+
 	signedExpiry := expiry.UTC().Format(time.RFC3339)
 	signedResource := "b"
 
