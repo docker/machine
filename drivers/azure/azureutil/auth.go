@@ -41,6 +41,7 @@ var (
 	appIDs = map[string]string{
 		azure.PublicCloud.Name: "637ddaba-219b-43b8-bf19-8cea500cf273",
 		azure.ChinaCloud.Name:  "bb5eed6f-120b-4365-8fd9-ab1a3fba5698",
+		azure.GermanCloud.Name: "aabac5f7-dd47-47ef-824c-e0d57598cada",
 	}
 )
 

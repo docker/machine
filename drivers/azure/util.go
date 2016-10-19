@@ -23,6 +23,7 @@ var (
 		azure.PublicCloud.Name:       azure.PublicCloud,
 		azure.USGovernmentCloud.Name: azure.USGovernmentCloud,
 		azure.ChinaCloud.Name:        azure.ChinaCloud,
+		azure.GermanCloud.Name:       azure.GermanCloud,
 	}
 )
 
@@ -39,7 +40,12 @@ func (r requiredOptionError) Error() string {
 func (d *Driver) newAzureClient() (*azureutil.AzureClient, error) {
 	env, ok := environments[d.Environment]
 	if !ok {
-		return nil, fmt.Errorf("Invalid Azure environment: %q", d.Environment)
+		valid := make([]string, 0, len(environments))
+		for k := range environments {
+			valid = append(valid, k)
+		}
+
+		return nil, fmt.Errorf("Invalid Azure environment: %q, supported values: %s", d.Environment, strings.Join(valid, ", "))
 	}
 
 	var (
