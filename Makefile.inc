@@ -5,7 +5,7 @@ PKG_NAME := docker-machine
 DEBUG ?=
 # If true, "build" will produce a static binary (cross compile always produce static build regardless)
 STATIC ?=
-# If true, turn on verbose output for build
+# If true, turn on verbose output for build
 VERBOSE ?=
 # Build tags
 BUILDTAGS ?=
@@ -16,7 +16,7 @@ COVERAGE_DIR ?= cover
 # Whether to perform targets inside a docker container, or natively on the host
 USE_CONTAINER ?=
 
-# List of cross compilation targets
+# List of cross compilation targets
 ifeq ($(TARGET_OS),)
   TARGET_OS := darwin linux windows
 endif

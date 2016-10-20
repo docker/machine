@@ -236,7 +236,7 @@ func (d *Driver) GetIP() (string, error) {
 	}
 	defer c.Logout(ctx)
 
-	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	vm, err := d.fetchVM(ctx, c, d.MachineName)
 	if err != nil {
 		return "", err
 	}
@@ -279,7 +279,7 @@ func (d *Driver) GetState() (state.State, error) {
 	}
 	defer c.Logout(ctx)
 
-	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	vm, err := d.fetchVM(ctx, c, d.MachineName)
 	if err != nil {
 		return state.None, err
 	}
@@ -592,7 +592,7 @@ func (d *Driver) Start() error {
 		}
 		defer c.Logout(ctx)
 
-		vm, err := d.fetchVM(c, ctx, d.MachineName)
+		vm, err := d.fetchVM(ctx, c, d.MachineName)
 		if err != nil {
 			return err
 		}
@@ -625,7 +625,7 @@ func (d *Driver) Stop() error {
 	}
 	defer c.Logout(ctx)
 
-	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	vm, err := d.fetchVM(ctx, c, d.MachineName)
 	if err != nil {
 		return err
 	}
@@ -681,7 +681,7 @@ func (d *Driver) Kill() error {
 	}
 	defer c.Logout(ctx)
 
-	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	vm, err := d.fetchVM(ctx, c, d.MachineName)
 	if err != nil {
 		return err
 	}
@@ -750,7 +750,7 @@ func (d *Driver) Remove() error {
 		}
 	}
 
-	vm, err := d.fetchVM(c, ctx, d.MachineName)
+	vm, err := d.fetchVM(ctx, c, d.MachineName)
 	if err != nil {
 		return err
 	}
@@ -849,7 +849,7 @@ func (d *Driver) vsphereLogin(ctx context.Context) (*govmomi.Client, error) {
 	return c, nil
 }
 
-func (d *Driver) fetchVM(c *govmomi.Client, ctx context.Context, vmname string) (*object.VirtualMachine, error) {
+func (d *Driver) fetchVM(ctx context.Context, c *govmomi.Client, vmname string) (*object.VirtualMachine, error) {
 
 	// Create a new finder
 	f := find.NewFinder(c.Client, true)
