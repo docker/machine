@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -16,12 +17,13 @@ import (
 )
 
 const (
-	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
+	envTmpl = `{{ .Prefix }}DOCKER_TLS_VERIFY{{ .Delimiter }}{{ .DockerTLSVerify }}{{ .Suffix }}{{ .Prefix }}DOCKER_HOST{{ .Delimiter }}{{ .DockerHost }}{{ .Suffix }}{{ .Prefix }}DOCKER_CERT_PATH{{ .Delimiter }}{{ .DockerCertPath }}{{ .Suffix }}{{ .Prefix }}DOCKER_MACHINE_NAME{{ .Delimiter }}{{ .MachineName }}{{ .Suffix }}{{ if .ComposePathsVar }}{{ .Prefix }}COMPOSE_CONVERT_WINDOWS_PATHS{{ .Delimiter }}true{{ .Suffix }}{{end}}{{ if .NoProxyVar }}{{ .Prefix }}{{ .NoProxyVar }}{{ .Delimiter }}{{ .NoProxyValue }}{{ .Suffix }}{{end}}{{ .UsageHint }}`
 )
 
 var (
 	errImproperUnsetEnvArgs = errors.New("Error: Expected no machine name when the -u flag is present")
 	defaultUsageHinter      UsageHintGenerator
+	runtimeOS               = func() string { return runtime.GOOS }
 )
 
 func init() {
@@ -39,6 +41,7 @@ type ShellConfig struct {
 	MachineName     string
 	NoProxyVar      string
 	NoProxyValue    string
+	ComposePathsVar bool
 }
 
 func cmdEnv(c CommandLine, api libmachine.API) error {
@@ -119,6 +122,10 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 
 		shellCfg.NoProxyVar = noProxyVar
 		shellCfg.NoProxyValue = noProxyValue
+	}
+
+	if runtimeOS() == "windows" {
+		shellCfg.ComposePathsVar = true
 	}
 
 	switch userShell {
