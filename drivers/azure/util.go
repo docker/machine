@@ -23,6 +23,7 @@ var (
 		azure.PublicCloud.Name:       azure.PublicCloud,
 		azure.USGovernmentCloud.Name: azure.USGovernmentCloud,
 		azure.ChinaCloud.Name:        azure.ChinaCloud,
+		azure.GermanCloud.Name:       azure.GermanCloud,
 	}
 )
 
@@ -39,23 +40,32 @@ func (r requiredOptionError) Error() string {
 func (d *Driver) newAzureClient() (*azureutil.AzureClient, error) {
 	env, ok := environments[d.Environment]
 	if !ok {
-		return nil, fmt.Errorf("Invalid Azure environment: %q", d.Environment)
+		valid := make([]string, 0, len(environments))
+		for k := range environments {
+			valid = append(valid, k)
+		}
+
+		return nil, fmt.Errorf("Invalid Azure environment: %q, supported values: %s", d.Environment, strings.Join(valid, ", "))
 	}
 
-	var auth azureutil.AuthFunc
+	var (
+		token *azure.ServicePrincipalToken
+		err   error
+	)
 	if d.ClientID != "" && d.ClientSecret != "" { // use Service Principal auth
 		log.Debug("Using Azure service principal authentication.")
-		auth = azureutil.ServicePrincipalAuth(d.ClientID, d.ClientSecret)
+		token, err = azureutil.AuthenticateServicePrincipal(env, d.SubscriptionID, d.ClientID, d.ClientSecret)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to authenticate using service principal credentials: %+v", err)
+		}
 	} else { // use browser-based device auth
 		log.Debug("Using Azure device flow authentication.")
-		auth = azureutil.DeviceFlowAuth
+		token, err = azureutil.AuthenticateDeviceFlow(env, d.SubscriptionID)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating Azure client: %v", err)
+		}
 	}
-
-	servicePrincipalToken, err := azureutil.Authenticate(env, d.SubscriptionID, auth)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating Azure client: %v", err)
-	}
-	return azureutil.New(env, d.SubscriptionID, servicePrincipalToken), nil
+	return azureutil.New(env, d.SubscriptionID, token), nil
 }
 
 // generateSSHKey creates a ssh key pair locally and saves the public key file

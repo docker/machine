@@ -1,6 +1,6 @@
 # Docker Machine
 
-![](/docs/img/logo.png)
+![](https://docs.docker.com/machine/img/logo.png)
 
 Machine lets you create Docker hosts on your computer, on cloud providers, and
 inside your own data center. It creates servers, installs Docker on them, then
@@ -70,7 +70,7 @@ In addition to the core driver plugins bundled alongside Docker Machine, users
 can make and distribute their own plugin for any virtualization technology or
 cloud provider.  To browse the list of known Docker Machine plugins, please [see
 this document in our
-repo](https://github.com/docker/machine/blob/master/docs/AVAILABLE_DRIVER_PLUGINS.md).
+docs repo](https://github.com/docker/docker.github.io/blob/master/machine/AVAILABLE_DRIVER_PLUGINS.md).
 
 ## Troubleshooting
 

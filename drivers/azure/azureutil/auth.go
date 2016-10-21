@@ -41,37 +41,25 @@ var (
 	appIDs = map[string]string{
 		azure.PublicCloud.Name: "637ddaba-219b-43b8-bf19-8cea500cf273",
 		azure.ChinaCloud.Name:  "bb5eed6f-120b-4365-8fd9-ab1a3fba5698",
+		azure.GermanCloud.Name: "aabac5f7-dd47-47ef-824c-e0d57598cada",
 	}
 )
 
-// Authenticate fetches a token from the local file cache or initiates a consent
-// flow and waits for token to be obtained.
-func Authenticate(env azure.Environment, subscriptionID string, getToken AuthFunc) (*azure.ServicePrincipalToken, error) {
-	appID, ok := appIDs[env.Name]
-	if !ok {
-		return nil, fmt.Errorf("docker-machine application not set up for Azure environment %q", env.Name)
-	}
-
+// AuthenticateDeviceFlow fetches a token from the local file cache or initiates a consent
+// flow and waits for token to be obtained. Obtained token is stored in a file cache for
+// future use and refreshing.
+func AuthenticateDeviceFlow(env azure.Environment, subscriptionID string) (*azure.ServicePrincipalToken, error) {
 	// First we locate the tenant ID of the subscription as we store tokens per
 	// tenant (which could have multiple subscriptions)
-	log.Debug("Looking up AAD Tenant ID.", logutil.Fields{
-		"subs": subscriptionID})
 	tenantID, err := loadOrFindTenantID(env, subscriptionID)
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("Found AAD Tenant ID.", logutil.Fields{
-		"tenant": tenantID,
-		"subs":   subscriptionID})
-
 	oauthCfg, err := env.OAuthConfigForTenant(tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to obtain oauth config for azure environment: %v", err)
 	}
 
-	// for AzurePublicCloud (https://management.core.windows.net/), this old
-	// Service Management scope covers both ASM and ARM.
-	apiScope := env.ServiceManagementEndpoint
 	tokenPath := tokenCachePath(tenantID)
 	saveToken := mkTokenCallback(tokenPath)
 	saveTokenCallback := func(t azure.Token) error {
@@ -80,8 +68,14 @@ func Authenticate(env azure.Environment, subscriptionID string, getToken AuthFun
 	}
 	f := logutil.Fields{"path": tokenPath}
 
+	appID, ok := appIDs[env.Name]
+	if !ok {
+		return nil, fmt.Errorf("docker-machine application not set up for Azure environment %q", env.Name)
+	}
+	scope := getScope(env)
+
 	// Lookup the token cache file for an existing token.
-	spt, err := tokenFromFile(*oauthCfg, tokenPath, appID, apiScope, saveTokenCallback)
+	spt, err := tokenFromFile(*oauthCfg, tokenPath, appID, scope, saveTokenCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +108,7 @@ func Authenticate(env azure.Environment, subscriptionID string, getToken AuthFun
 	}
 
 	log.Debug("Obtaining a token.", f)
-	spt, err = getToken(*oauthCfg, appID, apiScope)
+	spt, err = deviceFlowAuth(*oauthCfg, appID, scope)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +116,25 @@ func Authenticate(env azure.Environment, subscriptionID string, getToken AuthFun
 	if err := saveToken(spt.Token); err != nil {
 		log.Error("Error occurred saving token to cache file.")
 		return nil, err
+	}
+	return spt, nil
+}
+
+// AuthenticateServicePrincipal uses given service principal credentials to return a
+// service principal token. Generated token is not stored in a cache file or refreshed.
+func AuthenticateServicePrincipal(env azure.Environment, subscriptionID, spID, spPassword string) (*azure.ServicePrincipalToken, error) {
+	tenantID, err := loadOrFindTenantID(env, subscriptionID)
+	if err != nil {
+		return nil, err
+	}
+	oauthCfg, err := env.OAuthConfigForTenant(tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to obtain oauth config for azure environment: %v", err)
+	}
+
+	spt, err := azure.NewServicePrincipalToken(*oauthCfg, spID, spPassword, getScope(env))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create service principal token: %+v", err)
 	}
 	return spt, nil
 }
@@ -150,14 +163,11 @@ func tokenFromFile(oauthCfg azure.OAuthConfig, tokenPath, clientID, resource str
 	return spt, nil
 }
 
-// AuthFunc determines the authentication flow to retrieve a token from Azure.
-type AuthFunc func(oauthCfg azure.OAuthConfig, clientID, resource string) (*azure.ServicePrincipalToken, error)
-
-// DeviceFlowAuth prints a message to the screen for user to take action to
+// deviceFlowAuth prints a message to the screen for user to take action to
 // consent application on a browser and in the meanwhile the authentication
 // endpoint is polled until user gives consent, denies or the flow times out.
 // Returned token must be saved.
-func DeviceFlowAuth(oauthCfg azure.OAuthConfig, clientID, resource string) (*azure.ServicePrincipalToken, error) {
+func deviceFlowAuth(oauthCfg azure.OAuthConfig, clientID, resource string) (*azure.ServicePrincipalToken, error) {
 	cl := oauthClient()
 	deviceCode, err := azure.InitiateDeviceAuth(&cl, oauthCfg, clientID, resource)
 	if err != nil {
@@ -184,23 +194,6 @@ func DeviceFlowAuth(oauthCfg azure.OAuthConfig, clientID, resource string) (*azu
 	return spt, nil
 }
 
-// ServicePrincipalAuth creates a new AuthFunc that authenticates to Azure
-// using the provided Service Principal Account credentials (client_id and
-// client_secret).
-func ServicePrincipalAuth(spID, spPassword string) AuthFunc {
-	return func(oauthCfg azure.OAuthConfig, _, resource string) (*azure.ServicePrincipalToken, error) {
-		spt, err := azure.NewServicePrincipalToken(oauthCfg, spID, spPassword, resource)
-		if err != nil {
-			return nil, err
-		}
-		// force Refresh() to get a token to be stored.
-		if err := spt.Refresh(); err != nil {
-			return nil, fmt.Errorf("Failed to get a token with service principal: %v", err)
-		}
-		return spt, nil
-	}
-}
-
 // azureCredsPath returns the directory the azure credentials are stored in.
 func azureCredsPath() string {
 	return filepath.Join(mcnutils.GetHomeDir(), ".docker", "machine", "credentials", "azure")
@@ -213,7 +206,7 @@ func tokenCachePath(tenantID string) string {
 }
 
 // tenantIDPath returns the full path the tenant ID for the given subscription
-// should be saved at.
+// should be saved at.f
 func tenantIDPath(subscriptionID string) string {
 	return filepath.Join(azureCredsPath(), fmt.Sprintf("%s.tenantid", subscriptionID))
 }
@@ -243,4 +236,11 @@ func validateToken(env azure.Environment, token *azure.ServicePrincipalToken) er
 		return fmt.Errorf("Token validity check failed: %v", err)
 	}
 	return nil
+}
+
+// getScope returns the API scope for authnetication tokens.
+func getScope(env azure.Environment) string {
+	// for AzurePublicCloud (https://management.core.windows.net/), this old
+	// Service Management scope covers both ASM and ARM.
+	return env.ServiceManagementEndpoint
 }

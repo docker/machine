@@ -28,7 +28,7 @@ func oauthClient() autorest.Client {
 }
 
 func subscriptionsClient(baseURI string) subscriptions.Client {
-	c := subscriptions.NewClientWithBaseURI(baseURI, "") // used only for unauthenticated requests for generic subs IDs
+	c := subscriptions.NewClientWithBaseURI(baseURI) // used only for unauthenticated requests for generic subs IDs
 	c.Client.UserAgent += fmt.Sprintf(";docker-machine/%s", version.Version)
 	c.RequestInspector = withInspection()
 	c.ResponseInspector = byInspecting()

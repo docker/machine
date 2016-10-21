@@ -12,18 +12,18 @@ GOLINT := $(shell [ -x $(GOLINT_BIN) ] && echo $(GOLINT_BIN) || echo '')
 GODEP_BIN := $(GOPATH)/bin/godep
 GODEP := $(shell [ -x $(GODEP_BIN) ] && echo $(GODEP_BIN) || echo '')
 
-# Honor debug
+# Honor debug
 ifeq ($(DEBUG),true)
 	# Disable function inlining and variable registerization
 	GO_GCFLAGS := -gcflags "-N -l"
 else
-	# Turn of DWARF debugging information and strip the binary otherwise
+	# Turn of DWARF debugging information and strip the binary otherwise
 	GO_LDFLAGS := $(GO_LDFLAGS) -w -s
 endif
 
-# Honor static
+# Honor static
 ifeq ($(STATIC),true)
-	# Append to the version
+	# Append to the version
 	GO_LDFLAGS := $(GO_LDFLAGS) -extldflags -static
 endif
 
