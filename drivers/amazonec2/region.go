@@ -12,10 +12,10 @@ type region struct {
 // See https://cloud-images.ubuntu.com/locator/ec2/
 var regionDetails map[string]*region = map[string]*region{
 	"ap-northeast-1":  {"ami-31892c50"},
-	"ap-northeast-2":  {"ami-a3915acd"}, 
+	"ap-northeast-2":  {"ami-a3915acd"},
 	"ap-southeast-1":  {"ami-18e7417b"},
 	"ap-southeast-2":  {"ami-7be4d618"},
-	"ap-south-1":      {"ami-7e94fe11"}, 
+	"ap-south-1":      {"ami-7e94fe11"},
 	"cn-north-1":      {"ami-d7c511ba"},
 	"eu-central-1":    {"ami-597c8236"},
 	"eu-west-1":       {"ami-c593deb6"},
