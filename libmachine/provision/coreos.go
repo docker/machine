@@ -75,12 +75,21 @@ EnvironmentFile=-/run/flannel_docker_opts.env
 MountFlags=slave
 LimitNOFILE=1048576
 LimitNPROC=1048576
-ExecStart=/usr/lib/coreos/dockerd daemon --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:{{.DockerPort}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}}{{ range .EngineOptions.Labels }} --label {{.}}{{ end }}{{ range .EngineOptions.InsecureRegistry }} --insecure-registry {{.}}{{ end }}{{ range .EngineOptions.RegistryMirror }} --registry-mirror {{.}}{{ end }}{{ range .EngineOptions.ArbitraryFlags }} --{{.}}{{ end }} \$DOCKER_OPTS \$DOCKER_OPT_BIP \$DOCKER_OPT_MTU \$DOCKER_OPT_IPMASQ
+ExecStart=/usr/lib/coreos/dockerd daemon --host=unix:///var/run/docker.sock --host=tcp://{{.BindIP}}:{{.DockerPort}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}}{{ range .EngineOptions.Labels }} --label {{.}}{{ end }}{{ range .EngineOptions.InsecureRegistry }} --insecure-registry {{.}}{{ end }}{{ range .EngineOptions.RegistryMirror }} --registry-mirror {{.}}{{ end }}{{ range .EngineOptions.ArbitraryFlags }} --{{.}}{{ end }} \$DOCKER_OPTS \$DOCKER_OPT_BIP \$DOCKER_OPT_MTU \$DOCKER_OPT_IPMASQ
 Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
 
 [Install]
 WantedBy=multi-user.target
 `
+
+	bindIP, err := provisioner.GetDriver().GetIP()
+	if err != nil {
+		return nil, err
+	}
+
+	if provisioner.Driver.DriverName() != "softlayer" {
+		bindIP = "0.0.0.0"
+	}
 
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {
@@ -88,6 +97,7 @@ WantedBy=multi-user.target
 	}
 
 	engineConfigContext := EngineConfigContext{
+		BindIP:        bindIP,
 		DockerPort:    dockerPort,
 		AuthOptions:   provisioner.AuthOptions,
 		EngineOptions: provisioner.EngineOptions,

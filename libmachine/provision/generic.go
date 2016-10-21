@@ -98,7 +98,7 @@ func (provisioner *GenericProvisioner) GenerateDockerOptions(dockerPort int) (*D
 
 	engineConfigTmpl := `
 DOCKER_OPTS='
--H tcp://0.0.0.0:{{.DockerPort}}
+-H tcp://{{.BindIP}}:{{.DockerPort}}
 -H unix:///var/run/docker.sock
 --storage-driver {{.EngineOptions.StorageDriver}}
 --tlsverify
@@ -114,12 +114,23 @@ DOCKER_OPTS='
 {{range .EngineOptions.Env}}export \"{{ printf "%q" . }}\"
 {{end}}
 `
+
+	bindIP, err := provisioner.GetDriver().GetIP()
+	if err != nil {
+		return nil, err
+	}
+
+	if provisioner.Driver.DriverName() != "softlayer" {
+		bindIP = "0.0.0.0"
+	}
+
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
 	if err != nil {
 		return nil, err
 	}
 
 	engineConfigContext := EngineConfigContext{
+		BindIP:        bindIP,
 		DockerPort:    dockerPort,
 		AuthOptions:   provisioner.AuthOptions,
 		EngineOptions: provisioner.EngineOptions,
