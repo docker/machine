@@ -27,19 +27,19 @@ import (
 )
 
 const (
-	driverName               = "amazonec2"
-	ipRange                  = "0.0.0.0/0"
-	machineSecurityGroupName = "docker-machine"
-	defaultAmiId             = "ami-c60b90d1"
-	defaultRegion            = "us-east-1"
-	defaultInstanceType      = "t2.micro"
-	defaultDeviceName        = "/dev/sda1"
-	defaultRootSize          = 16
-	defaultVolumeType        = "gp2"
-	defaultZone              = "a"
-	defaultSecurityGroup     = machineSecurityGroupName
-	defaultSSHUser           = "ubuntu"
-	defaultSpotPrice         = "0.50"
+	driverName                  = "amazonec2"
+	ipRange                     = "0.0.0.0/0"
+	machineSecurityGroupName    = "docker-machine"
+	defaultAmiId                = "ami-c60b90d1"
+	defaultRegion               = "us-east-1"
+	defaultInstanceType         = "t2.micro"
+	defaultDeviceName           = "/dev/sda1"
+	defaultRootSize             = 16
+	defaultVolumeType           = "gp2"
+	defaultZone                 = "a"
+	defaultSecurityGroup        = machineSecurityGroupName
+	defaultSSHUser              = "ubuntu"
+	defaultSpotPrice            = "0.50"
 	defaultBlockDurationMinutes = 0
 )
 
