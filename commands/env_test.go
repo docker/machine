@@ -104,6 +104,7 @@ func TestShellCfgSet(t *testing.T) {
 	// these `env` operations.
 	defer revertUsageHinter(defaultUsageHinter)
 	defaultUsageHinter = &SimpleUsageHintGenerator{usageHint}
+	isRuntimeWindows := runtimeOS() == "windows"
 
 	var tests = []struct {
 		description      string
@@ -159,6 +160,7 @@ func TestShellCfgSet(t *testing.T) {
 				DockerTLSVerify: "1",
 				UsageHint:       usageHint,
 				MachineName:     "quux",
+				ComposePathsVar: isRuntimeWindows,
 			},
 			expectedErr: nil,
 		},
@@ -195,6 +197,7 @@ func TestShellCfgSet(t *testing.T) {
 				DockerTLSVerify: "1",
 				UsageHint:       usageHint,
 				MachineName:     defaultMachineName,
+				ComposePathsVar: isRuntimeWindows,
 			},
 			expectedErr: nil,
 		},
@@ -231,6 +234,7 @@ func TestShellCfgSet(t *testing.T) {
 				DockerTLSVerify: "1",
 				UsageHint:       usageHint,
 				MachineName:     "quux",
+				ComposePathsVar: isRuntimeWindows,
 			},
 			expectedErr: nil,
 		},
@@ -267,6 +271,7 @@ func TestShellCfgSet(t *testing.T) {
 				DockerTLSVerify: "1",
 				UsageHint:       usageHint,
 				MachineName:     "quux",
+				ComposePathsVar: isRuntimeWindows,
 			},
 			expectedErr: nil,
 		},
@@ -303,6 +308,7 @@ func TestShellCfgSet(t *testing.T) {
 				DockerTLSVerify: "1",
 				UsageHint:       usageHint,
 				MachineName:     "quux",
+				ComposePathsVar: isRuntimeWindows,
 			},
 			expectedErr: nil,
 		},
@@ -339,6 +345,7 @@ func TestShellCfgSet(t *testing.T) {
 				DockerTLSVerify: "1",
 				UsageHint:       usageHint,
 				MachineName:     "quux",
+				ComposePathsVar: isRuntimeWindows,
 			},
 			expectedErr: nil,
 		},
@@ -381,6 +388,7 @@ func TestShellCfgSet(t *testing.T) {
 				NoProxyVar:      "NO_PROXY",
 				NoProxyValue:    "1.2.3.4", // From FakeDriver
 				MachineName:     "quux",
+				ComposePathsVar: isRuntimeWindows,
 			},
 			noProxyVar:   "NO_PROXY",
 			noProxyValue: "",
@@ -425,12 +433,92 @@ func TestShellCfgSet(t *testing.T) {
 				NoProxyVar:      "no_proxy",
 				NoProxyValue:    "192.168.59.1,1.2.3.4", // From FakeDriver
 				MachineName:     "quux",
+				ComposePathsVar: isRuntimeWindows,
 			},
 			noProxyVar:   "no_proxy",
 			noProxyValue: "192.168.59.1",
 			expectedErr:  nil,
 		},
 	}
+
+	for _, test := range tests {
+		// TODO: Ideally this should not hit the environment at all but
+		// rather should go through an interface.
+		os.Setenv(test.noProxyVar, test.noProxyValue)
+
+		t.Log(test.description)
+
+		check.DefaultConnChecker = test.connChecker
+		shellCfg, err := shellCfgSet(test.commandLine, test.api)
+		assert.Equal(t, test.expectedShellCfg, shellCfg)
+		assert.Equal(t, test.expectedErr, err)
+
+		os.Unsetenv(test.noProxyVar)
+	}
+}
+
+func TestShellCfgSetWindowsRuntime(t *testing.T) {
+	const (
+		usageHint = "This is a usage hint"
+	)
+
+	// TODO: This should be embedded in some kind of wrapper struct for all
+	// these `env` operations.
+	defer revertUsageHinter(defaultUsageHinter)
+	defaultUsageHinter = &SimpleUsageHintGenerator{usageHint}
+
+	var tests = []struct {
+		description      string
+		commandLine      CommandLine
+		api              libmachine.API
+		connChecker      check.ConnChecker
+		noProxyVar       string
+		noProxyValue     string
+		expectedShellCfg *ShellConfig
+		expectedErr      error
+	}{
+		{
+			description: "powershell set happy path",
+			commandLine: &commandstest.FakeCommandLine{
+				CliArgs: []string{"quux"},
+				LocalFlags: &commandstest.FakeFlagger{
+					Data: map[string]interface{}{
+						"shell":    "powershell",
+						"swarm":    false,
+						"no-proxy": false,
+					},
+				},
+			},
+			api: &libmachinetest.FakeAPI{
+				Hosts: []*host.Host{
+					{
+						Name: "quux",
+					},
+				},
+			},
+			connChecker: &FakeConnChecker{
+				DockerHost:  "tcp://1.2.3.4:2376",
+				AuthOptions: nil,
+				Err:         nil,
+			},
+			expectedShellCfg: &ShellConfig{
+				Prefix:          "$Env:",
+				Suffix:          "\"\n",
+				Delimiter:       " = \"",
+				DockerCertPath:  filepath.Join(mcndirs.GetMachineDir(), "quux"),
+				DockerHost:      "tcp://1.2.3.4:2376",
+				DockerTLSVerify: "1",
+				UsageHint:       usageHint,
+				MachineName:     "quux",
+				ComposePathsVar: true,
+			},
+			expectedErr: nil,
+		},
+	}
+
+	actualRuntimeOS := runtimeOS
+	runtimeOS = func() string { return "windows" }
+	defer func() { runtimeOS = actualRuntimeOS }()
 
 	for _, test := range tests {
 		// TODO: Ideally this should not hit the environment at all but
