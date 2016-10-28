@@ -11,11 +11,11 @@ func TestCreateRm(t *testing.T) {
 	defer test.TearDown()
 
 	test.Run("non-existent driver fails", func() {
-		test.Machine("create -d bogus bogus").Should().Fail(`Driver "bogus" not found. Do you have the plugin binary accessible in your PATH?`)
+		test.Machine("create -d bogus bogus").Should().Fail(`Driver "bogus" not found. Do you have the plugin binary "docker-machine-driver-bogus" accessible in your PATH?`)
 	})
 
 	test.Run("non-existent driver fails", func() {
-		test.Machine("create -d bogus bogus").Should().Fail(`Driver "bogus" not found. Do you have the plugin binary accessible in your PATH?`)
+		test.Machine("create -d bogus bogus").Should().Fail(`Driver "bogus" not found. Do you have the plugin binary "docker-machine-driver-bogus" accessible in your PATH?`)
 	})
 
 	test.Run("create with no name fails", func() {
