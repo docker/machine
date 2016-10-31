@@ -1034,21 +1034,22 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 			}
 		}
 		d.SecurityGroupIds = append(d.SecurityGroupIds, *group.GroupId)
+	}
 
-		perms, err := d.configureSecurityGroupPermissions(group)
+	var mainGroup = groupsByName[groupNames[0]]
+	perms, err := d.configureSecurityGroupPermissions(mainGroup)
+	if err != nil {
+		return err
+	}
+
+	if len(perms) != 0 {
+		log.Debugf("authorizing group %s with permissions: %v", groupNames, perms)
+		_, err := d.getClient().AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+			GroupId:       mainGroup.GroupId,
+			IpPermissions: perms,
+		})
 		if err != nil {
 			return err
-		}
-
-		if len(perms) != 0 {
-			log.Debugf("authorizing group %s with permissions: %v", groupNames, perms)
-			_, err := d.getClient().AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-				GroupId:       group.GroupId,
-				IpPermissions: perms,
-			})
-			if err != nil {
-				return err
-			}
 		}
 	}
 

@@ -402,7 +402,8 @@ func TestConfigureSecurityGroupsMixed(t *testing.T) {
 		GroupId:       aws.String("existingGroupId"),
 		IpPermissions: []*ec2.IpPermission{ipPermission(testDockerPort)},
 	}).Return(
-		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
+		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil,
+	).Once() // Ensure no other ingress permissions are set
 
 	// The new security group is created.
 	recorder.On("CreateSecurityGroup", &ec2.CreateSecurityGroupInput{
@@ -422,13 +423,6 @@ func TestConfigureSecurityGroupsMixed(t *testing.T) {
 	recorder.On("DescribeSecurityGroups",
 		&ec2.DescribeSecurityGroupsInput{GroupIds: []*string{aws.String("newGroupId")}}).Return(
 		&postCreateLookupResult, nil)
-
-	// Permissions are added to the new security group.
-	recorder.On("AuthorizeSecurityGroupIngress", &ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId:       aws.String("newGroupId"),
-		IpPermissions: []*ec2.IpPermission{ipPermission(testSSHPort), ipPermission(testDockerPort)},
-	}).Return(
-		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
 
 	driver := NewCustomTestDriver(&recorder)
 	err := driver.configureSecurityGroups(groups)
