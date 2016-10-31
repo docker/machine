@@ -1043,7 +1043,7 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 	}
 
 	if len(perms) != 0 {
-		log.Debugf("authorizing group %s with permissions: %v", groupNames, perms)
+		log.Debugf("authorizing group %s with permissions: %v", *mainGroup.GroupName, perms)
 		_, err := d.getClient().AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 			GroupId:       mainGroup.GroupId,
 			IpPermissions: perms,
