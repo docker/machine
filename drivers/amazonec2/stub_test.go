@@ -41,24 +41,30 @@ func (p *okProvider) IsExpired() bool {
 	return true
 }
 
-type cliCredentials struct{}
+type fallbackCredentials struct{}
 
-func (c *cliCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
-	return credentials.NewCredentials(&okProvider{id, secret, token})
+func (c *fallbackCredentials) Credentials() *credentials.Credentials {
+	return credentials.NewStaticCredentials("fallback_access", "fallback_secret", "fallback_token")
 }
 
-func (c *cliCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
+func NewValidAwsCredentials() awsCredentials {
+	return &fallbackCredentials{}
+}
+
+type errorFallbackCredentials struct{}
+
+func (c *errorFallbackCredentials) Credentials() *credentials.Credentials {
 	return credentials.NewCredentials(&errorProvider{})
 }
 
-type fileCredentials struct{}
-
-func (c *fileCredentials) NewStaticCredentials(id, secret, token string) *credentials.Credentials {
-	return nil
+func NewErrorAwsCredentials() awsCredentials {
+	return &errorFallbackCredentials{}
 }
 
-func (c *fileCredentials) NewSharedCredentials(filename, profile string) *credentials.Credentials {
-	return credentials.NewCredentials(&okProvider{"access", "secret", "token"})
+type errorCredentialsProvider struct{}
+
+func (c *errorCredentialsProvider) NewStaticProvider(id, secret, token string) credentials.Provider {
+	return &errorProvider{}
 }
 
 type fakeEC2WithDescribe struct {
@@ -128,12 +134,16 @@ func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *
 
 func NewTestDriver() *Driver {
 	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return &fakeEC2{} }
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2{}
+	}
 	return driver
 }
 
 func NewCustomTestDriver(ec2Client Ec2Client) *Driver {
 	driver := NewDriver("machineFoo", "path")
-	driver.clientFactory = func() Ec2Client { return ec2Client }
+	driver.clientFactory = func() Ec2Client {
+		return ec2Client
+	}
 	return driver
 }

@@ -51,23 +51,22 @@ var (
 	dockerPort                           = 2376
 	swarmPort                            = 3376
 	errorNoPrivateSSHKey                 = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
-	errorMissingAccessKeyOption          = errors.New("amazonec2 driver requires the --amazonec2-access-key option or proper credentials in ~/.aws/credentials")
-	errorMissingSecretKeyOption          = errors.New("amazonec2 driver requires the --amazonec2-secret-key option or proper credentials in ~/.aws/credentials")
+	errorMissingCredentials              = errors.New("amazonec2 driver requires AWS credentials configured with the --amazonec2-access-key and --amazonec2-secret-key options, environment variables, ~/.aws/credentials, or an instance role")
 	errorNoVPCIdFound                    = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
 	errorDisableSSLWithoutCustomEndpoint = errors.New("using --amazonec2-insecure-transport also requires --amazonec2-endpoint")
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	clientFactory  func() Ec2Client
-	awsCredentials awsCredentials
-	Id             string
-	AccessKey      string
-	SecretKey      string
-	SessionToken   string
-	Region         string
-	AMI            string
-	SSHKeyID       int
+	clientFactory         func() Ec2Client
+	awsCredentialsFactory func() awsCredentials
+	Id                    string
+	AccessKey             string
+	SecretKey             string
+	SessionToken          string
+	Region                string
+	AMI                   string
+	SSHKeyID              int
 	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
 	ExistingKey      bool
 	KeyName          string
@@ -281,10 +280,10 @@ func NewDriver(hostName, storePath string) *Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
-		awsCredentials: &defaultAWSCredentials{},
 	}
 
 	driver.clientFactory = driver.buildClient
+	driver.awsCredentialsFactory = driver.buildCredentials
 
 	return driver
 }
@@ -293,7 +292,7 @@ func (d *Driver) buildClient() Ec2Client {
 	config := aws.NewConfig()
 	alogger := AwsLogger()
 	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(d.awsCredentials.NewStaticCredentials(d.AccessKey, d.SecretKey, d.SessionToken))
+	config = config.WithCredentials(d.awsCredentialsFactory().Credentials())
 	config = config.WithLogger(alogger)
 	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
 	config = config.WithMaxRetries(d.RetryCount)
@@ -302,6 +301,10 @@ func (d *Driver) buildClient() Ec2Client {
 		config = config.WithDisableSSL(d.DisableSSL)
 	}
 	return ec2.New(session.New(config))
+}
+
+func (d *Driver) buildCredentials() awsCredentials {
+	return NewAWSCredentials(d.AccessKey, d.SecretKey, d.SessionToken)
 }
 
 func (d *Driver) getClient() Ec2Client {
@@ -363,24 +366,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return errorNoPrivateSSHKey
 	}
 
-	if d.AccessKey == "" && d.SecretKey == "" {
-		credentials, err := d.awsCredentials.NewSharedCredentials("", "").Get()
-		if err != nil {
-			log.Debug("Could not load credentials from ~/.aws/credentials")
-		} else {
-			log.Debug("Successfully loaded credentials from ~/.aws/credentials")
-			d.AccessKey = credentials.AccessKeyID
-			d.SecretKey = credentials.SecretAccessKey
-			d.SessionToken = credentials.SessionToken
-		}
-	}
-
-	if d.AccessKey == "" {
-		return errorMissingAccessKeyOption
-	}
-
-	if d.SecretKey == "" {
-		return errorMissingSecretKeyOption
+	_, err = d.awsCredentialsFactory().Credentials().Get()
+	if err != nil {
+		return errorMissingCredentials
 	}
 
 	if d.VpcId == "" {
