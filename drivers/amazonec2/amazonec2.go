@@ -563,8 +563,8 @@ func (d *Driver) securityGroupIds() (ids []string) {
 
 func (d *Driver) Base64UserData() (userdata string, err error) {
 	if d.UserDataFile != "" {
-		buf, io_err := ioutil.ReadFile(d.UserDataFile)
-		if io_err != nil {
+		buf, ioerr := ioutil.ReadFile(d.UserDataFile)
+		if ioerr != nil {
 			err = errorReadingUserData
 			return
 		}
