@@ -3,6 +3,7 @@ package amazonec2
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -54,6 +55,7 @@ var (
 	errorMissingCredentials              = errors.New("amazonec2 driver requires AWS credentials configured with the --amazonec2-access-key and --amazonec2-secret-key options, environment variables, ~/.aws/credentials, or an instance role")
 	errorNoVPCIdFound                    = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
 	errorDisableSSLWithoutCustomEndpoint = errors.New("using --amazonec2-insecure-transport also requires --amazonec2-endpoint")
+	errorReadingUserData                 = errors.New("unable to read --amazonec2-userdata file")
 )
 
 type Driver struct {
@@ -104,6 +106,7 @@ type Driver struct {
 	RetryCount              int
 	Endpoint                string
 	DisableSSL              bool
+	UserDataFile            string
 }
 
 type clientFactory interface {
@@ -260,6 +263,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Disable SSL when sending requests",
 			EnvVar: "AWS_INSECURE_TRANSPORT",
 		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-userdata",
+			Usage:  "path to file with cloud-init user data",
+			EnvVar: "AWS_USERDATA",
+		},
 	}
 }
 
@@ -355,6 +363,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SetSwarmConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
 	d.OpenPorts = flags.StringSlice("amazonec2-open-port")
+	d.UserDataFile = flags.String("amazonec2-userdata")
 
 	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
 
@@ -540,6 +549,18 @@ func (d *Driver) securityGroupIds() (ids []string) {
 	return migrateStringToSlice(d.SecurityGroupId, d.SecurityGroupIds)
 }
 
+func (d *Driver) Base64UserData() (userdata string, err error) {
+	if d.UserDataFile != "" {
+		buf, ioerr := ioutil.ReadFile(d.UserDataFile)
+		if ioerr != nil {
+			err = errorReadingUserData
+			return
+		}
+		userdata = base64.StdEncoding.EncodeToString(buf)
+	}
+	return
+}
+
 func (d *Driver) Create() error {
 	if err := d.checkPrereqs(); err != nil {
 		return err
@@ -553,6 +574,13 @@ func (d *Driver) Create() error {
 
 	if err := d.configureSecurityGroups(d.securityGroupNames()); err != nil {
 		return err
+	}
+
+	var userdata string
+	if b64, err := d.Base64UserData(); err != nil {
+		return err
+	} else {
+		userdata = b64
 	}
 
 	bdm := &ec2.BlockDeviceMapping{
@@ -591,6 +619,7 @@ func (d *Driver) Create() error {
 				},
 				EbsOptimized:        &d.UseEbsOptimizedInstance,
 				BlockDeviceMappings: []*ec2.BlockDeviceMapping{bdm},
+				UserData:            &userdata,
 			},
 			InstanceCount: aws.Int64(1),
 			SpotPrice:     &d.SpotPrice,
@@ -662,6 +691,7 @@ func (d *Driver) Create() error {
 			},
 			EbsOptimized:        &d.UseEbsOptimizedInstance,
 			BlockDeviceMappings: []*ec2.BlockDeviceMapping{bdm},
+			UserData:            &userdata,
 		})
 
 		if err != nil {
