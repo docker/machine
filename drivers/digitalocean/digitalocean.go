@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
 	"time"
 
 	"github.com/digitalocean/godo"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"golang.org/x/oauth2"
@@ -25,6 +27,7 @@ type Driver struct {
 	Region            string
 	SSHKeyID          int
 	SSHKeyFingerprint string
+	SSHKey            string
 	Size              string
 	IPv6              bool
 	Backups           bool
@@ -59,6 +62,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "DIGITALOCEAN_SSH_KEY_FINGERPRINT",
 			Name:   "digitalocean-ssh-key-fingerprint",
 			Usage:  "SSH key fingerprint",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "DIGITALOCEAN_SSH_KEY_PATH",
+			Name:   "digitalocean-ssh-key-path",
+			Usage:  "SSH private key path ",
 		},
 		mcnflag.IntFlag{
 			EnvVar: "DIGITALOCEAN_SSH_PORT",
@@ -140,6 +148,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("digitalocean-ssh-user")
 	d.SSHPort = flags.Int("digitalocean-ssh-port")
 	d.SSHKeyFingerprint = flags.String("digitalocean-ssh-key-fingerprint")
+	d.SSHKey = flags.String("digitalocean-ssh-key-path")
+
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.AccessToken == "" {
@@ -153,6 +163,16 @@ func (d *Driver) PreCreateCheck() error {
 	if d.UserDataFile != "" {
 		if _, err := os.Stat(d.UserDataFile); os.IsNotExist(err) {
 			return fmt.Errorf("user-data file %s could not be found", d.UserDataFile)
+		}
+	}
+
+	if d.SSHKey != "" {
+		if d.SSHKeyFingerprint == "" {
+			return fmt.Errorf("ssh-key-fingerpint needs to be provided for %q", d.SSHKey)
+		}
+
+		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
+			return fmt.Errorf("SSH key does not exist: %q", d.SSHKey)
 		}
 	}
 
@@ -239,15 +259,26 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) createSSHKey() (*godo.Key, error) {
+	d.SSHKeyPath = d.GetSSHKeyPath()
+
 	if d.SSHKeyFingerprint != "" {
 		key, resp, err := d.getClient().Keys.GetByFingerprint(d.SSHKeyFingerprint)
 		if err != nil && resp.StatusCode == 404 {
 			return nil, fmt.Errorf("Digital Ocean SSH key with fingerprint %s doesn't exist", d.SSHKeyFingerprint)
 		}
-		return key, err
+
+		if d.SSHKey == "" {
+			log.Infof("Assuming Digital Ocean private SSH is located at ~/.ssh/id_rsa")
+			return key, nil
+		}
+
+		if err := copySSHKey(d.SSHKey, d.SSHKeyPath); err != nil {
+			return nil, err
+		}
+		return key, nil
 	}
 
-	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+	if err := ssh.GenerateSSHKey(d.SSHKeyPath); err != nil {
 		return nil, err
 	}
 
@@ -348,8 +379,9 @@ func (d *Driver) getClient() *godo.Client {
 }
 
 func (d *Driver) GetSSHKeyPath() string {
-	// don't set SSHKeyPath when using an existing key fingerprint
-	if d.SSHKeyPath == "" && d.SSHKeyFingerprint == "" {
+	if d.SSHKey != "" {
+		d.SSHKeyPath = d.ResolveStorePath(path.Base(d.SSHKey))
+	} else if d.SSHKeyPath == "" && d.SSHKeyFingerprint == "" {
 		d.SSHKeyPath = d.ResolveStorePath("id_rsa")
 	}
 	return d.SSHKeyPath
@@ -357,4 +389,16 @@ func (d *Driver) GetSSHKeyPath() string {
 
 func (d *Driver) publicSSHKeyPath() string {
 	return d.GetSSHKeyPath() + ".pub"
+}
+
+func copySSHKey(src, dst string) error {
+	if err := mcnutils.CopyFile(src, dst); err != nil {
+		return fmt.Errorf("unable to copy ssh key: %s", err)
+	}
+
+	if err := os.Chmod(dst, 0600); err != nil {
+		return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+	}
+
+	return nil
 }
