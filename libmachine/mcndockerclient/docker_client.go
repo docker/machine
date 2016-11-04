@@ -3,6 +3,8 @@ package mcndockerclient
 import (
 	"fmt"
 
+	"net/http"
+
 	"github.com/docker/machine/libmachine/cert"
 	"github.com/samalba/dockerclient"
 )
@@ -19,7 +21,13 @@ func DockerClient(dockerHost DockerHost) (*dockerclient.DockerClient, error) {
 		return nil, fmt.Errorf("Unable to read TLS config: %s", err)
 	}
 
-	return dockerclient.NewDockerClient(url, tlsConfig)
+	client, err := dockerclient.NewDockerClient(url, tlsConfig)
+	if err != nil {
+		transport := (client.HTTPClient.Transport).(*http.Transport)
+		transport.Proxy = http.ProxyFromEnvironment
+		client.HTTPClient.Transport = transport
+	}
+	return client, err
 }
 
 // CreateContainer creates a docker container.

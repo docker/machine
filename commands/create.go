@@ -85,12 +85,6 @@ var (
 			EnvVar: "MACHINE_SSH_CONFIG_FILE",
 			Name:   "ssh-config-file",
 			Usage:  "Use the specified SSH config file",
-			Value:  "",
-		},
-		cli.BoolFlag{
-			EnvVar: "MACHINE_USE_USER_SSH_CONFIG",
-			Name:   "use-user-ssh-config",
-			Usage:  "Use the user's SSH config file (~/.ssh/config)",
 		},
 		cli.BoolFlag{
 			Name:  "swarm",
@@ -184,26 +178,16 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	}
 
 	sshConfigFile := c.String("ssh-config-file")
-	if c.Bool("use-user-ssh-config") {
-		if sshConfigFile != "" {
-			return fmt.Errorf("--ssh-config-file not allowed with --use-user-ssh-config")
-		}
-		sshConfigFile = filepath.Join(os.Getenv("HOME"), ".ssh", "config")
-	}
 	if sshConfigFile == "" {
 		sshConfigFile = "/dev/null"
 	}
 
-	libmachineOpts, err := rpcdriver.GetMachineOptions(h.Driver)
-	if err == nil {
-		libmachineOpts.SSHConfigFile = sshConfigFile
-		mcnopt.SetOpts(libmachineOpts)
-		err = rpcdriver.SetMachineOptions(h.Driver, libmachineOpts)
-		if err != nil {
-			return fmt.Errorf("Error setting machine options: %s", err)
-		}
-	} else {
-		log.Warn(err)
+	libmachineOpts := mcnopt.Opts()
+	libmachineOpts.SSHConfigFile = sshConfigFile
+	mcnopt.SetOpts(libmachineOpts)
+	err = rpcdriver.SetMachineOptions(h.Driver, libmachineOpts)
+	if err != nil {
+		return fmt.Errorf("Error setting machine options: %s", err)
 	}
 
 	h.HostOptions = &host.Options{

@@ -101,12 +101,6 @@ func (r *RPCServerDriver) Close(_, _ *struct{}) error {
 	return nil
 }
 
-func (r *RPCServerDriver) GetMachineOptions(_ *struct{}, reply *mcnopt.Options) error {
-	options := mcnopt.Opts()
-	*reply = *options
-	return nil
-}
-
 func (r *RPCServerDriver) SetMachineOptions(opts *mcnopt.Options, _ *struct{}) error {
 	mcnopt.SetOpts(opts)
 	return nil

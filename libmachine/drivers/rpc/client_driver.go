@@ -88,7 +88,6 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
-	GetMachineOptionsMethod  = `.GetMachineOptions`
 	SetMachineOptionsMethod  = `.SetMachineOptions`
 )
 
@@ -376,16 +375,6 @@ func (c *RPCClientDriver) Upgrade() error {
 	return c.Client.Call(UpgradeMethod, struct{}{}, nil)
 }
 
-func (c *RPCClientDriver) GetMachineOptions() (*mcnopt.Options, error) {
-	options := &mcnopt.Options{}
-
-	if err := c.Client.Call(GetMachineOptionsMethod, struct{}{}, options); err != nil {
-		return nil, err
-	}
-
-	return options, nil
-}
-
 func (c *RPCClientDriver) SetMachineOptions(options *mcnopt.Options) error {
 	return c.Client.Call(SetMachineOptionsMethod, options, nil)
 }
@@ -404,14 +393,6 @@ more details.
 `, driverName)
 		optionWarningMessageShown = true
 	}
-}
-
-func GetMachineOptions(d drivers.Driver) (*mcnopt.Options, error) {
-	rpcDriver, ok := d.(*RPCClientDriver)
-	if ok {
-		return rpcDriver.GetMachineOptions()
-	}
-	return nil, fmt.Errorf("Failed to cast driver to RPCClientDriver")
 }
 
 func SetMachineOptions(d drivers.Driver, opts *mcnopt.Options) error {
