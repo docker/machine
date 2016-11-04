@@ -396,6 +396,10 @@ more details.
 }
 
 func SetMachineOptions(d drivers.Driver, opts *mcnopt.Options) error {
+	if d.DriverName() == "ci-test" {
+		return nil
+	}
+
 	if opts == nil {
 		opts = mcnopt.Opts()
 	}
