@@ -1,3 +1,4 @@
+//+build !windows
 /*
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -33,7 +35,16 @@ func setVmwareCmd(cmd string) string {
 	if path, err := exec.LookPath(cmd); err == nil {
 		return path
 	}
-	return filepath.Join("/Applications/VMware Fusion.app/Contents/Library/", cmd)
+
+	var basePath string
+
+	switch runtime.GOOS {
+	case "darwin":
+		basePath = "/Applications/VMware Fusion.app/Contents/Library/"
+	case "linux":
+		basePath = "/usr/bin/"
+	}
+	return filepath.Join(basePath, cmd)
 }
 
 func vmrun(args ...string) (string, string, error) {
