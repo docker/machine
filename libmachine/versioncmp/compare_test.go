@@ -1,4 +1,4 @@
-package versions
+package versioncmp
 
 import (
 	"testing"

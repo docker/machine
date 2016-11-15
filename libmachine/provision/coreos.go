@@ -11,7 +11,7 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/docker/machine/libmachine/versions"
+	"github.com/docker/machine/libmachine/versioncmp"
 )
 
 const (
@@ -71,7 +71,7 @@ func (provisioner *CoreOSProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	}
 
 	arg := "daemon"
-	if versions.GreaterThanOrEqualTo(dockerVersion, "1.12.0") {
+	if versioncmp.GreaterThanOrEqualTo(dockerVersion, "1.12.0") {
 		arg = ""
 	}
 
