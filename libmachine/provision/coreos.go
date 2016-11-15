@@ -11,6 +11,7 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/provision/pkgaction"
 	"github.com/docker/machine/libmachine/swarm"
+	"github.com/docker/machine/libmachine/versions"
 )
 
 const (
@@ -64,10 +65,13 @@ func (provisioner *CoreOSProvisioner) GenerateDockerOptions(dockerPort int) (*Do
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
+	dockerVersion, err := DockerClientVersion(provisioner)
+	if err != nil {
+		return nil, err
+	}
+
 	arg := "daemon"
-	if _, err := provisioner.SSHCommand("type dockerd"); err == nil {
-		// `dockerd` exists, meaning we're provisioning with docker >= 1.12. Do
-		// not add the daemon argument to /usr/lib/coreos/dockerd.
+	if versions.GreaterThanOrEqualTo(dockerVersion, "1.12.0") {
 		arg = ""
 	}
 
