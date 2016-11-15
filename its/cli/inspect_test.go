@@ -11,6 +11,6 @@ func TestInspect(t *testing.T) {
 	defer test.TearDown()
 
 	test.Run("inspect: show error in case of no args", func() {
-		test.Machine("inspect").Should().Fail(`Error: No machine name(s) specified and no "default" machine exists.`)
+		test.Machine("inspect").Should().Fail(`Error: No machine name(s) specified and no "default" machine exists`)
 	})
 }

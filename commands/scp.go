@@ -77,7 +77,7 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 func getScpCmd(src, dest string, recursive bool, hostInfoLoader HostInfoLoader) (*exec.Cmd, error) {
 	cmdPath, err := exec.LookPath("scp")
 	if err != nil {
-		return nil, errors.New("Error: You must have a copy of the scp binary locally to use the scp feature.")
+		return nil, errors.New("You must have a copy of the scp binary locally to use the scp feature")
 	}
 
 	srcHost, srcPath, srcOpts, err := getInfoForScpArg(src, hostInfoLoader)

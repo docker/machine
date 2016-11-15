@@ -1,6 +1,7 @@
 package google
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -173,7 +174,7 @@ func (d *Driver) DriverName() string {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Project = flags.String("google-project")
 	if d.Project == "" {
-		return fmt.Errorf("Please specify the Google Cloud Project name using the option --google-project.")
+		return errors.New("no Google Cloud Project name specified (--google-project)")
 	}
 
 	d.Zone = flags.String("google-zone")
@@ -220,11 +221,11 @@ func (d *Driver) PreCreateCheck() error {
 	instance, _ := c.instance()
 	if d.UseExisting {
 		if instance == nil {
-			return fmt.Errorf("Unable to find instance %q in zone %q.", d.MachineName, d.Zone)
+			return fmt.Errorf("unable to find instance %q in zone %q", d.MachineName, d.Zone)
 		}
 	} else {
 		if instance != nil {
-			return fmt.Errorf("Instance %q already exists in zone %q.", d.MachineName, d.Zone)
+			return fmt.Errorf("instance %q already exists in zone %q", d.MachineName, d.Zone)
 		}
 	}
 

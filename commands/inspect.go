@@ -41,7 +41,7 @@ func cmdInspect(c CommandLine, api libmachine.API) error {
 		var tmpl *template.Template
 		var err error
 		if tmpl, err = template.New("").Funcs(funcMap).Parse(tmplString); err != nil {
-			return fmt.Errorf("Template parsing error: %v\n", err)
+			return fmt.Errorf("template parsing error: %v", err)
 		}
 
 		jsonHost, err := json.Marshal(host)

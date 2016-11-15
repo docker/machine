@@ -527,9 +527,9 @@ func TestGetSomeHostInError(t *testing.T) {
 }
 
 func TestOnErrorWithMultilineComment(t *testing.T) {
-	err := errors.New("MissingParameter: The request must contain the parameter InstanceId\n	status code: 400, request id:")
+	err := errors.New("missing parameter: the request must contain the parameter InstanceId\n	status code: 400")
 
 	itemInError := newHostListItemInError("foo", err)
 
-	assert.Equal(t, itemInError.Error, "MissingParameter: The request must contain the parameter InstanceId 	status code: 400, request id:")
+	assert.Equal(t, itemInError.Error, "missing parameter: the request must contain the parameter InstanceId	status code: 400")
 }

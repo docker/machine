@@ -37,7 +37,7 @@ type imageName struct{ publisher, offer, sku, version string }
 func parseImageName(image string) (imageName, error) {
 	l := strings.Split(image, ":")
 	if len(l) != 4 {
-		return imageName{}, fmt.Errorf("Image name %q not a valid format.", image)
+		return imageName{}, fmt.Errorf("image name %q not a valid format", image)
 	}
 	return imageName{l[0], l[1], l[2], l[3]}, nil
 }
