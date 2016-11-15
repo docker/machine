@@ -19,7 +19,7 @@ func (h *MockHostInfo) GetMachineName() string {
 	return h.name
 }
 
-func (h *MockHostInfo) GetIP() (string, error) {
+func (h *MockHostInfo) GetSSHHostname() (string, error) {
 	return h.ip, nil
 }
 
