@@ -193,8 +193,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VIRTUALBOX_SHARE_FOLDER",
-			Name: "virtualbox-share-folder",
-			Usage: "Mount the specified directory instead of the default home location. Format: dir:name",
+			Name:   "virtualbox-share-folder",
+			Usage:  "Mount the specified directory instead of the default home location. Format: dir:name",
 		},
 	}
 }
