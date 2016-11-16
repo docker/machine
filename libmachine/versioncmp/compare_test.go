@@ -4,23 +4,28 @@ import (
 	"testing"
 )
 
-func assertVersion(t *testing.T, a, b string, result int) {
-	if r := compare(a, b); r != result {
-		t.Fatalf("Unexpected version comparison result. Found %d, expected %d", r, result)
-	}
-}
-
 func TestCompareVersion(t *testing.T) {
-	assertVersion(t, "1.12", "1.12", 0)
-	assertVersion(t, "1.0.0", "1", 0)
-	assertVersion(t, "1", "1.0.0", 0)
-	assertVersion(t, "1.05.00.0156", "1.0.221.9289", 1)
-	assertVersion(t, "1", "1.0.1", -1)
-	assertVersion(t, "1.0.1", "1", 1)
-	assertVersion(t, "1.0.1", "1.0.2", -1)
-	assertVersion(t, "1.0.2", "1.0.3", -1)
-	assertVersion(t, "1.0.3", "1.1", -1)
-	assertVersion(t, "1.1", "1.1.1", -1)
-	assertVersion(t, "1.1.1", "1.1.2", -1)
-	assertVersion(t, "1.1.2", "1.2", -1)
+	cases := []struct {
+		v1, v2 string
+		want   int
+	}{
+		{"1.12", "1.12", 0},
+		{"1.0.0", "1", 0},
+		{"1", "1.0.0", 0},
+		{"1.05.00.0156", "1.0.221.9289", 1},
+		{"1", "1.0.1", -1},
+		{"1.0.1", "1", 1},
+		{"1.0.1", "1.0.2", -1},
+		{"1.0.2", "1.0.3", -1},
+		{"1.0.3", "1.1", -1},
+		{"1.1", "1.1.1", -1},
+		{"1.1.1", "1.1.2", -1},
+		{"1.1.2", "1.2", -1},
+	}
+
+	for _, tc := range cases {
+		if got := compare(tc.v1, tc.v2); got != tc.want {
+			t.Errorf("compare(%q, %q) == %d, want %d", tc.v1, tc.v2, got, tc.want)
+		}
+	}
 }
