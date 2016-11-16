@@ -208,3 +208,29 @@ func TestGetFilesystemType(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "btrfs", fsType)
 }
+
+func TestDockerClientVersion(t *testing.T) {
+	cases := []struct {
+		output, want string
+	}{
+		{"Docker version 1.9.1, build a34a1d5\n", "1.9.1"},
+		{"Docker version 1.9.1\n", "1.9.1"},
+		{"Docker version 1.13.0-rc1, build deadbeef\n", "1.13.0-rc1"},
+		{"Docker version 1.13.0-dev, build deadbeef\n", "1.13.0-dev"},
+	}
+
+	sshCmder := &provisiontest.FakeSSHCommander{
+		Responses: make(map[string]string),
+	}
+
+	for _, tc := range cases {
+		sshCmder.Responses["docker --version"] = tc.output
+		got, err := DockerClientVersion(sshCmder)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != tc.want {
+			t.Errorf("Unexpected version string from %q; got %q, want %q", tc.output, tc.want, got)
+		}
+	}
+}
