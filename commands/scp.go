@@ -27,7 +27,7 @@ var (
 type HostInfo interface {
 	GetMachineName() string
 
-	GetIP() (string, error)
+	GetSSHHostname() (string, error)
 
 	GetSSHPort() (int, error)
 
@@ -167,12 +167,12 @@ func generateLocationArg(hostInfo HostInfo, path string) (string, error) {
 		return path, nil
 	}
 
-	ip, err := hostInfo.GetIP()
+	hostname, err := hostInfo.GetSSHHostname()
 	if err != nil {
 		return "", err
 	}
 
-	location := fmt.Sprintf("%s@%s:%s", hostInfo.GetSSHUsername(), ip, path)
+	location := fmt.Sprintf("%s@%s:%s", hostInfo.GetSSHUsername(), hostname, path)
 	return location, nil
 }
 
