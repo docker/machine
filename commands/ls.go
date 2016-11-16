@@ -181,7 +181,7 @@ func parseFilters(filters []string) (FilterOptions, error) {
 	for _, f := range filters {
 		kv := strings.SplitN(f, "=", 2)
 		if len(kv) != 2 {
-			return options, errors.New("Unsupported filter syntax.")
+			return options, errors.New("Unsupported filter syntax")
 		}
 		key, value := strings.ToLower(kv[0]), kv[1]
 
@@ -468,7 +468,7 @@ func newHostListItemInError(name string, err error) HostListItem {
 		Name:       name,
 		DriverName: "not found",
 		State:      state.Error,
-		Error:      strings.Replace(err.Error(), "\n", " ", -1),
+		Error:      strings.Replace(err.Error(), "\n", "", -1),
 	}
 }
 

@@ -275,7 +275,7 @@ VBoxNetworkName: HostInterfaceNetworking-vboxnet1`,
 	}
 	nets, err := listHostOnlyAdapters(vbox)
 	assert.Nil(t, nets)
-	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same IP "192.168.99.1". Please remove one.`)
+	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same IP "192.168.99.1". Please remove one`)
 }
 
 func TestFailIfTwoNetworksHaveSameName(t *testing.T) {
@@ -288,7 +288,7 @@ VBoxNetworkName: HostInterfaceNetworking-vboxnet0`,
 	}
 	nets, err := listHostOnlyAdapters(vbox)
 	assert.Nil(t, nets)
-	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same name "HostInterfaceNetworking-vboxnet0". Please remove one.`)
+	assert.EqualError(t, err, `VirtualBox is configured with multiple host-only adapters with the same name "HostInterfaceNetworking-vboxnet0". Please remove one`)
 }
 
 func TestGetDHCPServers(t *testing.T) {

@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -166,7 +167,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.URL = "https://api.exoscale.ch/compute"
 	}
 	if d.APIKey == "" || d.APISecretKey == "" {
-		return fmt.Errorf("Please specify an API key (--exoscale-api-key) and an API secret key (--exoscale-api-secret-key).")
+		return errors.New("missing an API key (--exoscale-api-key) or API secret key (--exoscale-api-secret-key)")
 	}
 
 	return nil

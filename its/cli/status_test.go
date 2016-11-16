@@ -11,6 +11,6 @@ func TestStatus(t *testing.T) {
 	defer test.TearDown()
 
 	test.Run("status: show error in case of no args", func() {
-		test.Machine("status").Should().Fail(`Error: No machine name(s) specified and no "default" machine exists.`)
+		test.Machine("status").Should().Fail(`Error: No machine name(s) specified and no "default" machine exists`)
 	})
 }

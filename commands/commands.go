@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	ErrHostLoad           = errors.New("All specified hosts had errors loading their configuration.")
-	ErrNoDefault          = fmt.Errorf("Error: No machine name(s) specified and no %q machine exists.", defaultMachineName)
+	ErrHostLoad           = errors.New("All specified hosts had errors loading their configuration")
+	ErrNoDefault          = fmt.Errorf("Error: No machine name(s) specified and no %q machine exists", defaultMachineName)
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 	ErrTooManyArguments   = errors.New("Error: Too many arguments given")

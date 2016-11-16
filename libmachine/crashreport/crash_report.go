@@ -68,7 +68,7 @@ func (r *BugsnagCrashReporter) Send(err CrashError) error {
 	}
 
 	if r.apiKey == "" {
-		return errors.New("Not sending report since no api key has been set.")
+		return errors.New("no api key has been set")
 	}
 
 	bugsnag.Configure(bugsnag.Configuration{

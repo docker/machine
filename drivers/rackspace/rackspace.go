@@ -147,7 +147,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	if d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL" {
-		return fmt.Errorf(`Invalid endpoint type "%s". Endpoint type must be publicURL, adminURL or internalURL.`, d.EndpointType)
+		return fmt.Errorf("invalid endpoint type %q (must be publicURL, adminURL or internalURL)", d.EndpointType)
 	}
 
 	return nil

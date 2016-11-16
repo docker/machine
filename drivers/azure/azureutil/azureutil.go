@@ -61,7 +61,7 @@ func (a AzureClient) RegisterResourceProviders(namespaces ...string) error {
 		return err
 	}
 	if l.Value == nil {
-		return errors.New("Resource Providers list is returned as nil.")
+		return errors.New("resource providers list is returned as nil")
 	}
 
 	m := make(map[string]bool)
@@ -72,7 +72,7 @@ func (a AzureClient) RegisterResourceProviders(namespaces ...string) error {
 	for _, ns := range namespaces {
 		registered, ok := m[strings.ToLower(ns)]
 		if !ok {
-			return fmt.Errorf("Unknown resource provider %q", ns)
+			return fmt.Errorf("unknown resource provider %q", ns)
 		}
 		if registered {
 			log.Debugf("Already registered for %q", ns)
