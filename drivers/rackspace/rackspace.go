@@ -17,6 +17,7 @@ type Driver struct {
 }
 
 const (
+	defaultRegionName    = "IAD"
 	defaultEndpointType  = "publicURL"
 	defaultFlavorID      = "general1-1"
 	defaultSSHUser       = "root"
@@ -45,7 +46,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "OS_REGION_NAME",
 			Name:   "rackspace-region",
 			Usage:  "Rackspace region name",
-			Value:  "",
+			Value:  defaultRegionName,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "OS_ENDPOINT_TYPE",
@@ -54,24 +55,27 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultEndpointType,
 		},
 		mcnflag.StringFlag{
-			Name:  "rackspace-image-id",
-			Usage: "Rackspace image ID. Default: Ubuntu 15.10 (Wily Werewolf) (PVHVM)",
+			EnvVar: "OS_IMAGE_ID",
+			Name:   "rackspace-image-id",
+			Usage:  "Rackspace image ID. Default: Ubuntu 15.10 (Wily Werewolf) (PVHVM)",
 		},
 		mcnflag.StringFlag{
+			EnvVar: "OS_FLAVOR_ID",
 			Name:   "rackspace-flavor-id",
 			Usage:  "Rackspace flavor ID. Default: General Purpose 1GB",
 			Value:  defaultFlavorID,
-			EnvVar: "OS_FLAVOR_ID",
 		},
 		mcnflag.StringFlag{
-			Name:  "rackspace-ssh-user",
-			Usage: "SSH user for the newly booted machine. Set to root by default",
-			Value: defaultSSHUser,
+			EnvVar: "OS_SSH_USER",
+			Name:   "rackspace-ssh-user",
+			Usage:  "SSH user for the newly booted machine. Set to root by default",
+			Value:  defaultSSHUser,
 		},
 		mcnflag.IntFlag{
-			Name:  "rackspace-ssh-port",
-			Usage: "SSH port for the newly booted machine. Set to 22 by default",
-			Value: defaultSSHPort,
+			EnvVar: "OS_SSH_PORT",
+			Name:   "rackspace-ssh-port",
+			Usage:  "SSH port for the newly booted machine. Set to 22 by default",
+			Value:  defaultSSHPort,
 		},
 		mcnflag.StringFlag{
 			Name:  "rackspace-docker-install",
