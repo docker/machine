@@ -294,3 +294,14 @@ func DockerClientVersion(ssh SSHCommander) (string, error) {
 
 	return strings.TrimRight(words[2], ","), nil
 }
+
+func waitForLockAptGetUpdate(ssh SSHCommander) error {
+	return mcnutils.WaitFor(func() bool {
+		_, err := ssh.SSHCommand("sudo apt-get update")
+		if err != nil {
+			failedToLock := strings.Contains(err.Error(), "Could not get lock")
+			return !failedToLock
+		}
+		return true
+	})
+}

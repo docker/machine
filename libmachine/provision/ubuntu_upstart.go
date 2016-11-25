@@ -87,9 +87,7 @@ func (provisioner *UbuntuProvisioner) Package(name string, action pkgaction.Pack
 	}
 
 	if updateMetadata {
-		if _, err := provisioner.SSHCommand("sudo apt-get update"); err != nil {
-			return err
-		}
+		waitForLockAptGetUpdate(provisioner)
 	}
 
 	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y -o Dpkg::Options::=\"--force-confnew\" %s", packageAction, name)

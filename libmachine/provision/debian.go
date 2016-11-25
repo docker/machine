@@ -52,9 +52,7 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 	}
 
 	if updateMetadata {
-		if _, err := provisioner.SSHCommand("sudo apt-get update"); err != nil {
-			return err
-		}
+		waitForLockAptGetUpdate(provisioner)
 	}
 
 	command := fmt.Sprintf("DEBIAN_FRONTEND=noninteractive sudo -E apt-get %s -y  %s", packageAction, name)
