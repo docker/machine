@@ -329,6 +329,11 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) Reinstall() error {
+	_, _, err := d.getClient().DropletActions.RebuildByImageSlug(d.DropletID, d.Image)
+	return err
+}
+
 func (d *Driver) Start() error {
 	_, _, err := d.getClient().DropletActions.PowerOn(d.DropletID)
 	return err

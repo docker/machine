@@ -131,6 +131,13 @@ func (d *SerialDriver) PreCreateCheck() error {
 }
 
 // Remove a host
+func (d *SerialDriver) Reinstall() error {
+	d.Lock()
+	defer d.Unlock()
+	return d.Driver.Reinstall()
+}
+
+// Remove a host
 func (d *SerialDriver) Remove() error {
 	d.Lock()
 	defer d.Unlock()

@@ -77,6 +77,7 @@ const (
 	GetStateMethod           = `.GetState`
 	PreCreateCheckMethod     = `.PreCreateCheck`
 	CreateMethod             = `.Create`
+	ReinstallMethod          = `.Reinstall`
 	RemoveMethod             = `.Remove`
 	StartMethod              = `.Start`
 	StopMethod               = `.Stop`
@@ -340,6 +341,10 @@ func (c *RPCClientDriver) PreCreateCheck() error {
 
 func (c *RPCClientDriver) Create() error {
 	return c.Client.Call(CreateMethod, struct{}{}, nil)
+}
+
+func (c *RPCClientDriver) Reinstall() error {
+	return c.Client.Call(ReinstallMethod, struct{}{}, nil)
 }
 
 func (c *RPCClientDriver) Remove() error {

@@ -3,6 +3,7 @@ package drivers
 import (
 	"errors"
 	"path/filepath"
+	"fmt"
 )
 
 const (
@@ -71,6 +72,11 @@ func (d *BaseDriver) GetSSHUsername() string {
 // PreCreateCheck is called to enforce pre-creation steps
 func (d *BaseDriver) PreCreateCheck() error {
 	return nil
+}
+
+// PreCreateCheck is called to enforce pre-creation steps
+func (d *BaseDriver) Reinstall() error {
+	return fmt.Errorf("Reinstall operation is not supported for %q driver.", d.DriverName)
 }
 
 // ResolveStorePath returns the store path where the machine is
