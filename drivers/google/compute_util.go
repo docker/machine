@@ -38,12 +38,10 @@ type ComputeUtil struct {
 }
 
 const (
-	apiURL             = "https://www.googleapis.com/compute/v1/projects/"
-	firewallRule       = "docker-machines"
-	port               = "2376"
-	firewallTargetTag  = "docker-machine"
-	dockerStartCommand = "sudo service docker start"
-	dockerStopCommand  = "sudo service docker stop"
+	apiURL            = "https://www.googleapis.com/compute/v1/projects/"
+	firewallRule      = "docker-machines"
+	port              = "2376"
+	firewallTargetTag = "docker-machine"
 )
 
 // NewComputeUtil creates and initializes a ComputeUtil.
