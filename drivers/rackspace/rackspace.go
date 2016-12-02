@@ -57,7 +57,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "OS_IMAGE_ID",
 			Name:   "rackspace-image-id",
-			Usage:  "Rackspace image ID. Default: Ubuntu 15.10 (Wily Werewolf) (PVHVM)",
+			Usage:  "Rackspace image ID. Default: Ubuntu 16.04 LTS (Xenial Xerus) (PVHVM)",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "OS_FLAVOR_ID",
@@ -144,10 +144,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	if d.ImageId == "" {
-		// Default to the Ubuntu 15.10 image.
+		// Default to the Ubuntu 16.04 image.
 		// This is done here, rather than in the option registration, to keep the default value
 		// from making "machine create --help" ugly.
-		d.ImageId = "59a3fadd-93e7-4674-886a-64883e17115f"
+		d.ImageId = "821ba5f4-712d-4ec8-9c65-a3fa4bc500f9"
 	}
 
 	if d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL" {
