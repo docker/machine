@@ -25,13 +25,13 @@ use_shared_machine
 }
 
 @test "$DRIVER: ensure that ssh extra arguments work" {
-  # don't run this test if we can't use external SSH
+  # Don't run this test if we can't use external SSH
   which ssh
   if [[ $? -ne 0 ]]; then
     skip
   fi
 
-  # this will not fare well if -C doesn't get interpreted as "use compression"
+  # This will not fare well if -C doesn't get interpreted as "use compression"
   # like intended
   run machine ssh $NAME -C echo foo
 

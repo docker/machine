@@ -3,7 +3,7 @@
 load ${BASE_TEST_DIR}/helpers.bash
 
 
-# this should move to the makefile
+# This should move to the makefile
 
 if [[ "$DRIVER" != "virtualbox" ]]; then
     exit 0
