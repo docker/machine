@@ -68,7 +68,7 @@ func (provisioner *UbuntuSystemdProvisioner) Package(name string, action pkgacti
 	}
 
 	if updateMetadata {
-		if _, err := provisioner.SSHCommand("sudo apt-get update"); err != nil {
+		if err := waitForLockAptGetUpdate(provisioner); err != nil {
 			return err
 		}
 	}
