@@ -177,7 +177,7 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 	}
 
 	// update OS -- this is needed for libdevicemapper and the docker install
-	if _, err := provisioner.SSHCommand("sudo -E yum -y update"); err != nil {
+	if _, err := provisioner.SSHCommand("sudo -E yum -y update -x docker-*"); err != nil {
 		return err
 	}
 
