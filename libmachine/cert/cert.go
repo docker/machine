@@ -167,13 +167,9 @@ func (xcg *X509CertGenerator) GenerateCert(opts *Options) error {
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 		template.KeyUsage = x509.KeyUsageDigitalSignature
 	} else { // server
-		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-		if opts.SwarmMaster {
-			// Extend the Swarm master's server certificate
-			// permissions to also be able to connect to downstream
-			// nodes as a client.
-			template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
-		}
+		// Extend the server certificate permissions to be able to connect to downstream
+		// nodes as a client, this will allow the server can be act as a swarm master later.
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
 		for _, h := range opts.Hosts {
 			if ip := net.ParseIP(h); ip != nil {
 				template.IPAddresses = append(template.IPAddresses, ip)
