@@ -1086,25 +1086,16 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 }
 
 func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]*ec2.IpPermission, error) {
-	hasSshPort := false
-	hasDockerPort := false
-	hasSwarmPort := false
+	hasPorts := make(map[string]bool)
 	for _, p := range group.IpPermissions {
 		if p.FromPort != nil {
-			switch *p.FromPort {
-			case 22:
-				hasSshPort = true
-			case int64(dockerPort):
-				hasDockerPort = true
-			case int64(swarmPort):
-				hasSwarmPort = true
-			}
+			hasPorts[fmt.Sprintf("%d/%s", *p.FromPort, *p.IpProtocol)] = true
 		}
 	}
 
 	perms := []*ec2.IpPermission{}
 
-	if !hasSshPort {
+	if !hasPorts["22/tcp"] {
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String("tcp"),
 			FromPort:   aws.Int64(22),
@@ -1113,7 +1104,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 		})
 	}
 
-	if !hasDockerPort {
+	if !hasPorts[fmt.Sprintf("%d/tcp", dockerPort)] {
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String("tcp"),
 			FromPort:   aws.Int64(int64(dockerPort)),
@@ -1122,7 +1113,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 		})
 	}
 
-	if !hasSwarmPort && d.SwarmMaster {
+	if !hasPorts[fmt.Sprintf("%d/tcp", swarmPort)] && d.SwarmMaster {
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String("tcp"),
 			FromPort:   aws.Int64(int64(swarmPort)),
@@ -1137,12 +1128,14 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 		if err != nil {
 			return nil, fmt.Errorf("invalid port number %s: %s", port, err)
 		}
-		perms = append(perms, &ec2.IpPermission{
-			IpProtocol: aws.String(protocol),
-			FromPort:   aws.Int64(portNum),
-			ToPort:     aws.Int64(portNum),
-			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
-		})
+		if !hasPorts[fmt.Sprintf("%s/%s", port, protocol)] {
+			perms = append(perms, &ec2.IpPermission{
+				IpProtocol: aws.String(protocol),
+				FromPort:   aws.Int64(portNum),
+				ToPort:     aws.Int64(portNum),
+				IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+			})
+		}
 	}
 
 	log.Debugf("configuring security group authorization for %s", ipRange)
