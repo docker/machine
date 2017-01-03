@@ -139,11 +139,14 @@ CONTRIBUTORS=$(git log "${LAST_RELEASE_VERSION}".. --format="%aN" --reverse | so
 CHANGELOG=$(git log "${LAST_RELEASE_VERSION}".. --oneline | grep -v 'Merge pull request')
 
 CHECKSUM=""
-for file in $(ls bin/docker-machine*); do
+rm -f sha256sum.txt md5sum.txt
+for file in $(ls bin/docker-machine-*); do
   SHA256=$(openssl dgst -sha256 < "${file}")
   MD5=$(openssl dgst -md5 < "${file}")
   LINE=$(printf "\n * **%s**\n  * sha256 \`%s\`\n  * md5 \`%s\`\n\n" "$(basename ${file})" "${SHA256}" "${MD5}")
   CHECKSUM="${CHECKSUM}${LINE}"
+  echo "${SHA256}  ${file:4}" >> sha256sum.txt
+  echo "${MD5}  ${file:4}" >> md5sum.txt
 done
 
 TEMPLATE=$(cat "${GITHUB_RELEASE_FILE}")
@@ -216,6 +219,21 @@ checkError "Could not create release, aborting"
 
 display "Uploading binaries"
 for file in $(ls bin/docker-machine-*); do
+  display "Uploading ${file}..."
+  github-release upload \
+      --security-token  "${GITHUB_TOKEN}" \
+      --user "${GITHUB_USER}" \
+      --repo "${GITHUB_REPO}" \
+      --tag "${GITHUB_VERSION}" \
+      --name "$(basename "${file}")" \
+      --file "${file}"
+  if [[ "$?" -ne 0 ]]; then
+    display "Could not upload ${file}, continuing with others"
+  fi
+done
+
+display "Uploading sha256sum.txt and md5sum.txt"
+for file in sha256sum.txt md5sum.txt; do
   display "Uploading ${file}..."
   github-release upload \
       --security-token  "${GITHUB_TOKEN}" \
