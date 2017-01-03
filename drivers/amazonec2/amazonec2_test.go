@@ -6,14 +6,15 @@ import (
 	"errors"
 	"reflect"
 
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/docker/machine/commands/commandstest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
 const (
@@ -110,6 +111,29 @@ func TestConfigureSecurityGroupPermissionsOpenPorts(t *testing.T) {
 	assert.Equal(t, aws.String("udp"), perms[3].IpProtocol)
 	assert.Equal(t, aws.Int64(int64(9090)), perms[4].ToPort)
 	assert.Equal(t, aws.String("tcp"), perms[4].IpProtocol)
+}
+
+func TestConfigureSecurityGroupPermissionsOpenPortsSkipExisting(t *testing.T) {
+	driver := NewTestDriver()
+	group := securityGroup
+	group.IpPermissions = []*ec2.IpPermission{
+		{
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(8888),
+			ToPort:     aws.Int64(testSSHPort),
+		},
+		{
+			IpProtocol: aws.String("tcp"),
+			FromPort:   aws.Int64(8080),
+			ToPort:     aws.Int64(testSSHPort),
+		},
+	}
+	driver.OpenPorts = []string{"8888/tcp", "8080/udp", "8080"}
+	perms, err := driver.configureSecurityGroupPermissions(group)
+	assert.NoError(t, err)
+	assert.Len(t, perms, 3)
+	assert.Equal(t, aws.Int64(int64(8080)), perms[2].ToPort)
+	assert.Equal(t, aws.String("udp"), perms[2].IpProtocol)
 }
 
 func TestConfigureSecurityGroupPermissionsInvalidOpenPorts(t *testing.T) {
