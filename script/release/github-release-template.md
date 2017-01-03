@@ -4,10 +4,16 @@ If you're a Mac or Windows user, the [Docker Toolbox](https://www.docker.com/doc
 
 You can use the usual commands to install or upgrade:
 
-On OS X or Linux
+On OS X
 ```console
 $ curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker-machine-`uname -s`-`uname -m` >/usr/local/bin/docker-machine && \
   chmod +x /usr/local/bin/docker-machine
+```
+On Linux
+```console
+$ curl -L https://github.com/docker/machine/releases/download/{{VERSION}}/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine &&
+    chmod +x /tmp/docker-machine &&
+    sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
 ```
 On Windows with git bash
 ```console
