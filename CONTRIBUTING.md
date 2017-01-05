@@ -93,9 +93,6 @@ Alternatively, if you are building natively, you can simply run:
 
     make coverage-html
 
-This will generate and open the report file:
-
-![](/docs/img/coverage.png)
 
 ## List of all targets
 
