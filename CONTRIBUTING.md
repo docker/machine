@@ -276,10 +276,6 @@ to ensure we keep the driver in a consistent and stable state:
     and integration tests on the new supported environment
 -   Participate in a weekly driver maintainer meeting
 
-If you can commit to those, the next step is to make sure the driver adheres
-to the [spec](https://github.com/docker/machine/blob/master/docs/DRIVER_SPEC.md).
-
-Once you have created and tested the driver, you can open a PR.
 
 Note: even if those are met does not guarantee a driver will be accepted.
 If you have questions, please do not hesitate to contact us on IRC.
