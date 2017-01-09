@@ -258,5 +258,3 @@ echo "  3. Update the documentation branch"
 echo "  4. Test the binaries linked from the github release page"
 echo "  5. Change version/version.go to the next dev version"
 echo "  6. Party !!"
-echo
-echo "The full details of these tasks are described in the RELEASE.md document, available at https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/master/docs/RELEASE.md"
