@@ -150,7 +150,7 @@ func (dmt *dockerMachineTest) DriverName() string {
 		return driver
 	}
 
-	return "none"
+	return "virtualbox"
 }
 
 func (dmt *dockerMachineTest) Should() Assertions {
