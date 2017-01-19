@@ -250,7 +250,7 @@ Misc
 
 - Update docker-machine version
 - Updated the bash completion with new options added
-- Bugsnag: Retrieve windows version on non-english OS
+- Bugsnag: Retrieve windows version on non-English OS
 
 Drivers
 
