@@ -29,7 +29,7 @@ func parseSystemInfoOutput(output string) string {
 		}
 	}
 
-	// If we couldn't find the version, maybe the output is not in english
+	// If we couldn't find the version, maybe the output is not in English
 	// Let's parse the fourth line since it seems to be the one always used
 	// for the version.
 	if len(lines) >= 4 {
