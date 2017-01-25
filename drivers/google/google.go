@@ -30,6 +30,7 @@ type Driver struct {
 	Project           string
 	Tags              string
 	UseExisting       bool
+	OpenPorts         []string
 }
 
 const (
@@ -131,6 +132,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Don't create a new VM, use an existing one",
 			EnvVar: "GOOGLE_USE_EXISTING",
 		},
+		mcnflag.StringSliceFlag{
+			Name:  "google-open-port",
+			Usage: "Make the specified port number accessible from the Internet, e.g, 8080/tcp",
+		},
 	}
 }
 
@@ -191,6 +196,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.UseInternalIPOnly = flags.Bool("google-use-internal-ip-only")
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
+		d.OpenPorts = flags.StringSlice("google-open-port")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
