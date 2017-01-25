@@ -38,7 +38,7 @@ var (
 		cli.StringFlag{
 			Name: "driver, d",
 			Usage: fmt.Sprintf(
-				"Driver to create machine with.",
+				"Driver to create machine with, for example virtualbox",
 			),
 			Value:  "none",
 			EnvVar: "MACHINE_DRIVER",
