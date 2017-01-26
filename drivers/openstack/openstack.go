@@ -45,6 +45,7 @@ type Driver struct {
 	ComputeNetwork   bool
 	FloatingIpPoolId string
 	IpVersion        int
+	KeypairDelete    bool
 	client           Client
 }
 
@@ -52,6 +53,7 @@ const (
 	defaultSSHUser       = "root"
 	defaultSSHPort       = 22
 	defaultActiveTimeout = 200
+	defaultKeypairDelete = false
 )
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -222,6 +224,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "OpenStack active timeout",
 			Value:  defaultActiveTimeout,
 		},
+		mcnflag.BoolFlag{
+			EnvVar: "OS_KEYPAIRDELETE",
+			Name:   "openstack-deletekeypair",
+			Usage:  "Remove keypair at instance creation fail or delete.",
+		},
 	}
 }
 
@@ -256,6 +263,10 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+	d.KeypairDelete = defaultKeypairDelete
+	if flags.Bool("openstack-deletekeypair") {
+		d.KeypairDelete = true
+	}
 	d.AuthUrl = flags.String("openstack-auth-url")
 	d.ActiveTimeout = flags.Int("openstack-active-timeout")
 	d.Insecure = flags.Bool("openstack-insecure")
@@ -449,10 +460,11 @@ func (d *Driver) Remove() error {
 	if err := d.client.DeleteInstance(d); err != nil {
 		return err
 	}
-	log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
-	// TODO (fsoppelsa) maybe we want to check this, in case of shared keypairs, before removal
-	if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
-		return err
+	if d.KeypairDelete {
+		log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
+		if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
+			return err
+		}
 	}
 	return nil
 }
