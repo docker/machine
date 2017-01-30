@@ -456,12 +456,11 @@ func (d *Driver) CreateVM() error {
 	shareName, shareDir := getShareDriveAndName()
 
 	if d.ShareFolder != "" {
-		split := strings.Split(d.ShareFolder, ":")
-		shareDir, shareName = split[0], split[1]
+		shareDir, shareName = parseShareFolder(d.ShareFolder)
 	}
 
 	if shareDir != "" && !d.NoShare {
-		log.Debugf("setting up shareDir")
+		log.Debugf("setting up shareDir '%s' -> '%s'", shareDir, shareName)
 		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
 			return err
 		} else if !os.IsNotExist(err) {
@@ -485,6 +484,13 @@ func (d *Driver) CreateVM() error {
 	}
 
 	return nil
+}
+
+func parseShareFolder(shareFolder string) (string, string) {
+	split := strings.Split(shareFolder, ":")
+	shareDir := strings.Join(split[:len(split)-1], ":")
+	shareName := split[len(split)-1]
+	return shareDir, shareName
 }
 
 func (d *Driver) hostOnlyIPAvailable() bool {

@@ -63,6 +63,25 @@ func TestDefaultSSHUsername(t *testing.T) {
 	assert.Equal(t, "docker", username)
 }
 
+var parseShareFolderTestCases = []struct {
+	shareFolder       string
+	expectedShareDir  string
+	expectedShareName string
+}{
+	{"dir:name", "dir", "name"},
+	{"C:\\dir:name", "C:\\dir", "name"},
+	{"C:\\:name", "C:\\", "name"},
+}
+
+func TestParseShareFolder(t *testing.T) {
+	for _, parseShareFolderTestCase := range parseShareFolderTestCases {
+		shareDir, shareName := parseShareFolder(parseShareFolderTestCase.shareFolder)
+
+		assert.Equal(t, shareDir, parseShareFolderTestCase.expectedShareDir)
+		assert.Equal(t, shareName, parseShareFolderTestCase.expectedShareName)
+	}
+}
+
 func TestState(t *testing.T) {
 	var tests = []struct {
 		stdOut string
