@@ -36,10 +36,8 @@ var (
 var (
 	SharedCreateFlags = []cli.Flag{
 		cli.StringFlag{
-			Name: "driver, d",
-			Usage: fmt.Sprintf(
-				"Driver to create machine with.",
-			),
+			Name:   "driver, d",
+			Usage:  "Driver to create machine with.",
 			Value:  "none",
 			EnvVar: "MACHINE_DRIVER",
 		},
