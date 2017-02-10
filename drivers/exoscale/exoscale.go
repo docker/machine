@@ -89,7 +89,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "EXOSCALE_AVAILABILITY_ZONE",
 			Name:   "exoscale-availability-zone",
 			Value:  defaultAvailabilityZone,
-			Usage:  "exoscale availibility zone",
+			Usage:  "exoscale availability zone",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "EXOSCALE_SSH_USER",

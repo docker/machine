@@ -238,7 +238,7 @@ func validateToken(env azure.Environment, token *azure.ServicePrincipalToken) er
 	return nil
 }
 
-// getScope returns the API scope for authnetication tokens.
+// getScope returns the API scope for authentication tokens.
 func getScope(env azure.Environment) string {
 	// for AzurePublicCloud (https://management.core.windows.net/), this old
 	// Service Management scope covers both ASM and ARM.

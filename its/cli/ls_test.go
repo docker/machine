@@ -36,7 +36,7 @@ func TestLs(t *testing.T) {
 			ContainLine(1, "testmachine4")
 	})
 
-	test.Run("ls: mutiple filters on label", func() {
+	test.Run("ls: multiple filters on label", func() {
 		test.Machine("ls --filter label=foo=bar --filter label=app=1").Should().Succeed().
 			ContainLines(3).
 			ContainLine(0, "NAME").

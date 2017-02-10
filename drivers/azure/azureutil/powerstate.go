@@ -47,7 +47,7 @@ const (
 
 // powerStateFromInstanceView reads the instance view response and extracts the
 // power state status (if exists) from there. If no status is found or an
-// unknown status has occured, returns Unknown.
+// unknown status has occurred, returns Unknown.
 func powerStateFromInstanceView(instanceView *compute.VirtualMachineInstanceView) VMPowerState {
 	if instanceView == nil {
 		log.Debug("Retrieved nil instance view.")

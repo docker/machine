@@ -22,7 +22,7 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 
 	force := c.Bool("force")
 	confirm := c.Bool("y")
-	var errorOccured []string
+	var errorOccurred []string
 
 	if !userConfirm(confirm, force) {
 		return nil
@@ -31,21 +31,21 @@ func cmdRm(c CommandLine, api libmachine.API) error {
 	for _, hostName := range c.Args() {
 		err := removeRemoteMachine(hostName, api)
 		if err != nil {
-			errorOccured = collectError(fmt.Sprintf("Error removing host %q: %s", hostName, err), force, errorOccured)
+			errorOccurred = collectError(fmt.Sprintf("Error removing host %q: %s", hostName, err), force, errorOccurred)
 		}
 
 		if err == nil || force {
 			removeErr := removeLocalMachine(hostName, api)
 			if removeErr != nil {
-				errorOccured = collectError(fmt.Sprintf("Can't remove \"%s\"", hostName), force, errorOccured)
+				errorOccurred = collectError(fmt.Sprintf("Can't remove \"%s\"", hostName), force, errorOccurred)
 			} else {
 				log.Infof("Successfully removed %s", hostName)
 			}
 		}
 	}
 
-	if len(errorOccured) > 0 && !force {
-		return errors.New(strings.Join(errorOccured, "\n"))
+	if len(errorOccurred) > 0 && !force {
+		return errors.New(strings.Join(errorOccurred, "\n"))
 	}
 
 	return nil
@@ -81,9 +81,9 @@ func removeLocalMachine(hostName string, api libmachine.API) error {
 	return api.Remove(hostName)
 }
 
-func collectError(message string, force bool, errorOccured []string) []string {
+func collectError(message string, force bool, errorOccurred []string) []string {
 	if force {
 		log.Error(message)
 	}
-	return append(errorOccured, message)
+	return append(errorOccurred, message)
 }

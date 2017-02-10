@@ -452,7 +452,7 @@ func (d *Driver) checkPrereqs() error {
 				return fmt.Errorf("There is no keypair with the name %s. Please verify the key name provided.", keyName)
 			}
 			if awsErr.Code() == keypairNotFoundCode && !keyShouldExist {
-				// Not a real error for 'NotFound' since we're checking existance
+				// Not a real error for 'NotFound' since we're checking existence
 			}
 		} else {
 			return err

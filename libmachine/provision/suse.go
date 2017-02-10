@@ -98,7 +98,7 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 	provisioner.EngineOptions = engineOptions
 	swarmOptions.Env = engineOptions.Env
 
-	// figure out the filesytem used by /var/lib
+	// figure out the filesystem used by /var/lib
 	fs, err := provisioner.SSHCommand("stat -f -c %T /var/lib/")
 	if err != nil {
 		return err
