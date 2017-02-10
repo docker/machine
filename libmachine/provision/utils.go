@@ -276,7 +276,7 @@ func WaitForDocker(p Provisioner, dockerPort int) error {
 // DockerClientVersion returns the version of the Docker client on the host
 // that ssh is connected to, e.g. "1.12.1".
 func DockerClientVersion(ssh SSHCommander) (string, error) {
-	// `docker version --format {{.Client.Version}}` would be preferrable, but
+	// `docker version --format {{.Client.Version}}` would be preferable, but
 	// that fails if the server isn't running yet.
 	//
 	// output is expected to be something like

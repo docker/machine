@@ -404,7 +404,7 @@ func (d *Driver) Remove() error {
 	}
 
 	// NOTE(ahmetalpbalkan):
-	//   - remove attemps are best effort and if a resource is already gone, we
+	//   - remove attempts are best effort and if a resource is already gone, we
 	//     continue removing other resources instead of failing.
 	//   - we can probably do a lot of parallelization here but a sequential
 	//     logic works fine too. If we were to detach the NIC from the VM and

@@ -19,7 +19,7 @@ func TestMigrateHost(t *testing.T) {
 	}{
 		{
 			// Point of this test is largely that no matter what was in RawDriver
-			// before, it shoud load into the Host struct based on what is actually
+			// before, it should load into the Host struct based on what is actually
 			// in the Driver field.
 			//
 			// Note that we don't check for the presence of RawDriver's literal "on
