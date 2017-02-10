@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/log"
 )
@@ -22,7 +23,7 @@ func cmdStatus(c CommandLine, api libmachine.API) error {
 
 	currentState, err := host.Driver.GetState()
 	if err != nil {
-		log.Errorf("error getting state for host %s: %s", host.Name, err)
+		return fmt.Errorf("error getting state for host %s: %s", host.Name, err)
 	}
 
 	log.Info(currentState)
