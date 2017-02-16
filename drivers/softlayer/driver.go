@@ -82,7 +82,7 @@ func (d *Driver) GetSSHHostname() (string, error) {
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
-	// Set hourly billing to true by default since codegangsta cli doesn't take default bool values
+	// Set hourly billing to true by default since urfave cli doesn't take default bool values
 	if os.Getenv("SOFTLAYER_HOURLY_BILLING") == "" {
 		os.Setenv("SOFTLAYER_HOURLY_BILLING", "true")
 	}

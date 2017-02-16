@@ -1,6 +1,6 @@
-[![Coverage](http://gocover.io/_badge/github.com/codegangsta/cli?0)](http://gocover.io/github.com/codegangsta/cli)
-[![Build Status](https://travis-ci.org/codegangsta/cli.png?branch=master)](https://travis-ci.org/codegangsta/cli)
-[![GoDoc](https://godoc.org/github.com/codegangsta/cli?status.svg)](https://godoc.org/github.com/codegangsta/cli)
+[![Coverage](http://gocover.io/_badge/github.com/urfave/cli?0)](http://gocover.io/github.com/urfave/cli)
+[![Build Status](https://travis-ci.org/urfave/cli.png?branch=master)](https://travis-ci.org/urfave/cli)
+[![GoDoc](https://godoc.org/github.com/urfave/cli?status.svg)](https://godoc.org/github.com/urfave/cli)
 
 # cli.go
 `cli.go` is simple, fast, and fun package for building command line apps in Go. The goal is to enable developers to write fast and distributable command line applications in an expressive way.
@@ -15,7 +15,7 @@ Make sure you have a working Go environment (go 1.1+ is *required*). [See the in
 
 To install `cli.go`, simply run:
 ```
-$ go get github.com/codegangsta/cli
+$ go get github.com/urfave/cli
 ```
 
 Make sure your `PATH` includes to the `$GOPATH/bin` directory so your commands can be easily used:
@@ -31,7 +31,7 @@ package main
 
 import (
   "os"
-  "github.com/codegangsta/cli"
+  "github.com/urfave/cli"
 )
 
 func main() {
@@ -46,7 +46,7 @@ package main
 
 import (
   "os"
-  "github.com/codegangsta/cli"
+  "github.com/urfave/cli"
 )
 
 func main() {
@@ -74,7 +74,7 @@ package main
 
 import (
   "os"
-  "github.com/codegangsta/cli"
+  "github.com/urfave/cli"
 )
 
 func main() {
@@ -184,7 +184,7 @@ app.Action = func(c *cli.Context) {
 ...
 ```
 
-See full list of flags at http://godoc.org/github.com/codegangsta/cli
+See full list of flags at http://godoc.org/github.com/urfave/cli
 
 #### Alternate Names
 
