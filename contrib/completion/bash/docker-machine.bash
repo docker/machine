@@ -31,7 +31,7 @@ _docker_machine_config() {
 }
 
 _docker_machine_create() {
-    # cheating, b/c there are approximately one zillion options to create
+    # Cheating, b/c there are approximately one zillion options to create
     COMPREPLY=($(compgen -W "$(docker-machine create --help | grep '^   -' | sed 's/^   //; s/[^a-z0-9-].*$//')" -- "${cur}"))
 }
 
@@ -234,7 +234,7 @@ _docker_machine() {
     for (( i=1; i < ${cword}; ++i)); do
         local word=${words[i]}
         if [[ " ${wants_file[*]} ${wants_dir[*]} " =~ " ${word} " ]]; then
-            # skip the next option
+            # Skip the next option
             (( ++i ))
         elif [[ " ${commands[*]} " =~ " ${word} " ]]; then
             command=${word}
