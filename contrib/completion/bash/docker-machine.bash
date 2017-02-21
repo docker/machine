@@ -14,6 +14,16 @@
 #    . ~/.docker-machine-completion.sh
 #
 
+_docker_machine_value_of_option() {
+    local pattern="$1"
+    for (( i=2; i < ${cword}; ++i)); do
+        if [[ ${words[$i]} =~ ^($pattern)$ ]] ; then
+            echo ${words[$i + 1]}
+            break
+        fi
+    done
+}
+
 _docker_machine_active() {
     if [[ "${cur}" == -* ]]; then
         COMPREPLY=($(compgen -W "--help" -- "${cur}"))
@@ -51,8 +61,14 @@ _docker_machine_create() {
             return
             ;;
     esac
-    # cheating, b/c there are approximately one zillion options to create
-    COMPREPLY=($(compgen -W "$(docker-machine create --help | grep '^   -' | sed 's/^   //; s/[^a-z0-9-].*$//') --help" -- "${cur}"))
+
+    # driver specific options are only included in help output if --driver is given,
+    # so we have to pass that option when calling docker-machine to harvest options.
+    local driver="$(_docker_machine_value_of_option '--driver|-d')"
+    local parsed_options="$(docker-machine 2>/dev/null create ${driver:+--driver $driver} --help | grep '^   -' | sed 's/^   //; s/[^a-z0-9-].*$//')"
+    if [[ ${cur} == -* ]]; then
+        COMPREPLY=($(compgen -W "${parsed_options} -d --help" -- "${cur}"))
+    fi
 }
 
 _docker_machine_env() {
