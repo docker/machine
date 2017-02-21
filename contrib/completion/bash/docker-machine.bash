@@ -31,8 +31,28 @@ _docker_machine_config() {
 }
 
 _docker_machine_create() {
+    case "${prev}" in
+        --driver|-d)
+            COMPREPLY=($(compgen -W "
+                amazonec2
+                azure
+                digitalocean
+                exoscale
+                generic
+                google
+                hyperv
+                openstack
+                rackspace
+                softlayer
+                virtualbox
+                vmwarefusion
+                vmwarevcloudair
+                vmwarevsphere" -- "${cur}"))
+            return
+            ;;
+    esac
     # cheating, b/c there are approximately one zillion options to create
-    COMPREPLY=($(compgen -W "$(docker-machine create --help | grep '^   -' | sed 's/^   //; s/[^a-z0-9-].*$//')" -- "${cur}"))
+    COMPREPLY=($(compgen -W "$(docker-machine create --help | grep '^   -' | sed 's/^   //; s/[^a-z0-9-].*$//') --help" -- "${cur}"))
 }
 
 _docker_machine_env() {
