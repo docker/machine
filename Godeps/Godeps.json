@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/docker/machine",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v74",
+	"GodepVersion": "v79",
 	"Packages": [
 		"github.com/docker/machine",
 		"github.com/docker/machine/cmd",
@@ -262,8 +262,8 @@
 		},
 		{
 			"ImportPath": "github.com/bugsnag/panicwrap",
-			"Comment": "1.0.0",
-			"Rev": "e5f9854865b9778a45169fc249e99e338d4d6f27"
+			"Comment": "1.1.0",
+			"Rev": "aceac81c6e2f55f23844821679a0553b545e91df"
 		},
 		{
 			"ImportPath": "github.com/cenkalti/backoff",
