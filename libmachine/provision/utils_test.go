@@ -146,6 +146,34 @@ func TestMachineCustomPortBoot2Docker(t *testing.T) {
 	}
 }
 
+func TestUbuntuSystemdDaemonBinary(t *testing.T) {
+	p := NewUbuntuSystemdProvisioner(&fakedriver.Driver{}).(*UbuntuSystemdProvisioner)
+	cases := []struct {
+		output, want string
+	}{
+		{"Docker version 1.9.1\n", "docker daemon"},
+		{"Docker version 1.11.2\n", "docker daemon"},
+		{"Docker version 1.12.0\n", "dockerd"},
+		{"Docker version 1.13.0\n", "dockerd"},
+	}
+
+	sshCmder := &provisiontest.FakeSSHCommander{
+		Responses: make(map[string]string),
+	}
+	p.SSHCommander = sshCmder
+
+	for _, tc := range cases {
+		sshCmder.Responses["docker --version"] = tc.output
+		opts, err := p.GenerateDockerOptions(1234)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(opts.EngineOptions, tc.want) {
+			t.Fatal("incorrect docker daemon binary in engine options")
+		}
+	}
+}
+
 type fakeProvisioner struct {
 	GenericProvisioner
 }
