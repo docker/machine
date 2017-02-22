@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestCompareVersion(t *testing.T) {
+func TestCompare(t *testing.T) {
 	cases := []struct {
 		v1, v2 string
 		want   int
@@ -25,9 +25,14 @@ func TestCompareVersion(t *testing.T) {
 		{"1.1.1", "1.1.2", -1},
 		{"1.1.2", "1.2", -1},
 		{"1.12.1", "1.13.0-rc1", -1},
-		{"1.13-rc1", "1.13.0-rc2", 0},
-		{"1.13.0-rc1", "1.13.0-rc2", 0},
+		{"1.13.0-rc1", "1.13.0-rc2", -1},
 		{"1.13.0-rc1", "1.13.1-rc1", -1},
+		{"17.03.0-ce", "17.03.0-ce", 0},
+		{"17.03.1-ce", "17.03.2-ce", -1},
+		{"17.06.6-ce", "17.09.2-ce", -1},
+		{"17.03.0-ce", "17.06.0-ce", -1},
+		{"17.03.0-ce-rc2", "17.03.0-ce-rc1", 1},
+		{"17.03.0-ce-rc1", "18.03.0-ce-rc1", -1},
 	}
 
 	for _, tc := range cases {

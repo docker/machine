@@ -11,12 +11,55 @@ import (
 	"strings"
 )
 
-// compare compares two version strings. compare returns -1 if v1 < v2, 1 if v1
-// > v2, 0 otherwise.
+const (
+	rcString  = "-rc"
+	ceEdition = "-ce"
+)
+
+// compare compares two versions of Docker to decipher which came first.
+//
+// compare returns -1 if v1 < v2, 1 if v1 > v2, 0 otherwise.
+func compare(v1, v2 string) int {
+	// Replace RC string with "." to make the RC number appear as simply
+	// another sub-version.
+	v1 = strings.Replace(v1, rcString, ".", -1)
+	v2 = strings.Replace(v2, rcString, ".", -1)
+
+	// All releases before the community edition (differentiated by
+	// presence of the "ce" string in the version string) are "less than"
+	// any community edition release (first occuring in March 2017).
+	if strings.Contains(v1, ceEdition) && !strings.Contains(v2, ceEdition) {
+		return -1
+	}
+	if !strings.Contains(v1, ceEdition) && strings.Contains(v2, ceEdition) {
+		return 1
+	}
+
+	// Without this tag, both are pre-CE versions.
+	if !strings.Contains(v1, ceEdition) && !strings.Contains(v2, ceEdition) {
+		return compareNumeric(v1, v2)
+	}
+
+	return compareCE(v1, v2)
+}
+
+// compareCE ("Community Edition") will differentiate between versions of
+// Docker that use the versioning scheme
+// {{release-year}}.{{release-month}}-{{ce|ee}}-{{rcnum|""}}
+//
+// This will be every release after 1.13.1.
+func compareCE(v1, v2 string) int {
+	return compareNumeric(
+		strings.Replace(v1, ceEdition, "", -1),
+		strings.Replace(v2, ceEdition, "", -1),
+	)
+}
+
+// compareNumeric compares two version that use pre-17.03 Docker.
 //
 // Non-numeric segments in either argument are considered equal, so
 // compare("1.a", "1.b") == 0, but compare("2.a", "1.b") == 1.
-func compare(v1, v2 string) int {
+func compareNumeric(v1, v2 string) int {
 	if n := strings.IndexByte(v1, '-'); n != -1 {
 		v1 = v1[:n]
 	}
