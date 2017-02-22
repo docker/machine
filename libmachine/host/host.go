@@ -1,7 +1,6 @@
 package host
 
 import (
-	"errors"
 	"regexp"
 
 	"github.com/docker/machine/libmachine/auth"
@@ -19,9 +18,8 @@ import (
 )
 
 var (
-	validHostNamePattern                               = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-\.]*$`)
-	errMachineMustBeRunningForUpgrade                  = errors.New("machine must be running to upgrade")
-	stdSSHClientCreator               SSHClientCreator = &StandardSSHClientCreator{}
+	validHostNamePattern                  = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-\.]*$`)
+	stdSSHClientCreator  SSHClientCreator = &StandardSSHClientCreator{}
 )
 
 type SSHClientCreator interface {
@@ -171,7 +169,10 @@ func (h *Host) Upgrade() error {
 	}
 
 	if machineState != state.Running {
-		return errMachineMustBeRunningForUpgrade
+		log.Info("Starting machine so machine can be upgraded...")
+		if err := h.Start(); err != nil {
+			return err
+		}
 	}
 
 	provisioner, err := provision.DetectProvisioner(h.Driver)
