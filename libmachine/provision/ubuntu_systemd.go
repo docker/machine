@@ -60,11 +60,14 @@ func (provisioner *UbuntuSystemdProvisioner) Package(name string, action pkgacti
 	case pkgaction.Remove:
 		packageAction = "remove"
 		updateMetadata = false
+	case pkgaction.Purge:
+		packageAction = "purge"
+		updateMetadata = false
 	}
 
 	switch name {
 	case "docker":
-		name = "docker-engine"
+		name = "docker-ce"
 	}
 
 	if updateMetadata {

@@ -44,6 +44,9 @@ func (provisioner *DebianProvisioner) Package(name string, action pkgaction.Pack
 	case pkgaction.Remove:
 		packageAction = "remove"
 		updateMetadata = false
+	case pkgaction.Purge:
+		packageAction = "purge"
+		updateMetadata = false
 	}
 
 	switch name {

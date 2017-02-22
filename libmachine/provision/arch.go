@@ -51,6 +51,8 @@ func (provisioner *ArchProvisioner) Package(name string, action pkgaction.Packag
 	}
 
 	switch name {
+	case "docker-engine":
+		name = "docker"
 	case "docker":
 		name = "docker"
 	}
