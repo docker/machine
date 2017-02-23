@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
+	"github.com/docker/machine/libmachine/versioncmp"
 )
 
 type SystemdProvisioner struct {
@@ -40,9 +41,19 @@ func (p *SystemdProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptio
 	driverNameLabel := fmt.Sprintf("provider=%s", p.Driver.DriverName())
 	p.EngineOptions.Labels = append(p.EngineOptions.Labels, driverNameLabel)
 
+	dockerVersion, err := DockerClientVersion(p)
+	if err != nil {
+		return nil, err
+	}
+
+	arg := "dockerd"
+	if versioncmp.LessThan(dockerVersion, "1.12.0") {
+		arg = "docker daemon"
+	}
+
 	engineConfigTmpl := `[Service]
 ExecStart=
-ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
+ExecStart=/usr/bin/` + arg + ` -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
 Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
 `
 	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
