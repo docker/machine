@@ -8,6 +8,7 @@ env:
     - TARGET_OS=darwin TARGET_ARCH=amd64 TARGETS="build-x"
     - TARGET_OS=windows TARGET_ARCH=amd64 TARGETS="build-x"
     - TARGET_OS=linux TARGET_ARCH=arm TARGETS="build-x"
+    - TARGET_OS=linux TARGET_ARCH=arm64 TARGETS="build-x"
 script:
     - USE_CONTAINER=true make "$TARGETS"
     - "[[ \"$(find bin -type f -name docker-machine*)\" != \"\" ]]"
