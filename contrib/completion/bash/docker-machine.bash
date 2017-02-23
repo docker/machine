@@ -285,4 +285,4 @@ _docker_machine() {
     return 0
 }
 
-complete -F _docker_machine docker-machine
+complete -F _docker_machine docker-machine docker-machine.exe
