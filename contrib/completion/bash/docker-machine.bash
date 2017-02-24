@@ -167,10 +167,9 @@ _docker_machine_restart() {
 
 _docker_machine_rm() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--help --force -y" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--help --force -f -y" -- "${cur}"))
     else
-        # For rm, it's best to be explicit
-        COMPREPLY=()
+	COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
     fi
 }
 
