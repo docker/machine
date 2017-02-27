@@ -19,20 +19,11 @@ import (
 
 var (
 	ErrUnknownYumOsRelease = errors.New("unknown OS for Yum repository")
-
-	packageListTemplate = `[docker]
-name=Docker Stable Repository
-baseurl=https://yum.dockerproject.org/repo/main/{{.OsRelease}}/{{.OsReleaseVersion}}
-priority=1
-enabled=1
-gpgkey=https://yum.dockerproject.org/gpg
-`
-	engineConfigTemplate = `[Service]
+	engineConfigTemplate   = `[Service]
 ExecStart=
 ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}
 Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
 `
-
 	majorVersionRE = regexp.MustCompile(`^(\d+)(\..*)?`)
 )
 
@@ -94,6 +85,8 @@ func (provisioner *RedHatProvisioner) Package(name string, action pkgaction.Pack
 	case pkgaction.Install:
 		packageAction = "install"
 	case pkgaction.Remove:
+		packageAction = "remove"
+	case pkgaction.Purge:
 		packageAction = "remove"
 	case pkgaction.Upgrade:
 		packageAction = "upgrade"
