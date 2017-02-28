@@ -74,10 +74,10 @@ _docker_machine_create() {
             ;;
     esac
 
-    # driver specific options are only included in help output if --driver is given,
-    # so we have to pass that option when calling docker-machine to harvest options.
+    # Driver specific options are only included in help output for the selected driver.
+    # We have to pass the driver to docker-machine when harvesting those options.
     local driver="$(_docker_machine_value_of_option '--driver|-d')"
-    local parsed_options="$(_docker_machine_q create ${driver:+--driver $driver} --help | grep '^   -' | sed 's/^   //; s/[^a-z0-9-].*$//')"
+    local parsed_options="$(_docker_machine_q create --driver ${driver:-virtualbox} --help | sed -n 's/^   \(-[^ ,\t]\+\).*$/\1/p')"
     if [[ ${cur} == -* ]]; then
         COMPREPLY=($(compgen -W "${parsed_options} -d --help" -- "${cur}"))
     fi
