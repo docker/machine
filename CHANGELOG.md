@@ -1,5 +1,66 @@
 # Changelog
 
+# 0.10.0 (2017-2-27)
+
+General
+
+- Various improvements to shell tab completion
+- Add support for compiling on ARM64 architecture
+
+Drivers
+
+- Make `virtualbox` default driver
+- `amazonec2`
+    - Update AMIs to latest version of Ubuntu 16.04 LTS
+- `virtualbox`
+    - Fix parsing of `--virtualbox-share-folder` on Windows
+- `google`
+    - Add `--google-open-port` flag to specify additional ports to open
+
+Provisioners
+
+- Machine now uses systemd drop-in files instead of over-writing the system units
+- Add support for upgrade to new Docker versioning scheme
+- Use `dockerd` only in Docker versions where it is available
+- Support multiple architectures in SUSE provisioner
+
+# 0.9.0 (2017-1-17)
+
+General
+- On Windows, the `COMPOSE_CONVERT_WINDOWS_PATHS` environment variable is now set by `docker-machine env` to improve Compose usability.
+- Docker Machine can now be built on FreeBSD
+- `docker-machine scp` non-22 port support
+- `scp` supports SSH agent
+- Bump Go version to 1.7.4
+
+Drivers
+- `amazonec2`
+  - Credentials can now be loaded from IAM instance profiles
+  - Add `--amazonec2-userdata` flag
+  - Add `--amazonec2-block-duration-minutes` flag
+  - Add support for `us-east-2` (Ohio)
+  - Update base images to Ubuntu 16.04
+- `azure`
+  - Add `--azure-dns` flag for specifying DNS names
+  - Add `--azure-storage-type` flag
+  - Allow using vnets from another resource group
+  - Add AzureGermanCloud support
+  - Add support for custom data
+  - Support Service Principal authentication
+  - Update base images to Ubuntu 16.04
+- `digitalocean`
+  - Add ability to speicify the private SSH key path
+- `gce`
+  - Update base images to Ubuntu 16.04
+- `virtualbox`
+  - Shared folder location can be specified instead of "hardcoded" to `C:\Users` or `/Users`
+- `openstack`
+  - Add support for `OS_CACERT`
+
+Provisioners
+- OpenSUSE provisioner refactored to use properly supported 3rd party code
+
+
 # 0.8.2 (2016-8-26)
 
 - Update Go version to 1.7.1
