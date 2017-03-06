@@ -362,6 +362,18 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Name:        "mount",
+		Usage:       "Mount or unmount a directory from a machine with SSHFS.",
+		Description: "Arguments are [machine:][path] [mountpoint]",
+		Action:      runCommand(cmdMount),
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "unmount, u",
+				Usage: "Unmount instead of mount",
+			},
+		},
+	},
+	{
 		Name:        "start",
 		Usage:       "Start a machine",
 		Description: "Argument(s) are one or more machine names.",
