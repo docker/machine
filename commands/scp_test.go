@@ -2,6 +2,7 @@ package commands
 
 import (
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,7 @@ func TestGetInfoForRemoteScpArg(t *testing.T) {
 	host, path, opts, err := getInfoForScpArg("myfunhost:/home/docker/foo", &hostInfoLoader)
 	assert.Equal(t, "myfunhost", host.GetMachineName())
 	assert.Equal(t, "/home/docker/foo", path)
-	assert.Equal(t, []string{"-i", "/fake/keypath/id_rsa"}, opts)
+	assert.Equal(t, []string{"-o", "IdentityFile=/fake/keypath/id_rsa"}, opts)
 	assert.NoError(t, err)
 
 	host, path, opts, err = getInfoForScpArg("myfunhost:C:\\path", &hostInfoLoader)
@@ -103,7 +104,7 @@ func TestGetScpCmd(t *testing.T) {
 		sshKeyPath:  "/fake/keypath/id_rsa",
 	}}
 
-	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, &hostInfoLoader)
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, false, &hostInfoLoader)
 
 	expectedArgs := append(
 		baseSSHArgs,
@@ -111,10 +112,10 @@ func TestGetScpCmd(t *testing.T) {
 		"-r",
 		"-o",
 		"IdentitiesOnly=yes",
-		"-P",
-		"234",
-		"-i",
-		"/fake/keypath/id_rsa",
+		"-o",
+		"Port=234",
+		"-o",
+		"IdentityFile=/fake/keypath/id_rsa",
 		"/tmp/foo",
 		"root@12.34.56.78:/home/docker/foo",
 	)
@@ -130,7 +131,7 @@ func TestGetScpCmdWithoutSshKey(t *testing.T) {
 		sshUsername: "user",
 	}}
 
-	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, &hostInfoLoader)
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, false, &hostInfoLoader)
 
 	expectedArgs := append(
 		baseSSHArgs,
@@ -140,6 +141,27 @@ func TestGetScpCmdWithoutSshKey(t *testing.T) {
 		"user@1.2.3.4:/home/docker/foo",
 	)
 	expectedCmd := exec.Command("/usr/bin/scp", expectedArgs...)
+
+	assert.Equal(t, expectedCmd, cmd)
+	assert.NoError(t, err)
+}
+
+func TestGetScpCmdWithDelta(t *testing.T) {
+	hostInfoLoader := MockHostInfoLoader{MockHostInfo{
+		ip:          "1.2.3.4",
+		sshUsername: "user",
+	}}
+
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, true, &hostInfoLoader)
+
+	expectedArgs := append(
+		[]string{"-e"},
+		"ssh "+strings.Join(baseSSHArgs, " "),
+		"-r",
+		"/tmp/foo",
+		"user@1.2.3.4:/home/docker/foo",
+	)
+	expectedCmd := exec.Command("/usr/bin/rsync", expectedArgs...)
 
 	assert.Equal(t, expectedCmd, cmd)
 	assert.NoError(t, err)
