@@ -355,6 +355,10 @@ var Commands = []cli.Command{
 				Name:  "recursive, r",
 				Usage: "Copy files recursively (required to copy directories)",
 			},
+			cli.BoolFlag{
+				Name:  "delta, d",
+				Usage: "Reduce amount of data sent over network by sending only the differences (uses rsync)",
+			},
 		},
 	},
 	{

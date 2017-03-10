@@ -66,7 +66,7 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 
 	hostInfoLoader := &storeHostInfoLoader{api}
 
-	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), hostInfoLoader)
+	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), c.Bool("delta"), hostInfoLoader)
 	if err != nil {
 		return err
 	}
@@ -74,10 +74,19 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 	return runCmdWithStdIo(*cmd)
 }
 
-func getScpCmd(src, dest string, recursive bool, hostInfoLoader HostInfoLoader) (*exec.Cmd, error) {
-	cmdPath, err := exec.LookPath("scp")
-	if err != nil {
-		return nil, errors.New("You must have a copy of the scp binary locally to use the scp feature")
+func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader HostInfoLoader) (*exec.Cmd, error) {
+	var cmdPath string
+	var err error
+	if !delta {
+		cmdPath, err = exec.LookPath("scp")
+		if err != nil {
+			return nil, errors.New("You must have a copy of the scp binary locally to use the scp feature")
+		}
+	} else {
+		cmdPath, err = exec.LookPath("rsync")
+		if err != nil {
+			return nil, errors.New("You must have a copy of the rsync binary locally to use the --delta option")
+		}
 	}
 
 	srcHost, srcPath, srcOpts, err := getInfoForScpArg(src, hostInfoLoader)
@@ -93,9 +102,11 @@ func getScpCmd(src, dest string, recursive bool, hostInfoLoader HostInfoLoader) 
 	// TODO: Check that "-3" flag is available in user's version of scp.
 	// It is on every system I've checked, but the manual mentioned it's "newer"
 	sshArgs := baseSSHArgs
-	sshArgs = append(sshArgs, "-3")
-	if recursive {
-		sshArgs = append(sshArgs, "-r")
+	if !delta {
+		sshArgs = append(sshArgs, "-3")
+		if recursive {
+			sshArgs = append(sshArgs, "-r")
+		}
 	}
 
 	// Don't use ssh-agent if both hosts have explicit ssh keys
@@ -111,6 +122,13 @@ func getScpCmd(src, dest string, recursive bool, hostInfoLoader HostInfoLoader) 
 	locationArg, err := generateLocationArg(srcHost, srcPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if delta {
+		sshArgs = append([]string{"-e"}, "ssh "+strings.Join(sshArgs, " "))
+		if recursive {
+			sshArgs = append(sshArgs, "-r")
+		}
 	}
 
 	sshArgs = append(sshArgs, locationArg)
@@ -152,11 +170,11 @@ func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (HostIn
 	args := []string{}
 	port, err := hostInfo.GetSSHPort()
 	if err == nil && port > 0 {
-		args = append(args, "-P", fmt.Sprintf("%v", port))
+		args = append(args, "-o", fmt.Sprintf("Port=%v", port))
 	}
 
 	if hostInfo.GetSSHKeyPath() != "" {
-		args = append(args, "-i", hostInfo.GetSSHKeyPath())
+		args = append(args, "-o", fmt.Sprintf("IdentityFile=%s", hostInfo.GetSSHKeyPath()))
 	}
 
 	return hostInfo, path, args, nil
