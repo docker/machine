@@ -54,6 +54,7 @@ var (
 	errorNoPrivateSSHKey                 = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
 	errorMissingCredentials              = errors.New("amazonec2 driver requires AWS credentials configured with the --amazonec2-access-key and --amazonec2-secret-key options, environment variables, ~/.aws/credentials, or an instance role")
 	errorNoVPCIdFound                    = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
+	errorNoSubnetsFound                  = errors.New("The desired subnet could not be located in this region. Is '--amazonec2-subnet-id' or AWS_SUBNET_ID configured correctly?")
 	errorDisableSSLWithoutCustomEndpoint = errors.New("using --amazonec2-insecure-transport also requires --amazonec2-endpoint")
 	errorReadingUserData                 = errors.New("unable to read --amazonec2-userdata file")
 )
@@ -404,6 +405,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		})
 		if err != nil {
 			return err
+		}
+
+		if subnets == nil || len(subnets.Subnets) == 0 {
+			return errorNoSubnetsFound
 		}
 
 		if *subnets.Subnets[0].VpcId != d.VpcId {
