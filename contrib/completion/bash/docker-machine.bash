@@ -37,16 +37,20 @@ _docker_machine_value_of_option() {
 # --- completion functions ---------------------------------------------------
 
 _docker_machine_active() {
+    case "${prev}" in
+        --timeout|-t)
+            return
+            ;;
+    esac
+
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--help" -- "${cur}"))
-    else
-        COMPREPLY=()
+        COMPREPLY=($(compgen -W "--help --timeout -t" -- "${cur}"))
     fi
 }
 
 _docker_machine_config() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--swarm --help" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--help --swarm" -- "${cur}"))
     else
         COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
     fi
@@ -86,22 +90,22 @@ _docker_machine_create() {
 _docker_machine_env() {
     case "${prev}" in
         --shell)
-            # What are the options for --shell?
-            COMPREPLY=()
+            COMPREPLY=($(compgen -W "cmd fish powershell tcsh" -- "${cur}"))
+            return
             ;;
-        *)
-            if [[ "${cur}" == -* ]]; then
-                COMPREPLY=($(compgen -W "--swarm --shell --unset --no-proxy --help" -- "${cur}"))
-            else
-                COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
-            fi
     esac
+
+    if [[ "${cur}" == -* ]]; then
+	COMPREPLY=($(compgen -W "--help --no-proxy --shell --swarm --unset -u" -- "${cur}"))
+    else
+	COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
+    fi
 }
 
 # See docker-machine-wrapper.bash for the use command
 _docker_machine_use() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--swarm --unset --help" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--help --swarm --unset" -- "${cur}"))
     else
         COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
     fi
@@ -109,17 +113,16 @@ _docker_machine_use() {
 
 _docker_machine_inspect() {
     case "${prev}" in
-        -f|--format)
-            COMPREPLY=()
-            ;;
-        *)
-            if [[ "${cur}" == -* ]]; then
-                COMPREPLY=($(compgen -W "--format --help" -- "${cur}"))
-            else
-                COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
-            fi
+        --format|-f)
+            return
             ;;
     esac
+
+    if [[ "${cur}" == -* ]]; then
+	COMPREPLY=($(compgen -W "--format -f --help" -- "${cur}"))
+    else
+	COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
+    fi
 }
 
 _docker_machine_ip() {
@@ -140,18 +143,19 @@ _docker_machine_kill() {
 
 _docker_machine_ls() {
     case "${prev}" in
-        --filter)
-            COMPREPLY=()
-            ;;
-        *)
-            COMPREPLY=($(compgen -W "--quiet --filter --format --timeout --help" -- "${cur}"))
+        --filter|--format|-f|--timeout|-t)
+            return
             ;;
     esac
+
+    if [[ "${cur}" == -* ]]; then
+        COMPREPLY=($(compgen -W "--filter --format -f --help --quiet -q --timeout -t" -- "${cur}"))
+    fi
 }
 
 _docker_machine_regenerate_certs() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--help --force" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--force -f --help" -- "${cur}"))
     else
         COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
     fi
@@ -167,7 +171,7 @@ _docker_machine_restart() {
 
 _docker_machine_rm() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--help --force -f -y" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--force -f --help -y" -- "${cur}"))
     else
 	COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
     fi
@@ -183,7 +187,7 @@ _docker_machine_ssh() {
 
 _docker_machine_scp() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--help --recursive" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--help --recursive -r" -- "${cur}"))
     else
         _filedir
         # It would be really nice to ssh to the machine and ls to complete
