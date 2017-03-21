@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/digitalocean/godo"
@@ -34,6 +35,7 @@ type Driver struct {
 	Backups           bool
 	PrivateNetworking bool
 	UserDataFile      string
+	Tags              string
 }
 
 const (
@@ -113,6 +115,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "digitalocean-userdata",
 			Usage:  "path to file with cloud-init user-data",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "DIGITALOCEAN_TAGS",
+			Name:   "digitalocean-tags",
+			Usage:  "comma-separated list of tags to apply to the Droplet",
+		},
 	}
 }
 
@@ -150,6 +157,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = flags.Int("digitalocean-ssh-port")
 	d.SSHKeyFingerprint = flags.String("digitalocean-ssh-key-fingerprint")
 	d.SSHKey = flags.String("digitalocean-ssh-key-path")
+	d.Tags = flags.String("digitalocean-tags")
 
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -224,6 +232,7 @@ func (d *Driver) Create() error {
 		Backups:           d.Backups,
 		UserData:          userdata,
 		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID}},
+		Tags:              d.getTags(),
 	}
 
 	newDroplet, _, err := client.Droplets.Create(context.TODO(), createRequest)
@@ -377,6 +386,17 @@ func (d *Driver) getClient() *godo.Client {
 	client := oauth2.NewClient(oauth2.NoContext, tokenSource)
 
 	return godo.NewClient(client)
+}
+
+func (d *Driver) getTags() []string {
+	var tagList []string
+
+	for _, t := range strings.Split(d.Tags, ",") {
+		t = strings.TrimSpace(t)
+		tagList = append(tagList, t)
+	}
+
+	return tagList
 }
 
 func (d *Driver) GetSSHKeyPath() string {
