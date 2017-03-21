@@ -1,4 +1,4 @@
-Copyright (c) 2014 The godo AUTHORS. All rights reserved.
+Copyright (c) 2014-2016 The godo AUTHORS. All rights reserved.
 
 MIT License
 

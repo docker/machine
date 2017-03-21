@@ -1,6 +1,7 @@
 package digitalocean
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -177,7 +178,7 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	client := d.getClient()
-	regions, _, err := client.Regions.List(nil)
+	regions, _, err := client.Regions.List(context.TODO(), nil)
 	if err != nil {
 		return err
 	}
@@ -225,7 +226,7 @@ func (d *Driver) Create() error {
 		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID}},
 	}
 
-	newDroplet, _, err := client.Droplets.Create(createRequest)
+	newDroplet, _, err := client.Droplets.Create(context.TODO(), createRequest)
 	if err != nil {
 		return err
 	}
@@ -234,7 +235,7 @@ func (d *Driver) Create() error {
 
 	log.Info("Waiting for IP address to be assigned to the Droplet...")
 	for {
-		newDroplet, _, err = client.Droplets.Get(d.DropletID)
+		newDroplet, _, err = client.Droplets.Get(context.TODO(), d.DropletID)
 		if err != nil {
 			return err
 		}
@@ -262,7 +263,7 @@ func (d *Driver) createSSHKey() (*godo.Key, error) {
 	d.SSHKeyPath = d.GetSSHKeyPath()
 
 	if d.SSHKeyFingerprint != "" {
-		key, resp, err := d.getClient().Keys.GetByFingerprint(d.SSHKeyFingerprint)
+		key, resp, err := d.getClient().Keys.GetByFingerprint(context.TODO(), d.SSHKeyFingerprint)
 		if err != nil && resp.StatusCode == 404 {
 			return nil, fmt.Errorf("Digital Ocean SSH key with fingerprint %s doesn't exist", d.SSHKeyFingerprint)
 		}
@@ -292,7 +293,7 @@ func (d *Driver) createSSHKey() (*godo.Key, error) {
 		PublicKey: string(publicKey),
 	}
 
-	key, _, err := d.getClient().Keys.Create(createRequest)
+	key, _, err := d.getClient().Keys.Create(context.TODO(), createRequest)
 	if err != nil {
 		return key, err
 	}
@@ -314,7 +315,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	droplet, _, err := d.getClient().Droplets.Get(d.DropletID)
+	droplet, _, err := d.getClient().Droplets.Get(context.TODO(), d.DropletID)
 	if err != nil {
 		return state.Error, err
 	}
@@ -330,29 +331,29 @@ func (d *Driver) GetState() (state.State, error) {
 }
 
 func (d *Driver) Start() error {
-	_, _, err := d.getClient().DropletActions.PowerOn(d.DropletID)
+	_, _, err := d.getClient().DropletActions.PowerOn(context.TODO(), d.DropletID)
 	return err
 }
 
 func (d *Driver) Stop() error {
-	_, _, err := d.getClient().DropletActions.Shutdown(d.DropletID)
+	_, _, err := d.getClient().DropletActions.Shutdown(context.TODO(), d.DropletID)
 	return err
 }
 
 func (d *Driver) Restart() error {
-	_, _, err := d.getClient().DropletActions.Reboot(d.DropletID)
+	_, _, err := d.getClient().DropletActions.Reboot(context.TODO(), d.DropletID)
 	return err
 }
 
 func (d *Driver) Kill() error {
-	_, _, err := d.getClient().DropletActions.PowerOff(d.DropletID)
+	_, _, err := d.getClient().DropletActions.PowerOff(context.TODO(), d.DropletID)
 	return err
 }
 
 func (d *Driver) Remove() error {
 	client := d.getClient()
 	if d.SSHKeyFingerprint == "" {
-		if resp, err := client.Keys.DeleteByID(d.SSHKeyID); err != nil {
+		if resp, err := client.Keys.DeleteByID(context.TODO(), d.SSHKeyID); err != nil {
 			if resp.StatusCode == 404 {
 				log.Infof("Digital Ocean SSH key doesn't exist, assuming it is already deleted")
 			} else {
@@ -360,7 +361,7 @@ func (d *Driver) Remove() error {
 			}
 		}
 	}
-	if resp, err := client.Droplets.Delete(d.DropletID); err != nil {
+	if resp, err := client.Droplets.Delete(context.TODO(), d.DropletID); err != nil {
 		if resp.StatusCode == 404 {
 			log.Infof("Digital Ocean droplet doesn't exist, assuming it is already deleted")
 		} else {
