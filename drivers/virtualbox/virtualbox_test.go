@@ -162,7 +162,7 @@ func TestGetRandomIPinSubnet(t *testing.T) {
 	}
 }
 
-func TestGetHolyOnlyMACAddress(t *testing.T) {
+func TestGetHostOnlyMACAddress(t *testing.T) {
 	driver := newTestDriver("default")
 	driver.VBoxManager = &VBoxManagerMock{
 		args:   "showvminfo default --machinereadable",
