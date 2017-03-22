@@ -24,7 +24,7 @@ type Driver struct {
 }
 
 const (
-	defaultTimeout = 1 * time.Second
+	defaultTimeout = 15 * time.Second
 )
 
 // GetCreateFlags registers the flags this driver adds to
