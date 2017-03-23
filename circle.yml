@@ -3,7 +3,7 @@ machine:
     - bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/1.0.22/binscripts/gvm-installer)
 
   post:
-    - gvm install go1.6 -B --name=stable
+    - gvm install go1.7 -B --name=stable
 
   environment:
     CHECKOUT: /home/ubuntu/$CIRCLE_PROJECT_REPONAME
