@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -192,7 +193,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.GetPort()))), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -238,7 +239,7 @@ func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group strin
 			SecurityGroupId: "",
 			Cidr:            "0.0.0.0/0",
 			Protocol:        "TCP",
-			Port:            2376,
+			Port:            d.GetPort(),
 		},
 		{
 			SecurityGroupId: "",

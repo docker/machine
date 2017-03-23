@@ -42,6 +42,7 @@ func TestCmdURL(t *testing.T) {
 				Driver: &fakedriver.Driver{
 					MockState: state.Running,
 					MockIP:    "120.0.0.1",
+					MockPort:  2376,
 				},
 			},
 		},

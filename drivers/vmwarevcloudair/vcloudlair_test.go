@@ -25,3 +25,27 @@ func TestSetConfigFromFlags(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, checkFlags.InvalidFlags)
 }
+
+func TestGenericDockerPortDeprecationError(t *testing.T) {
+	driver := NewDriver("default", "path")
+
+	checkFlags := &drivers.CheckDriverOptions{
+		FlagsValues: map[string]interface{}{
+			"vmwarevcloudair-username":    "root",
+			"vmwarevcloudair-password":    "pwd",
+			"vmwarevcloudair-vdcid":       "ID",
+			"vmwarevcloudair-publicip":    "IP",
+			"vmwarevcloudair-docker-port": 12345,
+		},
+		CreateFlags: driver.GetCreateFlags(),
+	}
+
+	err := driver.SetConfigFromFlags(checkFlags)
+
+	assert.EqualError(
+		t,
+		err,
+		"-vmwarevcloudair-docker-port has been deprecated in favor of: -engine-port",
+		"SetConfigFromFlags should throw an error when vmwarevcloudair-docker-port is set",
+	)
+}

@@ -39,7 +39,7 @@ func TestPortsUsed(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ports, err := test.computeUtil.portsUsed()
+		ports, err := test.computeUtil.portsUsed(2376)
 
 		assert.Equal(t, test.expectedPorts, ports)
 		assert.Equal(t, test.expectedError, err)

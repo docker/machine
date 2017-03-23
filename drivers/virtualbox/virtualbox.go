@@ -224,7 +224,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	return fmt.Sprintf("tcp://%s:%d", ip, d.GetPort()), nil
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {

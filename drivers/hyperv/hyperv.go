@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -124,7 +125,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", nil
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.GetPort()))), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {

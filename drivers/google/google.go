@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -284,7 +285,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.GetPort()))), nil
 }
 
 // GetIP returns the IP address of the GCE instance.

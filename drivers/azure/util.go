@@ -109,12 +109,12 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 		}
 	}
 
-	log.Debugf("Docker port is configured as %d", d.DockerPort)
+	log.Debugf("Docker port is configured as %d", d.GetPort())
 
 	// Base ports to be opened for any machine
 	rl := []network.SecurityRule{
 		mkRule(100, "SSHAllowAny", "Allow ssh from public Internet", "*", fmt.Sprintf("%d", d.BaseDriver.SSHPort), network.TCP),
-		mkRule(300, "DockerAllowAny", "Allow docker engine access (TLS-protected)", "*", fmt.Sprintf("%d", d.DockerPort), network.TCP),
+		mkRule(300, "DockerAllowAny", "Allow docker engine access (TLS-protected)", "*", fmt.Sprintf("%d", d.GetPort()), network.TCP),
 	}
 
 	// Open swarm port if configured

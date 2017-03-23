@@ -132,16 +132,18 @@ func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *
 	return value, err
 }
 
-func NewTestDriver() *Driver {
+func NewTestDriver(dockerPort int) *Driver {
 	driver := NewDriver("machineFoo", "path")
+	driver.PortNumber = dockerPort
 	driver.clientFactory = func() Ec2Client {
 		return &fakeEC2{}
 	}
 	return driver
 }
 
-func NewCustomTestDriver(ec2Client Ec2Client) *Driver {
+func NewCustomTestDriver(dockerPort int, ec2Client Ec2Client) *Driver {
 	driver := NewDriver("machineFoo", "path")
+	driver.PortNumber = dockerPort
 	driver.clientFactory = func() Ec2Client {
 		return ec2Client
 	}

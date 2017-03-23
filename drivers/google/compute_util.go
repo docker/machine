@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,7 +44,6 @@ type ComputeUtil struct {
 const (
 	apiURL            = "https://www.googleapis.com/compute/v1/projects/"
 	firewallRule      = "docker-machines"
-	dockerPort        = "2376"
 	firewallTargetTag = "docker-machine"
 )
 
@@ -159,8 +159,9 @@ func missingOpenedPorts(rule *raw.Firewall, ports []string) map[string][]string 
 	return missing
 }
 
-func (c *ComputeUtil) portsUsed() ([]string, error) {
-	ports := []string{dockerPort + "/tcp"}
+func (c *ComputeUtil) portsUsed(dockerPort int) ([]string, error) {
+	// TODO: get driver in here
+	ports := []string{strconv.Itoa(dockerPort) + "/tcp"}
 
 	if c.SwarmMaster {
 		u, err := url.Parse(c.SwarmHost)
@@ -196,7 +197,7 @@ func (c *ComputeUtil) openFirewallPorts(d *Driver) error {
 		}
 	}
 
-	portsUsed, err := c.portsUsed()
+	portsUsed, err := c.portsUsed(d.GetPort())
 	if err != nil {
 		return err
 	}

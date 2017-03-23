@@ -19,7 +19,7 @@ import (
 
 const (
 	testSSHPort    = int64(22)
-	testDockerPort = int64(2376)
+	testDockerPort = int64(12345)
 	testSwarmPort  = int64(3376)
 )
 
@@ -32,7 +32,7 @@ var (
 )
 
 func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 
 	perms, err := driver.configureSecurityGroupPermissions(securityGroup)
 
@@ -41,7 +41,7 @@ func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	group := securityGroup
 	group.IpPermissions = []*ec2.IpPermission{
 		{
@@ -59,7 +59,7 @@ func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	group := securityGroup
 	group.IpPermissions = []*ec2.IpPermission{
 		{
@@ -77,7 +77,7 @@ func TestConfigureSecurityGroupPermissionsDockerOnly(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	group := securityGroup
 	group.IpPermissions = []*ec2.IpPermission{
 		{
@@ -99,7 +99,7 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsOpenPorts(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	driver.OpenPorts = []string{"8888/tcp", "8080/udp", "9090"}
 	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
 
@@ -114,7 +114,7 @@ func TestConfigureSecurityGroupPermissionsOpenPorts(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsOpenPortsSkipExisting(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	group := securityGroup
 	group.IpPermissions = []*ec2.IpPermission{
 		{
@@ -137,7 +137,7 @@ func TestConfigureSecurityGroupPermissionsOpenPortsSkipExisting(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsInvalidOpenPorts(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	driver.OpenPorts = []string{"2222/tcp", "abc1"}
 	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
 
@@ -146,7 +146,7 @@ func TestConfigureSecurityGroupPermissionsInvalidOpenPorts(t *testing.T) {
 }
 
 func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	driver.SwarmMaster = true
 	group := securityGroup
 	group.IpPermissions = []*ec2.IpPermission{
@@ -219,7 +219,7 @@ func TestDefaultVPCIsMissing(t *testing.T) {
 }
 
 func TestGetRegionZoneForDefaultEndpoint(t *testing.T) {
-	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver := NewCustomTestDriver(int(testDockerPort), &fakeEC2WithLogin{})
 	driver.awsCredentialsFactory = NewValidAwsCredentials
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -238,7 +238,7 @@ func TestGetRegionZoneForDefaultEndpoint(t *testing.T) {
 }
 
 func TestGetRegionZoneForCustomEndpoint(t *testing.T) {
-	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver := NewCustomTestDriver(int(testDockerPort), &fakeEC2WithLogin{})
 	driver.awsCredentialsFactory = NewValidAwsCredentials
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -272,7 +272,7 @@ func TestDescribeAccountAttributeFails(t *testing.T) {
 }
 
 func TestAwsCredentialsAreRequired(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	driver.awsCredentialsFactory = NewErrorAwsCredentials
 
 	options := &commandstest.FakeFlagger{
@@ -288,7 +288,7 @@ func TestAwsCredentialsAreRequired(t *testing.T) {
 }
 
 func TestValidAwsCredentialsAreAccepted(t *testing.T) {
-	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver := NewCustomTestDriver(int(testDockerPort), &fakeEC2WithLogin{})
 	driver.awsCredentialsFactory = NewValidAwsCredentials
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -303,7 +303,7 @@ func TestValidAwsCredentialsAreAccepted(t *testing.T) {
 }
 
 func TestEndpointIsMandatoryWhenSSLDisabled(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	driver.awsCredentialsFactory = NewValidAwsCredentials
 	options := &commandstest.FakeFlagger{
 		Data: map[string]interface{}{
@@ -402,7 +402,7 @@ func ipPermission(port int64) *ec2.IpPermission {
 func TestConfigureSecurityGroupsEmpty(t *testing.T) {
 	recorder := fakeEC2SecurityGroupTestRecorder{}
 
-	driver := NewCustomTestDriver(&recorder)
+	driver := NewCustomTestDriver(int(testDockerPort), &recorder)
 	err := driver.configureSecurityGroups([]string{})
 
 	assert.Nil(t, err)
@@ -457,7 +457,7 @@ func TestConfigureSecurityGroupsMixed(t *testing.T) {
 	}).Return(
 		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
 
-	driver := NewCustomTestDriver(&recorder)
+	driver := NewCustomTestDriver(int(testDockerPort), &recorder)
 	err := driver.configureSecurityGroups(groups)
 
 	assert.Nil(t, err)
@@ -472,7 +472,7 @@ func TestConfigureSecurityGroupsErrLookupExist(t *testing.T) {
 	recorder.On("DescribeSecurityGroups", mock.MatchedBy(matchGroupLookup(groups))).Return(
 		nil, lookupExistErr)
 
-	driver := NewCustomTestDriver(&recorder)
+	driver := NewCustomTestDriver(int(testDockerPort), &recorder)
 	err := driver.configureSecurityGroups(groups)
 
 	assert.Exactly(t, lookupExistErr, err)
@@ -480,7 +480,7 @@ func TestConfigureSecurityGroupsErrLookupExist(t *testing.T) {
 }
 
 func TestBase64UserDataIsEmptyIfNoFileProvided(t *testing.T) {
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 
 	userdata, err := driver.Base64UserData()
 
@@ -495,7 +495,7 @@ func TestBase64UserDataGeneratesErrorIfFileNotFound(t *testing.T) {
 	defer os.RemoveAll(dir)
 	userdata_path := filepath.Join(dir, "does-not-exist.yml")
 
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	driver.UserDataFile = userdata_path
 
 	_, ud_err := driver.Base64UserData()
@@ -516,7 +516,7 @@ func TestBase64UserDataIsCorrectWhenFileProvided(t *testing.T) {
 	err = ioutil.WriteFile(userdata_path, content, 0666)
 	assert.NoError(t, err, "Unable to create temporary userdata file.")
 
-	driver := NewTestDriver()
+	driver := NewTestDriver(int(testDockerPort))
 	driver.UserDataFile = userdata_path
 
 	userdata, ud_err := driver.Base64UserData()
