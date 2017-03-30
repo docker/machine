@@ -2,13 +2,12 @@ package virtualbox
 
 import (
 	"errors"
+	"fmt"
 	"net"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
-
-	"fmt"
-
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -326,6 +325,61 @@ func TestCIDRHostIFaceCollision(t *testing.T) {
 	assert.Nil(t, cidrErr)
 	err = validateNoIPCollisions(mhi, network, nets)
 	assert.Equal(t, ErrNetworkAddrCollision, err)
+}
+
+// Tests the behavior of getDHCPAddressRange with a variety of subnets.
+func TestGetDHCPAddressRange(t *testing.T) {
+	tests := []struct {
+		name            string
+		dhcpAddrCIDR    string
+		expectedLowerIP net.IP
+		expectedUpperIP net.IP
+	}{
+		{
+			"Test /8 CIDR",
+			"10.0.0.14/8",
+			net.ParseIP("10.0.0.100"),
+			net.ParseIP("10.0.0.254"),
+		},
+		{
+			"Test /24 CIDR",
+			"192.168.99.7/24",
+			net.ParseIP("192.168.99.100"),
+			net.ParseIP("192.168.99.254"),
+		},
+		{
+			"Test /25 CIDR",
+			"100.121.20.19/25",
+			net.ParseIP("100.121.20.20"),
+			net.ParseIP("100.121.20.126"),
+		},
+		{
+			"Test /28 CIDR",
+			"100.121.10.8/28",
+			net.ParseIP("100.121.10.9"),
+			net.ParseIP("100.121.10.14"),
+		},
+	}
+
+	getTestArgsFromCIDR := func(cidr string) (dhcpAddr net.IP, network *net.IPNet) {
+		var err error
+		dhcpAddr, network, err = net.ParseCIDR(cidr)
+		assert.NoError(t, err, "Invalid CIDR %s", cidr)
+		return
+	}
+
+	for _, tt := range tests {
+		dhcpAddr, network := getTestArgsFromCIDR(tt.dhcpAddrCIDR)
+		t.Run(tt.name, func(t *testing.T) {
+			lowerIP, upperIP := getDHCPAddressRange(dhcpAddr, network)
+			if !reflect.DeepEqual(lowerIP, tt.expectedLowerIP) {
+				t.Errorf("getDHCPAddressRange() lowerIP = %v, want %v", lowerIP, tt.expectedLowerIP)
+			}
+			if !reflect.DeepEqual(upperIP, tt.expectedUpperIP) {
+				t.Errorf("getDHCPAddressRange() upperIP = %v, want %v", upperIP, tt.expectedUpperIP)
+			}
+		})
+	}
 }
 
 func TestSetConfigFromFlags(t *testing.T) {

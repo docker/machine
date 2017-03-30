@@ -851,14 +851,15 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) (*hostOnlyNetwork, err
 		return nil, err
 	}
 
-	log.Debugf("Adding/Modifying DHCP server %q...", dhcpAddr)
-	nAddr := network.IP.To4()
+	lowerIP, upperIP := getDHCPAddressRange(dhcpAddr, network)
+
+	log.Debugf("Adding/Modifying DHCP server %q with address range %q - %q...", dhcpAddr, lowerIP, upperIP)
 
 	dhcp := dhcpServer{}
 	dhcp.IPv4.IP = dhcpAddr
 	dhcp.IPv4.Mask = network.Mask
-	dhcp.LowerIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100))
-	dhcp.UpperIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254))
+	dhcp.LowerIP = lowerIP
+	dhcp.UpperIP = upperIP
 	dhcp.Enabled = !d.HostOnlyNoDHCP
 	if err := addHostOnlyDHCPServer(hostOnlyAdapter.Name, dhcp, d.VBoxManager); err != nil {
 		return nil, err
@@ -874,6 +875,30 @@ func (d *Driver) setupHostOnlyNetwork(machineName string) (*hostOnlyNetwork, err
 	}
 
 	return hostOnlyAdapter, nil
+}
+
+func getDHCPAddressRange(dhcpAddr net.IP, network *net.IPNet) (lowerIP net.IP, upperIP net.IP) {
+	nAddr := network.IP.To4()
+	ones, bits := network.Mask.Size()
+
+	if ones <= 24 {
+		// For a /24 subnet, use the original behavior of allowing the address range
+		// between x.x.x.100 and x.x.x.254.
+		lowerIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(100))
+		upperIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], byte(254))
+		return
+	}
+
+	// Start the lowerIP range one address above the selected DHCP address.
+	lowerIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], dhcpAddr.To4()[3]+1)
+
+	// The highest D-part of the address A.B.C.D in this subnet is at 2^n - 1,
+	// where n is the number of available bits in the subnet. Since the highest
+	// address is reserved for subnet broadcast, the highest *assignable* address
+	// is at (2^n - 1) - 1 == 2^n - 2.
+	maxAssignableSubnetAddress := (byte)((1 << (uint)(bits-ones)) - 2)
+	upperIP = net.IPv4(nAddr[0], nAddr[1], nAddr[2], maxAssignableSubnetAddress)
+	return
 }
 
 func parseAndValidateCIDR(hostOnlyCIDR string) (net.IP, *net.IPNet, error) {
