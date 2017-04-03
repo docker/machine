@@ -82,3 +82,19 @@ func TestSSHKeyFingerprint(t *testing.T) {
 	assert.Equal(t, "64:51:2b:9b:8b:f0:95:3c:f9:36:4d:8b:80:a8:8f:1e", driver.SSHKeyFingerprint)
 	assert.Equal(t, "", driver.GetSSHKeyPath())
 }
+
+func TestTags(t *testing.T) {
+	driver := NewDriver("default", "path")
+
+	checkFlags := &drivers.CheckDriverOptions{
+		FlagsValues: map[string]interface{}{
+			"digitalocean-access-token": "TOKEN",
+			"digitalocean-tags":         "docker,swarm, no-leading-space",
+		},
+		CreateFlags: driver.GetCreateFlags(),
+	}
+
+	err := driver.SetConfigFromFlags(checkFlags)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"docker", "swarm", "no-leading-space"}, driver.getTags())
+}
