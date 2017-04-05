@@ -62,6 +62,18 @@ func (provisioner *SUSEProvisioner) Package(name string, action pkgaction.Packag
 	switch action {
 	case pkgaction.Install:
 		packageAction = "in"
+		// This is an optimization that reduces the provisioning time of certain
+		// systems in a significant way.
+		// The invocation of "zypper in <pkg>" causes the download of the metadata
+		// of all the repositories that have never been refreshed or that have
+		// automatic refresh toggled and have not been refreshed recently.
+		// Refreshing the repository metadata can take quite some time and can cause
+		// longer provisioning times for machines that have been pre-optimized for
+		// docker by including all the needed packages.
+		if _, err := provisioner.SSHCommand(fmt.Sprintf("rpm -q %s", name)); err == nil {
+			log.Debugf("%s is already installed, skipping operation", name)
+			return nil
+		}
 	case pkgaction.Remove:
 		packageAction = "rm"
 	case pkgaction.Upgrade:
