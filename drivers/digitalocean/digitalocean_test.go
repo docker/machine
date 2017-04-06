@@ -89,7 +89,7 @@ func TestTags(t *testing.T) {
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
 			"digitalocean-access-token": "TOKEN",
-			"digitalocean-tags":         "docker,swarm, no-leading-space",
+			"digitalocean-tags":         "docker,swarm, no-leading-space,,",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}
@@ -97,4 +97,19 @@ func TestTags(t *testing.T) {
 	err := driver.SetConfigFromFlags(checkFlags)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"docker", "swarm", "no-leading-space"}, driver.getTags())
+}
+
+func TestTagsEmpty(t *testing.T) {
+	driver := NewDriver("default", "path")
+
+	checkFlags := &drivers.CheckDriverOptions{
+		FlagsValues: map[string]interface{}{
+			"digitalocean-access-token": "TOKEN",
+		},
+		CreateFlags: driver.GetCreateFlags(),
+	}
+
+	err := driver.SetConfigFromFlags(checkFlags)
+	assert.NoError(t, err)
+	assert.Nil(t, driver.getTags())
 }
