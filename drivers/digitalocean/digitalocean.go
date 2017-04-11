@@ -393,7 +393,9 @@ func (d *Driver) getTags() []string {
 
 	for _, t := range strings.Split(d.Tags, ",") {
 		t = strings.TrimSpace(t)
-		tagList = append(tagList, t)
+		if t != "" {
+			tagList = append(tagList, t)
+		}
 	}
 
 	return tagList
