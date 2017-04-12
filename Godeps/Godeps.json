@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/docker/machine",
+	"ImportPath": "github.com/michalmedvecky/machine",
 	"GoVersion": "go1.7",
 	"GodepVersion": "v79",
 	"Packages": [
