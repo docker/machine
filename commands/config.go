@@ -12,9 +12,9 @@ import (
 )
 
 func cmdConfig(c CommandLine, api libmachine.API) error {
-	// Ensure that log messages always go to stderr when this command is
-	// being run (it is intended to be run in a subshell)
-	log.SetOutWriter(os.Stderr)
+
+	log.SetOutWriter(os.Stdout)
+	log.SetErrWriter(os.Stderr)
 
 	target, err := targetHost(c, api)
 	if err != nil {
