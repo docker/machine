@@ -1,0 +1,113 @@
+#!/bin/bash
+#
+# This script is intended to be curled onto a host that was just provisioned with "machine create".
+# It should:
+#
+# * Install docker using the most suitable package manager.
+# * Configure docker to use identity auth and to listen on all interfaces.
+
+set -e
+
+has() {
+  command -v "$@" > /dev/null 2>&1
+}
+
+USER="$(id -un 2>/dev/null || true)"
+
+# Determine the command to run something as root.
+
+RUN='sh -c'
+if [ "$USER" != 'root' ]; then
+  if has sudo; then
+    RUN='sudo -E sh -c'
+  elif has su; then
+    RUN='su -c'
+  else
+    echo >&2 'Error: this installer needs the ability to run commands as root.'
+    echo >&2 'Neither "sudo" nor "su" is available to make this happen.'
+    exit 1
+  fi
+fi
+
+# Determine the command to fetch something from the network.
+
+CURL=''
+if has curl; then
+  CURL='curl -sSL'
+elif has wget; then
+  CURL='wget -qO-'
+elif has busybox && busybox --list-modules | grep -q wget; then
+  CURL='busybox wget -qO-'
+else
+  echo >&2 'Error: this installer needs the ability to download resources from the network.'
+  echo >&2 'Neither "curl" nor "wget" is available to do this.'
+  exit 1
+fi
+
+# Determine the mechanism used to control daemons on this host.
+
+DAEMON_STYLE=''
+if has service; then
+  DAEMON_STYLE='upstart'
+elif has systemctl; then
+  DAEMON_STYLE='systemd'
+else
+  echo >&2 'Error: this installer needs the ability to start and stop daemons on the host.'
+  echo >&2 'Neither "service" nor "systemctl" is available to do this.'
+  exit 1
+fi
+
+# Determine if selinux is present and enabled.
+
+SELINUX='false'
+if has getenforce && [ "$(getenforce)" == "Enforcing" ]; then
+  SELINUX='true'
+fi
+
+# Install docker if it isn't pre-loaded.
+
+if ! has docker; then
+  echo "Installing docker."
+
+  ${CURL} https://get.docker.com/ | /bin/sh
+fi
+
+# Stop and configure the running docker service.
+SELINUX_FLAG=''
+[ "${SELINUX}" == "true" ] && SELINUX_FLAG='--selinux-enabled'
+
+case ${DAEMON_STYLE} in
+  upstart)
+    ${RUN} 'service docker stop'
+    # HACK: Overwrite the docker binary with a version that supports identity auth.
+    ${RUN} "${CURL} https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -o /usr/bin/docker"
+    ${RUN} "echo \"export DOCKER_OPTS=\\\"--auth=identity --host=tcp://0.0.0.0:2376 ${SELINUX_FLAG}\\\"\" >> /etc/default/docker"
+    ;;
+  systemd)
+    ${RUN} 'systemctl stop docker'
+    # HACK: Overwrite the docker binary with a version that supports identity auth.
+    ${RUN} "${CURL} https://bfirsh.s3.amazonaws.com/docker/docker-1.3.1-dev-identity-auth -o /usr/bin/docker"
+    ${RUN} "echo \"OPTIONS=--auth=identity --host=tcp://0.0.0.0:2376 ${SELINUX_FLAG}\" > /etc/sysconfig/docker"
+    ;;
+esac
+
+# Configure SELinux to allow Docker to bind to 0.0.0.0.
+if [ "${SELINUX}" == "true" ]; then
+  ${RUN} 'setsebool -P docker_connect_any 1'
+fi
+
+# Configure the firewall to let the Docker socket out on Fedora.
+if has firewalld; then
+  ${RUN} 'firewall-cmd --zone=public --add-port=2376/tcp'
+  ${RUN} 'firewall-cmd --permanent --zone=public --add-port=2376/tcp'
+fi
+
+# Start the docker service back up.
+case ${DAEMON_STYLE} in
+  upstart)
+    ${RUN} 'service docker start'
+    ;;
+  systemd)
+    ${RUN} 'systemctl start docker'
+    ;;
+esac
