@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# A build script that allows building from a remote docker server that can't mount local volumes.
+# $ script/remote-build | tar xvf -
+set -e
+
+if [ -z "$1" ]; then
+    OS_PLATFORM_ARG=(-os="darwin linux windows")
+else
+    OS_PLATFORM_ARG=($1)
+fi
+
+if [ -z "$2" ]; then
+    OS_ARCH_ARG=(-arch="386 amd64")
+else
+    OS_ARCH_ARG=($2)
+fi
+
+rm -f docker-machine*
+docker build -t docker-machine . 1>&2
+exec docker run --rm docker-machine /bin/sh -c "gox \"${OS_PLATFORM_ARG[@]}\" \"${OS_ARCH_ARG[@]}\" -output=\"docker-machine_{{.OS}}-{{.Arch}}\" 1>&2 && tar -czf - docker-machine*"
