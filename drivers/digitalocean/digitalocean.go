@@ -161,6 +161,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.SetSwarmConfigFromFlags(flags)
 
+	if os.Getenv("DIGITALOCEAN_ACCESS_TOKEN") != "" {
+		d.AccessToken = os.Getenv("DIGITALOCEAN_ACCESS_TOKEN")
+	}
+
 	if d.AccessToken == "" {
 		return fmt.Errorf("digitalocean driver requires the --digitalocean-access-token option")
 	}
