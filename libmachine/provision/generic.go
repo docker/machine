@@ -98,18 +98,18 @@ func (provisioner *GenericProvisioner) GenerateDockerOptions(dockerPort int) (*D
 
 	engineConfigTmpl := `
 DOCKER_OPTS='
--H tcp://0.0.0.0:{{.DockerPort}}
--H unix:///var/run/docker.sock
---storage-driver {{.EngineOptions.StorageDriver}}
---tlsverify
---tlscacert {{.AuthOptions.CaCertRemotePath}}
---tlscert {{.AuthOptions.ServerCertRemotePath}}
---tlskey {{.AuthOptions.ServerKeyRemotePath}}
-{{ range .EngineOptions.Labels }}--label {{.}}
-{{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}}
-{{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}}
-{{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}}
-{{ end }}
+-H tcp://0.0.0.0:{{.DockerPort}} \
+-H unix:///var/run/docker.sock \
+--storage-driver {{.EngineOptions.StorageDriver}} \
+--tlsverify \
+--tlscacert {{.AuthOptions.CaCertRemotePath}} \
+--tlscert {{.AuthOptions.ServerCertRemotePath}} \
+--tlskey {{.AuthOptions.ServerKeyRemotePath}} \
+{{ range .EngineOptions.Labels }}--label {{.}} \
+{{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} \
+{{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} \
+{{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} \
+{{ end }} 
 '
 {{range .EngineOptions.Env}}export \"{{ printf "%q" . }}\"
 {{end}}
