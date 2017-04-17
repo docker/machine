@@ -69,4 +69,6 @@ uuid.action = "create"
 numvcpus = "{{.CPU}}"
 hgfs.mapRootShare = "FALSE"
 hgfs.linkRootShare = "FALSE"
+tools.syncTime = "TRUE"
+tools.syncTime.period = 1
 `
