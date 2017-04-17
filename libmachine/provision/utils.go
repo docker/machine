@@ -73,18 +73,20 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	log.Info("Copying certs to the local machine directory...")
+	if authOptions.StorePath != "" {
+		log.Info("Copying certs to the local machine directory...")
 
-	if err := mcnutils.CopyFile(authOptions.CaCertPath, filepath.Join(authOptions.StorePath, "ca.pem")); err != nil {
-		return fmt.Errorf("Copying ca.pem to machine dir failed: %s", err)
-	}
+		if err := mcnutils.CopyFile(authOptions.CaCertPath, filepath.Join(authOptions.StorePath, "ca.pem")); err != nil {
+			return fmt.Errorf("Copying ca.pem to machine dir failed: %s", err)
+		}
 
-	if err := mcnutils.CopyFile(authOptions.ClientCertPath, filepath.Join(authOptions.StorePath, "cert.pem")); err != nil {
-		return fmt.Errorf("Copying cert.pem to machine dir failed: %s", err)
-	}
+		if err := mcnutils.CopyFile(authOptions.ClientCertPath, filepath.Join(authOptions.StorePath, "cert.pem")); err != nil {
+			return fmt.Errorf("Copying cert.pem to machine dir failed: %s", err)
+		}
 
-	if err := mcnutils.CopyFile(authOptions.ClientKeyPath, filepath.Join(authOptions.StorePath, "key.pem")); err != nil {
-		return fmt.Errorf("Copying key.pem to machine dir failed: %s", err)
+		if err := mcnutils.CopyFile(authOptions.ClientKeyPath, filepath.Join(authOptions.StorePath, "key.pem")); err != nil {
+			return fmt.Errorf("Copying key.pem to machine dir failed: %s", err)
+		}
 	}
 
 	// The Host IP is always added to the certificate's SANs list
