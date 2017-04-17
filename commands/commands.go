@@ -127,7 +127,7 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 		return ErrHostLoad
 	}
 
-	if errs := runActionForeachMachine(actionName, hosts); len(errs) > 0 {
+	if errs := runActionForeachMachine(actionName, hosts); len(errs) > 0 && len(errs) == len(hosts) {
 		return consolidateErrs(errs)
 	}
 
@@ -135,6 +135,10 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 		if err := api.Save(h); err != nil {
 			return fmt.Errorf("Error saving host to store: %s", err)
 		}
+	}
+
+	for _, h := range hosts {
+		log.Infof("Successfully ran action %q on machine %q", actionName, h.Name)
 	}
 
 	return nil
