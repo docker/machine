@@ -154,8 +154,19 @@ func (provisioner *RedHatProvisioner) Provision(swarmOptions swarm.Options, auth
 		}
 	}
 
+	// configure dockers rpm repo
+	if err := provisioner.ConfigurePackageList(); err != nil {
+		return err
+	}
+
 	// update OS -- this is needed for libdevicemapper and the docker install
 	if _, err := provisioner.SSHCommand("sudo -E yum -y update -x docker-*"); err != nil {
+		return err
+	}
+
+	// try to install docker rpms via repo that provisioner.ConfigurePackageList created
+	// if that does not succed, installDocker will install generic or skip install if docker exists
+	if _, err := provisioner.SSHCommand("sudo -E yum -y -q install docker-engine"); err != nil {
 		return err
 	}
 
