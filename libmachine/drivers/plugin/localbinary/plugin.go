@@ -21,6 +21,7 @@ var (
 		"exoscale", "generic", "google", "hyperv", "none", "openstack",
 		"rackspace", "softlayer", "virtualbox", "vmwarefusion",
 		"vmwarevcloudair", "vmwarevsphere"}
+	PluginBinaryPrefix = "docker-machine-driver"
 )
 
 const (
@@ -96,7 +97,7 @@ func (e ErrPluginBinaryNotFound) Error() string {
 //  + If the driver is a core driver, there is no separate driver binary. We reuse current binary if it's `docker-machine`
 // or we assume `docker-machine` is in the PATH.
 //  + If the driver is NOT a core driver, then the separate binary must be in the PATH and it's name must be
-// `docker-machine-driver-driverName`
+// `$PluginBinaryPrefix-driverName`
 func driverPath(driverName string) string {
 	for _, coreDriver := range CoreDrivers {
 		if coreDriver == driverName {
@@ -108,7 +109,7 @@ func driverPath(driverName string) string {
 		}
 	}
 
-	return fmt.Sprintf("docker-machine-driver-%s", driverName)
+	return fmt.Sprintf("%s-%s", PluginBinaryPrefix, driverName)
 }
 
 func NewPlugin(driverName string) (*Plugin, error) {
