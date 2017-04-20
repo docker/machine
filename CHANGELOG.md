@@ -623,7 +623,7 @@ Core Stability and Driver Updates
 -   Support for system proxy environment
 -   New command to regenerate TLS certificates
     -   Note: this will restart the Docker engine to apply
--   Updates to driver operations (create, start, stop, etc) for better reliability
+-   Updates to driver operations (create, start, stop, and so on) for better reliability
 -   New internal `libmachine` package for internal api (not ready for public usage)
 -   Updated Driver Interface
     -   [Driver Spec](https://github.com/docker/machine/blob/master/docs/DRIVER_SPEC.md)
