@@ -596,7 +596,7 @@ func (c *GenericClient) SetTLSConfig(d *Driver) error {
 		config.RootCAs = certpool
 	}
 
-	transport := &http.Transport{TLSClientConfig: config}
+	transport := &http.Transport{TLSClientConfig: config, Proxy: http.ProxyFromEnvironment}
 	c.Provider.HTTPClient.Transport = transport
 	return nil
 }
