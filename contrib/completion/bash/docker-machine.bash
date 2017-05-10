@@ -187,7 +187,7 @@ _docker_machine_ssh() {
 
 _docker_machine_scp() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--help --recursive -r" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--delta -d --help --recursive -r" -- "${cur}"))
     else
         _filedir
         # It would be really nice to ssh to the machine and ls to complete
