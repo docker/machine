@@ -49,7 +49,7 @@ include mk/validate.mk
 default: build
 
 install:
-	cp $(PREFIX)/bin/docker-machine /usr/local/bin
+	cp $(PREFIX)/bin/$(PKG_NAME) /usr/local/bin
 
 clean: coverage-clean build-clean
 test: dco fmt test-short lint vet
