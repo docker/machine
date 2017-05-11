@@ -165,7 +165,7 @@ _docker_machine_regenerate_certs() {
     if [[ "${cur}" == -* ]]; then
         COMPREPLY=($(compgen -W "--force -f --help" -- "${cur}"))
     else
-        COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
+        COMPREPLY=($(compgen -W "$(_docker_machine_machines --filter state=Running)" -- "${cur}"))
     fi
 }
 
