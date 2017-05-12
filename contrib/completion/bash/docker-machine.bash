@@ -153,11 +153,19 @@ _docker_machine_ls() {
     fi
 }
 
+_docker_machine_provision() {
+    if [[ "${cur}" == -* ]]; then
+        COMPREPLY=($(compgen -W "--help" -- "${cur}"))
+    else
+        COMPREPLY=($(compgen -W "$(_docker_machine_machines --filter state=Running)" -- "${cur}"))
+    fi
+}
+
 _docker_machine_regenerate_certs() {
     if [[ "${cur}" == -* ]]; then
         COMPREPLY=($(compgen -W "--force -f --help" -- "${cur}"))
     else
-        COMPREPLY=($(compgen -W "$(_docker_machine_machines)" -- "${cur}"))
+        COMPREPLY=($(compgen -W "$(_docker_machine_machines --filter state=Running)" -- "${cur}"))
     fi
 }
 
@@ -266,7 +274,7 @@ _docker_machine_docker_machine() {
 
 _docker_machine() {
     COMPREPLY=()
-    local commands=(active config create env inspect ip kill ls regenerate-certs restart rm ssh scp start status stop upgrade url version help)
+    local commands=(active config create env inspect ip kill ls provision regenerate-certs restart rm ssh scp start status stop upgrade url version help)
 
     local flags=(--debug --native-ssh --github-api-token --bugsnag-api-token --help --version)
     local wants_dir=(--storage-path)
