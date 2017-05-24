@@ -196,6 +196,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if !d.UseExisting {
 		d.MachineType = flags.String("google-machine-type")
 		d.MachineImage = flags.String("google-machine-image")
+		d.MachineImage = strings.TrimPrefix(d.MachineImage, "https://www.googleapis.com/compute/v1/projects/")
 		d.DiskSize = flags.Int("google-disk-size")
 		d.DiskType = flags.String("google-disk-type")
 		d.Address = flags.String("google-address")
