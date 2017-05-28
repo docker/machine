@@ -1,0 +1,20 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "zbsrR7+F5D0v/tSQ0Ylugdm8SC4=",
+			"path": "github.com/bugsnag/panicwrap",
+			"revision": "aceac81c6e2f55f23844821679a0553b545e91df",
+			"revisionTime": "2016-01-18T15:44:47Z",
+			"version": "=1.1.0",
+			"versionExact": "1.1.0"
+		},
+		{
+			"path": "github.com/bugsnag/panicwrap/context",
+			"revision": "=v1.1.0",
+			"version": "=v1.1.0"
+		}
+	],
+	"rootPath": "github.com/dieterreuter/machine"
+}
