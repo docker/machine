@@ -79,13 +79,18 @@ func (c *contextCommandLine) Application() *cli.App {
 // arg, or the default host name if no host is specified.
 func targetHost(c CommandLine, api libmachine.API) (string, error) {
 	if len(c.Args()) == 0 {
-		defaultExists, err := api.Exists(defaultMachineName)
+		machineName := os.Getenv("MACHINE_NAME")
+		if machineName == "" {
+			machineName = defaultMachineName
+		}
+
+		defaultExists, err := api.Exists(machineName)
 		if err != nil {
-			return "", fmt.Errorf("Error checking if host %q exists: %s", defaultMachineName, err)
+			return "", fmt.Errorf("Error checking if host %q exists: %s", machineName, err)
 		}
 
 		if defaultExists {
-			return defaultMachineName, nil
+			return machineName, nil
 		}
 
 		return "", ErrNoDefault
