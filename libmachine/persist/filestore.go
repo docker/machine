@@ -49,10 +49,6 @@ func (s Filestore) saveToFile(data []byte, file string) error {
 		return err
 	}
 
-	if err = os.Remove(file); err != nil {
-		return err
-	}
-
 	if err = os.Rename(tmpfi.Name(), file); err != nil {
 		return err
 	}
