@@ -952,6 +952,7 @@ func (d *Driver) terminate() error {
 	})
 
 	if strings.HasPrefix(err.Error(), "unknown instance") {
+		log.Warn("Remote instance does not exist, proceeding with removing local reference")
 		return nil
 	}
 
