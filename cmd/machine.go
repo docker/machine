@@ -20,6 +20,7 @@ import (
 	"github.com/docker/machine/drivers/none"
 	"github.com/docker/machine/drivers/openstack"
 	"github.com/docker/machine/drivers/rackspace"
+	"github.com/docker/machine/drivers/sadeem"
 	"github.com/docker/machine/drivers/softlayer"
 	"github.com/docker/machine/drivers/virtualbox"
 	"github.com/docker/machine/drivers/vmwarefusion"
@@ -187,6 +188,8 @@ func runDriver(driverName string) {
 		plugin.RegisterDriver(openstack.NewDriver("", ""))
 	case "rackspace":
 		plugin.RegisterDriver(rackspace.NewDriver("", ""))
+	case "sadeem":
+		plugin.RegisterDriver(sadeem.NewDriver("", ""))
 	case "softlayer":
 		plugin.RegisterDriver(softlayer.NewDriver("", ""))
 	case "virtualbox":
