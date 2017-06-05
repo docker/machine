@@ -31,6 +31,7 @@ type Driver struct {
 	SSHKeyFingerprint string
 	SSHKey            string
 	Size              string
+	PrivateIPAddress  string
 	IPv6              bool
 	Backups           bool
 	PrivateNetworking bool
@@ -252,6 +253,10 @@ func (d *Driver) Create() error {
 			if network.Type == "public" {
 				d.IPAddress = network.IPAddress
 			}
+
+			if network.Type == "private" {
+				d.PrivateIPAddress = network.IPAddress
+			}
 		}
 
 		if d.IPAddress != "" {
@@ -261,9 +266,10 @@ func (d *Driver) Create() error {
 		time.Sleep(1 * time.Second)
 	}
 
-	log.Debugf("Created droplet ID %d, IP address %s",
+	log.Debugf("Created droplet ID %d, IP address %s, Private IP address %s",
 		newDroplet.ID,
-		d.IPAddress)
+		d.IPAddress,
+		d.PrivateIPAddress)
 
 	return nil
 }
