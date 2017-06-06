@@ -21,6 +21,32 @@ const (
 hostname: %s
 EOF
 `
+
+	cloudConfigTmpl = `sudo tee /var/tmp/cloudinit.yml << EOF
+#cloud-config
+
+coreos:
+  etcd:
+    discovery: {{.Token}}
+    addr: {{.IP}}:4001
+    peer-addr: {{.IP}}:7001
+    # give etcd more time if it's under heavy load - prevent leader election thrashing
+    peer-election-timeout: 4000
+    # heartbeat interval should ideally be 1/4 or 1/5 of peer election timeout
+    peer-heartbeat-interval: 1000
+    # don't keep all day in memory
+    snapshot: true
+  fleet:
+    public-ip: {{.IP}}
+    # allow etcd to slow down at times
+    etcd-request-timeout: 15
+  units:
+    - name: etcd.service
+      command: start
+    - name: fleet.service
+      command: start
+EOF
+`
 )
 
 func init() {
@@ -51,6 +77,43 @@ func (provisioner *CoreOSProvisioner) SetHostname(hostname string) error {
 	}
 
 	if _, err := provisioner.SSHCommand("sudo systemctl start system-cloudinit@var-tmp-hostname.yml.service"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (provisioner *CoreOSProvisioner) SetCloudInit(hostname string) error {
+	log.Debugf("SetCloudInit: %s", hostname)
+
+	ip, err := provisioner.Driver.GetIP()
+	if err != nil {
+		log.Fatalf("Could not get IP address for created machine: %s", err)
+	}
+
+	token, err := provisioner.SSHCommand("curl -sSL https://discovery.etcd.io/new?size=3")
+	if err != nil {
+		return err
+	}
+
+	data := map[string]interface{}{
+		"IP":       ip,
+		"HostName": hostname,
+		"Token":    token,
+	}
+
+	t := template.Must(template.New("cloudinit").Parse(cloudConfigTmpl))
+	buf := &bytes.Buffer{}
+	if err := t.Execute(buf, data); err != nil {
+		panic(err)
+	}
+	cloudConfigTmpl := buf.String()
+
+	if _, err := provisioner.SSHCommand(cloudConfigTmpl); err != nil {
+		return err
+	}
+
+	if _, err := provisioner.SSHCommand("sudo systemctl start system-cloudinit@var-tmp-cloudinit.yml.service"); err != nil {
 		return err
 	}
 
@@ -111,6 +174,10 @@ func (provisioner *CoreOSProvisioner) Provision(swarmOptions swarm.Options, auth
 	provisioner.EngineOptions = engineOptions
 
 	if err := provisioner.SetHostname(provisioner.Driver.GetMachineName()); err != nil {
+		return err
+	}
+
+	if err := provisioner.SetCloudInit(provisioner.Driver.GetMachineName()); err != nil {
 		return err
 	}
 
