@@ -14,7 +14,6 @@
 			"dgageot",
 			"ehazlett",
 			"jeanlaurent",
-			"nathanleclaire",
 		]
 
 [people]
@@ -39,8 +38,3 @@
 	Name = "Jean-Laurent de Morlhon"
 	Email = "jeanlaurent@docker.com>"
 	GitHub = "jeanlaurent"
-
-	[people.nathanleclaire]
-	Name = "Nathan LeClaire"
-	Email = "nathan.leclaire@docker.com"
-	GitHub = "nathanleclaire"
