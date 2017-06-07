@@ -64,5 +64,5 @@ __update_shell_prompt () {
     tput cup $((current_row-2)) 0 && tput el
 }
 
-bind '"\C-M":"\n __update_shell_prompt\n"'
+bind '"\e[C":"\n __update_shell_prompt\n"'
 
