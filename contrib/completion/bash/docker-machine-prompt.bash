@@ -66,4 +66,3 @@ __update_shell_prompt () {
 
 bind '"\C-M":"\n __update_shell_prompt\n"'
 
-
