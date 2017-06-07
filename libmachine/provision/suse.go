@@ -153,7 +153,13 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 	}
 
 	log.Debug("Installing docker")
-	if err := provisioner.Package("docker", pkgaction.Install); err != nil {
+	var packageName string
+	if strings.HasPrefix(provisioner.OsReleaseInfo.VersionID, "12")  {
+	    packageName = "docker"
+	} else {
+	    packageName = "docker-engine"
+	}
+	if err := provisioner.Package(packageName, pkgaction.Install); err != nil {
 		return err
 	}
 
