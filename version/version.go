@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	Version = "dev"
+	Version = "0.12.0-rc2"
 
 	// GitCommit will be overwritten automatically by the build system
 	GitCommit = "HEAD"
