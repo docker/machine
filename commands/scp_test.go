@@ -47,14 +47,16 @@ func (l *MockHostInfoLoader) load(name string) (HostInfo, error) {
 }
 
 func TestGetInfoForLocalScpArg(t *testing.T) {
-	host, path, opts, err := getInfoForScpArg("/tmp/foo", nil)
+	host, user, path, opts, err := getInfoForScpArg("/tmp/foo", nil)
 	assert.Nil(t, host)
+	assert.Empty(t, user)
 	assert.Equal(t, "/tmp/foo", path)
 	assert.Nil(t, opts)
 	assert.NoError(t, err)
 
-	host, path, opts, err = getInfoForScpArg("localhost:C:\\path", nil)
+	host, user, path, opts, err = getInfoForScpArg("localhost:C:\\path", nil)
 	assert.Nil(t, host)
+	assert.Empty(t, user)
 	assert.Equal(t, "C:\\path", path)
 	assert.Nil(t, opts)
 	assert.NoError(t, err)
@@ -65,20 +67,23 @@ func TestGetInfoForRemoteScpArg(t *testing.T) {
 		sshKeyPath: "/fake/keypath/id_rsa",
 	}}
 
-	host, path, opts, err := getInfoForScpArg("myfunhost:/home/docker/foo", &hostInfoLoader)
+	host, user, path, opts, err := getInfoForScpArg("myuser@myfunhost:/home/docker/foo", &hostInfoLoader)
 	assert.Equal(t, "myfunhost", host.GetMachineName())
+	assert.Equal(t, "myuser", user)
 	assert.Equal(t, "/home/docker/foo", path)
 	assert.Equal(t, []string{"-o", "IdentityFile=/fake/keypath/id_rsa"}, opts)
 	assert.NoError(t, err)
 
-	host, path, opts, err = getInfoForScpArg("myfunhost:C:\\path", &hostInfoLoader)
+	host, user, path, opts, err = getInfoForScpArg("myfunhost:C:\\path", &hostInfoLoader)
 	assert.Equal(t, "myfunhost", host.GetMachineName())
+	assert.Empty(t, user)
 	assert.Equal(t, "C:\\path", path)
+	assert.Equal(t, []string{"-o", "IdentityFile=/fake/keypath/id_rsa"}, opts)
 	assert.NoError(t, err)
 }
 
 func TestHostLocation(t *testing.T) {
-	arg, err := generateLocationArg(nil, "/home/docker/foo")
+	arg, err := generateLocationArg(nil, "user1", "/home/docker/foo")
 
 	assert.Equal(t, "/home/docker/foo", arg)
 	assert.NoError(t, err)
@@ -90,9 +95,14 @@ func TestRemoteLocation(t *testing.T) {
 		sshUsername: "root",
 	}
 
-	arg, err := generateLocationArg(&hostInfo, "/home/docker/foo")
+	arg, err := generateLocationArg(&hostInfo, "", "/home/docker/foo")
 
 	assert.Equal(t, "root@12.34.56.78:/home/docker/foo", arg)
+	assert.NoError(t, err)
+
+	argWithUser, err := generateLocationArg(&hostInfo, "user1", "/home/docker/foo")
+
+	assert.Equal(t, "user1@12.34.56.78:/home/docker/foo", argWithUser)
 	assert.NoError(t, err)
 }
 

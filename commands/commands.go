@@ -348,7 +348,7 @@ var Commands = []cli.Command{
 	{
 		Name:        "scp",
 		Usage:       "Copy files between machines",
-		Description: "Arguments are [machine:][path] [machine:][path].",
+		Description: "Arguments are [[user@]machine:][path] [[user@]machine:][path].",
 		Action:      runCommand(cmdScp),
 		Flags: []cli.Flag{
 			cli.BoolFlag{

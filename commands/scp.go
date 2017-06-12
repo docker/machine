@@ -89,12 +89,12 @@ func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader Host
 		}
 	}
 
-	srcHost, srcPath, srcOpts, err := getInfoForScpArg(src, hostInfoLoader)
+	srcHost, srcUser, srcPath, srcOpts, err := getInfoForScpArg(src, hostInfoLoader)
 	if err != nil {
 		return nil, err
 	}
 
-	destHost, destPath, destOpts, err := getInfoForScpArg(dest, hostInfoLoader)
+	destHost, destUser, destPath, destOpts, err := getInfoForScpArg(dest, hostInfoLoader)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader Host
 	sshArgs = append(sshArgs, destOpts...)
 
 	// Append actual arguments for the scp command (i.e. docker@<ip>:/path)
-	locationArg, err := generateLocationArg(srcHost, srcPath)
+	locationArg, err := generateLocationArg(srcHost, srcUser, srcPath)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader Host
 	}
 
 	sshArgs = append(sshArgs, locationArg)
-	locationArg, err = generateLocationArg(destHost, destPath)
+	locationArg, err = generateLocationArg(destHost, destUser, destPath)
 	if err != nil {
 		return nil, err
 	}
@@ -147,40 +147,43 @@ func missesExplicitSSHKey(hostInfo HostInfo) bool {
 	return hostInfo != nil && hostInfo.GetSSHKeyPath() == ""
 }
 
-func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (HostInfo, string, []string, error) {
+func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (h HostInfo, user string, path string, args []string, err error) {
 	// Local path.  e.g. "/tmp/foo"
 	if !strings.Contains(hostAndPath, ":") {
-		return nil, hostAndPath, nil, nil
+		return nil, "", hostAndPath, nil, nil
 	}
 
 	// Path with hostname.  e.g. "hostname:/usr/bin/cmatrix"
 	parts := strings.SplitN(hostAndPath, ":", 2)
 	hostName := parts[0]
-	path := parts[1]
+	if hParts := strings.SplitN(hostName, "@", 2); len(hParts) == 2 {
+		user, hostName = hParts[0], hParts[1]
+	}
+	path = parts[1]
 	if hostName == "localhost" {
-		return nil, path, nil, nil
+		return nil, "", path, nil, nil
 	}
 
 	// Remote path
-	hostInfo, err := hostInfoLoader.load(hostName)
+	h, err = hostInfoLoader.load(hostName)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("Error loading host: %s", err)
+		return nil, "", "", nil, fmt.Errorf("Error loading host: %s", err)
 	}
 
-	args := []string{}
-	port, err := hostInfo.GetSSHPort()
+	args = []string{}
+	port, err := h.GetSSHPort()
 	if err == nil && port > 0 {
 		args = append(args, "-o", fmt.Sprintf("Port=%v", port))
 	}
 
-	if hostInfo.GetSSHKeyPath() != "" {
-		args = append(args, "-o", fmt.Sprintf("IdentityFile=%s", hostInfo.GetSSHKeyPath()))
+	if h.GetSSHKeyPath() != "" {
+		args = append(args, "-o", fmt.Sprintf("IdentityFile=%s", h.GetSSHKeyPath()))
 	}
 
-	return hostInfo, path, args, nil
+	return
 }
 
-func generateLocationArg(hostInfo HostInfo, path string) (string, error) {
+func generateLocationArg(hostInfo HostInfo, user, path string) (string, error) {
 	if hostInfo == nil {
 		return path, nil
 	}
@@ -190,7 +193,10 @@ func generateLocationArg(hostInfo HostInfo, path string) (string, error) {
 		return "", err
 	}
 
-	location := fmt.Sprintf("%s@%s:%s", hostInfo.GetSSHUsername(), hostname, path)
+	if user == "" {
+		user = hostInfo.GetSSHUsername()
+	}
+	location := fmt.Sprintf("%s@%s:%s", user, hostname, path)
 	return location, nil
 }
 
