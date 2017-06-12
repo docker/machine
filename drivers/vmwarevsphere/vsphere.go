@@ -329,14 +329,14 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-    var hs *object.HostSystem
-    if d.HostSystem != "" {
-        var err error
-        hs, err = f.HostSystemOrDefault(ctx, d.HostSystem)
-        if err != nil {
-            return err
-        }
-    }
+	var hs *object.HostSystem
+	if d.HostSystem != "" {
+		var err error
+		hs, err = f.HostSystemOrDefault(ctx, d.HostSystem)
+		if err != nil {
+			return err
+		}
+	}
 
 	// ResourcePool
 	if d.Pool != "" {
@@ -350,13 +350,11 @@ func (d *Driver) PreCreateCheck() error {
 			return err
 		}
 	} else {
-        // Pick the default Resource Pool for the Datacenter.
-        if _, err := f.DefaultResourcePool(ctx); err != nil {
-            return err
-        }
-    }
-
-
+		// Pick the default Resource Pool for the Datacenter.
+		if _, err := f.DefaultResourcePool(ctx); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -407,13 +405,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-    var hs *object.HostSystem
-    if d.HostSystem != "" {
-        var err error
-        hs, err = f.HostSystemOrDefault(ctx, d.HostSystem)
-        if err != nil {
-            return err
-        }
+	var hs *object.HostSystem
+	if d.HostSystem != "" {
+		var err error
+		hs, err = f.HostSystemOrDefault(ctx, d.HostSystem)
+		if err != nil {
+			return err
+		}
 	}
 
 	var rp *object.ResourcePool
@@ -430,13 +428,12 @@ func (d *Driver) Create() error {
 			return err
 		}
 	} else {
-        // Pick the default Resource Pool for the Datacenter.
-        rp, err = f.DefaultResourcePool(ctx)
-        if err != nil {
-            return err
-        }
-    }
-
+		// Pick the default Resource Pool for the Datacenter.
+		rp, err = f.DefaultResourcePool(ctx)
+		if err != nil {
+			return err
+		}
+	}
 
 	spec := types.VirtualMachineConfigSpec{
 		Name:     d.MachineName,
