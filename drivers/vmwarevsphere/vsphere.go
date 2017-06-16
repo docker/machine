@@ -56,7 +56,8 @@ type Driver struct {
 	Port       int
 	Username   string
 	Password   string
-	Network    []string
+	Network    string
+	Networks   []string
 	Datastore  string
 	Datacenter string
 	Pool       string
@@ -193,7 +194,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Port = flags.Int("vmwarevsphere-vcenter-port")
 	d.Username = flags.String("vmwarevsphere-username")
 	d.Password = flags.String("vmwarevsphere-password")
-	d.Network = flags.StringSlice("vmwarevsphere-network")
+	d.Networks = flags.StringSlice("vmwarevsphere-network")
 	d.Datastore = flags.String("vmwarevsphere-datastore")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	d.Pool = flags.String("vmwarevsphere-pool")
@@ -325,16 +326,19 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	if len(d.Network) == 0 {
+	// TODO: if the user has both the VSPHERE_NETWORK defined and adds --vmwarevsphere-network
+	//       both are used at the same time - probably should detect that and remove the one from ENV
+	if len(d.Networks) == 0 {
 		// machine assumes there will be a network
-		// TODO: ask the API what the default network is called.
-		d.Network = append(d.Network, "VM Network")
+		d.Networks = append(d.Networks, "VM Network")
 	}
-	for _, netName := range d.Network {
+	for _, netName := range d.Networks {
 		if _, err := f.NetworkOrDefault(ctx, netName); err != nil {
 			return err
 		}
 	}
+	// d.Network needs to remain a string to cope with existing machines :/
+	d.Network = d.Networks[0]
 
 	hs, err := f.HostSystemOrDefault(ctx, d.HostSystem)
 	if err != nil {
@@ -399,7 +403,7 @@ func (d *Driver) Create() error {
 	}
 
 	networks := make(map[string]object.NetworkReference)
-	for _, netName := range d.Network {
+	for _, netName := range d.Networks {
 		net, err := f.NetworkOrDefault(ctx, netName)
 		if err != nil {
 			return err
@@ -501,7 +505,7 @@ func (d *Driver) Create() error {
 
 	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename))))
 
-	for _, netName := range d.Network {
+	for _, netName := range d.Networks {
 		backing, err := networks[netName].EthernetCardBackingInfo(ctx)
 		if err != nil {
 			return err
