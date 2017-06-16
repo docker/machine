@@ -56,7 +56,7 @@ type Driver struct {
 	Port       int
 	Username   string
 	Password   string
-	Network    string
+	Network    []string
 	Datastore  string
 	Datacenter string
 	Pool       string
@@ -122,7 +122,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "vmwarevsphere-password",
 			Usage:  "vSphere password",
 		},
-		mcnflag.StringFlag{
+		mcnflag.StringSliceFlag{
 			EnvVar: "VSPHERE_NETWORK",
 			Name:   "vmwarevsphere-network",
 			Usage:  "vSphere network where the docker VM will be attached",
@@ -193,7 +193,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Port = flags.Int("vmwarevsphere-vcenter-port")
 	d.Username = flags.String("vmwarevsphere-username")
 	d.Password = flags.String("vmwarevsphere-password")
-	d.Network = flags.String("vmwarevsphere-network")
+	d.Network = flags.StringSlice("vmwarevsphere-network")
 	d.Datastore = flags.String("vmwarevsphere-datastore")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	d.Pool = flags.String("vmwarevsphere-pool")
@@ -325,8 +325,15 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	if _, err := f.NetworkOrDefault(ctx, d.Network); err != nil {
-		return err
+	if len(d.Network) == 0 {
+		// machine assumes there will be a network
+		// TODO: ask the API what the default network is called.
+		d.Network = append(d.Network, "VM Network")
+	}
+	for _, netName := range d.Network {
+		if _, err := f.NetworkOrDefault(ctx, netName); err != nil {
+			return err
+		}
 	}
 
 	hs, err := f.HostSystemOrDefault(ctx, d.HostSystem)
@@ -391,9 +398,13 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	net, err := f.NetworkOrDefault(ctx, d.Network)
-	if err != nil {
-		return err
+	networks := make(map[string]object.NetworkReference)
+	for _, netName := range d.Network {
+		net, err := f.NetworkOrDefault(ctx, netName)
+		if err != nil {
+			return err
+		}
+		networks[netName] = net
 	}
 
 	hs, err := f.HostSystemOrDefault(ctx, d.HostSystem)
@@ -490,18 +501,22 @@ func (d *Driver) Create() error {
 
 	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename))))
 
-	backing, err := net.EthernetCardBackingInfo(ctx)
-	if err != nil {
-		return err
+	for _, netName := range d.Network {
+		backing, err := networks[netName].EthernetCardBackingInfo(ctx)
+		if err != nil {
+			return err
+		}
+
+		netdev, err := object.EthernetCardTypes().CreateEthernetCard("vmxnet3", backing)
+		if err != nil {
+			return err
+		}
+
+		log.Infof("adding network: %s", netName)
+		add = append(add, netdev)
 	}
 
-	netdev, err := object.EthernetCardTypes().CreateEthernetCard("vmxnet3", backing)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Reconfiguring VM...")
-	add = append(add, netdev)
+	log.Infof("Reconfiguring VM")
 	if vm.AddDevice(ctx, add...); err != nil {
 		return err
 	}
