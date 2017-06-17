@@ -61,6 +61,7 @@ type Driver struct {
 	Datacenter string
 	Pool       string
 	HostSystem string
+	CfgParams  []string
 
 	SSHPassword string
 }
@@ -147,6 +148,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "vmwarevsphere-hostsystem",
 			Usage:  "vSphere compute resource where the docker VM will be instantiated (use <cluster>/* or <cluster>/<host> if using a cluster)",
 		},
+		mcnflag.StringSliceFlag{
+			EnvVar: "VSPHERE_CFGPARAM",
+			Name:   "vmwarevsphere-cfgparam",
+			Usage:  "vSphere vm configuration parameters (used for guestinfo)",
+		},
 	}
 }
 
@@ -198,6 +204,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	d.Pool = flags.String("vmwarevsphere-pool")
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
+	d.CfgParams = flags.StringSlice("vmwarevsphere-cfgparam")
 	d.SetSwarmConfigFromFlags(flags)
 
 	d.ISO = d.ResolveStorePath(isoFilename)
@@ -505,6 +512,30 @@ func (d *Driver) Create() error {
 	if vm.AddDevice(ctx, add...); err != nil {
 		return err
 	}
+
+	// Adding some guestinfo data
+	var opts []types.BaseOptionValue
+	for _, param := range d.CfgParams {
+		v := strings.SplitN(param, "=", 2)
+		key := v[0]
+		value := ""
+		if len(v) > 1 {
+			value = v[1]
+		}
+		fmt.Printf("Setting %s to %s\n", key, value)
+		opts = append(opts, &types.OptionValue{
+			Key:   key,
+			Value: value,
+		})
+	}
+
+	task, err = vm.Reconfigure(ctx, types.VirtualMachineConfigSpec{
+		ExtraConfig: opts,
+	})
+	if err != nil {
+		return err
+	}
+	task.Wait(ctx)
 
 	if err := d.Start(); err != nil {
 		return err
