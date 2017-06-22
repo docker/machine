@@ -951,13 +951,13 @@ func (d *Driver) terminate() error {
 		InstanceIds: []*string{&d.InstanceId},
 	})
 
-	if strings.HasPrefix(err.Error(), "unknown instance") ||
-		strings.HasPrefix(err.Error(), "InvalidInstanceID.NotFound") {
-		log.Warn("Remote instance does not exist, proceeding with removing local reference")
-		return nil
-	}
-
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "unknown instance") ||
+			strings.HasPrefix(err.Error(), "InvalidInstanceID.NotFound") {
+			log.Warn("Remote instance does not exist, proceeding with removing local reference")
+			return nil
+		}
+		
 		return fmt.Errorf("unable to terminate instance: %s", err)
 	}
 	return nil
