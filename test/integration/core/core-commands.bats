@@ -102,17 +102,16 @@ use_shared_machine
   [[ ${output} == *"Host is not running"* ]]
 }
 
-
-@test "$DRIVER: machine should not allow upgrade when stopped" {
+@test "$DRIVER: machine should upgrade even when machine is stopped" {
   run machine upgrade $NAME
   echo ${output}
-  [[ "$status" -eq 1 ]]
+  [[ "$status" -eq 0 ]]
 }
 
-@test "$DRIVER: start" {
+@test "$DRIVER: start should show an error after upgrade" {
   run machine start $NAME
   echo ${output}
-  [ "$status" -eq 0  ]
+  [ "$status" -eq 1  ]
 }
 
 @test "$DRIVER: machine should show running after start" {
