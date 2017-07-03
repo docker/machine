@@ -558,6 +558,7 @@ func (d *Driver) Base64UserData() (userdata string, err error) {
 	if d.UserDataFile != "" {
 		buf, ioerr := ioutil.ReadFile(d.UserDataFile)
 		if ioerr != nil {
+			log.Warnf("failed to read user data file %q: %s", d.UserDataFile, ioerr)
 			err = errorReadingUserData
 			return
 		}
