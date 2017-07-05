@@ -22,6 +22,7 @@ const (
 	CertAlgoECDSA256v01 = "ecdsa-sha2-nistp256-cert-v01@openssh.com"
 	CertAlgoECDSA384v01 = "ecdsa-sha2-nistp384-cert-v01@openssh.com"
 	CertAlgoECDSA521v01 = "ecdsa-sha2-nistp521-cert-v01@openssh.com"
+	CertAlgoED25519v01  = "ssh-ed25519-cert-v01@openssh.com"
 )
 
 // Certificate types distinguish between host and user
@@ -250,10 +251,18 @@ type CertChecker struct {
 	// for user certificates.
 	SupportedCriticalOptions []string
 
-	// IsAuthority should return true if the key is recognized as
-	// an authority. This allows for certificates to be signed by other
-	// certificates.
-	IsAuthority func(auth PublicKey) bool
+	// IsUserAuthority should return true if the key is recognized as an
+	// authority for the given user certificate. This allows for
+	// certificates to be signed by other certificates. This must be set
+	// if this CertChecker will be checking user certificates.
+	IsUserAuthority func(auth PublicKey) bool
+
+	// IsHostAuthority should report whether the key is recognized as
+	// an authority for this host. This allows for certificates to be
+	// signed by other keys, and for those other keys to only be valid
+	// signers for particular hostnames. This must be set if this
+	// CertChecker will be checking host certificates.
+	IsHostAuthority func(auth PublicKey, address string) bool
 
 	// Clock is used for verifying time stamps. If nil, time.Now
 	// is used.
@@ -267,7 +276,7 @@ type CertChecker struct {
 	// HostKeyFallback is called when CertChecker.CheckHostKey encounters a
 	// public key that is not a certificate. It must implement host key
 	// validation or else, if nil, all such keys are rejected.
-	HostKeyFallback func(addr string, remote net.Addr, key PublicKey) error
+	HostKeyFallback HostKeyCallback
 
 	// IsRevoked is called for each certificate so that revocation checking
 	// can be implemented. It should return true if the given certificate
@@ -289,8 +298,17 @@ func (c *CertChecker) CheckHostKey(addr string, remote net.Addr, key PublicKey) 
 	if cert.CertType != HostCert {
 		return fmt.Errorf("ssh: certificate presented as a host key has type %d", cert.CertType)
 	}
+	if !c.IsHostAuthority(cert.SignatureKey, addr) {
+		return fmt.Errorf("ssh: no authorities for hostname: %v", addr)
+	}
 
-	return c.CheckCert(addr, cert)
+	hostname, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return err
+	}
+
+	// Pass hostname only as principal for host certificates (consistent with OpenSSH)
+	return c.CheckCert(hostname, cert)
 }
 
 // Authenticate checks a user certificate. Authenticate can be used as
@@ -306,6 +324,9 @@ func (c *CertChecker) Authenticate(conn ConnMetadata, pubKey PublicKey) (*Permis
 
 	if cert.CertType != UserCert {
 		return nil, fmt.Errorf("ssh: cert has type %d", cert.CertType)
+	}
+	if !c.IsUserAuthority(cert.SignatureKey) {
+		return nil, fmt.Errorf("ssh: certificate signed by unrecognized authority")
 	}
 
 	if err := c.CheckCert(conn.User(), cert); err != nil {
@@ -355,10 +376,6 @@ func (c *CertChecker) CheckCert(principal string, cert *Certificate) error {
 		}
 	}
 
-	if !c.IsAuthority(cert.SignatureKey) {
-		return fmt.Errorf("ssh: certificate signed by unrecognized authority")
-	}
-
 	clock := c.Clock
 	if clock == nil {
 		clock = time.Now
@@ -401,6 +418,7 @@ var certAlgoNames = map[string]string{
 	KeyAlgoECDSA256: CertAlgoECDSA256v01,
 	KeyAlgoECDSA384: CertAlgoECDSA384v01,
 	KeyAlgoECDSA521: CertAlgoECDSA521v01,
+	KeyAlgoED25519:  CertAlgoED25519v01,
 }
 
 // certToPrivAlgo returns the underlying algorithm for a certificate algorithm.
@@ -459,7 +477,7 @@ func (c *Certificate) Marshal() []byte {
 func (c *Certificate) Type() string {
 	algo, ok := certAlgoNames[c.Key.Type()]
 	if !ok {
-		panic("unknown cert key type")
+		panic("unknown cert key type " + c.Key.Type())
 	}
 	return algo
 }
