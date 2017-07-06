@@ -638,7 +638,7 @@ func (d *Driver) Create() error {
 	var env []string
 	guestspec := types.GuestProgramSpec{
 		ProgramPath:      "/usr/bin/sudo",
-		Arguments:        "/usr/bin/sudo /bin/sh -c \"tar xvf userdata.tar -C /home/docker > /var/log/userdata.log 2>&1 && chown -R docker:staff /home/docker\"",
+		Arguments:        "/usr/bin/sudo /bin/sh -c \"tar xvf /home/docker/userdata.tar -C /home/docker > /var/log/userdata.log 2>&1 && chown -R docker:staff /home/docker\"",
 		WorkingDirectory: "",
 		EnvVariables:     env,
 	}
