@@ -957,7 +957,7 @@ func (d *Driver) terminate() error {
 			log.Warn("Remote instance does not exist, proceeding with removing local reference")
 			return nil
 		}
-		
+
 		return fmt.Errorf("unable to terminate instance: %s", err)
 	}
 	return nil
