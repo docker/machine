@@ -118,9 +118,13 @@ func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.Options, aut
 		}
 	}
 
-	log.Debugf("Selecting docker engine: %s", engineOptions.InstallURL)
-	if err := selectDocker(provisioner, engineOptions.InstallURL); err != nil {
-		return err
+	if engineOptions.InstallURL == drivers.DefaultEngineInstallURL {
+		log.Debugf("Skipping docker engine default: %s", engineOptions.InstallURL)
+	} else {
+		log.Debugf("Selecting docker engine: %s", engineOptions.InstallURL)
+		if err := selectDocker(provisioner, engineOptions.InstallURL); err != nil {
+			return err
+		}
 	}
 
 	log.Debugf("Preparing certificates")
