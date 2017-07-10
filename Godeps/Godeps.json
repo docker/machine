@@ -547,15 +547,15 @@
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
-			"Rev": "beef0f4390813b96e8e68fd78570396d0f4751fc"
+			"Rev": "51714a8c4ac1764f07ab4127d7f739351ced4759"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
-			"Rev": "beef0f4390813b96e8e68fd78570396d0f4751fc"
+			"Rev": "51714a8c4ac1764f07ab4127d7f739351ced4759"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
-			"Rev": "beef0f4390813b96e8e68fd78570396d0f4751fc"
+			"Rev": "51714a8c4ac1764f07ab4127d7f739351ced4759"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
@@ -644,6 +644,14 @@
 		{
 			"ImportPath": "google.golang.org/cloud/internal",
 			"Rev": "975617b05ea8a58727e6c1a06b6161ff4185a9f2"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ed25519",
+			"Rev": "51714a8c4ac1764f07ab4127d7f739351ced4759"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ed25519/internal/edwards25519",
+			"Rev": "51714a8c4ac1764f07ab4127d7f739351ced4759"
 		}
 	]
 }
