@@ -62,7 +62,7 @@ _docker_machine_value_of_option() {
 }
 
 # Returns `key` if we are currently completing the value of a map option
-# (`key=value`) which matches the extglob passed in as an argument.
+# (`key=value`) which matches the glob passed in as an argument.
 # This function is needed for key-specific argument completions.
 _docker_machine_map_key_of_current_option() {
     local glob="$1"
@@ -83,7 +83,7 @@ _docker_machine_map_key_of_current_option() {
 
     [ "${words[$glob_pos]}" = "=" ] && ((glob_pos--))  # --option=key=value syntax
 
-    [[ ${words[$glob_pos]} == @($glob) ]] && echo "$key"
+    [[ ${words[$glob_pos]} == $glob ]] && echo "$key"
 }
 
 # --- completion functions ---------------------------------------------------
