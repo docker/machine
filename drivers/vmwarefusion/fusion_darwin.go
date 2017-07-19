@@ -536,7 +536,7 @@ func (d *Driver) getIPfromVmnetConfigurationFile(conffile, macaddr string) (stri
 		return "", err
 	}
 
-	// find all occurences of 'host .* { .. }' and extract
+	// find all occurrences of 'host .* { .. }' and extract
 	// out of the inner block the MAC and IP addresses
 
 	// key = MAC, value = IP

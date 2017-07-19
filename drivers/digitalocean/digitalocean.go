@@ -177,7 +177,7 @@ func (d *Driver) PreCreateCheck() error {
 
 	if d.SSHKey != "" {
 		if d.SSHKeyFingerprint == "" {
-			return fmt.Errorf("ssh-key-fingerpint needs to be provided for %q", d.SSHKey)
+			return fmt.Errorf("ssh-key-fingerprint needs to be provided for %q", d.SSHKey)
 		}
 
 		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
