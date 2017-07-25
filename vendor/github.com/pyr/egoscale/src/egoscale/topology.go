@@ -142,7 +142,7 @@ func (exo *Client) GetImages() (map[string]map[int]string, error) {
 	images = make(map[string]map[int]string)
 
 	params := url.Values{}
-	params.Set("templatefilter", "executable")
+	params.Set("templatefilter", "featured")
 
 	resp, err := exo.Request("listTemplates", params)
 
