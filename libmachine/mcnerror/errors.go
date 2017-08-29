@@ -17,7 +17,7 @@ type ErrHostDoesNotExist struct {
 }
 
 func (e ErrHostDoesNotExist) Error() string {
-	return fmt.Sprintf("Docker machine %q does not exist", e.Name)
+	return fmt.Sprintf("Docker machine \"%q\" does not exist", e.Name)
 }
 
 type ErrHostAlreadyExists struct {
@@ -25,7 +25,7 @@ type ErrHostAlreadyExists struct {
 }
 
 func (e ErrHostAlreadyExists) Error() string {
-	return fmt.Sprintf("Docker machine %q already exists", e.Name)
+	return fmt.Sprintf("Docker machine \"%q\" already exists", e.Name)
 }
 
 type ErrDuringPreCreate struct {
