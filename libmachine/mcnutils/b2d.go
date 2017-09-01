@@ -307,14 +307,16 @@ func (b *b2dISO) version() (string, error) {
 
 	fullVersion := string(isoMetadata)
 
-	versionIndex := strings.Index(fullVersion, versionPrefix)
+	trimmedVersion := strings.TrimSpace( fullVersion )
+
+	versionIndex := strings.Index(trimmedVersion, versionPrefix)
 	if versionIndex == -1 {
 		return "", fmt.Errorf("Did not find prefix %q in version string", versionPrefix)
 	}
 
 	// Original magic file string looks similar to this: "Boot2Docker-v0.1.0              "
 	// This will return "v0.1.0" given the above string
-	vers := strings.TrimSpace(fullVersion)[versionIndex+1:]
+	vers := trimmedVersion[versionIndex+1:]
 
 	log.Debug("local Boot2Docker ISO version: ", vers)
 	return vers, nil
