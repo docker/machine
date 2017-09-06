@@ -232,23 +232,40 @@ func (a AzureClient) GetSubnet(resourceGroup, virtualNetwork, name string) (netw
 	return a.subnetsClient().Get(resourceGroup, virtualNetwork, name, "")
 }
 
+// CreateSubnet creates or updates a subnet if it does not already exist.
 func (a AzureClient) CreateSubnet(ctx *DeploymentContext, resourceGroup, virtualNetwork, name, subnetPrefix string) error {
-	log.Info("Configuring subnet.", logutil.Fields{
-		"name": name,
-		"vnet": virtualNetwork,
-		"cidr": subnetPrefix})
-	_, err := a.subnetsClient().CreateOrUpdate(resourceGroup, virtualNetwork, name,
-		network.Subnet{
-			Properties: &network.SubnetPropertiesFormat{
-				AddressPrefix: to.StringPtr(subnetPrefix),
-			},
-		}, nil)
-	if err != nil {
+	subnet, err := a.GetSubnet(resourceGroup, virtualNetwork, name)
+	if err == nil {
+		log.Info("Subnet already exists.")
+		ctx.SubnetID = to.String(subnet.ID)
 		return err
 	}
-	subnet, err := a.subnetsClient().Get(resourceGroup, virtualNetwork, name, "")
-	ctx.SubnetID = to.String(subnet.ID)
+
+	// If the subnet is not found, create it
+	if err.(autorest.DetailedError).StatusCode == 404 {
+		log.Info("Configuring subnet.", logutil.Fields{
+			"name": name,
+			"vnet": virtualNetwork,
+			"cidr": subnetPrefix})
+		_, err = a.subnetsClient().CreateOrUpdate(resourceGroup, virtualNetwork, name,
+			network.Subnet{
+				Properties: &network.SubnetPropertiesFormat{
+					AddressPrefix: to.StringPtr(subnetPrefix),
+				},
+			}, nil)
+
+		if err != nil {
+			return err
+		}
+
+		subnet, err = a.subnetsClient().Get(resourceGroup, virtualNetwork, name, "")
+		ctx.SubnetID = to.String(subnet.ID)
+		return err
+	}
+
+	log.Warn("Create subnet operation error %v: ", err)
 	return err
+
 }
 
 // CleanupSubnetIfExists removes a subnet if there are no IP configurations
