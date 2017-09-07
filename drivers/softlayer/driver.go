@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -28,7 +29,7 @@ type Driver struct {
 }
 
 type deviceConfig struct {
-	DiskSize        int
+	DiskSize        []string
 	Cpu             int
 	Hostname        string
 	Domain          string
@@ -45,7 +46,7 @@ type deviceConfig struct {
 
 const (
 	defaultMemory          = 1024
-	defaultDiskSize        = 0
+	defaultDiskSize        = "0"
 	defaultRegion          = "dal01"
 	defaultCpus            = 1
 	defaultImage           = "UBUNTU_LATEST"
@@ -61,7 +62,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		},
 		deviceConfig: &deviceConfig{
 			HourlyBilling:   true,
-			DiskSize:        defaultDiskSize,
+			DiskSize:        []string{defaultDiskSize},
 			Image:           defaultImage,
 			Memory:          defaultMemory,
 			Cpu:             defaultCpus,
@@ -93,11 +94,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Memory in MB for machine",
 			Value:  defaultMemory,
 		},
-		mcnflag.IntFlag{
+		mcnflag.StringSliceFlag{
 			EnvVar: "SOFTLAYER_DISK_SIZE",
 			Name:   "softlayer-disk-size",
 			Usage:  "Disk size for machine, a value of 0 uses the default size on softlayer",
-			Value:  defaultDiskSize,
+			Value:  []string{defaultDiskSize},
 		},
 		mcnflag.StringFlag{
 			EnvVar: "SOFTLAYER_USER",
@@ -236,7 +237,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.deviceConfig = &deviceConfig{
 		Hostname:        flags.String("softlayer-hostname"),
-		DiskSize:        flags.Int("softlayer-disk-size"),
+		DiskSize:        flags.StringSlice("softlayer-disk-size"),
 		Cpu:             flags.Int("softlayer-cpu"),
 		Domain:          flags.String("softlayer-domain"),
 		Memory:          flags.Int("softlayer-memory"),
@@ -452,8 +453,16 @@ func (d *Driver) buildHostSpec() *HostSpec {
 	if d.deviceConfig.NetworkMaxSpeed > 0 {
 		spec.NetworkMaxSpeeds = []NetworkMaxSpeed{{MaxSpeed: d.deviceConfig.NetworkMaxSpeed}}
 	}
-	if d.deviceConfig.DiskSize > 0 {
-		spec.BlockDevices = []BlockDevice{{Device: "0", DiskImage: DiskImage{Capacity: d.deviceConfig.DiskSize}}}
+	if len(d.deviceConfig.DiskSize) > 0 {
+		var size, _ = strconv.Atoi(d.deviceConfig.DiskSize[0])
+		spec.BlockDevices = []BlockDevice{{Device: "0", DiskImage: DiskImage{Capacity: size}}}
+
+		for i, size := range d.deviceConfig.DiskSize[1:] {
+			var deviceNumber = strconv.Itoa(i + 2)
+			var intSize, _ = strconv.Atoi(size)
+			spec.BlockDevices = append(spec.BlockDevices,
+				BlockDevice{Device: deviceNumber, DiskImage: DiskImage{Capacity: intSize}})
+		}
 	}
 	if d.deviceConfig.PublicVLAN > 0 {
 		spec.PrimaryNetworkComponent = &NetworkComponent{
