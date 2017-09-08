@@ -460,6 +460,22 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 	if err != nil {
 		log.Debugf("Container remove happened: %v", ok)
 	}
+
+	cts, err := bs.GetBlobService().ListContainers(blobstorage.ListContainersParameters{})
+	if err != nil {
+		return err
+	}
+
+	if len(cts.Containers) == 0 {
+		log.Debugf("No storage containers left. Deleting virtual machine storage account.")
+		resp, err := a.storageAccountsClient().Delete(resourceGroup, storageAccount)
+		if err != nil {
+			return err
+		}
+
+		log.Debugf("Storage account deletion happened: %v", resp.Response.Status)
+	}
+
 	return err
 }
 
