@@ -326,7 +326,7 @@
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
 		{
-			"ImportPath": "github.com/pyr/egoscale/src/egoscale",
+			"ImportPath": "github.com/exoscale/egoscale/src/egoscale",
 			"Rev": "6d4bce648770ef59cc1356b9207afaffe93dcb09"
 		},
 		{
