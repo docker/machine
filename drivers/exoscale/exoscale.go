@@ -154,10 +154,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 	d.SecurityGroup = strings.Join(securityGroups, ",")
 	affinityGroups := flags.StringSlice("exoscale-affinity-group")
-	if len(affinityGroups) == 0 {
-		affinityGroups = []string{"docker-machine"}
+	if len(affinityGroups) > 0 {
+		d.AffinityGroup = strings.Join(affinityGroups, ",")
 	}
-	d.AffinityGroup = strings.Join(affinityGroups, ",")
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
 	d.SSHUser = flags.String("exoscale-ssh-user")
 	d.UserDataFile = flags.String("exoscale-userdata")
