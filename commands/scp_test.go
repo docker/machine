@@ -71,14 +71,14 @@ func TestGetInfoForRemoteScpArg(t *testing.T) {
 	assert.Equal(t, "myfunhost", host.GetMachineName())
 	assert.Equal(t, "myuser", user)
 	assert.Equal(t, "/home/docker/foo", path)
-	assert.Equal(t, []string{"-o", "IdentityFile=/fake/keypath/id_rsa"}, opts)
+	assert.Equal(t, []string{"-o", `IdentityFile="/fake/keypath/id_rsa"`}, opts)
 	assert.NoError(t, err)
 
 	host, user, path, opts, err = getInfoForScpArg("myfunhost:C:\\path", &hostInfoLoader)
 	assert.Equal(t, "myfunhost", host.GetMachineName())
 	assert.Empty(t, user)
 	assert.Equal(t, "C:\\path", path)
-	assert.Equal(t, []string{"-o", "IdentityFile=/fake/keypath/id_rsa"}, opts)
+	assert.Equal(t, []string{"-o", `IdentityFile="/fake/keypath/id_rsa"`}, opts)
 	assert.NoError(t, err)
 }
 
@@ -125,7 +125,7 @@ func TestGetScpCmd(t *testing.T) {
 		"-o",
 		"Port=234",
 		"-o",
-		"IdentityFile=/fake/keypath/id_rsa",
+		`IdentityFile="/fake/keypath/id_rsa"`,
 		"/tmp/foo",
 		"root@12.34.56.78:/home/docker/foo",
 	)

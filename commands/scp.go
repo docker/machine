@@ -177,7 +177,7 @@ func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (h Host
 	}
 
 	if h.GetSSHKeyPath() != "" {
-		args = append(args, "-o", fmt.Sprintf("IdentityFile=%s", h.GetSSHKeyPath()))
+		args = append(args, "-o", fmt.Sprintf(`IdentityFile="%s"`, h.GetSSHKeyPath()))
 	}
 
 	return
