@@ -68,6 +68,10 @@ func ConfigureAuth(p Provisioner) error {
 	org := mcnutils.GetUsername() + "." + machineName
 	bits := 2048
 
+	if authOptions.Skip {
+		return nil
+	}
+
 	ip, err := driver.GetIP()
 	if err != nil {
 		return err
