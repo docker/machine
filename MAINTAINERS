@@ -13,6 +13,7 @@
 		people = [
 			"dgageot",
 			"jeanlaurent",
+			"shin-",
 		]
 
 [people]
@@ -30,5 +31,10 @@
 
 	[people.jeanlaurent]
 	Name = "Jean-Laurent de Morlhon"
-	Email = "jeanlaurent@docker.com>"
+	Email = "jeanlaurent@docker.com"
 	GitHub = "jeanlaurent"
+
+	[people.shin-]
+	Name = "Joffrey F"
+	Email = "joffrey@docker.com"
+	GitHub = "shin-"
