@@ -935,12 +935,8 @@ func (d *Driver) generateKeyBundle() error {
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
 		return err
 	}
-	if err := tw.Close(); err != nil {
-		return err
-	}
-
-	return nil
-
+	err = tw.Close()
+	return err
 }
 
 func (d *Driver) vsphereLogin(ctx context.Context) (*govmomi.Client, error) {
