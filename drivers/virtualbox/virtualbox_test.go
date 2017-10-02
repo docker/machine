@@ -454,7 +454,7 @@ func (v *MockCreateOperations) Wait(d *Driver) error {
 }
 
 func (v *MockCreateOperations) RandomInt(n int) int {
-	return 6
+	return 5
 }
 
 func (v *MockCreateOperations) Sleep(d time.Duration) {
