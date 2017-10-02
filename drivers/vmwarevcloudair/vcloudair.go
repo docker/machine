@@ -445,11 +445,8 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	if err = p.Disconnect(); err != nil {
-		return err
-	}
-
-	return nil
+	err = p.Disconnect()
+	return err
 }
 
 func (d *Driver) Start() error {

@@ -455,10 +455,8 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	if err = d.waitForJob(client, dvmresp); err != nil {
-		return err
-	}
-	return nil
+	err = d.waitForJob(client, dvmresp)
+	return err
 }
 
 func (d *Driver) jobIsDone(client *egoscale.Client, jobid string) (bool, error) {
