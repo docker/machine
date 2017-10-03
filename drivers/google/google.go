@@ -399,12 +399,12 @@ func (d *Driver) Remove() error {
 	}
 
 	if err := c.deleteInstance(); err != nil {
-		if googleErr, ok := err.(*googleapi.Error); ok {
-			if googleErr.Code == http.StatusNotFound {
-				log.Warn("Remote instance does not exist, proceeding with removing local reference")
-			} else {
-				return err
-			}
+		googleErr, ok := err.(*googleapi.Error)
+		if !ok {
+			return err
+		}
+		if googleErr.Code == http.StatusNotFound {
+			log.Warn("Remote instance does not exist, proceeding with removing local reference")
 		} else {
 			return err
 		}
