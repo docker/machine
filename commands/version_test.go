@@ -42,7 +42,7 @@ func TestCmdVersionNotFound(t *testing.T) {
 
 	err := cmdVersion(commandLine, api)
 
-	assert.EqualError(t, err, `Host does not exist: "unknown"`)
+	assert.EqualError(t, err, `Docker machine "unknown" does not exist. Use "docker-machine ls" to list machines. Use "docker-machine create" to add a new one.`)
 }
 
 func TestCmdVersionOnHost(t *testing.T) {

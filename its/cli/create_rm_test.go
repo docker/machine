@@ -55,7 +55,7 @@ func TestCreateRm(t *testing.T) {
 	})
 
 	test.Run("rm non existent machine fails", func() {
-		test.Machine("rm ∞ -y").Should().Fail(`Error removing host "∞": Host does not exist: "∞"`)
+		test.Machine("rm ∞ -y").Should().Fail(`Error removing host "∞": Docker machine "∞" does not exist.`)
 	})
 
 	test.Run("rm existing machine", func() {
