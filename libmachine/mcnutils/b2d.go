@@ -305,9 +305,7 @@ func (b *b2dISO) version() (string, error) {
 		return "", err
 	}
 
-	fullVersion := string(isoMetadata)
-
-	trimmedVersion := strings.TrimSpace( fullVersion )
+	trimmedVersion := strings.TrimSpace(string(isoMetadata))
 
 	versionIndex := strings.Index(trimmedVersion, versionPrefix)
 	if versionIndex == -1 {
