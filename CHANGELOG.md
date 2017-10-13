@@ -1,5 +1,92 @@
 # Changelog
 
+# 0.13.0 (2017-10-12)
+
+General
+
+- Added new `docker-machine mount` command for mounting machine directories over SSHFS
+- Improved some logging messages
+- Fixed a bug with the `scp` command when using an identity file.
+-Fixed a parsing error that caused the boot2docker ISO cache to malfunction, forcing a new download everytime.
+
+Drivers
+
+- `azure`
+  - `docker-machine rm` now also cleans up the associated storage account if it has no remaining storage containers.
+  - The creation process will no longer recreate the associated subnet if it already it exists.
+- `exoscale`
+  - Updated driver
+  - Removed default `docker-machine` affinity group if no other affinity group was specified
+- `virtualbox`
+  - Fixed a bug where the machine would sometimes be assigned an invalid IP address at creation time.
+-`vmwaresphere`
+  - Added support for multiple networks
+
+# 0.12.2 (2017-7-12)
+
+General
+
+* The `scp` sub-command now allows to provide an optional `user@` to the address.
+* Fixed bash completion on OS X
+
+Drivers
+
+* `amazonec2`
+  * Updated default AMIs to the latest version of Ubuntu 16.04 LTS
+  * Fixed a bug preventing proper machine removal
+* `vmwarevsphere`
+  * Creating VMs on a DRS-enabled cluster should now work properly
+  * Fixed a bug that prevented provisioning
+* `vmwarefusion`
+  * Fixed a bug that prevented provisioning
+* `exoscale`
+  * Updated library
+
+# 0.12.1 (2017-6-30)
+
+General
+
+- Fixed an issue with the version comparison function that prevented machines created with Engine 17.06.0 from starting properly.
+
+# 0.12.0 (2017-6-5)
+
+General
+
+- Various bash completion improvements
+- Bump Go to version 1.8.3
+
+Drivers
+
+- `openstack`
+    - Enable `HTTP_PROXY`
+- `digitalocean`
+    - Add support for tagging
+- `virtualbox`
+    - Scope DHCP address range based on CIDR
+- `generic`
+    - Increase default timeout
+- `google`
+    - Add subnetwork support
+
+Provisioners
+
+- Remove restriction on `--engine-install-url` in default-to-boot2docker drivers (`virtualbox`, `vmwarefusion`, etc.)
+- Reduce provisioning time of SUSE/openSUSE systems
+
+# 0.11.0 (2017-4-25)
+
+General
+
+- Various bugfixes and updated library dependencies
+- new `docker-machine scp --delta` to invoke `rsync` behind the scenes for more efficient transfer
+
+Drivers
+
+- `digitalocean`
+  - Add support for tagging DigitalOcean instances.
+- `google`
+  - Add support for subnetworks
+
 # 0.10.0 (2017-2-27)
 
 General
