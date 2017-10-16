@@ -202,7 +202,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Network = flags.String("vmwarevsphere-network")
 	d.Datastore = flags.String("vmwarevsphere-datastore")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
-	d.Folder = flags.String("vmwarevsphere-folder")
+	// Sanitize input on ingress.
+	d.Folder = strings.Trim(flags.String("vmwarevsphere-folder"), "/")
 	d.Pool = flags.String("vmwarevsphere-pool")
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
 	d.SetSwarmConfigFromFlags(flags)
@@ -335,13 +336,13 @@ func (d *Driver) PreCreateCheck() error {
 		if err != nil {
 			return err
 		}
-		f, err := object.NewSearchIndex(c.Client).FindChild(ctx, folders.VmFolder, d.Folder)
+		folder, err := f.Folder(ctx, fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
 		// It's an error to not find the folder, or for the search itself to fail.
 		if err != nil {
 			// The search itself failed.
 			return err
 		}
-		if f == nil {
+		if folder == nil {
 			return fmt.Errorf("failed to find VM Folder '%s'", d.Folder)
 		}
 	}
@@ -463,11 +464,10 @@ func (d *Driver) Create() error {
 	folders, err := dc.Folders(ctx)
 	folder := folders.VmFolder
 	if d.Folder != "" {
-		folderRef, err := object.NewSearchIndex(c.Client).FindChild(ctx, folders.VmFolder, d.Folder)
+		folder, err = f.Folder(ctx, fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
 		if err != nil {
 			return err
 		}
-		folder = folderRef.(*object.Folder)
 	}
 	task, err := folder.CreateVM(ctx, spec, rp, hs)
 	if err != nil {
