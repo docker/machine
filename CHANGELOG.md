@@ -19,7 +19,7 @@ Drivers
   - Removed default `docker-machine` affinity group if no other affinity group was specified
 - `virtualbox`
   - Fixed a bug where the machine would sometimes be assigned an invalid IP address at creation time.
--`vmwaresphere`
+- `vmwaresphere`
   - Added support for multiple networks
 
 # 0.12.2 (2017-7-12)
