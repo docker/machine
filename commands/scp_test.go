@@ -2,6 +2,7 @@ package commands
 
 import (
 	"os/exec"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -171,7 +172,13 @@ func TestGetScpCmdWithDelta(t *testing.T) {
 		"/tmp/foo",
 		"user@1.2.3.4:/home/docker/foo",
 	)
-	expectedCmd := exec.Command("/usr/local/bin/rsync", expectedArgs...)
+
+	var expectedCmd *exec.Cmd
+	if runtime.GOOS == "openbsd" {
+		expectedCmd = exec.Command("/usr/local/bin/rsync", expectedArgs...)
+	} else {
+		expectedCmd = exec.Command("/usr/bin/rsync", expectedArgs...)
+	}
 
 	assert.Equal(t, expectedCmd, cmd)
 	assert.NoError(t, err)
