@@ -171,7 +171,7 @@ func TestGetScpCmdWithDelta(t *testing.T) {
 		"/tmp/foo",
 		"user@1.2.3.4:/home/docker/foo",
 	)
-	expectedCmd := exec.Command("/usr/bin/rsync", expectedArgs...)
+	expectedCmd := exec.Command("/usr/local/bin/rsync", expectedArgs...)
 
 	assert.Equal(t, expectedCmd, cmd)
 	assert.NoError(t, err)
