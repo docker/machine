@@ -12,7 +12,7 @@ fmt:
 	@test -z "$$(gofmt -s -l . 2>&1 | grep -v vendor/ | tee /dev/stderr)"
 
 vet:
-	@test -z "$$(go vet $(PKGS) 2>&1 | tee /dev/stderr)"
+	@test -z "$$($(GO) vet $(PKGS) 2>&1 | tee /dev/stderr)"
 
 lint:
 	$(if $(GOLINT), , \
