@@ -40,6 +40,8 @@ const (
 	defaultImage            = "ubuntu-16.04"
 	defaultAvailabilityZone = "ch-dk-2"
 	defaultSSHUser          = "ubuntu"
+
+	defaultRetryTimeout = 5 * time.Second
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -280,7 +282,7 @@ func (d *Driver) createDefaultAffinityGroup(client *egoscale.Client, group strin
 		if resp.Jobstatus == 1 {
 			break
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(defaultRetryTimeout)
 	}
 	affinitygroups, err := client.GetAffinityGroups()
 	agid := affinitygroups[group]
