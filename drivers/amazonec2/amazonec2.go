@@ -42,6 +42,8 @@ const (
 	defaultSSHUser              = "ubuntu"
 	defaultSpotPrice            = "0.50"
 	defaultBlockDurationMinutes = 0
+	defaultSSHPort              = 22
+	defaultVPCName              = "default-vpc"
 )
 
 const (
@@ -300,11 +302,13 @@ func NewDriver(hostName, storePath string) *Driver {
 func (d *Driver) buildClient() Ec2Client {
 	config := aws.NewConfig()
 	alogger := AwsLogger()
-	config = config.WithRegion(d.Region)
-	config = config.WithCredentials(d.awsCredentialsFactory().Credentials())
-	config = config.WithLogger(alogger)
-	config = config.WithLogLevel(aws.LogDebugWithHTTPBody)
-	config = config.WithMaxRetries(d.RetryCount)
+	config = config.
+		WithRegion(d.Region).
+		WithCredentials(d.awsCredentialsFactory().Credentials()).
+		WithLogger(alogger).
+		WithLogLevel(aws.LogDebugWithHTTPBody).
+		WithMaxRetries(d.RetryCount)
+
 	if d.Endpoint != "" {
 		config = config.WithEndpoint(d.Endpoint)
 		config = config.WithDisableSSL(d.DisableSSL)
@@ -346,14 +350,13 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SubnetId = flags.String("amazonec2-subnet-id")
 	d.SecurityGroupNames = flags.StringSlice("amazonec2-security-group")
 	d.Tags = flags.String("amazonec2-tags")
-	zone := flags.String("amazonec2-zone")
-	d.Zone = zone[:]
+	d.Zone = flags.String("amazonec2-zone")
 	d.DeviceName = flags.String("amazonec2-device-name")
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
 	d.VolumeType = flags.String("amazonec2-volume-type")
 	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SSHUser = flags.String("amazonec2-ssh-user")
-	d.SSHPort = 22
+	d.SSHPort = defaultSSHPort
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
@@ -454,7 +457,7 @@ func (d *Driver) checkPrereqs() error {
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok {
 			if awsErr.Code() == keypairNotFoundCode && keyShouldExist {
-				return fmt.Errorf("There is no keypair with the name %s. Please verify the key name provided.", keyName)
+				return fmt.Errorf("There is no keypair with the name %s. Please verify the key name provided", keyName)
 			}
 			if awsErr.Code() == keypairNotFoundCode && !keyShouldExist {
 				// Not a real error for 'NotFound' since we're checking existence
@@ -467,7 +470,7 @@ func (d *Driver) checkPrereqs() error {
 	// In case we got a result with an empty set of keys
 	if err == nil && len(key.KeyPairs) != 0 {
 		if !keyShouldExist {
-			return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name.", d.MachineName)
+			return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name", d.MachineName)
 		}
 		// otherwise we found the key: success
 	}
@@ -538,12 +541,12 @@ func makePointerSlice(stackSlice []string) []*string {
 }
 
 // Support migrating single string Driver fields to slices.
-func migrateStringToSlice(value string, values []string) (result []string) {
+func migrateStringToSlice(value string, values []string) []string {
+	var result []string
 	if value != "" {
 		result = append(result, value)
 	}
-	result = append(result, values...)
-	return
+	return append(result, values...)
 }
 
 func (d *Driver) securityGroupNames() (ids []string) {
@@ -582,11 +585,12 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	var userdata string
-	if b64, err := d.Base64UserData(); err != nil {
+	var (
+		userdata string
+		err      error
+	)
+	if userdata, err = d.Base64UserData(); err != nil {
 		return err
-	} else {
-		userdata = b64
 	}
 
 	bdm := &ec2.BlockDeviceMapping{
@@ -726,7 +730,7 @@ func (d *Driver) Create() error {
 	)
 
 	log.Debug("Settings tags for instance")
-	err := d.configureTags(d.Tags)
+	err = d.configureTags(d.Tags)
 
 	if err != nil {
 		return fmt.Errorf("Unable to tag instance %s: %s", d.InstanceId, err)
@@ -892,11 +896,7 @@ func (d *Driver) instanceIsRunning() bool {
 }
 
 func (d *Driver) waitForInstance() error {
-	if err := mcnutils.WaitFor(d.instanceIsRunning); err != nil {
-		return err
-	}
-
-	return nil
+	return mcnutils.WaitFor(d.instanceIsRunning)
 }
 
 func (d *Driver) createKeyPair() error {
@@ -1011,11 +1011,7 @@ func (d *Driver) configureTags(tagGroups string) error {
 		Tags:      tags,
 	})
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (d *Driver) configureSecurityGroups(groupNames []string) error {
@@ -1176,7 +1172,7 @@ func (d *Driver) getDefaultVPCId() (string, error) {
 	}
 
 	for _, attribute := range output.AccountAttributes {
-		if *attribute.AttributeName == "default-vpc" {
+		if *attribute.AttributeName == defaultVPCName {
 			return *attribute.AttributeValues[0].AttributeValue, nil
 		}
 	}
