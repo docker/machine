@@ -52,6 +52,7 @@ const (
 	defaultSSHUser       = "root"
 	defaultSSHPort       = 22
 	defaultActiveTimeout = 200
+	defaultRetryTimeout  = 2 * time.Second
 )
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -343,7 +344,7 @@ func (d *Driver) GetIP() (string, error) {
 				return a.Address, nil
 			}
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(defaultRetryTimeout)
 	}
 	return "", fmt.Errorf("No IP found for the machine")
 }
@@ -406,10 +407,8 @@ func (d *Driver) Create() error {
 			return err
 		}
 	}
-	if err := d.lookForIPAddress(); err != nil {
-		return err
-	}
-	return nil
+
+	return d.lookForIPAddress()
 }
 
 func (d *Driver) Start() error {
@@ -623,30 +622,21 @@ func (d *Driver) initCompute() error {
 	if err := d.client.Authenticate(d); err != nil {
 		return err
 	}
-	if err := d.client.InitComputeClient(d); err != nil {
-		return err
-	}
-	return nil
+	return d.client.InitComputeClient(d)
 }
 
 func (d *Driver) initIdentity() error {
 	if err := d.client.Authenticate(d); err != nil {
 		return err
 	}
-	if err := d.client.InitIdentityClient(d); err != nil {
-		return err
-	}
-	return nil
+	return d.client.InitIdentityClient(d)
 }
 
 func (d *Driver) initNetwork() error {
 	if err := d.client.Authenticate(d); err != nil {
 		return err
 	}
-	if err := d.client.InitNetworkClient(d); err != nil {
-		return err
-	}
-	return nil
+	return d.client.InitNetworkClient(d)
 }
 
 func (d *Driver) loadSSHKey() error {
@@ -666,11 +656,7 @@ func (d *Driver) loadSSHKey() error {
 	if err := ioutil.WriteFile(d.privateSSHKeyPath(), privateKey, 0600); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(d.publicSSHKeyPath(), publicKey, 0600); err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(d.publicSSHKeyPath(), publicKey, 0600)
 }
 
 func (d *Driver) createSSHKey() error {
@@ -687,10 +673,7 @@ func (d *Driver) createSSHKey() error {
 	if err := d.initCompute(); err != nil {
 		return err
 	}
-	if err := d.client.CreateKeyPair(d, d.KeyPairName, string(publicKey)); err != nil {
-		return err
-	}
-	return nil
+	return d.client.CreateKeyPair(d, d.KeyPairName, string(publicKey))
 }
 
 func (d *Driver) createMachine() error {
@@ -762,10 +745,7 @@ func (d *Driver) assignFloatingIP() error {
 
 func (d *Driver) waitForInstanceActive() error {
 	log.Debug("Waiting for the OpenStack instance to be ACTIVE...", map[string]string{"MachineId": d.MachineId})
-	if err := d.client.WaitForInstanceStatus(d, "ACTIVE"); err != nil {
-		return err
-	}
-	return nil
+	return d.client.WaitForInstanceStatus(d, "ACTIVE")
 }
 
 func (d *Driver) lookForIPAddress() error {
