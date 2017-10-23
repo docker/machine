@@ -40,11 +40,12 @@ type Driver struct {
 }
 
 const (
-	defaultSSHPort = 22
-	defaultSSHUser = "root"
-	defaultImage   = "ubuntu-16-04-x64"
-	defaultRegion  = "nyc3"
-	defaultSize    = "512mb"
+	defaultSSHPort      = 22
+	defaultSSHUser      = "root"
+	defaultImage        = "ubuntu-16-04-x64"
+	defaultRegion       = "nyc3"
+	defaultSize         = "512mb"
+	defaultRetryTimeout = 1 * time.Second
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -187,7 +188,8 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	client := d.getClient()
-	regions, _, err := client.Regions.List(context.TODO(), nil)
+	ctx := context.TODO()
+	regions, _, err := client.Regions.List(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -201,7 +203,11 @@ func (d *Driver) PreCreateCheck() error {
 }
 
 func (d *Driver) Create() error {
-	var userdata string
+	var (
+		userdata string
+		ctx      = context.TODO()
+	)
+
 	if d.UserDataFile != "" {
 		buf, err := ioutil.ReadFile(d.UserDataFile)
 		if err != nil {
@@ -236,7 +242,7 @@ func (d *Driver) Create() error {
 		Tags:              d.getTags(),
 	}
 
-	newDroplet, _, err := client.Droplets.Create(context.TODO(), createRequest)
+	newDroplet, _, err := client.Droplets.Create(ctx, createRequest)
 	if err != nil {
 		return err
 	}
@@ -245,7 +251,7 @@ func (d *Driver) Create() error {
 
 	log.Info("Waiting for IP address to be assigned to the Droplet...")
 	for {
-		newDroplet, _, err = client.Droplets.Get(context.TODO(), d.DropletID)
+		newDroplet, _, err = client.Droplets.Get(ctx, d.DropletID)
 		if err != nil {
 			return err
 		}
@@ -259,7 +265,7 @@ func (d *Driver) Create() error {
 			break
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(defaultRetryTimeout)
 	}
 
 	log.Debugf("Created droplet ID %d, IP address %s",
@@ -271,10 +277,11 @@ func (d *Driver) Create() error {
 
 func (d *Driver) createSSHKey() (*godo.Key, error) {
 	d.SSHKeyPath = d.GetSSHKeyPath()
+	ctx := context.TODO()
 
 	if d.SSHKeyFingerprint != "" {
-		key, resp, err := d.getClient().Keys.GetByFingerprint(context.TODO(), d.SSHKeyFingerprint)
-		if err != nil && resp.StatusCode == 404 {
+		key, resp, err := d.getClient().Keys.GetByFingerprint(ctx, d.SSHKeyFingerprint)
+		if err != nil && resp.StatusCode == http.StatusNotFound {
 			return nil, fmt.Errorf("Digital Ocean SSH key with fingerprint %s doesn't exist", d.SSHKeyFingerprint)
 		}
 
@@ -303,7 +310,7 @@ func (d *Driver) createSSHKey() (*godo.Key, error) {
 		PublicKey: string(publicKey),
 	}
 
-	key, _, err := d.getClient().Keys.Create(context.TODO(), createRequest)
+	key, _, err := d.getClient().Keys.Create(ctx, createRequest)
 	if err != nil {
 		return key, err
 	}
@@ -324,17 +331,23 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
+const (
+	doDropletStateNew    = "new"
+	doDropletStateActive = "active"
+	doDropletStateOff    = "off"
+)
+
 func (d *Driver) GetState() (state.State, error) {
 	droplet, _, err := d.getClient().Droplets.Get(context.TODO(), d.DropletID)
 	if err != nil {
 		return state.Error, err
 	}
 	switch droplet.Status {
-	case "new":
+	case doDropletStateNew:
 		return state.Starting, nil
-	case "active":
+	case doDropletStateActive:
 		return state.Running, nil
-	case "off":
+	case doDropletStateOff:
 		return state.Stopped, nil
 	}
 	return state.None, nil
