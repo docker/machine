@@ -139,9 +139,7 @@ func (d *Driver) GetSSHUsername() string {
 }
 
 // DriverName returns the name of the driver
-func (d *Driver) DriverName() string {
-	return "exoscale"
-}
+func (d *Driver) DriverName() string { return "exoscale" }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.URL = flags.String("exoscale-url")
@@ -263,8 +261,7 @@ func (d *Driver) createDefaultSecurityGroup(client *egoscale.Client, group strin
 	if err != nil {
 		return "", err
 	}
-	sg := sgresp.Id
-	return sg, nil
+	return sgresp.Id, nil
 }
 
 func (d *Driver) createDefaultAffinityGroup(client *egoscale.Client, group string) (string, error) {
@@ -285,8 +282,7 @@ func (d *Driver) createDefaultAffinityGroup(client *egoscale.Client, group strin
 		time.Sleep(defaultRetryTimeout)
 	}
 	affinitygroups, err := client.GetAffinityGroups()
-	agid := affinitygroups[group]
-	return agid, nil
+	return affinitygroups[group], nil
 }
 
 func (d *Driver) Create() error {
@@ -439,9 +435,7 @@ func (d *Driver) Restart() error {
 	return d.waitForJob(client, svmresp)
 }
 
-func (d *Driver) Kill() error {
-	return d.Stop()
-}
+func (d *Driver) Kill() error { return d.Stop() }
 
 func (d *Driver) Remove() error {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
@@ -456,8 +450,7 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	err = d.waitForJob(client, dvmresp)
-	return err
+	return d.waitForJob(client, dvmresp)
 }
 
 func (d *Driver) jobIsDone(client *egoscale.Client, jobid string) (bool, error) {
