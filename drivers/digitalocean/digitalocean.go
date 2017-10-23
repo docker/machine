@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -361,17 +362,18 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) Remove() error {
 	client := d.getClient()
+	ctx := context.TODO()
 	if d.SSHKeyFingerprint == "" {
-		if resp, err := client.Keys.DeleteByID(context.TODO(), d.SSHKeyID); err != nil {
-			if resp.StatusCode == 404 {
+		if resp, err := client.Keys.DeleteByID(ctx, d.SSHKeyID); err != nil {
+			if resp.StatusCode == http.StatusNotFound {
 				log.Infof("Digital Ocean SSH key doesn't exist, assuming it is already deleted")
 			} else {
 				return err
 			}
 		}
 	}
-	if resp, err := client.Droplets.Delete(context.TODO(), d.DropletID); err != nil {
-		if resp.StatusCode == 404 {
+	if resp, err := client.Droplets.Delete(ctx, d.DropletID); err != nil {
+		if resp.StatusCode == http.StatusNotFound {
 			log.Infof("Digital Ocean droplet doesn't exist, assuming it is already deleted")
 		} else {
 			return err
