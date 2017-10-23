@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/state"
 
 	"github.com/Azure/azure-sdk-for-go/arm/storage"
@@ -413,26 +414,37 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
+
+	multierr := mcnutils.MultiError{
+		Errs: []error{},
+	}
+
 	if err := c.DeleteVirtualMachineIfExists(d.ResourceGroup, d.naming().VM()); err != nil {
-		return err
+		multierr.Errs = append(multierr.Errs, err)
 	}
 	if err := c.DeleteNetworkInterfaceIfExists(d.ResourceGroup, d.naming().NIC()); err != nil {
-		return err
+		multierr.Errs = append(multierr.Errs, err)
 	}
 	if err := c.DeletePublicIPAddressIfExists(d.ResourceGroup, d.naming().IP()); err != nil {
-		return err
+		multierr.Errs = append(multierr.Errs, err)
 	}
 	if err := c.DeleteNetworkSecurityGroupIfExists(d.ResourceGroup, d.naming().NSG()); err != nil {
-		return err
+		multierr.Errs = append(multierr.Errs, err)
 	}
 	if err := c.CleanupAvailabilitySetIfExists(d.ResourceGroup, d.AvailabilitySet); err != nil {
-		return err
+		multierr.Errs = append(multierr.Errs, err)
 	}
 	if err := c.CleanupSubnetIfExists(d.ResourceGroup, d.VirtualNetwork, d.SubnetName); err != nil {
-		return err
+		multierr.Errs = append(multierr.Errs, err)
 	}
-	err = c.CleanupVirtualNetworkIfExists(d.ResourceGroup, d.VirtualNetwork)
-	return err
+	if err := c.CleanupVirtualNetworkIfExists(d.ResourceGroup, d.VirtualNetwork); err != nil {
+		multierr.Errs = append(multierr.Errs, err)
+	}
+
+	if len(multierr.Errs) != 0 {
+		return multierr
+	}
+	return nil
 }
 
 // GetIP returns public IP address or hostname of the machine instance.
