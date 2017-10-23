@@ -1,6 +1,7 @@
 package auth
 
 type Options struct {
+	Skip                 bool
 	CertDir              string
 	CaCertPath           string
 	CaPrivateKeyPath     string
