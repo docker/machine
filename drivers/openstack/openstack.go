@@ -442,19 +442,18 @@ func (d *Driver) Kill() error {
 
 func (d *Driver) Remove() error {
 	log.Debug("deleting instance...", map[string]string{"MachineId": d.MachineId})
-	log.Info("Deleting OpenStack instance...")
 	if err := d.initCompute(); err != nil {
 		return err
 	}
-	if err := d.client.DeleteInstance(d); err != nil {
-		return err
-	}
+
 	log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
 	// TODO (fsoppelsa) maybe we want to check this, in case of shared keypairs, before removal
 	if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
-		return err
+		log.Errorf("Openstack SSH key can't be deleted, assuming it is already deleted: %q", err)
 	}
-	return nil
+
+	log.Info("Deleting OpenStack instance...")
+	return d.client.DeleteInstance(d)
 }
 
 const (
