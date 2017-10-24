@@ -243,19 +243,17 @@ func (d *Driver) Create() error {
 	d.DropletID = newDroplet.ID
 
 	log.Info("Waiting for IP address to be assigned to the Droplet...")
+IpAssignLoop:
 	for {
 		newDroplet, _, err = client.Droplets.Get(context.TODO(), d.DropletID)
 		if err != nil {
 			return err
 		}
 		for _, network := range newDroplet.Networks.V4 {
-			if network.Type == "public" {
+			if network.Type == "public" && network.IPAddress != "" {
 				d.IPAddress = network.IPAddress
+				break IpAssignLoop
 			}
-		}
-
-		if d.IPAddress != "" {
-			break
 		}
 
 		time.Sleep(1 * time.Second)
