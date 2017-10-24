@@ -2,8 +2,15 @@
 GO_LDFLAGS := -X `go list ./version`.GitCommit=`git rev-parse --short HEAD 2>/dev/null`
 GO_GCFLAGS :=
 
+# Honor verbose
+VERBOSE_GO := 
+GO := go
+ifeq ($(VERBOSE),true)
+	VERBOSE_GO := -v
+endif
+
 # Full package list
-PKGS := $(shell go list -tags "$(BUILDTAGS)" ./... | grep -v "/vendor/" | grep -v "/cmd")
+PKGS := $(shell $(GO) list -tags "$(BUILDTAGS)" ./... | grep -v "/vendor/" | grep -v "/cmd")
 
 # Resolving binary dependencies for specific targets
 GOLINT_BIN := $(GOPATH)/bin/golint
@@ -25,13 +32,6 @@ endif
 ifeq ($(STATIC),true)
 	# Append to the version
 	GO_LDFLAGS := $(GO_LDFLAGS) -extldflags -static
-endif
-
-# Honor verbose
-VERBOSE_GO := 
-GO := go
-ifeq ($(VERBOSE),true)
-	VERBOSE_GO := -v
 endif
 
 include mk/build.mk
