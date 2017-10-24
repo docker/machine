@@ -184,6 +184,7 @@ func (d *Driver) GetIP() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if s != state.Running {
 		return "", drivers.ErrHostIsNotRunning
 	}
@@ -214,6 +215,7 @@ func (d *Driver) GetState() (state.State, error) {
 	if err != nil {
 		return state.Error, err
 	}
+
 	if stdout, _, _ := vmrun("list"); strings.Contains(stdout, vmxp) {
 		return state.Running, nil
 	}
@@ -225,11 +227,7 @@ func (d *Driver) PreCreateCheck() error {
 	// Downloading boot2docker to cache should be done here to make sure
 	// that a download failure will not leave a machine half created.
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
-	if err := b2dutils.UpdateISOCache(d.Boot2DockerURL); err != nil {
-		return err
-	}
-
-	return nil
+	return b2dutils.UpdateISOCache(d.Boot2DockerURL)
 }
 
 func (d *Driver) Create() error {
@@ -371,13 +369,8 @@ func (d *Driver) Create() error {
 	// Enable Shared Folders
 	vmrun("-gu", B2DUser, "-gp", B2DPass, "enableSharedFolders", d.vmxPath())
 
-	var shareName, shareDir string // TODO configurable at some point
-	switch runtime.GOOS {
-	case "darwin":
-		shareName = "Users"
-		shareDir = "/Users"
-		// TODO "linux" and "windows"
-	}
+	shareName := "Users"
+	shareDir := "/Users"
 
 	if shareDir != "" && !d.NoShare {
 		if _, err := os.Stat(shareDir); err != nil && !os.IsNotExist(err) {
@@ -434,10 +427,7 @@ func (d *Driver) Restart() error {
 		return err
 	}
 	// Start it again and mount shared folder
-	if err := d.Start(); err != nil {
-		return err
-	}
-	return nil
+	return d.Start()
 }
 
 func (d *Driver) Kill() error {
@@ -506,7 +496,7 @@ func (d *Driver) getMacAddressFromVmx() (string, error) {
 func (d *Driver) getIPfromVmnetConfiguration(macaddr string) (string, error) {
 
 	// DHCP lease table for NAT vmnet interface
-	confFiles, _ := filepath.Glob("/Library/Preferences/VMware Fusion/vmnet*/dhcpd.conf")
+	confFiles, _ := filepath.Glob(DhcpConfigFiles())
 	for _, conffile := range confFiles {
 		log.Debugf("Trying to find IP address in configuration file: %s", conffile)
 		if ipaddr, err := d.getIPfromVmnetConfigurationFile(conffile, macaddr); err == nil {
@@ -548,9 +538,9 @@ func (d *Driver) getIPfromVmnetConfigurationFile(conffile, macaddr string) (stri
 	hostend := regexp.MustCompile(`^}`)
 
 	// Get the IP address.
-	ip := regexp.MustCompile(`^\s*fixed-address (.+?);$`)
+	ip := regexp.MustCompile(`^\s*fixed-address (.+?);\r?$`)
 	// Get the MAC address associated.
-	mac := regexp.MustCompile(`^\s*hardware ethernet (.+?);$`)
+	mac := regexp.MustCompile(`^\s*hardware ethernet (.+?);\r?$`)
 
 	// we use a block depth so that just in case inner blocks exists
 	// we are not being fooled by them
@@ -612,7 +602,7 @@ func (d *Driver) getIPfromVmnetConfigurationFile(conffile, macaddr string) (stri
 func (d *Driver) getIPfromDHCPLease(macaddr string) (string, error) {
 
 	// DHCP lease table for NAT vmnet interface
-	leasesFiles, _ := filepath.Glob("/var/db/vmware/*.leases")
+	leasesFiles, _ := filepath.Glob(DhcpLeaseFiles())
 	for _, dhcpfile := range leasesFiles {
 		log.Debugf("Trying to find IP address in leases file: %s", dhcpfile)
 		if ipaddr, err := d.getIPfromDHCPLeaseFile(dhcpfile, macaddr); err == nil {
@@ -624,7 +614,6 @@ func (d *Driver) getIPfromDHCPLease(macaddr string) (string, error) {
 }
 
 func (d *Driver) getIPfromDHCPLeaseFile(dhcpfile, macaddr string) (string, error) {
-
 	var dhcpfh *os.File
 	var dhcpcontent []byte
 	var lastipmatch string
@@ -643,11 +632,11 @@ func (d *Driver) getIPfromDHCPLeaseFile(dhcpfile, macaddr string) (string, error
 	}
 
 	// Get the IP from the lease table.
-	leaseip := regexp.MustCompile(`^lease (.+?) {$`)
+	leaseip := regexp.MustCompile(`^lease (.+?) {\r?$`)
 	// Get the lease end date time.
-	leaseend := regexp.MustCompile(`^\s*ends \d (.+?);$`)
+	leaseend := regexp.MustCompile(`^\s*ends \d (.+?);\r?$`)
 	// Get the MAC address associated.
-	leasemac := regexp.MustCompile(`^\s*hardware ethernet (.+?);$`)
+	leasemac := regexp.MustCompile(`^\s*hardware ethernet (.+?);\r?$`)
 
 	for _, line := range strings.Split(string(dhcpcontent), "\n") {
 
@@ -727,12 +716,8 @@ func (d *Driver) generateKeyBundle() error {
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
 		return err
 	}
-	if err := tw.Close(); err != nil {
-		return err
-	}
 
-	return nil
-
+	return tw.Close()
 }
 
 // execute command over SSH with user / password authentication

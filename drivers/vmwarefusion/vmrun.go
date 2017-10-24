@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/docker/machine/libmachine/log"
 )
@@ -28,18 +26,13 @@ var (
 	ErrVMRUNNotFound   = errors.New("VMRUN not found")
 )
 
-// detect the vmrun and vmware-vdiskmanager cmds' path if needed
-func setVmwareCmd(cmd string) string {
-	if path, err := exec.LookPath(cmd); err == nil {
-		return path
-	}
-	return filepath.Join("/Applications/VMware Fusion.app/Contents/Library/", cmd)
+func init() {
+	// vmrun with nogui on VMware Fusion through at least 8.0.1 doesn't work right
+	// if the umask is set to not allow world-readable permissions
+	SetUmask()
 }
 
 func vmrun(args ...string) (string, string, error) {
-	// vmrun with nogui on VMware Fusion through at least 8.0.1 doesn't work right
-	// if the umask is set to not allow world-readable permissions
-	_ = syscall.Umask(022)
 	cmd := exec.Command(vmrunbin, args...)
 	if os.Getenv("MACHINE_DEBUG") != "" {
 		cmd.Stdout = os.Stdout
