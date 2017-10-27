@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/arm/network"
@@ -113,8 +114,8 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 
 	// Base ports to be opened for any machine
 	rl := []network.SecurityRule{
-		mkRule(100, "SSHAllowAny", "Allow ssh from public Internet", "*", fmt.Sprintf("%d", d.BaseDriver.SSHPort), network.TCP),
-		mkRule(300, "DockerAllowAny", "Allow docker engine access (TLS-protected)", "*", fmt.Sprintf("%d", d.DockerPort), network.TCP),
+		mkRule(100, "SSHAllowAny", "Allow ssh from public Internet", "*", strconv.Itoa(d.BaseDriver.SSHPort), network.TCP),
+		mkRule(300, "DockerAllowAny", "Allow docker engine access (TLS-protected)", "*", strconv.Itoa(d.DockerPort), network.TCP),
 	}
 
 	// Open swarm port if configured
@@ -143,7 +144,7 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 			return nil, fmt.Errorf("cannot parse security rule protocol: %v", err)
 		}
 		log.Debugf("User-requested port to be opened on NSG: %v/%s", port, proto)
-		name := fmt.Sprintf("Port%s-%sAllowAny", port, proto)
+		name := "Port" + port + "-" + string(proto) + "AllowAny"
 		name = strings.Replace(name, "*", "Asterisk", -1)
 		r := mkRule(basePri+i, name, "User requested port to be accessible from Internet via docker-machine", "*", port, proto)
 		rl = append(rl, r)

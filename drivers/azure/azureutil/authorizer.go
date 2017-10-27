@@ -1,8 +1,6 @@
 package azureutil
 
 import (
-	"fmt"
-
 	"github.com/Azure/go-autorest/autorest"
 )
 
@@ -11,5 +9,5 @@ import (
 type accessToken string
 
 func (a accessToken) WithAuthorization() autorest.PrepareDecorator {
-	return autorest.WithHeader("Authorization", fmt.Sprintf("Bearer %s", string(a)))
+	return autorest.WithHeader("Authorization", "Bearer "+string(a))
 }

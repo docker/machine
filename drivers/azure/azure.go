@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/docker/machine/drivers/azure/azureutil"
 	"github.com/docker/machine/libmachine/drivers"
@@ -473,7 +474,7 @@ func (d *Driver) GetURL() (string, error) {
 	}
 	u := (&url.URL{
 		Scheme: "tcp",
-		Host:   net.JoinHostPort(ip, fmt.Sprintf("%d", d.DockerPort)),
+		Host:   net.JoinHostPort(ip, strconv.Itoa(d.DockerPort)),
 	}).String()
 	log.Debugf("Machine URL is resolved to: %s", u)
 	return u, nil

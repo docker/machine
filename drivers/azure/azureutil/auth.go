@@ -97,7 +97,7 @@ func AuthenticateDeviceFlow(env azure.Environment, subscriptionID string) (*azur
 		log.Debug("Validating the token.")
 		if err := validateToken(env, spt); err != nil {
 			log.Debug(fmt.Sprintf("Error: %v", err))
-			log.Debug(fmt.Sprintf("Deleting %s", tokenPath))
+			log.Debug("Deleting " + tokenPath)
 			if err := os.RemoveAll(tokenPath); err != nil {
 				return nil, fmt.Errorf("Error deleting stale token file: %v", err)
 			}
@@ -202,13 +202,13 @@ func azureCredsPath() string {
 // tokenCachePath returns the full path the OAuth 2.0 token should be saved at
 // for given tenant ID.
 func tokenCachePath(tenantID string) string {
-	return filepath.Join(azureCredsPath(), fmt.Sprintf("%s.json", tenantID))
+	return filepath.Join(azureCredsPath(), tenantID+".json")
 }
 
 // tenantIDPath returns the full path the tenant ID for the given subscription
 // should be saved at.f
 func tenantIDPath(subscriptionID string) string {
-	return filepath.Join(azureCredsPath(), fmt.Sprintf("%s.tenantid", subscriptionID))
+	return filepath.Join(azureCredsPath(), subscriptionID+".tenantid")
 }
 
 // mkTokenCallback returns a callback function that can be used to save the

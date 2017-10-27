@@ -200,7 +200,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(d.PublicIP, strconv.Itoa(d.DockerPort))), nil
+	return "tcp://" + net.JoinHostPort(d.PublicIP, strconv.Itoa(d.DockerPort)), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -600,7 +600,7 @@ func (d *Driver) Kill() error {
 
 func generateVMName() string {
 	randomID := mcnutils.TruncateID(mcnutils.GenerateRandomID())
-	return fmt.Sprintf("docker-host-%s", randomID)
+	return "docker-host-" + randomID
 }
 
 func (d *Driver) createSSHKey() (string, error) {

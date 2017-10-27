@@ -148,7 +148,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.EnginePort))), nil
+	return "tcp://" + net.JoinHostPort(ip, strconv.Itoa(d.EnginePort)), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {

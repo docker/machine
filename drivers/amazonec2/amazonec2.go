@@ -748,7 +748,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", nil
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(dockerPort))), nil
+	return "tcp://" + net.JoinHostPort(ip, strconv.Itoa(dockerPort)), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -1141,7 +1141,7 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 		if err != nil {
 			return nil, fmt.Errorf("invalid port number %s: %s", port, err)
 		}
-		if !hasPorts[fmt.Sprintf("%s/%s", port, protocol)] {
+		if !hasPorts[port+"/"+protocol] {
 			perms = append(perms, &ec2.IpPermission{
 				IpProtocol: aws.String(protocol),
 				FromPort:   aws.Int64(portNum),
