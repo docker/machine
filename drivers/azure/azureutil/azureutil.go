@@ -513,7 +513,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 
 	var (
 		osDiskBlobURL = osDiskStorageBlobURL(storageAccount, name)
-		sshKeyPath    = fmt.Sprintf("/home/%s/.ssh/authorized_keys", username)
+		sshKeyPath    = "/home/" + username + "/.ssh/authorized_keys"
 	)
 	log.Debugf("OS disk blob will be placed at: %s", osDiskBlobURL)
 	log.Debugf("SSH key will be placed at: %s", sshKeyPath)
