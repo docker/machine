@@ -43,6 +43,26 @@ tcp6       0      0 :::22                   :::*                    LISTEN`
 	}
 }
 
+func TestMatchSsOutMissing(t *testing.T) {
+	ssOut := `State      Recv-Q Send-Q Local Address:Port               Peer Address:Port              
+LISTEN     0      128          *:22                       *:*                  
+LISTEN     0      128         :::22                      :::*                  
+LISTEN     0      128         :::23760                   :::*                  `
+	if matchNetstatOut(reDaemonListening, ssOut) {
+		t.Fatal("Expected not to match the ss output as showing the daemon listening but got a match")
+	}
+}
+
+func TestMatchSsOutPresent(t *testing.T) {
+	ssOut := `State      Recv-Q Send-Q Local Address:Port               Peer Address:Port              
+LISTEN     0      128          *:22                       *:*                  
+LISTEN     0      128         :::22                      :::*                  
+LISTEN     0      128         :::2376                    :::*                  `
+	if !matchNetstatOut(reDaemonListening, ssOut) {
+		t.Fatal("Expected to match the ss output as showing the daemon listening but didn't")
+	}
+}
+
 func TestGenerateDockerOptionsBoot2Docker(t *testing.T) {
 	p := &Boot2DockerProvisioner{
 		Driver: &fakedriver.Driver{},
