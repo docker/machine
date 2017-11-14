@@ -61,6 +61,7 @@ type Driver struct {
 	Networks   []string
 	Datastore  string
 	Datacenter string
+	Folder     string
 	Pool       string
 	HostSystem string
 	CfgParams  []string
@@ -142,6 +143,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "vSphere datacenter for docker VM",
 		},
 		mcnflag.StringFlag{
+			EnvVar: "VSPHERE_FOLDER",
+			Name:   "vmwarevsphere-folder",
+			Usage:  "vSphere folder for the docker VM. This folder must already exist in the datacenter.",
+		},
+		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_POOL",
 			Name:   "vmwarevsphere-pool",
 			Usage:  "vSphere resource pool for docker VM",
@@ -210,6 +216,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Networks = flags.StringSlice("vmwarevsphere-network")
 	d.Datastore = flags.String("vmwarevsphere-datastore")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
+	// Sanitize input on ingress.
+	d.Folder = strings.Trim(flags.String("vmwarevsphere-folder"), "/")
 	d.Pool = flags.String("vmwarevsphere-pool")
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
 	d.CfgParams = flags.StringSlice("vmwarevsphere-cfgparam")
@@ -336,6 +344,24 @@ func (d *Driver) PreCreateCheck() error {
 	}
 
 	f.SetDatacenter(dc)
+
+	// Folder
+	if d.Folder != "" {
+		// Find the specified Folder to create the VM in.
+		folders, err := dc.Folders(ctx)
+		if err != nil {
+			return err
+		}
+		folder, err := f.Folder(ctx, fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
+		// It's an error to not find the folder, or for the search itself to fail.
+		if err != nil {
+			// The search itself failed.
+			return err
+		}
+		if folder == nil {
+			return fmt.Errorf("failed to find VM Folder '%s'", d.Folder)
+		}
+	}
 
 	if _, err := f.DatastoreOrDefault(ctx, d.Datastore); err != nil {
 		return err
@@ -485,7 +511,14 @@ func (d *Driver) Create() error {
 
 	log.Infof("Creating VM...")
 	folders, err := dc.Folders(ctx)
-	task, err := folders.VmFolder.CreateVM(ctx, spec, rp, hs)
+	folder := folders.VmFolder
+	if d.Folder != "" {
+		folder, err = f.Folder(ctx, fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
+		if err != nil {
+			return err
+		}
+	}
+	task, err := folder.CreateVM(ctx, spec, rp, hs)
 	if err != nil {
 		return err
 	}
@@ -973,7 +1006,11 @@ func (d *Driver) fetchVM(ctx context.Context, c *govmomi.Client, vmname string) 
 
 	f.SetDatacenter(dc)
 
-	vm, err = f.VirtualMachine(ctx, vmname)
+	vmPath := vmname
+	if d.Folder != "" {
+		vmPath = fmt.Sprintf("%s/%s", d.Folder, vmname)
+	}
+	vm, err = f.VirtualMachine(ctx, vmPath)
 	if err != nil {
 		return vm, err
 	}
