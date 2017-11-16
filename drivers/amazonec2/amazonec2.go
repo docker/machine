@@ -45,7 +45,8 @@ const (
 )
 
 const (
-	keypairNotFoundCode = "InvalidKeyPair.NotFound"
+	keypairNotFoundCode             = "InvalidKeyPair.NotFound"
+	spotInstanceRequestNotFoundCode = "InvalidSpotInstanceRequestID.NotFound"
 )
 
 var (
@@ -640,11 +641,21 @@ func (d *Driver) Create() error {
 		}
 
 		log.Info("Waiting for spot instance...")
-		err = d.getClient().WaitUntilSpotInstanceRequestFulfilled(&ec2.DescribeSpotInstanceRequestsInput{
-			SpotInstanceRequestIds: []*string{spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId},
-		})
-		if err != nil {
-			return fmt.Errorf("Error fulfilling spot request: %v", err)
+		for i := 0; i < 3; i++ {
+			// AWS eventual consistency means we could not have SpotInstanceRequest ready yet
+			err = d.getClient().WaitUntilSpotInstanceRequestFulfilled(&ec2.DescribeSpotInstanceRequestsInput{
+				SpotInstanceRequestIds: []*string{spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId},
+			})
+			if err != nil {
+				if awsErr, ok := err.(awserr.Error); ok {
+					if awsErr.Code() == spotInstanceRequestNotFoundCode {
+						time.Sleep(5 * time.Second)
+						continue
+					}
+				}
+				return fmt.Errorf("Error fulfilling spot request: %v", err)
+			}
+			break
 		}
 		log.Info("Created spot instance request %v", *spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId)
 		// resolve instance id
