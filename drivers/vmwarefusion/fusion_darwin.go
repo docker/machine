@@ -225,11 +225,8 @@ func (d *Driver) PreCreateCheck() error {
 	// Downloading boot2docker to cache should be done here to make sure
 	// that a download failure will not leave a machine half created.
 	b2dutils := mcnutils.NewB2dUtils(d.StorePath)
-	if err := b2dutils.UpdateISOCache(d.Boot2DockerURL); err != nil {
-		return err
-	}
 
-	return nil
+	return b2dutils.UpdateISOCache(d.Boot2DockerURL)
 }
 
 func (d *Driver) Create() error {
@@ -434,10 +431,7 @@ func (d *Driver) Restart() error {
 		return err
 	}
 	// Start it again and mount shared folder
-	if err := d.Start(); err != nil {
-		return err
-	}
-	return nil
+	return d.Start()
 }
 
 func (d *Driver) Kill() error {
@@ -727,12 +721,7 @@ func (d *Driver) generateKeyBundle() error {
 	if _, err := tw.Write([]byte(pubKey)); err != nil {
 		return err
 	}
-	if err := tw.Close(); err != nil {
-		return err
-	}
-
-	return nil
-
+	return tw.Close()
 }
 
 // execute command over SSH with user / password authentication
