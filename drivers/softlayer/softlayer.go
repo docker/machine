@@ -76,20 +76,25 @@ func NewClient(user, key, endpoint string) *Client {
 	return &Client{User: user, ApiKey: key, Endpoint: endpoint}
 }
 
-func (c *Client) isOkStatus(code int) bool {
-	codes := map[int]bool{
-		200: true,
-		201: true,
-		204: true,
-		400: false,
-		404: false,
-		500: false,
-		409: false,
-		406: false,
+var (
+	statusCodes = map[int]bool{
+		http.StatusOK:                  true,
+		http.StatusCreated:             true,
+		http.StatusNoContent:           true,
+		http.StatusBadRequest:          false,
+		http.StatusNotFound:            false,
+		http.StatusInternalServerError: false,
+		http.StatusConflict:            false,
+		http.StatusNotAcceptable:       false,
 	}
+)
 
-	return codes[code]
-}
+const (
+	defaultSSHNamespace          = "SoftLayer_Security_Ssh_Key"
+	defaultVirtualGuestNamespace = "SoftLayer_Virtual_Guest"
+)
+
+func (c *Client) isOkStatus(code int) bool { return statusCodes[code] }
 
 func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error) {
 	var (
@@ -137,17 +142,13 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	return data, nil
 }
 
-func (c *Client) SSHKey() *sshKey {
-	return &sshKey{c}
-}
+func (c *Client) SSHKey() *sshKey { return &sshKey{c} }
 
-func (c *sshKey) namespace() string {
-	return "SoftLayer_Security_Ssh_Key"
-}
+func (c *sshKey) namespace() string { return defaultSSHNamespace }
 
 func (c *sshKey) Create(label, key string) (*SSHKey, error) {
 	var (
-		method = "POST"
+		method = http.MethodPost
 		uri    = c.namespace()
 		body   = SSHKey{Key: key, Label: label}
 	)
@@ -167,7 +168,7 @@ func (c *sshKey) Create(label, key string) (*SSHKey, error) {
 
 func (c *sshKey) Delete(id int) error {
 	var (
-		method = "DELETE"
+		method = http.MethodDelete
 		uri    = fmt.Sprintf("%s/%v", c.namespace(), id)
 	)
 
@@ -182,9 +183,7 @@ func (c *Client) VirtualGuest() *VirtualGuest {
 	return &VirtualGuest{c}
 }
 
-func (c *VirtualGuest) namespace() string {
-	return "SoftLayer_Virtual_Guest"
-}
+func (c *VirtualGuest) namespace() string { return defaultVirtualGuestNamespace }
 
 func (c *VirtualGuest) PowerState(id int) (string, error) {
 	type state struct {
@@ -192,7 +191,7 @@ func (c *VirtualGuest) PowerState(id int) (string, error) {
 		Name    string `json:"name"`
 	}
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/getPowerState.json", c.namespace(), id)
 	)
 
@@ -225,7 +224,7 @@ func (c *VirtualGuest) ActiveTransaction(id int) (string, error) {
 		TransactionStatus transactionStatus `json:"transactionStatus"`
 	}
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/getActiveTransaction.json", c.namespace(), id)
 	)
 
@@ -243,7 +242,7 @@ func (c *VirtualGuest) ActiveTransaction(id int) (string, error) {
 
 func (c *VirtualGuest) Create(spec *HostSpec) (int, error) {
 	var (
-		method = "POST"
+		method = http.MethodPost
 		uri    = c.namespace() + ".json"
 	)
 
@@ -266,7 +265,7 @@ func (c *VirtualGuest) Create(spec *HostSpec) (int, error) {
 
 func (c *VirtualGuest) Cancel(id int) error {
 	var (
-		method = "DELETE"
+		method = http.MethodDelete
 		uri    = fmt.Sprintf("%s/%v", c.namespace(), id)
 	)
 
@@ -279,7 +278,7 @@ func (c *VirtualGuest) Cancel(id int) error {
 
 func (c *VirtualGuest) PowerOn(id int) error {
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/powerOn.json", c.namespace(), id)
 	)
 
@@ -292,7 +291,7 @@ func (c *VirtualGuest) PowerOn(id int) error {
 
 func (c *VirtualGuest) PowerOff(id int) error {
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/powerOff.json", c.namespace(), id)
 	)
 
@@ -305,7 +304,7 @@ func (c *VirtualGuest) PowerOff(id int) error {
 
 func (c *VirtualGuest) Pause(id int) error {
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/pause.json", c.namespace(), id)
 	)
 
@@ -318,7 +317,7 @@ func (c *VirtualGuest) Pause(id int) error {
 
 func (c *VirtualGuest) Resume(id int) error {
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/resume.json", c.namespace(), id)
 	)
 
@@ -331,7 +330,7 @@ func (c *VirtualGuest) Resume(id int) error {
 
 func (c *VirtualGuest) Reboot(id int) error {
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/rebootSoft.json", c.namespace(), id)
 	)
 
@@ -344,7 +343,7 @@ func (c *VirtualGuest) Reboot(id int) error {
 
 func (c *VirtualGuest) GetPublicIP(id int) (string, error) {
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/getPrimaryIpAddress.json", c.namespace(), id)
 	)
 
@@ -357,7 +356,7 @@ func (c *VirtualGuest) GetPublicIP(id int) (string, error) {
 
 func (c *VirtualGuest) GetPrivateIP(id int) (string, error) {
 	var (
-		method = "GET"
+		method = http.MethodGet
 		uri    = fmt.Sprintf("%s/%v/getPrimaryBackendIpAddress.json", c.namespace(), id)
 	)
 
