@@ -40,6 +40,7 @@ const (
 	defaultZone                 = "a"
 	defaultSecurityGroup        = machineSecurityGroupName
 	defaultSSHUser              = "ubuntu"
+        defaultSSHPort              = 22
 	defaultSpotPrice            = "0.50"
 	defaultBlockDurationMinutes = 0
 )
@@ -209,6 +210,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultSSHUser,
 			EnvVar: "AWS_SSH_USER",
 		},
+                mcnflag.IntFlag{
+                        Name:  "amazonec2-ssh-port",
+                        Usage: "Set the port used for ssh",
+                        Value:  defaultSSHPort,
+                        EnvVar: "AWS_SSH_PORT",
+                },
 		mcnflag.BoolFlag{
 			Name:  "amazonec2-request-spot-instance",
 			Usage: "Set this flag to request spot instance",
@@ -287,6 +294,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		BlockDurationMinutes: defaultBlockDurationMinutes,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultSSHUser,
+                        SSHPort:     defaultSSHPort,
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
@@ -354,7 +362,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.VolumeType = flags.String("amazonec2-volume-type")
 	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SSHUser = flags.String("amazonec2-ssh-user")
-	d.SSHPort = 22
+        /* d.SSHPort = 22 */
+        d.SSHPort = flags.Int("amazonec2-ssh-port")
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
@@ -825,6 +834,14 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+func (d *Driver) GetSSHPort() (int, error) {
+        if d.SSHPort == 0 {
+                d.SSHPort = defaultSSHPort
+        }
+
+        return d.SSHPort, nil
+}
+
 func (d *Driver) Start() error {
 	_, err := d.getClient().StartInstances(&ec2.StartInstancesInput{
 		InstanceIds: []*string{&d.InstanceId},
@@ -1119,14 +1136,14 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 
 	perms := []*ec2.IpPermission{}
 
-	if !hasPorts["22/tcp"] {
-		perms = append(perms, &ec2.IpPermission{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(22),
-			ToPort:     aws.Int64(22),
-			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
-		})
-	}
+        if !hasPorts[fmt.Sprintf("%d/tcp", d.BaseDriver.SSHPort)] {
+                perms = append(perms, &ec2.IpPermission{
+                        IpProtocol: aws.String("tcp"),
+                        FromPort:   aws.Int64(22),
+                        ToPort:     aws.Int64(int64(d.BaseDriver.SSHPort)),
+                        IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+                })
+        }
 
 	if !hasPorts[fmt.Sprintf("%d/tcp", dockerPort)] {
 		perms = append(perms, &ec2.IpPermission{
