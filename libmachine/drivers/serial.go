@@ -66,6 +66,14 @@ func (d *SerialDriver) GetIP() (string, error) {
 	return d.Driver.GetIP()
 }
 
+// GetPort returns the port number that the host is listening at
+// e.g. 2376
+func (d *SerialDriver) GetPort() int {
+	d.Lock()
+	defer d.Unlock()
+	return d.Driver.GetPort()
+}
+
 // GetMachineName returns the name of the machine
 func (d *SerialDriver) GetMachineName() string {
 	d.Lock()

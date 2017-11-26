@@ -28,6 +28,22 @@ func TestIP(t *testing.T) {
 	}
 }
 
+func TestPort(t *testing.T) {
+	cases := []struct {
+		baseDriver   *BaseDriver
+		expectedPort int
+	}{
+		{&BaseDriver{}, 2376},
+		{&BaseDriver{PortNumber: 1234}, 1234},
+		{&BaseDriver{PortNumber: 0}, 2376},
+	}
+
+	for _, c := range cases {
+		port := c.baseDriver.GetPort()
+		assert.Equal(t, c.expectedPort, port)
+	}
+}
+
 func TestEngineInstallUrlFlagEmpty(t *testing.T) {
 	assert.False(t, EngineInstallURLFlagSet(&CheckDriverOptions{}))
 }

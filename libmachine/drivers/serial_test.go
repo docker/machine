@@ -33,6 +33,7 @@ type MockDriver struct {
 	driverName  string
 	flags       []mcnflag.Flag
 	ip          string
+	port        int
 	machineName string
 	sshHostname string
 	sshKeyPath  string
@@ -60,6 +61,11 @@ func (d *MockDriver) GetCreateFlags() []mcnflag.Flag {
 func (d *MockDriver) GetIP() (string, error) {
 	d.calls.record("GetIP")
 	return d.ip, nil
+}
+
+func (d *MockDriver) GetPort() int {
+	d.calls.record("GetPort")
+	return d.port
 }
 
 func (d *MockDriver) GetMachineName() string {
@@ -160,6 +166,16 @@ func TestSerialDriverGetIP(t *testing.T) {
 
 	assert.Equal(t, "IP", ip)
 	assert.Equal(t, []string{"Lock", "GetIP", "Unlock"}, callRecorder.calls)
+}
+
+func TestSerialDriverGetPort(t *testing.T) {
+	callRecorder := &CallRecorder{}
+
+	driver := newSerialDriverWithLock(&MockDriver{port: 12345, calls: callRecorder}, &MockLocker{calls: callRecorder})
+	port := driver.GetPort()
+
+	assert.Equal(t, 12345, port)
+	assert.Equal(t, []string{"Lock", "GetPort", "Unlock"}, callRecorder.calls)
 }
 
 func TestSerialDriverGetMachineName(t *testing.T) {

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
-	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
@@ -19,8 +18,7 @@ import (
 
 type Driver struct {
 	*drivers.BaseDriver
-	EnginePort int
-	SSHKey     string
+	SSHKey string
 }
 
 const (
@@ -31,12 +29,6 @@ const (
 // "docker hosts create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
-		mcnflag.IntFlag{
-			Name:   "generic-engine-port",
-			Usage:  "Docker engine port",
-			Value:  engine.DefaultPort,
-			EnvVar: "GENERIC_ENGINE_PORT",
-		},
 		mcnflag.StringFlag{
 			Name:   "generic-ip-address",
 			Usage:  "IP Address of machine",
@@ -60,13 +52,18 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  drivers.DefaultSSHPort,
 			EnvVar: "GENERIC_SSH_PORT",
 		},
+		// DEPRECATED: remove in a future version
+		mcnflag.IntFlag{
+			Name:   "generic-engine-port",
+			Usage:  "Docker engine port",
+			EnvVar: "GENERIC_ENGINE_PORT",
+		},
 	}
 }
 
 // NewDriver creates and returns a new instance of the driver
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
-		EnginePort: engine.DefaultPort,
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -92,7 +89,6 @@ func (d *Driver) GetSSHKeyPath() string {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.EnginePort = flags.Int("generic-engine-port")
 	d.IPAddress = flags.String("generic-ip-address")
 	d.SSHUser = flags.String("generic-ssh-user")
 	d.SSHKey = flags.String("generic-ssh-key")
@@ -100,6 +96,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if d.IPAddress == "" {
 		return errors.New("generic driver requires the --generic-ip-address option")
+	}
+
+	if flags.Int("generic-engine-port") != 0 {
+		return errors.New("-generic-engine-port has been deprecated in favor of: -engine-port")
 	}
 
 	return nil
@@ -148,7 +148,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.EnginePort))), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.GetPort()))), nil
 }
 
 func (d *Driver) GetState() (state.State, error) {

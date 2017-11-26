@@ -173,7 +173,8 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 	// Is yast2 firewall installed?
 	if _, installed := provisioner.SSHCommand("rpm -q yast2-firewall"); installed == nil {
 		// Open the firewall port required by docker
-		if _, err := provisioner.SSHCommand("sudo -E /sbin/yast2 firewall services add ipprotocol=tcp tcpport=2376 zone=EXT"); err != nil {
+		firewallCommand := fmt.Sprintf("sudo -E /sbin/yast2 firewall services add ipprotocol=tcp tcpport=%d zone=EXT", provisioner.GetDriver().GetPort())
+		if _, err := provisioner.SSHCommand(firewallCommand); err != nil {
 			return err
 		}
 	}

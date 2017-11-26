@@ -317,6 +317,7 @@ func TestGetHostListItems(t *testing.T) {
 			Driver: &fakedriver.Driver{
 				MockState: state.Running,
 				MockIP:    "active.host.com",
+				MockPort:  2376,
 			},
 		},
 		{

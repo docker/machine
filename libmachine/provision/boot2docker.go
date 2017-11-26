@@ -222,7 +222,7 @@ func (provisioner *Boot2DockerProvisioner) Provision(swarmOptions swarm.Options,
 
 	defer func() {
 		if err == nil {
-			provisioner.AttemptIPContact(engine.DefaultPort)
+			provisioner.AttemptIPContact(provisioner.GetDriver().GetPort())
 		}
 	}()
 

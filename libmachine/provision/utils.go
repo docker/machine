@@ -3,17 +3,14 @@ package provision
 import (
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/cert"
-	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/provision/serviceaction"
@@ -156,23 +153,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	dockerURL, err := driver.GetURL()
-	if err != nil {
-		return err
-	}
-	u, err := url.Parse(dockerURL)
-	if err != nil {
-		return err
-	}
-	dockerPort := engine.DefaultPort
-	parts := strings.Split(u.Host, ":")
-	if len(parts) == 2 {
-		dPort, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return err
-		}
-		dockerPort = dPort
-	}
+	dockerPort := driver.GetPort()
 
 	dkrcfg, err := p.GenerateDockerOptions(dockerPort)
 	if err != nil {

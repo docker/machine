@@ -50,7 +50,6 @@ const (
 )
 
 var (
-	dockerPort                           = 2376
 	swarmPort                            = 3376
 	errorNoPrivateSSHKey                 = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
 	errorMissingCredentials              = errors.New("amazonec2 driver requires AWS credentials configured with the --amazonec2-access-key and --amazonec2-secret-key options, environment variables, ~/.aws/credentials, or an instance role")
@@ -759,7 +758,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", nil
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(dockerPort))), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.GetPort()))), nil
 }
 
 func (d *Driver) GetIP() (string, error) {
@@ -1128,11 +1127,11 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 		})
 	}
 
-	if !hasPorts[fmt.Sprintf("%d/tcp", dockerPort)] {
+	if !hasPorts[fmt.Sprintf("%d/tcp", d.GetPort())] {
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(int64(dockerPort)),
-			ToPort:     aws.Int64(int64(dockerPort)),
+			FromPort:   aws.Int64(int64(d.GetPort())),
+			ToPort:     aws.Int64(int64(d.GetPort())),
 			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 		})
 	}

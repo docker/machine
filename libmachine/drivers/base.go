@@ -3,6 +3,8 @@ package drivers
 import (
 	"errors"
 	"path/filepath"
+
+	"github.com/docker/machine/libmachine/engine"
 )
 
 const (
@@ -15,6 +17,7 @@ const (
 // of fields and functions.
 type BaseDriver struct {
 	IPAddress      string
+	PortNumber     int
 	MachineName    string
 	SSHUser        string
 	SSHPort        int
@@ -41,6 +44,15 @@ func (d *BaseDriver) GetIP() (string, error) {
 		return "", errors.New("IP address is not set")
 	}
 	return d.IPAddress, nil
+}
+
+// GetPort returns the port
+func (d *BaseDriver) GetPort() int {
+	if d.PortNumber == 0 {
+		d.PortNumber = engine.DefaultPort
+	}
+
+	return d.PortNumber
 }
 
 // GetSSHKeyPath returns the ssh key path

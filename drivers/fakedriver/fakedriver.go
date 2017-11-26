@@ -2,6 +2,8 @@ package fakedriver
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -13,6 +15,7 @@ type Driver struct {
 	MockState state.State
 	MockIP    string
 	MockName  string
+	MockPort  int
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -36,7 +39,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return fmt.Sprintf("tcp://%s:2376", ip), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.GetPort()))), nil
 }
 
 func (d *Driver) GetMachineName() string {
@@ -54,6 +57,10 @@ func (d *Driver) GetIP() (string, error) {
 		return "", drivers.ErrHostIsNotRunning
 	}
 	return d.MockIP, nil
+}
+
+func (d *Driver) GetPort() int {
+	return d.MockPort
 }
 
 func (d *Driver) GetSSHHostname() (string, error) {

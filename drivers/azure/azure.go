@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/docker/machine/drivers/azure/azureutil"
 	"github.com/docker/machine/libmachine/drivers"
@@ -24,7 +25,6 @@ const (
 	defaultAzureSize            = "Standard_A2"
 	defaultAzureLocation        = "westus"
 	defaultSSHUser              = "docker-user" // 'root' not allowed on Azure
-	defaultDockerPort           = 2376
 	defaultAzureImage           = "canonical:UbuntuServer:16.04.0-LTS:latest"
 	defaultAzureVNet            = "docker-machine-vnet"
 	defaultAzureSubnet          = "docker-machine"
@@ -74,7 +74,6 @@ type Driver struct {
 	SubscriptionID string
 	ResourceGroup  string
 
-	DockerPort      int
 	Location        string
 	Size            string
 	Image           string
@@ -138,12 +137,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Username for SSH login",
 			EnvVar: "AZURE_SSH_USER",
 			Value:  defaultSSHUser,
-		},
-		mcnflag.IntFlag{
-			Name:   flAzureDockerPort,
-			Usage:  "Port number for Docker engine",
-			EnvVar: "AZURE_DOCKER_PORT",
-			Value:  defaultDockerPort,
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureLocation,
@@ -233,6 +226,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Azure Service Principal Account password (optional, browser auth is used if not specified)",
 			EnvVar: "AZURE_CLIENT_SECRET",
 		},
+		// DEPRECATED: remove in a future version
+		mcnflag.IntFlag{
+			Name:   flAzureDockerPort,
+			Usage:  "Port number for Docker engine",
+			EnvVar: "AZURE_DOCKER_PORT",
+		},
 	}
 }
 
@@ -273,7 +272,6 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.UsePrivateIP = fl.Bool(flAzureUsePrivateIP)
 	d.NoPublicIP = fl.Bool(flAzureNoPublicIP)
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
-	d.DockerPort = fl.Int(flAzureDockerPort)
 	d.DNSLabel = fl.String(flAzureDNSLabel)
 	d.CustomDataFile = fl.String(flAzureCustomData)
 
@@ -283,6 +281,10 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	// Set flags on the BaseDriver
 	d.BaseDriver.SSHPort = sshPort
 	d.SetSwarmConfigFromFlags(fl)
+
+	if fl.Int(flAzureDockerPort) != 0 {
+		return fmt.Errorf("-%s has been deprecated in favor of: -engine-port", flAzureDockerPort)
+	}
 
 	log.Debug("Set configuration from flags.")
 	return nil
@@ -473,7 +475,7 @@ func (d *Driver) GetURL() (string, error) {
 	}
 	u := (&url.URL{
 		Scheme: "tcp",
-		Host:   net.JoinHostPort(ip, fmt.Sprintf("%d", d.DockerPort)),
+		Host:   net.JoinHostPort(ip, strconv.Itoa(d.GetPort())),
 	}).String()
 	log.Debugf("Machine URL is resolved to: %s", u)
 	return u, nil

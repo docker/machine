@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -279,7 +280,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", nil
 	}
 
-	return "tcp://" + net.JoinHostPort(ip, "2376"), nil
+	return "tcp://" + net.JoinHostPort(ip, strconv.Itoa(d.GetPort())), nil
 }
 
 func (d *Driver) GetIP() (string, error) {

@@ -44,7 +44,6 @@ const (
 	defaultCpus        = 1
 	defaultMemory      = 2048
 	defaultSSHPort     = 22
-	defaultDockerPort  = 2376
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -116,11 +115,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "vCloud Air SSH port",
 			Value:  defaultSSHPort,
 		},
+		// DEPRECATED: remove in a future version
 		mcnflag.IntFlag{
 			EnvVar: "VCLOUDAIR_DOCKER_PORT",
 			Name:   "vmwarevcloudair-docker-port",
 			Usage:  "vCloud Air Docker port",
-			Value:  defaultDockerPort,
 		},
 	}
 }
@@ -131,7 +130,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		CatalogItem: defaultCatalogItem,
 		CPUCount:    defaultCpus,
 		MemorySize:  defaultMemory,
-		DockerPort:  defaultDockerPort,
 		BaseDriver: &drivers.BaseDriver{
 			SSHPort:     defaultSSHPort,
 			MachineName: hostName,
@@ -186,11 +184,15 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Catalog = flags.String("vmwarevcloudair-catalog")
 	d.CatalogItem = flags.String("vmwarevcloudair-catalogitem")
 
-	d.DockerPort = flags.Int("vmwarevcloudair-docker-port")
 	d.SSHUser = "root"
 	d.SSHPort = flags.Int("vmwarevcloudair-ssh-port")
 	d.CPUCount = flags.Int("vmwarevcloudair-cpu-count")
 	d.MemorySize = flags.Int("vmwarevcloudair-memory-size")
+
+	// Return a deprecation error if vmwarevcloudair-docker-port is set
+	if flags.Int("vmwarevcloudair-docker-port") != 0 {
+		return fmt.Errorf("-vmwarevcloudair-docker-port has been deprecated in favor of: -engine-port")
+	}
 
 	return nil
 }
@@ -200,7 +202,7 @@ func (d *Driver) GetURL() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("tcp://%s", net.JoinHostPort(d.PublicIP, strconv.Itoa(d.DockerPort))), nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(d.PublicIP, strconv.Itoa(d.GetPort()))), nil
 }
 
 func (d *Driver) GetIP() (string, error) {

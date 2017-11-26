@@ -77,6 +77,12 @@ var (
 			Usage: "Specify environment variables to set in the engine",
 			Value: &cli.StringSlice{},
 		},
+		cli.IntFlag{
+			Name:   "engine-port",
+			Usage:  "Specify the port number that the engine will listen on",
+			Value:  engine.DefaultPort,
+			EnvVar: "ENGINE_PORT_NUMBER",
+		},
 		cli.BoolFlag{
 			Name:  "swarm",
 			Usage: "Configure Machine to join a Swarm cluster",
@@ -157,6 +163,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	rawDriver, err := json.Marshal(&drivers.BaseDriver{
 		MachineName: name,
 		StorePath:   c.GlobalString("storage-path"),
+		PortNumber:  c.Int("engine-port"),
 	})
 	if err != nil {
 		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
