@@ -74,7 +74,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "exoscale disk size (10, 50, 100, 200, 400)",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "EXSOCALE_IMAGE",
+			EnvVar: "EXOSCALE_IMAGE",
 			Name:   "exoscale-image",
 			Value:  defaultImage,
 			Usage:  "exoscale image template",
