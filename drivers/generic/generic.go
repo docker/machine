@@ -124,7 +124,7 @@ func (d *Driver) PreCreateCheck() error {
 
 		_, err = ssh.ParsePrivateKey(keyBytes)
 		if err != nil {
-			return fmt.Errorf("SSH key not valid key: %q", d.SSHKey)
+			return fmt.Errorf("%q not valid key: %s", d.SSHKey, err)
 		}
 	}
 
