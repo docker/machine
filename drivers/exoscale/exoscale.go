@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -135,11 +136,20 @@ func (d *Driver) GetSSHHostname() (string, error) {
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		name := strings.ToLower(d.Image)
+		re := regexp.MustCompile(`\b[0-9.]+\b`)
+		version := re.FindString(d.Image)
+
 		if strings.Contains(name, "ubuntu") {
 			return "ubuntu"
 		}
+		if strings.Contains(name, "centos") && version >= "7.3" {
+			return "centos"
+		}
 		if strings.Contains(name, "coreos") {
 			return "core"
+		}
+		if strings.Contains(name, "debian") && version >= "8" {
+			return "debian"
 		}
 		return defaultSSHUser
 	}

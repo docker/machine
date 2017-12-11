@@ -327,7 +327,8 @@
 		},
 		{
 			"ImportPath": "github.com/exoscale/egoscale",
-			"Rev": "325740036187ddae3a5b74be00fbbc70011c4d96"
+			"Comment": "v0.1.0",
+			"Rev": "5e23d5d34cb5855ddd1c7fbf8032f13b702994d7"
 		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
