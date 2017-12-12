@@ -217,11 +217,11 @@ _docker_machine_ls() {
     local key=$(_docker_machine_map_key_of_current_option '--filter')
     case "$key" in
         driver)
-            COMPREPLY=($(compgen -W "$(_docker_machine_drivers)" -- "${cur##*=}"))
+            COMPREPLY=("driver="$(compgen -W "$(_docker_machine_drivers)" -- "${cur##*=}"))
             return
             ;;
         state)
-            COMPREPLY=($(compgen -W "Error Paused Running Saved Starting Stopped Stopping" -- "${cur##*=}"))
+            COMPREPLY=("state="$(compgen -W "Error Paused Running Saved Starting Stopped Stopping" -- "${cur##*=}"))
             return
             ;;
     esac
