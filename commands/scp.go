@@ -127,8 +127,13 @@ func getScpCmd(src, dest string, recursive bool, delta bool, quiet bool, hostInf
 		return nil, err
 	}
 
+	// TODO: Check that "--progress" flag is available in user's version of rsync.
+	// Use quiet mode as a workaround, if it should happen to not be supported...
 	if delta {
 		sshArgs = append([]string{"-e"}, "ssh "+strings.Join(sshArgs, " "))
+		if !quiet {
+			sshArgs = append([]string{"--progress"}, sshArgs...)
+		}
 		if recursive {
 			sshArgs = append(sshArgs, "-r")
 		}

@@ -165,7 +165,8 @@ func TestGetScpCmdWithDelta(t *testing.T) {
 	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, true, false, &hostInfoLoader)
 
 	expectedArgs := append(
-		[]string{"-e"},
+		[]string{"--progress"},
+		"-e",
 		"ssh "+strings.Join(baseSSHArgs, " "),
 		"-r",
 		"/tmp/foo",
