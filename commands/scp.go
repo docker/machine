@@ -66,7 +66,7 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 
 	hostInfoLoader := &storeHostInfoLoader{api}
 
-	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), c.Bool("delta"), hostInfoLoader)
+	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), c.Bool("delta"), c.Bool("quiet"), hostInfoLoader)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 	return runCmdWithStdIo(*cmd)
 }
 
-func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader HostInfoLoader) (*exec.Cmd, error) {
+func getScpCmd(src, dest string, recursive bool, delta bool, quiet bool, hostInfoLoader HostInfoLoader) (*exec.Cmd, error) {
 	var cmdPath string
 	var err error
 	if !delta {
@@ -106,6 +106,9 @@ func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader Host
 		sshArgs = append(sshArgs, "-3")
 		if recursive {
 			sshArgs = append(sshArgs, "-r")
+		}
+		if quiet {
+			sshArgs = append(sshArgs, "-q")
 		}
 	}
 

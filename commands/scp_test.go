@@ -114,7 +114,7 @@ func TestGetScpCmd(t *testing.T) {
 		sshKeyPath:  "/fake/keypath/id_rsa",
 	}}
 
-	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, false, &hostInfoLoader)
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, false, false, &hostInfoLoader)
 
 	expectedArgs := append(
 		baseSSHArgs,
@@ -141,7 +141,7 @@ func TestGetScpCmdWithoutSshKey(t *testing.T) {
 		sshUsername: "user",
 	}}
 
-	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, false, &hostInfoLoader)
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, false, false, &hostInfoLoader)
 
 	expectedArgs := append(
 		baseSSHArgs,
@@ -162,7 +162,7 @@ func TestGetScpCmdWithDelta(t *testing.T) {
 		sshUsername: "user",
 	}}
 
-	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, true, &hostInfoLoader)
+	cmd, err := getScpCmd("/tmp/foo", "myfunhost:/home/docker/foo", true, true, false, &hostInfoLoader)
 
 	expectedArgs := append(
 		[]string{"-e"},
