@@ -242,7 +242,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		Disks: []*raw.AttachedDisk{
 			{
 				Boot:       true,
-				AutoDelete: false,
+				AutoDelete: true,
 				Type:       "PERSISTENT",
 				Mode:       "READ_WRITE",
 			},
