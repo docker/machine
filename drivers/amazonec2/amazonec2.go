@@ -33,6 +33,7 @@ const (
 	machineSecurityGroupName    = "docker-machine"
 	defaultAmiId                = "ami-c60b90d1"
 	defaultRegion               = "us-east-1"
+	defaultInstanceTenancy      = "default"
 	defaultInstanceType         = "t2.micro"
 	defaultDeviceName           = "/dev/sda1"
 	defaultRootSize             = 16
@@ -75,6 +76,7 @@ type Driver struct {
 	ExistingKey      bool
 	KeyName          string
 	InstanceId       string
+	InstanceTenancy  string
 	InstanceType     string
 	PrivateIPAddress string
 
@@ -173,6 +175,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "amazonec2-tags",
 			Usage:  "AWS Tags (e.g. key1,value1,key2,value2)",
 			EnvVar: "AWS_TAGS",
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-instance-tenancy",
+			Usage:  "AWS instance tenancy",
+			Value:  defaultInstanceTenancy,
+			EnvVar: "AWS_INSTANCE_TENANCY",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-instance-type",
@@ -279,6 +287,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		Id:                   id,
 		AMI:                  defaultAmiId,
 		Region:               defaultRegion,
+		InstanceTenancy:      defaultInstanceTenancy,
 		InstanceType:         defaultInstanceType,
 		RootSize:             defaultRootSize,
 		Zone:                 defaultZone,
@@ -342,6 +351,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.RequestSpotInstance = flags.Bool("amazonec2-request-spot-instance")
 	d.SpotPrice = flags.String("amazonec2-spot-price")
 	d.BlockDurationMinutes = int64(flags.Int("amazonec2-block-duration-minutes"))
+	d.InstanceTenancy = flags.String("amazonec2-instance-tenancy")
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
 	d.SubnetId = flags.String("amazonec2-subnet-id")
@@ -698,6 +708,7 @@ func (d *Driver) Create() error {
 			MaxCount: aws.Int64(1),
 			Placement: &ec2.Placement{
 				AvailabilityZone: &regionZone,
+				Tenancy: &d.InstanceTenancy,
 			},
 			KeyName:           &d.KeyName,
 			InstanceType:      &d.InstanceType,
