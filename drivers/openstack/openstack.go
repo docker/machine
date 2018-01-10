@@ -50,6 +50,8 @@ type Driver struct {
 	IpVersion        int
 	ConfigDrive      bool
 	client           Client
+	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
+	ExistingKey bool
 }
 
 const (
@@ -292,6 +294,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ComputeNetwork = flags.Bool("openstack-nova-network")
 	d.SSHUser = flags.String("openstack-ssh-user")
 	d.SSHPort = flags.Int("openstack-ssh-port")
+	d.ExistingKey = flags.String("openstack-keypair-name") != ""
 	d.KeyPairName = flags.String("openstack-keypair-name")
 	d.PrivateKeyFile = flags.String("openstack-private-key-file")
 	d.ConfigDrive = flags.Bool("openstack-config-drive")
@@ -467,10 +470,11 @@ func (d *Driver) Remove() error {
 			return err
 		}
 	}
-	log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
-	// TODO (fsoppelsa) maybe we want to check this, in case of shared keypairs, before removal
-	if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
-		return err
+	if !d.ExistingKey {
+		log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
+		if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
+			return err
+		}
 	}
 	return nil
 }
