@@ -32,7 +32,7 @@ const (
 	driverName                  = "amazonec2"
 	ipRange                     = "0.0.0.0/0"
 	machineSecurityGroupName    = "rancher-nodes"
-	machineTag                  = "rancher-docker"
+	machineTag                  = "rancher-nodes"
 	defaultAmiId                = "ami-c60b90d1"
 	defaultRegion               = "us-east-1"
 	defaultInstanceType         = "t2.micro"
@@ -1094,11 +1094,8 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 			Name:   aws.String("vpc-id"),
 			Values: []*string{&d.VpcId},
 		},
-		{
-			Name:   aws.String("tag:" + machineTag),
-			Values: []*string{aws.String(version)},
-		},
 	}
+
 	groups, err := d.getClient().DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 		Filters: filters,
 	})
@@ -1121,7 +1118,7 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 			log.Debugf("creating security group (%s) in %s", groupName, d.VpcId)
 			groupResp, err := d.getClient().CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 				GroupName:   aws.String(groupName),
-				Description: aws.String("RKE Machine"),
+				Description: aws.String("Rancher Nodes"),
 				VpcId:       aws.String(d.VpcId),
 			})
 			if err != nil && !strings.Contains(err.Error(), "already exists") {
@@ -1148,6 +1145,16 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 				}
 				group = groups.SecurityGroups[0]
 			}
+
+			// Manually translate into the security group construct
+			if group == nil {
+				group = &ec2.SecurityGroup{
+					GroupId:   groupResp.GroupId,
+					VpcId:     aws.String(d.VpcId),
+					GroupName: aws.String(groupName),
+				}
+			}
+
 			_, err = d.getClient().CreateTags(&ec2.CreateTagsInput{
 				Tags: []*ec2.Tag{
 					{
@@ -1161,14 +1168,7 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 				return fmt.Errorf("can't create tag for security group. err: %v", err)
 			}
 
-			// Manually translate into the security group construct
-			if group == nil {
-				group = &ec2.SecurityGroup{
-					GroupId:   groupResp.GroupId,
-					VpcId:     aws.String(d.VpcId),
-					GroupName: aws.String(groupName),
-				}
-			}
+
 
 			// wait until created (dat eventual consistency)
 			log.Debugf("waiting for group (%s) to become available", *group.GroupId)
@@ -1189,7 +1189,7 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 				GroupId:       group.GroupId,
 				IpPermissions: inboundPerms,
 			})
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "already exists") {
 				return err
 			}
 		}
@@ -1231,84 +1231,87 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 		})
 	}
 
-	// kubeapi
-	if !hasPortsInbound[fmt.Sprintf("%d/tcp", kubeApiPort)] {
-		inboundPerms = append(inboundPerms, &ec2.IpPermission{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(int64(kubeApiPort)),
-			ToPort:     aws.Int64(int64(kubeApiPort)),
-			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
-		})
-	}
+	// we are only adding custom ports when the group is rancher-nodes
+	if *group.GroupName == defaultSecurityGroup && hasTagKey(group.Tags, machineSecurityGroupName) {
+		// kubeapi
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", kubeApiPort)] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(kubeApiPort)),
+				ToPort:     aws.Int64(int64(kubeApiPort)),
+				IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+			})
+		}
 
-	// etcd
-	if !hasPortsInbound[fmt.Sprintf("%d/tcp", etcdPorts[0])] {
-		inboundPerms = append(inboundPerms, &ec2.IpPermission{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(int64(etcdPorts[0])),
-			ToPort:     aws.Int64(int64(etcdPorts[1])),
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{
-				{
-					GroupId: group.GroupId,
+		// etcd
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", etcdPorts[0])] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(etcdPorts[0])),
+				ToPort:     aws.Int64(int64(etcdPorts[1])),
+				UserIdGroupPairs: []*ec2.UserIdGroupPair{
+					{
+						GroupId: group.GroupId,
+					},
 				},
-			},
-		})
-	}
+			})
+		}
 
-	// vxlan
-	if !hasPortsInbound[fmt.Sprintf("%d/udp", vxlanPorts[0])] {
-		inboundPerms = append(inboundPerms, &ec2.IpPermission{
-			IpProtocol: aws.String("udp"),
-			FromPort:   aws.Int64(int64(vxlanPorts[0])),
-			ToPort:     aws.Int64(int64(vxlanPorts[1])),
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{
-				{
-					GroupId: group.GroupId,
+		// vxlan
+		if !hasPortsInbound[fmt.Sprintf("%d/udp", vxlanPorts[0])] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("udp"),
+				FromPort:   aws.Int64(int64(vxlanPorts[0])),
+				ToPort:     aws.Int64(int64(vxlanPorts[1])),
+				UserIdGroupPairs: []*ec2.UserIdGroupPair{
+					{
+						GroupId: group.GroupId,
+					},
 				},
-			},
-		})
-	}
+			})
+		}
 
-	// flannel
-	if !hasPortsInbound[fmt.Sprintf("%d/udp", flannelPorts[0])] {
-		inboundPerms = append(inboundPerms, &ec2.IpPermission{
-			IpProtocol: aws.String("udp"),
-			FromPort:   aws.Int64(int64(flannelPorts[0])),
-			ToPort:     aws.Int64(int64(flannelPorts[1])),
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{
-				{
-					GroupId: group.GroupId,
+		// flannel
+		if !hasPortsInbound[fmt.Sprintf("%d/udp", flannelPorts[0])] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("udp"),
+				FromPort:   aws.Int64(int64(flannelPorts[0])),
+				ToPort:     aws.Int64(int64(flannelPorts[1])),
+				UserIdGroupPairs: []*ec2.UserIdGroupPair{
+					{
+						GroupId: group.GroupId,
+					},
 				},
-			},
-		})
-	}
+			})
+		}
 
-	// others
-	if !hasPortsInbound[fmt.Sprintf("%d/tcp", otherKubePorts[0])] {
-		inboundPerms = append(inboundPerms, &ec2.IpPermission{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(int64(otherKubePorts[0])),
-			ToPort:     aws.Int64(int64(otherKubePorts[1])),
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{
-				{
-					GroupId: group.GroupId,
+		// others
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", otherKubePorts[0])] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(otherKubePorts[0])),
+				ToPort:     aws.Int64(int64(otherKubePorts[1])),
+				UserIdGroupPairs: []*ec2.UserIdGroupPair{
+					{
+						GroupId: group.GroupId,
+					},
 				},
-			},
-		})
-	}
+			})
+		}
 
-	// kube proxy
-	if !hasPortsInbound[fmt.Sprintf("%d/tcp", kubeProxyPorts[0])] {
-		inboundPerms = append(inboundPerms, &ec2.IpPermission{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(int64(kubeProxyPorts[0])),
-			ToPort:     aws.Int64(int64(kubeProxyPorts[1])),
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{
-				{
-					GroupId: group.GroupId,
+		// kube proxy
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", kubeProxyPorts[0])] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(kubeProxyPorts[0])),
+				ToPort:     aws.Int64(int64(kubeProxyPorts[1])),
+				UserIdGroupPairs: []*ec2.UserIdGroupPair{
+					{
+						GroupId: group.GroupId,
+					},
 				},
-			},
-		})
+			})
+		}
 	}
 
 	for _, p := range d.OpenPorts {
@@ -1382,4 +1385,13 @@ func generateId() string {
 	h := md5.New()
 	io.WriteString(h, string(rb))
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func hasTagKey(tags []*ec2.Tag, key string) bool {
+	for _, tag := range tags {
+		if *tag.Key == key {
+			return true
+		}
+	}
+	return false
 }
