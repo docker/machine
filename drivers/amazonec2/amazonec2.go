@@ -1164,10 +1164,17 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 				},
 				Resources: []*string{group.GroupId},
 			})
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "already exists"){
 				return fmt.Errorf("can't create tag for security group. err: %v", err)
 			}
 
+			// set Tag to group manually so that we know the group has rancher-nodes tag
+			group.Tags = []*ec2.Tag{
+				{
+					Key:   aws.String(machineTag),
+					Value: aws.String(version),
+				},
+			}
 
 
 			// wait until created (dat eventual consistency)
