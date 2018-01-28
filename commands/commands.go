@@ -359,6 +359,10 @@ var Commands = []cli.Command{
 				Name:  "delta, d",
 				Usage: "Reduce amount of data sent over network by sending only the differences (uses rsync)",
 			},
+			cli.BoolFlag{
+				Name:  "quiet, q",
+				Usage: "Disables the progress meter as well as warning and diagnostic messages from ssh",
+			},
 		},
 	},
 	{

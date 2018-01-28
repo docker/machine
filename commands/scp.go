@@ -66,7 +66,7 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 
 	hostInfoLoader := &storeHostInfoLoader{api}
 
-	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), c.Bool("delta"), hostInfoLoader)
+	cmd, err := getScpCmd(src, dest, c.Bool("recursive"), c.Bool("delta"), c.Bool("quiet"), hostInfoLoader)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 	return runCmdWithStdIo(*cmd)
 }
 
-func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader HostInfoLoader) (*exec.Cmd, error) {
+func getScpCmd(src, dest string, recursive bool, delta bool, quiet bool, hostInfoLoader HostInfoLoader) (*exec.Cmd, error) {
 	var cmdPath string
 	var err error
 	if !delta {
@@ -107,6 +107,9 @@ func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader Host
 		if recursive {
 			sshArgs = append(sshArgs, "-r")
 		}
+		if quiet {
+			sshArgs = append(sshArgs, "-q")
+		}
 	}
 
 	// Don't use ssh-agent if both hosts have explicit ssh keys
@@ -124,8 +127,13 @@ func getScpCmd(src, dest string, recursive bool, delta bool, hostInfoLoader Host
 		return nil, err
 	}
 
+	// TODO: Check that "--progress" flag is available in user's version of rsync.
+	// Use quiet mode as a workaround, if it should happen to not be supported...
 	if delta {
 		sshArgs = append([]string{"-e"}, "ssh "+strings.Join(sshArgs, " "))
+		if !quiet {
+			sshArgs = append([]string{"--progress"}, sshArgs...)
+		}
 		if recursive {
 			sshArgs = append(sshArgs, "-r")
 		}
