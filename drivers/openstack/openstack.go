@@ -45,6 +45,7 @@ type Driver struct {
 	ComputeNetwork   bool
 	FloatingIpPoolId string
 	IpVersion        int
+	ConfigDrive      bool
 	client           Client
 }
 
@@ -222,6 +223,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "OpenStack active timeout",
 			Value:  defaultActiveTimeout,
 		},
+		mcnflag.BoolFlag{
+			EnvVar: "OS_CONFIG_DRIVE",
+			Name:   "openstack-config-drive",
+			Usage:  "Enables the OpenStack config drive for the instance",
+		},
 	}
 }
 
@@ -285,6 +291,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = flags.Int("openstack-ssh-port")
 	d.KeyPairName = flags.String("openstack-keypair-name")
 	d.PrivateKeyFile = flags.String("openstack-private-key-file")
+	d.ConfigDrive = flags.Bool("openstack-config-drive")
 
 	if flags.String("openstack-user-data-file") != "" {
 		userData, err := ioutil.ReadFile(flags.String("openstack-user-data-file"))
