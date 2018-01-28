@@ -21,6 +21,7 @@ var regionDetails map[string]*region = map[string]*region{
 	"eu-central-1":    {"ami-1c45e273"},
 	"eu-west-1":       {"ami-6d48500b"},
 	"eu-west-2":       {"ami-cc7066a8"},
+	"eu-west-3":       {"ami-c1cf79bc"}, // Note: this is 20180126
 	"sa-east-1":       {"ami-34afc458"},
 	"us-east-1":       {"ami-d15a75c7"},
 	"us-east-2":       {"ami-8b92b4ee"},
