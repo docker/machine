@@ -3,6 +3,7 @@ package google
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -486,4 +487,17 @@ func unwrapGoogleError(err error) error {
 	}
 
 	return err
+}
+
+func isNotFound(err error) bool {
+	googleErr, ok := err.(*googleapi.Error)
+	if !ok {
+		return false
+	}
+
+	if googleErr.Code == http.StatusNotFound {
+		return true
+	}
+
+	return false
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"strings"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -12,8 +11,6 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-
-	"google.golang.org/api/googleapi"
 )
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
@@ -343,7 +340,7 @@ func (d *Driver) Start() error {
 
 	instance, err := c.instance()
 	if err != nil {
-		if !strings.Contains(err.Error(), "notFound") {
+		if !isNotFound(err) {
 			return err
 		}
 	}
@@ -399,16 +396,20 @@ func (d *Driver) Remove() error {
 	}
 
 	if err := c.deleteInstance(); err != nil {
-		googleErr, ok := err.(*googleapi.Error)
-		if !ok {
-			return err
-		}
-		if googleErr.Code == http.StatusNotFound {
+		if isNotFound(err) {
 			log.Warn("Remote instance does not exist, proceeding with removing local reference")
 		} else {
 			return err
 		}
 	}
 
-	return c.deleteDisk()
+	if err := c.deleteDisk(); err != nil {
+		if isNotFound(err) {
+			log.Warn("Remote disk does not exist, proceeding")
+		} else {
+			return err
+		}
+	}
+
+	return nil
 }
