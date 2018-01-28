@@ -31,12 +31,14 @@ func (exo *Client) GetSecurityGroups() (map[string]SecurityGroup, error) {
 
 func (exo *Client) GetSecurityGroupId(name string) (string, error) {
 	params := url.Values{}
-	resp, err := exo.Request("listSecurityGroups", params); if err != nil {
+	resp, err := exo.Request("listSecurityGroups", params)
+	if err != nil {
 		return "", err
 	}
 
 	var r ListSecurityGroupsResponse
-	err = json.Unmarshal(resp, &r); if err != nil {
+	err = json.Unmarshal(resp, &r)
+	if err != nil {
 		return "", err
 	}
 
@@ -137,6 +139,7 @@ func (exo *Client) GetAffinityGroups() (map[string]string, error) {
 
 }
 
+// GetImages list the available featured images and group them by name, then size.
 func (exo *Client) GetImages() (map[string]map[int]string, error) {
 	var images map[string]map[int]string
 	images = make(map[string]map[int]string)
@@ -155,22 +158,27 @@ func (exo *Client) GetImages() (map[string]map[int]string, error) {
 		return nil, err
 	}
 
-	re := regexp.MustCompile(`^Linux (?P<name>.+?) (?P<version>[0-9.]+).*$`)
+	re := regexp.MustCompile(`^Linux (?P<name>.+?) (?P<version>[0-9.]+)\b`)
 	for _, template := range r.Templates {
 		size := int(template.Size / (1024 * 1024 * 1024))
+
+		fullname := strings.ToLower(template.Name)
+
+		if _, present := images[fullname]; !present {
+			images[fullname] = make(map[int]string)
+		}
+		images[fullname][size] = template.Id
+
 		submatch := re.FindStringSubmatch(template.Name)
 		if len(submatch) > 0 {
 			name := strings.Replace(strings.ToLower(submatch[1]), " ", "-", -1)
 			version := submatch[2]
 			image := fmt.Sprintf("%s-%s", name, version)
 
-			_, present := images[image]
-			if !present {
+			if _, present := images[image]; !present {
 				images[image] = make(map[int]string)
 			}
 			images[image][size] = template.Id
-
-			images[fmt.Sprintf("%s-%s", name, version)][size] = template.Id
 		}
 	}
 	return images, nil
@@ -191,7 +199,7 @@ func (exo *Client) GetTopology() (*Topology, error) {
 		return nil, err
 	}
 	groups := make(map[string]string)
-	for k,v := range securityGroups {
+	for k, v := range securityGroups {
 		groups[k] = v.Id
 	}
 

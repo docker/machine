@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/exoscale/egoscale"
 )
 
+// Driver is the struct compatible with github.com/docker/machine/libmachine/drivers.Driver interface
 type Driver struct {
 	*drivers.BaseDriver
 	URL              string
@@ -35,11 +37,11 @@ type Driver struct {
 }
 
 const (
-	defaultInstanceProfile  = "small"
+	defaultInstanceProfile  = "Small"
 	defaultDiskSize         = 50
-	defaultImage            = "ubuntu-16.04"
-	defaultAvailabilityZone = "ch-dk-2"
-	defaultSSHUser          = "ubuntu"
+	defaultImage            = "Linux Ubuntu 16.04 TLS 64-bit"
+	defaultAvailabilityZone = "CH-DK-2"
+	defaultSSHUser          = "root"
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -65,7 +67,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "EXOSCALE_INSTANCE_PROFILE",
 			Name:   "exoscale-instance-profile",
 			Value:  defaultInstanceProfile,
-			Usage:  "exoscale instance profile (small, medium, large, ...)",
+			Usage:  "exoscale instance profile (Small, Medium, Large, ...)",
 		},
 		mcnflag.IntFlag{
 			EnvVar: "EXOSCALE_DISK_SIZE",
@@ -74,7 +76,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "exoscale disk size (10, 50, 100, 200, 400)",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "EXSOCALE_IMAGE",
+			EnvVar: "EXOSCALE_IMAGE",
 			Name:   "exoscale-image",
 			Value:  defaultImage,
 			Usage:  "exoscale image template",
@@ -94,8 +96,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "EXOSCALE_SSH_USER",
 			Name:   "exoscale-ssh-user",
-			Value:  defaultSSHUser,
-			Usage:  "Set the name of the ssh user",
+			Value:  "",
+			Usage:  "name of the ssh user",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "EXOSCALE_USERDATA",
@@ -111,36 +113,56 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	}
 }
 
-func NewDriver(hostName, storePath string) drivers.Driver {
+// NewDriver creates a Driver with the specified machineName and storePath.
+func NewDriver(machineName, storePath string) drivers.Driver {
 	return &Driver{
 		InstanceProfile:  defaultInstanceProfile,
 		DiskSize:         defaultDiskSize,
 		Image:            defaultImage,
 		AvailabilityZone: defaultAvailabilityZone,
 		BaseDriver: &drivers.BaseDriver{
-			MachineName: hostName,
+			MachineName: machineName,
 			StorePath:   storePath,
 		},
 	}
 }
 
+// GetSSHHostname returns the hostname to use with ssh.
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
 
+// GetSSHUsername returns the username to use with ssh.
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
-		d.SSHUser = defaultSSHUser
+		name := strings.ToLower(d.Image)
+		re := regexp.MustCompile(`\b[0-9.]+\b`)
+		version := re.FindString(d.Image)
+
+		if strings.Contains(name, "ubuntu") {
+			return "ubuntu"
+		}
+		if strings.Contains(name, "centos") && version >= "7.3" {
+			return "centos"
+		}
+		if strings.Contains(name, "coreos") {
+			return "core"
+		}
+		if strings.Contains(name, "debian") && version >= "8" {
+			return "debian"
+		}
+		return defaultSSHUser
 	}
 
 	return d.SSHUser
 }
 
-// DriverName returns the name of the driver
+// DriverName returns the name of the driver.
 func (d *Driver) DriverName() string {
 	return "exoscale"
 }
 
+// SetConfigFromFlags initializes the driver based on the command line flags.
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.URL = flags.String("exoscale-url")
 	d.APIKey = flags.String("exoscale-api-key")
@@ -172,6 +194,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return nil
 }
 
+// PreCreateCheck is called to enforced pre-creation checks.
 func (d *Driver) PreCreateCheck() error {
 	if d.UserDataFile != "" {
 		if _, err := os.Stat(d.UserDataFile); os.IsNotExist(err) {
@@ -182,6 +205,7 @@ func (d *Driver) PreCreateCheck() error {
 	return nil
 }
 
+// GetURL returns the URL of the remote docker daemon.
 func (d *Driver) GetURL() (string, error) {
 	if err := drivers.MustBeRunning(d); err != nil {
 		return "", err
@@ -195,6 +219,7 @@ func (d *Driver) GetURL() (string, error) {
 	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, "2376")), nil
 }
 
+// GetState returns a github.com/machine/libmachine/state.State representing the state of the host.
 func (d *Driver) GetState() (state.State, error) {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 	vm, err := client.GetVirtualMachine(d.ID)
@@ -287,6 +312,7 @@ func (d *Driver) createDefaultAffinityGroup(client *egoscale.Client, group strin
 	return agid, nil
 }
 
+// Create creates the VM instance acting as the docker host.
 func (d *Driver) Create() error {
 	userdata, err := d.getCloudInit()
 	if err != nil {
@@ -301,7 +327,7 @@ func (d *Driver) Create() error {
 	}
 
 	// Availability zone UUID
-	zone, ok := topology.Zones[d.AvailabilityZone]
+	zone, ok := topology.Zones[strings.ToLower(d.AvailabilityZone)]
 	if !ok {
 		return fmt.Errorf("Availability zone %v doesn't exist",
 			d.AvailabilityZone)
@@ -404,6 +430,7 @@ func (d *Driver) Create() error {
 	return nil
 }
 
+// Start starts the existing VM instance.
 func (d *Driver) Start() error {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
@@ -415,6 +442,7 @@ func (d *Driver) Start() error {
 	return d.waitForJob(client, svmresp)
 }
 
+// Stop stops the existing VM instance.
 func (d *Driver) Stop() error {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
@@ -426,6 +454,7 @@ func (d *Driver) Stop() error {
 	return d.waitForJob(client, svmresp)
 }
 
+// Restart reboots the existing VM instance.
 func (d *Driver) Restart() error {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
@@ -437,10 +466,12 @@ func (d *Driver) Restart() error {
 	return d.waitForJob(client, svmresp)
 }
 
+// Kill stops the VM instance.
 func (d *Driver) Kill() error {
 	return d.Stop()
 }
 
+// Remove destroys the VM instance and the associated SSH key.
 func (d *Driver) Remove() error {
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
