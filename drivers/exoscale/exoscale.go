@@ -321,6 +321,14 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 		},
 		{
 			SecurityGroupID: sg.ID,
+			Description:     "Legacy Standalone Swarm",
+			CidrList:        []string{"0.0.0.0/0"},
+			Protocol:        "TCP",
+			StartPort:       3376,
+			EndPort:         3377,
+		},
+		{
+			SecurityGroupID: sg.ID,
 			Description:     "Communication among nodes",
 			Protocol:        "TCP",
 			StartPort:       7946,
