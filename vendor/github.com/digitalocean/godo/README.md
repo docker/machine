@@ -59,7 +59,7 @@ dropletName := "super-cool-droplet"
 createRequest := &godo.DropletCreateRequest{
     Name:   dropletName,
     Region: "nyc3",
-    Size:   "512mb",
+    Size:   "s-1vcpu-1gb",
     Image: godo.DropletCreateImage{
         Slug: "ubuntu-14-04-x64",
     },
