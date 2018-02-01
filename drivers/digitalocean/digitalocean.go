@@ -43,7 +43,7 @@ const (
 	defaultSSHUser = "root"
 	defaultImage   = "ubuntu-16-04-x64"
 	defaultRegion  = "nyc3"
-	defaultSize    = "512mb"
+	defaultSize    = "s-1vcpu-1gb"
 )
 
 // GetCreateFlags registers the flags this driver adds to
