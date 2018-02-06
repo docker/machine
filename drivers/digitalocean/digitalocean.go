@@ -35,6 +35,7 @@ type Driver struct {
 	Backups           bool
 	PrivateNetworking bool
 	UserDataFile      string
+	Monitoring        bool
 	Tags              string
 }
 
@@ -115,6 +116,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "digitalocean-userdata",
 			Usage:  "path to file with cloud-init user-data",
 		},
+		mcnflag.BoolFlag{
+			EnvVar: "DIGITALOCEAN_MONITORING",
+			Name:   "digitalocean-monitoring",
+			Usage:  "enable monitoring for droplet",
+		},
 		mcnflag.StringFlag{
 			EnvVar: "DIGITALOCEAN_TAGS",
 			Name:   "digitalocean-tags",
@@ -157,6 +163,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = flags.Int("digitalocean-ssh-port")
 	d.SSHKeyFingerprint = flags.String("digitalocean-ssh-key-fingerprint")
 	d.SSHKey = flags.String("digitalocean-ssh-key-path")
+	d.Monitoring = flags.Bool("digitalocean-monitoring")
 	d.Tags = flags.String("digitalocean-tags")
 
 	d.SetSwarmConfigFromFlags(flags)
@@ -232,6 +239,7 @@ func (d *Driver) Create() error {
 		Backups:           d.Backups,
 		UserData:          userdata,
 		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID}},
+		Monitoring:        d.Monitoring,
 		Tags:              d.getTags(),
 	}
 
