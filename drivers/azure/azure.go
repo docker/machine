@@ -390,9 +390,16 @@ func (d *Driver) Create() error {
 	if err := d.generateSSHKey(d.ctx); err != nil {
 		return err
 	}
-	err = c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
-		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount)
-	return err
+	if err := c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
+		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount); err != nil {
+			return err
+	}
+	ip, err := d.GetIP()
+	if err != nil {
+		return err
+	}
+	d.IPAddress = ip
+	return nil
 }
 
 // Remove deletes the virtual machine and resources associated to it.
