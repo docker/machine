@@ -38,8 +38,8 @@
   version = "1.4.10"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/docker/docker"
-  version = "1.5.0"
 
 [[constraint]]
   name = "github.com/exoscale/egoscale"

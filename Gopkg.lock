@@ -15,6 +15,15 @@
   version = "v5.0.0-beta"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/Azure/go-ansiterm"
+  packages = [
+    ".",
+    "winterm"
+  ]
+  revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
+
+[[projects]]
   name = "github.com/Azure/go-autorest"
   packages = [
     "autorest",
@@ -104,10 +113,13 @@
   revision = "d59ed2fe842bbb3cbee91c9df8bb7659dc9ee86f"
 
 [[projects]]
+  branch = "master"
   name = "github.com/docker/docker"
-  packages = ["pkg/term"]
-  revision = "a8a31eff10544860d2188dddabdee4d727545796"
-  version = "v1.5.0"
+  packages = [
+    "pkg/term",
+    "pkg/term/windows"
+  ]
+  revision = "bf1345d0b6d91f24e06d05e741897bc83cf8bab4"
 
 [[projects]]
   name = "github.com/docker/go-units"
@@ -182,6 +194,12 @@
   name = "github.com/samalba/dockerclient"
   packages = ["."]
   revision = "f661dd4754aa5c52da85d04b5871ee0e11f4b59c"
+
+[[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+  version = "v1.0.4"
 
 [[projects]]
   branch = "master"
@@ -315,6 +333,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fd6f498fe6ccb460069247c554252dec8391329efa7a04b48de54cf6f003dc9c"
+  inputs-digest = "15f268444f73c8446a63dc2c8e790c943c82acfd05327630cb0d86095f8e7232"
   solver-name = "gps-cdcl"
   solver-version = 1
