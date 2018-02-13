@@ -297,6 +297,7 @@
   revision = "d9157a9621b69ad1d8d77a1933590c416593f24f"
 
 [[projects]]
+  branch = "master"
   name = "google.golang.org/api"
   packages = [
     "compute/v1",
@@ -304,7 +305,7 @@
     "googleapi",
     "googleapi/internal/uritemplates"
   ]
-  revision = "030d584ade5f79aa2ed0ce067e8f7da50c9a10d5"
+  revision = "87a2f5c77b3602f3ae7c8dca6d76f9c2b9bc0957"
 
 [[projects]]
   name = "google.golang.org/appengine"
