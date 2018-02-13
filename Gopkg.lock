@@ -289,12 +289,14 @@
   revision = "442624c9ec9243441e83b374a9e22ac549b5c51d"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
+    "windows",
     "windows/registry"
   ]
-  revision = "d9157a9621b69ad1d8d77a1933590c416593f24f"
+  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
 
 [[projects]]
   branch = "master"
