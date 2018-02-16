@@ -19,5 +19,8 @@ func cmdRegenerateCerts(c CommandLine, api libmachine.API) error {
 
 	log.Infof("Regenerating TLS certificates")
 
+	if c.Bool("client-certs") {
+		return runAction("configureAllAuth", c, api)
+	}
 	return runAction("configureAuth", c, api)
 }

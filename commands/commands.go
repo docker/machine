@@ -314,6 +314,10 @@ var Commands = []cli.Command{
 				Name:  "force, f",
 				Usage: "Force rebuild and do not prompt",
 			},
+			cli.BoolFlag{
+				Name:  "client-certs",
+				Usage: "Also regenerate client certificates and CA.",
+			},
 		},
 	},
 	{
@@ -432,14 +436,15 @@ func printIP(h *host.Host) func() error {
 func machineCommand(actionName string, host *host.Host, errorChan chan<- error) {
 	// TODO: These actions should have their own type.
 	commands := map[string](func() error){
-		"configureAuth": host.ConfigureAuth,
-		"start":         host.Start,
-		"stop":          host.Stop,
-		"restart":       host.Restart,
-		"kill":          host.Kill,
-		"upgrade":       host.Upgrade,
-		"ip":            printIP(host),
-		"provision":     host.Provision,
+		"configureAuth":    host.ConfigureAuth,
+		"configureAllAuth": host.ConfigureAllAuth,
+		"start":            host.Start,
+		"stop":             host.Stop,
+		"restart":          host.Restart,
+		"kill":             host.Kill,
+		"upgrade":          host.Upgrade,
+		"ip":               printIP(host),
+		"provision":        host.Provision,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, host.Name)
