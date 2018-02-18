@@ -305,6 +305,17 @@ var Commands = []cli.Command{
 		Action: runCommand(cmdProvision),
 	},
 	{
+		Name:   "reinstall",
+		Usage:  "Re-install and re-provision existing machines",
+		Action: runCommand(cmdReinstall),
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "y",
+				Usage: "Assumes automatic yes to proceed with reinstall, without prompting further user confirmation",
+			},
+		},
+	},
+	{
 		Name:        "regenerate-certs",
 		Usage:       "Regenerate TLS Certificates for a machine",
 		Description: "Argument(s) are one or more machine names.",
@@ -440,6 +451,7 @@ func machineCommand(actionName string, host *host.Host, errorChan chan<- error) 
 		"upgrade":       host.Upgrade,
 		"ip":            printIP(host),
 		"provision":     host.Provision,
+		"reinstall":     host.Reinstall,
 	}
 
 	log.Debugf("command=%s machine=%s", actionName, host.Name)

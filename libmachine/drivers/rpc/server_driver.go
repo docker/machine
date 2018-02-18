@@ -201,6 +201,10 @@ func (r *RPCServerDriver) PreCreateCheck(_ *struct{}, _ *struct{}) error {
 	return r.ActualDriver.PreCreateCheck()
 }
 
+func (r *RPCServerDriver) Reinstall(_ *struct{}, _ *struct{}) error {
+	return r.ActualDriver.Reinstall()
+}
+
 func (r *RPCServerDriver) Remove(_ *struct{}, _ *struct{}) error {
 	return r.ActualDriver.Remove()
 }

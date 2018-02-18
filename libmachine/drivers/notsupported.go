@@ -64,6 +64,10 @@ func (d *DriverNotSupported) Create() error {
 	return NotSupported{d.DriverName()}
 }
 
+func (d *DriverNotSupported) Reinstall() error {
+	return NotSupported{d.DriverName()}
+}
+
 func (d *DriverNotSupported) Remove() error {
 	return NotSupported{d.DriverName()}
 }

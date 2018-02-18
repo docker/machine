@@ -275,3 +275,28 @@ func (h *Host) Provision() error {
 
 	return provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
 }
+
+func (h *Host) Reinstall() error {
+	log.Infof("Stopping %q...", h.Name)
+	if err := h.runActionForState(h.Driver.Stop, state.Stopped); err != nil {
+		return err
+	}
+
+	log.Infof("Reinstalling %q...", h.Name)
+	if err := h.Driver.Reinstall(); err != nil {
+		return err
+	}
+
+	log.Infof("Waiting for %q to become Running...", h.Name)
+	if err := mcnutils.WaitFor(drivers.MachineInState(h.Driver, state.Running)); err != nil {
+		return err
+	}
+
+	log.Infof("Machine %q was started.", h.Name)
+	provisioner, err := provision.DetectProvisioner(h.Driver)
+	if err != nil {
+		return err
+	}
+
+	return provisioner.Provision(*h.HostOptions.SwarmOptions, *h.HostOptions.AuthOptions, *h.HostOptions.EngineOptions)
+}

@@ -250,6 +250,15 @@ func TestSerialDriverPreCreateCheck(t *testing.T) {
 	assert.Equal(t, []string{"Lock", "PreCreateCheck", "Unlock"}, callRecorder.calls)
 }
 
+func TestSerialDriverReinstall(t *testing.T) {
+	callRecorder := &CallRecorder{}
+
+	driver := newSerialDriverWithLock(&MockDriver{calls: callRecorder}, &MockLocker{calls: callRecorder})
+	driver.Reinstall()
+
+	assert.Equal(t, []string{"Lock", "Reinstall", "Unlock"}, callRecorder.calls)
+}
+
 func TestSerialDriverRemove(t *testing.T) {
 	callRecorder := &CallRecorder{}
 

@@ -79,6 +79,10 @@ func (d *Driver) Create() error {
 	return NotLoadable{d.Name}
 }
 
+func (d *Driver) Reinstall() error {
+	return NotLoadable{d.Name}
+}
+
 func (d *Driver) Remove() error {
 	return NotLoadable{d.Name}
 }
