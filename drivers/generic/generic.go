@@ -152,9 +152,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	address := net.JoinHostPort(d.IPAddress, strconv.Itoa(d.SSHPort))
-
-	_, err := net.DialTimeout("tcp", address, defaultTimeout)
+	_, err := drivers.RunSSHCommandFromDriver(d, "/bin/true")
 	if err != nil {
 		return state.Stopped, nil
 	}

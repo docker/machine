@@ -20,7 +20,6 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/persist"
 	"github.com/docker/machine/libmachine/provision"
-	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/docker/machine/libmachine/swarm"
 	"github.com/docker/machine/libmachine/version"
@@ -35,10 +34,8 @@ type API interface {
 }
 
 type Client struct {
-	certsDir       string
-	IsDebug        bool
-	SSHClientType  ssh.ClientType
-	GithubAPIToken string
+	certsDir string
+	IsDebug  bool
 	*persist.Filestore
 	clientDriverFactory rpcdriver.RPCClientDriverFactory
 }
@@ -47,7 +44,6 @@ func NewClient(storePath, certsDir string) *Client {
 	return &Client{
 		certsDir:            certsDir,
 		IsDebug:             false,
-		SSHClientType:       ssh.External,
 		Filestore:           persist.NewFilestore(storePath, certsDir, certsDir),
 		clientDriverFactory: rpcdriver.NewRPCClientDriverFactory(),
 	}

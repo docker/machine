@@ -19,16 +19,12 @@ func GetSSHClientFromDriver(d Driver) (ssh.Client, error) {
 		return nil, err
 	}
 
-	var auth *ssh.Auth
-	if d.GetSSHKeyPath() == "" {
-		auth = &ssh.Auth{}
-	} else {
-		auth = &ssh.Auth{
-			Keys: []string{d.GetSSHKeyPath()},
-		}
+	options := &ssh.Options{}
+	if d.GetSSHKeyPath() != "" {
+		options.Keys = []string{d.GetSSHKeyPath()}
 	}
 
-	client, err := ssh.NewClient(d.GetSSHUsername(), address, port, auth)
+	client, err := ssh.NewClient(d.GetSSHUsername(), address, port, options)
 	return client, err
 
 }

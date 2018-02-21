@@ -26,6 +26,8 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/opt"
+	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/swarm"
 )
 
@@ -76,6 +78,11 @@ var (
 			Name:  "engine-env",
 			Usage: "Specify environment variables to set in the engine",
 			Value: &cli.StringSlice{},
+		},
+		cli.StringFlag{
+			EnvVar: "MACHINE_SSH_CONFIG_FILE",
+			Name:   "ssh-config-file",
+			Usage:  "Use the specified SSH config file",
 		},
 		cli.BoolFlag{
 			Name:  "swarm",
@@ -168,6 +175,19 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		return fmt.Errorf("Error getting new host: %s", err)
 	}
 
+	sshConfigFile := c.String("ssh-config-file")
+	if sshConfigFile == "" {
+		sshConfigFile = "/dev/null"
+	}
+
+	libmachineOpts := mcnopt.Opts()
+	libmachineOpts.SSHConfigFile = sshConfigFile
+	mcnopt.SetOpts(libmachineOpts)
+	err = rpcdriver.SetMachineOptions(h.Driver, libmachineOpts)
+	if err != nil {
+		return fmt.Errorf("Error setting machine options: %s", err)
+	}
+
 	h.HostOptions = &host.Options{
 		AuthOptions: &auth.Options{
 			CertDir:          mcndirs.GetMachineCertDir(),
@@ -203,7 +223,12 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 			ArbitraryJoinFlags: c.StringSlice("swarm-join-opt"),
 			IsExperimental:     c.Bool("swarm-experimental"),
 		},
+		SSHOptions: &ssh.Options{
+			ConfigFile: sshConfigFile,
+		},
 	}
+
+	log.Debugf("Set host config, including SSHOptions.ConfigFile = %q", sshConfigFile)
 
 	exists, err := api.Exists(h.Name)
 	if err != nil {
