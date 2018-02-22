@@ -13,7 +13,7 @@ type AffinityGroup struct {
 	DomainID          string   `json:"domainid,omitempty"`
 	Name              string   `json:"name,omitempty"`
 	Type              string   `json:"type,omitempty"`
-	VirtualMachineIDs []string `json:"virtualmachineIDs,omitempty"` // *I*ds is not a typo
+	VirtualMachineIDs []string `json:"virtualmachineIds,omitempty"` // *I*ds is not a typo
 }
 
 // AffinityGroupType represent an affinity group type
@@ -100,9 +100,9 @@ type ListAffinityGroups struct {
 	Account          string `json:"account,omitempty"`
 	DomainID         string `json:"domainid,omitempty"`
 	ID               string `json:"id,omitempty"`
-	IsRecursive      bool   `json:"isrecursive,omitempty"`
+	IsRecursive      *bool  `json:"isrecursive,omitempty"`
 	Keyword          string `json:"keyword,omitempty"`
-	ListAll          bool   `json:"listall,omitempty"`
+	ListAll          *bool  `json:"listall,omitempty"`
 	Name             string `json:"name,omitempty"`
 	Page             int    `json:"page,omitempty"`
 	PageSize         int    `json:"pagesize,omitempty"`

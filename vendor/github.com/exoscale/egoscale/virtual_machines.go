@@ -27,7 +27,7 @@ type VirtualMachine struct {
 	Group                 string            `json:"group,omitempty"`
 	GroupID               string            `json:"groupid,omitempty"`
 	GuestOsID             string            `json:"guestosid,omitempty"`
-	HaEnable              bool              `json:"haenable,omitempty"`
+	HAEnable              bool              `json:"haenable,omitempty"`
 	HostID                string            `json:"hostid,omitempty"`
 	HostName              string            `json:"hostname,omitempty"`
 	Hypervisor            string            `json:"hypervisor,omitempty"`
@@ -77,6 +77,22 @@ type VirtualMachine struct {
 	JobStatus             JobStatusType     `json:"jobstatus,omitempty"`
 }
 
+// ResourceType returns the type of the resource
+func (*VirtualMachine) ResourceType() string {
+	return "UserVM"
+}
+
+// DefaultNic returns the default nic
+func (vm *VirtualMachine) DefaultNic() *Nic {
+	for _, nic := range vm.Nic {
+		if nic.IsDefault {
+			return &nic
+		}
+	}
+
+	return nil
+}
+
 // NicsByType returns the corresponding interfaces base on the given type
 func (vm *VirtualMachine) NicsByType(nicType string) []Nic {
 	nics := make([]Nic, 0)
@@ -91,6 +107,8 @@ func (vm *VirtualMachine) NicsByType(nicType string) []Nic {
 }
 
 // NicByNetworkID returns the corresponding interface based on the given NetworkID
+//
+// A VM cannot be connected twice to a same network.
 func (vm *VirtualMachine) NicByNetworkID(networkID string) *Nic {
 	for _, nic := range vm.Nic {
 		if nic.NetworkID == networkID {
@@ -140,7 +158,7 @@ type DeployVirtualMachine struct {
 	Details            map[string]string `json:"details,omitempty"`
 	DiskOfferingID     string            `json:"diskofferingid,omitempty"`
 	DisplayName        string            `json:"displayname,omitempty"`
-	DisplayVM          bool              `json:"displayvm,omitempty"`
+	DisplayVM          *bool             `json:"displayvm,omitempty"`
 	DomainID           string            `json:"domainid,omitempty"`
 	Group              string            `json:"group,omitempty"`
 	HostID             string            `json:"hostid,omitempty"`
@@ -157,7 +175,7 @@ type DeployVirtualMachine struct {
 	SecurityGroupIDs   []string          `json:"securitygroupids,omitempty"`
 	SecurityGroupNames []string          `json:"securitygroupnames,omitempty"` // does nothing, mutually exclusive
 	Size               string            `json:"size,omitempty"`               // mutually exclusive with DiskOfferingID
-	StartVM            bool              `json:"startvm,omitempty"`
+	StartVM            *bool             `json:"startvm,omitempty"`
 	UserData           string            `json:"userdata,omitempty"` // the client is responsible to base64/gzip it
 }
 
@@ -196,7 +214,7 @@ type StartVirtualMachineResponse VirtualMachineResponse
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/stopVirtualMachine.html
 type StopVirtualMachine struct {
 	ID     string `json:"id"`
-	Forced bool   `json:"forced,omitempty"`
+	Forced *bool  `json:"forced,omitempty"`
 }
 
 func (*StopVirtualMachine) name() string {
@@ -234,6 +252,7 @@ type RebootVirtualMachineResponse VirtualMachineResponse
 type RestoreVirtualMachine struct {
 	VirtualMachineID string `json:"virtualmachineid"`
 	TemplateID       string `json:"templateid,omitempty"`
+	RootDiskSize     string `json:"rootdisksize,omitempty"` // in GiB, Exoscale specific
 }
 
 func (*RestoreVirtualMachine) name() string {
@@ -270,7 +289,7 @@ type RecoverVirtualMachineResponse VirtualMachineResponse
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/destroyVirtualMachine.html
 type DestroyVirtualMachine struct {
 	ID      string `json:"id"`
-	Expunge bool   `json:"expunge,omitempty"`
+	Expunge *bool  `json:"expunge,omitempty"`
 }
 
 func (*DestroyVirtualMachine) name() string {
@@ -292,10 +311,10 @@ type UpdateVirtualMachine struct {
 	CustomID              string            `json:"customid,omitempty"` // root only
 	Details               map[string]string `json:"details,omitempty"`
 	DisplayName           string            `json:"displayname,omitempty"`
-	DisplayVM             bool              `json:"displayvm,omitempty"`
+	DisplayVM             *bool             `json:"displayvm,omitempty"`
 	Group                 string            `json:"group,omitempty"`
-	HAEnable              bool              `json:"haenable,omitempty"`
-	IsDynamicallyScalable bool              `json:"isdynamicallyscalable,omitempty"`
+	HAEnable              *bool             `json:"haenable,omitempty"`
+	IsDynamicallyScalable *bool             `json:"isdynamicallyscalable,omitempty"`
 	Name                  string            `json:"name,omitempty"` // must reboot
 	OsTypeID              int64             `json:"ostypeid,omitempty"`
 	SecurityGroupIDs      []string          `json:"securitygroupids,omitempty"`
@@ -406,19 +425,19 @@ type ListVirtualMachines struct {
 	Account           string            `json:"account,omitempty"`
 	AffinityGroupID   string            `json:"affinitygroupid,omitempty"`
 	Details           map[string]string `json:"details,omitempty"`
-	DisplayVM         bool              `json:"displayvm,omitempty"` // root only
+	DisplayVM         *bool             `json:"displayvm,omitempty"` // root only
 	DomainID          string            `json:"domainid,omitempty"`
-	ForVirtualNetwork bool              `json:"forvirtualnetwork,omitempty"`
+	ForVirtualNetwork *bool             `json:"forvirtualnetwork,omitempty"`
 	GroupID           string            `json:"groupid,omitempty"`
 	HostID            string            `json:"hostid,omitempty"`
 	Hypervisor        string            `json:"hypervisor,omitempty"`
 	ID                string            `json:"id,omitempty"`
 	IDs               []string          `json:"ids,omitempty"` // mutually exclusive with id
 	IsoID             string            `json:"isoid,omitempty"`
-	IsRecursive       bool              `json:"isrecursive,omitempty"`
+	IsRecursive       *bool             `json:"isrecursive,omitempty"`
 	KeyPair           string            `json:"keypair,omitempty"`
 	Keyword           string            `json:"keyword,omitempty"`
-	ListAll           bool              `json:"listall,omitempty"`
+	ListAll           *bool             `json:"listall,omitempty"`
 	Name              string            `json:"name,omitempty"`
 	NetworkID         string            `json:"networkid,omitempty"`
 	Page              int               `json:"page,omitempty"`

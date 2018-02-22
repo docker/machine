@@ -24,6 +24,11 @@ type SecurityGroup struct {
 	JobStatus           JobStatusType `json:"jobstatus,omitempty"`
 }
 
+// ResourceType returns the type of the resource
+func (*SecurityGroup) ResourceType() string {
+	return "SecurityGroup"
+}
+
 // IngressRule represents the ingress rule
 type IngressRule struct {
 	RuleID                string              `json:"ruleid"`
@@ -193,9 +198,9 @@ type ListSecurityGroups struct {
 	Account           string        `json:"account,omitempty"`
 	DomainID          string        `json:"domainid,omitempty"`
 	ID                string        `json:"id,omitempty"`
-	IsRecursive       bool          `json:"isrecursive,omitempty"`
+	IsRecursive       *bool         `json:"isrecursive,omitempty"`
 	Keyword           string        `json:"keyword,omitempty"`
-	ListAll           bool          `json:"listall,omitempty"`
+	ListAll           *bool         `json:"listall,omitempty"`
 	Page              int           `json:"page,omitempty"`
 	PageSize          int           `json:"pagesize,omitempty"`
 	ProjectID         string        `json:"projectid,omitempty"`

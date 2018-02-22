@@ -25,6 +25,11 @@ type Snapshot struct {
 	JobStatus    JobStatusType `json:"jobstatus,omitempty"`
 }
 
+// ResourceType returns the type of the resource
+func (*Snapshot) ResourceType() string {
+	return "Snapshot"
+}
+
 // CreateSnapshot represents a request to create a volume snapshot
 //
 // CloudStackAPI: http://cloudstack.apache.org/api/apidocs-4.10/apis/createSnapshot.html
@@ -33,7 +38,7 @@ type CreateSnapshot struct {
 	Account   string `json:"account,omitempty"`
 	DomainID  string `json:"domainid,omitempty"`
 	PolicyID  string `json:"policyid,omitempty"`
-	QuiesceVM bool   `json:"quiescevm,omitempty"`
+	QuiesceVM *bool  `json:"quiescevm,omitempty"`
 }
 
 func (*CreateSnapshot) name() string {
@@ -57,9 +62,9 @@ type ListSnapshots struct {
 	DomainID     string        `json:"domainid,omitempty"`
 	ID           string        `json:"id,omitempty"`
 	IntervalType string        `json:"intervaltype,omitempty"`
-	IsRecursive  bool          `json:"isrecursive,omitempty"`
+	IsRecursive  *bool         `json:"isrecursive,omitempty"`
 	Keyword      string        `json:"keyword,omitempty"`
-	ListAll      bool          `json:"listall,omitempty"`
+	ListAll      *bool         `json:"listall,omitempty"`
 	Name         string        `json:"name,omitempty"`
 	Page         int           `json:"page,omitempty"`
 	PageSize     int           `json:"pagesize,omitempty"`

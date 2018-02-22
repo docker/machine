@@ -21,7 +21,7 @@ type Nic struct {
 	NetworkID        string           `json:"networkid,omitempty"`
 	NetworkName      string           `json:"networkname,omitempty"`
 	SecondaryIP      []NicSecondaryIP `json:"secondaryip,omitempty"`
-	Traffictype      string           `json:"traffictype,omitempty"`
+	TrafficType      string           `json:"traffictype,omitempty"`
 	Type             string           `json:"type,omitempty"`
 	VirtualMachineID string           `json:"virtualmachineid,omitempty"`
 }

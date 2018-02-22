@@ -44,7 +44,7 @@ type QueryAsyncJobResultResponse AsyncJobResult
 type ListAsyncJobs struct {
 	Account     string `json:"account,omitempty"`
 	DomainID    string `json:"domainid,omitempty"`
-	IsRecursive bool   `json:"isrecursive,omitempty"`
+	IsRecursive *bool  `json:"isrecursive,omitempty"`
 	Keyword     string `json:"keyword,omitempty"`
 	Page        int    `json:"page,omitempty"`
 	PageSize    int    `json:"pagesize,omitempty"`

@@ -43,7 +43,7 @@
 
 [[constraint]]
   name = "github.com/exoscale/egoscale"
-  version = "0.9.6"
+  version = "0.9.10"
 
 [[constraint]]
   branch = "master"
