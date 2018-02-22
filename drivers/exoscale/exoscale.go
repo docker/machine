@@ -416,8 +416,16 @@ func (d *Driver) Create() error {
 	// Image UUID
 	var tpl string
 	images, ok := topology.Images[strings.ToLower(d.Image)]
+
 	if ok {
-		tpl, ok = images[d.DiskSize]
+		smallestDiskSize := d.DiskSize
+		for s := range images {
+			if s < smallestDiskSize {
+				smallestDiskSize = s
+			}
+		}
+
+		tpl, ok = images[smallestDiskSize]
 	}
 	if !ok {
 		return fmt.Errorf("Unable to find image %v with size %d",
@@ -554,7 +562,7 @@ ssh_authorized_keys:
 		d.IPAddress = IPAddress.String()
 	}
 	d.ID = vm.ID
-	log.Infof("IP Address: %#v", d.IPAddress)
+	log.Infof("IP Address: %v, SSH User: %v", d.IPAddress, d.GetSSHUsername())
 
 	// Destroy the SSH key from CloudStack
 	if d.KeyPair != "" {
@@ -626,7 +634,7 @@ func (d *Driver) Remove() error {
 
 	log.Infof("The Anti-Affinity group and Security group were not removed")
 
-	return err
+	return nil
 }
 
 // Build a cloud-init user data string that will install and run
