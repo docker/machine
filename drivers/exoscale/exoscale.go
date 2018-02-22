@@ -1,18 +1,21 @@
 package exoscale
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
-	"regexp"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/exoscale/egoscale"
 )
@@ -26,9 +29,10 @@ type Driver struct {
 	InstanceProfile  string
 	DiskSize         int64
 	Image            string
-	SecurityGroup    string
-	AffinityGroup    string
+	SecurityGroups   []string
+	AffinityGroups   []string
 	AvailabilityZone string
+	SSHKey           string
 	KeyPair          string
 	PublicKey        string
 	UserDataFile     string
@@ -43,6 +47,7 @@ const (
 	defaultImage             = "Linux Ubuntu 16.04 LTS 64-bit"
 	defaultAvailabilityZone  = "CH-DK-2"
 	defaultSSHUser           = "root"
+	defaultSecurityGroup     = "docker-machine"
 	defaultAffinityGroupType = "host anti-affinity"
 	defaultCloudInit         = `#cloud-config
 manage_etc_hosts: localhost
@@ -89,7 +94,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringSliceFlag{
 			EnvVar: "EXOSCALE_SECURITY_GROUP",
 			Name:   "exoscale-security-group",
-			Value:  []string{},
+			Value:  []string{defaultSecurityGroup},
 			Usage:  "exoscale security group",
 		},
 		mcnflag.StringFlag{
@@ -103,6 +108,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "exoscale-ssh-user",
 			Value:  "",
 			Usage:  "name of the ssh user",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "EXOSCALE_SSH_KEY",
+			Name:   "exoscale-ssh-key",
+			Value:  "",
+			Usage:  "path to the SSH user private key",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "EXOSCALE_USERDATA",
@@ -145,19 +156,17 @@ func (d *Driver) GetSSHHostname() (string, error) {
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		name := strings.ToLower(d.Image)
-		re := regexp.MustCompile(`\b[0-9.]+\b`)
-		version := re.FindString(d.Image)
 
 		if strings.Contains(name, "ubuntu") {
 			return "ubuntu"
 		}
-		if strings.Contains(name, "centos") && version >= "7.3" {
+		if strings.Contains(name, "centos") {
 			return "centos"
 		}
 		if strings.Contains(name, "coreos") {
 			return "core"
 		}
-		if strings.Contains(name, "debian") && version >= "8" {
+		if strings.Contains(name, "debian") {
 			return "debian"
 		}
 		return defaultSSHUser
@@ -180,17 +189,11 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.InstanceProfile = flags.String("exoscale-instance-profile")
 	d.DiskSize = int64(flags.Int("exoscale-disk-size"))
 	d.Image = flags.String("exoscale-image")
-	securityGroups := flags.StringSlice("exoscale-security-group")
-	if len(securityGroups) == 0 {
-		securityGroups = []string{"docker-machine"}
-	}
-	d.SecurityGroup = strings.Join(securityGroups, ",")
-	affinityGroups := flags.StringSlice("exoscale-affinity-group")
-	if len(affinityGroups) > 0 {
-		d.AffinityGroup = strings.Join(affinityGroups, ",")
-	}
+	d.SecurityGroups = flags.StringSlice("exoscale-security-group")
+	d.AffinityGroups = flags.StringSlice("exoscale-affinity-group")
 	d.AvailabilityZone = flags.String("exoscale-availability-zone")
 	d.SSHUser = flags.String("exoscale-ssh-user")
+	d.SSHKey = flags.String("exoscale-ssh-key")
 	d.UserDataFile = flags.String("exoscale-userdata")
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -394,7 +397,6 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
-	userData := base64.StdEncoding.EncodeToString(cloudInit)
 
 	log.Infof("Querying exoscale for the requested parameters...")
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
@@ -432,9 +434,12 @@ func (d *Driver) Create() error {
 	log.Debugf("Profile %v = %s", d.InstanceProfile, profile)
 
 	// Security groups
-	securityGroups := strings.Split(d.SecurityGroup, ",")
-	sgs := make([]string, len(securityGroups))
-	for idx, group := range securityGroups {
+	sgs := make([]string, 0, len(d.SecurityGroups))
+	for _, group := range d.SecurityGroups {
+		if group == "" {
+			continue
+		}
+
 		sg, ok := topology.SecurityGroups[group]
 		if !ok {
 			log.Infof("Security group %v does not exist, create it", group)
@@ -445,13 +450,15 @@ func (d *Driver) Create() error {
 			sg = securityGroup.ID
 		}
 		log.Debugf("Security group %v = %s", group, sg)
-		sgs[idx] = sg
+		sgs = append(sgs, sg)
 	}
 
 	// Affinity Groups
-	affinityGroups := strings.Split(d.AffinityGroup, ",")
-	ags := make([]string, len(affinityGroups))
-	for idx, group := range affinityGroups {
+	ags := make([]string, 0, len(d.AffinityGroups))
+	for _, group := range d.AffinityGroups {
+		if group == "" {
+			continue
+		}
 		ag, ok := topology.AffinityGroups[group]
 		if !ok {
 			log.Infof("Affinity Group %v does not exist, create it", group)
@@ -462,32 +469,73 @@ func (d *Driver) Create() error {
 			ag = affinityGroup.ID
 		}
 		log.Debugf("Affinity group %v = %s", group, ag)
-		ags[idx] = ag
+		ags = append(ags, ag)
 	}
 
-	log.Infof("Generate an SSH keypair...")
-	keypairName := fmt.Sprintf("docker-machine-%s", d.MachineName)
-	kpresp, err := client.CreateKeypair(keypairName)
-	if err != nil {
-		return err
+	// SSH key pair
+	if d.SSHKey == "" {
+		var keyPairName string
+		keyPairName = fmt.Sprintf("docker-machine-%s", d.MachineName)
+		log.Infof("Generate an SSH keypair...")
+		resp, err := client.Request(&egoscale.CreateSSHKeyPair{
+			Name: keyPairName,
+		})
+		if err != nil {
+			return fmt.Errorf("SSH Key pair creation failed %s", err)
+		}
+		keyPair := resp.(*egoscale.CreateSSHKeyPairResponse).KeyPair
+		if err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(keyPair.PrivateKey), 0600); err != nil {
+			return fmt.Errorf("SSH public key could not be written %s", err)
+		}
+		d.KeyPair = keyPairName
+	} else {
+		log.Infof("Importing SSH key from %s", d.SSHKey)
+
+		sshKey := d.SSHKey
+		if strings.HasPrefix(sshKey, "~/") {
+			usr, _ := user.Current()
+			sshKey = filepath.Join(usr.HomeDir, sshKey[2:])
+		} else {
+			var err error
+			if sshKey, err = filepath.Abs(sshKey); err != nil {
+				return err
+			}
+		}
+
+		// Sending the SSH public key through the cloud-init config
+		pubKey, err := ioutil.ReadFile(sshKey + ".pub")
+		if err != nil {
+			return fmt.Errorf("Cannot read SSH public key %s", err)
+		}
+
+		sshAuthorizedKeys := `
+ssh_authorized_keys:
+- `
+		cloudInit = bytes.Join([][]byte{cloudInit, []byte(sshAuthorizedKeys), pubKey}, []byte(""))
+
+		// Copying the private key into docker-machine
+		if err := mcnutils.CopyFile(sshKey, d.GetSSHKeyPath()); err != nil {
+			return fmt.Errorf("Unable to copy SSH file: %s", err)
+		}
+		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
+			return fmt.Errorf("Unable to set permissions on the SSH file: %s", err)
+		}
 	}
-	err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(kpresp.PrivateKey), 0600)
-	if err != nil {
-		return err
-	}
-	d.KeyPair = keypairName
 
 	log.Infof("Spawn exoscale host...")
 	log.Debugf("Using the following cloud-init file:")
 	log.Debugf("%s", string(cloudInit))
+
+	// Base64 encode the userdata
+	userData := base64.StdEncoding.EncodeToString(cloudInit)
 
 	req := &egoscale.DeployVirtualMachine{
 		TemplateID:        tpl,
 		ServiceOfferingID: profile,
 		UserData:          userData,
 		ZoneID:            zone,
-		KeyPair:           d.KeyPair,
 		Name:              d.MachineName,
+		KeyPair:           d.KeyPair,
 		DisplayName:       d.MachineName,
 		RootDiskSize:      d.DiskSize,
 		SecurityGroupIDs:  sgs,
@@ -506,6 +554,19 @@ func (d *Driver) Create() error {
 		d.IPAddress = IPAddress.String()
 	}
 	d.ID = vm.ID
+	log.Infof("IP Address: %#v", d.IPAddress)
+
+	// Destroy the SSH key from CloudStack
+	if d.KeyPair != "" {
+		if err := drivers.WaitForSSH(d); err != nil {
+			return err
+		}
+
+		if err := client.BooleanRequest(&egoscale.DeleteSSHKeyPair{Name: d.KeyPair}); err != nil {
+			return err
+		}
+		d.KeyPair = ""
+	}
 
 	return nil
 }
@@ -547,15 +608,21 @@ func (d *Driver) Kill() error {
 
 // Remove destroys the VM instance and the associated SSH key.
 func (d *Driver) Remove() error {
-	cs := d.client()
+	client := d.client()
 
-	// Destroy the SSH key
-	if err := cs.BooleanRequest(&egoscale.DeleteSSHKeyPair{Name: d.KeyPair}); err != nil {
-		return err
+	// Destroy the SSH key from CloudStack
+	if d.KeyPair != "" {
+		if err := client.BooleanRequest(&egoscale.DeleteSSHKeyPair{Name: d.KeyPair}); err != nil {
+			return err
+		}
 	}
 
 	// Destroy the virtual machine
-	_, err := cs.AsyncRequest(&egoscale.DestroyVirtualMachine{ID: d.ID}, d.async)
+	if d.ID != "" {
+		if _, err := client.AsyncRequest(&egoscale.DestroyVirtualMachine{ID: d.ID}, d.async); err != nil {
+			return err
+		}
+	}
 
 	log.Infof("The Anti-Affinity group and Security group were not removed")
 
