@@ -14,7 +14,7 @@ import (
 
 	"time"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/auth"
@@ -254,15 +254,15 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 
 // The following function is needed because the CLI acrobatics that we're doing
 // (with having an "outer" and "inner" function each with their own custom
-// settings and flag parsing needs) are not well supported by codegangsta/cli.
+// settings and flag parsing needs) are not well supported by urfave/cli.
 //
 // Instead of trying to make a convoluted series of flag parsing and relying on
-// codegangsta/cli internals work well, we simply read the flags we're
+// urfave/cli internals work well, we simply read the flags we're
 // interested in from the outer function into module-level variables, and then
 // use them from the "inner" function.
 //
 // I'm not very pleased about this, but it seems to be the only decent
-// compromise without drastically modifying codegangsta/cli internals or our
+// compromise without drastically modifying urfave/cli internals or our
 // own CLI.
 func flagHackLookup(flagName string) string {
 	// e.g. "-d" for "--driver"

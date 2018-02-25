@@ -525,7 +525,7 @@ General
     directly again in this file.
 -   Change fish `env` variable setting to be global
 -   Add `docker-machine version` command
--   Move back to normal `codegangsta/cli` upstream
+-   Move back to normal `urfave/cli` upstream
 -   `--tls-san` flag for extra SANs
 
 Drivers

@@ -1,6 +1,6 @@
 package commands
 
-import "github.com/codegangsta/cli"
+import "github.com/urfave/cli"
 
 type ByFlagName []cli.Flag
 
