@@ -267,7 +267,7 @@ _docker_machine_provision() {
 
 _docker_machine_regenerate_certs() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--force -f --help" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--client-certs --force -f --help" -- "${cur}"))
     else
         COMPREPLY=($(compgen -W "$(_docker_machine_machines --filter state=Running)" -- "${cur}"))
     fi
@@ -299,7 +299,7 @@ _docker_machine_ssh() {
 
 _docker_machine_scp() {
     if [[ "${cur}" == -* ]]; then
-        COMPREPLY=($(compgen -W "--delta -d --help --recursive -r" -- "${cur}"))
+        COMPREPLY=($(compgen -W "--delta -d --help --quiet -q --recursive -r" -- "${cur}"))
     else
         _filedir
         # It would be really nice to ssh to the machine and ls to complete
