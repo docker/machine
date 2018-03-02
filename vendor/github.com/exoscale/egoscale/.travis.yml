@@ -1,0 +1,19 @@
+language: go
+
+dist: trusty
+
+go:
+- 1.8
+- 1.9
+- tip
+
+cache: apt
+
+before_install:
+  - npm i -g codeclimate-test-reporter
+
+script:
+  - go test -race -coverprofile=coverage.out -covermode=atomic .
+
+after_success:
+  - codeclimate-test-reporter < coverage.out

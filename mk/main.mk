@@ -9,9 +9,6 @@ PKGS := $(shell go list -tags "$(BUILDTAGS)" ./... | grep -v "/vendor/" | grep -
 GOLINT_BIN := $(GOPATH)/bin/golint
 GOLINT := $(shell [ -x $(GOLINT_BIN) ] && echo $(GOLINT_BIN) || echo '')
 
-GODEP_BIN := $(GOPATH)/bin/godep
-GODEP := $(shell [ -x $(GODEP_BIN) ] && echo $(GODEP_BIN) || echo '')
-
 # Honor debug
 ifeq ($(DEBUG),true)
 	# Disable function inlining and variable registerization

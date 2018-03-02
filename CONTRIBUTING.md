@@ -145,23 +145,11 @@ Scrub build results:
     make lint
     make dco
 
-### Restore, update and save dependencies
+### Managing dependencies
 
-When you make a fresh copy of the repo, all the dependecies are in `vendor/` directory for the builds to work. If you want to update the dependencies
-
-#### Restore the dependencies
-
-    make dep-restore
-
-   This uses godep to restores all the dependencies to your `$GOPATH`. Note that this changes the packages in your `$GOPATH`
-
-#### Add one ore more dependencies
-
-    go get -u <new dependency>
-
-#### Save the dependencies to `vendor/`
-
-    make dep-save
+When you make a fresh copy of the repo, all the dependencies are in `vendor/` directory for the build to work.
+This project uses [golang/dep](https://github.com/golang/dep) as vendor management tool. Please refer to `dep` documentation
+for further details.
 
 4. Verify the changes in your repo, commit and submit a pull request
 
