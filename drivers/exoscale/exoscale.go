@@ -163,6 +163,12 @@ func (d *Driver) GetSSHUsername() string {
 		if strings.Contains(name, "centos") {
 			return "centos"
 		}
+		if strings.Contains(name, "redhat") {
+			return "cloud-user"
+		}
+		if strings.Contains(name, "fedora") {
+			return "fedora"
+		}
 		if strings.Contains(name, "coreos") {
 			return "core"
 		}
