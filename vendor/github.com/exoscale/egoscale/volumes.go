@@ -33,13 +33,18 @@ type Volume struct {
 	JobStatus                  JobStatusType `json:"jobstatus,omitempty"`
 }
 
+// ResourceType returns the type of the resource
+func (*Volume) ResourceType() string {
+	return "Volume"
+}
+
 // ResizeVolume (Async) resizes a volume
 //
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/resizeVolume.html
 type ResizeVolume struct {
 	ID             string `json:"id"`
 	DiskOfferingID string `json:"diskofferingid,omitempty"`
-	ShrinkOk       bool   `json:"shrinkok,omitempty"`
+	ShrinkOk       *bool  `json:"shrinkok,omitempty"`
 	Size           int64  `json:"size,omitempty"` // in GiB
 }
 
@@ -66,9 +71,9 @@ type ListVolumes struct {
 	DomainID         string        `json:"domainid,omitempty"`
 	HostID           string        `json:"hostid,omitempty"`
 	ID               string        `json:"id,omitempty"`
-	IsRecursive      bool          `json:"isrecursive,omitempty"`
+	IsRecursive      *bool         `json:"isrecursive,omitempty"`
 	Keyword          string        `json:"keyword,omitempty"`
-	ListAll          bool          `json:"listall,omitempty"`
+	ListAll          *bool         `json:"listall,omitempty"`
 	Name             string        `json:"name,omitempty"`
 	Page             int           `json:"page,omitempty"`
 	PageSize         int           `json:"pagesize,omitempty"`

@@ -34,14 +34,14 @@ type Zone struct {
 //
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/listZones.html
 type ListZones struct {
-	Available      bool          `json:"available,omitempty"`
+	Available      *bool         `json:"available,omitempty"`
 	DomainID       string        `json:"domainid,omitempty"`
 	ID             string        `json:"id,omitempty"`
 	Keyword        string        `json:"keyword,omitempty"`
 	Name           string        `json:"name,omitempty"`
 	Page           int           `json:"page,omitempty"`
 	PageSize       int           `json:"pagesize,omitempty"`
-	ShowCapacities bool          `json:"showcapacities,omitempty"`
+	ShowCapacities *bool         `json:"showcapacities,omitempty"`
 	Tags           []ResourceTag `json:"tags,omitempty"`
 }
 

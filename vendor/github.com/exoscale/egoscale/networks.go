@@ -56,6 +56,11 @@ type Network struct {
 	Tags                        []ResourceTag `json:"tags"`
 }
 
+// ResourceType returns the type of the resource
+func (*Network) ResourceType() string {
+	return "Network"
+}
+
 // Service is a feature of a network
 type Service struct {
 	Name       string              `json:"name"`
@@ -96,7 +101,7 @@ type CreateNetwork struct {
 	Account           string `json:"account,omitempty"`
 	ACLID             string `json:"aclid,omitempty"`
 	ACLType           string `json:"acltype,omitempty"`        // Account or Domain
-	DisplayNetwork    bool   `json:"displaynetwork,omitempty"` // root only
+	DisplayNetwork    *bool  `json:"displaynetwork,omitempty"` // root only
 	DomainID          string `json:"domainid,omitempty"`
 	EndIP             net.IP `json:"endip,omitempty"`
 	EndIpv6           net.IP `json:"endipv6,omitempty"`
@@ -142,16 +147,16 @@ type CreateNetworkResponse NetworkResponse
 // CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/updateNetwork.html
 type UpdateNetwork struct {
 	ID                string `json:"id"`
-	ChangeCidr        bool   `json:"changecidr,omitempty"`
+	ChangeCidr        *bool  `json:"changecidr,omitempty"`
 	CustomID          string `json:"customid,omitempty"` // root only
 	DisplayNetwork    string `json:"displaynetwork,omitempty"`
 	DisplayText       string `json:"displaytext,omitempty"`
-	Forced            bool   `json:"forced,omitempty"`
+	Forced            *bool  `json:"forced,omitempty"`
 	GuestVMCidr       string `json:"guestvmcidr,omitempty"`
 	Name              string `json:"name,omitempty"`
 	NetworkDomain     string `json:"networkdomain,omitempty"`
 	NetworkOfferingID string `json:"networkofferingid,omitempty"`
-	UpdateInSequence  bool   `json:"updateinsequence,omitempty"`
+	UpdateInSequence  *bool  `json:"updateinsequence,omitempty"`
 }
 
 func (*UpdateNetwork) name() string {
@@ -170,7 +175,7 @@ type UpdateNetworkResponse NetworkResponse
 // CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/restartNetwork.html
 type RestartNetwork struct {
 	ID      string `json:"id"`
-	Cleanup bool   `json:"cleanup,omitempty"`
+	Cleanup *bool  `json:"cleanup,omitempty"`
 }
 
 func (*RestartNetwork) name() string {
@@ -189,7 +194,7 @@ type RestartNetworkResponse NetworkResponse
 // CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/deleteNetwork.html
 type DeleteNetwork struct {
 	ID     string `json:"id"`
-	Forced bool   `json:"forced,omitempty"`
+	Forced *bool  `json:"forced,omitempty"`
 }
 
 func (*DeleteNetwork) name() string {
@@ -206,21 +211,21 @@ func (*DeleteNetwork) asyncResponse() interface{} {
 type ListNetworks struct {
 	Account           string        `json:"account,omitempty"`
 	ACLType           string        `json:"acltype,omitempty"` // Account or Domain
-	CanUseForDeploy   bool          `json:"canusefordeploy,omitempty"`
-	DisplayNetwork    bool          `json:"displaynetwork,omitempty"` // root only
+	CanUseForDeploy   *bool         `json:"canusefordeploy,omitempty"`
+	DisplayNetwork    *bool         `json:"displaynetwork,omitempty"` // root only
 	DomainID          string        `json:"domainid,omitempty"`
 	ForVpc            string        `json:"forvpc,omitempty"`
 	ID                string        `json:"id,omitempty"`
-	IsRecursive       bool          `json:"isrecursive,omitempty"`
-	IsSystem          bool          `json:"issystem,omitempty"`
+	IsRecursive       *bool         `json:"isrecursive,omitempty"`
+	IsSystem          *bool         `json:"issystem,omitempty"`
 	Keyword           string        `json:"keyword,omitempty"`
-	ListAll           bool          `json:"listall,omitempty"`
+	ListAll           *bool         `json:"listall,omitempty"`
 	Page              int           `json:"page,omitempty"`
 	PageSize          int           `json:"pagesize,omitempty"`
 	PhysicalNetworkID string        `json:"physicalnetworkid,omitempty"`
 	ProjectID         string        `json:"projectid,omitempty"`
-	RestartRequired   bool          `json:"restartrequired,omitempty"`
-	SpecifyRanges     bool          `json:"specifyranges,omitempty"`
+	RestartRequired   *bool         `json:"restartrequired,omitempty"`
+	SpecifyRanges     *bool         `json:"specifyranges,omitempty"`
 	SupportedServices []Service     `json:"supportedservices,omitempty"`
 	Tags              []ResourceTag `json:"resourcetag,omitempty"`
 	TrafficType       string        `json:"traffictype,omitempty"`

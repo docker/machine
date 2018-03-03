@@ -38,14 +38,19 @@ type IPAddress struct {
 	JobStatus                 JobStatusType `json:"jobstatus,omitempty"`
 }
 
+// ResourceType returns the type of the resource
+func (*IPAddress) ResourceType() string {
+	return "PublicIpAddress"
+}
+
 // AssociateIPAddress (Async) represents the IP creation
 //
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/associateIpAddress.html
 type AssociateIPAddress struct {
 	Account    string `json:"account,omitempty"`
 	DomainID   string `json:"domainid,omitempty"`
-	ForDisplay bool   `json:"fordisplay,omitempty"`
-	IsPortable bool   `json:"isportable,omitempty"`
+	ForDisplay *bool  `json:"fordisplay,omitempty"`
+	IsPortable *bool  `json:"isportable,omitempty"`
 	NetworkdID string `json:"networkid,omitempty"`
 	ProjectID  string `json:"projectid,omitempty"`
 	RegionID   string `json:"regionid,omitempty"`
@@ -86,7 +91,7 @@ func (*DisassociateIPAddress) asyncResponse() interface{} {
 type UpdateIPAddress struct {
 	ID         string `json:"id"`
 	CustomID   string `json:"customid,omitempty"` // root only
-	ForDisplay bool   `json:"fordisplay,omitempty"`
+	ForDisplay *bool  `json:"fordisplay,omitempty"`
 }
 
 func (*UpdateIPAddress) name() string {
@@ -104,20 +109,20 @@ type UpdateIPAddressResponse AssociateIPAddressResponse
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/listPublicIpAddresses.html
 type ListPublicIPAddresses struct {
 	Account            string        `json:"account,omitempty"`
-	AllocatedOnly      bool          `json:"allocatedonly,omitempty"`
+	AllocatedOnly      *bool         `json:"allocatedonly,omitempty"`
 	AllocatedNetworkID string        `json:"allocatednetworkid,omitempty"`
 	DomainID           string        `json:"domainid,omitempty"`
-	ForDisplay         bool          `json:"fordisplay,omitempty"`
-	ForLoadBalancing   bool          `json:"forloadbalancing,omitempty"`
+	ForDisplay         *bool         `json:"fordisplay,omitempty"`
+	ForLoadBalancing   *bool         `json:"forloadbalancing,omitempty"`
 	ForVirtualNetwork  string        `json:"forvirtualnetwork,omitempty"`
 	ID                 string        `json:"id,omitempty"`
 	IPAddress          net.IP        `json:"ipaddress,omitempty"`
-	IsElastic          bool          `json:"iselastic,omitempty"`
-	IsRecursive        bool          `json:"isrecursive,omitempty"`
-	IsSourceNat        bool          `json:"issourcenat,omitempty"`
-	IsStaticNat        bool          `json:"isstaticnat,omitempty"`
+	IsElastic          *bool         `json:"iselastic,omitempty"`
+	IsRecursive        *bool         `json:"isrecursive,omitempty"`
+	IsSourceNat        *bool         `json:"issourcenat,omitempty"`
+	IsStaticNat        *bool         `json:"isstaticnat,omitempty"`
 	Keyword            string        `json:"keyword,omitempty"`
-	ListAll            bool          `json:"listall,omiempty"`
+	ListAll            *bool         `json:"listall,omitempty"`
 	Page               int           `json:"page,omitempty"`
 	PageSize           int           `json:"pagesize,omitempty"`
 	PhysicalNetworkID  string        `json:"physicalnetworkid,omitempty"`

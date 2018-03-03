@@ -2,6 +2,7 @@ package egoscale
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
@@ -41,6 +42,14 @@ type AsyncCommand interface {
 // `omitempty` may make sense in some cases but not all the time.
 type onBeforeHook interface {
 	onBeforeSend(params *url.Values) error
+}
+
+// AsyncInfo represents the details for any async call
+//
+// It retries at most Retries time and waits for Delay between each retry
+type AsyncInfo struct {
+	Retries int
+	Delay   int
 }
 
 const (
@@ -107,10 +116,17 @@ type JobResultResponse struct {
 
 // ErrorResponse represents the standard error response from CloudStack
 type ErrorResponse struct {
-	ErrorCode   ErrorCode `json:"errorcode"`
-	CsErrorCode int       `json:"cserrorcode"`
-	ErrorText   string    `json:"errortext"`
-	UUIDList    []string  `json:"uuidList,omitempty"` // uuid*L*ist is not a typo
+	ErrorCode   ErrorCode  `json:"errorcode"`
+	CsErrorCode int        `json:"cserrorcode"`
+	ErrorText   string     `json:"errortext"`
+	UUIDList    []UUIDItem `json:"uuidList,omitempty"` // uuid*L*ist is not a typo
+}
+
+// UUIDItem represents an item of the UUIDList part of an ErrorResponse
+type UUIDItem struct {
+	Description      string `json:"description,omitempty"`
+	SerialVersionUID int64  `json:"serialVersionUID,omitempty"`
+	UUID             string `json:"uuid"`
 }
 
 // Error formats a CloudStack error into a standard error
@@ -146,12 +162,13 @@ func (e *booleanSyncResponse) Error() error {
 	return fmt.Errorf("API error: %s", e.DisplayText)
 }
 
-// AsyncInfo represents the details for any async call
-//
-// It retries at most Retries time and waits for Delay between each retry
-type AsyncInfo struct {
-	Retries int
-	Delay   int
+type asyncJob struct {
+	command      AsyncCommand
+	delay        int
+	retries      int
+	responseChan chan<- *AsyncJobResult
+	errorChan    chan<- error
+	ctx          context.Context
 }
 
 func csQuotePlus(s string) string {
@@ -212,66 +229,111 @@ func (exo *Client) parseResponse(resp *http.Response) (json.RawMessage, error) {
 	return b, nil
 }
 
+func (exo *Client) processAsyncJob(ctx context.Context, job *asyncJob) {
+	defer close(job.responseChan)
+	defer close(job.errorChan)
+
+	body, err := exo.request(job.command.name(), job.command)
+	if err != nil {
+		job.errorChan <- err
+		return
+	}
+
+	jobResult := new(AsyncJobResult)
+	if err := json.Unmarshal(body, jobResult); err != nil {
+		r := new(ErrorResponse)
+		if e := json.Unmarshal(body, r); e != nil {
+			job.errorChan <- r
+			return
+		}
+		job.errorChan <- err
+		return
+	}
+
+	// Successful response
+	if jobResult.JobID == "" || jobResult.JobStatus != Pending {
+		job.responseChan <- jobResult
+		return
+	}
+
+	for job.retries > 0 {
+		select {
+		case <-ctx.Done():
+			job.errorChan <- ctx.Err()
+			return
+		default:
+			job.retries--
+
+			end, _ := ctx.Deadline()
+
+			when := end.Add(time.Duration(job.delay*-job.retries) * time.Second)
+			time.Sleep(when.Sub(time.Now()))
+
+			req := &QueryAsyncJobResult{JobID: jobResult.JobID}
+			resp, err := exo.Request(req)
+			if err != nil {
+				job.errorChan <- err
+				return
+			}
+
+			result := resp.(*QueryAsyncJobResultResponse)
+			if result.JobStatus == Success {
+				job.responseChan <- (*AsyncJobResult)(result)
+				return
+			} else if result.JobStatus == Failure {
+				r := new(ErrorResponse)
+				e := json.Unmarshal(*result.JobResult, r)
+				if e != nil {
+					job.errorChan <- e
+					return
+				}
+				job.errorChan <- r
+				return
+			}
+		}
+	}
+
+	job.errorChan <- fmt.Errorf("Maximum number of retries reached")
+}
+
 // AsyncRequest performs an asynchronous request and polls it for retries * day [s]
 func (exo *Client) AsyncRequest(req AsyncCommand, async AsyncInfo) (interface{}, error) {
-	body, err := exo.request(req.name(), req)
-	if err != nil {
-		return nil, err
-	}
+	totalTime := time.Duration(async.Delay*async.Retries) * time.Second
+	end := time.Now().Add(totalTime)
 
-	// Is it a Job?
-	job := new(JobResultResponse)
-	if err := json.Unmarshal(body, &job); err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithDeadline(context.Background(), end)
+	defer cancel()
 
-	// Error response
-	errorResponse := new(ErrorResponse)
-	// Successful response
-	resp := req.asyncResponse()
-	if job.JobID == "" || job.JobStatus != Pending {
-		if err := json.Unmarshal(*job.JobResult, resp); err != nil {
-			return job, err
+	responseChan := make(chan *AsyncJobResult, 1)
+	errorChan := make(chan error, 1)
+
+	go exo.processAsyncJob(ctx, &asyncJob{
+		command:      req,
+		delay:        async.Delay,
+		retries:      async.Retries,
+		responseChan: responseChan,
+		errorChan:    errorChan,
+		ctx:          ctx,
+	})
+
+	select {
+	case result := <-responseChan:
+		cancel()
+		resp := req.asyncResponse()
+		if err := json.Unmarshal(*(result.JobResult), resp); err != nil {
+			return nil, err
 		}
 		return resp, nil
+
+	case err := <-errorChan:
+		cancel()
+		return nil, err
+
+	case <-ctx.Done():
+		cancel()
+		err := <-errorChan
+		return nil, err
 	}
-
-	// we've got a pending job
-	result := &QueryAsyncJobResultResponse{
-		JobStatus: job.JobStatus,
-	}
-	for async.Retries > 0 && result.JobStatus == Pending {
-		time.Sleep(time.Duration(async.Delay) * time.Second)
-
-		async.Retries--
-
-		req := &QueryAsyncJobResult{JobID: job.JobID}
-		resp, err := exo.Request(req)
-		if err != nil {
-			return nil, err
-		}
-		result = resp.(*QueryAsyncJobResultResponse)
-	}
-
-	if result.JobStatus == Failure {
-		if err := json.Unmarshal(*result.JobResult, &errorResponse); err != nil {
-			return nil, err
-		}
-		return errorResponse, errorResponse
-	}
-
-	if result.JobStatus == Pending {
-		return result, fmt.Errorf("Maximum number of retries reached")
-	}
-
-	if err := json.Unmarshal(*result.JobResult, resp); err != nil {
-		if err := json.Unmarshal(*result.JobResult, errorResponse); err != nil {
-			return nil, err
-		}
-		return errorResponse, errorResponse
-	}
-
-	return resp, nil
 }
 
 // BooleanRequest performs a sync request on a boolean call
@@ -434,6 +496,19 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 					}
 				} else {
 					(*params).Set(name, "true")
+				}
+			case reflect.Ptr:
+				if val.IsNil() {
+					if required {
+						return fmt.Errorf("%s.%s (%v) is required, got empty ptr", typeof.Name(), field.Name, val.Kind())
+					}
+				} else {
+					switch field.Type.Elem().Kind() {
+					case reflect.Bool:
+						params.Set(name, strconv.FormatBool(val.Elem().Bool()))
+					default:
+						log.Printf("[SKIP] %s.%s (%v) not supported", typeof.Name(), field.Name, field.Type.Elem().Kind())
+					}
 				}
 			case reflect.Slice:
 				switch field.Type.Elem().Kind() {

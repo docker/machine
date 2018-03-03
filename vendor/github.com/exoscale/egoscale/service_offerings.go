@@ -40,8 +40,8 @@ type ServiceOffering struct {
 type ListServiceOfferings struct {
 	DomainID         string `json:"domainid,omitempty"`
 	ID               string `json:"id,omitempty"`
-	IsRecursive      bool   `json:"isrecursive,omitempty"`
-	IsSystem         bool   `json:"issystem,omitempty"`
+	IsRecursive      *bool  `json:"isrecursive,omitempty"`
+	IsSystem         *bool  `json:"issystem,omitempty"`
 	Keyword          string `json:"keyword,omitempty"`
 	Name             string `json:"name,omitempty"`
 	Page             int    `json:"page,omitempty"`

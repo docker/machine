@@ -32,10 +32,10 @@ type ListEvents struct {
 	EndDate     string `json:"enddate,omitempty"`
 	EntryTime   int    `json:"entrytime,omitempty"`
 	ID          string `json:"id,omitempty"`
-	IsRecursive bool   `json:"isrecursive,omitempty"`
+	IsRecursive *bool  `json:"isrecursive,omitempty"`
 	Keyword     string `json:"keyword,omitempty"`
 	Level       string `json:"level,omitempty"` // INFO, WARN, ERROR
-	ListAll     bool   `json:"listall,omitempty"`
+	ListAll     *bool  `json:"listall,omitempty"`
 	Page        int    `json:"page,omitempty"`
 	PageSize    int    `json:"pagesize,omitempty"`
 	ProjectID   string `json:"projectid,omitempty"`

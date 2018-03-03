@@ -37,6 +37,11 @@ type Template struct {
 	Zonename              string            `json:"zonename,omitempty"`
 }
 
+// ResourceType returns the type of the resource
+func (*Template) ResourceType() string {
+	return "Template"
+}
+
 // ListTemplates represents a template query filter
 type ListTemplates struct {
 	TemplateFilter string        `json:"templatefilter"` // featured, etc.
@@ -44,14 +49,14 @@ type ListTemplates struct {
 	DomainID       string        `json:"domainid,omitempty"`
 	Hypervisor     string        `json:"hypervisor,omitempty"`
 	ID             string        `json:"id,omitempty"`
-	IsRecursive    bool          `json:"isrecursive,omitempty"`
+	IsRecursive    *bool         `json:"isrecursive,omitempty"`
 	Keyword        string        `json:"keyword,omitempty"`
-	ListAll        bool          `json:"listall,omitempty"`
+	ListAll        *bool         `json:"listall,omitempty"`
 	Name           string        `json:"name,omitempty"`
 	Page           int           `json:"page,omitempty"`
 	PageSize       int           `json:"pagesize,omitempty"`
 	ProjectID      string        `json:"projectid,omitempty"`
-	ShowRemoved    bool          `json:"showremoved,omitempty"`
+	ShowRemoved    *bool         `json:"showremoved,omitempty"`
 	Tags           []ResourceTag `json:"tags,omitempty"`
 	ZoneID         string        `json:"zoneid,omitempty"`
 }

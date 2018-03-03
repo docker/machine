@@ -1,5 +1,13 @@
 package egoscale
 
+// Taggable represents a resource which can have tags attached
+//
+// This is a helper to fill the resourcetype of a CreateTags call
+type Taggable interface {
+	// CloudStack resource type of the Taggable type
+	ResourceType() string
+}
+
 // ResourceTag is a tag associated with a resource
 //
 // http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/4.9/management.html
@@ -58,10 +66,10 @@ type ListTags struct {
 	Account      string `json:"account,omitempty"`
 	Customer     string `json:"customer,omitempty"`
 	DomainID     string `json:"domainid,omitempty"`
-	IsRecursive  bool   `json:"isrecursive,omitempty"`
+	IsRecursive  *bool  `json:"isrecursive,omitempty"`
 	Key          string `json:"key,omitempty"`
 	Keyword      string `json:"keyword,omitempty"`
-	ListAll      bool   `json:"listall,omitempty"`
+	ListAll      *bool  `json:"listall,omitempty"`
 	Page         int    `json:"page,omitempty"`
 	PageSize     int    `json:"pagesize,omitempty"`
 	ProjectID    string `json:"projectid,omitempty"`
