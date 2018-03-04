@@ -1,4 +1,3 @@
-docker-machine*
 *.log
 *.iml
 .idea/
