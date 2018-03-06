@@ -1,5 +1,60 @@
 # Changelog
 
+# 0.14.0 (2018-03-06)
+
+## General
+
+* Added `--client-certs` flag to the `docker-machine regenerate-certs` command.
+* Improved OpenBSD support
+* Fixed a bug with `scp` commands issued from a Windows host.
+* Enabled progress output by default for `scp` commands using `rsync`
+* Added `--quiet` flag to `scp` to suppress progress output
+* Machine now uses the `ss` command to detect connectivity when `netstat` is unavailable
+* Added bash completion for `docker-machine mount`
+* Improved provisioning resilience on Debian-based hosts
+
+## Drivers
+
+`amazonec2`
+* Added support for `eu-west-3` region
+* Upon failure, the `create` command now ensures dangling resources are cleaned up before exiting
+* Machine creation no longer fails when waiting on spot instance readiness
+
+`digitalocean`
+* Added `--digitalocean-monitoring` flag
+* Increased the default droplet size
+
+`exoscale`
+* Updated driver library
+* Several improvements and fixes to the default machine template
+* Added support for user-provided SSH key (`--exoscale-ssh-key`)
+* Added support for arbitrary disk size
+
+`google`
+* Enabled disk auto-deletion on newly created machines
+* Fixed a bug preventing the removal of a machine if it had already been removed remotely.
+* Added support for fully qualified network and subnetwork names
+
+`hyperv`
+* Fixed potential cmdlet collision with VMWare powercli
+* Fixed a bug with virtual switch selection
+* Machine now correctly detects if the user is a Hyper-V administrator when using a localized version of Windows
+
+`openstack`
+* Added `--openstack-config-drive` flag
+* Fixed an issue causing some user-uploaded keypairs to be removed when removing the associated machine.
+* Fixed a bug preventing the removal of a machine if it had already been removed remotely.
+
+`virtualbox`
+* Added OpenBSD support
+
+`vmwarefusion`
+* Improved error detection and reporting when creating a new instance
+
+`vmwarevsphere`
+* Added  `--vmwarevsphere-folder` flag
+
+
 # 0.13.0 (2017-10-12)
 
 General
