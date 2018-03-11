@@ -10,6 +10,7 @@ import (
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/crashreport"
+	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
@@ -150,6 +151,7 @@ func runCommand(command func(commandLine CommandLine, api libmachine.API) error)
 		}
 		api.GithubAPIToken = context.GlobalString("github-api-token")
 		api.Filestore.Path = context.GlobalString("storage-path")
+		drivers.MaxAttempts = context.GlobalInt("max-attempts")
 
 		// TODO (nathanleclaire): These should ultimately be accessed
 		// through the libmachine client by the rest of the code and

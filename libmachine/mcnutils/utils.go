@@ -87,9 +87,12 @@ func WaitForSpecificOrError(f func() (bool, error), maxAttempts int, waitInterva
 		if stop {
 			return nil
 		}
-		time.Sleep(waitInterval)
+		// don't sleep if it was the last attempt
+		if i != maxAttempts-1 {
+			time.Sleep(waitInterval)
+		}
 	}
-	return fmt.Errorf("Maximum number of retries (%d) exceeded", maxAttempts)
+	return fmt.Errorf("Maximum number of attempts (%d) exceeded", maxAttempts)
 }
 
 func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration) error {
