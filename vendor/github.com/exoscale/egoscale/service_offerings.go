@@ -50,7 +50,8 @@ type ListServiceOfferings struct {
 	VirtualMachineID string `json:"virtualmachineid,omitempty"`
 }
 
-func (*ListServiceOfferings) name() string {
+// APIName returns the CloudStack API command name
+func (*ListServiceOfferings) APIName() string {
 	return "listServiceOfferings"
 }
 

@@ -1,13 +1,62 @@
 package egoscale
 
+import (
+	"context"
+	"fmt"
+
+	"github.com/jinzhu/copier"
+)
+
 // SSHKeyPair represents an SSH key pair
 type SSHKeyPair struct {
-	Account     string `json:"account,omitempty"`
+	Account     string `json:"account,omitempty"` // must be used with a Domain ID
 	DomainID    string `json:"domainid,omitempty"`
 	ProjectID   string `json:"projectid,omitempty"`
 	Fingerprint string `json:"fingerprint,omitempty"`
 	Name        string `json:"name,omitempty"`
 	PrivateKey  string `json:"privatekey,omitempty"`
+}
+
+// Get populates the given SSHKeyPair
+func (ssh *SSHKeyPair) Get(ctx context.Context, client *Client) error {
+	resp, err := client.RequestWithContext(ctx, &ListSSHKeyPairs{
+		Account:     ssh.Account,
+		DomainID:    ssh.DomainID,
+		Name:        ssh.Name,
+		Fingerprint: ssh.Fingerprint,
+		ProjectID:   ssh.ProjectID,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	sshs := resp.(*ListSSHKeyPairsResponse)
+	count := len(sshs.SSHKeyPair)
+	if count == 0 {
+		return &ErrorResponse{
+			ErrorCode: ParamError,
+			ErrorText: fmt.Sprintf("SSHKeyPair not found"),
+		}
+	} else if count > 1 {
+		return fmt.Errorf("More than one SSHKeyPair was found")
+	}
+
+	return copier.Copy(ssh, sshs.SSHKeyPair[0])
+}
+
+// Delete removes the given SSH key, by Name
+func (ssh *SSHKeyPair) Delete(ctx context.Context, client *Client) error {
+	if ssh.Name == "" {
+		return fmt.Errorf("An SSH Key Pair may only be deleted using Name")
+	}
+
+	return client.BooleanRequestWithContext(ctx, &DeleteSSHKeyPair{
+		Name:      ssh.Name,
+		Account:   ssh.Account,
+		DomainID:  ssh.DomainID,
+		ProjectID: ssh.ProjectID,
+	})
 }
 
 // CreateSSHKeyPair represents a new keypair to be created
@@ -20,7 +69,8 @@ type CreateSSHKeyPair struct {
 	ProjectID string `json:"projectid,omitempty"`
 }
 
-func (*CreateSSHKeyPair) name() string {
+// APIName returns the CloudStack API command name
+func (*CreateSSHKeyPair) APIName() string {
 	return "createSSHKeyPair"
 }
 
@@ -43,7 +93,8 @@ type DeleteSSHKeyPair struct {
 	ProjectID string `json:"projectid,omitempty"`
 }
 
-func (*DeleteSSHKeyPair) name() string {
+// APIName returns the CloudStack API command name
+func (*DeleteSSHKeyPair) APIName() string {
 	return "deleteSSHKeyPair"
 }
 
@@ -62,7 +113,8 @@ type RegisterSSHKeyPair struct {
 	ProjectID string `json:"projectid,omitempty"`
 }
 
-func (*RegisterSSHKeyPair) name() string {
+// APIName returns the CloudStack API command name
+func (*RegisterSSHKeyPair) APIName() string {
 	return "registerSSHKeyPair"
 }
 
@@ -91,7 +143,8 @@ type ListSSHKeyPairs struct {
 	ProjectID   string `json:"projectid,omitempty"`
 }
 
-func (*ListSSHKeyPairs) name() string {
+// APIName returns the CloudStack API command name
+func (*ListSSHKeyPairs) APIName() string {
 	return "listSSHKeyPairs"
 }
 
@@ -116,7 +169,8 @@ type ResetSSHKeyForVirtualMachine struct {
 	ProjectID string `json:"projectid,omitempty"`
 }
 
-func (*ResetSSHKeyForVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*ResetSSHKeyForVirtualMachine) APIName() string {
 	return "resetSSHKeyForVirtualMachine"
 }
 
@@ -126,46 +180,3 @@ func (*ResetSSHKeyForVirtualMachine) asyncResponse() interface{} {
 
 // ResetSSHKeyForVirtualMachineResponse represents the modified VirtualMachine
 type ResetSSHKeyForVirtualMachineResponse VirtualMachineResponse
-
-// CreateKeypair create a new SSH Key Pair
-//
-// Deprecated: will go away, use the API directly
-func (exo *Client) CreateKeypair(name string) (*SSHKeyPair, error) {
-	req := &CreateSSHKeyPair{
-		Name: name,
-	}
-	resp, err := exo.Request(req)
-	if err != nil {
-		return nil, err
-	}
-
-	keypair := resp.(*CreateSSHKeyPairResponse).KeyPair
-	return &keypair, nil
-}
-
-// DeleteKeypair deletes an SSH key pair
-//
-// Deprecated: will go away, use the API directly
-func (exo *Client) DeleteKeypair(name string) error {
-	req := &DeleteSSHKeyPair{
-		Name: name,
-	}
-	return exo.BooleanRequest(req)
-}
-
-// RegisterKeypair registers a public key in a keypair
-//
-// Deprecated: will go away, use the API directly
-func (exo *Client) RegisterKeypair(name string, publicKey string) (*SSHKeyPair, error) {
-	req := &RegisterSSHKeyPair{
-		Name:      name,
-		PublicKey: publicKey,
-	}
-	resp, err := exo.Request(req)
-	if err != nil {
-		return nil, err
-	}
-
-	keypair := resp.(*RegisterSSHKeyPairResponse).KeyPair
-	return &keypair, nil
-}

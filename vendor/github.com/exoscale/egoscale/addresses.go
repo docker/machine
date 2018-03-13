@@ -58,7 +58,8 @@ type AssociateIPAddress struct {
 	ZoneID     string `json:"zoneid,omitempty"`
 }
 
-func (*AssociateIPAddress) name() string {
+// APIName returns the CloudStack API command name
+func (*AssociateIPAddress) APIName() string {
 	return "associateIpAddress"
 }
 
@@ -78,7 +79,8 @@ type DisassociateIPAddress struct {
 	ID string `json:"id"`
 }
 
-func (*DisassociateIPAddress) name() string {
+// APIName returns the CloudStack API command name
+func (*DisassociateIPAddress) APIName() string {
 	return "disassociateIpAddress"
 }
 func (*DisassociateIPAddress) asyncResponse() interface{} {
@@ -94,7 +96,8 @@ type UpdateIPAddress struct {
 	ForDisplay *bool  `json:"fordisplay,omitempty"`
 }
 
-func (*UpdateIPAddress) name() string {
+// APIName returns the CloudStack API command name
+func (*UpdateIPAddress) APIName() string {
 	return "updateIpAddress"
 }
 func (*UpdateIPAddress) asyncResponse() interface{} {
@@ -133,7 +136,8 @@ type ListPublicIPAddresses struct {
 	ZoneID             string        `json:"zoneid,omitempty"`
 }
 
-func (*ListPublicIPAddresses) name() string {
+// APIName returns the CloudStack API command name
+func (*ListPublicIPAddresses) APIName() string {
 	return "listPublicIpAddresses"
 }
 

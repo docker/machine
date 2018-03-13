@@ -34,7 +34,8 @@ type CreateTags struct {
 	Customer     string        `json:"customer,omitempty"`
 }
 
-func (*CreateTags) name() string {
+// APIName returns the CloudStack API command name
+func (*CreateTags) APIName() string {
 	return "createTags"
 }
 
@@ -51,7 +52,8 @@ type DeleteTags struct {
 	Tags         []ResourceTag `json:"tags,omitempty"`
 }
 
-func (*DeleteTags) name() string {
+// APIName returns the CloudStack API command name
+func (*DeleteTags) APIName() string {
 	return "deleteTags"
 }
 
@@ -78,7 +80,8 @@ type ListTags struct {
 	Value        string `json:"value,omitempty"`
 }
 
-func (*ListTags) name() string {
+// APIName returns the CloudStack API command name
+func (*ListTags) APIName() string {
 	return "listTags"
 }
 

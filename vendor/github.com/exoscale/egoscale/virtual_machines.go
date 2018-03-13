@@ -1,6 +1,13 @@
 package egoscale
 
-import "net"
+import (
+	"context"
+	"fmt"
+	"net"
+	"net/url"
+
+	"github.com/jinzhu/copier"
+)
 
 // VirtualMachine reprents a virtual machine
 type VirtualMachine struct {
@@ -82,6 +89,44 @@ func (*VirtualMachine) ResourceType() string {
 	return "UserVM"
 }
 
+// Get fills the VM
+func (vm *VirtualMachine) Get(ctx context.Context, client *Client) error {
+	if vm.ID == "" && vm.Name == "" {
+		return fmt.Errorf("A VirtualMachine may only be searched using ID or Name")
+	}
+
+	resp, err := client.RequestWithContext(ctx, &ListVirtualMachines{
+		ID:   vm.ID,
+		Name: vm.Name,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	vms := resp.(*ListVirtualMachinesResponse)
+	count := len(vms.VirtualMachine)
+	if count == 0 {
+		return &ErrorResponse{
+			ErrorCode: ParamError,
+			ErrorText: fmt.Sprintf("VirtualMachine not found. id: %s, name: %s", vm.ID, vm.Name),
+		}
+	} else if count > 1 {
+		return fmt.Errorf("More than one VirtualMachine was found. Query: id: %s, name: %s", vm.ID, vm.Name)
+	}
+
+	return copier.Copy(vm, vms.VirtualMachine[0])
+}
+
+// Delete destroys the VM
+func (vm *VirtualMachine) Delete(ctx context.Context, client *Client) error {
+	_, err := client.RequestWithContext(ctx, &DestroyVirtualMachine{
+		ID: vm.ID,
+	})
+
+	return err
+}
+
 // DefaultNic returns the default nic
 func (vm *VirtualMachine) DefaultNic() *Nic {
 	for _, nic := range vm.Nic {
@@ -138,6 +183,13 @@ type IPToNetwork struct {
 	NetworkID string `json:"networkid,omitempty"`
 }
 
+// Password represents an encrypted password
+//
+// TODO: method to decrypt it, https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=34014652
+type Password struct {
+	EncryptedPassword string `json:"encryptedpassword"`
+}
+
 // VirtualMachineResponse represents a generic Virtual Machine response
 type VirtualMachineResponse struct {
 	VirtualMachine VirtualMachine `json:"virtualmachine"`
@@ -151,10 +203,10 @@ type DeployVirtualMachine struct {
 	TemplateID         string            `json:"templateid"`
 	ZoneID             string            `json:"zoneid"`
 	Account            string            `json:"account,omitempty"`
-	AffinityGroupIDs   []string          `json:"affinitygroupids,omitempty"`
-	AffinityGroupNames []string          `json:"affinitygroupnames,omitempty"`
-	CustomID           string            `json:"customid,omitempty"`          // root only
-	DeploymentPlanner  string            `json:"deploymentplanner,omitempty"` // root only
+	AffinityGroupIDs   []string          `json:"affinitygroupids,omitempty"`   // mutually exclusive with AffinityGroupNames
+	AffinityGroupNames []string          `json:"affinitygroupnames,omitempty"` // mutually exclusive with AffinityGroupIDs
+	CustomID           string            `json:"customid,omitempty"`           // root only
+	DeploymentPlanner  string            `json:"deploymentplanner,omitempty"`  // root only
 	Details            map[string]string `json:"details,omitempty"`
 	DiskOfferingID     string            `json:"diskofferingid,omitempty"`
 	DisplayName        string            `json:"displayname,omitempty"`
@@ -163,24 +215,41 @@ type DeployVirtualMachine struct {
 	Group              string            `json:"group,omitempty"`
 	HostID             string            `json:"hostid,omitempty"`
 	Hypervisor         string            `json:"hypervisor,omitempty"`
-	IP6Address         net.IP            `json:"ip6address,omitempty"`
+	IP4                *bool             `json:"ip4,omitempty"` // Exoscale specific
+	IP6                *bool             `json:"ip6,omitempty"` // Exoscale specific
 	IPAddress          net.IP            `json:"ipaddress,omitempty"`
+	IP6Address         net.IP            `json:"ip6address,omitempty"`
 	IPToNetworkList    []IPToNetwork     `json:"iptonetworklist,omitempty"`
 	Keyboard           string            `json:"keyboard,omitempty"`
 	KeyPair            string            `json:"keypair,omitempty"`
 	Name               string            `json:"name,omitempty"`
 	NetworkIDs         []string          `json:"networkids,omitempty"` // mutually exclusive with IPToNetworkList
 	ProjectID          string            `json:"projectid,omitempty"`
-	RootDiskSize       int64             `json:"rootdisksize,omitempty"` // in GiB
-	SecurityGroupIDs   []string          `json:"securitygroupids,omitempty"`
-	SecurityGroupNames []string          `json:"securitygroupnames,omitempty"` // does nothing, mutually exclusive
+	RootDiskSize       int64             `json:"rootdisksize,omitempty"`       // in GiB
+	SecurityGroupIDs   []string          `json:"securitygroupids,omitempty"`   // mutually exclusive with SecurityGroupNames
+	SecurityGroupNames []string          `json:"securitygroupnames,omitempty"` // mutually exclusive with SecurityGroupIDs
 	Size               string            `json:"size,omitempty"`               // mutually exclusive with DiskOfferingID
 	StartVM            *bool             `json:"startvm,omitempty"`
 	UserData           string            `json:"userdata,omitempty"` // the client is responsible to base64/gzip it
 }
 
-func (*DeployVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*DeployVirtualMachine) APIName() string {
 	return "deployVirtualMachine"
+}
+
+func (req *DeployVirtualMachine) onBeforeSend(params *url.Values) error {
+	// Either AffinityGroupIDs or AffinityGroupNames must be set
+	if len(req.AffinityGroupIDs) > 0 && len(req.AffinityGroupNames) > 0 {
+		return fmt.Errorf("Either AffinityGroupIDs or AffinityGroupNames must be set")
+	}
+
+	// Either SecurityGroupIDs or SecurityGroupNames must be set
+	if len(req.SecurityGroupIDs) > 0 && len(req.SecurityGroupNames) > 0 {
+		return fmt.Errorf("Either SecurityGroupIDs or SecurityGroupNames must be set")
+	}
+
+	return nil
 }
 
 func (*DeployVirtualMachine) asyncResponse() interface{} {
@@ -199,7 +268,8 @@ type StartVirtualMachine struct {
 	HostID            string `json:"hostid,omitempty"`            // root only
 }
 
-func (*StartVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*StartVirtualMachine) APIName() string {
 	return "startVirtualMachine"
 }
 func (*StartVirtualMachine) asyncResponse() interface{} {
@@ -217,7 +287,8 @@ type StopVirtualMachine struct {
 	Forced *bool  `json:"forced,omitempty"`
 }
 
-func (*StopVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*StopVirtualMachine) APIName() string {
 	return "stopVirtualMachine"
 }
 
@@ -235,7 +306,8 @@ type RebootVirtualMachine struct {
 	ID string `json:"id"`
 }
 
-func (*RebootVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*RebootVirtualMachine) APIName() string {
 	return "rebootVirtualMachine"
 }
 
@@ -255,7 +327,8 @@ type RestoreVirtualMachine struct {
 	RootDiskSize     string `json:"rootdisksize,omitempty"` // in GiB, Exoscale specific
 }
 
-func (*RestoreVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*RestoreVirtualMachine) APIName() string {
 	return "restoreVirtualMachine"
 }
 
@@ -273,7 +346,8 @@ type RecoverVirtualMachine struct {
 	ID string `json:"virtualmachineid"`
 }
 
-func (*RecoverVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*RecoverVirtualMachine) APIName() string {
 	return "recoverVirtualMachine"
 }
 
@@ -292,7 +366,8 @@ type DestroyVirtualMachine struct {
 	Expunge *bool  `json:"expunge,omitempty"`
 }
 
-func (*DestroyVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*DestroyVirtualMachine) APIName() string {
 	return "destroyVirtualMachine"
 }
 
@@ -316,12 +391,13 @@ type UpdateVirtualMachine struct {
 	HAEnable              *bool             `json:"haenable,omitempty"`
 	IsDynamicallyScalable *bool             `json:"isdynamicallyscalable,omitempty"`
 	Name                  string            `json:"name,omitempty"` // must reboot
-	OsTypeID              int64             `json:"ostypeid,omitempty"`
+	OSTypeID              int64             `json:"ostypeid,omitempty"`
 	SecurityGroupIDs      []string          `json:"securitygroupids,omitempty"`
 	UserData              string            `json:"userdata,omitempty"`
 }
 
-func (*UpdateVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*UpdateVirtualMachine) APIName() string {
 	return "updateVirtualMachine"
 }
 
@@ -337,7 +413,8 @@ type ExpungeVirtualMachine struct {
 	ID string `json:"id"`
 }
 
-func (*ExpungeVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*ExpungeVirtualMachine) APIName() string {
 	return "expungeVirtualMachine"
 }
 
@@ -357,7 +434,8 @@ type ScaleVirtualMachine struct {
 	Details           map[string]string `json:"details,omitempty"`
 }
 
-func (*ScaleVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*ScaleVirtualMachine) APIName() string {
 	return "scaleVirtualMachine"
 }
 
@@ -370,7 +448,8 @@ func (*ScaleVirtualMachine) asyncResponse() interface{} {
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/changeServiceForVirtualMachine.html
 type ChangeServiceForVirtualMachine ScaleVirtualMachine
 
-func (*ChangeServiceForVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*ChangeServiceForVirtualMachine) APIName() string {
 	return "changeServiceForVirtualMachine"
 }
 
@@ -386,7 +465,8 @@ type ChangeServiceForVirtualMachineResponse VirtualMachineResponse
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/resetPasswordForVirtualMachine.html
 type ResetPasswordForVirtualMachine ScaleVirtualMachine
 
-func (*ResetPasswordForVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*ResetPasswordForVirtualMachine) APIName() string {
 	return "resetPasswordForVirtualMachine"
 }
 
@@ -404,7 +484,8 @@ type GetVMPassword struct {
 	ID string `json:"id"`
 }
 
-func (*GetVMPassword) name() string {
+// APIName returns the CloudStack API command name
+func (*GetVMPassword) APIName() string {
 	return "getVMPassword"
 }
 
@@ -415,7 +496,7 @@ func (*GetVMPassword) response() interface{} {
 // GetVMPasswordResponse represents the encrypted password
 type GetVMPasswordResponse struct {
 	// Base64 encrypted password for the VM
-	EncryptedPassword string `json:"encryptedpassword"`
+	Password Password `json:"password"`
 }
 
 // ListVirtualMachines represents a search for a VM
@@ -454,7 +535,8 @@ type ListVirtualMachines struct {
 	ZoneID            string            `json:"zoneid,omitempty"`
 }
 
-func (*ListVirtualMachines) name() string {
+// APIName returns the CloudStack API command name
+func (*ListVirtualMachines) APIName() string {
 	return "listVirtualMachines"
 }
 
@@ -477,7 +559,8 @@ type AddNicToVirtualMachine struct {
 	IPAddress        net.IP `json:"ipaddress,omitempty"`
 }
 
-func (*AddNicToVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*AddNicToVirtualMachine) APIName() string {
 	return "addNicToVirtualMachine"
 }
 
@@ -496,7 +579,8 @@ type RemoveNicFromVirtualMachine struct {
 	VirtualMachineID string `json:"virtualmachineid"`
 }
 
-func (*RemoveNicFromVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*RemoveNicFromVirtualMachine) APIName() string {
 	return "removeNicFromVirtualMachine"
 }
 
@@ -516,7 +600,8 @@ type UpdateDefaultNicForVirtualMachine struct {
 	IPAddress        net.IP `json:"ipaddress,omitempty"`
 }
 
-func (*UpdateDefaultNicForVirtualMachine) name() string {
+// APIName returns the CloudStack API command name
+func (*UpdateDefaultNicForVirtualMachine) APIName() string {
 	return "updateDefaultNicForVirtualMachine"
 }
 

@@ -79,7 +79,8 @@ type ListResourceLimits struct {
 	ResourceTypeName ResourceTypeName `json:"resourcetypename,omitempty"`
 }
 
-func (*ListResourceLimits) name() string {
+// APIName returns the CloudStack API command name
+func (*ListResourceLimits) APIName() string {
 	return "listResourceLimits"
 }
 

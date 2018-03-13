@@ -45,7 +45,8 @@ type ListZones struct {
 	Tags           []ResourceTag `json:"tags,omitempty"`
 }
 
-func (*ListZones) name() string {
+// APIName returns the CloudStack API command name
+func (*ListZones) APIName() string {
 	return "listZones"
 }
 

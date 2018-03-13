@@ -129,8 +129,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "401e52c49deedb261ddf0e2432a645abbb66bb4e"
-  version = "v0.9.10"
+  revision = "5c191f1d82540498eb0552346f4a4db03a63e657"
+  version = "v0.9.14"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -146,6 +146,12 @@
   name = "github.com/google/go-querystring"
   packages = ["query"]
   revision = "30f7a39f4a218feb5325f3aebc60c32a572a8274"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/jinzhu/copier"
+  packages = ["."]
+  revision = "7e38e58719c33e0d44d585c4ab477a30f8cb82dd"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
@@ -336,6 +342,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e99aac76aae722f534984877f01c84fa023d10b3cf07e4acba9f33b792fd23a3"
+  inputs-digest = "4bf60991beceac36c64aa2749d5150563e6f1bd2a0ec1f45aa20438755b7f219"
   solver-name = "gps-cdcl"
   solver-version = 1

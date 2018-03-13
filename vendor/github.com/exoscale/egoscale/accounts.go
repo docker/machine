@@ -83,7 +83,8 @@ type ListAccounts struct {
 	State             string `json:"state,omitempty"`
 }
 
-func (*ListAccounts) name() string {
+// APIName returns the CloudStack API command name
+func (*ListAccounts) APIName() string {
 	return "listAccounts"
 }
 

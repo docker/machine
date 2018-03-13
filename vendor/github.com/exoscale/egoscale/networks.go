@@ -120,7 +120,8 @@ type CreateNetwork struct {
 	VpcID             string `json:"vpcid,omitempty"`
 }
 
-func (*CreateNetwork) name() string {
+// APIName returns the CloudStack API command name
+func (*CreateNetwork) APIName() string {
 	return "createNetwork"
 }
 
@@ -159,7 +160,8 @@ type UpdateNetwork struct {
 	UpdateInSequence  *bool  `json:"updateinsequence,omitempty"`
 }
 
-func (*UpdateNetwork) name() string {
+// APIName returns the CloudStack API command name
+func (*UpdateNetwork) APIName() string {
 	return "updateNetwork"
 }
 
@@ -178,7 +180,8 @@ type RestartNetwork struct {
 	Cleanup *bool  `json:"cleanup,omitempty"`
 }
 
-func (*RestartNetwork) name() string {
+// APIName returns the CloudStack API command name
+func (*RestartNetwork) APIName() string {
 	return "restartNetwork"
 }
 
@@ -197,7 +200,8 @@ type DeleteNetwork struct {
 	Forced *bool  `json:"forced,omitempty"`
 }
 
-func (*DeleteNetwork) name() string {
+// APIName returns the CloudStack API command name
+func (*DeleteNetwork) APIName() string {
 	return "deleteNetwork"
 }
 
@@ -234,7 +238,8 @@ type ListNetworks struct {
 	ZoneID            string        `json:"zoneid,omitempty"`
 }
 
-func (*ListNetworks) name() string {
+// APIName returns the CloudStack API command name
+func (*ListNetworks) APIName() string {
 	return "listNetworks"
 }
 
