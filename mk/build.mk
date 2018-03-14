@@ -18,7 +18,7 @@ define gocross
 		$(GO) build \
 		-o $(PREFIX)/bin/$(PKG_NAME)-${os.$(1)}-${arch.$(2)}$(call extension,$(GOOS)) \
 		-a $(VERBOSE_GO) -tags "static_build netgo $(BUILDTAGS)" -installsuffix netgo \
-		-ldflags "$(GO_LDFLAGS) -extldflags -static" $(GO_GCFLAGS) ./cmd/machine.go;)
+		-ldflags "$(GO_LDFLAGS) -extldflags -static" $(GO_GCFLAGS) ./cmd/docker-machine;)
 endef
 
 build-clean:
@@ -31,6 +31,6 @@ $(PREFIX)/bin/$(PKG_NAME)$(call extension,$(GOOS)): $(shell find . -type f -name
 	$(GO) build \
 	-o $@ \
 	$(VERBOSE_GO) -tags "$(BUILDTAGS)" \
-	-ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ./cmd/machine.go
+	-ldflags "$(GO_LDFLAGS)" $(GO_GCFLAGS) ./cmd/docker-machine
 
 build: $(PREFIX)/bin/$(PKG_NAME)$(call extension,$(GOOS))
