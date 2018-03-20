@@ -1,11 +1,11 @@
-FROM golang:1.8.3
+FROM golang:1.9.4-alpine3.7
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk --no-cache add \
+                git \
+                make \
                 openssh-client \
                 rsync \
-                fuse \
-                sshfs \
-        && rm -rf /var/lib/apt/lists/*
+                sshfs
 
 RUN go get  github.com/golang/lint/golint \
             github.com/mattn/goveralls \
@@ -14,5 +14,5 @@ RUN go get  github.com/golang/lint/golint \
 ENV USER root
 WORKDIR /go/src/github.com/docker/machine
 
-COPY . ./
+COPY . .
 RUN mkdir bin
