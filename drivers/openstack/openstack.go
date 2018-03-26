@@ -462,8 +462,33 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Remove() error {
+
+	var floatingIP *FloatingIP
+
 	log.Debug("deleting instance...", map[string]string{"MachineId": d.MachineId})
 	log.Info("Deleting OpenStack instance...")
+
+	if err := d.resolveIds(); err != nil {
+		return err
+	}
+	if ips, err := d.client.GetFloatingIPs(d); err != nil {
+		return err
+	} else {
+		for _, xip := range ips {
+			if xip.Ip == d.IPAddress {
+				floatingIP = &xip
+				_ = floatingIP
+				break
+			}
+		}
+	}
+	log.Debug("Deleting Floating IP: ", map[string]string{"floatingIP": floatingIP.Ip})
+	if floatingIP != nil {
+		if err := d.client.DeleteFloatingIP(d, floatingIP); err != nil {
+			return err
+		}
+	}
+
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -785,7 +810,14 @@ func (d *Driver) assignFloatingIP() error {
 
 	var floatingIP *FloatingIP
 
-	log.Debugf("Looking for an available floating IP", map[string]string{
+	// This is currently broken
+	// When using parallel docker-machine create calls, it might get the same IP
+	// and fail to update the port, but somehow Update() does not fail
+	// and it will think the same IP has been given to different VMs
+	// https://github.com/docker/machine/issues/4038
+
+	_ = ips
+	/*log.Debugf("Looking for an available floating IP", map[string]string{
 		"MachineId": d.MachineId,
 		"Pool":      d.FloatingIpPool,
 	})
@@ -799,7 +831,7 @@ func (d *Driver) assignFloatingIP() error {
 			floatingIP = &ip
 			break
 		}
-	}
+	}*/
 
 	if floatingIP == nil {
 		floatingIP = &FloatingIP{}

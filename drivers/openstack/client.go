@@ -47,6 +47,7 @@ type Client interface {
 	GetFlavorID(d *Driver) (string, error)
 	GetImageID(d *Driver) (string, error)
 	AssignFloatingIP(d *Driver, floatingIP *FloatingIP) error
+	DeleteFloatingIP(d *Driver, floatingIP *FloatingIP) error
 	GetFloatingIPs(d *Driver) ([]FloatingIP, error)
 	GetFloatingIPPoolID(d *Driver) (string, error)
 	GetInstancePortID(d *Driver) (string, error)
@@ -383,6 +384,22 @@ func (c *GenericClient) assignNeutronFloatingIP(d *Driver, floatingIP *FloatingI
 	_, err = floatingips.Update(c.Network, floatingIP.Id, floatingips.UpdateOpts{
 		PortID: portID,
 	}).Extract()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *GenericClient) DeleteFloatingIP(d *Driver, floatingIP *FloatingIP) error {
+	if d.ComputeNetwork {
+		// Not implemented
+		return nil
+	}
+	return c.deleteNeutronFloatingIP(d, floatingIP)
+}
+
+func (c *GenericClient) deleteNeutronFloatingIP(d *Driver, floatingIP *FloatingIP) error {
+	err := floatingips.Delete(c.Network, floatingIP.Id).ExtractErr()
 	if err != nil {
 		return err
 	}
