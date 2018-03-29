@@ -37,7 +37,8 @@ type ListAPIs struct {
 	Name string `json:"name,omitempty"`
 }
 
-func (*ListAPIs) name() string {
+// APIName returns the CloudStack API command name
+func (*ListAPIs) APIName() string {
 	return "listApis"
 }
 

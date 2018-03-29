@@ -48,7 +48,8 @@ type ResizeVolume struct {
 	Size           int64  `json:"size,omitempty"` // in GiB
 }
 
-func (*ResizeVolume) name() string {
+// APIName returns the CloudStack API command name
+func (*ResizeVolume) APIName() string {
 	return "resizeVolume"
 }
 
@@ -86,7 +87,8 @@ type ListVolumes struct {
 	ZoneID           string        `json:"zoneid,omitempty"`
 }
 
-func (*ListVolumes) name() string {
+// APIName returns the CloudStack API command name
+func (*ListVolumes) APIName() string {
 	return "listVolumes"
 }
 

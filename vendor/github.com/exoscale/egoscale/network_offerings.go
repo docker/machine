@@ -53,7 +53,8 @@ type ListNetworkOfferings struct {
 	ZoneID             string        `json:"zoneid,omitempty"`
 }
 
-func (*ListNetworkOfferings) name() string {
+// APIName returns the CloudStack API command name
+func (*ListNetworkOfferings) APIName() string {
 	return "listNetworkOfferings"
 }
 

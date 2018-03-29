@@ -41,7 +41,8 @@ type CreateSnapshot struct {
 	QuiesceVM *bool  `json:"quiescevm,omitempty"`
 }
 
-func (*CreateSnapshot) name() string {
+// APIName returns the CloudStack API command name
+func (*CreateSnapshot) APIName() string {
 	return "createSnapshot"
 }
 
@@ -75,7 +76,8 @@ type ListSnapshots struct {
 	ZoneID       string        `json:"zoneid,omitempty"`
 }
 
-func (*ListSnapshots) name() string {
+// APIName returns the CloudStack API command name
+func (*ListSnapshots) APIName() string {
 	return "listSnapshots"
 }
 
@@ -96,7 +98,8 @@ type DeleteSnapshot struct {
 	ID string `json:"id"`
 }
 
-func (*DeleteSnapshot) name() string {
+// APIName returns the CloudStack API command name
+func (*DeleteSnapshot) APIName() string {
 	return "deleteSnapshot"
 }
 
@@ -111,7 +114,8 @@ type RevertSnapshot struct {
 	ID string `json:"id"`
 }
 
-func (*RevertSnapshot) name() string {
+// APIName returns the CloudStack API command name
+func (*RevertSnapshot) APIName() string {
 	return "revertSnapshot"
 }
 

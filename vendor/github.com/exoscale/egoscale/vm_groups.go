@@ -27,7 +27,8 @@ type CreateInstanceGroup struct {
 	ProjectID string `json:"projectid,omitempty"`
 }
 
-func (*CreateInstanceGroup) name() string {
+// APIName returns the CloudStack API command name
+func (*CreateInstanceGroup) APIName() string {
 	return "createInstanceGroup"
 }
 
@@ -46,7 +47,8 @@ type UpdateInstanceGroup struct {
 	Name string `json:"name,omitempty"`
 }
 
-func (*UpdateInstanceGroup) name() string {
+// APIName returns the CloudStack API command name
+func (*UpdateInstanceGroup) APIName() string {
 	return "updateInstanceGroup"
 }
 
@@ -67,7 +69,8 @@ type DeleteInstanceGroup struct {
 	ProjectID string `json:"projectid,omitempty"`
 }
 
-func (*DeleteInstanceGroup) name() string {
+// APIName returns the CloudStack API command name
+func (*DeleteInstanceGroup) APIName() string {
 	return "deleteInstanceGroup"
 }
 
@@ -91,7 +94,8 @@ type ListInstanceGroups struct {
 	ProjectID   string `json:"projectid,omitempty"`
 }
 
-func (*ListInstanceGroups) name() string {
+// APIName returns the CloudStack API command name
+func (*ListInstanceGroups) APIName() string {
 	return "listInstanceGroups"
 }
 

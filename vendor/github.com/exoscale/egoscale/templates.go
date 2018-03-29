@@ -61,7 +61,8 @@ type ListTemplates struct {
 	ZoneID         string        `json:"zoneid,omitempty"`
 }
 
-func (*ListTemplates) name() string {
+// APIName returns the CloudStack API command name
+func (*ListTemplates) APIName() string {
 	return "listTemplates"
 }
 

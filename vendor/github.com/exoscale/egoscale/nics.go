@@ -36,6 +36,8 @@ type NicSecondaryIP struct {
 }
 
 // ListNics represents the NIC search
+//
+// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/listNics.html
 type ListNics struct {
 	VirtualMachineID string `json:"virtualmachineid"`
 	ForDisplay       bool   `json:"fordisplay,omitempty"`
@@ -46,7 +48,8 @@ type ListNics struct {
 	PageSize         int    `json:"pagesize,omitempty"`
 }
 
-func (*ListNics) name() string {
+// APIName returns the CloudStack API command name
+func (*ListNics) APIName() string {
 	return "listNics"
 }
 
@@ -60,13 +63,16 @@ type ListNicsResponse struct {
 	Nic   []Nic `json:"nic"`
 }
 
-// AddIPToNic represents the assignation of a secondary IP
+// AddIPToNic (Async) represents the assignation of a secondary IP
+//
+// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/addIpToNic.html
 type AddIPToNic struct {
 	NicID     string `json:"nicid"`
 	IPAddress net.IP `json:"ipaddress"`
 }
 
-func (*AddIPToNic) name() string {
+// APIName returns the CloudStack API command name: addIpToNic
+func (*AddIPToNic) APIName() string {
 	return "addIpToNic"
 }
 func (*AddIPToNic) asyncResponse() interface{} {
@@ -78,17 +84,41 @@ type AddIPToNicResponse struct {
 	NicSecondaryIP NicSecondaryIP `json:"nicsecondaryip"`
 }
 
-// RemoveIPFromNic represents a deletion request
+// RemoveIPFromNic (Async) represents a deletion request
+//
+// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/removeIpFromNic.html
 type RemoveIPFromNic struct {
 	ID string `json:"id"`
 }
 
-func (*RemoveIPFromNic) name() string {
+// APIName returns the CloudStack API command name: removeIpFromNic
+func (*RemoveIPFromNic) APIName() string {
 	return "removeIpFromNic"
 }
 
 func (*RemoveIPFromNic) asyncResponse() interface{} {
 	return new(booleanAsyncResponse)
+}
+
+// ActivateIP6 (Async) activates the IP6 on the given NIC
+//
+// Exoscale specific API: https://community.exoscale.ch/api/compute/#activateip6_GET
+type ActivateIP6 struct {
+	NicID string `json:"nicid"`
+}
+
+// APIName returns the CloudStack API command name: activateIp6
+func (*ActivateIP6) APIName() string {
+	return "activateIp6"
+}
+
+func (*ActivateIP6) asyncResponse() interface{} {
+	return new(ActivateIP6Response)
+}
+
+// ActivateIP6Response represents the modified NIC
+type ActivateIP6Response struct {
+	Nic Nic `json:"nic"`
 }
 
 // ListNics lists the NIC of a VM
@@ -106,7 +136,7 @@ func (exo *Client) ListNics(req *ListNics) ([]Nic, error) {
 // AddIPToNic adds an IP to a NIC
 //
 // Deprecated: use the API directly
-func (exo *Client) AddIPToNic(nicID string, ipAddress string, async AsyncInfo) (*NicSecondaryIP, error) {
+func (exo *Client) AddIPToNic(nicID string, ipAddress string) (*NicSecondaryIP, error) {
 	ip := net.ParseIP(ipAddress)
 	if ip == nil {
 		return nil, fmt.Errorf("%s is not a valid IP address", ipAddress)
@@ -115,7 +145,7 @@ func (exo *Client) AddIPToNic(nicID string, ipAddress string, async AsyncInfo) (
 		NicID:     nicID,
 		IPAddress: ip,
 	}
-	resp, err := exo.AsyncRequest(req, async)
+	resp, err := exo.Request(req)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +157,9 @@ func (exo *Client) AddIPToNic(nicID string, ipAddress string, async AsyncInfo) (
 // RemoveIPFromNic removes an IP from a NIC
 //
 // Deprecated: use the API directly
-func (exo *Client) RemoveIPFromNic(secondaryNicID string, async AsyncInfo) error {
+func (exo *Client) RemoveIPFromNic(secondaryNicID string) error {
 	req := &RemoveIPFromNic{
 		ID: secondaryNicID,
 	}
-	return exo.BooleanAsyncRequest(req, async)
+	return exo.BooleanRequest(req)
 }

@@ -27,7 +27,8 @@ type RegisterUserKeys struct {
 	ID string `json:"id"`
 }
 
-func (*RegisterUserKeys) name() string {
+// APIName returns the CloudStack API command name
+func (*RegisterUserKeys) APIName() string {
 	return "registerUserKeys"
 }
 
