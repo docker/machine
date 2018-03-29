@@ -40,8 +40,9 @@ before_script:
   <<: *build_base
   script: make build-x
 
-linux amd64: *build_validate
 darwin amd64: *build_x
+linux amd64: *build_validate
+openbsd amd64: *build_x
 windows amd64: *build_x
 linux arm: *build_x
 linux arm64: *build_x
