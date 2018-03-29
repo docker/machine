@@ -81,8 +81,8 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 	log.Info("Creating machine...")
 
 	server, err := servers.Create(c.Compute, keypairs.CreateOptsExt{
-		serverOpts,
-		d.KeyPairName,
+		CreateOptsBuilder: serverOpts,
+		KeyName:           d.KeyPairName,
 	}).Extract()
 	if err != nil {
 		return "", err
