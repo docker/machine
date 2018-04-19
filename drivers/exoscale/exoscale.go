@@ -39,6 +39,7 @@ type Driver struct {
 	Password         string
 	PublicKey        string
 	UserDataFile     string
+	UserData         []byte
 	ID               string `json:"Id"`
 }
 
@@ -199,6 +200,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("exoscale-ssh-user")
 	d.SSHKey = flags.String("exoscale-ssh-key")
 	d.UserDataFile = flags.String("exoscale-userdata")
+	d.UserData = []byte(defaultCloudInit)
 	d.SetSwarmConfigFromFlags(flags)
 
 	if d.URL == "" {
@@ -416,47 +418,55 @@ func (d *Driver) Create() error {
 	zone := zones.Zone[0].ID
 	log.Debugf("Availability zone %v = %s", d.AvailabilityZone, zone)
 
-	// Image UUID
-	var tpl string
+	// Image
+	template := egoscale.Template{
+		IsFeatured: true,
+		ZoneID:     "1", // GVA2
+	}
 
-	resp, err = client.RequestWithContext(context.TODO(), &egoscale.ListTemplates{
-		TemplateFilter: "featured",
-		ZoneID:         "1", // GVA2
-	})
+	templates, err := client.ListWithContext(context.TODO(), &template)
 	if err != nil {
 		return err
 	}
 
 	image := strings.ToLower(d.Image)
 	re := regexp.MustCompile(`^Linux (?P<name>.+?) (?P<version>[0-9.]+)\b`)
-	for _, template := range resp.(*egoscale.ListTemplatesResponse).Template {
+
+	for _, t := range templates {
+		tpl := t.(*egoscale.Template)
+
 		// Keep only 10GiB images
-		if template.Size>>30 != 10 {
+		if tpl.Size>>30 != 10 {
 			continue
 		}
 
-		fullname := strings.ToLower(template.Name)
+		fullname := strings.ToLower(tpl.Name)
 		if image == fullname {
-			tpl = template.ID
+			template = *tpl
 			break
 		}
 
-		submatch := re.FindStringSubmatch(template.Name)
+		submatch := re.FindStringSubmatch(tpl.Name)
 		if len(submatch) > 0 {
 			name := strings.Replace(strings.ToLower(submatch[1]), " ", "-", -1)
 			version := submatch[2]
 			shortname := fmt.Sprintf("%s-%s", name, version)
 
 			if image == shortname {
-				tpl = template.ID
+				template = *tpl
 				break
 			}
 		}
 	}
-	if tpl == "" {
+	if template.ID == "" {
 		return fmt.Errorf("Unable to find image %v", d.Image)
 	}
-	log.Debugf("Image %v(10) = %s", d.Image, tpl)
+
+	// Reading the username from the template
+	if name, ok := template.Details["username"]; ok {
+		d.SSHUser = name
+	}
+	log.Debugf("Image %v(10) = %s (%s)", d.Image, template.ID, d.SSHUser)
 
 	// Profile UUID
 	resp, err = client.RequestWithContext(context.TODO(), &egoscale.ListServiceOfferings{
@@ -531,8 +541,11 @@ func (d *Driver) Create() error {
 			return fmt.Errorf("SSH Key pair creation failed %s", err)
 		}
 		keyPair := resp.(*egoscale.CreateSSHKeyPairResponse).KeyPair
+		if err = os.MkdirAll(filepath.Dir(d.GetSSHKeyPath()), 0750); err != nil {
+			return fmt.Errorf("Cannot create the folder to store the SSH private key. %s", err)
+		}
 		if err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(keyPair.PrivateKey), 0600); err != nil {
-			return fmt.Errorf("SSH public key could not be written %s", err)
+			return fmt.Errorf("SSH private key could not be written. %s", err)
 		}
 		d.KeyPair = keyPairName
 	} else {
@@ -574,12 +587,13 @@ ssh_authorized_keys:
 	log.Debugf("%s", string(cloudInit))
 
 	// Base64 encode the userdata
-	userData := base64.StdEncoding.EncodeToString(cloudInit)
+	d.UserData = cloudInit
+	encodedUserData := base64.StdEncoding.EncodeToString(d.UserData)
 
 	req := &egoscale.DeployVirtualMachine{
-		TemplateID:        tpl,
+		TemplateID:        template.ID,
 		ServiceOfferingID: profile,
-		UserData:          userData,
+		UserData:          encodedUserData,
 		ZoneID:            zone,
 		Name:              d.MachineName,
 		KeyPair:           d.KeyPair,
@@ -688,9 +702,10 @@ func (d *Driver) Remove() error {
 // Build a cloud-init user data string that will install and run
 // docker.
 func (d *Driver) getCloudInit() ([]byte, error) {
+	var err error
 	if d.UserDataFile != "" {
-		return ioutil.ReadFile(d.UserDataFile)
+		d.UserData, err = ioutil.ReadFile(d.UserDataFile)
 	}
 
-	return []byte(defaultCloudInit), nil
+	return d.UserData, err
 }
