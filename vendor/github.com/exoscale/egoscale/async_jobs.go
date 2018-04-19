@@ -1,34 +1,16 @@
 package egoscale
 
-import (
-	"encoding/json"
-)
-
-// AsyncJobResult represents an asynchronous job result
-type AsyncJobResult struct {
-	AccountID       string           `json:"accountid"`
-	Cmd             string           `json:"cmd"`
-	Created         string           `json:"created"`
-	JobInstanceID   string           `json:"jobinstanceid"`
-	JobInstanceType string           `json:"jobinstancetype"`
-	JobProcStatus   int              `json:"jobprocstatus"`
-	JobResult       *json.RawMessage `json:"jobresult"`
-	JobResultCode   int              `json:"jobresultcode"`
-	JobResultType   string           `json:"jobresulttype"`
-	JobStatus       JobStatusType    `json:"jobstatus"`
-	UserID          string           `json:"userid"`
-	JobID           string           `json:"jobid"`
-}
+import "encoding/json"
 
 // QueryAsyncJobResult represents a query to fetch the status of async job
 //
 // CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/queryAsyncJobResult.html
 type QueryAsyncJobResult struct {
-	JobID string `json:"jobid"`
+	JobID string `json:"jobid" doc:"the ID of the asychronous job"`
 }
 
-// APIName returns the CloudStack API command name
-func (*QueryAsyncJobResult) APIName() string {
+// name returns the CloudStack API command name
+func (*QueryAsyncJobResult) name() string {
 	return "queryAsyncJobResult"
 }
 
@@ -36,24 +18,8 @@ func (*QueryAsyncJobResult) response() interface{} {
 	return new(QueryAsyncJobResultResponse)
 }
 
-// QueryAsyncJobResultResponse represents the current status of an asynchronous job
-type QueryAsyncJobResultResponse AsyncJobResult
-
-// ListAsyncJobs list the asynchronous jobs
-//
-// CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/listAsyncJobs.html
-type ListAsyncJobs struct {
-	Account     string `json:"account,omitempty"`
-	DomainID    string `json:"domainid,omitempty"`
-	IsRecursive *bool  `json:"isrecursive,omitempty"`
-	Keyword     string `json:"keyword,omitempty"`
-	Page        int    `json:"page,omitempty"`
-	PageSize    int    `json:"pagesize,omitempty"`
-	StartDate   string `json:"startdate,omitempty"`
-}
-
-// APIName returns the CloudStack API command name
-func (*ListAsyncJobs) APIName() string {
+// name returns the CloudStack API command name
+func (*ListAsyncJobs) name() string {
 	return "listAsyncJobs"
 }
 
@@ -61,8 +27,23 @@ func (*ListAsyncJobs) response() interface{} {
 	return new(ListAsyncJobsResponse)
 }
 
-// ListAsyncJobsResponse represents a list of job results
-type ListAsyncJobsResponse struct {
-	Count     int              `json:"count"`
-	AsyncJobs []AsyncJobResult `json:"asyncjobs"`
+//Response return response of AsyncJobResult from a given type
+func (a *AsyncJobResult) Response(i interface{}) error {
+	if a.JobStatus == Failure {
+		return a.Error()
+	}
+	if a.JobStatus == Success {
+		if err := json.Unmarshal(*(a.JobResult), i); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *AsyncJobResult) Error() error {
+	r := new(ErrorResponse)
+	if e := json.Unmarshal(*a.JobResult, r); e != nil {
+		return e
+	}
+	return r
 }

@@ -43,8 +43,8 @@ type ListEvents struct {
 	Type        string `json:"type,omitempty"`
 }
 
-// APIName returns the CloudStack API command name
-func (*ListEvents) APIName() string {
+// name returns the CloudStack API command name
+func (*ListEvents) name() string {
 	return "listEvents"
 }
 
@@ -63,8 +63,8 @@ type ListEventsResponse struct {
 // CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/listEventTypes.html
 type ListEventTypes struct{}
 
-// APIName returns the CloudStack API command name
-func (*ListEventTypes) APIName() string {
+// name returns the CloudStack API command name
+func (*ListEventTypes) name() string {
 	return "listEventTypes"
 }
 

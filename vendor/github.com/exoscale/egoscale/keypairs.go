@@ -7,32 +7,14 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-// SSHKeyPair represents an SSH key pair
-type SSHKeyPair struct {
-	Account     string `json:"account,omitempty"` // must be used with a Domain ID
-	DomainID    string `json:"domainid,omitempty"`
-	ProjectID   string `json:"projectid,omitempty"`
-	Fingerprint string `json:"fingerprint,omitempty"`
-	Name        string `json:"name,omitempty"`
-	PrivateKey  string `json:"privatekey,omitempty"`
-}
-
 // Get populates the given SSHKeyPair
 func (ssh *SSHKeyPair) Get(ctx context.Context, client *Client) error {
-	resp, err := client.RequestWithContext(ctx, &ListSSHKeyPairs{
-		Account:     ssh.Account,
-		DomainID:    ssh.DomainID,
-		Name:        ssh.Name,
-		Fingerprint: ssh.Fingerprint,
-		ProjectID:   ssh.ProjectID,
-	})
-
+	sshs, err := client.ListWithContext(ctx, ssh)
 	if err != nil {
 		return err
 	}
 
-	sshs := resp.(*ListSSHKeyPairsResponse)
-	count := len(sshs.SSHKeyPair)
+	count := len(sshs)
 	if count == 0 {
 		return &ErrorResponse{
 			ErrorCode: ParamError,
@@ -42,7 +24,7 @@ func (ssh *SSHKeyPair) Get(ctx context.Context, client *Client) error {
 		return fmt.Errorf("More than one SSHKeyPair was found")
 	}
 
-	return copier.Copy(ssh, sshs.SSHKeyPair[0])
+	return copier.Copy(ssh, sshs[0])
 }
 
 // Delete removes the given SSH key, by Name
@@ -59,18 +41,21 @@ func (ssh *SSHKeyPair) Delete(ctx context.Context, client *Client) error {
 	})
 }
 
-// CreateSSHKeyPair represents a new keypair to be created
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/createSSHKeyPair.html
-type CreateSSHKeyPair struct {
-	Name      string `json:"name"`
-	Account   string `json:"account,omitempty"`
-	DomainID  string `json:"domainid,omitempty"`
-	ProjectID string `json:"projectid,omitempty"`
+// ListRequest builds the ListSSHKeyPairs request
+func (ssh *SSHKeyPair) ListRequest() (ListCommand, error) {
+	req := &ListSSHKeyPairs{
+		Account:     ssh.Account,
+		DomainID:    ssh.DomainID,
+		Fingerprint: ssh.Fingerprint,
+		Name:        ssh.Name,
+		ProjectID:   ssh.ProjectID,
+	}
+
+	return req, nil
 }
 
-// APIName returns the CloudStack API command name
-func (*CreateSSHKeyPair) APIName() string {
+// name returns the CloudStack API command name
+func (*CreateSSHKeyPair) name() string {
 	return "createSSHKeyPair"
 }
 
@@ -78,43 +63,17 @@ func (*CreateSSHKeyPair) response() interface{} {
 	return new(CreateSSHKeyPairResponse)
 }
 
-// CreateSSHKeyPairResponse represents the creation of an SSH Key Pair
-type CreateSSHKeyPairResponse struct {
-	KeyPair SSHKeyPair `json:"keypair"`
-}
-
-// DeleteSSHKeyPair represents a new keypair to be created
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/deleteSSHKeyPair.html
-type DeleteSSHKeyPair struct {
-	Name      string `json:"name"`
-	Account   string `json:"account,omitempty"`
-	DomainID  string `json:"domainid,omitempty"`
-	ProjectID string `json:"projectid,omitempty"`
-}
-
-// APIName returns the CloudStack API command name
-func (*DeleteSSHKeyPair) APIName() string {
+// name returns the CloudStack API command name
+func (*DeleteSSHKeyPair) name() string {
 	return "deleteSSHKeyPair"
 }
 
 func (*DeleteSSHKeyPair) response() interface{} {
-	return new(booleanSyncResponse)
+	return new(booleanResponse)
 }
 
-// RegisterSSHKeyPair represents a new registration of a public key in a keypair
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/registerSSHKeyPair.html
-type RegisterSSHKeyPair struct {
-	Name      string `json:"name"`
-	PublicKey string `json:"publickey"`
-	Account   string `json:"account,omitempty"`
-	DomainID  string `json:"domainid,omitempty"`
-	ProjectID string `json:"projectid,omitempty"`
-}
-
-// APIName returns the CloudStack API command name
-func (*RegisterSSHKeyPair) APIName() string {
+// name returns the CloudStack API command name
+func (*RegisterSSHKeyPair) name() string {
 	return "registerSSHKeyPair"
 }
 
@@ -122,29 +81,8 @@ func (*RegisterSSHKeyPair) response() interface{} {
 	return new(RegisterSSHKeyPairResponse)
 }
 
-// RegisterSSHKeyPairResponse represents the creation of an SSH Key Pair
-type RegisterSSHKeyPairResponse struct {
-	KeyPair SSHKeyPair `json:"keypair"`
-}
-
-// ListSSHKeyPairs represents a query for a list of SSH KeyPairs
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/listSSHKeyPairs.html
-type ListSSHKeyPairs struct {
-	Account     string `json:"account,omitempty"`
-	DomainID    string `json:"domainid,omitempty"`
-	Fingerprint string `json:"fingerprint,omitempty"`
-	IsRecursive *bool  `json:"isrecursive,omitempty"`
-	Keyword     string `json:"keyword,omitempty"`
-	ListAll     *bool  `json:"listall,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Page        int    `json:"page,omitempty"`
-	PageSize    int    `json:"pagesize,omitempty"`
-	ProjectID   string `json:"projectid,omitempty"`
-}
-
-// APIName returns the CloudStack API command name
-func (*ListSSHKeyPairs) APIName() string {
+// name returns the CloudStack API command name
+func (*ListSSHKeyPairs) name() string {
 	return "listSSHKeyPairs"
 }
 
@@ -152,31 +90,35 @@ func (*ListSSHKeyPairs) response() interface{} {
 	return new(ListSSHKeyPairsResponse)
 }
 
-// ListSSHKeyPairsResponse represents a list of SSH key pairs
-type ListSSHKeyPairsResponse struct {
-	Count      int          `json:"count"`
-	SSHKeyPair []SSHKeyPair `json:"sshkeypair"`
+func (*ListSSHKeyPairs) each(resp interface{}, callback IterateItemFunc) {
+	sshs, ok := resp.(*ListSSHKeyPairsResponse)
+	if !ok {
+		callback(nil, fmt.Errorf("ListSSHKeyPairsResponse expected, got %t", resp))
+		return
+	}
+
+	for i := range sshs.SSHKeyPair {
+		if !callback(&sshs.SSHKeyPair[i], nil) {
+			break
+		}
+	}
 }
 
-// ResetSSHKeyForVirtualMachine (Async) represents a change for the key pairs
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/resetSSHKeyForVirtualMachine.html
-type ResetSSHKeyForVirtualMachine struct {
-	ID        string `json:"id"`
-	KeyPair   string `json:"keypair"`
-	Account   string `json:"account,omitempty"`
-	DomainID  string `json:"domainid,omitempty"`
-	ProjectID string `json:"projectid,omitempty"`
+// SetPage sets the current page
+func (ls *ListSSHKeyPairs) SetPage(page int) {
+	ls.Page = page
 }
 
-// APIName returns the CloudStack API command name
-func (*ResetSSHKeyForVirtualMachine) APIName() string {
+// SetPageSize sets the page size
+func (ls *ListSSHKeyPairs) SetPageSize(pageSize int) {
+	ls.PageSize = pageSize
+}
+
+// name returns the CloudStack API command name
+func (*ResetSSHKeyForVirtualMachine) name() string {
 	return "resetSSHKeyForVirtualMachine"
 }
 
 func (*ResetSSHKeyForVirtualMachine) asyncResponse() interface{} {
 	return new(ResetSSHKeyForVirtualMachineResponse)
 }
-
-// ResetSSHKeyForVirtualMachineResponse represents the modified VirtualMachine
-type ResetSSHKeyForVirtualMachineResponse VirtualMachineResponse

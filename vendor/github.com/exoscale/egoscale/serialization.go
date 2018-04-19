@@ -112,6 +112,19 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 				} else {
 					(*params).Set(name, "true")
 				}
+			case reflect.Ptr:
+				if val.IsNil() {
+					if required {
+						return fmt.Errorf("%s.%s (%v) is required, got tempty ptr", typeof.Name(), field.Name, val.Kind())
+					}
+				} else {
+					switch field.Type.Elem().Kind() {
+					case reflect.Bool:
+						params.Set(name, strconv.FormatBool(val.Elem().Bool()))
+					default:
+						log.Printf("[SKIP] %s.%s (%v) not supported", typeof.Name(), field.Name, field.Type.Elem().Kind())
+					}
+				}
 			case reflect.Slice:
 				switch field.Type.Elem().Kind() {
 				case reflect.Uint8:

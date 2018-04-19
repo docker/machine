@@ -1,6 +1,84 @@
 Changelog
 =========
 
+0.9.23
+------
+
+- feat: `booleanResponse` supports true booleans: https://github.com/apache/cloudstack/pull/2428
+
+0.9.22
+------
+
+- feat: `ListUsers`, `CreateUser`, `UpdateUser`
+- feat: `ListResourceDetails`
+- feat: `SecurityGroup` helper `RuleByID`
+- feat: `Sign` signs the payload
+- feat: `UpdateNetworkOffering`
+- feat: `GetVirtualMachineUserData`
+- feat: `EnableAccount` and `DisableAccount` (admin stuff)
+- feat: `AsyncRequest` and `AsyncRequestWithContext` to examine the polling
+- fix: `AuthorizeSecurityGroupIngress` support for ICMPv6
+- change: move `APIName()` into the `Client`, nice godoc
+- change: `Payload` doesn't sign the request anymore
+- change: `Client` exposes more of its underlying data
+- change: requests are sent as GET unless it body size is too big
+
+0.9.21
+------
+
+- feat: `Network` is `Listable`
+- feat: `Zone` is `Gettable`
+- feat: `Client.Payload` to help preview the HTTP parameters
+- feat: generate command utility
+- fix: `CreateSnapshot` was missing the `Name` attribute
+- fix: `ListSnapshots` was missing the `IDs` attribute
+- fix: `ListZones` was missing the `NetworkType` attribute
+- fix: `ListAsyncJobs` was missing the `ListAll` attribute
+- change: ICMP Type/Code are uint8 and TCP/UDP port are uint16
+
+0.9.20
+------
+
+- feat: `Template` is `Listable`
+- feat: `IPAddress` is `Listable`
+- change: `List` and `Paginate` return pointers
+- fix: `Template` was missing `tags`
+
+0.9.19
+------
+
+- feat: `SSHKeyPair` is `Listable`
+
+0.9.18
+------
+
+- feat: `VirtualMachine` is `Listable`
+- feat: new `Client.Paginate` and `Client.PaginateWithContext`
+- change: the inner logic of `Listable`
+- remove: not working `Client.AsyncList`
+
+0.9.17
+------
+
+- fix: `AuthorizeSecurityGroup(In|E)gress` startport may be zero
+
+0.9.16
+------
+
+- feat: new `Listable` interface
+- feat: `Nic` is `Listable`
+- feat: `Volume` is `Listable`
+- feat: `Zone` is `Listable`
+- feat: `AffinityGroup` is `Listable`
+- remove: deprecated methods `ListNics`, `AddIPToNic`, and `RemoveIPFromNic`
+- remove: deprecated method `GetRootVolumeForVirtualMachine`
+
+0.9.15
+------
+
+- feat: `IPAddress` is `Gettable` and `Deletable`
+- fix: serialization of *bool
+
 0.9.14
 ------
 
