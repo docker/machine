@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -17,141 +18,41 @@ import (
 	"time"
 )
 
-// Command represents a CloudStack request
-type Command interface {
-	// CloudStack API command name
-	APIName() string
-}
-
-// SyncCommand represents a CloudStack synchronous request
-type syncCommand interface {
-	Command
-	// Response interface to Unmarshal the JSON into
-	response() interface{}
-}
-
-// asyncCommand represents a async CloudStack request
-type asyncCommand interface {
-	Command
-	// Response interface to Unmarshal the JSON into
-	asyncResponse() interface{}
-}
-
-// onBeforeHook represents an action to be done on the params before sending them
-//
-// This little took helps with issue of relying on JSON serialization logic only.
-// `omitempty` may make sense in some cases but not all the time.
-type onBeforeHook interface {
-	onBeforeSend(params *url.Values) error
-}
-
-const (
-	// Pending represents a job in progress
-	Pending JobStatusType = iota
-	// Success represents a successfully completed job
-	Success
-	// Failure represents a job that has failed to complete
-	Failure
-)
-
-// JobStatusType represents the status of a Job
-type JobStatusType int
-
-const (
-	// Unauthorized represents ... (TODO)
-	Unauthorized ErrorCode = 401
-	// MethodNotAllowed represents ... (TODO)
-	MethodNotAllowed = 405
-	// UnsupportedActionError represents ... (TODO)
-	UnsupportedActionError = 422
-	// APILimitExceeded represents ... (TODO)
-	APILimitExceeded = 429
-	// MalformedParameterError represents ... (TODO)
-	MalformedParameterError = 430
-	// ParamError represents ... (TODO)
-	ParamError = 431
-
-	// InternalError represents a server error
-	InternalError = 530
-	// AccountError represents ... (TODO)
-	AccountError = 531
-	// AccountResourceLimitError represents ... (TODO)
-	AccountResourceLimitError = 532
-	// InsufficientCapacityError represents ... (TODO)
-	InsufficientCapacityError = 533
-	// ResourceUnavailableError represents ... (TODO)
-	ResourceUnavailableError = 534
-	// ResourceAllocationError represents ... (TODO)
-	ResourceAllocationError = 535
-	// ResourceInUseError represents ... (TODO)
-	ResourceInUseError = 536
-	// NetworkRuleConflictError represents ... (TODO)
-	NetworkRuleConflictError = 537
-)
-
-// ErrorCode represents the CloudStack ApiErrorCode enum
-//
-// See: https://github.com/apache/cloudstack/blob/master/api/src/org/apache/cloudstack/api/ApiErrorCode.java
-type ErrorCode int
-
-// JobResultResponse represents a generic response to a job task
-type JobResultResponse struct {
-	AccountID     string           `json:"accountid,omitempty"`
-	Cmd           string           `json:"cmd"`
-	Created       string           `json:"created"`
-	JobID         string           `json:"jobid"`
-	JobProcStatus int              `json:"jobprocstatus"`
-	JobResult     *json.RawMessage `json:"jobresult"`
-	JobStatus     JobStatusType    `json:"jobstatus"`
-	JobResultType string           `json:"jobresulttype"`
-	UserID        string           `json:"userid,omitempty"`
-}
-
-// ErrorResponse represents the standard error response from CloudStack
-type ErrorResponse struct {
-	ErrorCode   ErrorCode  `json:"errorcode"`
-	CsErrorCode int        `json:"cserrorcode"`
-	ErrorText   string     `json:"errortext"`
-	UUIDList    []UUIDItem `json:"uuidList,omitempty"` // uuid*L*ist is not a typo
-}
-
-// UUIDItem represents an item of the UUIDList part of an ErrorResponse
-type UUIDItem struct {
-	Description      string `json:"description,omitempty"`
-	SerialVersionUID int64  `json:"serialVersionUID,omitempty"`
-	UUID             string `json:"uuid"`
-}
-
 // Error formats a CloudStack error into a standard error
 func (e *ErrorResponse) Error() string {
-	return fmt.Sprintf("API error %d (internal code: %d): %s", e.ErrorCode, e.CsErrorCode, e.ErrorText)
+	return fmt.Sprintf("API error %s %d (%d): %s", e.ErrorCode, e.ErrorCode, e.CsErrorCode, e.ErrorText)
 }
 
-// booleanAsyncResponse represents a boolean response (usually after a deletion)
-type booleanAsyncResponse struct {
-	Success     bool   `json:"success"`
-	DisplayText string `json:"diplaytext,omitempty"`
+// Success computes the values based on the RawMessage, either string or bool
+func (e *booleanResponse) IsSuccess() (bool, error) {
+	if e.Success == nil {
+		return false, fmt.Errorf("Not a valid booleanResponse")
+	}
+
+	str := ""
+	if err := json.Unmarshal(e.Success, &str); err != nil {
+		boolean := false
+		if e := json.Unmarshal(e.Success, &boolean); e != nil {
+			return false, e
+		}
+		return boolean, nil
+	}
+	return str == "true", nil
 }
 
 // Error formats a CloudStack job response into a standard error
-func (e *booleanAsyncResponse) Error() error {
-	if e.Success {
-		return nil
+func (e *booleanResponse) Error() error {
+	success, err := e.IsSuccess()
+
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("API error: %s", e.DisplayText)
-}
 
-// booleanAsyncResponse represents a boolean response for sync calls
-type booleanSyncResponse struct {
-	Success     string `json:"success"`
-	DisplayText string `json:"displaytext,omitempty"`
-}
-
-func (e *booleanSyncResponse) Error() error {
-	if e.Success == "true" {
+	if success {
 		return nil
 	}
 
+	fmt.Printf("%#v", e)
 	return fmt.Errorf("API error: %s", e.DisplayText)
 }
 
@@ -172,7 +73,7 @@ func (exo *Client) parseResponse(resp *http.Response) (json.RawMessage, error) {
 
 	if resp.StatusCode >= 400 {
 		errorResponse := new(ErrorResponse)
-		if json.Unmarshal(b, errorResponse) == nil {
+		if e := json.Unmarshal(b, errorResponse); e == nil && errorResponse.ErrorCode > 0 {
 			return nil, errorResponse
 		}
 		return nil, fmt.Errorf("%d %s", resp.StatusCode, b)
@@ -182,68 +83,52 @@ func (exo *Client) parseResponse(resp *http.Response) (json.RawMessage, error) {
 }
 
 // asyncRequest perform an asynchronous job with a context
-func (exo *Client) asyncRequest(ctx context.Context, request asyncCommand) (interface{}, error) {
-	body, err := exo.request(ctx, request.APIName(), request)
-	if err != nil {
-		return nil, err
-	}
+func (exo *Client) asyncRequest(ctx context.Context, request AsyncCommand) (interface{}, error) {
+	var err error
 
-	jobResult := new(AsyncJobResult)
-	if err := json.Unmarshal(body, jobResult); err != nil {
-		r := new(ErrorResponse)
-		if e := json.Unmarshal(body, r); e != nil {
-			return nil, r
+	res := request.asyncResponse()
+	exo.AsyncRequestWithContext(ctx, request, func(j *AsyncJobResult, er error) bool {
+		if er != nil {
+			err = er
+			return false
 		}
-		return nil, err
-	}
-
-	// Successful response
-	if jobResult.JobID == "" || jobResult.JobStatus != Pending {
-		response := request.asyncResponse()
-		if err := json.Unmarshal(*(jobResult.JobResult), response); err != nil {
-			return nil, err
-		}
-		return response, nil
-	}
-
-	for iteration := 0; ; iteration++ {
-		time.Sleep(exo.RetryStrategy(int64(iteration)))
-
-		req := &QueryAsyncJobResult{JobID: jobResult.JobID}
-		resp, err := exo.Request(req)
-		if err != nil {
-			return nil, err
-		}
-
-		result := resp.(*QueryAsyncJobResultResponse)
-		if result.JobStatus == Success {
-			response := request.asyncResponse()
-			if err := json.Unmarshal(*(result.JobResult), response); err != nil {
-				return nil, err
+		if j.JobStatus == Success {
+			if r := j.Response(res); err != nil {
+				err = r
 			}
-			return response, nil
-
-		} else if result.JobStatus == Failure {
-			r := new(ErrorResponse)
-			if e := json.Unmarshal(*result.JobResult, r); e != nil {
-				return nil, e
-			}
-			return nil, r
+			return false
 		}
-	}
+		return true
+	})
+	return res, err
 }
 
 // syncRequest performs a sync request with a context
 func (exo *Client) syncRequest(ctx context.Context, request syncCommand) (interface{}, error) {
-	body, err := exo.request(ctx, request.APIName(), request)
+	body, err := exo.request(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
 	response := request.response()
-	if err := json.Unmarshal(body, response); err != nil {
+	err = json.Unmarshal(body, response)
+
+	// booleanResponse will alway be valid...
+	if err == nil {
+		if br, ok := response.(*booleanResponse); ok {
+			success, e := br.IsSuccess()
+			if e != nil {
+				return nil, e
+			}
+			if !success {
+				err = fmt.Errorf("Not a valid booleanResponse")
+			}
+		}
+	}
+
+	if err != nil {
 		errResponse := new(ErrorResponse)
-		if json.Unmarshal(body, errResponse) == nil {
+		if e := json.Unmarshal(body, errResponse); e == nil && errResponse.ErrorCode > 0 {
 			return errResponse, nil
 		}
 		return nil, err
@@ -259,16 +144,11 @@ func (exo *Client) BooleanRequest(req Command) error {
 		return err
 	}
 
-	// CloudStack returns a different type between sync and async success responses
-	if b, ok := resp.(*booleanSyncResponse); ok {
+	if b, ok := resp.(*booleanResponse); ok {
 		return b.Error()
 	}
 
-	if b, ok := resp.(*booleanAsyncResponse); ok {
-		return b.Error()
-	}
-
-	panic(fmt.Errorf("The command %s is not a proper boolean response. %#v", req.APIName(), resp))
+	panic(fmt.Errorf("The command %s is not a proper boolean response. %#v", req.name(), resp))
 }
 
 // BooleanRequestWithContext performs the given boolean command
@@ -278,15 +158,11 @@ func (exo *Client) BooleanRequestWithContext(ctx context.Context, req Command) e
 		return err
 	}
 
-	// CloudStack returns a different type between sync and async success responses
-	if b, ok := resp.(*booleanSyncResponse); ok {
-		return b.Error()
-	}
-	if b, ok := resp.(*booleanAsyncResponse); ok {
+	if b, ok := resp.(*booleanResponse); ok {
 		return b.Error()
 	}
 
-	panic(fmt.Errorf("The command %s is not a proper boolean response. %#v", req.APIName(), resp))
+	panic(fmt.Errorf("The command %s is not a proper boolean response. %#v", req.name(), resp))
 }
 
 // Request performs the given command
@@ -297,10 +173,10 @@ func (exo *Client) Request(request Command) (interface{}, error) {
 	switch request.(type) {
 	case syncCommand:
 		return exo.syncRequest(ctx, request.(syncCommand))
-	case asyncCommand:
-		return exo.asyncRequest(ctx, request.(asyncCommand))
+	case AsyncCommand:
+		return exo.asyncRequest(ctx, request.(AsyncCommand))
 	default:
-		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.APIName()))
+		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.name()))
 	}
 }
 
@@ -309,25 +185,92 @@ func (exo *Client) RequestWithContext(ctx context.Context, request Command) (int
 	switch request.(type) {
 	case syncCommand:
 		return exo.syncRequest(ctx, request.(syncCommand))
-	case asyncCommand:
-		return exo.asyncRequest(ctx, request.(asyncCommand))
+	case AsyncCommand:
+		return exo.asyncRequest(ctx, request.(AsyncCommand))
 	default:
-		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.APIName()))
+		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.name()))
 	}
 }
 
-// request makes a Request while being close to the metal
-func (exo *Client) request(ctx context.Context, command string, req interface{}) (json.RawMessage, error) {
-	params := url.Values{}
-	err := prepareValues("", &params, req)
+// AsyncRequest performs the given command
+func (exo *Client) AsyncRequest(request AsyncCommand, callback WaitAsyncJobResultFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), exo.Timeout)
+	defer cancel()
+	exo.AsyncRequestWithContext(ctx, request, callback)
+}
+
+// AsyncRequestWithContext preforms a request with a context
+func (exo *Client) AsyncRequestWithContext(ctx context.Context, request AsyncCommand, callback WaitAsyncJobResultFunc) {
+	body, err := exo.request(ctx, request)
 	if err != nil {
-		return nil, err
+		callback(nil, err)
+		return
 	}
-	if hookReq, ok := req.(onBeforeHook); ok {
+
+	jobResult := new(AsyncJobResult)
+	if err := json.Unmarshal(body, jobResult); err != nil {
+		r := new(ErrorResponse)
+		if e := json.Unmarshal(body, r); e != nil && r.ErrorCode > 0 {
+			if !callback(nil, r) {
+				return
+			}
+		}
+		if !callback(nil, err) {
+			return
+		}
+	}
+
+	// Successful response
+	if jobResult.JobID == "" || jobResult.JobStatus != Pending {
+		if !callback(jobResult, nil) {
+			return
+		}
+	}
+
+	for iteration := 0; ; iteration++ {
+		time.Sleep(exo.RetryStrategy(int64(iteration)))
+
+		req := &QueryAsyncJobResult{JobID: jobResult.JobID}
+		resp, err := exo.syncRequest(ctx, req)
+		if err != nil {
+			if !callback(nil, err) {
+				return
+			}
+		}
+
+		result, ok := resp.(*QueryAsyncJobResultResponse)
+		if !ok {
+			if !callback(nil, fmt.Errorf("AsyncJobResult expected, got %t", resp)) {
+				return
+			}
+		}
+
+		res := (*AsyncJobResult)(result)
+
+		if res.JobStatus == Failure {
+			if !callback(nil, res.Error()) {
+				return
+			}
+		} else {
+			if !callback(res, nil) {
+				return
+			}
+		}
+	}
+}
+
+// Payload builds the HTTP request from the given command
+func (exo *Client) Payload(request Command) (string, error) {
+	params := url.Values{}
+	err := prepareValues("", &params, request)
+	if err != nil {
+		return "", err
+	}
+	if hookReq, ok := request.(onBeforeHook); ok {
 		hookReq.onBeforeSend(&params)
 	}
-	params.Set("apikey", exo.apiKey)
-	params.Set("command", command)
+	params.Set("apikey", exo.APIKey)
+	params.Set("command", request.name())
 	params.Set("response", "json")
 
 	// This code is borrowed from net/url/url.go
@@ -351,33 +294,59 @@ func (exo *Client) request(ctx context.Context, command string, req interface{})
 		}
 	}
 
-	query := buf.String()
+	return buf.String(), nil
+}
 
+// Sign signs the HTTP request and return it
+func (exo *Client) Sign(query string) string {
 	mac := hmac.New(sha1.New, []byte(exo.apiSecret))
 	mac.Write([]byte(strings.ToLower(query)))
 	signature := csEncode(base64.StdEncoding.EncodeToString(mac.Sum(nil)))
 
-	payload := fmt.Sprintf("%s&signature=%s", csQuotePlus(query), signature)
+	return fmt.Sprintf("%s&signature=%s", csQuotePlus(query), signature)
+}
 
-	request, err := http.NewRequest("POST", exo.endpoint, strings.NewReader(payload))
+// request makes a Request while being close to the metal
+func (exo *Client) request(ctx context.Context, req Command) (json.RawMessage, error) {
+	payload, err := exo.Payload(req)
 	if err != nil {
 		return nil, err
 	}
+	query := exo.Sign(payload)
 
-	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	request.Header.Add("Content-Length", strconv.Itoa(len(payload)))
+	method := "GET"
+	url := fmt.Sprintf("%s?%s", exo.Endpoint, query)
+
+	var body io.Reader
+	// respect Internet Explorer limit of 2048
+	if len(url) > 1<<11 {
+		url = exo.Endpoint
+		method = "POST"
+		body = strings.NewReader(query)
+	}
+
+	request, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
 	request = request.WithContext(ctx)
+	request.Header.Add("User-Agent", fmt.Sprintf("exoscale/egoscale (%v)", Version))
 
-	resp, err := exo.client.Do(request)
+	if method == "POST" {
+		request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		request.Header.Add("Content-Length", strconv.Itoa(len(query)))
+	}
+
+	resp, err := exo.HTTPClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	body, err := exo.parseResponse(resp)
+	text, err := exo.parseResponse(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	return body, nil
+	return text, nil
 }

@@ -211,21 +211,22 @@ func (exo *Client) DeleteRecord(name string, recordID int64) error {
 }
 
 func (exo *Client) dnsRequest(uri string, params string, method string) (json.RawMessage, error) {
-	url := exo.endpoint + uri
+	url := exo.Endpoint + uri
 	req, err := http.NewRequest(method, url, strings.NewReader(params))
 	if err != nil {
 		return nil, err
 	}
 
 	var hdr = make(http.Header)
-	hdr.Add("X-DNS-TOKEN", exo.apiKey+":"+exo.apiSecret)
+	hdr.Add("X-DNS-TOKEN", exo.APIKey+":"+exo.apiSecret)
+	hdr.Add("User-Agent", fmt.Sprintf("exoscale/egoscale (%v)", Version))
 	hdr.Add("Accept", "application/json")
 	if params != "" {
 		hdr.Add("Content-Type", "application/json")
 	}
 	req.Header = hdr
 
-	response, err := exo.client.Do(req)
+	response, err := exo.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
