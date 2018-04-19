@@ -103,6 +103,7 @@ type Driver struct {
 	PrivateIPOnly           bool
 	UsePrivateIP            bool
 	UseEbsOptimizedInstance bool
+	InstanceStoreImage      bool
 	Monitoring              bool
 	SSHPrivateKeyPath       string
 	RetryCount              int
@@ -241,6 +242,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "amazonec2-use-ebs-optimized-instance",
 			Usage: "Create an EBS optimized instance",
 		},
+		mcnflag.BoolFlag{
+			Name:  "amazonec2-instance-store-image",
+			Usage: "Set this flag to use an instance store image",
+		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-ssh-keypath",
 			Usage:  "SSH Key for Instance",
@@ -331,16 +336,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return err
 	}
 
-	image := flags.String("amazonec2-ami")
-	if len(image) == 0 {
-		image = regionDetails[region].AmiId
-	}
-
 	d.AccessKey = flags.String("amazonec2-access-key")
 	d.SecretKey = flags.String("amazonec2-secret-key")
 	d.SessionToken = flags.String("amazonec2-session-token")
 	d.Region = region
-	d.AMI = image
 	d.RequestSpotInstance = flags.Bool("amazonec2-request-spot-instance")
 	d.SpotPrice = flags.String("amazonec2-spot-price")
 	d.BlockDurationMinutes = int64(flags.Int("amazonec2-block-duration-minutes"))
@@ -361,6 +360,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
+	d.InstanceStoreImage = flags.Bool("amazonec2-instance-store-image")
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
 	d.KeyName = flags.String("amazonec2-keypair-name")
 	d.ExistingKey = flags.String("amazonec2-keypair-name") != ""
@@ -370,6 +370,18 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UserDataFile = flags.String("amazonec2-userdata")
 
 	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
+
+	image := flags.String("amazonec2-ami")
+	if len(image) == 0 {
+		if d.InstanceStoreImage {
+			image = regionDetails[region].InstanceStoreAmiId
+		} else {
+			image = regionDetails[region].AmiId
+		}
+
+	}
+
+	d.AMI = image
 
 	if d.DisableSSL && d.Endpoint == "" {
 		return errorDisableSSLWithoutCustomEndpoint
@@ -601,15 +613,21 @@ func (d *Driver) innerCreate() error {
 	} else {
 		userdata = b64
 	}
+	var bdm []*ec2.BlockDeviceMapping
 
-	bdm := &ec2.BlockDeviceMapping{
-		DeviceName: aws.String(d.DeviceName),
-		Ebs: &ec2.EbsBlockDevice{
-			VolumeSize:          aws.Int64(d.RootSize),
-			VolumeType:          aws.String(d.VolumeType),
-			DeleteOnTermination: aws.Bool(true),
-		},
+	if !d.InstanceStoreImage {
+		bdm = []*ec2.BlockDeviceMapping{
+			&ec2.BlockDeviceMapping{
+				DeviceName: aws.String(d.DeviceName),
+				Ebs: &ec2.EbsBlockDevice{
+					VolumeSize:          aws.Int64(d.RootSize),
+					VolumeType:          aws.String(d.VolumeType),
+					DeleteOnTermination: aws.Bool(true),
+				},
+			},
+		}
 	}
+
 	netSpecs := []*ec2.InstanceNetworkInterfaceSpecification{{
 		DeviceIndex:              aws.Int64(0), // eth0
 		Groups:                   makePointerSlice(d.securityGroupIds()),
@@ -637,7 +655,7 @@ func (d *Driver) innerCreate() error {
 					Name: &d.IamInstanceProfile,
 				},
 				EbsOptimized:        &d.UseEbsOptimizedInstance,
-				BlockDeviceMappings: []*ec2.BlockDeviceMapping{bdm},
+				BlockDeviceMappings: bdm,
 				UserData:            &userdata,
 			},
 			InstanceCount: aws.Int64(1),
@@ -720,7 +738,7 @@ func (d *Driver) innerCreate() error {
 				Name: &d.IamInstanceProfile,
 			},
 			EbsOptimized:        &d.UseEbsOptimizedInstance,
-			BlockDeviceMappings: []*ec2.BlockDeviceMapping{bdm},
+			BlockDeviceMappings: bdm,
 			UserData:            &userdata,
 		})
 
