@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	mrand "math/rand"
 	"net"
 	"net/url"
 	"strconv"
@@ -44,6 +45,7 @@ const (
 	defaultSSHUser              = "ubuntu"
 	defaultSpotPrice            = "0.50"
 	defaultBlockDurationMinutes = 0
+	charset                     = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 const (
@@ -459,38 +461,6 @@ func (d *Driver) DriverName() string {
 }
 
 func (d *Driver) checkPrereqs() error {
-	// check for existing keypair
-	keyName := d.KeyName
-	keyShouldExist := true
-	if keyName == "" {
-		keyName = d.MachineName
-		keyShouldExist = false
-	}
-
-	key, err := d.getClient().DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
-		KeyNames: []*string{&keyName},
-	})
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == keypairNotFoundCode && keyShouldExist {
-				return fmt.Errorf("There is no keypair with the name %s. Please verify the key name provided.", keyName)
-			}
-			if awsErr.Code() == keypairNotFoundCode && !keyShouldExist {
-				// Not a real error for 'NotFound' since we're checking existence
-			}
-		} else {
-			return err
-		}
-	}
-
-	// In case we got a result with an empty set of keys
-	if err == nil && len(key.KeyPairs) != 0 {
-		if !keyShouldExist {
-			return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name.", d.MachineName)
-		}
-		// otherwise we found the key: success
-	}
-
 	regionZone := d.getRegionZone()
 	if d.SubnetId == "" {
 		filters := []*ec2.Filter{
@@ -985,7 +955,12 @@ func (d *Driver) createKeyPair() error {
 		return err
 	}
 
-	keyName := d.MachineName
+	r := mrand.New(mrand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, 5)
+	for i := range b {
+		b[i] = charset[r.Intn(len(charset))]
+	}
+	keyName := d.MachineName + "-" + string(b)
 
 	log.Debugf("creating key pair: %s", keyName)
 	_, err = d.getClient().ImportKeyPair(&ec2.ImportKeyPairInput{
@@ -1164,7 +1139,7 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 				},
 				Resources: []*string{group.GroupId},
 			})
-			if err != nil && !strings.Contains(err.Error(), "already exists"){
+			if err != nil && !strings.Contains(err.Error(), "already exists") {
 				return fmt.Errorf("can't create tag for security group. err: %v", err)
 			}
 
@@ -1175,7 +1150,6 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 					Value: aws.String(version),
 				},
 			}
-
 
 			// wait until created (dat eventual consistency)
 			log.Debugf("waiting for group (%s) to become available", *group.GroupId)
@@ -1350,8 +1324,13 @@ func (d *Driver) deleteKeyPair() error {
 
 	log.Debugf("deleting key pair: %s", d.KeyName)
 
-	_, err := d.getClient().DeleteKeyPair(&ec2.DeleteKeyPairInput{
-		KeyName: &d.KeyName,
+	instance, err := d.getInstance()
+	if err != nil {
+		return err
+	}
+
+	_, err = d.getClient().DeleteKeyPair(&ec2.DeleteKeyPairInput{
+		KeyName: instance.KeyName,
 	})
 	if err != nil {
 		return err
