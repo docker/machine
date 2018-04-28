@@ -57,6 +57,8 @@ var (
 	dockerPort                           = 2376
 	swarmPort                            = 3376
 	kubeApiPort                          = 6443
+	httpPort                             = 80
+	httpsPort                            = 443
 	etcdPorts                            = []int64{2379, 2380}
 	clusterManagerPorts                  = []int64{6443, 6443}
 	vxlanPorts                           = []int64{4789, 4789}
@@ -1291,6 +1293,25 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 						GroupId: group.GroupId,
 					},
 				},
+			})
+		}
+
+		// nginx ingress
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", httpPort)] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(httpPort)),
+				ToPort:     aws.Int64(int64(httpPort)),
+				IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+			})
+		}
+
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", httpsPort)] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(httpsPort)),
+				ToPort:     aws.Int64(int64(httpsPort)),
+				IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 			})
 		}
 	}
