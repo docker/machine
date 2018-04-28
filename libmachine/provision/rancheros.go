@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	versionsURL  = "http://releases.rancher.com/os/versions.yml"
-	isoURL       = "https://github.com/rancherio/os/releases/download/%s/machine-rancheros.iso"
-	hostnameTmpl = `sudo mkdir -p /var/lib/rancher/conf/cloud-config.d/  
+	versionsURL  = "https://releases.rancher.com/os/releases.yml"
+	isoURL       = "https://releases.rancher.com/os/%s/rancheros.iso"
+	hostnameTmpl = `sudo mkdir -p /var/lib/rancher/conf/cloud-config.d/
 sudo tee /var/lib/rancher/conf/cloud-config.d/machine-hostname.yml << EOF
 #cloud-config
 
@@ -75,7 +75,7 @@ func (provisioner *RancherProvisioner) Package(name string, action pkgaction.Pac
 
 	switch action {
 	case pkgaction.Install:
-		packageAction = "enabled"
+		packageAction = "enable"
 	case pkgaction.Remove:
 		packageAction = "disable"
 	case pkgaction.Upgrade:
@@ -83,7 +83,7 @@ func (provisioner *RancherProvisioner) Package(name string, action pkgaction.Pac
 		packageAction = "upgrade"
 	}
 
-	command := fmt.Sprintf("sudo rancherctl service %s %s", packageAction, name)
+	command := fmt.Sprintf("sudo ros service %s %s", packageAction, name)
 
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
@@ -102,7 +102,7 @@ func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.Options, aut
 
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "overlay"
-	} else if provisioner.EngineOptions.StorageDriver != "overlay" {
+	} else if provisioner.EngineOptions.StorageDriver != "overlay" && provisioner.EngineOptions.StorageDriver != "overlay2" {
 		return fmt.Errorf("Unsupported storage driver: %s", provisioner.EngineOptions.StorageDriver)
 	}
 
@@ -163,7 +163,7 @@ func (provisioner *RancherProvisioner) upgrade() error {
 		return provisioner.upgradeIso()
 	default:
 		log.Infof("Running upgrade")
-		if _, err := provisioner.SSHCommand("sudo rancherctl os upgrade -f --no-reboot"); err != nil {
+		if _, err := provisioner.SSHCommand("sudo ros os upgrade -f --no-reboot"); err != nil {
 			return err
 		}
 
@@ -201,12 +201,12 @@ func (provisioner *RancherProvisioner) upgradeIso() error {
 		return err
 	}
 
-	if err := b2dutils.DownloadISOFromURL(url); err != nil {
-		return err
-	}
+	//if err := b2dutils.DownloadISOFromURL(url); err != nil {
+	//	return err
+	//}
 
-	// Copy the latest version of boot2docker ISO to the machine's directory
-	if err := b2dutils.CopyIsoToMachineDir("", machineName); err != nil {
+	// Copy the latest version of rancheros ISO to the machine's directory
+	if err := b2dutils.CopyIsoToMachineDir(url, machineName); err != nil {
 		return err
 	}
 
