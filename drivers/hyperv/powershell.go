@@ -61,7 +61,7 @@ func hypervAvailable() error {
 	}
 
 	resp := parseLines(stdout)
-	if resp[0] != "Hyper-V" {
+	if strings.ToLower(resp[0]) != "hyper-v" {
 		return ErrNotInstalled
 	}
 
