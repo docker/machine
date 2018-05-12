@@ -1,41 +1,59 @@
 package egoscale
 
-import "net"
+import (
+	"context"
+	"fmt"
 
-// IPAddress represents an IP Address
-type IPAddress struct {
-	ID                        string        `json:"id"`
-	Account                   string        `json:"account,omitempty"`
-	AllocatedAt               string        `json:"allocated,omitempty"`
-	AssociatedNetworkID       string        `json:"associatednetworkid,omitempty"`
-	AssociatedNetworkName     string        `json:"associatednetworkname,omitempty"`
-	DomainID                  string        `json:"domainid,omitempty"`
-	DomainName                string        `json:"domainname,omitempty"`
-	ForDisplay                bool          `json:"fordisplay,omitempty"`
-	ForVirtualNetwork         bool          `json:"forvirtualnetwork,omitempty"`
-	IPAddress                 net.IP        `json:"ipaddress"`
-	IsElastic                 bool          `json:"iselastic,omitempty"`
-	IsPortable                bool          `json:"isportable,omitempty"`
-	IsSourceNat               bool          `json:"issourcenat,omitempty"`
-	IsSystem                  bool          `json:"issystem,omitempty"`
-	NetworkID                 string        `json:"networkid,omitempty"`
-	PhysicalNetworkID         string        `json:"physicalnetworkid,omitempty"`
-	Project                   string        `json:"project,omitempty"`
-	ProjectID                 string        `json:"projectid,omitempty"`
-	Purpose                   string        `json:"purpose,omitempty"`
-	State                     string        `json:"state,omitempty"`
-	VirtualMachineDisplayName string        `json:"virtualmachinedisplayname,omitempty"`
-	VirtualMachineID          string        `json:"virtualmachineid,omitempty"`
-	VirtualMachineName        string        `json:"virtualmachineName,omitempty"`
-	VlanID                    string        `json:"vlanid,omitempty"`
-	VlanName                  string        `json:"vlanname,omitempty"`
-	VMIPAddress               net.IP        `json:"vmipaddress,omitempty"`
-	VpcID                     string        `json:"vpcid,omitempty"`
-	ZoneID                    string        `json:"zoneid,omitempty"`
-	ZoneName                  string        `json:"zonename,omitempty"`
-	Tags                      []ResourceTag `json:"tags,omitempty"`
-	JobID                     string        `json:"jobid,omitempty"`
-	JobStatus                 JobStatusType `json:"jobstatus,omitempty"`
+	"github.com/jinzhu/copier"
+)
+
+// Get fetches the resource
+func (ipaddress *IPAddress) Get(ctx context.Context, client *Client) error {
+	if ipaddress.ID == "" && ipaddress.IPAddress == nil {
+		return fmt.Errorf("An IPAddress may only be searched using ID or IPAddress")
+	}
+
+	req := &ListPublicIPAddresses{
+		ID:        ipaddress.ID,
+		IPAddress: ipaddress.IPAddress,
+		Account:   ipaddress.Account,
+		DomainID:  ipaddress.DomainID,
+		ProjectID: ipaddress.ProjectID,
+		ZoneID:    ipaddress.ZoneID,
+	}
+
+	if ipaddress.IsElastic {
+		req.IsElastic = &(ipaddress.IsElastic)
+	}
+
+	resp, err := client.RequestWithContext(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	ips := resp.(*ListPublicIPAddressesResponse)
+	count := len(ips.PublicIPAddress)
+	if count == 0 {
+		return &ErrorResponse{
+			ErrorCode: ParamError,
+			ErrorText: fmt.Sprintf("PublicIPAddress not found. id: %s, ipaddress: %s", ipaddress.ID, ipaddress.IPAddress),
+		}
+	} else if count > 1 {
+		return fmt.Errorf("More than one PublicIPAddress was found")
+	}
+
+	return copier.Copy(ipaddress, ips.PublicIPAddress[0])
+}
+
+// Delete removes the resource
+func (ipaddress *IPAddress) Delete(ctx context.Context, client *Client) error {
+	if ipaddress.ID == "" {
+		return fmt.Errorf("An IPAddress may only be deleted using ID")
+	}
+
+	return client.BooleanRequestWithContext(ctx, &DisassociateIPAddress{
+		ID: ipaddress.ID,
+	})
 }
 
 // ResourceType returns the type of the resource
@@ -43,23 +61,8 @@ func (*IPAddress) ResourceType() string {
 	return "PublicIpAddress"
 }
 
-// AssociateIPAddress (Async) represents the IP creation
-//
-// CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/associateIpAddress.html
-type AssociateIPAddress struct {
-	Account    string `json:"account,omitempty"`
-	DomainID   string `json:"domainid,omitempty"`
-	ForDisplay *bool  `json:"fordisplay,omitempty"`
-	IsPortable *bool  `json:"isportable,omitempty"`
-	NetworkdID string `json:"networkid,omitempty"`
-	ProjectID  string `json:"projectid,omitempty"`
-	RegionID   string `json:"regionid,omitempty"`
-	VpcID      string `json:"vpcid,omitempty"`
-	ZoneID     string `json:"zoneid,omitempty"`
-}
-
-// APIName returns the CloudStack API command name
-func (*AssociateIPAddress) APIName() string {
+// name returns the CloudStack API command name
+func (*AssociateIPAddress) name() string {
 	return "associateIpAddress"
 }
 
@@ -67,77 +70,24 @@ func (*AssociateIPAddress) asyncResponse() interface{} {
 	return new(AssociateIPAddressResponse)
 }
 
-// AssociateIPAddressResponse represents the response to the creation of an IPAddress
-type AssociateIPAddressResponse struct {
-	IPAddress IPAddress `json:"ipaddress"`
-}
-
-// DisassociateIPAddress (Async) represents the IP deletion
-//
-// CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/disassociateIpAddress.html
-type DisassociateIPAddress struct {
-	ID string `json:"id"`
-}
-
-// APIName returns the CloudStack API command name
-func (*DisassociateIPAddress) APIName() string {
+// name returns the CloudStack API command name
+func (*DisassociateIPAddress) name() string {
 	return "disassociateIpAddress"
 }
 func (*DisassociateIPAddress) asyncResponse() interface{} {
-	return new(booleanAsyncResponse)
+	return new(booleanResponse)
 }
 
-// UpdateIPAddress (Async) represents the IP modification
-//
-// CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/updateIpAddress.html
-type UpdateIPAddress struct {
-	ID         string `json:"id"`
-	CustomID   string `json:"customid,omitempty"` // root only
-	ForDisplay *bool  `json:"fordisplay,omitempty"`
-}
-
-// APIName returns the CloudStack API command name
-func (*UpdateIPAddress) APIName() string {
+// name returns the CloudStack API command name
+func (*UpdateIPAddress) name() string {
 	return "updateIpAddress"
 }
 func (*UpdateIPAddress) asyncResponse() interface{} {
 	return new(UpdateIPAddressResponse)
 }
 
-// UpdateIPAddressResponse represents the modified IP Address
-type UpdateIPAddressResponse AssociateIPAddressResponse
-
-// ListPublicIPAddresses represents a search for public IP addresses
-//
-// CloudStack API: https://cloudstack.apache.org/api/apidocs-4.10/apis/listPublicIpAddresses.html
-type ListPublicIPAddresses struct {
-	Account            string        `json:"account,omitempty"`
-	AllocatedOnly      *bool         `json:"allocatedonly,omitempty"`
-	AllocatedNetworkID string        `json:"allocatednetworkid,omitempty"`
-	DomainID           string        `json:"domainid,omitempty"`
-	ForDisplay         *bool         `json:"fordisplay,omitempty"`
-	ForLoadBalancing   *bool         `json:"forloadbalancing,omitempty"`
-	ForVirtualNetwork  string        `json:"forvirtualnetwork,omitempty"`
-	ID                 string        `json:"id,omitempty"`
-	IPAddress          net.IP        `json:"ipaddress,omitempty"`
-	IsElastic          *bool         `json:"iselastic,omitempty"`
-	IsRecursive        *bool         `json:"isrecursive,omitempty"`
-	IsSourceNat        *bool         `json:"issourcenat,omitempty"`
-	IsStaticNat        *bool         `json:"isstaticnat,omitempty"`
-	Keyword            string        `json:"keyword,omitempty"`
-	ListAll            *bool         `json:"listall,omitempty"`
-	Page               int           `json:"page,omitempty"`
-	PageSize           int           `json:"pagesize,omitempty"`
-	PhysicalNetworkID  string        `json:"physicalnetworkid,omitempty"`
-	ProjectID          string        `json:"projectid,omitempty"`
-	Tags               []ResourceTag `json:"tags,omitempty"`
-	VlanID             string        `json:"vlanid,omitempty"`
-	VpcID              string        `json:"vpcid,omitempty"`
-	ZoneID             string        `json:"zoneid,omitempty"`
-}
-
-// APIName returns the CloudStack API command name
-func (*ListPublicIPAddresses) APIName() string {
+// name returns the CloudStack API command name
+func (*ListPublicIPAddresses) name() string {
 	return "listPublicIpAddresses"
 }
 
@@ -145,8 +95,48 @@ func (*ListPublicIPAddresses) response() interface{} {
 	return new(ListPublicIPAddressesResponse)
 }
 
-// ListPublicIPAddressesResponse represents a list of public IP addresses
-type ListPublicIPAddressesResponse struct {
-	Count           int         `json:"count"`
-	PublicIPAddress []IPAddress `json:"publicipaddress"`
+// ListRequest builds the ListAdresses request
+func (ipaddress *IPAddress) ListRequest() (ListCommand, error) {
+	req := &ListPublicIPAddresses{
+		Account:            ipaddress.Account,
+		AllocatedNetworkID: ipaddress.AssociatedNetworkID,
+		DomainID:           ipaddress.DomainID,
+		ForDisplay:         &ipaddress.ForDisplay,
+		//ForVirtualNetwork:  ip.ForVirtualNetwork, change ForVirtualNetwork type for type bool
+		ID:                ipaddress.ID,
+		IPAddress:         ipaddress.IPAddress,
+		IsElastic:         &ipaddress.IsElastic,
+		IsSourceNat:       &ipaddress.IsSourceNat,
+		PhysicalNetworkID: ipaddress.PhysicalNetworkID,
+		ProjectID:         ipaddress.ProjectID,
+		VlanID:            ipaddress.VlanID,
+		VpcID:             ipaddress.VpcID,
+		ZoneID:            ipaddress.ZoneID,
+	}
+
+	return req, nil
+}
+
+// SetPage sets the current page
+func (ls *ListPublicIPAddresses) SetPage(page int) {
+	ls.Page = page
+}
+
+// SetPageSize sets the page size
+func (ls *ListPublicIPAddresses) SetPageSize(pageSize int) {
+	ls.PageSize = pageSize
+}
+
+func (*ListPublicIPAddresses) each(resp interface{}, callback IterateItemFunc) {
+	ips, ok := resp.(*ListPublicIPAddressesResponse)
+	if !ok {
+		callback(nil, fmt.Errorf("ListPublicIPAddressesResponse expected, got %t", resp))
+		return
+	}
+
+	for i := range ips.PublicIPAddress {
+		if !callback(&ips.PublicIPAddress[i], nil) {
+			break
+		}
+	}
 }
