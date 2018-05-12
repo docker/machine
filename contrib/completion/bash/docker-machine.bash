@@ -162,7 +162,7 @@ _docker_machine_create() {
 _docker_machine_env() {
     case "${prev}" in
         --shell)
-            COMPREPLY=($(compgen -W "cmd fish powershell tcsh" -- "${cur}"))
+            COMPREPLY=($(compgen -W "cmd emacs fish powershell tcsh" -- "${cur}"))
             return
             ;;
     esac
