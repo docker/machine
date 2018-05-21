@@ -124,3 +124,27 @@ func (c *avSetCleanup) LogFields() logutil.Fields { return logutil.Fields{"name"
 func (c *avSetCleanup) HasAttachedResources() bool {
 	return c.ref.Properties.VirtualMachines != nil && len(*c.ref.Properties.VirtualMachines) > 0
 }
+
+// nsgCleanup manages cleanup of Network Security Group resources.
+type nsgCleanup struct {
+	rg, name string
+	ref      network.SecurityGroup
+}
+
+func (c *nsgCleanup) Get(a AzureClient) (err error) {
+	c.ref, err = a.securityGroupsClient().Get(c.rg, c.name, "")
+	return err
+}
+
+func (c *nsgCleanup) Delete(a AzureClient) error {
+	_, err := a.securityGroupsClient().Delete(c.rg, c.name, nil)
+	return err
+}
+
+func (c *nsgCleanup) ResourceType() string { return "Network Security Group" }
+
+func (c *nsgCleanup) LogFields() logutil.Fields { return logutil.Fields{"name": c.name} }
+
+func (c *nsgCleanup) HasAttachedResources() bool {
+	return c.ref.Properties.NetworkInterfaces != nil && len(*c.ref.Properties.NetworkInterfaces) > 0
+}
