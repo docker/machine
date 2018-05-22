@@ -434,6 +434,11 @@ func (d *Driver) Remove() error {
 	if err := c.DeletePublicIPAddressIfExists(d.ResourceGroup, d.naming().IP()); err != nil {
 		return err
 	}
+	// Check if network security group was set by optional param and if not set it from naming.
+	// included for backwards compatibility else nsgs prior without name will be orphaned.
+	if d.NetworkSecurityGroup == "" {
+		d.NetworkSecurityGroup = d.naming().NSG()
+	}
 	if err := c.CleanupNetworkSecurityGroupIfExists(d.ResourceGroup, d.NetworkSecurityGroup); err != nil {
 		return err
 	}
