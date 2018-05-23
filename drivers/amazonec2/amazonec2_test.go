@@ -98,6 +98,15 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 	assert.Empty(t, perms)
 }
 
+func TestConfigureSecurityGroupPermissionsSkipReadOnly(t *testing.T) {
+	driver := NewTestDriver()
+	driver.SecurityGroupReadOnly = true
+	perms, err := driver.configureSecurityGroupPermissions(securityGroup)
+
+	assert.Nil(t, err)
+	assert.Len(t, perms, 0)
+}
+
 func TestConfigureSecurityGroupPermissionsOpenPorts(t *testing.T) {
 	driver := NewTestDriver()
 	driver.OpenPorts = []string{"8888/tcp", "8080/udp", "9090"}
