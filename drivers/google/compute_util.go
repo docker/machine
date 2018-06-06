@@ -274,6 +274,19 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		},
 	}
 
+	if len(d.MinCPUPlatform) > 0 {
+		instance.MinCpuPlatform = d.MinCPUPlatform
+	}
+
+	if d.AcceleratorCount != -1 && len(d.AcceleratorType) > 0 {
+		instance.GuestAccelerators = []*raw.AcceleratorConfig{
+			{
+				AcceleratorCount: int64(d.AcceleratorCount),
+				AcceleratorType:  "https://www.googleapis.com/compute/beta/projects/" + c.project + "/zones/" + d.Zone + "/acceleratorTypes/" + d.AcceleratorType,
+			},
+		}
+	}
+
 	if strings.Contains(c.subnetwork, "/subnetworks/") {
 		instance.NetworkInterfaces[0].Subnetwork = c.subnetwork
 	} else if c.subnetwork != "" {
