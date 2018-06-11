@@ -86,6 +86,7 @@ type Driver struct {
 	SecurityGroupName  string
 	SecurityGroupNames []string
 
+	SecurityGroupReadOnly   bool
 	OpenPorts               []string
 	Tags                    string
 	ReservationId           string
@@ -160,6 +161,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "amazonec2-subnet-id",
 			Usage:  "AWS VPC subnet id",
 			EnvVar: "AWS_SUBNET_ID",
+		},
+		mcnflag.BoolFlag{
+			Name:   "amazonec2-security-group-readonly",
+			Usage:  "Skip adding default rules to security groups",
+			EnvVar: "AWS_SECURITY_GROUP_READONLY",
 		},
 		mcnflag.StringSliceFlag{
 			Name:   "amazonec2-security-group",
@@ -348,6 +354,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.VpcId = flags.String("amazonec2-vpc-id")
 	d.SubnetId = flags.String("amazonec2-subnet-id")
 	d.SecurityGroupNames = flags.StringSlice("amazonec2-security-group")
+	d.SecurityGroupReadOnly = flags.Bool("amazonec2-security-group-readonly")
 	d.Tags = flags.String("amazonec2-tags")
 	zone := flags.String("amazonec2-zone")
 	d.Zone = zone[:]
@@ -1141,6 +1148,10 @@ func (d *Driver) configureSecurityGroups(groupNames []string) error {
 }
 
 func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]*ec2.IpPermission, error) {
+	if d.SecurityGroupReadOnly {
+		log.Debug("Skipping permission configuration on security groups")
+		return nil, nil
+	}
 	hasPorts := make(map[string]bool)
 	for _, p := range group.IpPermissions {
 		if p.FromPort != nil {
