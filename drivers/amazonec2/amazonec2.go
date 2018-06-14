@@ -65,6 +65,7 @@ var (
 	flannelPorts                         = []int64{8472, 8472}
 	otherKubePorts                       = []int64{10250, 10252}
 	kubeProxyPorts                       = []int64{10256, 10256}
+	nodePorts                            = []int64{30000, 32767}
 	errorNoPrivateSSHKey                 = errors.New("using --amazonec2-keypair-name also requires --amazonec2-ssh-keypath")
 	errorMissingCredentials              = errors.New("amazonec2 driver requires AWS credentials configured with the --amazonec2-access-key and --amazonec2-secret-key options, environment variables, ~/.aws/credentials, or an instance role")
 	errorNoVPCIdFound                    = errors.New("amazonec2 driver requires either the --amazonec2-subnet-id or --amazonec2-vpc-id option or an AWS Account with a default vpc-id")
@@ -1293,6 +1294,25 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 						GroupId: group.GroupId,
 					},
 				},
+			})
+		}
+
+		// nodePorts
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", nodePorts[0])] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(nodePorts[0])),
+				ToPort:     aws.Int64(int64(nodePorts[1])),
+				IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
+			})
+		}
+
+		if !hasPortsInbound[fmt.Sprintf("%d/udp", nodePorts[0])] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("udp"),
+				FromPort:   aws.Int64(int64(nodePorts[0])),
+				ToPort:     aws.Int64(int64(nodePorts[1])),
+				IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 			})
 		}
 
