@@ -119,7 +119,7 @@
     "pkg/term",
     "pkg/term/windows"
   ]
-  revision = "bf1345d0b6d91f24e06d05e741897bc83cf8bab4"
+  revision = "093424bec097cdf51154255226cf999d6824633b"
 
 [[projects]]
   name = "github.com/docker/go-units"
