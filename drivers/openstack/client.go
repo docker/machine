@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/docker/machine/libmachine/log"
@@ -72,11 +73,12 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 		Metadata:         d.GetMetadata(),
 	}
 	if d.NetworkId != "" {
-		serverOpts.Networks = []servers.Network{
-			{
-				UUID: d.NetworkId,
-			},
+		networkIDs := strings.Split(d.NetworkId, ",")
+		networks := make([]servers.Network, len(networkIDs))
+		for i, id := range networkIDs {
+			networks[i] = servers.Network{UUID: id}
 		}
+		serverOpts.Networks = networks
 	}
 
 	log.Info("Creating machine...")
@@ -212,10 +214,21 @@ func (c *GenericClient) GetFloatingIPPoolID(d *Driver) (string, error) {
 	return c.getNetworkID(d, d.FloatingIpPool)
 }
 
+func Contains(slice []string, element string) (bool, int) {
+	for i, e := range slice {
+		if e == element {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
 func (c *GenericClient) getNetworkID(d *Driver, networkName string) (string, error) {
 	opts := networks.ListOpts{Name: networkName}
 	pager := networks.List(c.Network, opts)
-	networkID := ""
+	networkNames := strings.Split(networkName, ",")
+	remainingNetworks := len(networkNames)
+	networkID := make([]string, remainingNetworks)
 
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		networkList, err := networks.ExtractNetworks(page)
@@ -224,16 +237,25 @@ func (c *GenericClient) getNetworkID(d *Driver, networkName string) (string, err
 		}
 
 		for _, n := range networkList {
-			if n.Name == networkName {
-				networkID = n.ID
-				return false, nil
+			match, index := Contains(networkNames, n.Name)
+			if match {
+				networkID[index] = n.ID
+				remainingNetworks--
+
+				if remainingNetworks == 0 {
+					return false, nil
+				}
 			}
 		}
 
 		return true, nil
 	})
 
-	return networkID, err
+	if remainingNetworks != 0 {
+		return "", err
+	}
+
+	return strings.Join(networkID, ","), err
 }
 
 func (c *GenericClient) GetFlavorID(d *Driver) (string, error) {
@@ -454,7 +476,7 @@ func (c *GenericClient) getNeutronNetworkFloatingIPs(d *Driver) ([]FloatingIP, e
 func (c *GenericClient) GetInstancePortID(d *Driver) (string, error) {
 	pager := ports.List(c.Network, ports.ListOpts{
 		DeviceID:  d.MachineId,
-		NetworkID: d.NetworkId,
+		NetworkID: strings.Split(d.NetworkId, ",")[0],
 	})
 
 	var portID string

@@ -164,11 +164,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "OpenStack keypair to use to SSH to the instance",
 			Value:  "",
 		},
-		mcnflag.StringFlag{
+		mcnflag.StringSliceFlag{
 			EnvVar: "OS_NETWORK_ID",
 			Name:   "openstack-net-id",
 			Usage:  "OpenStack network id the machine will be connected on",
-			Value:  "",
+			Value:  []string{},
 		},
 		mcnflag.StringFlag{
 			EnvVar: "OS_PRIVATE_KEY_FILE",
@@ -182,11 +182,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "File containing an openstack userdata script",
 			Value:  "",
 		},
-		mcnflag.StringFlag{
+		mcnflag.StringSliceFlag{
 			EnvVar: "OS_NETWORK_NAME",
 			Name:   "openstack-net-name",
 			Usage:  "OpenStack network name the machine will be connected on",
-			Value:  "",
+			Value:  []string{},
 		},
 		mcnflag.StringFlag{
 			EnvVar: "OS_SECURITY_GROUPS",
@@ -202,7 +202,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "OS_FLOATINGIP_POOL",
 			Name:   "openstack-floatingip-pool",
-			Usage:  "OpenStack floating IP pool to get an IP from to assign to the instance",
+			Usage:  "OpenStack floating IP pool to get an IP from to assign to the instance (first network only)",
 			Value:  "",
 		},
 		mcnflag.IntFlag{
@@ -291,8 +291,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.FlavorName = flags.String("openstack-flavor-name")
 	d.ImageId = flags.String("openstack-image-id")
 	d.ImageName = flags.String("openstack-image-name")
-	d.NetworkId = flags.String("openstack-net-id")
-	d.NetworkName = flags.String("openstack-net-name")
+	d.NetworkId = strings.Join(flags.StringSlice("openstack-net-id"), ",")
+	d.NetworkName = strings.Join(flags.StringSlice("openstack-net-name"), ",")
 	d.metadata = flags.String("openstack-metadata")
 	if flags.String("openstack-sec-groups") != "" {
 		d.SecurityGroups = strings.Split(flags.String("openstack-sec-groups"), ",")
@@ -553,7 +553,7 @@ func (d *Driver) checkConfig() error {
 	}
 
 	if d.NetworkName != "" && d.NetworkId != "" {
-		return fmt.Errorf(errorExclusiveOptions, "Network name", "Network id")
+		return fmt.Errorf(errorExclusiveOptions, "Network names", "Network ids")
 	}
 	if d.EndpointType != "" && (d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL") {
 		return fmt.Errorf(errorWrongEndpointType)
@@ -570,21 +570,18 @@ func (d *Driver) resolveIds() error {
 			return err
 		}
 
-		networkID, err := d.client.GetNetworkID(d)
+		networkIDs, err := d.client.GetNetworkID(d)
 
 		if err != nil {
 			return err
 		}
 
-		if networkID == "" {
+		if networkIDs == "" {
 			return fmt.Errorf(errorUnknownNetworkName, d.NetworkName)
 		}
 
-		d.NetworkId = networkID
-		log.Debug("Found network id using its name", map[string]string{
-			"Name": d.NetworkName,
-			"ID":   d.NetworkId,
-		})
+		d.NetworkId = networkIDs
+		//TODO: log found networks?
 	}
 
 	if d.FlavorName != "" {
