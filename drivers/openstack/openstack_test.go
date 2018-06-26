@@ -77,15 +77,14 @@ func TestSetMultipleNetworkIds(t *testing.T) {
 
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"openstack-auth-url":  "http://url",
-			"openstack-username":  "user",
-			"openstack-password":  "pwd",
-			"openstack-tenant-id": "ID",
-			"openstack-flavor-id": "ID",
-			"openstack-image-id":  "ID",
-			//TODO: multivalue test
-			//"openstack-net-id":    "ID",
-			"openstack-net-id": "ID2",
+			"openstack-auth-url":          "http://url",
+			"openstack-username":          "user",
+			"openstack-password":          "pwd",
+			"openstack-tenant-id":         "ID",
+			"openstack-flavor-id":         "ID",
+			"openstack-image-id":          "ID",
+			"openstack-net-id":            []string{"ID", "ID2"},
+			"openstack-floatingip-net-id": "ID2",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}
@@ -101,15 +100,14 @@ func TestSetMultipleNetworkNames(t *testing.T) {
 
 	checkFlags := &drivers.CheckDriverOptions{
 		FlagsValues: map[string]interface{}{
-			"openstack-auth-url":  "http://url",
-			"openstack-username":  "user",
-			"openstack-password":  "pwd",
-			"openstack-tenant-id": "ID",
-			"openstack-flavor-id": "ID",
-			"openstack-image-id":  "ID",
-			"openstack-net-name":  "ID",
-			//TODO: multivalue test
-			//"openstack-net-name":  "ID2",
+			"openstack-auth-url":            "http://url",
+			"openstack-username":            "user",
+			"openstack-password":            "pwd",
+			"openstack-tenant-id":           "ID",
+			"openstack-flavor-id":           "ID",
+			"openstack-image-id":            "ID",
+			"openstack-net-name":            []string{"ID", "ID2"},
+			"openstack-floatingip-net-name": "ID2",
 		},
 		CreateFlags: driver.GetCreateFlags(),
 	}

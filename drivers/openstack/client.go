@@ -44,12 +44,11 @@ type Client interface {
 	GetPublicKey(keyPairName string) ([]byte, error)
 	CreateKeyPair(d *Driver, name string, publicKey string) error
 	DeleteKeyPair(d *Driver, name string) error
-	GetNetworkID(d *Driver) (string, error)
+	GetNetworkIDs(networkNames []string) (string, error)
 	GetFlavorID(d *Driver) (string, error)
 	GetImageID(d *Driver) (string, error)
 	AssignFloatingIP(d *Driver, floatingIP *FloatingIP) error
 	GetFloatingIPs(d *Driver) ([]FloatingIP, error)
-	GetFloatingIPPoolID(d *Driver) (string, error)
 	GetInstancePortID(d *Driver) (string, error)
 	GetTenantID(d *Driver) (string, error)
 }
@@ -206,29 +205,22 @@ func (c *GenericClient) GetInstanceIPAddresses(d *Driver) ([]IPAddress, error) {
 	return addresses, nil
 }
 
-func (c *GenericClient) GetNetworkID(d *Driver) (string, error) {
-	return c.getNetworkID(d, d.NetworkName)
-}
-
-func (c *GenericClient) GetFloatingIPPoolID(d *Driver) (string, error) {
-	return c.getNetworkID(d, d.FloatingIpPool)
-}
-
-func Contains(slice []string, element string) (bool, int) {
-	for i, e := range slice {
-		if e == element {
-			return true, i
+func (c *GenericClient) GetNetworkIDs(networkNames []string) (string, error) {
+	ips := []string{}
+	for _, name := range networkNames {
+		id, err := c.getNetworkID(name)
+		if err != nil {
+			return "", err
 		}
+		ips = append(ips, id)
 	}
-	return false, -1
+	return strings.Join(ips, ","), nil
 }
 
-func (c *GenericClient) getNetworkID(d *Driver, networkName string) (string, error) {
+func (c *GenericClient) getNetworkID(networkName string) (string, error) {
 	opts := networks.ListOpts{Name: networkName}
 	pager := networks.List(c.Network, opts)
-	networkNames := strings.Split(networkName, ",")
-	remainingNetworks := len(networkNames)
-	networkID := make([]string, remainingNetworks)
+	networkID := ""
 
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {
 		networkList, err := networks.ExtractNetworks(page)
@@ -237,25 +229,16 @@ func (c *GenericClient) getNetworkID(d *Driver, networkName string) (string, err
 		}
 
 		for _, n := range networkList {
-			match, index := Contains(networkNames, n.Name)
-			if match {
-				networkID[index] = n.ID
-				remainingNetworks--
-
-				if remainingNetworks == 0 {
-					return false, nil
-				}
+			if n.Name == networkName {
+				networkID = n.ID
+				return false, nil
 			}
 		}
 
 		return true, nil
 	})
 
-	if remainingNetworks != 0 {
-		return "", err
-	}
-
-	return strings.Join(networkID, ","), err
+	return networkID, err
 }
 
 func (c *GenericClient) GetFlavorID(d *Driver) (string, error) {
@@ -476,7 +459,7 @@ func (c *GenericClient) getNeutronNetworkFloatingIPs(d *Driver) ([]FloatingIP, e
 func (c *GenericClient) GetInstancePortID(d *Driver) (string, error) {
 	pager := ports.List(c.Network, ports.ListOpts{
 		DeviceID:  d.MachineId,
-		NetworkID: strings.Split(d.NetworkId, ",")[0],
+		NetworkID: d.FloatingIpNetworkId,
 	})
 
 	var portID string

@@ -53,6 +53,9 @@ type Driver struct {
 	client           Client
 	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
 	ExistingKey bool
+	// To get right port id, if multiple networks are configured and first one is not the one for floating ip.
+	FloatingIpNetworkName string
+	FloatingIpNetworkId   string
 }
 
 const (
@@ -202,7 +205,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "OS_FLOATINGIP_POOL",
 			Name:   "openstack-floatingip-pool",
-			Usage:  "OpenStack floating IP pool to get an IP from to assign to the instance (first network only)",
+			Usage:  "OpenStack floating IP pool to get an IP from to assign to the instance.",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_FLOATINGIP_NETWORK_NAME",
+			Name:   "openstack-floatingip-net-name",
+			Usage:  "OpenStack floating IP target network name to get right port for assingin IP.",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_FLOATINGIP_NETWORK_ID",
+			Name:   "openstack-floatingip-net-id",
+			Usage:  "OpenStack floating IP target network id to get right port for assingin IP.",
 			Value:  "",
 		},
 		mcnflag.IntFlag{
@@ -298,6 +313,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.SecurityGroups = strings.Split(flags.String("openstack-sec-groups"), ",")
 	}
 	d.FloatingIpPool = flags.String("openstack-floatingip-pool")
+	d.FloatingIpNetworkName = flags.String("openstack-floatingip-net-name")
+	d.FloatingIpNetworkId = flags.String("openstack-floatingip-net-id")
 	d.IpVersion = flags.Int("openstack-ip-version")
 	d.ComputeNetwork = flags.Bool("openstack-nova-network")
 	d.SSHUser = flags.String("openstack-ssh-user")
@@ -561,6 +578,9 @@ func (d *Driver) checkConfig() error {
 	if (d.KeyPairName != "" && d.PrivateKeyFile == "") || (d.KeyPairName == "" && d.PrivateKeyFile != "") {
 		return fmt.Errorf(errorBothOptions, "KeyPairName", "PrivateKeyFile")
 	}
+	if d.FloatingIpNetworkName != "" && d.FloatingIpNetworkId != "" {
+		return fmt.Errorf(errorBothOptions, "FloatingIpNetworkName", "FloatingIpNetworkId")
+	}
 	return nil
 }
 
@@ -570,7 +590,7 @@ func (d *Driver) resolveIds() error {
 			return err
 		}
 
-		networkIDs, err := d.client.GetNetworkID(d)
+		networkIDs, err := d.client.GetNetworkIDs(strings.Split(d.NetworkName, ","))
 
 		if err != nil {
 			return err
@@ -581,7 +601,10 @@ func (d *Driver) resolveIds() error {
 		}
 
 		d.NetworkId = networkIDs
-		//TODO: log found networks?
+		log.Debug("Found networks using their name", map[string]string{
+			"Names": d.NetworkName,
+			"IDs":   d.NetworkId,
+		})
 	}
 
 	if d.FlavorName != "" {
@@ -630,20 +653,43 @@ func (d *Driver) resolveIds() error {
 		if err := d.initNetwork(); err != nil {
 			return err
 		}
-		f, err := d.client.GetFloatingIPPoolID(d)
+
+		networkID, err := d.client.GetNetworkIDs([]string{d.FloatingIpPool})
 
 		if err != nil {
 			return err
 		}
 
-		if f == "" {
+		if networkID == "" {
 			return fmt.Errorf(errorUnknownNetworkName, d.FloatingIpPool)
 		}
 
-		d.FloatingIpPoolId = f
+		d.FloatingIpPoolId = networkID
 		log.Debug("Found floating IP pool id using its name", map[string]string{
 			"Name": d.FloatingIpPool,
 			"ID":   d.FloatingIpPoolId,
+		})
+	}
+
+	if d.FloatingIpNetworkId == "" && !d.ComputeNetwork {
+		d.FloatingIpNetworkId = strings.Split(d.NetworkId, ",")[0]
+		log.Debug("Using first network as floating ip network")
+	} else if d.FloatingIpNetworkName != "" && !d.ComputeNetwork {
+		if err := d.initNetwork(); err != nil {
+			return err
+		}
+
+		networkID, err := d.client.GetNetworkIDs([]string{d.FloatingIpNetworkName})
+
+		if err != nil {
+			return err
+		}
+
+		d.FloatingIpNetworkId = networkID
+
+		log.Debug("Found floating network for floating ip using its name", map[string]string{
+			"Name": d.FloatingIpNetworkName,
+			"ID":   d.FloatingIpNetworkId,
 		})
 	}
 
