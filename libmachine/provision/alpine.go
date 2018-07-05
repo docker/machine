@@ -86,7 +86,7 @@ func (provisioner *AlpineProvisioner) dockerDaemonResponding() bool {
 	return true
 }
 
-func (provisioner *AlpineProvisioner) Service(name string, action serviceaction.ServiceAction) error {	
+func (provisioner *AlpineProvisioner) Service(name string, action serviceaction.ServiceAction) error {
 	var command string
 	switch action {
 	case serviceaction.Start, serviceaction.Restart, serviceaction.Stop:
@@ -98,7 +98,7 @@ func (provisioner *AlpineProvisioner) Service(name string, action serviceaction.
 	case serviceaction.Disable:
 		command = fmt.Sprintf("sudo rc-update del %s boot", name)
 	}
-	
+
 	if _, err := provisioner.SSHCommand(command); err != nil {
 		return err
 	}
@@ -134,6 +134,11 @@ func (provisioner *AlpineProvisioner) Provision(swarmOptions swarm.Options, auth
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
 			return err
 		}
+	}
+
+	log.Debug("Add Community repo")
+	if _, err := provisioner.SSHCommand("if ! apk info docker >/dev/null; then ver=$(awk '{split($1,a,\".\"); print a[1]\".\"a[2]}' /etc/alpine-release); echo \"http://dl-cdn.alpinelinux.org/alpine/v$ver/community\" >> /etc/apk/repositories; apk update; fi"); err != nil {
+		return err
 	}
 
 	log.Debug("Installing docker")
