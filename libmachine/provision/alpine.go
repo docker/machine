@@ -137,7 +137,15 @@ func (provisioner *AlpineProvisioner) Provision(swarmOptions swarm.Options, auth
 	}
 
 	log.Debug("Add Community repo")
-	if _, err := provisioner.SSHCommand("if ! which docker >/dev/null && ! apk info docker >/dev/null; then ver=$(awk '{split($1,a,\".\"); print a[1]\".\"a[2]}' /etc/alpine-release); echo \"http://dl-cdn.alpinelinux.org/alpine/v$ver/community\" >> /etc/apk/repositories; apk update; fi"); err != nil {
+	if _, err := provisioner.SSHCommand(`
+		if ! grep -q '^[[:blank:]]*[^#].*community$' /etc/apk/repositories; then
+			if ! grep -q '^[[:blank:]]*[^#].*main$' /etc/apk/repositories; then
+				echo "http://dl-cdn.alpinelinux.org/alpine/v$(cut -d. -f1-2 /etc/alpine-release)/community" >> /etc/apk/repositories;
+			else
+				sed -i '/^\\s*[^#].*main/{p;s/main/community/;}' /etc/apk/repositories;
+			fi
+		fi;
+		apk update`); err != nil {
 		return err
 	}
 
