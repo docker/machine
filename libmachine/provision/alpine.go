@@ -52,7 +52,7 @@ func (provisioner *AlpineProvisioner) Package(name string, action pkgaction.Pack
 	case pkgaction.Install, pkgaction.Upgrade:
 		packageAction = "add"
 	case pkgaction.Remove:
-		packageAction = "remove"
+		packageAction = "del"
 	}
 
 	switch name {
@@ -137,7 +137,7 @@ func (provisioner *AlpineProvisioner) Provision(swarmOptions swarm.Options, auth
 	}
 
 	log.Debug("Add Community repo")
-	if _, err := provisioner.SSHCommand("if ! apk info docker >/dev/null; then ver=$(awk '{split($1,a,\".\"); print a[1]\".\"a[2]}' /etc/alpine-release); echo \"http://dl-cdn.alpinelinux.org/alpine/v$ver/community\" >> /etc/apk/repositories; apk update; fi"); err != nil {
+	if _, err := provisioner.SSHCommand("if ! which docker >/dev/null && ! apk info docker >/dev/null; then ver=$(awk '{split($1,a,\".\"); print a[1]\".\"a[2]}' /etc/alpine-release); echo \"http://dl-cdn.alpinelinux.org/alpine/v$ver/community\" >> /etc/apk/repositories; apk update; fi"); err != nil {
 		return err
 	}
 
