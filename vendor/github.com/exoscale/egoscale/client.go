@@ -5,8 +5,44 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/jinzhu/copier"
 )
+
+// NewClientWithTimeout creates a CloudStack API client
+//
+// Timeout is set to both the HTTP client and the client itself.
+func NewClientWithTimeout(endpoint, apiKey, apiSecret string, timeout time.Duration) *Client {
+	client := &http.Client{
+		Timeout: timeout,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: false,
+			},
+		},
+	}
+
+	cs := &Client{
+		HTTPClient:    client,
+		Endpoint:      endpoint,
+		APIKey:        apiKey,
+		apiSecret:     apiSecret,
+		PageSize:      50,
+		Timeout:       timeout,
+		RetryStrategy: MonotonicRetryStrategyFunc(2),
+	}
+
+	return cs
+}
+
+// NewClient creates a CloudStack API client with default timeout (60)
+func NewClient(endpoint, apiKey, apiSecret string) *Client {
+	timeout := 60 * time.Second
+	return NewClientWithTimeout(endpoint, apiKey, apiSecret, timeout)
+}
 
 // Get populates the given resource or fails
 func (client *Client) Get(g Gettable) error {
@@ -18,7 +54,36 @@ func (client *Client) Get(g Gettable) error {
 
 // GetWithContext populates the given resource or fails
 func (client *Client) GetWithContext(ctx context.Context, g Gettable) error {
-	return g.Get(ctx, client)
+	gs, err := client.ListWithContext(ctx, g)
+	if err != nil {
+		return err
+	}
+
+	count := len(gs)
+	if count != 1 {
+		req, err := g.ListRequest()
+		if err != nil {
+			return err
+		}
+		payload, err := client.Payload(req)
+		if err != nil {
+			return err
+		}
+
+		// formatting the query string nicely
+		payload = strings.Replace(payload, "&", ", ", -1)
+
+		if count == 0 {
+			return &ErrorResponse{
+				ErrorCode: ParamError,
+				ErrorText: fmt.Sprintf("not found, query: %s", payload),
+			}
+		}
+		return fmt.Errorf("more than one element found: %s", payload)
+	}
+
+	return copier.Copy(g, gs[0])
+
 }
 
 // Delete removes the given resource of fails
@@ -170,53 +235,43 @@ func (client *Client) PaginateWithContext(ctx context.Context, req ListCommand, 
 }
 
 // APIName returns the CloudStack name of the given command
-func (client *Client) APIName(request Command) string {
-	return request.name()
+func (client *Client) APIName(command Command) string {
+	// This is due to a limitation of Go<=1.7
+	if _, ok := command.(*AuthorizeSecurityGroupEgress); ok {
+		return "authorizeSecurityGroupEgress"
+	}
+
+	info, err := info(command)
+	if err != nil {
+		panic(err)
+	}
+	return info.Name
+}
+
+// APIDescription returns the description of the given CloudStack command
+func (client *Client) APIDescription(command Command) string {
+	info, err := info(command)
+	if err != nil {
+		panic(err)
+	}
+	return info.Description
 }
 
 // Response returns the response structure of the given command
-func (client *Client) Response(request Command) interface{} {
-	switch request.(type) {
-	case syncCommand:
-		return (request.(syncCommand)).response()
+func (client *Client) Response(command Command) interface{} {
+	switch command.(type) {
 	case AsyncCommand:
-		return (request.(AsyncCommand)).asyncResponse()
+		return (command.(AsyncCommand)).asyncResponse()
 	default:
-		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.name()))
+		return command.response()
 	}
 }
 
-// NewClientWithTimeout creates a CloudStack API client
-//
-// Timeout is set to both the HTTP client and the client itself.
-func NewClientWithTimeout(endpoint, apiKey, apiSecret string, timeout time.Duration) *Client {
-	client := &http.Client{
-		Timeout: timeout,
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: false,
-			},
-		},
+// MonotonicRetryStrategyFunc returns a function that waits for n seconds for each iteration
+func MonotonicRetryStrategyFunc(seconds int) RetryStrategyFunc {
+	return func(iteration int64) time.Duration {
+		return time.Duration(seconds) * time.Second
 	}
-
-	cs := &Client{
-		HTTPClient:    client,
-		Endpoint:      endpoint,
-		APIKey:        apiKey,
-		apiSecret:     apiSecret,
-		PageSize:      50,
-		Timeout:       timeout,
-		RetryStrategy: FibonacciRetryStrategy,
-	}
-
-	return cs
-}
-
-// NewClient creates a CloudStack API client with default timeout (60)
-func NewClient(endpoint, apiKey, apiSecret string) *Client {
-	timeout := time.Duration(60 * time.Second)
-	return NewClientWithTimeout(endpoint, apiKey, apiSecret, timeout)
 }
 
 // FibonacciRetryStrategy waits for an increasing amount of time following the Fibonacci sequence

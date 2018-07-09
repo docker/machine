@@ -14,12 +14,6 @@ type Taggable interface {
 	ResourceType() string
 }
 
-// Gettable represents an Interface that can be "Get" by the client
-type Gettable interface {
-	// Get populates the given resource or throws
-	Get(context context.Context, client *Client) error
-}
-
 // Deletable represents an Interface that can be "Delete" by the client
 type Deletable interface {
 	// Delete removes the given resource(s) or throws
@@ -30,6 +24,11 @@ type Deletable interface {
 type Listable interface {
 	// ListRequest builds the list command
 	ListRequest() (ListCommand, error)
+}
+
+// Gettable represents an Interface that can be "Get" by the client
+type Gettable interface {
+	Listable
 }
 
 // Client represents the CloudStack API client

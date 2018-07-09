@@ -1,0 +1,10 @@
+ignored = ["github.com/exoscale/egoscale/cmd/*"]
+
+[[constraint]]
+  name = "github.com/jinzhu/copier"
+  branch = "master"
+
+[prune]
+  non-go = true
+  go-tests = true
+  unused-packages = true

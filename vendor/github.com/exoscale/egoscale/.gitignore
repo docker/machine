@@ -1,4 +1,7 @@
-build/
-exo
+.token
 vendor
-.gopath
+cloudstack.ini
+listApis.json
+dist
+ops.asc
+bash_completion

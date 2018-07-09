@@ -129,8 +129,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "432a702ab7d709538572f9a2a42eaf0ca0691698"
-  version = "v0.9.23"
+  revision = "8dc4d6e2c2fc970475f5c29da7deed86cb6ae4de"
+  version = "v0.10.3"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -342,6 +342,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "719314934f3d0bb8163ba9d459ebb4135c14e92b1750c74a37ffa668102dc81c"
+  inputs-digest = "0dc4fb9482bad7f76dae310506c65155c60f5e387f535bae68686ca8831b8916"
   solver-name = "gps-cdcl"
   solver-version = 1
