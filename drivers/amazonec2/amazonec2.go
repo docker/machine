@@ -1235,7 +1235,11 @@ func (d *Driver) getDefaultVPCId() (string, error) {
 
 	for _, attribute := range output.AccountAttributes {
 		if *attribute.AttributeName == "default-vpc" {
-			return *attribute.AttributeValues[0].AttributeValue, nil
+			value := *attribute.AttributeValues[0].AttributeValue
+			if value == "none" {
+				return "", errors.New("default-vpc is 'none'")
+			}
+			return value, nil
 		}
 	}
 
