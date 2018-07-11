@@ -227,6 +227,31 @@ func TestDefaultVPCIsMissing(t *testing.T) {
 	assert.Empty(t, vpc)
 }
 
+func TestDefaultVPCIsNone(t *testing.T) {
+	driver := NewDriver("machineFoo", "path")
+	attributeName := "default-vpc"
+	vpcName := "none"
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2WithDescribe{
+			output: &ec2.DescribeAccountAttributesOutput{
+				AccountAttributes: []*ec2.AccountAttribute{
+					{
+						AttributeName: &attributeName,
+						AttributeValues: []*ec2.AccountAttributeValue{
+							{AttributeValue: &vpcName},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	vpc, err := driver.getDefaultVPCId()
+
+	assert.EqualError(t, err, "default-vpc is 'none'")
+	assert.Empty(t, vpc)
+}
+
 func TestGetRegionZoneForDefaultEndpoint(t *testing.T) {
 	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
 	driver.awsCredentialsFactory = NewValidAwsCredentials
