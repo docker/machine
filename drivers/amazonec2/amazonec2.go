@@ -503,7 +503,7 @@ func (d *Driver) checkPrereqs() error {
 		}
 
 		if len(subnets.Subnets) == 0 {
-			return fmt.Errorf("unable to find a subnet in the zone: %s", regionZone)
+			return fmt.Errorf("unable to find a subnet that is both in the zone %s and belonging to VPC ID %s", regionZone, d.VpcId)
 		}
 
 		d.SubnetId = *subnets.Subnets[0].SubnetId
