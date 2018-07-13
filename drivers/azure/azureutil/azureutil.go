@@ -496,14 +496,16 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 	return err
 }
 
-func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, availabilitySetID, networkInterfaceID,
+func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, priority, evictionPolicy, availabilitySetID, networkInterfaceID,
 	username, sshPublicKey, imageName, customData string, storageAccount *storage.AccountProperties) error {
 	log.Info("Creating virtual machine.", logutil.Fields{
-		"name":     name,
-		"location": location,
-		"size":     size,
-		"username": username,
-		"osImage":  imageName,
+		"name":           name,
+		"location":       location,
+		"size":           size,
+		"username":       username,
+		"osImage":        imageName,
+		"priority":       priority,
+		"evictionPolicy": evictionPolicy,
 	})
 
 	img, err := parseImageName(imageName)
@@ -557,6 +559,8 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 				},
 				OsProfile: osProfile,
 				StorageProfile: &compute.StorageProfile{
+					Priority:       to.StringPtr(priority),
+					EvictionPolicy: to.StringPtr(evictionPolicy),
 					ImageReference: &compute.ImageReference{
 						Publisher: to.StringPtr(img.publisher),
 						Offer:     to.StringPtr(img.offer),
