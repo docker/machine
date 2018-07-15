@@ -142,7 +142,7 @@ func (provisioner *AlpineProvisioner) Provision(swarmOptions swarm.Options, auth
 			if ! grep -q '^[[:blank:]]*[^#].*main$' /etc/apk/repositories; then
 				echo "http://dl-cdn.alpinelinux.org/alpine/v$(cut -d. -f1-2 /etc/alpine-release)/community" >> /etc/apk/repositories;
 			else
-				sed -i '/^\\s*[^#].*main/{p;s/main/community/;}' /etc/apk/repositories;
+				sed -i '/^\s*[^#].*main/{p;s/main/community/;}' /etc/apk/repositories;
 			fi
 		fi;
 		apk update`); err != nil {
