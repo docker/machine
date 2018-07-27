@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"text/tabwriter"
 	"text/template"
 	"time"
@@ -212,15 +213,38 @@ func filterHosts(hosts []*host.Host, filters FilterOptions) []*host.Host {
 		return hosts
 	}
 
-	filteredHosts := []*host.Host{}
+	filteredHosts := map[*host.Host]bool{}
 	swarmMasters := getSwarmMasters(hosts)
 
+	var wg sync.WaitGroup
+	hostCh := make(chan *host.Host)
 	for _, h := range hosts {
-		if filterHost(h, filters, swarmMasters) {
-			filteredHosts = append(filteredHosts, h)
+		if filterHostLight(h, filters, swarmMasters) {
+			// Now check expensive filters (only State now) concurrently.
+			wg.Add(1)
+			go func(h *host.Host) {
+				defer wg.Done()
+				if matchesState(h, filters.State) {
+					hostCh <- h
+				}
+			}(h)
 		}
 	}
-	return filteredHosts
+	go func() {
+		wg.Wait()
+		close(hostCh)
+	}()
+	for matchedHost := range hostCh {
+		filteredHosts[matchedHost] = true
+	}
+	// Trim hosts based on filteredHosts to preserve original order.
+	for i := len(hosts) - 1; i >= 0; i-- {
+		if !filteredHosts[hosts[i]] {
+			hosts = append(hosts[:i], hosts[i+1:]...)
+		}
+	}
+
+	return hosts
 }
 
 func getSwarmMasters(hosts []*host.Host) map[string]string {
@@ -236,14 +260,13 @@ func getSwarmMasters(hosts []*host.Host) map[string]string {
 	return swarmMasters
 }
 
-func filterHost(host *host.Host, filters FilterOptions, swarmMasters map[string]string) bool {
+func filterHostLight(host *host.Host, filters FilterOptions, swarmMasters map[string]string) bool {
 	swarmMatches := matchesSwarmName(host, filters.SwarmName, swarmMasters)
 	driverMatches := matchesDriverName(host, filters.DriverName)
-	stateMatches := matchesState(host, filters.State)
 	nameMatches := matchesName(host, filters.Name)
 	labelMatches := matchesLabel(host, filters.Labels)
 
-	return swarmMatches && driverMatches && stateMatches && nameMatches && labelMatches
+	return swarmMatches && driverMatches && nameMatches && labelMatches
 }
 
 func matchesSwarmName(host *host.Host, swarmNames []string, swarmMasters map[string]string) bool {
@@ -276,11 +299,12 @@ func matchesState(host *host.Host, states []string) bool {
 	if len(states) == 0 {
 		return true
 	}
+	s, err := host.Driver.GetState()
+	if err != nil {
+		log.Error(err)
+		return false
+	}
 	for _, n := range states {
-		s, err := host.Driver.GetState()
-		if err != nil {
-			log.Warn(err)
-		}
 		if strings.EqualFold(n, s.String()) {
 			return true
 		}
