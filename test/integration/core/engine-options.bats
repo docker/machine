@@ -28,7 +28,7 @@ use_disposable_machine
 
 @test "$DRIVER: test docker process envs" {
   # get pid of docker process, check process envs for set Environment Variable from above test
-  run machine ssh $NAME 'sudo cat /proc/$(pgrep -f "docker [d]aemon")/environ'
+  run machine ssh $NAME 'sudo cat /proc/$(pgrep -f $(which dockerd))/environ'
   echo ${output}
   [ $status -eq 0 ]
   [[ "${output}" =~ "TEST=VALUE" ]]
