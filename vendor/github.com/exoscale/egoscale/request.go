@@ -7,7 +7,6 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,45 +23,16 @@ func (e ErrorResponse) Error() string {
 	return fmt.Sprintf("API error %s %d (%s %d): %s", e.ErrorCode, e.ErrorCode, e.CSErrorCode, e.CSErrorCode, e.ErrorText)
 }
 
-// Success computes the values based on the RawMessage, either string or bool
-func (e booleanResponse) IsSuccess() (bool, error) {
-	if e.Success == nil {
-		return false, errors.New("not a valid booleanResponse, Success is missing")
-	}
-
-	str := ""
-	if err := json.Unmarshal(e.Success, &str); err != nil {
-		boolean := false
-		if e := json.Unmarshal(e.Success, &boolean); e != nil {
-			return false, e
-		}
-		return boolean, nil
-	}
-	return str == "true", nil
-}
-
 // Error formats a CloudStack job response into a standard error
 func (e booleanResponse) Error() error {
-	success, err := e.IsSuccess()
-
-	if err != nil {
-		return err
+	if !e.Success {
+		return fmt.Errorf("API error: %s", e.DisplayText)
 	}
 
-	if success {
-		return nil
-	}
-
-	return fmt.Errorf("API error: %s", e.DisplayText)
+	return nil
 }
 
 func (client *Client) parseResponse(resp *http.Response, key string) (json.RawMessage, error) {
-	contentType := resp.Header.Get("content-type")
-
-	if !strings.Contains(contentType, "application/json") {
-		return nil, fmt.Errorf("body content-type response expected \"application/json\", got %q", contentType)
-	}
-
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -149,22 +119,27 @@ func (client *Client) SyncRequestWithContext(ctx context.Context, command Comman
 	}
 
 	response := command.response()
-	err = json.Unmarshal(body, response)
-
-	// booleanResponse will alway be valid...
-	if err == nil {
-		if br, ok := response.(*booleanResponse); ok {
-			success, e := br.IsSuccess()
-			if e != nil {
-				return nil, e
-			}
-			if !success {
-				err = errors.New("not a valid booleanResponse")
-			}
+	b, ok := response.(*booleanResponse)
+	if ok {
+		m := make(map[string]interface{})
+		if errUnmarshal := json.Unmarshal(body, &m); errUnmarshal != nil {
+			return nil, errUnmarshal
 		}
+
+		b.DisplayText, _ = m["displaytext"].(string)
+
+		if success, okSuccess := m["success"].(string); okSuccess {
+			b.Success = success == "true"
+		}
+
+		if success, okSuccess := m["success"].(bool); okSuccess {
+			b.Success = success
+		}
+
+		return b, nil
 	}
 
-	if err != nil {
+	if err := json.Unmarshal(body, response); err != nil {
 		errResponse := new(ErrorResponse)
 		if e := json.Unmarshal(body, errResponse); e == nil && errResponse.ErrorCode > 0 {
 			return errResponse, nil
@@ -304,7 +279,7 @@ func (client *Client) Payload(command Command) (string, error) {
 
 	// This code is borrowed from net/url/url.go
 	// The way it's encoded by net/url doesn't match
-	// how CloudStack works.
+	// how CloudStack work.
 	var buf bytes.Buffer
 	keys := make([]string, 0, len(params))
 	for k := range params {
@@ -354,7 +329,7 @@ func (client *Client) request(ctx context.Context, command Command) (json.RawMes
 
 	var body io.Reader
 	// respect Internet Explorer limit of 2048
-	if len(url) > 1<<11 {
+	if len(url) > 2048 {
 		url = client.Endpoint
 		method = "POST"
 		body = strings.NewReader(query)
@@ -377,6 +352,12 @@ func (client *Client) request(ctx context.Context, command Command) (json.RawMes
 		return nil, err
 	}
 	defer resp.Body.Close() // nolint: errcheck
+
+	contentType := resp.Header.Get("content-type")
+
+	if !strings.Contains(contentType, "application/json") {
+		return nil, fmt.Errorf(`body content-type response expected "application/json", got %q`, contentType)
+	}
 
 	apiName := client.APIName(command)
 	key := fmt.Sprintf("%sresponse", strings.ToLower(apiName))

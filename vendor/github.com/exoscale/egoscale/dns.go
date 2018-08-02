@@ -294,23 +294,23 @@ func (client *Client) dnsRequest(uri string, params string, method string) (json
 	}
 	req.Header = hdr
 
-	response, err := client.HTTPClient.Do(req)
+	resp, err := client.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close() // nolint: errcheck
+	defer resp.Body.Close() // nolint: errcheck
 
-	contentType := response.Header.Get("content-type")
+	contentType := resp.Header.Get("content-type")
 	if !strings.Contains(contentType, "application/json") {
 		return nil, fmt.Errorf(`response content-type expected to be "application/json", got %q`, contentType)
 	}
 
-	b, err := ioutil.ReadAll(response.Body)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	if response.StatusCode >= 400 {
+	if resp.StatusCode >= 400 {
 		e := new(DNSErrorResponse)
 		if err := json.Unmarshal(b, e); err != nil {
 			return nil, err

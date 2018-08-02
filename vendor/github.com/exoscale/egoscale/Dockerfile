@@ -9,7 +9,7 @@
 #
 # Prepare a snapshot release
 #
-#   docker run -v $PWD:/go/src/github.com/exoscale/egoscale egoscale goreleaser --snaphost
+#   docker run -v $PWD:/go/src/github.com/exoscale/egoscale egoscale goreleaser --snapshot
 #
 # Publish egoscale exposing a valid GITHUB_TOKEN
 #

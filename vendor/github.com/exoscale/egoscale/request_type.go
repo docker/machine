@@ -1,7 +1,6 @@
 package egoscale
 
 import (
-	"encoding/json"
 	"net/url"
 )
 
@@ -165,8 +164,8 @@ const (
 
 // ErrorResponse represents the standard error response from CloudStack
 type ErrorResponse struct {
-	ErrorCode   ErrorCode   `json:"errorcode"`
 	CSErrorCode CSErrorCode `json:"cserrorcode"`
+	ErrorCode   ErrorCode   `json:"errorcode"`
 	ErrorText   string      `json:"errortext"`
 	UUIDList    []UUIDItem  `json:"uuidList,omitempty"` // uuid*L*ist is not a typo
 }
@@ -180,6 +179,6 @@ type UUIDItem struct {
 
 // booleanResponse represents a boolean response (usually after a deletion)
 type booleanResponse struct {
-	Success     json.RawMessage `json:"success"`
-	DisplayText string          `json:"displaytext,omitempty"`
+	DisplayText string `json:"displaytext,omitempty"`
+	Success     bool   `json:"success"`
 }

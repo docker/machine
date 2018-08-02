@@ -2,46 +2,97 @@ package egoscale
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"net/http/httputil"
+	"os"
 	"strings"
 	"time"
-
-	"github.com/jinzhu/copier"
 )
 
-// NewClientWithTimeout creates a CloudStack API client
+// Taggable represents a resource which can have tags attached
+//
+// This is a helper to fill the resourcetype of a CreateTags call
+type Taggable interface {
+	// CloudStack resource type of the Taggable type
+	ResourceType() string
+}
+
+// Deletable represents an Interface that can be "Delete" by the client
+type Deletable interface {
+	// Delete removes the given resource(s) or throws
+	Delete(context context.Context, client *Client) error
+}
+
+// Listable represents an Interface that can be "List" by the client
+type Listable interface {
+	// ListRequest builds the list command
+	ListRequest() (ListCommand, error)
+}
+
+// Gettable represents an Interface that can be "Get" by the client
+type Gettable interface {
+	Listable
+}
+
+// Client represents the CloudStack API client
+type Client struct {
+	// HTTPClient holds the HTTP client
+	HTTPClient *http.Client
+	// Endpoints is CloudStack API
+	Endpoint string
+	// APIKey is the API identifier
+	APIKey string
+	// apisecret is the API secret, hence non exposed
+	apiSecret string
+	// PageSize represents the default size for a paginated result
+	PageSize int
+	// Timeout represents the default timeout for the async requests
+	Timeout time.Duration
+	// RetryStrategy represents the waiting strategy for polling the async requests
+	RetryStrategy RetryStrategyFunc
+	// Logger contains any log, plug your own
+	Logger *log.Logger
+}
+
+// RetryStrategyFunc represents a how much time to wait between two calls to CloudStack
+type RetryStrategyFunc func(int64) time.Duration
+
+// IterateItemFunc represents the callback to iterate a list of results, if false stops
+type IterateItemFunc func(interface{}, error) bool
+
+// WaitAsyncJobResultFunc represents the callback to wait a results of an async request, if false stops
+type WaitAsyncJobResultFunc func(*AsyncJobResult, error) bool
+
+// NewClient creates a CloudStack API client with default timeout (60)
 //
 // Timeout is set to both the HTTP client and the client itself.
-func NewClientWithTimeout(endpoint, apiKey, apiSecret string, timeout time.Duration) *Client {
-	client := &http.Client{
-		Timeout: timeout,
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: false,
-			},
-		},
+func NewClient(endpoint, apiKey, apiSecret string) *Client {
+	timeout := 60 * time.Second
+
+	httpClient := &http.Client{
+		Transport: http.DefaultTransport,
 	}
 
-	cs := &Client{
-		HTTPClient:    client,
+	client := &Client{
+		HTTPClient:    httpClient,
 		Endpoint:      endpoint,
 		APIKey:        apiKey,
 		apiSecret:     apiSecret,
 		PageSize:      50,
 		Timeout:       timeout,
 		RetryStrategy: MonotonicRetryStrategyFunc(2),
+		Logger:        log.New(ioutil.Discard, "", 0),
 	}
 
-	return cs
-}
+	if prefix, ok := os.LookupEnv("EXOSCALE_TRACE"); ok {
+		client.Logger = log.New(os.Stderr, prefix, log.LstdFlags)
+		client.TraceOn()
+	}
 
-// NewClient creates a CloudStack API client with default timeout (60)
-func NewClient(endpoint, apiKey, apiSecret string) *Client {
-	timeout := 60 * time.Second
-	return NewClientWithTimeout(endpoint, apiKey, apiSecret, timeout)
+	return client
 }
 
 // Get populates the given resource or fails
@@ -82,8 +133,7 @@ func (client *Client) GetWithContext(ctx context.Context, g Gettable) error {
 		return fmt.Errorf("more than one element found: %s", payload)
 	}
 
-	return copier.Copy(g, gs[0])
-
+	return Copy(g, gs[0])
 }
 
 // Delete removes the given resource of fails
@@ -110,6 +160,10 @@ func (client *Client) List(g Listable) ([]interface{}, error) {
 // ListWithContext lists the given resources (and paginate till the end)
 func (client *Client) ListWithContext(ctx context.Context, g Listable) ([]interface{}, error) {
 	s := make([]interface{}, 0)
+
+	if g == nil {
+		return s, fmt.Errorf("g Listable shouldn't be nil")
+	}
 
 	req, err := g.ListRequest()
 	if err != nil {
@@ -265,6 +319,47 @@ func (client *Client) Response(command Command) interface{} {
 	default:
 		return command.response()
 	}
+}
+
+// TraceOn activates the HTTP tracer
+func (client *Client) TraceOn() {
+	if _, ok := client.HTTPClient.Transport.(*traceTransport); !ok {
+		client.HTTPClient.Transport = &traceTransport{
+			transport: client.HTTPClient.Transport,
+			logger:    client.Logger,
+		}
+	}
+}
+
+// TraceOff deactivates the HTTP tracer
+func (client *Client) TraceOff() {
+	if rt, ok := client.HTTPClient.Transport.(*traceTransport); ok {
+		client.HTTPClient.Transport = rt.transport
+	}
+}
+
+// traceTransport  contains the original HTTP transport to enable it to be reverted
+type traceTransport struct {
+	transport http.RoundTripper
+	logger    *log.Logger
+}
+
+// RoundTrip executes a single HTTP transaction
+func (t *traceTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if dump, err := httputil.DumpRequest(req, true); err == nil {
+		t.logger.Printf("%s", dump)
+	}
+
+	resp, err := t.transport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if dump, err := httputil.DumpResponse(resp, true); err == nil {
+		t.logger.Printf("%s", dump)
+	}
+
+	return resp, nil
 }
 
 // MonotonicRetryStrategyFunc returns a function that waits for n seconds for each iteration

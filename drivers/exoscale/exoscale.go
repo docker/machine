@@ -299,11 +299,16 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 	}
 	sg := resp.(*egoscale.SecurityGroup)
 
+	cidrList := []egoscale.CIDR{
+		*egoscale.ForceParseCIDR("0.0.0.0/0"),
+		*egoscale.ForceParseCIDR("::/0"),
+	}
+
 	requests := []egoscale.AuthorizeSecurityGroupIngress{
 		{
 			SecurityGroupID: sg.ID,
 			Description:     "SSH",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        cidrList,
 			Protocol:        "TCP",
 			StartPort:       22,
 			EndPort:         22,
@@ -311,15 +316,23 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 		{
 			SecurityGroupID: sg.ID,
 			Description:     "Ping",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        []egoscale.CIDR{*egoscale.ForceParseCIDR("0.0.0.0/0")},
 			Protocol:        "ICMP",
 			IcmpType:        8,
 			IcmpCode:        0,
 		},
 		{
 			SecurityGroupID: sg.ID,
+			Description:     "Ping6",
+			CIDRList:        []egoscale.CIDR{*egoscale.ForceParseCIDR("::/0")},
+			Protocol:        "ICMPv6",
+			IcmpType:        128,
+			IcmpCode:        0,
+		},
+		{
+			SecurityGroupID: sg.ID,
 			Description:     "Docker",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        cidrList,
 			Protocol:        "TCP",
 			StartPort:       2376,
 			EndPort:         2377,
@@ -327,7 +340,7 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 		{
 			SecurityGroupID: sg.ID,
 			Description:     "Legacy Standalone Swarm",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        cidrList,
 			Protocol:        "TCP",
 			StartPort:       3376,
 			EndPort:         3377,

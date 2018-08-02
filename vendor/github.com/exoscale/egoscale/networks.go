@@ -15,7 +15,7 @@ type Network struct {
 	BroadcastDomainType         string        `json:"broadcastdomaintype,omitempty" doc:"Broadcast domain type of the network"`
 	BroadcastURI                string        `json:"broadcasturi,omitempty" doc:"broadcast uri of the network."`
 	CanUseForDeploy             bool          `json:"canusefordeploy,omitempty" doc:"list networks available for vm deployment"`
-	Cidr                        string        `json:"cidr,omitempty" doc:"Cloudstack managed address space, all CloudStack managed VMs get IP address from CIDR"`
+	CIDR                        *CIDR         `json:"cidr,omitempty" doc:"Cloudstack managed address space, all CloudStack managed VMs get IP address from CIDR"`
 	DisplayNetwork              bool          `json:"displaynetwork,omitempty" doc:"an optional field, whether to the display the network to the end user or not."`
 	DisplayText                 string        `json:"displaytext,omitempty" doc:"the displaytext of the network"`
 	DNS1                        net.IP        `json:"dns1,omitempty" doc:"the first DNS for the network"`
@@ -24,14 +24,14 @@ type Network struct {
 	DomainID                    string        `json:"domainid,omitempty" doc:"the domain id of the network owner"`
 	Gateway                     net.IP        `json:"gateway,omitempty" doc:"the network's gateway"`
 	ID                          string        `json:"id,omitempty" doc:"the id of the network"`
-	IP6Cidr                     string        `json:"ip6cidr,omitempty" doc:"the cidr of IPv6 network"`
+	IP6CIDR                     *CIDR         `json:"ip6cidr,omitempty" doc:"the cidr of IPv6 network"`
 	IP6Gateway                  net.IP        `json:"ip6gateway,omitempty" doc:"the gateway of IPv6 network"`
 	IsDefault                   bool          `json:"isdefault,omitempty" doc:"true if network is default, false otherwise"`
 	IsPersistent                bool          `json:"ispersistent,omitempty" doc:"list networks that are persistent"`
 	IsSystem                    bool          `json:"issystem,omitempty" doc:"true if network is system, false otherwise"`
 	Name                        string        `json:"name,omitempty" doc:"the name of the network"`
 	Netmask                     net.IP        `json:"netmask,omitempty" doc:"the network's netmask"`
-	NetworkCidr                 string        `json:"networkcidr,omitempty" doc:"the network CIDR of the guest network configured with IP reservation. It is the summation of CIDR and RESERVED_IP_RANGE"`
+	NetworkCIDR                 *CIDR         `json:"networkcidr,omitempty" doc:"the network CIDR of the guest network configured with IP reservation. It is the summation of CIDR and RESERVED_IP_RANGE"`
 	NetworkDomain               string        `json:"networkdomain,omitempty" doc:"the network domain"`
 	NetworkOfferingAvailability string        `json:"networkofferingavailability,omitempty" doc:"availability of the network offering the network is created from"`
 	NetworkOfferingConserveMode bool          `json:"networkofferingconservemode,omitempty" doc:"true if network offering is ip conserve mode enabled"`
@@ -117,7 +117,7 @@ type CreateNetwork struct {
 	EndIP             net.IP `json:"endip,omitempty" doc:"the ending IP address in the network IP range. If not specified, will be defaulted to startIP"`
 	EndIpv6           net.IP `json:"endipv6,omitempty" doc:"the ending IPv6 address in the IPv6 network range"`
 	Gateway           net.IP `json:"gateway,omitempty" doc:"the gateway of the network. Required for Shared networks and Isolated networks when it belongs to VPC"`
-	IP6Cidr           string `json:"ip6cidr,omitempty" doc:"the CIDR of IPv6 network, must be at least /64"`
+	IP6CIDR           *CIDR  `json:"ip6cidr,omitempty" doc:"the CIDR of IPv6 network, must be at least /64"`
 	IP6Gateway        net.IP `json:"ip6gateway,omitempty" doc:"the gateway of the IPv6 network. Required for Shared networks and Isolated networks when it belongs to VPC"`
 	IsolatedPVlan     string `json:"isolatedpvlan,omitempty" doc:"the isolated private vlan for this network"`
 	Name              string `json:"name,omitempty" doc:"the name of the network"` // This field is required but might be empty

@@ -87,7 +87,7 @@ func (sg SecurityGroup) RuleByID(ruleID string) (*IngressRule, *EgressRule) {
 // IngressRule represents the ingress rule
 type IngressRule struct {
 	Account               string              `json:"account,omitempty" doc:"account owning the security group rule"`
-	Cidr                  string              `json:"cidr,omitempty" doc:"the CIDR notation for the base IP address of the security group rule"`
+	CIDR                  *CIDR               `json:"cidr,omitempty" doc:"the CIDR notation for the base IP address of the security group rule"`
 	Description           string              `json:"description,omitempty" doc:"description of the security group rule"`
 	EndPort               uint16              `json:"endport,omitempty" doc:"the ending port of the security group rule "`
 	IcmpCode              uint8               `json:"icmpcode,omitempty" doc:"the code for the ICMP message response"`
@@ -108,6 +108,11 @@ type EgressRule IngressRule
 type UserSecurityGroup struct {
 	Group   string `json:"group,omitempty"`
 	Account string `json:"account,omitempty"`
+}
+
+// String gives the UserSecurityGroup name
+func (usg UserSecurityGroup) String() string {
+	return usg.Group
 }
 
 // CreateSecurityGroup represents a security group creation
@@ -139,7 +144,7 @@ func (DeleteSecurityGroup) response() interface{} {
 // AuthorizeSecurityGroupIngress (Async) represents the ingress rule creation
 type AuthorizeSecurityGroupIngress struct {
 	Account               string              `json:"account,omitempty" doc:"an optional account for the security group. Must be used with domainId."`
-	CidrList              []string            `json:"cidrlist,omitempty" doc:"the cidr list associated"`
+	CIDRList              []CIDR              `json:"cidrlist,omitempty" doc:"the cidr list associated"`
 	Description           string              `json:"description,omitempty" doc:"the description of the ingress/egress rule"`
 	DomainID              string              `json:"domainid,omitempty" doc:"an optional domainid for the security group. If the account parameter is used, domainid must also be used."`
 	EndPort               uint16              `json:"endport,omitempty" doc:"end port for this ingress rule"`

@@ -59,6 +59,18 @@ This exemple deploys a virtual machine while controlling the job status as it go
 
 	fmt.Printf("Virtual Machine ID: %s\n", vm.ID)
 
+Debugging and traces
+
+As this library is mostly an HTTP client, you can reuse all the existing tools around it.
+
+	cs := egoscale.NewClient("https://api.exoscale.ch/compute", "EXO...", "...")
+	// sets a logger on stderr
+	cs.Logger = log.Newos.Stderr, "prefix", log.LstdFlags)
+	// activates the HTTP traces
+	cs.TraceOn()
+
+Nota bene: when running the tests or the egoscale library via another tool, e.g. the exo cli (or the cs cli), the environment variable EXOSCALE_TRACE=prefix does the above configuration for you. As a developer using egoscale as a library, you'll find it more convenient to plug your favorite io.Writer as it's Logger.
+
 
 APIs
 

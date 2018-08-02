@@ -21,7 +21,7 @@ type DeleteReverseDNSFromPublicIPAddress struct {
 }
 
 func (*DeleteReverseDNSFromPublicIPAddress) response() interface{} {
-	return new(IPAddress)
+	return new(booleanResponse)
 }
 
 // DeleteReverseDNSFromVirtualMachine is a command to create/delete the PTR record(s) of a virtual machine
@@ -31,7 +31,7 @@ type DeleteReverseDNSFromVirtualMachine struct {
 }
 
 func (*DeleteReverseDNSFromVirtualMachine) response() interface{} {
-	return new(VirtualMachine)
+	return new(booleanResponse)
 }
 
 // QueryReverseDNSForPublicIPAddress is a command to create/query the PTR record of a public IP address

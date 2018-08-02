@@ -47,7 +47,6 @@ def gofmt(repo, ...bins) {
     image.inside("-u root --net=host -v ${env.WORKSPACE}/src:/go/src/github.com/${repo}") {
       sh 'test `gofmt -s -d -e . | tee -a /dev/fd/2 | wc -l` -eq 0'
       // let's not gofmt the dependencies
-      sh "cd /go/src/github.com/${repo} && dep ensure -v -vendor-only"
       for (bin in bins) {
         sh "cd /go/src/github.com/${repo}/cmd/${bin} && dep ensure -v -vendor-only"
       }

@@ -14,7 +14,7 @@ type Nic struct {
 	Gateway          net.IP           `json:"gateway,omitempty" doc:"the gateway of the nic"`
 	ID               string           `json:"id,omitempty" doc:"the ID of the nic"`
 	IP6Address       net.IP           `json:"ip6address,omitempty" doc:"the IPv6 address of network"`
-	IP6Cidr          string           `json:"ip6cidr,omitempty" doc:"the cidr of IPv6 network"`
+	IP6CIDR          *CIDR            `json:"ip6cidr,omitempty" doc:"the cidr of IPv6 network"`
 	IP6Gateway       net.IP           `json:"ip6gateway,omitempty" doc:"the gateway of IPv6 network"`
 	IPAddress        net.IP           `json:"ipaddress,omitempty" doc:"the ip address of the nic"`
 	IsDefault        bool             `json:"isdefault,omitempty" doc:"true if nic is default, false otherwise"`

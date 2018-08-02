@@ -1,11 +1,23 @@
 Changelog
 =========
 
+0.10.5 (unreleased)
+------
+
+- feat: `Client.Logger` to plug in any `*log.Logger`
+- feat: `Client.TraceOn`/`ClientTraceOff` to toggle the HTTP tracing
+
+0.10.4
+------
+
+- feat: `CIDR` to replace string string
+- fix: prevent panic on nil
+
 0.10.3
 ------
 
 - feat: `Account` is Listable
-- feat: `MACAddress` to replace type
+- feat: `MACAddress` to replace string type
 - fix: Go 1.7 support
 
 0.10.2
