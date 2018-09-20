@@ -473,7 +473,15 @@ func (d *Driver) Remove() error {
 	if !d.ExistingKey {
 		log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
 		if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
-			return err
+			if gopherErr, ok := err.(*gophercloud.UnexpectedResponseCodeError); ok {
+				if gopherErr.Actual == http.StatusNotFound {
+					log.Warn("Keypair already deleted")
+				} else {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 	}
 	return nil
