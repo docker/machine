@@ -53,19 +53,23 @@ type Driver struct {
 	Boot2DockerURL string
 	CPUS           int
 
-	IP         string
-	Port       int
-	Username   string
-	Password   string
-	Network    string
-	Networks   []string
-	Datastore  string
-	Datacenter string
-	Folder     string
-	Pool       string
-	HostSystem string
-	CfgParams  []string
-	CloudInit  string
+	IP                     string
+	Port                   int
+	Username               string
+	Password               string
+	Network                string
+	Networks               []string
+	Datastore              string
+	Datacenter             string
+	Folder                 string
+	Pool                   string
+	HostSystem             string
+	CfgParams              []string
+	CloudInit              string
+	VAppIpProtocol         string
+	VAppIpAllocationPolicy string
+	VAppTransport          string
+	VAppProperties         []string
 
 	SSHPassword string
 }
@@ -167,6 +171,26 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "vmwarevsphere-cloudinit",
 			Usage:  "vSphere cloud-init file or url to set in the guestinfo",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "VSPHERE_VAPP_IPPROTOCOL",
+			Name:   "vmwarevsphere-vapp-ipprotocol",
+			Usage:  "vSphere vApp IP protocol for this deployment. Supported values are: IPv4 and IPv6",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "VSPHERE_VAPP_IPALLOCATIONPOLICY",
+			Name:   "vmwarevsphere-vapp-ipallocationpolicy",
+			Usage:  "vSphere vApp IP allocation policy. Supported values are: dhcp, fixed, transient and fixedAllocated",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "VSPHERE_VAPP_TRANSPORT",
+			Name:   "vmwarevsphere-vapp-transport",
+			Usage:  "vSphere OVF environment transports to use for properties. Supported values are: iso and com.vmware.guestInfo",
+		},
+		mcnflag.StringSliceFlag{
+			EnvVar: "VSPHERE_VAPP_PROPERTY",
+			Name:   "vmwarevsphere-vapp-property",
+			Usage:  "vSphere vApp properties",
+		},
 	}
 }
 
@@ -222,6 +246,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
 	d.CfgParams = flags.StringSlice("vmwarevsphere-cfgparam")
 	d.CloudInit = flags.String("vmwarevsphere-cloudinit")
+	d.VAppIpProtocol = flags.String("vmwarevsphere-vapp-ipprotocol")
+	d.VAppIpAllocationPolicy = flags.String("vmwarevsphere-vapp-ipallocationpolicy")
+	d.VAppTransport = flags.String("vmwarevsphere-vapp-transport")
+	d.VAppProperties = flags.StringSlice("vmwarevsphere-vapp-property")
 	d.SetSwarmConfigFromFlags(flags)
 
 	d.ISO = d.ResolveStorePath(isoFilename)
@@ -508,6 +536,67 @@ func (d *Driver) Create() error {
 		Operation: types.VirtualDeviceConfigSpecOperationAdd,
 		Device:    scsi,
 	})
+
+	if d.VAppTransport == "com.vmware.guestInfo" ||
+		d.VAppTransport == "iso" {
+
+		vApp := types.VmConfigSpec{
+			OvfEnvironmentTransport: []string{d.VAppTransport},
+		}
+
+		if d.VAppIpAllocationPolicy == "dhcp" ||
+			d.VAppIpAllocationPolicy == "fixed" ||
+			d.VAppIpAllocationPolicy == "transient" ||
+			d.VAppIpAllocationPolicy == "fixedAllocated" {
+
+			if d.VAppIpProtocol != "IPv4" &&
+				d.VAppIpProtocol != "IPv6" {
+				d.VAppIpProtocol = "IPv4"
+			}
+
+			supportedAllocationScheme := "ovfenv"
+			if d.VAppIpAllocationPolicy == "dhcp" {
+				supportedAllocationScheme = "dhcp"
+			}
+
+			vApp.IpAssignment = &types.VAppIPAssignmentInfo{
+				SupportedIpProtocol:       []string{d.VAppIpProtocol},
+				SupportedAllocationScheme: []string{supportedAllocationScheme},
+				IpProtocol:                d.VAppIpProtocol,
+				IpAllocationPolicy:        d.VAppIpAllocationPolicy + "Policy",
+			}
+		}
+
+		for i, prop := range d.VAppProperties {
+			v := strings.SplitN(prop, "=", 2)
+			key := v[0]
+			typ := "string"
+			value := ""
+			if len(v) > 1 {
+				value = v[1]
+			}
+			if strings.HasPrefix(value, "ip:") {
+				typ = value
+				value = ""
+			} else if strings.HasPrefix(value, "${") &&
+				strings.HasSuffix(value, "}") {
+				typ = "expression"
+			}
+			vApp.Property = append(vApp.Property, types.VAppPropertySpec{
+				ArrayUpdateSpec: types.ArrayUpdateSpec{
+					Operation: types.ArrayUpdateOperationAdd,
+				},
+				Info: &types.VAppPropertyInfo{
+					Key:          int32(i),
+					Id:           key,
+					Type:         typ,
+					DefaultValue: value,
+				},
+			})
+		}
+
+		spec.VAppConfig = &vApp
+	}
 
 	log.Infof("Creating VM...")
 	folders, err := dc.Folders(ctx)
