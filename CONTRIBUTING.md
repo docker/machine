@@ -223,7 +223,7 @@ in order to run the core tests on Red Hat Enterprise Linux on Amazon.
 
 ### Layout
 
-The `test/integration` directory is layed out to divide up tests based on the
+The `test/integration` directory is laid out to divide up tests based on the
 areas which the test.  If you are uncertain where to put yours, we are happy to
 guide you.
 
