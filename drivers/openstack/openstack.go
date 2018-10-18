@@ -51,13 +51,15 @@ type Driver struct {
 	ConfigDrive      bool
 	client           Client
 	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
-	ExistingKey bool
+	ExistingKey      bool
+	TimeoutCloudInit int
 }
 
 const (
-	defaultSSHUser       = "root"
-	defaultSSHPort       = 22
-	defaultActiveTimeout = 200
+	defaultSSHUser           = "root"
+	defaultSSHPort           = 22
+	defaultActiveTimeout     = 200
+	defaultTimeoutCloudIinit = 0
 )
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -233,6 +235,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "openstack-config-drive",
 			Usage:  "Enables the OpenStack config drive for the instance",
 		},
+		mcnflag.IntFlag{
+			EnvVar: "OS_TIMEOUT_CLOUDINIT",
+			Name:   "openstack-timeout-cloud-init",
+			Usage:  "Amout of time in seconds to wait for the successfull end of cloud-init process (0 to disable)",
+			Value:  defaultTimeoutCloudIinit,
+		},
 	}
 }
 
@@ -307,6 +315,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 			return err
 		}
 	}
+	d.TimeoutCloudInit = flags.Int("openstack-timeout-cloud-init")
 
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -421,6 +430,18 @@ func (d *Driver) Create() error {
 	}
 	if err := d.lookForIPAddress(); err != nil {
 		return err
+	}
+
+	if d.TimeoutCloudInit > 0 {
+		log.Info("Waiting for cloud-init scripts to finish")
+		return mcnutils.WaitForSpecific(func() bool {
+			_, err := drivers.RunSSHCommandFromDriver(d, "test -f /var/lib/cloud/instance/boot-finished")
+			if err == nil {
+				return true
+			} else {
+				return false
+			}
+		}, (d.TimeoutCloudInit / 10), 10*time.Second)
 	}
 	return nil
 }
