@@ -1,7 +1,9 @@
 package google
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	raw "google.golang.org/api/compute/v1"
@@ -68,5 +70,117 @@ func TestMissingOpenedPorts(t *testing.T) {
 		missingPorts := missingOpenedPorts(firewall, test.ports)
 
 		assert.Equal(t, test.expectedMissing, missingPorts, test.description)
+	}
+}
+
+type testOperationCaller struct {
+	operationDuration time.Duration
+	getError          error
+	operationError    *raw.OperationErrorErrors
+
+	calls     int
+	startedAt time.Time
+}
+
+func (oc *testOperationCaller) Get() (*raw.Operation, error) {
+	oc.calls++
+
+	if oc.getError != nil {
+		return nil, oc.getError
+	}
+
+	op := &raw.Operation{
+		Name: "test operation",
+	}
+
+	if time.Since(oc.startedAt) >= oc.operationDuration {
+		op.Status = "DONE"
+	} else {
+		op.Status = "PENDING"
+	}
+
+	if oc.operationError != nil {
+		op.Error = &raw.OperationError{
+			Errors: []*raw.OperationErrorErrors{
+				oc.operationError,
+			},
+		}
+	}
+
+	return op, nil
+}
+
+func TestWaitForOpBackOff(t *testing.T) {
+	tests := map[string]struct {
+		backoffFactoryNotDefined bool
+		operationDuration        time.Duration
+		maxOperationDuration     time.Duration
+
+		getError       error
+		operationError *raw.OperationErrorErrors
+
+		expectedError error
+	}{
+		"error on call": {
+			getError:      errors.New("test error"),
+			expectedError: errors.New("test error"),
+		},
+		"operation too long": {
+			operationDuration:    5 * time.Second,
+			maxOperationDuration: 1 * time.Second,
+			expectedError:        errors.New("maximum backoff elapsed time exceeded"),
+		},
+		"operation error": {
+			operationDuration:    1 * time.Second,
+			maxOperationDuration: 5 * time.Second,
+			operationError: &raw.OperationErrorErrors{
+				Code:     "code",
+				Location: "location",
+				Message:  "message",
+			},
+			expectedError: errors.New("operation error: {code location message [] []}"),
+		},
+		"backoff factory not defined": {
+			backoffFactoryNotDefined: true,
+			operationDuration:        5 * time.Second,
+			maxOperationDuration:     5 * time.Second,
+			expectedError:            errors.New("operationBackoffFactory is not defined"),
+		},
+		"proper operation call": {
+			operationDuration:    5 * time.Second,
+			maxOperationDuration: 5 * time.Second,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			toc := &testOperationCaller{
+				operationDuration: test.operationDuration,
+				getError:          test.getError,
+				operationError:    test.operationError,
+
+				startedAt: time.Now(),
+			}
+
+			cu := &ComputeUtil{}
+			if !test.backoffFactoryNotDefined {
+				cu.operationBackoffFactory = &backoffFactory{
+					InitialInterval:     125 * time.Millisecond,
+					RandomizationFactor: 0,
+					Multiplier:          2,
+					MaxInterval:         4 * time.Second,
+					MaxElapsedTime:      test.maxOperationDuration,
+				}
+			}
+
+			err := cu.waitForOp(toc.Get)
+			if test.expectedError != nil {
+				assert.EqualError(t, err, test.expectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.True(t, toc.calls < 8, "Too many *OperationServices.Get() calls")
+		})
 	}
 }
