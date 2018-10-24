@@ -4,14 +4,36 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 )
+
+type backoffFactory struct {
+	InitialInterval     time.Duration
+	RandomizationFactor float64
+	Multiplier          float64
+	MaxInterval         time.Duration
+	MaxElapsedTime      time.Duration
+}
+
+func (bf *backoffFactory) create() *backoff.ExponentialBackOff {
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = bf.InitialInterval
+	b.RandomizationFactor = bf.RandomizationFactor
+	b.Multiplier = bf.Multiplier
+	b.MaxInterval = bf.MaxInterval
+	b.MaxElapsedTime = bf.MaxElapsedTime
+
+	return b
+}
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
@@ -33,6 +55,8 @@ type Driver struct {
 	Tags              string
 	UseExisting       bool
 	OpenPorts         []string
+
+	OperationBackoffFactory *backoffFactory
 }
 
 const (
@@ -46,6 +70,12 @@ const (
 	defaultDiskSize       = 10
 	defaultNetwork        = "default"
 	defaultSubnetwork     = ""
+
+	defaultGoogleOperationBackoffInitialInterval     = 1
+	defaultGoogleOperationBackoffRandomizationFactor = "0.5"
+	defaultGoogleOperationBackoffMultipler           = "2"
+	defaultGoogleOperationBackoffMaxInterval         = 30
+	defaultGoogleOperationBackoffMaxElapsedTime      = 300
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -152,6 +182,31 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "google-open-port",
 			Usage: "Make the specified port number accessible from the Internet, e.g, 8080/tcp",
 		},
+		mcnflag.IntFlag{
+			Name:  "google-operation-backoff-initial-interval",
+			Usage: "Initial interval for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffInitialInterval,
+		},
+		mcnflag.StringFlag{
+			Name:  "google-operation-backoff-randomization-factor",
+			Usage: "Randomization factor for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffRandomizationFactor,
+		},
+		mcnflag.StringFlag{
+			Name:  "google-operation-backoff-multipler",
+			Usage: "Multipler factor for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffMultipler,
+		},
+		mcnflag.IntFlag{
+			Name:  "google-operation-backoff-max-interval",
+			Usage: "Maximum interval for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffMaxInterval,
+		},
+		mcnflag.IntFlag{
+			Name:  "google-operation-backoff-max-elapsed-time",
+			Usage: "Maximum elapsed time for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffMaxElapsedTime,
+		},
 	}
 }
 
@@ -222,6 +277,24 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
 	d.SetSwarmConfigFromFlags(flags)
+
+	backoffRandomizationFactor, err := strconv.ParseFloat(flags.String("google-operation-backoff-randomization-factor"), 64)
+	if err != nil {
+		return fmt.Errorf("error while parsing google-operation-backoff-randomization-factor value: %v", err)
+	}
+
+	backoffMultipler, err := strconv.ParseFloat(flags.String("google-operation-backoff-multipler"), 64)
+	if err != nil {
+		return fmt.Errorf("error while parsing google-operation-backoff-multipler value: %v", err)
+	}
+
+	d.OperationBackoffFactory = &backoffFactory{
+		InitialInterval:     time.Duration(flags.Int("google-operation-backoff-initial-interval")) * time.Second,
+		RandomizationFactor: backoffRandomizationFactor,
+		Multiplier:          backoffMultipler,
+		MaxInterval:         time.Duration(flags.Int("google-operation-backoff-max-interval")) * time.Second,
+		MaxElapsedTime:      time.Duration(flags.Int("google-operation-backoff-max-elapsed-time")) * time.Second,
+	}
 
 	return nil
 }
