@@ -114,7 +114,6 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	}
 
 	req.SetBasicAuth(c.User, c.ApiKey)
-	req.Method = method
 
 	resp, err := client.Do(req)
 	if err != nil {
