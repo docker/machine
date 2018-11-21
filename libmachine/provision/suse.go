@@ -49,7 +49,8 @@ type SUSEProvisioner struct {
 }
 
 func (provisioner *SUSEProvisioner) CompatibleWithHost() bool {
-	return strings.ToLower(provisioner.OsReleaseInfo.ID) == strings.ToLower(provisioner.OsReleaseID)
+	return strings.HasPrefix(strings.ToLower(provisioner.OsReleaseInfo.ID),
+				 strings.ToLower(provisioner.OsReleaseID))
 }
 
 func (provisioner *SUSEProvisioner) String() string {
@@ -135,7 +136,7 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 		return err
 	}
 
-	if strings.ToLower(provisioner.OsReleaseInfo.ID) != "opensuse" {
+	if !strings.HasPrefix(strings.ToLower(provisioner.OsReleaseInfo.ID), "opensuse") {
 		// This is a SLE machine, enable the containers module to have access
 		// to the docker packages
 		if _, err := provisioner.SSHCommand("sudo -E SUSEConnect -p sle-module-containers/12/$(uname -m) -r ''"); err != nil {
