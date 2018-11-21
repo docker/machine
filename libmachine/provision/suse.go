@@ -3,6 +3,8 @@ package provision
 import (
 	"fmt"
 	"strings"
+	"bytes"
+	"text/template"
 
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/drivers"
@@ -158,19 +160,6 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 		return err
 	}
 
-	// create symlinks for containerd, containerd-shim and runc.
-	// We have to do that because machine overrides the openSUSE systemd
-	// unit of docker
-	if _, err := provisioner.SSHCommand("sudo -E ln -sf /usr/sbin/runc /usr/sbin/docker-runc"); err != nil {
-		return err
-	}
-	if _, err := provisioner.SSHCommand("sudo -E ln -sf /usr/sbin/containerd /usr/sbin/docker-containerd"); err != nil {
-		return err
-	}
-	if _, err := provisioner.SSHCommand("sudo -E ln -sf /usr/sbin/containerd-shim /usr/sbin/docker-containerd-shim"); err != nil {
-		return err
-	}
-
 	// Is yast2 firewall installed?
 	if _, installed := provisioner.SSHCommand("rpm -q yast2-firewall"); installed == nil {
 		// Open the firewall port required by docker
@@ -205,4 +194,34 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 	log.Debug("Enabling docker in systemd")
 	err = provisioner.Service("docker", serviceaction.Enable)
 	return err
+}
+
+func (provisioner *SUSEProvisioner) GenerateDockerOptions(dockerPort int) (*DockerOptions, error) {
+	var (
+		engineCfg  bytes.Buffer
+		configPath = "/etc/sysconfig/docker"
+	)
+
+	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
+	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
+
+	engineConfigTmpl := `DOCKER_OPTS=\"-H tcp://0.0.0.0:{{.DockerPort}} -H unix:///var/run/docker.sock --storage-driver {{.EngineOptions.StorageDriver}} --tlsverify --tlscacert {{.AuthOptions.CaCertRemotePath}} --tlscert {{.AuthOptions.ServerCertRemotePath}} --tlskey {{.AuthOptions.ServerKeyRemotePath}} {{ range .EngineOptions.Labels }}--label {{.}} {{ end }}{{ range .EngineOptions.InsecureRegistry }}--insecure-registry {{.}} {{ end }}{{ range .EngineOptions.RegistryMirror }}--registry-mirror {{.}} {{ end }}{{ range .EngineOptions.ArbitraryFlags }}--{{.}} {{ end }}\"`
+	t, err := template.New("engineConfig").Parse(engineConfigTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	engineConfigContext := EngineConfigContext{
+		DockerPort:       dockerPort,
+		AuthOptions:      provisioner.AuthOptions,
+		EngineOptions:    provisioner.EngineOptions,
+	}
+
+	t.Execute(&engineCfg, engineConfigContext)
+
+	daemonOptsDir := configPath
+	return &DockerOptions{
+		EngineOptions:     engineCfg.String(),
+		EngineOptionsPath: daemonOptsDir,
+	}, nil
 }
