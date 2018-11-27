@@ -18,6 +18,7 @@ type Driver struct {
 	*drivers.BaseDriver
 	Boot2DockerURL       string
 	VSwitch              string
+	ComputeName          string
 	DiskSize             int
 	MemSize              int
 	CPU                  int
@@ -31,6 +32,7 @@ const (
 	defaultMemory               = 1024
 	defaultCPU                  = 1
 	defaultVLanID               = 0
+	defaultComputerName         = "localhost"
 	defaultDisableDynamicMemory = false
 )
 
@@ -41,6 +43,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		MemSize:              defaultMemory,
 		CPU:                  defaultCPU,
 		DisableDynamicMemory: defaultDisableDynamicMemory,
+		ComputerName:         defaultComputerName
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -61,6 +64,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "hyperv-virtual-switch",
 			Usage:  "Virtual switch name. Defaults to first found.",
 			EnvVar: "HYPERV_VIRTUAL_SWITCH",
+		},
+		mcnflag.StringFlag{
+			Name:   "hyperv-computer-name",
+			Usage:  "Remote Hyper-V Server name. Defaults to localhost.",
+			EnvVar: "HYPERV_COMPUTER_NAME",
 		},
 		mcnflag.IntFlag{
 			Name:   "hyperv-disk-size",
@@ -102,6 +110,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Boot2DockerURL = flags.String("hyperv-boot2docker-url")
 	d.VSwitch = flags.String("hyperv-virtual-switch")
+	d.ComputerName = flags.String("hyperv-computer-name")
 	d.DiskSize = flags.Int("hyperv-disk-size")
 	d.MemSize = flags.Int("hyperv-memory")
 	d.CPU = flags.Int("hyperv-cpu-count")
@@ -137,7 +146,7 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetState() (state.State, error) {
-	stdout, err := cmdOut("(", "Hyper-V\\Get-VM", d.MachineName, ").state")
+	stdout, err := cmdOut("(", "Hyper-V\\Get-VM", "-ComputerName", d.ComputerName, d.MachineName, ").state")
 	if err != nil {
 		return state.None, fmt.Errorf("Failed to find the VM status")
 	}
@@ -216,6 +225,7 @@ func (d *Driver) Create() error {
 
 	if err := cmd("Hyper-V\\New-VM",
 		d.MachineName,
+		"-ComputerName", d.ComputerName, 
 		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(".")),
 		"-SwitchName", quote(virtualSwitch),
 		"-MemoryStartupBytes", toMb(d.MemSize)); err != nil {
@@ -223,6 +233,7 @@ func (d *Driver) Create() error {
 	}
 	if d.DisableDynamicMemory {
 		if err := cmd("Hyper-V\\Set-VMMemory",
+			"-ComputerName", d.ComputerName, 
 			"-VMName", d.MachineName,
 			"-DynamicMemoryEnabled", "$false"); err != nil {
 			return err
@@ -231,6 +242,7 @@ func (d *Driver) Create() error {
 
 	if d.CPU > 1 {
 		if err := cmd("Hyper-V\\Set-VMProcessor",
+			"-ComputerName", d.ComputerName,
 			d.MachineName,
 			"-Count", fmt.Sprintf("%d", d.CPU)); err != nil {
 			return err
@@ -239,6 +251,7 @@ func (d *Driver) Create() error {
 
 	if d.MacAddr != "" {
 		if err := cmd("Hyper-V\\Set-VMNetworkAdapter",
+			"-ComputerName", d.ComputerName,
 			"-VMName", d.MachineName,
 			"-StaticMacAddress", fmt.Sprintf("\"%s\"", d.MacAddr)); err != nil {
 			return err
@@ -247,6 +260,7 @@ func (d *Driver) Create() error {
 
 	if d.VLanID > 0 {
 		if err := cmd("Hyper-V\\Set-VMNetworkAdapterVlan",
+			"-ComputerName", d.ComputerName,
 			"-VMName", d.MachineName,
 			"-Access",
 			"-VlanId", fmt.Sprintf("%d", d.VLanID)); err != nil {
@@ -255,12 +269,14 @@ func (d *Driver) Create() error {
 	}
 
 	if err := cmd("Hyper-V\\Set-VMDvdDrive",
+		"-ComputerName", d.ComputerName,
 		"-VMName", d.MachineName,
 		"-Path", quote(d.ResolveStorePath("boot2docker.iso"))); err != nil {
 		return err
 	}
 
 	if err := cmd("Hyper-V\\Add-VMHardDiskDrive",
+		"-ComputerName", d.ComputerName,
 		"-VMName", d.MachineName,
 		"-Path", quote(diskImage)); err != nil {
 		return err
@@ -273,7 +289,7 @@ func (d *Driver) Create() error {
 func (d *Driver) chooseVirtualSwitch() (string, error) {
 	if d.VSwitch == "" {
 		// Default to the first external switche and in the process avoid DockerNAT
-		stdout, err := cmdOut("(Hyper-V\\Get-VMSwitch -SwitchType External).Name")
+		stdout, err := cmdOut("(Hyper-V\\Get-VMSwitch", "-ComputerName", d.ComputerName, "-SwitchType External).Name")
 		if err != nil {
 			return "", err
 		}
@@ -287,7 +303,7 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 		return switches[0], nil
 	}
 
-	stdout, err := cmdOut("(Hyper-V\\Get-VMSwitch).Name")
+	stdout, err := cmdOut("(Hyper-V\\Get-VMSwitch", "-ComputerName", d.ComputerName).Name")
 	if err != nil {
 		return "", err
 	}
@@ -343,7 +359,7 @@ func (d *Driver) waitStopped() error {
 
 // Start starts an host
 func (d *Driver) Start() error {
-	if err := cmd("Hyper-V\\Start-VM", d.MachineName); err != nil {
+	if err := cmd("Hyper-V\\Start-VM", "-ComputerName", d.ComputerName, d.MachineName); err != nil {
 		return err
 	}
 
@@ -359,7 +375,7 @@ func (d *Driver) Start() error {
 
 // Stop stops an host
 func (d *Driver) Stop() error {
-	if err := cmd("Hyper-V\\Stop-VM", d.MachineName); err != nil {
+	if err := cmd("Hyper-V\\Stop-VM", "-ComputerName", d.ComputerName, d.MachineName); err != nil {
 		return err
 	}
 
@@ -385,7 +401,7 @@ func (d *Driver) Remove() error {
 		}
 	}
 
-	return cmd("Hyper-V\\Remove-VM", d.MachineName, "-Force")
+	return cmd("Hyper-V\\Remove-VM", "-ComputerName", d.ComputerName, d.MachineName, "-Force")
 }
 
 // Restart stops and starts an host
@@ -400,7 +416,7 @@ func (d *Driver) Restart() error {
 
 // Kill force stops an host
 func (d *Driver) Kill() error {
-	if err := cmd("Hyper-V\\Stop-VM", d.MachineName, "-TurnOff"); err != nil {
+	if err := cmd("Hyper-V\\Stop-VM","-ComputerName", d.ComputerName, d.MachineName, "-TurnOff"); err != nil {
 		return err
 	}
 
@@ -422,7 +438,7 @@ func (d *Driver) GetIP() (string, error) {
 		return "", drivers.ErrHostIsNotRunning
 	}
 
-	stdout, err := cmdOut("((", "Hyper-V\\Get-VM", d.MachineName, ").networkadapters[0]).ipaddresses[0]")
+	stdout, err := cmdOut("((", "Hyper-V\\Get-VM", "-ComputerName", d.ComputerName, d.MachineName, ").networkadapters[0]).ipaddresses[0]")
 	if err != nil {
 		return "", err
 	}
@@ -456,7 +472,7 @@ func (d *Driver) generateDiskImage() (string, error) {
 	}
 
 	log.Infof("Creating VHD")
-	if err := cmd("Hyper-V\\New-VHD", "-Path", quote(fixed), "-SizeBytes", fixedDiskSize, "-Fixed"); err != nil {
+	if err := cmd("Hyper-V\\New-VHD", "-ComputerName", d.ComputerName, "-Path", quote(fixed), "-SizeBytes", fixedDiskSize, "-Fixed"); err != nil {
 		return "", err
 	}
 
@@ -478,12 +494,12 @@ func (d *Driver) generateDiskImage() (string, error) {
 	}
 	file.Close()
 
-	if err := cmd("Hyper-V\\Convert-VHD", "-Path", quote(fixed), "-DestinationPath", quote(diskImage), "-VHDType", "Dynamic", "-DeleteSource"); err != nil {
+	if err := cmd("Hyper-V\\Convert-VHD", "-ComputerName", d.ComputerName, "-Path", quote(fixed), "-DestinationPath", quote(diskImage), "-VHDType", "Dynamic", "-DeleteSource"); err != nil {
 		return "", err
 	}
 
 	if isWindowsAdmin {
-		if err := cmd("Hyper-V\\Resize-VHD", "-Path", quote(diskImage), "-SizeBytes", toMb(d.DiskSize)); err != nil {
+		if err := cmd("Hyper-V\\Resize-VHD", "-ComputerName", d.ComputerName, "-Path", quote(diskImage), "-SizeBytes", toMb(d.DiskSize)); err != nil {
 			return "", err
 		}
 	}
