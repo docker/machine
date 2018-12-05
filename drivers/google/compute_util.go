@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/docker/machine/drivers/driverutil"
 	"github.com/docker/machine/libmachine/log"
 	raw "google.golang.org/api/compute/v1"
@@ -39,6 +40,8 @@ type ComputeUtil struct {
 	SwarmMaster       bool
 	SwarmHost         string
 	openPorts         []string
+
+	operationBackoffFactory *backoffFactory
 }
 
 const (
@@ -61,23 +64,24 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 	}
 
 	return &ComputeUtil{
-		zone:              driver.Zone,
-		instanceName:      driver.MachineName,
-		userName:          driver.SSHUser,
-		project:           driver.Project,
-		diskTypeURL:       driver.DiskType,
-		address:           driver.Address,
-		network:           driver.Network,
-		subnetwork:        driver.Subnetwork,
-		preemptible:       driver.Preemptible,
-		useInternalIP:     driver.UseInternalIP,
-		useInternalIPOnly: driver.UseInternalIPOnly,
-		service:           service,
-		zoneURL:           apiURL + driver.Project + "/zones/" + driver.Zone,
-		globalURL:         apiURL + driver.Project + "/global",
-		SwarmMaster:       driver.SwarmMaster,
-		SwarmHost:         driver.SwarmHost,
-		openPorts:         driver.OpenPorts,
+		zone:                    driver.Zone,
+		instanceName:            driver.MachineName,
+		userName:                driver.SSHUser,
+		project:                 driver.Project,
+		diskTypeURL:             driver.DiskType,
+		address:                 driver.Address,
+		network:                 driver.Network,
+		subnetwork:              driver.Subnetwork,
+		preemptible:             driver.Preemptible,
+		useInternalIP:           driver.UseInternalIP,
+		useInternalIPOnly:       driver.UseInternalIPOnly,
+		service:                 service,
+		zoneURL:                 apiURL + driver.Project + "/zones/" + driver.Zone,
+		globalURL:               apiURL + driver.Project + "/global",
+		SwarmMaster:             driver.SwarmMaster,
+		SwarmHost:               driver.SwarmHost,
+		openPorts:               driver.OpenPorts,
+		operationBackoffFactory: driver.OperationBackoffFactory,
 	}, nil
 }
 
@@ -435,6 +439,15 @@ func (c *ComputeUtil) startInstance() error {
 
 // waitForOp waits for the operation to finish.
 func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
+	var next time.Duration
+
+	if c.operationBackoffFactory == nil {
+		return errors.New("operationBackoffFactory is not defined")
+	}
+
+	b := c.operationBackoffFactory.create()
+	b.Reset()
+
 	for {
 		op, err := opGetter()
 		if err != nil {
@@ -444,12 +457,18 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 		log.Debugf("Operation %q status: %s", op.Name, op.Status)
 		if op.Status == "DONE" {
 			if op.Error != nil {
-				return fmt.Errorf("Operation error: %v", *op.Error.Errors[0])
+				return fmt.Errorf("operation error: %v", *op.Error.Errors[0])
 			}
 			break
 		}
-		time.Sleep(1 * time.Second)
+
+		if next = b.NextBackOff(); next == backoff.Stop {
+			return errors.New("maximum backoff elapsed time exceeded")
+		}
+
+		time.Sleep(next)
 	}
+
 	return nil
 }
 
