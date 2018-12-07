@@ -40,6 +40,7 @@ type Driver struct {
 	*drivers.BaseDriver
 	Zone              string
 	MachineType       string
+	MinCPUPlatform    string
 	MachineImage      string
 	DiskType          string
 	Address           string
@@ -70,6 +71,7 @@ const (
 	defaultDiskSize       = 10
 	defaultNetwork        = "default"
 	defaultSubnetwork     = ""
+	defaultMinCPUPlatform = ""
 
 	defaultGoogleOperationBackoffInitialInterval     = 1
 	defaultGoogleOperationBackoffRandomizationFactor = "0.5"
@@ -93,6 +95,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "GCE Machine Type",
 			Value:  defaultMachineType,
 			EnvVar: "GOOGLE_MACHINE_TYPE",
+		},
+		mcnflag.StringFlag{
+			Name:   "google-min-cpu-platform",
+			Usage:  "Minimal CPU Platform for created VM (use friendly name e.g. 'Intel Sandy Bridge')",
+			EnvVar: "GOOGLE_MIN_CPU_PLATFORM",
+			Value:  defaultMinCPUPlatform,
 		},
 		mcnflag.StringFlag{
 			Name:   "google-machine-image",
@@ -221,6 +229,7 @@ func NewDriver(machineName string, storePath string) *Driver {
 		Network:        defaultNetwork,
 		Subnetwork:     defaultSubnetwork,
 		ServiceAccount: defaultServiceAccount,
+		MinCPUPlatform: defaultMinCPUPlatform,
 		Scopes:         defaultScopes,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultUser,
@@ -259,6 +268,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UseExisting = flags.Bool("google-use-existing")
 	if !d.UseExisting {
 		d.MachineType = flags.String("google-machine-type")
+		d.MinCPUPlatform = flags.String("google-min-cpu-platform")
 		d.MachineImage = flags.String("google-machine-image")
 		d.MachineImage = strings.TrimPrefix(d.MachineImage, "https://www.googleapis.com/compute/v1/projects/")
 		d.DiskSize = flags.Int("google-disk-size")

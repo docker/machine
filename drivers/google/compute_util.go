@@ -40,6 +40,7 @@ type ComputeUtil struct {
 	SwarmMaster       bool
 	SwarmHost         string
 	openPorts         []string
+	minCPUPlatform    string
 
 	operationBackoffFactory *backoffFactory
 }
@@ -82,6 +83,7 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		SwarmHost:               driver.SwarmHost,
 		openPorts:               driver.OpenPorts,
 		operationBackoffFactory: driver.OperationBackoffFactory,
+		minCPUPlatform:          driver.MinCPUPlatform,
 	}, nil
 }
 
@@ -248,9 +250,10 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 	}
 
 	instance := &raw.Instance{
-		Name:        c.instanceName,
-		Description: "docker host vm",
-		MachineType: c.zoneURL + "/machineTypes/" + d.MachineType,
+		Name:           c.instanceName,
+		Description:    "docker host vm",
+		MachineType:    c.zoneURL + "/machineTypes/" + d.MachineType,
+		MinCpuPlatform: c.minCPUPlatform,
 		Disks: []*raw.AttachedDisk{
 			{
 				Boot:       true,
