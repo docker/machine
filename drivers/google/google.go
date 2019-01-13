@@ -26,6 +26,7 @@ type Driver struct {
 	Preemptible       bool
 	UseInternalIP     bool
 	UseInternalIPOnly bool
+	ServiceAccount    string
 	Scopes            string
 	DiskSize          int
 	Project           string
@@ -35,15 +36,16 @@ type Driver struct {
 }
 
 const (
-	defaultZone        = "us-central1-a"
-	defaultUser        = "docker-user"
-	defaultMachineType = "n1-standard-1"
-	defaultImageName   = "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
-	defaultScopes      = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
-	defaultDiskType    = "pd-standard"
-	defaultDiskSize    = 10
-	defaultNetwork     = "default"
-	defaultSubnetwork  = ""
+	defaultZone           = "us-central1-a"
+	defaultUser           = "docker-user"
+	defaultMachineType    = "n1-standard-1"
+	defaultImageName      = "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
+	defaultServiceAccount = "default"
+	defaultScopes         = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
+	defaultDiskType       = "pd-standard"
+	defaultDiskSize       = 10
+	defaultNetwork        = "default"
+	defaultSubnetwork     = ""
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -78,6 +80,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "google-project",
 			Usage:  "GCE Project",
 			EnvVar: "GOOGLE_PROJECT",
+		},
+		mcnflag.StringFlag{
+			Name:   "google-service-account",
+			Usage:  "GCE Service Account for the VM (email address)",
+			Value:  defaultServiceAccount,
+			EnvVar: "GOOGLE_SERVICE_ACCOUNT",
 		},
 		mcnflag.StringFlag{
 			Name:   "google-scopes",
@@ -150,14 +158,15 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 // NewDriver creates a Driver with the specified storePath.
 func NewDriver(machineName string, storePath string) *Driver {
 	return &Driver{
-		Zone:         defaultZone,
-		DiskType:     defaultDiskType,
-		DiskSize:     defaultDiskSize,
-		MachineType:  defaultMachineType,
-		MachineImage: defaultImageName,
-		Network:      defaultNetwork,
-		Subnetwork:   defaultSubnetwork,
-		Scopes:       defaultScopes,
+		Zone:           defaultZone,
+		DiskType:       defaultDiskType,
+		DiskSize:       defaultDiskSize,
+		MachineType:    defaultMachineType,
+		MachineImage:   defaultImageName,
+		Network:        defaultNetwork,
+		Subnetwork:     defaultSubnetwork,
+		ServiceAccount: defaultServiceAccount,
+		Scopes:         defaultScopes,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultUser,
 			MachineName: machineName,
@@ -205,6 +214,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Preemptible = flags.Bool("google-preemptible")
 		d.UseInternalIP = flags.Bool("google-use-internal-ip") || flags.Bool("google-use-internal-ip-only")
 		d.UseInternalIPOnly = flags.Bool("google-use-internal-ip-only")
+		d.ServiceAccount = flags.String("google-service-account")
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
 		d.OpenPorts = flags.StringSlice("google-open-port")

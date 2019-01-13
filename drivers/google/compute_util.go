@@ -265,7 +265,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		},
 		ServiceAccounts: []*raw.ServiceAccount{
 			{
-				Email:  "default",
+				Email:  d.ServiceAccount,
 				Scopes: strings.Split(d.Scopes, ","),
 			},
 		},
