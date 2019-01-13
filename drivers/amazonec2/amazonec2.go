@@ -39,6 +39,7 @@ const (
 	defaultVolumeType           = "gp2"
 	defaultZone                 = "a"
 	defaultSecurityGroup        = machineSecurityGroupName
+	defaultSSHPort              = 22
 	defaultSSHUser              = "ubuntu"
 	defaultSpotPrice            = "0.50"
 	defaultBlockDurationMinutes = 0
@@ -211,9 +212,15 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "AWS IAM Instance Profile",
 			EnvVar: "AWS_INSTANCE_PROFILE",
 		},
+		mcnflag.IntFlag{
+			Name:   "amazonec2-ssh-port",
+			Usage:  "SSH port",
+			Value:  defaultSSHPort,
+			EnvVar: "AWS_SSH_PORT",
+		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-ssh-user",
-			Usage:  "Set the name of the ssh user",
+			Usage:  "SSH username",
 			Value:  defaultSSHUser,
 			EnvVar: "AWS_SSH_USER",
 		},
@@ -294,6 +301,7 @@ func NewDriver(hostName, storePath string) *Driver {
 		SpotPrice:            defaultSpotPrice,
 		BlockDurationMinutes: defaultBlockDurationMinutes,
 		BaseDriver: &drivers.BaseDriver{
+			SSHPort:     defaultSSHPort,
 			SSHUser:     defaultSSHUser,
 			MachineName: hostName,
 			StorePath:   storePath,
@@ -363,7 +371,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.VolumeType = flags.String("amazonec2-volume-type")
 	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SSHUser = flags.String("amazonec2-ssh-user")
-	d.SSHPort = 22
+	d.SSHPort = flags.Int("amazonec2-ssh-port")
 	d.PrivateIPOnly = flags.Bool("amazonec2-private-address-only")
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
@@ -837,6 +845,14 @@ func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
 
+func (d *Driver) GetSSHPort() (int, error) {
+	if d.SSHPort == 0 {
+		d.SSHPort = defaultSSHPort
+	}
+
+	return d.SSHPort, nil
+}
+
 func (d *Driver) GetSSHUsername() string {
 	if d.SSHUser == "" {
 		d.SSHUser = defaultSSHUser
@@ -1161,11 +1177,11 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 
 	perms := []*ec2.IpPermission{}
 
-	if !hasPorts["22/tcp"] {
+	if !hasPorts[fmt.Sprintf("%d/tcp", d.BaseDriver.SSHPort)] {
 		perms = append(perms, &ec2.IpPermission{
 			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(22),
-			ToPort:     aws.Int64(22),
+			FromPort:   aws.Int64(int64(d.BaseDriver.SSHPort)),
+			ToPort:     aws.Int64(int64(d.BaseDriver.SSHPort)),
 			IpRanges:   []*ec2.IpRange{{CidrIp: aws.String(ipRange)}},
 		})
 	}
