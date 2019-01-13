@@ -23,6 +23,28 @@ Provisioning with boot2docker...
 Copying certs to the local machine directory...
 Copying certs to the remote machine...
 Setting Docker configuration on the remote daemon...
+This branch has conflicts that must be resolved
+Only those with write access to this repository can merge pull requests.
+Conflicting files
+Dockerfile
+docs/drivers/aws.md
+docs/drivers/azure.md
+docs/drivers/digital-ocean.md
+docs/drivers/exoscale.md
+docs/drivers/gce.md
+docs/drivers/generic.md
+docs/drivers/hyper-v.md
+docs/drivers/openstack.md
+docs/drivers/rackspace.md
+docs/drivers/soft-layer.md
+docs/drivers/virtualbox.md
+docs/drivers/vm-cloud.md
+docs/drivers/vm-fusion.md
+docs/drivers/vsphere.md
+docs/get-started.md
+docs/install-machine.md
+libmachine/provision/redhat.go
+version/version.go
 Checking connection to Docker...
 Docker is up and running!
 To see how to connect Docker to this machine, run: docker-machine env default
