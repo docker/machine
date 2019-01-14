@@ -155,12 +155,12 @@
   revision = "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 
 [[projects]]
-  digest = "1:7515ee368d2554cccaecdb552cf602e7a555139ffe45aad7500294fc14bcf2e1"
+  digest = "1:03ca4baaa08ee80f7e89ad64e2ef7d9b322cc81e59ced153621538d712397ec5"
   name = "github.com/exoscale/egoscale"
   packages = ["."]
   pruneopts = "UT"
-  revision = "432a702ab7d709538572f9a2a42eaf0ca0691698"
-  version = "v0.9.23"
+  revision = "ada2a6b6341fc08195d64e083e0869baa2e42f43"
+  version = "v0.13.2"
 
 [[projects]]
   digest = "1:ad48c8fd2fb8c747d8798f19890f70b18091196274a773550a9e5dffa9e165d1"
@@ -190,14 +190,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "1a4a6f06a1c643c8fbd339bd61d980960627d09e"
-
-[[projects]]
-  branch = "master"
-  digest = "1:5c3444689562053b027ef3b96372e306adbe0d7d109b6cdd48d01eb80f8bab14"
-  name = "github.com/jinzhu/copier"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "7e38e58719c33e0d44d585c4ab477a30f8cb82dd"
 
 [[projects]]
   digest = "1:b87714e57a511d88f307aba7d5b63522da12bed0a050889c81272fc50f71100e"
@@ -256,6 +248,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "f661dd4754aa5c52da85d04b5871ee0e11f4b59c"
+
+[[projects]]
+  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:5622116f2c79239f2d25d47b881e14f96a8b8c17b63b8a8326a38ee1a332b007"

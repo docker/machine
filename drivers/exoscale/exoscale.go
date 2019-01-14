@@ -40,14 +40,14 @@ type Driver struct {
 	PublicKey        string
 	UserDataFile     string
 	UserData         []byte
-	ID               string `json:"Id"`
+	ID               *egoscale.UUID `json:"Id"`
 }
 
 const (
 	defaultAPIEndpoint       = "https://api.exoscale.ch/compute"
 	defaultInstanceProfile   = "Small"
 	defaultDiskSize          = 50
-	defaultImage             = "Linux Ubuntu 16.04 LTS 64-bit"
+	defaultImage             = "Linux Ubuntu 18.04 LTS 64-bit"
 	defaultAvailabilityZone  = "CH-DK-2"
 	defaultSSHUser           = "root"
 	defaultSecurityGroup     = "docker-machine"
@@ -250,11 +250,8 @@ func (d *Driver) virtualMachine() (*egoscale.VirtualMachine, error) {
 		ID: d.ID,
 	}
 
-	if err := cs.GetWithContext(context.TODO(), virtualMachine); err != nil {
-		return nil, err
-	}
-
-	return virtualMachine, nil
+	vm, err := cs.GetWithContext(context.TODO(), virtualMachine)
+	return vm.(*egoscale.VirtualMachine), err
 }
 
 // GetState returns a github.com/machine/libmachine/state.State representing the state of the host (running, stopped, etc.)
@@ -297,13 +294,18 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 	if err != nil {
 		return nil, err
 	}
-	sg := resp.(*egoscale.CreateSecurityGroupResponse).SecurityGroup
+	sg := resp.(*egoscale.SecurityGroup)
+
+	cidrList := []egoscale.CIDR{
+		*egoscale.MustParseCIDR("0.0.0.0/0"),
+		*egoscale.MustParseCIDR("::/0"),
+	}
 
 	requests := []egoscale.AuthorizeSecurityGroupIngress{
 		{
 			SecurityGroupID: sg.ID,
 			Description:     "SSH",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        cidrList,
 			Protocol:        "TCP",
 			StartPort:       22,
 			EndPort:         22,
@@ -311,15 +313,23 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 		{
 			SecurityGroupID: sg.ID,
 			Description:     "Ping",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        []egoscale.CIDR{*egoscale.MustParseCIDR("0.0.0.0/0")},
 			Protocol:        "ICMP",
 			IcmpType:        8,
 			IcmpCode:        0,
 		},
 		{
 			SecurityGroupID: sg.ID,
+			Description:     "Ping6",
+			CIDRList:        []egoscale.CIDR{*egoscale.MustParseCIDR("::/0")},
+			Protocol:        "ICMPv6",
+			IcmpType:        128,
+			IcmpCode:        0,
+		},
+		{
+			SecurityGroupID: sg.ID,
 			Description:     "Docker",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        cidrList,
 			Protocol:        "TCP",
 			StartPort:       2376,
 			EndPort:         2377,
@@ -327,7 +337,7 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 		{
 			SecurityGroupID: sg.ID,
 			Description:     "Legacy Standalone Swarm",
-			CidrList:        []string{"0.0.0.0/0"},
+			CIDRList:        cidrList,
 			Protocol:        "TCP",
 			StartPort:       3376,
 			EndPort:         3377,
@@ -338,10 +348,9 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 			Protocol:        "TCP",
 			StartPort:       7946,
 			EndPort:         7946,
-			UserSecurityGroupList: []egoscale.UserSecurityGroup{{
-				Group:   sg.Name,
-				Account: sg.Account,
-			}},
+			UserSecurityGroupList: []egoscale.UserSecurityGroup{
+				sg.UserSecurityGroup(),
+			},
 		},
 		{
 			SecurityGroupID: sg.ID,
@@ -349,10 +358,9 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 			Protocol:        "UDP",
 			StartPort:       7946,
 			EndPort:         7946,
-			UserSecurityGroupList: []egoscale.UserSecurityGroup{{
-				Group:   sg.Name,
-				Account: sg.Account,
-			}},
+			UserSecurityGroupList: []egoscale.UserSecurityGroup{
+				sg.UserSecurityGroup(),
+			},
 		},
 		{
 			SecurityGroupID: sg.ID,
@@ -360,10 +368,9 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 			Protocol:        "UDP",
 			StartPort:       4789,
 			EndPort:         4789,
-			UserSecurityGroupList: []egoscale.UserSecurityGroup{{
-				Group:   sg.Name,
-				Account: sg.Account,
-			}},
+			UserSecurityGroupList: []egoscale.UserSecurityGroup{
+				sg.UserSecurityGroup(),
+			},
 		},
 	}
 
@@ -374,7 +381,7 @@ func (d *Driver) createDefaultSecurityGroup(group string) (*egoscale.SecurityGro
 		}
 	}
 
-	return &sg, nil
+	return sg, nil
 }
 
 func (d *Driver) createDefaultAffinityGroup(group string) (*egoscale.AffinityGroup, error) {
@@ -389,8 +396,8 @@ func (d *Driver) createDefaultAffinityGroup(group string) (*egoscale.AffinityGro
 		return nil, err
 	}
 
-	affinityGroup := resp.(*egoscale.CreateAffinityGroupResponse).AffinityGroup
-	return &affinityGroup, nil
+	affinityGroup := resp.(*egoscale.AffinityGroup)
+	return affinityGroup, nil
 }
 
 // Create creates the VM instance acting as the docker host
@@ -403,25 +410,24 @@ func (d *Driver) Create() error {
 	log.Infof("Querying exoscale for the requested parameters...")
 	client := egoscale.NewClient(d.URL, d.APIKey, d.APISecretKey)
 
-	resp, err := client.RequestWithContext(context.TODO(), &egoscale.ListZones{
+	zones, err := client.ListWithContext(context.TODO(), &egoscale.Zone{
 		Name: d.AvailabilityZone,
 	})
 	if err != nil {
 		return err
 	}
 
-	zones := resp.(*egoscale.ListZonesResponse)
-	if len(zones.Zone) != 1 {
+	if len(zones) != 1 {
 		return fmt.Errorf("Availability zone %v doesn't exist",
 			d.AvailabilityZone)
 	}
-	zone := zones.Zone[0].ID
+	zone := zones[0].(*egoscale.Zone).ID
 	log.Debugf("Availability zone %v = %s", d.AvailabilityZone, zone)
 
 	// Image
 	template := egoscale.Template{
 		IsFeatured: true,
-		ZoneID:     "1", // GVA2
+		ZoneID:     zone,
 	}
 
 	templates, err := client.ListWithContext(context.TODO(), &template)
@@ -458,7 +464,7 @@ func (d *Driver) Create() error {
 			}
 		}
 	}
-	if template.ID == "" {
+	if template.ID == nil {
 		return fmt.Errorf("Unable to find image %v", d.Image)
 	}
 
@@ -469,83 +475,88 @@ func (d *Driver) Create() error {
 	log.Debugf("Image %v(10) = %s (%s)", d.Image, template.ID, d.SSHUser)
 
 	// Profile UUID
-	resp, err = client.RequestWithContext(context.TODO(), &egoscale.ListServiceOfferings{
+	profiles, err := client.ListWithContext(context.TODO(), &egoscale.ServiceOffering{
 		Name: d.InstanceProfile,
 	})
 	if err != nil {
 		return err
 	}
-	profiles := resp.(*egoscale.ListServiceOfferingsResponse)
-	if len(profiles.ServiceOffering) != 1 {
+	if len(profiles) != 1 {
 		return fmt.Errorf("Unable to find the %s profile",
 			d.InstanceProfile)
 	}
-	profile := profiles.ServiceOffering[0].ID
+	profile := profiles[0].(*egoscale.ServiceOffering).ID
 	log.Debugf("Profile %v = %s", d.InstanceProfile, profile)
 
 	// Security groups
-	sgs := make([]string, 0, len(d.SecurityGroups))
+	sgs := make([]egoscale.UUID, 0, len(d.SecurityGroups))
 	for _, group := range d.SecurityGroups {
 		if group == "" {
 			continue
 		}
 
-		sg := &egoscale.SecurityGroup{Name: group}
-		if err := client.Get(sg); err != nil {
-			if _, ok := err.(*egoscale.ErrorResponse); !ok {
-				return err
+		var sgID *egoscale.UUID
+		resp, errGet := client.Get(egoscale.SecurityGroup{Name: group})
+		if errGet != nil {
+			if _, ok := errGet.(*egoscale.ErrorResponse); !ok {
+				return errGet
 			}
 			log.Infof("Security group %v does not exist. Creating it...", group)
-			securityGroup, err := d.createDefaultSecurityGroup(group)
-			if err != nil {
-				return err
+			securityGroup, errCreate := d.createDefaultSecurityGroup(group)
+			if errCreate != nil {
+				return errCreate
 			}
-			sg.ID = securityGroup.ID
+
+			sgID = securityGroup.ID
+		} else {
+			sgID = resp.(*egoscale.VirtualMachine).ID
 		}
 
-		log.Debugf("Security group %v = %s", group, sg.ID)
-		sgs = append(sgs, sg.ID)
+		log.Debugf("Security group %v = %s", group, sgID)
+		sgs = append(sgs, *sgID)
 	}
 
 	// Affinity Groups
-	ags := make([]string, 0, len(d.AffinityGroups))
+	ags := make([]egoscale.UUID, 0, len(d.AffinityGroups))
 	for _, group := range d.AffinityGroups {
 		if group == "" {
 			continue
 		}
-		ag := &egoscale.AffinityGroup{Name: group}
-		if err := client.Get(ag); err != nil {
-			if _, ok := err.(*egoscale.ErrorResponse); !ok {
+		var agID *egoscale.UUID
+		resp, errGet := client.Get(egoscale.AffinityGroup{Name: group})
+		if errGet != nil {
+			if _, ok := errGet.(*egoscale.ErrorResponse); !ok {
 				return err
 			}
 			log.Infof("Affinity Group %v does not exist, create it", group)
-			affinityGroup, err := d.createDefaultAffinityGroup(group)
-			if err != nil {
-				return err
+			affinityGroup, errCreate := d.createDefaultAffinityGroup(group)
+			if errCreate != nil {
+				return errCreate
 			}
-			ag.ID = affinityGroup.ID
+			agID = affinityGroup.ID
+		} else {
+			agID = resp.(*egoscale.AffinityGroup).ID
 		}
-		log.Debugf("Affinity group %v = %s", group, ag.ID)
-		ags = append(ags, ag.ID)
+		log.Debugf("Affinity group %v = %s", group, agID)
+		ags = append(ags, *agID)
 	}
 
 	// SSH key pair
 	if d.SSHKey == "" {
-		var keyPairName string
-		keyPairName = fmt.Sprintf("docker-machine-%s", d.MachineName)
+		keyPairName := fmt.Sprintf("docker-machine-%s", d.MachineName)
 		log.Infof("Generate an SSH keypair...")
-		resp, err := client.RequestWithContext(context.TODO(), &egoscale.CreateSSHKeyPair{
+		resp, errCreate := client.RequestWithContext(context.TODO(), &egoscale.CreateSSHKeyPair{
 			Name: keyPairName,
 		})
-		if err != nil {
-			return fmt.Errorf("SSH Key pair creation failed %s", err)
+		if errCreate != nil {
+			return fmt.Errorf("SSH Key pair creation failed %s", errCreate)
 		}
-		keyPair := resp.(*egoscale.CreateSSHKeyPairResponse).KeyPair
-		if err = os.MkdirAll(filepath.Dir(d.GetSSHKeyPath()), 0750); err != nil {
-			return fmt.Errorf("Cannot create the folder to store the SSH private key. %s", err)
+		keyPair := resp.(*egoscale.SSHKeyPair)
+		if errM := os.MkdirAll(filepath.Dir(d.GetSSHKeyPath()), 0750); errM != nil {
+			return fmt.Errorf("Cannot create the folder to store the SSH private key. %s", errM)
 		}
-		if err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(keyPair.PrivateKey), 0600); err != nil {
-			return fmt.Errorf("SSH private key could not be written. %s", err)
+		if errW := ioutil.WriteFile(d.GetSSHKeyPath(), []byte(keyPair.PrivateKey), 0600); errW != nil {
+			return fmt.Errorf("SSH private key could not be written. %s", errW)
 		}
 		d.KeyPair = keyPairName
 	} else {
@@ -556,16 +567,16 @@ func (d *Driver) Create() error {
 			usr, _ := user.Current()
 			sshKey = filepath.Join(usr.HomeDir, sshKey[2:])
 		} else {
-			var err error
-			if sshKey, err = filepath.Abs(sshKey); err != nil {
-				return err
+			var errA error
+			if sshKey, errA = filepath.Abs(sshKey); errA != nil {
+				return errA
 			}
 		}
 
 		// Sending the SSH public key through the cloud-init config
-		pubKey, err := ioutil.ReadFile(sshKey + ".pub")
-		if err != nil {
-			return fmt.Errorf("Cannot read SSH public key %s", err)
+		pubKey, errR := ioutil.ReadFile(sshKey + ".pub")
+		if errR != nil {
+			return fmt.Errorf("Cannot read SSH public key %s", errR)
 		}
 
 		sshAuthorizedKeys := `
@@ -574,11 +585,11 @@ ssh_authorized_keys:
 		cloudInit = bytes.Join([][]byte{cloudInit, []byte(sshAuthorizedKeys), pubKey}, []byte(""))
 
 		// Copying the private key into docker-machine
-		if err := mcnutils.CopyFile(sshKey, d.GetSSHKeyPath()); err != nil {
-			return fmt.Errorf("Unable to copy SSH file: %s", err)
+		if errCopy := mcnutils.CopyFile(sshKey, d.GetSSHKeyPath()); errCopy != nil {
+			return fmt.Errorf("Unable to copy SSH file: %s", errCopy)
 		}
-		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
-			return fmt.Errorf("Unable to set permissions on the SSH file: %s", err)
+		if errChmod := os.Chmod(d.GetSSHKeyPath(), 0600); errChmod != nil {
+			return fmt.Errorf("Unable to set permissions on the SSH file: %s", errChmod)
 		}
 	}
 
@@ -591,6 +602,7 @@ ssh_authorized_keys:
 	encodedUserData := base64.StdEncoding.EncodeToString(d.UserData)
 
 	req := &egoscale.DeployVirtualMachine{
+		Details:           map[string]string{"ip6": "true"},
 		TemplateID:        template.ID,
 		ServiceOfferingID: profile,
 		UserData:          encodedUserData,
@@ -602,15 +614,15 @@ ssh_authorized_keys:
 		SecurityGroupIDs:  sgs,
 		AffinityGroupIDs:  ags,
 	}
-	log.Infof("Deploy %#v", req)
-	resp, err = client.RequestWithContext(context.TODO(), req)
+	log.Infof("Deploying %s...", req.DisplayName)
+	resp, err := client.RequestWithContext(context.TODO(), req)
 	if err != nil {
 		return err
 	}
 
-	vm := resp.(*egoscale.DeployVirtualMachineResponse).VirtualMachine
+	vm := resp.(*egoscale.VirtualMachine)
 
-	IPAddress := vm.Nic[0].IPAddress
+	IPAddress := vm.IP()
 	if IPAddress != nil {
 		d.IPAddress = IPAddress.String()
 	}
@@ -687,7 +699,7 @@ func (d *Driver) Remove() error {
 	}
 
 	// Destroy the virtual machine
-	if d.ID != "" {
+	if d.ID != nil {
 		vm := &egoscale.VirtualMachine{ID: d.ID}
 		if err := client.DeleteWithContext(context.TODO(), vm); err != nil {
 			return err

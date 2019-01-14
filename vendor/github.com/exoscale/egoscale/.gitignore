@@ -1,4 +1,4 @@
-build/
-exo
+.token
+dist
+ops.asc
 vendor
-.gopath
