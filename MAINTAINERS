@@ -13,9 +13,12 @@
 		people = [
 			"dgageot",
 			"jeanlaurent",
-			"shin-",
 		]
 
+	[Org.Alumni]
+		people = [
+			"shin-",
+		]
 [people]
 
 # A reference list of all people associated with the project.
@@ -36,5 +39,5 @@
 
 	[people.shin-]
 	Name = "Joffrey F"
-	Email = "joffrey@docker.com"
+	Email = "f.joffrey@gmail.com"
 	GitHub = "shin-"
