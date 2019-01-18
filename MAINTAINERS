@@ -27,11 +27,6 @@
 
 	# ADD YOURSELF HERE IN ALPHABETICAL ORDER
 
-	[people.dgageot]
-	Name = "David Gageot"
-	Email = "david.gageot@docker.com"
-	GitHub = "dgageot"
-
 	[people.jeanlaurent]
 	Name = "Jean-Laurent de Morlhon"
 	Email = "jeanlaurent@docker.com"
