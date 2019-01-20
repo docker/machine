@@ -30,6 +30,10 @@
   name = "github.com/vmware/govmomi"
   version = "0.6.2"
 
+[[constraint]]
+  name = "github.com/intel-go/cpuid"
+  branch = "master"
+
 [prune]
   go-tests = true
   unused-packages = true
