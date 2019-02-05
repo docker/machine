@@ -136,7 +136,7 @@ func (f *DefaultRPCClientDriverFactory) NewRPCClientDriver(driverName string, ra
 
 	addr, err := p.Address()
 	if err != nil {
-		return nil, fmt.Errorf("Error attempting to get plugin server address for RPC: %s", err)
+		return nil, fmt.Errorf("error attempting to get plugin server address for RPC: %s", err)
 	}
 
 	rpcclient, err := rpc.DialHTTP("tcp", addr)
@@ -166,7 +166,7 @@ func (f *DefaultRPCClientDriverFactory) NewRPCClientDriver(driverName string, ra
 	}
 
 	if serverVersion != version.APIVersion {
-		return nil, fmt.Errorf("Driver binary uses an incompatible API version (%d)", serverVersion)
+		return nil, fmt.Errorf("driver binary uses an incompatible API version (%d)", serverVersion)
 	}
 	log.Debug("Using API Version ", serverVersion)
 

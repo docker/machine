@@ -57,7 +57,7 @@ func AuthenticateDeviceFlow(env azure.Environment, subscriptionID string) (*azur
 	}
 	oauthCfg, err := env.OAuthConfigForTenant(tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to obtain oauth config for azure environment: %v", err)
+		return nil, fmt.Errorf("failed to obtain oauth config for azure environment: %v", err)
 	}
 
 	tokenPath := tokenCachePath(tenantID)
@@ -99,7 +99,7 @@ func AuthenticateDeviceFlow(env azure.Environment, subscriptionID string) (*azur
 			log.Debug(fmt.Sprintf("Error: %v", err))
 			log.Debug(fmt.Sprintf("Deleting %s", tokenPath))
 			if err := os.RemoveAll(tokenPath); err != nil {
-				return nil, fmt.Errorf("Error deleting stale token file: %v", err)
+				return nil, fmt.Errorf("error deleting stale token file: %v", err)
 			}
 		} else {
 			log.Debug("Token works.")
@@ -129,12 +129,12 @@ func AuthenticateServicePrincipal(env azure.Environment, subscriptionID, spID, s
 	}
 	oauthCfg, err := env.OAuthConfigForTenant(tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to obtain oauth config for azure environment: %v", err)
+		return nil, fmt.Errorf("failed to obtain oauth config for azure environment: %v", err)
 	}
 
 	spt, err := azure.NewServicePrincipalToken(*oauthCfg, spID, spPassword, getScope(env))
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create service principal token: %+v", err)
+		return nil, fmt.Errorf("failed to create service principal token: %+v", err)
 	}
 	return spt, nil
 }
@@ -153,12 +153,12 @@ func tokenFromFile(oauthCfg azure.OAuthConfig, tokenPath, clientID, resource str
 
 	token, err := azure.LoadToken(tokenPath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load token from file: %v", err)
+		return nil, fmt.Errorf("failed to load token from file: %v", err)
 	}
 
 	spt, err := azure.NewServicePrincipalTokenFromManualToken(oauthCfg, clientID, resource, *token, callback)
 	if err != nil {
-		return nil, fmt.Errorf("Error constructing service principal token: %v", err)
+		return nil, fmt.Errorf("error constructing service principal token: %v", err)
 	}
 	return spt, nil
 }
@@ -171,7 +171,7 @@ func deviceFlowAuth(oauthCfg azure.OAuthConfig, clientID, resource string) (*azu
 	cl := oauthClient()
 	deviceCode, err := azure.InitiateDeviceAuth(&cl, oauthCfg, clientID, resource)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to start device auth: %v", err)
+		return nil, fmt.Errorf("failed to start device auth: %v", err)
 	}
 	log.Debug("Retrieved device code.", logutil.Fields{
 		"expires_in": to.Int64(deviceCode.ExpiresIn),
@@ -184,12 +184,12 @@ func deviceFlowAuth(oauthCfg azure.OAuthConfig, clientID, resource string) (*azu
 
 	token, err := azure.WaitForUserCompletion(&cl, deviceCode)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to complete device auth: %v", err)
+		return nil, fmt.Errorf("failed to complete device auth: %v", err)
 	}
 
 	spt, err := azure.NewServicePrincipalTokenFromManualToken(oauthCfg, clientID, resource, *token)
 	if err != nil {
-		return nil, fmt.Errorf("Error constructing service principal token: %v", err)
+		return nil, fmt.Errorf("error constructing service principal token: %v", err)
 	}
 	return spt, nil
 }
@@ -233,7 +233,7 @@ func validateToken(env azure.Environment, token *azure.ServicePrincipalToken) er
 	c.Authorizer = token
 	_, err := c.List()
 	if err != nil {
-		return fmt.Errorf("Token validity check failed: %v", err)
+		return fmt.Errorf("token validity check failed: %v", err)
 	}
 	return nil
 }

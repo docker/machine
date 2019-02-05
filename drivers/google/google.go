@@ -238,7 +238,7 @@ func (d *Driver) PreCreateCheck() error {
 	log.Infof("Check that the project exists")
 
 	if _, err = c.service.Projects.Get(d.Project).Do(); err != nil {
-		return fmt.Errorf("Project with ID %q not found. %v", d.Project, err)
+		return fmt.Errorf("project with ID %q not found. %v", d.Project, err)
 	}
 
 	// Check if the instance already exists. There will be an error if the instance

@@ -444,7 +444,7 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 		log.Debugf("Operation %q status: %s", op.Name, op.Status)
 		if op.Status == "DONE" {
 			if op.Error != nil {
-				return fmt.Errorf("Operation error: %v", *op.Error.Errors[0])
+				return fmt.Errorf("operation error: %v", *op.Error.Errors[0])
 			}
 			break
 		}

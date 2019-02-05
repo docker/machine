@@ -139,7 +139,7 @@ func (d *Driver) GetURL() (string, error) {
 func (d *Driver) GetState() (state.State, error) {
 	stdout, err := cmdOut("(", "Hyper-V\\Get-VM", d.MachineName, ").state")
 	if err != nil {
-		return state.None, fmt.Errorf("Failed to find the VM status")
+		return state.None, fmt.Errorf("failed to find the VM status")
 	}
 
 	resp := parseLines(stdout)
@@ -429,7 +429,7 @@ func (d *Driver) GetIP() (string, error) {
 
 	resp := parseLines(stdout)
 	if len(resp) < 1 {
-		return "", fmt.Errorf("IP not found")
+		return "", fmt.Errorf("iP not found")
 	}
 
 	return resp[0], nil

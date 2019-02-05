@@ -24,7 +24,7 @@ const (
 
 var (
 	ErrHostLoad           = errors.New("All specified hosts had errors loading their configuration")
-	ErrNoDefault          = fmt.Errorf("Error: No machine name(s) specified and no %q machine exists", defaultMachineName)
+	ErrNoDefault          = fmt.Errorf("error: No machine name(s) specified and no %q machine exists", defaultMachineName)
 	ErrNoMachineSpecified = errors.New("Error: Expected to get one or more machine names as arguments")
 	ErrExpectedOneMachine = errors.New("Error: Expected one machine name as an argument")
 	ErrTooManyArguments   = errors.New("Error: Too many arguments given")
@@ -81,7 +81,7 @@ func targetHost(c CommandLine, api libmachine.API) (string, error) {
 	if len(c.Args()) == 0 {
 		defaultExists, err := api.Exists(defaultMachineName)
 		if err != nil {
-			return "", fmt.Errorf("Error checking if host %q exists: %s", defaultMachineName, err)
+			return "", fmt.Errorf("error checking if host %q exists: %s", defaultMachineName, err)
 		}
 
 		if defaultExists {
@@ -133,7 +133,7 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 
 	for _, h := range hosts {
 		if err := api.Save(h); err != nil {
-			return fmt.Errorf("Error saving host to store: %s", err)
+			return fmt.Errorf("error saving host to store: %s", err)
 		}
 	}
 
@@ -422,7 +422,7 @@ func printIP(h *host.Host) func() error {
 	return func() error {
 		ip, err := h.Driver.GetIP()
 		if err != nil {
-			return fmt.Errorf("Error getting IP address: %s", err)
+			return fmt.Errorf("error getting IP address: %s", err)
 		}
 
 		fmt.Println(ip)

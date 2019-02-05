@@ -188,7 +188,7 @@ func (d *Driver) PreCreateCheck() error {
 		}
 
 		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
-			return fmt.Errorf("SSH key does not exist: %q", d.SSHKey)
+			return fmt.Errorf("sSH key does not exist: %q", d.SSHKey)
 		}
 	}
 
@@ -282,7 +282,7 @@ func (d *Driver) createSSHKey() (*godo.Key, error) {
 	if d.SSHKeyFingerprint != "" {
 		key, resp, err := d.getClient().Keys.GetByFingerprint(context.TODO(), d.SSHKeyFingerprint)
 		if err != nil && resp.StatusCode == 404 {
-			return nil, fmt.Errorf("Digital Ocean SSH key with fingerprint %s doesn't exist", d.SSHKeyFingerprint)
+			return nil, fmt.Errorf("digital Ocean SSH key with fingerprint %s doesn't exist", d.SSHKeyFingerprint)
 		}
 
 		if d.SSHKey == "" {

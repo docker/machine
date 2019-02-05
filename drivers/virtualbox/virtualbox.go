@@ -516,7 +516,7 @@ func (d *Driver) Start() error {
 		log.Infof("Check network to re-create if needed...")
 
 		if hostOnlyAdapter, err = d.setupHostOnlyNetwork(d.MachineName); err != nil {
-			return fmt.Errorf("Error setting up host only network on machine start: %s", err)
+			return fmt.Errorf("error setting up host only network on machine start: %s", err)
 		}
 	}
 
@@ -529,9 +529,9 @@ func (d *Driver) Start() error {
 
 		if err := d.vbm("startvm", d.MachineName, "--type", d.UIType); err != nil {
 			if lines, readErr := d.readVBoxLog(); readErr == nil && len(lines) > 0 {
-				return fmt.Errorf("Unable to start the VM: %s\nDetails: %s", err, lines[len(lines)-1])
+				return fmt.Errorf("unable to start the VM: %s\nDetails: %s", err, lines[len(lines)-1])
 			}
-			return fmt.Errorf("Unable to start the VM: %s", err)
+			return fmt.Errorf("unable to start the VM: %s", err)
 		}
 	case state.Paused:
 		if err := d.vbm("controlvm", d.MachineName, "resume", "--type", d.UIType); err != nil {
@@ -546,7 +546,7 @@ func (d *Driver) Start() error {
 		// Verify that VT-X is not disabled in the started VM
 		vtxIsDisabled, err := d.IsVTXDisabledInTheVM()
 		if err != nil {
-			return fmt.Errorf("Checking if hardware virtualization is enabled failed: %s", err)
+			return fmt.Errorf("checking if hardware virtualization is enabled failed: %s", err)
 		}
 
 		if vtxIsDisabled {
@@ -604,7 +604,7 @@ func (d *Driver) Start() error {
 	d.sleeper.Sleep(5 * time.Second)
 
 	if err := d.vbm("startvm", d.MachineName, "--type", d.UIType); err != nil {
-		return fmt.Errorf("Unable to start the VM: %s", err)
+		return fmt.Errorf("unable to start the VM: %s", err)
 	}
 
 	log.Infof("Waiting for an IP...")
@@ -647,11 +647,11 @@ func (d *Driver) Stop() error {
 // Restart restarts a machine which is known to be running.
 func (d *Driver) Restart() error {
 	if err := d.Stop(); err != nil {
-		return fmt.Errorf("Problem stopping the VM: %s", err)
+		return fmt.Errorf("problem stopping the VM: %s", err)
 	}
 
 	if err := d.Start(); err != nil {
-		return fmt.Errorf("Problem starting the VM: %s", err)
+		return fmt.Errorf("problem starting the VM: %s", err)
 	}
 
 	d.IPAddress = ""
@@ -732,7 +732,7 @@ func (d *Driver) getHostOnlyMACAddress() (string, error) {
 	re = regexp.MustCompile(fmt.Sprintf("(?m)^macaddress%s=\"(.*)\"", adapterNumber))
 	groups = re.FindStringSubmatch(stdout)
 	if len(groups) < 2 {
-		return "", fmt.Errorf("Could not find MAC address for adapter %v", adapterNumber)
+		return "", fmt.Errorf("could not find MAC address for adapter %v", adapterNumber)
 	}
 
 	return strings.ToLower(groups[1]), nil
@@ -765,7 +765,7 @@ func (d *Driver) parseIPForMACFromIPAddr(ipAddrOutput string, macAddress string)
 		}
 	}
 
-	return "", fmt.Errorf("Could not find matching IP for MAC address %v", macAddress)
+	return "", fmt.Errorf("could not find matching IP for MAC address %v", macAddress)
 }
 
 func (d *Driver) GetIP() (string, error) {

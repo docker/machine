@@ -115,7 +115,7 @@ func getInfoForSshfsArg(hostAndPath string, hostInfoLoader HostInfoLoader) (h Ho
 	// Remote path
 	h, err = hostInfoLoader.load(hostName)
 	if err != nil {
-		return nil, "", "", nil, fmt.Errorf("Error loading host: %s", err)
+		return nil, "", "", nil, fmt.Errorf("error loading host: %s", err)
 	}
 
 	args = []string{}

@@ -45,7 +45,7 @@ func (d *Driver) newAzureClient() (*azureutil.AzureClient, error) {
 			valid = append(valid, k)
 		}
 
-		return nil, fmt.Errorf("Invalid Azure environment: %q, supported values: %s", d.Environment, strings.Join(valid, ", "))
+		return nil, fmt.Errorf("invalid Azure environment: %q, supported values: %s", d.Environment, strings.Join(valid, ", "))
 	}
 
 	var (
@@ -56,13 +56,13 @@ func (d *Driver) newAzureClient() (*azureutil.AzureClient, error) {
 		log.Debug("Using Azure service principal authentication.")
 		token, err = azureutil.AuthenticateServicePrincipal(env, d.SubscriptionID, d.ClientID, d.ClientSecret)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to authenticate using service principal credentials: %+v", err)
+			return nil, fmt.Errorf("failed to authenticate using service principal credentials: %+v", err)
 		}
 	} else { // use browser-based device auth
 		log.Debug("Using Azure device flow authentication.")
 		token, err = azureutil.AuthenticateDeviceFlow(env, d.SubscriptionID)
 		if err != nil {
-			return nil, fmt.Errorf("Error creating Azure client: %v", err)
+			return nil, fmt.Errorf("error creating Azure client: %v", err)
 		}
 	}
 	return azureutil.New(env, d.SubscriptionID, token), nil
@@ -123,11 +123,11 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 		log.Debugf("Swarm host is configured as %q", swarmHost)
 		u, err := url.Parse(swarmHost)
 		if err != nil {
-			return nil, fmt.Errorf("Cannot parse URL %q: %v", swarmHost, err)
+			return nil, fmt.Errorf("cannot parse URL %q: %v", swarmHost, err)
 		}
 		_, swarmPort, err := net.SplitHostPort(u.Host)
 		if err != nil {
-			return nil, fmt.Errorf("Could not parse swarm port in %q: %v", u.Host, err)
+			return nil, fmt.Errorf("could not parse swarm port in %q: %v", u.Host, err)
 		}
 		rl = append(rl, mkRule(500, "DockerSwarmAllowAny", "Allow swarm manager access (TLS-protected)", "*", swarmPort, network.TCP))
 	} else {
@@ -178,7 +178,7 @@ func (d *Driver) ipAddress() (ip string, err error) {
 
 	log.Debugf("Retrieving %s IP address...", ipType)
 	if err != nil {
-		return "", fmt.Errorf("Error querying %s IP: %v", ipType, err)
+		return "", fmt.Errorf("error querying %s IP: %v", ipType, err)
 	}
 	if ip == "" {
 		log.Debugf("%s IP address is not yet allocated.", ipType)

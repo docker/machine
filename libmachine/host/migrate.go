@@ -68,7 +68,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 	if migratedHostMetadata.ConfigVersion == version.ConfigVersion {
 		h.Driver = driver
 		if err := json.Unmarshal(data, &h); err != nil {
-			return nil, migrationPerformed, fmt.Errorf("Error unmarshalling most recent host version: %s", err)
+			return nil, migrationPerformed, fmt.Errorf("error unmarshalling most recent host version: %s", err)
 		}
 	} else {
 		migrationNeeded = true
@@ -84,7 +84,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 					Driver: driver,
 				}
 				if err := json.Unmarshal(data, &hostV0); err != nil {
-					return nil, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 0: %s", err)
+					return nil, migrationPerformed, fmt.Errorf("error unmarshalling host config version 0: %s", err)
 				}
 				hostV1 = MigrateHostV0ToHostV1(hostV0)
 			case 1:
@@ -93,7 +93,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 						Driver: driver,
 					}
 					if err := json.Unmarshal(data, &hostV1); err != nil {
-						return nil, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 1: %s", err)
+						return nil, migrationPerformed, fmt.Errorf("error unmarshalling host config version 1: %s", err)
 					}
 				}
 				hostV2 = MigrateHostV1ToHostV2(hostV1)
@@ -103,7 +103,7 @@ func MigrateHost(h *Host, data []byte) (*Host, bool, error) {
 						Driver: driver,
 					}
 					if err := json.Unmarshal(data, &hostV2); err != nil {
-						return nil, migrationPerformed, fmt.Errorf("Error unmarshalling host config version 2: %s", err)
+						return nil, migrationPerformed, fmt.Errorf("error unmarshalling host config version 2: %s", err)
 					}
 				}
 				h = MigrateHostV2ToHostV3(hostV2, data, globalStorePath)

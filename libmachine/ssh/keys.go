@@ -107,16 +107,16 @@ func (kp *KeyPair) Fingerprint() string {
 func GenerateSSHKey(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if !os.IsNotExist(err) {
-			return fmt.Errorf("Desired directory for SSH keys does not exist: %s", err)
+			return fmt.Errorf("desired directory for SSH keys does not exist: %s", err)
 		}
 
 		kp, err := NewKeyPair()
 		if err != nil {
-			return fmt.Errorf("Error generating key pair: %s", err)
+			return fmt.Errorf("error generating key pair: %s", err)
 		}
 
 		if err := kp.WriteToFile(path, fmt.Sprintf("%s.pub", path)); err != nil {
-			return fmt.Errorf("Error writing keys to file(s): %s", err)
+			return fmt.Errorf("error writing keys to file(s): %s", err)
 		}
 	}
 

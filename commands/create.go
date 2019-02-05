@@ -135,7 +135,7 @@ var (
 
 func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	if len(c.Args()) > 1 {
-		return fmt.Errorf("Invalid command line. Found extra arguments %v", c.Args()[1:])
+		return fmt.Errorf("invalid command line. Found extra arguments %v", c.Args()[1:])
 	}
 
 	name := c.Args().First()
@@ -146,11 +146,11 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 
 	validName := host.ValidateHostName(name)
 	if !validName {
-		return fmt.Errorf("Error creating machine: %s", mcnerror.ErrInvalidHostname)
+		return fmt.Errorf("error creating machine: %s", mcnerror.ErrInvalidHostname)
 	}
 
 	if err := validateSwarmDiscovery(c.String("swarm-discovery")); err != nil {
-		return fmt.Errorf("Error parsing swarm discovery: %s", err)
+		return fmt.Errorf("error parsing swarm discovery: %s", err)
 	}
 
 	// TODO: Fix hacky JSON solution
@@ -159,13 +159,13 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 		StorePath:   c.GlobalString("storage-path"),
 	})
 	if err != nil {
-		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
+		return fmt.Errorf("error attempting to marshal bare driver data: %s", err)
 	}
 
 	driverName := c.String("driver")
 	h, err := api.NewHost(driverName, rawDriver)
 	if err != nil {
-		return fmt.Errorf("Error getting new host: %s", err)
+		return fmt.Errorf("error getting new host: %s", err)
 	}
 
 	h.HostOptions = &host.Options{
@@ -207,7 +207,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 
 	exists, err := api.Exists(h.Name)
 	if err != nil {
-		return fmt.Errorf("Error checking if host exists: %s", err)
+		return fmt.Errorf("error checking if host exists: %s", err)
 	}
 	if exists {
 		return mcnerror.ErrHostAlreadyExists{
@@ -222,7 +222,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	driverOpts := getDriverOpts(c, mcnFlags)
 
 	if err := h.Driver.SetConfigFromFlags(driverOpts); err != nil {
-		return fmt.Errorf("Error setting machine configuration from flags provided: %s", err)
+		return fmt.Errorf("error setting machine configuration from flags provided: %s", err)
 	}
 
 	if err := api.Create(h); err != nil {
@@ -244,7 +244,7 @@ func cmdCreateInner(c CommandLine, api libmachine.API) error {
 	}
 
 	if err := api.Save(h); err != nil {
-		return fmt.Errorf("Error attempting to save store: %s", err)
+		return fmt.Errorf("error attempting to save store: %s", err)
 	}
 
 	log.Infof("To see how to connect your Docker Client to the Docker Engine running on this virtual machine, run: %s env %s", os.Args[0], name)
@@ -308,7 +308,7 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 		MachineName: flagLookupMachineName,
 	})
 	if err != nil {
-		return fmt.Errorf("Error attempting to marshal bare driver data: %s", err)
+		return fmt.Errorf("error attempting to marshal bare driver data: %s", err)
 	}
 
 	h, err := api.NewHost(driverName, rawDriver)
@@ -327,7 +327,7 @@ func cmdCreateOuter(c CommandLine, api libmachine.API) error {
 	// on the requested driver.
 	cliFlags, err := convertMcnFlagsToCliFlags(mcnFlags)
 	if err != nil {
-		return fmt.Errorf("Error trying to convert provided driver flags to cli flags: %s", err)
+		return fmt.Errorf("error trying to convert provided driver flags to cli flags: %s", err)
 	}
 
 	for i := range c.Application().Commands {
@@ -419,7 +419,7 @@ func convertMcnFlagsToCliFlags(mcnFlags []mcnflag.Flag) ([]cli.Flag, error) {
 			})
 		default:
 			log.Warn("Flag is ", f)
-			return nil, fmt.Errorf("Flag is unrecognized flag type: %T", t)
+			return nil, fmt.Errorf("flag is unrecognized flag type: %T", t)
 		}
 	}
 
@@ -449,7 +449,7 @@ func validateSwarmDiscovery(discovery string) error {
 		return nil
 	}
 
-	return fmt.Errorf("Swarm Discovery URL was in the wrong format: %s", discovery)
+	return fmt.Errorf("swarm Discovery URL was in the wrong format: %s", discovery)
 }
 
 func tlsPath(c CommandLine, flag string, defaultName string) string {

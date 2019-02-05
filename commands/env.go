@@ -86,7 +86,7 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 
 	dockerHost, _, err := check.DefaultConnChecker.Check(host, c.Bool("swarm"))
 	if err != nil {
-		return nil, fmt.Errorf("Error checking TLS connection: %s", err)
+		return nil, fmt.Errorf("error checking TLS connection: %s", err)
 	}
 
 	userShell, err := getShell(c.String("shell"))
@@ -105,7 +105,7 @@ func shellCfgSet(c CommandLine, api libmachine.API) (*ShellConfig, error) {
 	if c.Bool("no-proxy") {
 		ip, err := host.Driver.GetIP()
 		if err != nil {
-			return nil, fmt.Errorf("Error getting host IP: %s", err)
+			return nil, fmt.Errorf("error getting host IP: %s", err)
 		}
 
 		noProxyVar, noProxyValue := findNoProxyFromEnv()

@@ -11,7 +11,7 @@ import (
 )
 
 func unsupportedOpErr(operation string) error {
-	return fmt.Errorf("Rackspace does not currently support the %s operation", operation)
+	return fmt.Errorf("rackspace does not currently support the %s operation", operation)
 }
 
 // Client is a Rackspace specialization of the generic OpenStack driver.

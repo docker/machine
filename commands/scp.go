@@ -47,7 +47,7 @@ type storeHostInfoLoader struct {
 func (s *storeHostInfoLoader) load(name string) (HostInfo, error) {
 	host, err := s.store.Load(name)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading host: %s", err)
+		return nil, fmt.Errorf("error loading host: %s", err)
 	}
 
 	return host.Driver, nil
@@ -154,7 +154,7 @@ func getInfoForScpArg(hostAndPath string, hostInfoLoader HostInfoLoader) (h Host
 	// Remote path
 	h, err = hostInfoLoader.load(hostName)
 	if err != nil {
-		return nil, "", "", nil, fmt.Errorf("Error loading host: %s", err)
+		return nil, "", "", nil, fmt.Errorf("error loading host: %s", err)
 	}
 
 	args = []string{}

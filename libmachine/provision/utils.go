@@ -76,15 +76,15 @@ func ConfigureAuth(p Provisioner) error {
 	log.Info("Copying certs to the local machine directory...")
 
 	if err := mcnutils.CopyFile(authOptions.CaCertPath, filepath.Join(authOptions.StorePath, "ca.pem")); err != nil {
-		return fmt.Errorf("Copying ca.pem to machine dir failed: %s", err)
+		return fmt.Errorf("copying ca.pem to machine dir failed: %s", err)
 	}
 
 	if err := mcnutils.CopyFile(authOptions.ClientCertPath, filepath.Join(authOptions.StorePath, "cert.pem")); err != nil {
-		return fmt.Errorf("Copying cert.pem to machine dir failed: %s", err)
+		return fmt.Errorf("copying cert.pem to machine dir failed: %s", err)
 	}
 
 	if err := mcnutils.CopyFile(authOptions.ClientKeyPath, filepath.Join(authOptions.StorePath, "key.pem")); err != nil {
-		return fmt.Errorf("Copying key.pem to machine dir failed: %s", err)
+		return fmt.Errorf("copying key.pem to machine dir failed: %s", err)
 	}
 
 	// The Host IP is always added to the certificate's SANs list
@@ -243,7 +243,7 @@ func decideStorageDriver(p Provisioner, defaultDriver, suppliedDriver string) (s
 func getFilesystemType(p Provisioner, directory string) (string, error) {
 	statCommandOutput, err := p.SSHCommand("stat -f -c %T " + directory)
 	if err != nil {
-		err = fmt.Errorf("Error looking up filesystem type: %s", err)
+		err = fmt.Errorf("error looking up filesystem type: %s", err)
 		return "", err
 	}
 
@@ -289,7 +289,7 @@ func DockerClientVersion(ssh SSHCommander) (string, error) {
 
 	words := strings.Fields(output)
 	if len(words) < 3 || words[0] != "Docker" || words[1] != "version" {
-		return "", fmt.Errorf("DockerClientVersion: cannot parse version string from %q", output)
+		return "", fmt.Errorf("dockerClientVersion: cannot parse version string from %q", output)
 	}
 
 	return strings.TrimRight(words[2], ","), nil
@@ -313,10 +313,10 @@ func waitForLock(ssh SSHCommander, cmd string) error {
 		return true
 	})
 	if sshErr != nil {
-		return fmt.Errorf("Error running %q: %s", cmd, sshErr)
+		return fmt.Errorf("error running %q: %s", cmd, sshErr)
 	}
 	if err != nil {
-		return fmt.Errorf("Failed to obtain lock: %s", err)
+		return fmt.Errorf("failed to obtain lock: %s", err)
 	}
 	return nil
 }

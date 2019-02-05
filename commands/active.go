@@ -27,7 +27,7 @@ func cmdActive(c CommandLine, api libmachine.API) error {
 
 	hosts, hostsInError, err := persist.LoadAllHosts(api)
 	if err != nil {
-		return fmt.Errorf("Error getting active host: %s", err)
+		return fmt.Errorf("error getting active host: %s", err)
 	}
 
 	timeout := time.Duration(c.Int("timeout")) * time.Second

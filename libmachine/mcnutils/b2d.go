@@ -309,7 +309,7 @@ func (b *b2dISO) version() (string, error) {
 
 	versionIndex := strings.Index(trimmedVersion, versionPrefix)
 	if versionIndex == -1 {
-		return "", fmt.Errorf("Did not find prefix %q in version string", versionPrefix)
+		return "", fmt.Errorf("did not find prefix %q in version string", versionPrefix)
 	}
 
 	// Original magic file string looks similar to this: "Boot2Docker-v0.1.0              "
@@ -323,7 +323,7 @@ func (b *b2dISO) version() (string, error) {
 func removeFileIfExists(name string) error {
 	if _, err := os.Stat(name); err == nil {
 		if err := os.Remove(name); err != nil {
-			return fmt.Errorf("Error removing temporary download file: %s", err)
+			return fmt.Errorf("error removing temporary download file: %s", err)
 		}
 	}
 	return nil

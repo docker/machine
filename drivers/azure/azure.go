@@ -323,7 +323,7 @@ func (d *Driver) PreCreateCheck() (err error) {
 	if exists, err := c.VirtualMachineExists(d.ResourceGroup, d.naming().VM()); err != nil {
 		return err
 	} else if exists {
-		return fmt.Errorf("Virtual Machine with name %s already exists in resource group %q", d.naming().VM(), d.ResourceGroup)
+		return fmt.Errorf("virtual Machine with name %s already exists in resource group %q", d.naming().VM(), d.ResourceGroup)
 	}
 
 	// NOTE(ahmetalpbalkan) we could have done more checks here but Azure often

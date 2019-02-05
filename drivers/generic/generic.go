@@ -108,7 +108,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 func (d *Driver) PreCreateCheck() error {
 	if d.SSHKey != "" {
 		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
-			return fmt.Errorf("SSH key does not exist: %q", d.SSHKey)
+			return fmt.Errorf("sSH key does not exist: %q", d.SSHKey)
 		}
 
 		// TODO: validate the key is a valid key

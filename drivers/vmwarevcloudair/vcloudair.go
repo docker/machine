@@ -159,7 +159,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	// Check for required Params
 	if d.UserName == "" || d.UserPassword == "" || d.VDCID == "" || d.PublicIP == "" {
-		return fmt.Errorf("Please specify vcloudair mandatory params using options: -vmwarevcloudair-username -vmwarevcloudair-password -vmwarevcloudair-vdcid and -vmwarevcloudair-publicip")
+		return fmt.Errorf("please specify vcloudair mandatory params using options: -vmwarevcloudair-username -vmwarevcloudair-password -vmwarevcloudair-vdcid and -vmwarevcloudair-publicip")
 	}
 
 	// If ComputeID is not set we're using a VPC, hence setting ComputeID = VDCID

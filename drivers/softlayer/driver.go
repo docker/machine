@@ -179,24 +179,24 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 
 func validateDeviceConfig(c *deviceConfig) error {
 	if c.Domain == "" {
-		return fmt.Errorf("Missing required setting - --softlayer-domain")
+		return fmt.Errorf("missing required setting - --softlayer-domain")
 	}
 
 	if c.Region == "" {
-		return fmt.Errorf("Missing required setting - --softlayer-region")
+		return fmt.Errorf("missing required setting - --softlayer-region")
 	}
 	if c.Cpu < 1 {
-		return fmt.Errorf("Missing required setting - --softlayer-cpu")
+		return fmt.Errorf("missing required setting - --softlayer-cpu")
 	}
 
 	if c.PrivateNet && c.PublicVLAN > 0 {
-		return fmt.Errorf("Can not specify both --softlayer-private-net-only and --softlayer-public-vlan-id")
+		return fmt.Errorf("can not specify both --softlayer-private-net-only and --softlayer-public-vlan-id")
 	}
 	if c.PublicVLAN > 0 && c.PrivateVLAN == 0 {
-		return fmt.Errorf("Missing required setting - --softlayer-private-vlan-id (because --softlayer-public-vlan-id is specified)")
+		return fmt.Errorf("missing required setting - --softlayer-private-vlan-id (because --softlayer-public-vlan-id is specified)")
 	}
 	if c.PrivateVLAN > 0 && !c.PrivateNet && c.PublicVLAN == 0 {
-		return fmt.Errorf("Missing required setting - --softlayer-public-vlan-id (because --softlayer-private-vlan-id is specified)")
+		return fmt.Errorf("missing required setting - --softlayer-public-vlan-id (because --softlayer-private-vlan-id is specified)")
 	}
 
 	return nil
@@ -204,15 +204,15 @@ func validateDeviceConfig(c *deviceConfig) error {
 
 func validateClientConfig(c *Client) error {
 	if c.ApiKey == "" {
-		return fmt.Errorf("Missing required setting - --softlayer-api-key")
+		return fmt.Errorf("missing required setting - --softlayer-api-key")
 	}
 
 	if c.User == "" {
-		return fmt.Errorf("Missing required setting - --softlayer-user")
+		return fmt.Errorf("missing required setting - --softlayer-user")
 	}
 
 	if c.Endpoint == "" {
-		return fmt.Errorf("Missing required setting - --softlayer-api-endpoint")
+		return fmt.Errorf("missing required setting - --softlayer-api-endpoint")
 	}
 
 	return nil
@@ -426,7 +426,7 @@ func (d *Driver) Create() error {
 
 	id, err := d.getClient().VirtualGuest().Create(spec)
 	if err != nil {
-		return fmt.Errorf("Error creating host: %q", err)
+		return fmt.Errorf("error creating host: %q", err)
 	}
 	d.Id = id
 	d.getIP()

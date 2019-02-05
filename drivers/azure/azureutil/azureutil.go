@@ -466,7 +466,7 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 	storageAccountKey := to.String(((*resp.Keys)[0]).Value)
 	bs, err := blobstorage.NewClient(storageAccount, storageAccountKey, blobServiceBaseURL, defaultStorageAPIVersion, true)
 	if err != nil {
-		return fmt.Errorf("Error constructing blob storage client :%v", err)
+		return fmt.Errorf("error constructing blob storage client :%v", err)
 	}
 
 	f := logutil.Fields{
@@ -750,7 +750,7 @@ func (a AzureClient) waitVMPowerState(resourceGroup, name string, goalState VMPo
 	select {
 	case <-time.After(timeout):
 		close(chErr)
-		return fmt.Errorf("Waiting for goal state %q timed out after %v", goalState, timeout)
+		return fmt.Errorf("waiting for goal state %q timed out after %v", goalState, timeout)
 	case err := <-chErr:
 		return err
 	}

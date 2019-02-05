@@ -307,7 +307,7 @@ func (d *Driver) Create() error {
 	}
 
 	if ip == "" {
-		return fmt.Errorf("Machine didn't return an IP after 120 seconds, aborting")
+		return fmt.Errorf("machine didn't return an IP after 120 seconds, aborting")
 	}
 
 	// we got an IP, let's copy ssh keys over
@@ -467,7 +467,7 @@ func (d *Driver) Remove() error {
 	s, _ := d.GetState()
 	if s == state.Running {
 		if err := d.Kill(); err != nil {
-			return fmt.Errorf("Error stopping VM before deletion")
+			return fmt.Errorf("error stopping VM before deletion")
 		}
 	}
 	log.Infof("Deleting %s...", d.MachineName)
@@ -476,7 +476,7 @@ func (d *Driver) Remove() error {
 }
 
 func (d *Driver) Upgrade() error {
-	return fmt.Errorf("VMware Fusion does not currently support the upgrade operation")
+	return fmt.Errorf("vMware Fusion does not currently support the upgrade operation")
 }
 
 func (d *Driver) vmxPath() string {
@@ -532,7 +532,7 @@ func (d *Driver) getIPfromVmnetConfiguration(macaddr string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("IP not found for MAC %s in vmnet configuration files", macaddr)
+	return "", fmt.Errorf("iP not found for MAC %s in vmnet configuration files", macaddr)
 }
 
 func (d *Driver) getIPfromVmnetConfigurationFile(conffile, macaddr string) (string, error) {
@@ -618,7 +618,7 @@ func (d *Driver) getIPfromVmnetConfigurationFile(conffile, macaddr string) (stri
 	currentip, ok := m[strings.ToLower(macaddr)]
 
 	if !ok {
-		return "", fmt.Errorf("IP not found for MAC %s in vmnet configuration", macaddr)
+		return "", fmt.Errorf("iP not found for MAC %s in vmnet configuration", macaddr)
 	}
 
 	log.Debugf("IP found in vmnet configuration file: %s", currentip)
@@ -638,7 +638,7 @@ func (d *Driver) getIPfromDHCPLease(macaddr string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", macaddr)
+	return "", fmt.Errorf("iP not found for MAC %s in DHCP leases", macaddr)
 }
 
 func (d *Driver) getIPfromDHCPLeaseFile(dhcpfile, macaddr string) (string, error) {
@@ -686,7 +686,7 @@ func (d *Driver) getIPfromDHCPLeaseFile(dhcpfile, macaddr string) (string, error
 	}
 
 	if currentip == "" {
-		return "", fmt.Errorf("IP not found for MAC %s in DHCP leases", macaddr)
+		return "", fmt.Errorf("iP not found for MAC %s in DHCP leases", macaddr)
 	}
 
 	log.Debugf("IP found in DHCP lease table: %s", currentip)

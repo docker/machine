@@ -366,7 +366,7 @@ func (d *Driver) GetIP() (string, error) {
 		}
 		time.Sleep(2 * time.Second)
 	}
-	return "", fmt.Errorf("No IP found for the machine")
+	return "", fmt.Errorf("no IP found for the machine")
 }
 
 func (d *Driver) GetState() (state.State, error) {
@@ -526,40 +526,40 @@ const (
 
 func (d *Driver) checkConfig() error {
 	if d.AuthUrl == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Authentication URL", "OS_AUTH_URL", "--openstack-auth-url")
+		return fmt.Errorf(errorMandatoryEnvOrOption, "authentication URL", "oS_AUTH_URL", "--openstack-auth-url")
 	}
 	if d.Username == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Username", "OS_USERNAME", "--openstack-username")
+		return fmt.Errorf(errorMandatoryEnvOrOption, "username", "oS_USERNAME", "--openstack-username")
 	}
 	if d.Password == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Password", "OS_PASSWORD", "--openstack-password")
+		return fmt.Errorf(errorMandatoryEnvOrOption, "password", "oS_PASSWORD", "--openstack-password")
 	}
 	if d.TenantName == "" && d.TenantId == "" {
 		return fmt.Errorf(errorMandatoryTenantNameOrID)
 	}
 
 	if d.FlavorName == "" && d.FlavorId == "" {
-		return fmt.Errorf(errorMandatoryOption, "Flavor name or Flavor id", "--openstack-flavor-name or --openstack-flavor-id")
+		return fmt.Errorf(errorMandatoryOption, "flavor name or Flavor id", "--openstack-flavor-name or --openstack-flavor-id")
 	}
 	if d.FlavorName != "" && d.FlavorId != "" {
-		return fmt.Errorf(errorExclusiveOptions, "Flavor name", "Flavor id")
+		return fmt.Errorf(errorExclusiveOptions, "flavor name", "flavor id")
 	}
 
 	if d.ImageName == "" && d.ImageId == "" {
-		return fmt.Errorf(errorMandatoryOption, "Image name or Image id", "--openstack-image-name or --openstack-image-id")
+		return fmt.Errorf(errorMandatoryOption, "image name or Image id", "--openstack-image-name or --openstack-image-id")
 	}
 	if d.ImageName != "" && d.ImageId != "" {
-		return fmt.Errorf(errorExclusiveOptions, "Image name", "Image id")
+		return fmt.Errorf(errorExclusiveOptions, "image name", "image id")
 	}
 
 	if d.NetworkName != "" && d.NetworkId != "" {
-		return fmt.Errorf(errorExclusiveOptions, "Network name", "Network id")
+		return fmt.Errorf(errorExclusiveOptions, "network name", "network id")
 	}
 	if d.EndpointType != "" && (d.EndpointType != "publicURL" && d.EndpointType != "adminURL" && d.EndpointType != "internalURL") {
 		return fmt.Errorf(errorWrongEndpointType)
 	}
 	if (d.KeyPairName != "" && d.PrivateKeyFile == "") || (d.KeyPairName == "" && d.PrivateKeyFile != "") {
-		return fmt.Errorf(errorBothOptions, "KeyPairName", "PrivateKeyFile")
+		return fmt.Errorf(errorBothOptions, "keyPairName", "privateKeyFile")
 	}
 	return nil
 }

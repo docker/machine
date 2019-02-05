@@ -110,12 +110,12 @@ func (detector StandardDetector) DetectProvisioner(d drivers.Driver) (Provisione
 
 	osReleaseOut, err := drivers.RunSSHCommandFromDriver(d, "cat /etc/os-release")
 	if err != nil {
-		return nil, fmt.Errorf("Error getting SSH command: %s", err)
+		return nil, fmt.Errorf("error getting SSH command: %s", err)
 	}
 
 	osReleaseInfo, err := NewOsRelease([]byte(osReleaseOut))
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing /etc/os-release file: %s", err)
+		return nil, fmt.Errorf("error parsing /etc/os-release file: %s", err)
 	}
 
 	for _, p := range provisioners {

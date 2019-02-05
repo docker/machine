@@ -103,7 +103,7 @@ func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.Options, aut
 	if provisioner.EngineOptions.StorageDriver == "" {
 		provisioner.EngineOptions.StorageDriver = "overlay"
 	} else if provisioner.EngineOptions.StorageDriver != "overlay" {
-		return fmt.Errorf("Unsupported storage driver: %s", provisioner.EngineOptions.StorageDriver)
+		return fmt.Errorf("unsupported storage driver: %s", provisioner.EngineOptions.StorageDriver)
 	}
 
 	log.Debugf("Setting hostname %s", provisioner.Driver.GetMachineName())
@@ -237,7 +237,7 @@ func (provisioner *RancherProvisioner) getLatestISOURL() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("Failed to find current version")
+	return "", fmt.Errorf("failed to find current version")
 }
 
 func selectDocker(p Provisioner, baseURL string) error {

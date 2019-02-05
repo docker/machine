@@ -157,7 +157,7 @@ func (c *GenericClient) WaitForInstanceStatus(d *Driver, status string) error {
 		}
 
 		if current.Status == "ERROR" {
-			return true, fmt.Errorf("Instance creation failed. Instance is in ERROR state")
+			return true, fmt.Errorf("instance creation failed. Instance is in ERROR state")
 		}
 
 		if current.Status == status {
@@ -593,7 +593,7 @@ func (c *GenericClient) SetTLSConfig(d *Driver) error {
 
 		ok := certpool.AppendCertsFromPEM(pem)
 		if !ok {
-			return fmt.Errorf("Ill-formed CA certificate(s) PEM file")
+			return fmt.Errorf("ill-formed CA certificate(s) PEM file")
 		}
 		config.RootCAs = certpool
 	}

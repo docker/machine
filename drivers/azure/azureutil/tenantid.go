@@ -33,7 +33,7 @@ func loadOrFindTenantID(env azure.Environment, subscriptionID string) (string, e
 	} else if os.IsNotExist(err) {
 		log.Debugf("Tenant ID file not found: %s", fp)
 	} else {
-		return "", fmt.Errorf("Failed to load tenant ID file: %v", err)
+		return "", fmt.Errorf("failed to load tenant ID file: %v", err)
 	}
 
 	// Handle cache miss
@@ -47,7 +47,7 @@ func loadOrFindTenantID(env azure.Environment, subscriptionID string) (string, e
 
 		// Cache the result
 		if err := saveTenantID(fp, tenantID); err != nil {
-			return "", fmt.Errorf("Failed to save tenant ID: %v", err)
+			return "", fmt.Errorf("failed to save tenant ID: %v", err)
 		}
 		log.Debugf("Cached tenant ID to file: %s", fp)
 	}
@@ -69,16 +69,16 @@ func findTenantID(env azure.Environment, subscriptionID string) (string, error) 
 	// network error etc)
 	subs, err := c.Get(subscriptionID)
 	if subs.Response.Response == nil {
-		return "", fmt.Errorf("Request failed: %v", err)
+		return "", fmt.Errorf("request failed: %v", err)
 	}
 
 	// Expecting 401 StatusUnauthorized here, just read the header
 	if subs.StatusCode != http.StatusUnauthorized {
-		return "", fmt.Errorf("Unexpected response from Get Subscription: %v", err)
+		return "", fmt.Errorf("unexpected response from Get Subscription: %v", err)
 	}
 	hdr := subs.Header.Get(hdrKey)
 	if hdr == "" {
-		return "", fmt.Errorf("Header %v not found in Get Subscription response", hdrKey)
+		return "", fmt.Errorf("header %v not found in Get Subscription response", hdrKey)
 	}
 
 	// Example value for hdr:
@@ -86,7 +86,7 @@ func findTenantID(env azure.Environment, subscriptionID string) (string, error) 
 	r := regexp.MustCompile(`authorization_uri=".*/([0-9a-f\-]+)"`)
 	m := r.FindStringSubmatch(hdr)
 	if m == nil {
-		return "", fmt.Errorf("Could not find the tenant ID in header: %s %q", hdrKey, hdr)
+		return "", fmt.Errorf("could not find the tenant ID in header: %s %q", hdrKey, hdr)
 	}
 	return m[1], nil
 }
@@ -97,27 +97,27 @@ func saveTenantID(path string, tenantID string) error {
 
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return fmt.Errorf("Failed to create directory %s: %v", dir, err)
+		return fmt.Errorf("failed to create directory %s: %v", dir, err)
 	}
 
 	f, err := ioutil.TempFile(dir, "tenantid")
 	if err != nil {
-		return fmt.Errorf("Failed to create temp file: %v", err)
+		return fmt.Errorf("failed to create temp file: %v", err)
 	}
 	defer f.Close()
 
 	fp := f.Name()
 	if _, err := f.Write([]byte(tenantID)); err != nil {
-		return fmt.Errorf("Failed to write tenant ID to file: %v", err)
+		return fmt.Errorf("failed to write tenant ID to file: %v", err)
 	}
 	f.Close()
 
 	// atomic move by rename
 	if err := os.Rename(fp, path); err != nil {
-		return fmt.Errorf("Failed to rename file. src=%s dst=%s error=%v", fp, path, err)
+		return fmt.Errorf("failed to rename file. src=%s dst=%s error=%v", fp, path, err)
 	}
 	if err := os.Chmod(path, perm); err != nil {
-		return fmt.Errorf("Failed to chmod the file %s: %v", path, err)
+		return fmt.Errorf("failed to chmod the file %s: %v", path, err)
 	}
 	return nil
 }

@@ -430,7 +430,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		}
 
 		if *subnets.Subnets[0].VpcId != d.VpcId {
-			return fmt.Errorf("SubnetId: %s does not belong to VpcId: %s", d.SubnetId, d.VpcId)
+			return fmt.Errorf("subnetId: %s does not belong to VpcId: %s", d.SubnetId, d.VpcId)
 		}
 	}
 
@@ -472,7 +472,7 @@ func (d *Driver) checkPrereqs() error {
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok {
 			if awsErr.Code() == keypairNotFoundCode && keyShouldExist {
-				return fmt.Errorf("There is no keypair with the name %s. Please verify the key name provided.", keyName)
+				return fmt.Errorf("there is no keypair with the name %s. Please verify the key name provided", keyName)
 			}
 			if awsErr.Code() == keypairNotFoundCode && !keyShouldExist {
 				// Not a real error for 'NotFound' since we're checking existence
@@ -485,7 +485,7 @@ func (d *Driver) checkPrereqs() error {
 	// In case we got a result with an empty set of keys
 	if err == nil && len(key.KeyPairs) != 0 {
 		if !keyShouldExist {
-			return fmt.Errorf("There is already a keypair with the name %s.  Please either remove that keypair or use a different machine name.", d.MachineName)
+			return fmt.Errorf("there is already a keypair with the name %s.  Please either remove that keypair or use a different machine name", d.MachineName)
 		}
 		// otherwise we found the key: success
 	}
@@ -664,7 +664,7 @@ func (d *Driver) innerCreate() error {
 
 		spotInstanceRequest, err := d.getClient().RequestSpotInstances(&req)
 		if err != nil {
-			return fmt.Errorf("Error request spot instance: %s", err)
+			return fmt.Errorf("error request spot instance: %s", err)
 		}
 		d.spotInstanceRequestId = *spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId
 
@@ -681,7 +681,7 @@ func (d *Driver) innerCreate() error {
 						continue
 					}
 				}
-				return fmt.Errorf("Error fulfilling spot request: %v", err)
+				return fmt.Errorf("error fulfilling spot request: %v", err)
 			}
 			break
 		}
@@ -697,7 +697,7 @@ func (d *Driver) innerCreate() error {
 			})
 			if err != nil {
 				// Unexpected; no need to retry
-				return fmt.Errorf("Error describing previously made spot instance request: %v", err)
+				return fmt.Errorf("error describing previously made spot instance request: %v", err)
 			}
 			maybeInstanceId := resolvedSpotInstance.SpotInstanceRequests[0].InstanceId
 			if maybeInstanceId != nil {
@@ -717,7 +717,7 @@ func (d *Driver) innerCreate() error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("Error resolving spot instance to real instance: %v", err)
+			return fmt.Errorf("error resolving spot instance to real instance: %v", err)
 		}
 	} else {
 		inst, err := d.getClient().RunInstances(&ec2.RunInstancesInput{
@@ -740,7 +740,7 @@ func (d *Driver) innerCreate() error {
 		})
 
 		if err != nil {
-			return fmt.Errorf("Error launching instance: %s", err)
+			return fmt.Errorf("error launching instance: %s", err)
 		}
 		instance = inst.Instances[0]
 	}
@@ -768,7 +768,7 @@ func (d *Driver) innerCreate() error {
 	err := d.configureTags(d.Tags)
 
 	if err != nil {
-		return fmt.Errorf("Unable to tag instance %s: %s", d.InstanceId, err)
+		return fmt.Errorf("unable to tag instance %s: %s", d.InstanceId, err)
 	}
 
 	return nil
@@ -798,20 +798,20 @@ func (d *Driver) GetIP() (string, error) {
 
 	if d.PrivateIPOnly {
 		if inst.PrivateIpAddress == nil {
-			return "", fmt.Errorf("No private IP for instance %v", *inst.InstanceId)
+			return "", fmt.Errorf("no private IP for instance %v", *inst.InstanceId)
 		}
 		return *inst.PrivateIpAddress, nil
 	}
 
 	if d.UsePrivateIP {
 		if inst.PrivateIpAddress == nil {
-			return "", fmt.Errorf("No private IP for instance %v", *inst.InstanceId)
+			return "", fmt.Errorf("no private IP for instance %v", *inst.InstanceId)
 		}
 		return *inst.PrivateIpAddress, nil
 	}
 
 	if inst.PublicIpAddress == nil {
-		return "", fmt.Errorf("No IP for instance %v", *inst.InstanceId)
+		return "", fmt.Errorf("no IP for instance %v", *inst.InstanceId)
 	}
 	return *inst.PublicIpAddress, nil
 }

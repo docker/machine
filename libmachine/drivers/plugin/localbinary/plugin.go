@@ -139,12 +139,12 @@ func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 
 	lbe.pluginStdout, err = lbe.cmd.StdoutPipe()
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error getting cmd stdout pipe: %s", err)
+		return nil, nil, fmt.Errorf("error getting cmd stdout pipe: %s", err)
 	}
 
 	lbe.pluginStderr, err = lbe.cmd.StderrPipe()
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error getting cmd stderr pipe: %s", err)
+		return nil, nil, fmt.Errorf("error getting cmd stderr pipe: %s", err)
 	}
 
 	outScanner := bufio.NewScanner(lbe.pluginStdout)
@@ -154,7 +154,7 @@ func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 	os.Setenv(PluginEnvDriverName, lbe.DriverName)
 
 	if err := lbe.cmd.Start(); err != nil {
-		return nil, nil, fmt.Errorf("Error starting plugin binary: %s", err)
+		return nil, nil, fmt.Errorf("error starting plugin binary: %s", err)
 	}
 
 	return outScanner, errScanner, nil
@@ -162,7 +162,7 @@ func (lbe *Executor) Start() (*bufio.Scanner, *bufio.Scanner, error) {
 
 func (lbe *Executor) Close() error {
 	if err := lbe.cmd.Wait(); err != nil {
-		return fmt.Errorf("Error waiting for binary close: %s", err)
+		return fmt.Errorf("error waiting for binary close: %s", err)
 	}
 
 	return nil
@@ -199,7 +199,7 @@ func (lbp *Plugin) execServer() error {
 	outScanner.Scan()
 	addr := outScanner.Text()
 	if err := outScanner.Err(); err != nil {
-		return fmt.Errorf("Reading plugin address failed: %s", err)
+		return fmt.Errorf("reading plugin address failed: %s", err)
 	}
 
 	lbp.addrCh <- strings.TrimSpace(addr)
@@ -215,7 +215,7 @@ func (lbp *Plugin) execServer() error {
 			log.Debugf(pluginErr, lbp.MachineName, err)
 		case <-lbp.stopCh:
 			if err := lbp.Executor.Close(); err != nil {
-				return fmt.Errorf("Error closing local plugin binary: %s", err)
+				return fmt.Errorf("error closing local plugin binary: %s", err)
 			}
 			return nil
 		}
@@ -238,7 +238,7 @@ func (lbp *Plugin) Address() (string, error) {
 			close(lbp.addrCh)
 			return lbp.Addr, nil
 		case <-time.After(lbp.timeout):
-			return "", fmt.Errorf("Failed to dial the plugin server in %s", lbp.timeout)
+			return "", fmt.Errorf("failed to dial the plugin server in %s", lbp.timeout)
 		}
 	}
 	return lbp.Addr, nil

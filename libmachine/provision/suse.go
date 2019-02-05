@@ -128,7 +128,7 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 		// to the docker packages
 		if _, err := provisioner.SSHCommand("sudo -E SUSEConnect -p sle-module-containers/12/$(uname -m) -r ''"); err != nil {
 			return fmt.Errorf(
-				"Error while adding the 'containers' module, make sure this machine is registered either against SUSE Customer Center (SCC) or to a local Subscription Management Tool (SMT): %v",
+				"error while adding the 'containers' module, make sure this machine is registered either against SUSE Customer Center (SCC) or to a local Subscription Management Tool (SMT): %v",
 				err)
 		}
 	}

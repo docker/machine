@@ -110,7 +110,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("Error with request: %v - %q", url, err)
+		return nil, fmt.Errorf("error with request: %v - %q", url, err)
 	}
 
 	req.SetBasicAuth(c.User, c.ApiKey)
@@ -127,7 +127,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 		}
 		var outErr apiErr
 		json.Unmarshal(data, &outErr)
-		return nil, fmt.Errorf("Error in response: %s", outErr.Err)
+		return nil, fmt.Errorf("error in response: %s", outErr.Err)
 	}
 	if err != nil {
 		return nil, err

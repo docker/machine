@@ -412,7 +412,7 @@ func (d *Driver) Create() error {
 
 	zones := resp.(*egoscale.ListZonesResponse)
 	if len(zones.Zone) != 1 {
-		return fmt.Errorf("Availability zone %v doesn't exist",
+		return fmt.Errorf("availability zone %v doesn't exist",
 			d.AvailabilityZone)
 	}
 	zone := zones.Zone[0].ID
@@ -459,7 +459,7 @@ func (d *Driver) Create() error {
 		}
 	}
 	if template.ID == "" {
-		return fmt.Errorf("Unable to find image %v", d.Image)
+		return fmt.Errorf("unable to find image %v", d.Image)
 	}
 
 	// Reading the username from the template
@@ -477,7 +477,7 @@ func (d *Driver) Create() error {
 	}
 	profiles := resp.(*egoscale.ListServiceOfferingsResponse)
 	if len(profiles.ServiceOffering) != 1 {
-		return fmt.Errorf("Unable to find the %s profile",
+		return fmt.Errorf("unable to find the %s profile",
 			d.InstanceProfile)
 	}
 	profile := profiles.ServiceOffering[0].ID
@@ -538,14 +538,14 @@ func (d *Driver) Create() error {
 			Name: keyPairName,
 		})
 		if err != nil {
-			return fmt.Errorf("SSH Key pair creation failed %s", err)
+			return fmt.Errorf("sSH Key pair creation failed %s", err)
 		}
 		keyPair := resp.(*egoscale.CreateSSHKeyPairResponse).KeyPair
 		if err = os.MkdirAll(filepath.Dir(d.GetSSHKeyPath()), 0750); err != nil {
-			return fmt.Errorf("Cannot create the folder to store the SSH private key. %s", err)
+			return fmt.Errorf("cannot create the folder to store the SSH private key. %s", err)
 		}
 		if err = ioutil.WriteFile(d.GetSSHKeyPath(), []byte(keyPair.PrivateKey), 0600); err != nil {
-			return fmt.Errorf("SSH private key could not be written. %s", err)
+			return fmt.Errorf("sSH private key could not be written. %s", err)
 		}
 		d.KeyPair = keyPairName
 	} else {
@@ -565,7 +565,7 @@ func (d *Driver) Create() error {
 		// Sending the SSH public key through the cloud-init config
 		pubKey, err := ioutil.ReadFile(sshKey + ".pub")
 		if err != nil {
-			return fmt.Errorf("Cannot read SSH public key %s", err)
+			return fmt.Errorf("cannot read SSH public key %s", err)
 		}
 
 		sshAuthorizedKeys := `
@@ -575,10 +575,10 @@ ssh_authorized_keys:
 
 		// Copying the private key into docker-machine
 		if err := mcnutils.CopyFile(sshKey, d.GetSSHKeyPath()); err != nil {
-			return fmt.Errorf("Unable to copy SSH file: %s", err)
+			return fmt.Errorf("unable to copy SSH file: %s", err)
 		}
 		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
-			return fmt.Errorf("Unable to set permissions on the SSH file: %s", err)
+			return fmt.Errorf("unable to set permissions on the SSH file: %s", err)
 		}
 	}
 

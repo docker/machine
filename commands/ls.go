@@ -197,7 +197,7 @@ func parseFilters(filters []string) (FilterOptions, error) {
 		case "label":
 			options.Labels = append(options.Labels, value)
 		default:
-			return options, fmt.Errorf("Unsupported filter key '%s'", key)
+			return options, fmt.Errorf("unsupported filter key '%s'", key)
 		}
 	}
 	return options, nil
