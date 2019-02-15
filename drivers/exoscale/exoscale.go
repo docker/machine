@@ -40,6 +40,7 @@ type Driver struct {
 	PublicKey        string
 	UserDataFile     string
 	UserData         []byte
+	UserDataString   string
 	ID               string `json:"Id"`
 }
 
@@ -123,6 +124,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "exoscale-userdata",
 			Usage:  "path to file with cloud-init user-data",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "EXOSCALE_USERDATA_STRING",
+			Name:   "exoscale-userdata-string",
+			Usage:  "verbatim user-data string",
+		},
 		mcnflag.StringSliceFlag{
 			EnvVar: "EXOSCALE_AFFINITY_GROUP",
 			Name:   "exoscale-affinity-group",
@@ -200,6 +206,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHUser = flags.String("exoscale-ssh-user")
 	d.SSHKey = flags.String("exoscale-ssh-key")
 	d.UserDataFile = flags.String("exoscale-userdata")
+	d.UserDataString = flags.String("exoscale-userdata-string")
 	d.UserData = []byte(defaultCloudInit)
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -705,6 +712,11 @@ func (d *Driver) getCloudInit() ([]byte, error) {
 	var err error
 	if d.UserDataFile != "" {
 		d.UserData, err = ioutil.ReadFile(d.UserDataFile)
+	}
+
+	if d.UserDataString != "" {
+		d.UserData = []byte(d.UserDataString)
+		err = nil
 	}
 
 	return d.UserData, err
