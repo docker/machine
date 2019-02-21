@@ -121,7 +121,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "EXOSCALE_USERDATA",
 			Name:   "exoscale-userdata",
-			Usage:  "path to file with cloud-init user-data",
+			Usage:  "cloud-init user-data (content or path)",
 		},
 		mcnflag.StringSliceFlag{
 			EnvVar: "EXOSCALE_AFFINITY_GROUP",
@@ -216,12 +216,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 // PreCreateCheck allows for pre-create operations to make sure a driver is
 // ready for creation
 func (d *Driver) PreCreateCheck() error {
-	if d.UserDataFile != "" {
-		if _, err := os.Stat(d.UserDataFile); os.IsNotExist(err) {
-			return fmt.Errorf("user-data file %s could not be found", d.UserDataFile)
-		}
-	}
-
 	return nil
 }
 
@@ -594,7 +588,7 @@ ssh_authorized_keys:
 	}
 
 	log.Infof("Spawn exoscale host...")
-	log.Debugf("Using the following cloud-init file:")
+	log.Debugf("Using the following cloud-init:")
 	log.Debugf("%s", string(cloudInit))
 
 	// Base64 encode the userdata
@@ -711,12 +705,14 @@ func (d *Driver) Remove() error {
 	return nil
 }
 
-// Build a cloud-init user data string that will install and run
-// docker.
 func (d *Driver) getCloudInit() ([]byte, error) {
 	var err error
 	if d.UserDataFile != "" {
-		d.UserData, err = ioutil.ReadFile(d.UserDataFile)
+		if _, err := os.Stat(d.UserDataFile); os.IsNotExist(err) {
+			d.UserData = []byte(d.UserDataFile)
+		} else {
+			d.UserData, err = ioutil.ReadFile(d.UserDataFile)
+		}
 	}
 
 	return d.UserData, err
