@@ -119,7 +119,7 @@ func (DeleteSnapshot) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (DeleteSnapshot) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // RevertSnapshot (Async) reverts a volume snapshot
@@ -135,5 +135,5 @@ func (RevertSnapshot) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (RevertSnapshot) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }

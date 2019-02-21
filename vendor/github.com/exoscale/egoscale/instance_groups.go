@@ -49,7 +49,7 @@ type DeleteInstanceGroup struct {
 
 // Response returns the struct to unmarshal
 func (DeleteInstanceGroup) Response() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 //go:generate go run generate/main.go -interface=Listable ListInstanceGroups

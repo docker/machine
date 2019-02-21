@@ -9,9 +9,10 @@ go:
 - "1.9.x"
 - "1.10.x"
 - "1.11.x"
+- tip
 
 env:
-  - GOLANGCI_LINT_VERSION=1.12.2 GO111MODULES=on
+  - GOLANGCI_LINT_VERSION=1.13.2 GO111MODULES=on
 
 cache: apt
 

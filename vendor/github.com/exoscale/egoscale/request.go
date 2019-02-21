@@ -24,7 +24,7 @@ func (e ErrorResponse) Error() string {
 }
 
 // Error formats a CloudStack job response into a standard error
-func (e booleanResponse) Error() error {
+func (e BooleanResponse) Error() error {
 	if !e.Success {
 		return fmt.Errorf("API error: %s", e.DisplayText)
 	}
@@ -143,7 +143,7 @@ func (client *Client) SyncRequestWithContext(ctx context.Context, command Comman
 	}
 
 	response := command.Response()
-	b, ok := response.(*booleanResponse)
+	b, ok := response.(*BooleanResponse)
 	if ok {
 		m := make(map[string]interface{})
 		if errUnmarshal := json.Unmarshal(body, &m); errUnmarshal != nil {
@@ -181,7 +181,7 @@ func (client *Client) BooleanRequest(command Command) error {
 		return err
 	}
 
-	if b, ok := resp.(*booleanResponse); ok {
+	if b, ok := resp.(*BooleanResponse); ok {
 		return b.Error()
 	}
 
@@ -195,7 +195,7 @@ func (client *Client) BooleanRequestWithContext(ctx context.Context, command Com
 		return err
 	}
 
-	if b, ok := resp.(*booleanResponse); ok {
+	if b, ok := resp.(*BooleanResponse); ok {
 		return b.Error()
 	}
 

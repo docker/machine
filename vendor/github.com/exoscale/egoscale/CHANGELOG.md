@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.14.0
+------
+
+- change: all DNS calls require a context
+- fix: `CreateAffinityGroup` allows empty `name`
+
+0.13.3
+------
+
+- fix: runstatus unmarshalling errors
+- feature: `UUID` implements DeepCopy, DeepCopyInto
+- change: export `BooleanResponse`
+
 0.13.2
 ------
 

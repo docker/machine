@@ -177,8 +177,8 @@ type UUIDItem struct {
 	UUID             string `json:"uuid"`
 }
 
-// booleanResponse represents a boolean response (usually after a deletion)
-type booleanResponse struct {
+// BooleanResponse represents a boolean response (usually after a deletion)
+type BooleanResponse struct {
 	DisplayText string `json:"displaytext,omitempty"`
 	Success     bool   `json:"success"`
 }

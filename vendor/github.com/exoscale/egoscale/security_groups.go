@@ -116,7 +116,7 @@ type DeleteSecurityGroup struct {
 
 // Response returns the struct to unmarshal
 func (DeleteSecurityGroup) Response() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // AuthorizeSecurityGroupIngress (Async) represents the ingress rule creation
@@ -187,7 +187,7 @@ func (RevokeSecurityGroupIngress) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (RevokeSecurityGroupIngress) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // RevokeSecurityGroupEgress (Async) represents the ingress/egress rule deletion
@@ -203,7 +203,7 @@ func (RevokeSecurityGroupEgress) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (RevokeSecurityGroupEgress) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 //go:generate go run generate/main.go -interface=Listable ListSecurityGroups

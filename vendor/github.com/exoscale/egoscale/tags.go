@@ -41,7 +41,7 @@ func (CreateTags) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (CreateTags) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // DeleteTags (Async) deletes the resource tag(s)
@@ -59,7 +59,7 @@ func (DeleteTags) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (DeleteTags) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 //go:generate go run generate/main.go -interface=Listable ListTags

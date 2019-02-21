@@ -106,7 +106,7 @@ func (DisassociateIPAddress) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (DisassociateIPAddress) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // UpdateIPAddress (Async) represents the IP modification

@@ -98,7 +98,7 @@ func (RemoveIPFromNic) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (RemoveIPFromNic) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // ActivateIP6 (Async) activates the IP6 on the given NIC

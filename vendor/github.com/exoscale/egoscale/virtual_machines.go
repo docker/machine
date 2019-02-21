@@ -436,7 +436,7 @@ func (ExpungeVirtualMachine) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (ExpungeVirtualMachine) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // ScaleVirtualMachine (Async) scales the virtual machine to a new service offering.
@@ -457,7 +457,7 @@ func (ScaleVirtualMachine) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (ScaleVirtualMachine) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // ChangeServiceForVirtualMachine changes the service offering for a virtual machine. The virtual machine must be in a "Stopped" state for this command to take effect.

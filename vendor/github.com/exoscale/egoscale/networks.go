@@ -198,7 +198,7 @@ func (DeleteNetwork) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (DeleteNetwork) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 //go:generate go run generate/main.go -interface=Listable ListNetworks

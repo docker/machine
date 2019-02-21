@@ -19,6 +19,7 @@ linters:
     - ineffassign
     - megacheck
     - nakedret
+    - scopelint
     - staticcheck
     - structcheck
     - unused

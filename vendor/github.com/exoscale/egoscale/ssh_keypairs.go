@@ -54,7 +54,7 @@ type DeleteSSHKeyPair struct {
 
 // Response returns the struct to unmarshal
 func (DeleteSSHKeyPair) Response() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // RegisterSSHKeyPair represents a new registration of a public key in a keypair
