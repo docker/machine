@@ -52,6 +52,7 @@ type Driver struct {
 	ISO            string
 	Boot2DockerURL string
 	CPUS           int
+	GuestId        string
 
 	IP         string
 	Port       int
@@ -73,7 +74,8 @@ type Driver struct {
 const (
 	defaultSSHUser  = B2DUser
 	defaultSSHPass  = B2DPass
-	defaultCpus     = 2
+	defaultCpus     = 2 
+	defaultGuestId  = "otherLinux64Guest"
 	defaultMemory   = 2048
 	defaultDiskSize = 20480
 	defaultSDKPort  = 443
@@ -83,6 +85,12 @@ const (
 // "docker-machine create"
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
+		mcnflag.StringFlag{
+			EnvVar: "VSPHERE_GUESTID",
+			Name:   "vmwarevsphere-guestid",
+			Usage:  "vSphere guest os version",
+			Value:  defaultGuestId,
+		},
 		mcnflag.IntFlag{
 			EnvVar: "VSPHERE_CPU_COUNT",
 			Name:   "vmwarevsphere-cpu-count",
@@ -172,6 +180,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 
 func NewDriver(hostName, storePath string) drivers.Driver {
 	return &Driver{
+		GuestId:     defaultGuestId,
 		CPUS:        defaultCpus,
 		Memory:      defaultMemory,
 		DiskSize:    defaultDiskSize,
@@ -222,6 +231,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
 	d.CfgParams = flags.StringSlice("vmwarevsphere-cfgparam")
 	d.CloudInit = flags.String("vmwarevsphere-cloudinit")
+	d.GuestId = flags.String("vmwarevsphere-guestid")
 	d.SetSwarmConfigFromFlags(flags)
 
 	d.ISO = d.ResolveStorePath(isoFilename)
@@ -493,7 +503,7 @@ func (d *Driver) Create() error {
 
 	spec := types.VirtualMachineConfigSpec{
 		Name:     d.MachineName,
-		GuestId:  "otherLinux64Guest",
+		GuestId:  d.GuestId,
 		Files:    &types.VirtualMachineFileInfo{VmPathName: fmt.Sprintf("[%s]", dss.Name())},
 		NumCPUs:  int32(d.CPU),
 		MemoryMB: int64(d.Memory),
