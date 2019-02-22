@@ -302,13 +302,14 @@
   version = "v0.0.2"
 
 [[projects]]
-  digest = "1:46a5783efbdb552f34f2fcac90f3b0bbe790a169153706be69bf22dabdcbf337"
+  digest = "1:48f74da3809cc4b0792b802b41e34ebac78a12e6a6f800611da5142c9627921b"
   name = "github.com/vmware/govmomi"
   packages = [
     ".",
     "find",
     "guest",
     "list",
+    "nfc",
     "object",
     "property",
     "session",
@@ -323,8 +324,8 @@
     "vim25/xml",
   ]
   pruneopts = "UT"
-  revision = "9051bd6b44125d9472e0c148b5965692ab283d4a"
-  version = "v0.6.2"
+  revision = "bdf05b6cab86b1e9f40ee80a4d2cb07a0c25ef78"
+  version = "v0.20.0"
 
 [[projects]]
   digest = "1:c520e4d4fc9976e4da44ee0a3bdd5a45e8a206a72c1ccd2089f3d184f5eb942a"

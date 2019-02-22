@@ -17,6 +17,7 @@ limitations under the License.
 package object
 
 import (
+	"context"
 	"path"
 
 	"github.com/vmware/govmomi/property"
@@ -24,13 +25,10 @@ import (
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type ComputeResource struct {
 	Common
-
-	InventoryPath string
 }
 
 func NewComputeResource(c *vim25.Client, ref types.ManagedObjectReference) *ComputeResource {
@@ -105,19 +103,6 @@ func (c ComputeResource) Reconfigure(ctx context.Context, spec types.BaseCompute
 	}
 
 	res, err := methods.ReconfigureComputeResource_Task(ctx, c.c, &req)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewTask(c.c, res.Returnval), nil
-}
-
-func (c ComputeResource) Destroy(ctx context.Context) (*Task, error) {
-	req := types.Destroy_Task{
-		This: c.Reference(),
-	}
-
-	res, err := methods.Destroy_Task(ctx, c.c, &req)
 	if err != nil {
 		return nil, err
 	}

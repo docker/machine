@@ -17,26 +17,16 @@ limitations under the License.
 package object
 
 import (
-	"fmt"
+	"context"
 
+	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
-	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type ResourcePool struct {
 	Common
-
-	InventoryPath string
-}
-
-func (p ResourcePool) String() string {
-	if p.InventoryPath == "" {
-		return p.Common.String()
-	}
-	return fmt.Sprintf("%v @ %v", p.Common, p.InventoryPath)
 }
 
 func NewResourcePool(c *vim25.Client, ref types.ManagedObjectReference) *ResourcePool {
@@ -45,18 +35,7 @@ func NewResourcePool(c *vim25.Client, ref types.ManagedObjectReference) *Resourc
 	}
 }
 
-func (p ResourcePool) Name(ctx context.Context) (string, error) {
-	var o mo.ResourcePool
-
-	err := p.Properties(ctx, p.Reference(), []string{"name"}, &o)
-	if err != nil {
-		return "", err
-	}
-
-	return o.Name, nil
-}
-
-func (p ResourcePool) ImportVApp(ctx context.Context, spec types.BaseImportSpec, folder *Folder, host *HostSystem) (*HttpNfcLease, error) {
+func (p ResourcePool) ImportVApp(ctx context.Context, spec types.BaseImportSpec, folder *Folder, host *HostSystem) (*nfc.Lease, error) {
 	req := types.ImportVApp{
 		This: p.Reference(),
 		Spec: spec,
@@ -77,7 +56,7 @@ func (p ResourcePool) ImportVApp(ctx context.Context, spec types.BaseImportSpec,
 		return nil, err
 	}
 
-	return NewHttpNfcLease(p.c, res.Returnval), nil
+	return nfc.NewLease(p.c, res.Returnval), nil
 }
 
 func (p ResourcePool) Create(ctx context.Context, name string, spec types.ResourceConfigSpec) (*ResourcePool, error) {

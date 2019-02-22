@@ -17,12 +17,14 @@ limitations under the License.
 package object
 
 import (
+	"context"
+
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/task"
 	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/progress"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 // Task is a convenience wrapper around task.Task that keeps a reference to
@@ -49,4 +51,12 @@ func (t *Task) Wait(ctx context.Context) error {
 func (t *Task) WaitForResult(ctx context.Context, s progress.Sinker) (*types.TaskInfo, error) {
 	p := property.DefaultCollector(t.c)
 	return task.Wait(ctx, t.Reference(), p, s)
+}
+
+func (t *Task) Cancel(ctx context.Context) error {
+	_, err := methods.CancelTask(ctx, t.Client(), &types.CancelTask{
+		This: t.Reference(),
+	})
+
+	return err
 }

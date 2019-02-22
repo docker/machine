@@ -17,10 +17,11 @@ limitations under the License.
 package guest
 
 import (
+	"context"
+
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type ProcessManager struct {
@@ -29,6 +30,10 @@ type ProcessManager struct {
 	vm types.ManagedObjectReference
 
 	c *vim25.Client
+}
+
+func (m ProcessManager) Client() *vim25.Client {
+	return m.c
 }
 
 func (m ProcessManager) Reference() types.ManagedObjectReference {

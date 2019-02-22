@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2016 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2018 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -148,6 +148,46 @@ type ContainerView struct {
 
 func init() {
 	t["ContainerView"] = reflect.TypeOf((*ContainerView)(nil)).Elem()
+}
+
+type CryptoManager struct {
+	Self types.ManagedObjectReference
+
+	Enabled bool `mo:"enabled"`
+}
+
+func (m CryptoManager) Reference() types.ManagedObjectReference {
+	return m.Self
+}
+
+func init() {
+	t["CryptoManager"] = reflect.TypeOf((*CryptoManager)(nil)).Elem()
+}
+
+type CryptoManagerHost struct {
+	CryptoManager
+}
+
+func init() {
+	t["CryptoManagerHost"] = reflect.TypeOf((*CryptoManagerHost)(nil)).Elem()
+}
+
+type CryptoManagerHostKMS struct {
+	CryptoManagerHost
+}
+
+func init() {
+	t["CryptoManagerHostKMS"] = reflect.TypeOf((*CryptoManagerHostKMS)(nil)).Elem()
+}
+
+type CryptoManagerKmip struct {
+	CryptoManager
+
+	KmipServers []types.KmipClusterInfo `mo:"kmipServers"`
+}
+
+func init() {
+	t["CryptoManagerKmip"] = reflect.TypeOf((*CryptoManagerKmip)(nil)).Elem()
 }
 
 type CustomFieldsManager struct {
@@ -356,6 +396,34 @@ func init() {
 	t["ExtensionManager"] = reflect.TypeOf((*ExtensionManager)(nil)).Elem()
 }
 
+type FailoverClusterConfigurator struct {
+	Self types.ManagedObjectReference
+
+	DisabledConfigureMethod []string `mo:"disabledConfigureMethod"`
+}
+
+func (m FailoverClusterConfigurator) Reference() types.ManagedObjectReference {
+	return m.Self
+}
+
+func init() {
+	t["FailoverClusterConfigurator"] = reflect.TypeOf((*FailoverClusterConfigurator)(nil)).Elem()
+}
+
+type FailoverClusterManager struct {
+	Self types.ManagedObjectReference
+
+	DisabledClusterMethod []string `mo:"disabledClusterMethod"`
+}
+
+func (m FailoverClusterManager) Reference() types.ManagedObjectReference {
+	return m.Self
+}
+
+func init() {
+	t["FailoverClusterManager"] = reflect.TypeOf((*FailoverClusterManager)(nil)).Elem()
+}
+
 type FileManager struct {
 	Self types.ManagedObjectReference
 }
@@ -459,6 +527,18 @@ func (m GuestWindowsRegistryManager) Reference() types.ManagedObjectReference {
 
 func init() {
 	t["GuestWindowsRegistryManager"] = reflect.TypeOf((*GuestWindowsRegistryManager)(nil)).Elem()
+}
+
+type HealthUpdateManager struct {
+	Self types.ManagedObjectReference
+}
+
+func (m HealthUpdateManager) Reference() types.ManagedObjectReference {
+	return m.Self
+}
+
+func init() {
+	t["HealthUpdateManager"] = reflect.TypeOf((*HealthUpdateManager)(nil)).Elem()
 }
 
 type HistoryCollector struct {
@@ -695,8 +775,10 @@ func init() {
 type HostGraphicsManager struct {
 	ExtensibleManagedObject
 
-	GraphicsInfo           []types.HostGraphicsInfo `mo:"graphicsInfo"`
-	SharedPassthruGpuTypes []string                 `mo:"sharedPassthruGpuTypes"`
+	GraphicsInfo           []types.HostGraphicsInfo          `mo:"graphicsInfo"`
+	GraphicsConfig         *types.HostGraphicsConfig         `mo:"graphicsConfig"`
+	SharedPassthruGpuTypes []string                          `mo:"sharedPassthruGpuTypes"`
+	SharedGpuCapabilities  []types.HostSharedGpuCapabilities `mo:"sharedGpuCapabilities"`
 }
 
 func init() {
@@ -788,6 +870,20 @@ func init() {
 	t["HostNetworkSystem"] = reflect.TypeOf((*HostNetworkSystem)(nil)).Elem()
 }
 
+type HostNvdimmSystem struct {
+	Self types.ManagedObjectReference
+
+	NvdimmSystemInfo types.NvdimmSystemInfo `mo:"nvdimmSystemInfo"`
+}
+
+func (m HostNvdimmSystem) Reference() types.ManagedObjectReference {
+	return m.Self
+}
+
+func init() {
+	t["HostNvdimmSystem"] = reflect.TypeOf((*HostNvdimmSystem)(nil)).Elem()
+}
+
 type HostPatchManager struct {
 	Self types.ManagedObjectReference
 }
@@ -803,7 +899,8 @@ func init() {
 type HostPciPassthruSystem struct {
 	ExtensibleManagedObject
 
-	PciPassthruInfo []types.BaseHostPciPassthruInfo `mo:"pciPassthruInfo"`
+	PciPassthruInfo     []types.BaseHostPciPassthruInfo     `mo:"pciPassthruInfo"`
+	SriovDevicePoolInfo []types.BaseHostSriovDevicePoolInfo `mo:"sriovDevicePoolInfo"`
 }
 
 func init() {
@@ -828,7 +925,10 @@ func init() {
 type HostProfile struct {
 	Profile
 
-	ReferenceHost *types.ManagedObjectReference `mo:"referenceHost"`
+	ValidationState           *string                                 `mo:"validationState"`
+	ValidationStateUpdateTime *time.Time                              `mo:"validationStateUpdateTime"`
+	ValidationFailureInfo     *types.HostProfileValidationFailureInfo `mo:"validationFailureInfo"`
+	ReferenceHost             *types.ManagedObjectReference           `mo:"referenceHost"`
 }
 
 func init() {
@@ -868,6 +968,18 @@ func init() {
 	t["HostSnmpSystem"] = reflect.TypeOf((*HostSnmpSystem)(nil)).Elem()
 }
 
+type HostSpecificationManager struct {
+	Self types.ManagedObjectReference
+}
+
+func (m HostSpecificationManager) Reference() types.ManagedObjectReference {
+	return m.Self
+}
+
+func init() {
+	t["HostSpecificationManager"] = reflect.TypeOf((*HostSpecificationManager)(nil)).Elem()
+}
+
 type HostStorageSystem struct {
 	ExtensibleManagedObject
 
@@ -884,18 +996,25 @@ func init() {
 type HostSystem struct {
 	ManagedEntity
 
-	Runtime            types.HostRuntimeInfo            `mo:"runtime"`
-	Summary            types.HostListSummary            `mo:"summary"`
-	Hardware           *types.HostHardwareInfo          `mo:"hardware"`
-	Capability         *types.HostCapability            `mo:"capability"`
-	LicensableResource types.HostLicensableResourceInfo `mo:"licensableResource"`
-	ConfigManager      types.HostConfigManager          `mo:"configManager"`
-	Config             *types.HostConfigInfo            `mo:"config"`
-	Vm                 []types.ManagedObjectReference   `mo:"vm"`
-	Datastore          []types.ManagedObjectReference   `mo:"datastore"`
-	Network            []types.ManagedObjectReference   `mo:"network"`
-	DatastoreBrowser   types.ManagedObjectReference     `mo:"datastoreBrowser"`
-	SystemResources    *types.HostSystemResourceInfo    `mo:"systemResources"`
+	Runtime                    types.HostRuntimeInfo                      `mo:"runtime"`
+	Summary                    types.HostListSummary                      `mo:"summary"`
+	Hardware                   *types.HostHardwareInfo                    `mo:"hardware"`
+	Capability                 *types.HostCapability                      `mo:"capability"`
+	LicensableResource         types.HostLicensableResourceInfo           `mo:"licensableResource"`
+	RemediationState           *types.HostSystemRemediationState          `mo:"remediationState"`
+	PrecheckRemediationResult  *types.ApplyHostProfileConfigurationSpec   `mo:"precheckRemediationResult"`
+	RemediationResult          *types.ApplyHostProfileConfigurationResult `mo:"remediationResult"`
+	ComplianceCheckState       *types.HostSystemComplianceCheckState      `mo:"complianceCheckState"`
+	ComplianceCheckResult      *types.ComplianceResult                    `mo:"complianceCheckResult"`
+	ConfigManager              types.HostConfigManager                    `mo:"configManager"`
+	Config                     *types.HostConfigInfo                      `mo:"config"`
+	Vm                         []types.ManagedObjectReference             `mo:"vm"`
+	Datastore                  []types.ManagedObjectReference             `mo:"datastore"`
+	Network                    []types.ManagedObjectReference             `mo:"network"`
+	DatastoreBrowser           types.ManagedObjectReference               `mo:"datastoreBrowser"`
+	SystemResources            *types.HostSystemResourceInfo              `mo:"systemResources"`
+	AnswerFileValidationState  *types.AnswerFileStatusResult              `mo:"answerFileValidationState"`
+	AnswerFileValidationResult *types.AnswerFileStatusResult              `mo:"answerFileValidationResult"`
 }
 
 func (m *HostSystem) Entity() *ManagedEntity {
@@ -929,6 +1048,14 @@ type HostVMotionSystem struct {
 
 func init() {
 	t["HostVMotionSystem"] = reflect.TypeOf((*HostVMotionSystem)(nil)).Elem()
+}
+
+type HostVStorageObjectManager struct {
+	VStorageObjectManagerBase
+}
+
+func init() {
+	t["HostVStorageObjectManager"] = reflect.TypeOf((*HostVStorageObjectManager)(nil)).Elem()
 }
 
 type HostVirtualNicManager struct {
@@ -970,10 +1097,13 @@ func init() {
 type HttpNfcLease struct {
 	Self types.ManagedObjectReference
 
-	InitializeProgress int32                       `mo:"initializeProgress"`
-	Info               *types.HttpNfcLeaseInfo     `mo:"info"`
-	State              types.HttpNfcLeaseState     `mo:"state"`
-	Error              *types.LocalizedMethodFault `mo:"error"`
+	InitializeProgress int32                          `mo:"initializeProgress"`
+	TransferProgress   int32                          `mo:"transferProgress"`
+	Mode               string                         `mo:"mode"`
+	Capabilities       types.HttpNfcLeaseCapabilities `mo:"capabilities"`
+	Info               *types.HttpNfcLeaseInfo        `mo:"info"`
+	State              types.HttpNfcLeaseState        `mo:"state"`
+	Error              *types.LocalizedMethodFault    `mo:"error"`
 }
 
 func (m HttpNfcLease) Reference() types.ManagedObjectReference {
@@ -1151,6 +1281,9 @@ func init() {
 
 type OpaqueNetwork struct {
 	Network
+
+	Capability  *types.OpaqueNetworkCapability `mo:"capability"`
+	ExtraConfig []types.BaseOptionValue        `mo:"extraConfig"`
 }
 
 func init() {
@@ -1496,16 +1629,24 @@ func init() {
 	t["UserDirectory"] = reflect.TypeOf((*UserDirectory)(nil)).Elem()
 }
 
-type VRPResourceManager struct {
+type VStorageObjectManagerBase struct {
 	Self types.ManagedObjectReference
 }
 
-func (m VRPResourceManager) Reference() types.ManagedObjectReference {
+func (m VStorageObjectManagerBase) Reference() types.ManagedObjectReference {
 	return m.Self
 }
 
 func init() {
-	t["VRPResourceManager"] = reflect.TypeOf((*VRPResourceManager)(nil)).Elem()
+	t["VStorageObjectManagerBase"] = reflect.TypeOf((*VStorageObjectManagerBase)(nil)).Elem()
+}
+
+type VcenterVStorageObjectManager struct {
+	VStorageObjectManagerBase
+}
+
+func init() {
+	t["VcenterVStorageObjectManager"] = reflect.TypeOf((*VcenterVStorageObjectManager)(nil)).Elem()
 }
 
 type View struct {

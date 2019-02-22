@@ -17,12 +17,12 @@ limitations under the License.
 package mo
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 func ignoreMissingProperty(ref types.ManagedObjectReference, p types.MissingProperty) bool {
@@ -63,6 +63,22 @@ func ObjectContentToType(o types.ObjectContent) (interface{}, error) {
 	}
 
 	return v.Elem().Interface(), nil
+}
+
+// ApplyPropertyChange converts the response of a call to WaitForUpdates
+// and applies it to the given managed object.
+func ApplyPropertyChange(obj Reference, changes []types.PropertyChange) {
+	t := typeInfoForType(obj.Reference().Type)
+	v := reflect.ValueOf(obj)
+
+	for _, p := range changes {
+		rv, ok := t.props[p.Name]
+		if !ok {
+			continue
+		}
+
+		assignValue(v, rv, reflect.ValueOf(p.Val))
+	}
 }
 
 // LoadRetrievePropertiesResponse converts the response of a call to

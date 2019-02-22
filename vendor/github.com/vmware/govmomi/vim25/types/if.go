@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2016 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014-2018 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -116,6 +116,40 @@ type BaseAuthorizationEvent interface {
 
 func init() {
 	t["BaseAuthorizationEvent"] = reflect.TypeOf((*AuthorizationEvent)(nil)).Elem()
+}
+
+func (b *BaseConfigInfo) GetBaseConfigInfo() *BaseConfigInfo { return b }
+
+type BaseBaseConfigInfo interface {
+	GetBaseConfigInfo() *BaseConfigInfo
+}
+
+func init() {
+	t["BaseBaseConfigInfo"] = reflect.TypeOf((*BaseConfigInfo)(nil)).Elem()
+}
+
+func (b *BaseConfigInfoBackingInfo) GetBaseConfigInfoBackingInfo() *BaseConfigInfoBackingInfo {
+	return b
+}
+
+type BaseBaseConfigInfoBackingInfo interface {
+	GetBaseConfigInfoBackingInfo() *BaseConfigInfoBackingInfo
+}
+
+func init() {
+	t["BaseBaseConfigInfoBackingInfo"] = reflect.TypeOf((*BaseConfigInfoBackingInfo)(nil)).Elem()
+}
+
+func (b *BaseConfigInfoFileBackingInfo) GetBaseConfigInfoFileBackingInfo() *BaseConfigInfoFileBackingInfo {
+	return b
+}
+
+type BaseBaseConfigInfoFileBackingInfo interface {
+	GetBaseConfigInfoFileBackingInfo() *BaseConfigInfoFileBackingInfo
+}
+
+func init() {
+	t["BaseBaseConfigInfoFileBackingInfo"] = reflect.TypeOf((*BaseConfigInfoFileBackingInfo)(nil)).Elem()
 }
 
 func (b *CannotAccessNetwork) GetCannotAccessNetwork() *CannotAccessNetwork { return b }
@@ -374,6 +408,26 @@ type BaseCpuIncompatible interface {
 
 func init() {
 	t["BaseCpuIncompatible"] = reflect.TypeOf((*CpuIncompatible)(nil)).Elem()
+}
+
+func (b *CryptoSpec) GetCryptoSpec() *CryptoSpec { return b }
+
+type BaseCryptoSpec interface {
+	GetCryptoSpec() *CryptoSpec
+}
+
+func init() {
+	t["BaseCryptoSpec"] = reflect.TypeOf((*CryptoSpec)(nil)).Elem()
+}
+
+func (b *CryptoSpecNoOp) GetCryptoSpecNoOp() *CryptoSpecNoOp { return b }
+
+type BaseCryptoSpecNoOp interface {
+	GetCryptoSpecNoOp() *CryptoSpecNoOp
+}
+
+func init() {
+	t["BaseCryptoSpecNoOp"] = reflect.TypeOf((*CryptoSpecNoOp)(nil)).Elem()
 }
 
 func (b *CustomFieldDefEvent) GetCustomFieldDefEvent() *CustomFieldDefEvent { return b }
@@ -732,6 +786,7 @@ func (b *DvsFilterConfig) GetDvsFilterConfig() *DvsFilterConfig { return b }
 
 type BaseDvsFilterConfig interface {
 	GetDvsFilterConfig() *DvsFilterConfig
+	GetDvsTrafficFilterConfig() *DvsTrafficFilterConfig
 }
 
 func init() {
@@ -774,10 +829,19 @@ func (b *DvsNetworkRuleQualifier) GetDvsNetworkRuleQualifier() *DvsNetworkRuleQu
 
 type BaseDvsNetworkRuleQualifier interface {
 	GetDvsNetworkRuleQualifier() *DvsNetworkRuleQualifier
+	GetDvsIpNetworkRuleQualifier() *DvsIpNetworkRuleQualifier
 }
 
 func init() {
 	t["BaseDvsNetworkRuleQualifier"] = reflect.TypeOf((*DvsNetworkRuleQualifier)(nil)).Elem()
+}
+
+func (b *DvsIpNetworkRuleQualifier) GetDvsIpNetworkRuleQualifier() *DvsIpNetworkRuleQualifier {
+	return b
+}
+
+type BaseDvsIpNetworkRuleQualifier interface {
+	GetDvsIpNetworkRuleQualifier() *DvsIpNetworkRuleQualifier
 }
 
 func (b *DvsTrafficFilterConfig) GetDvsTrafficFilterConfig() *DvsTrafficFilterConfig { return b }
@@ -1388,6 +1452,28 @@ func init() {
 	t["BaseHostProfileConfigSpec"] = reflect.TypeOf((*HostProfileConfigSpec)(nil)).Elem()
 }
 
+func (b *HostProfilesEntityCustomizations) GetHostProfilesEntityCustomizations() *HostProfilesEntityCustomizations {
+	return b
+}
+
+type BaseHostProfilesEntityCustomizations interface {
+	GetHostProfilesEntityCustomizations() *HostProfilesEntityCustomizations
+}
+
+func init() {
+	t["BaseHostProfilesEntityCustomizations"] = reflect.TypeOf((*HostProfilesEntityCustomizations)(nil)).Elem()
+}
+
+func (b *HostSriovDevicePoolInfo) GetHostSriovDevicePoolInfo() *HostSriovDevicePoolInfo { return b }
+
+type BaseHostSriovDevicePoolInfo interface {
+	GetHostSriovDevicePoolInfo() *HostSriovDevicePoolInfo
+}
+
+func init() {
+	t["BaseHostSriovDevicePoolInfo"] = reflect.TypeOf((*HostSriovDevicePoolInfo)(nil)).Elem()
+}
+
 func (b *HostSystemSwapConfigurationSystemSwapOption) GetHostSystemSwapConfigurationSystemSwapOption() *HostSystemSwapConfigurationSystemSwapOption {
 	return b
 }
@@ -1798,6 +1884,26 @@ func init() {
 	t["BaseNoPermission"] = reflect.TypeOf((*NoPermission)(nil)).Elem()
 }
 
+func (b *NodeDeploymentSpec) GetNodeDeploymentSpec() *NodeDeploymentSpec { return b }
+
+type BaseNodeDeploymentSpec interface {
+	GetNodeDeploymentSpec() *NodeDeploymentSpec
+}
+
+func init() {
+	t["BaseNodeDeploymentSpec"] = reflect.TypeOf((*NodeDeploymentSpec)(nil)).Elem()
+}
+
+func (b *NodeNetworkSpec) GetNodeNetworkSpec() *NodeNetworkSpec { return b }
+
+type BaseNodeNetworkSpec interface {
+	GetNodeNetworkSpec() *NodeNetworkSpec
+}
+
+func init() {
+	t["BaseNodeNetworkSpec"] = reflect.TypeOf((*NodeNetworkSpec)(nil)).Elem()
+}
+
 func (b *NotEnoughCpus) GetNotEnoughCpus() *NotEnoughCpus { return b }
 
 type BaseNotEnoughCpus interface {
@@ -2170,6 +2276,16 @@ func init() {
 	t["BaseProfileEvent"] = reflect.TypeOf((*ProfileEvent)(nil)).Elem()
 }
 
+func (b *ProfileExecuteResult) GetProfileExecuteResult() *ProfileExecuteResult { return b }
+
+type BaseProfileExecuteResult interface {
+	GetProfileExecuteResult() *ProfileExecuteResult
+}
+
+func init() {
+	t["BaseProfileExecuteResult"] = reflect.TypeOf((*ProfileExecuteResult)(nil)).Elem()
+}
+
 func (b *ProfileExpression) GetProfileExpression() *ProfileExpression { return b }
 
 type BaseProfileExpression interface {
@@ -2252,16 +2368,6 @@ type BaseReplicationVmFault interface {
 
 func init() {
 	t["BaseReplicationVmFault"] = reflect.TypeOf((*ReplicationVmFault)(nil)).Elem()
-}
-
-func (b *ResourceAllocationInfo) GetResourceAllocationInfo() *ResourceAllocationInfo { return b }
-
-type BaseResourceAllocationInfo interface {
-	GetResourceAllocationInfo() *ResourceAllocationInfo
-}
-
-func init() {
-	t["BaseResourceAllocationInfo"] = reflect.TypeOf((*ResourceAllocationInfo)(nil)).Elem()
 }
 
 func (b *ResourceInUse) GetResourceInUse() *ResourceInUse { return b }
@@ -2896,6 +3002,18 @@ func init() {
 	t["BaseVirtualMachineDiskDeviceInfo"] = reflect.TypeOf((*VirtualMachineDiskDeviceInfo)(nil)).Elem()
 }
 
+func (b *VirtualMachineGuestQuiesceSpec) GetVirtualMachineGuestQuiesceSpec() *VirtualMachineGuestQuiesceSpec {
+	return b
+}
+
+type BaseVirtualMachineGuestQuiesceSpec interface {
+	GetVirtualMachineGuestQuiesceSpec() *VirtualMachineGuestQuiesceSpec
+}
+
+func init() {
+	t["BaseVirtualMachineGuestQuiesceSpec"] = reflect.TypeOf((*VirtualMachineGuestQuiesceSpec)(nil)).Elem()
+}
+
 func (b *VirtualMachinePciPassthroughInfo) GetVirtualMachinePciPassthroughInfo() *VirtualMachinePciPassthroughInfo {
 	return b
 }
@@ -2918,6 +3036,18 @@ type BaseVirtualMachineProfileSpec interface {
 
 func init() {
 	t["BaseVirtualMachineProfileSpec"] = reflect.TypeOf((*VirtualMachineProfileSpec)(nil)).Elem()
+}
+
+func (b *VirtualMachineSriovDevicePoolInfo) GetVirtualMachineSriovDevicePoolInfo() *VirtualMachineSriovDevicePoolInfo {
+	return b
+}
+
+type BaseVirtualMachineSriovDevicePoolInfo interface {
+	GetVirtualMachineSriovDevicePoolInfo() *VirtualMachineSriovDevicePoolInfo
+}
+
+func init() {
+	t["BaseVirtualMachineSriovDevicePoolInfo"] = reflect.TypeOf((*VirtualMachineSriovDevicePoolInfo)(nil)).Elem()
 }
 
 func (b *VirtualMachineTargetInfo) GetVirtualMachineTargetInfo() *VirtualMachineTargetInfo { return b }
@@ -3026,6 +3156,26 @@ type BaseVirtualVmxnet interface {
 
 func init() {
 	t["BaseVirtualVmxnet"] = reflect.TypeOf((*VirtualVmxnet)(nil)).Elem()
+}
+
+func (b *VirtualVmxnet3) GetVirtualVmxnet3() *VirtualVmxnet3 { return b }
+
+type BaseVirtualVmxnet3 interface {
+	GetVirtualVmxnet3() *VirtualVmxnet3
+}
+
+func init() {
+	t["BaseVirtualVmxnet3"] = reflect.TypeOf((*VirtualVmxnet3)(nil)).Elem()
+}
+
+func (b *VirtualVmxnet3Option) GetVirtualVmxnet3Option() *VirtualVmxnet3Option { return b }
+
+type BaseVirtualVmxnet3Option interface {
+	GetVirtualVmxnet3Option() *VirtualVmxnet3Option
+}
+
+func init() {
+	t["BaseVirtualVmxnet3Option"] = reflect.TypeOf((*VirtualVmxnet3Option)(nil)).Elem()
 }
 
 func (b *VirtualVmxnetOption) GetVirtualVmxnetOption() *VirtualVmxnetOption { return b }
@@ -3284,4 +3434,26 @@ type BaseVsanUpgradeSystemUpgradeHistoryItem interface {
 
 func init() {
 	t["BaseVsanUpgradeSystemUpgradeHistoryItem"] = reflect.TypeOf((*VsanUpgradeSystemUpgradeHistoryItem)(nil)).Elem()
+}
+
+func (b *VslmCreateSpecBackingSpec) GetVslmCreateSpecBackingSpec() *VslmCreateSpecBackingSpec {
+	return b
+}
+
+type BaseVslmCreateSpecBackingSpec interface {
+	GetVslmCreateSpecBackingSpec() *VslmCreateSpecBackingSpec
+}
+
+func init() {
+	t["BaseVslmCreateSpecBackingSpec"] = reflect.TypeOf((*VslmCreateSpecBackingSpec)(nil)).Elem()
+}
+
+func (b *VslmMigrateSpec) GetVslmMigrateSpec() *VslmMigrateSpec { return b }
+
+type BaseVslmMigrateSpec interface {
+	GetVslmMigrateSpec() *VslmMigrateSpec
+}
+
+func init() {
+	t["BaseVslmMigrateSpec"] = reflect.TypeOf((*VslmMigrateSpec)(nil)).Elem()
 }

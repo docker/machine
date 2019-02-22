@@ -17,13 +17,13 @@ limitations under the License.
 package object
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type DatacenterFolders struct {
@@ -87,4 +87,43 @@ func (d Datacenter) Destroy(ctx context.Context) (*Task, error) {
 	}
 
 	return NewTask(d.c, res.Returnval), nil
+}
+
+// PowerOnVM powers on multiple virtual machines with a single vCenter call.
+// If called against ESX, serially powers on the list of VMs and the returned *Task will always be nil.
+func (d Datacenter) PowerOnVM(ctx context.Context, vm []types.ManagedObjectReference, option ...types.BaseOptionValue) (*Task, error) {
+	if d.Client().IsVC() {
+		req := types.PowerOnMultiVM_Task{
+			This:   d.Reference(),
+			Vm:     vm,
+			Option: option,
+		}
+
+		res, err := methods.PowerOnMultiVM_Task(ctx, d.c, &req)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewTask(d.c, res.Returnval), nil
+	}
+
+	for _, ref := range vm {
+		obj := NewVirtualMachine(d.Client(), ref)
+		task, err := obj.PowerOn(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		err = task.Wait(ctx)
+		if err != nil {
+			// Ignore any InvalidPowerState fault, as it indicates the VM is already powered on
+			if f, ok := err.(types.HasFault); ok {
+				if _, ok = f.Fault().(*types.InvalidPowerState); !ok {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return nil, nil
 }

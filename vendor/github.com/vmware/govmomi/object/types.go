@@ -49,6 +49,8 @@ func NewReference(c *vim25.Client, e types.ManagedObjectReference) Reference {
 		return NewHostSystem(c, e)
 	case "Network":
 		return NewNetwork(c, e)
+	case "OpaqueNetwork":
+		return NewOpaqueNetwork(c, e)
 	case "ResourcePool":
 		return NewResourcePool(c, e)
 	case "DistributedVirtualSwitch":
