@@ -94,6 +94,26 @@ func targetHost(c CommandLine, api libmachine.API) (string, error) {
 	return c.Args()[0], nil
 }
 
+// targetHostWithOffset returns a specific host name if one is indicated by the first CLI
+// arg, or the default host name if no host is specified. It ignores a number of arguments
+// equal to the value of `argOffset`.
+func targetHostWithOffset(c CommandLine, api libmachine.API, argOffset int) (string, error) {
+	if len(c.Args()) == 0+argOffset {
+		defaultExists, err := api.Exists(defaultMachineName)
+		if err != nil {
+			return "", fmt.Errorf("Error checking if host %q exists: %s", defaultMachineName, err)
+		}
+
+		if defaultExists {
+			return defaultMachineName, nil
+		}
+
+		return "", ErrNoDefault
+	}
+
+	return c.Args()[0+argOffset], nil
+}
+
 func runAction(actionName string, c CommandLine, api libmachine.API) error {
 	var (
 		hostsToLoad []string
@@ -202,6 +222,18 @@ var Commands = []cli.Command{
 				Name:  "timeout, t",
 				Usage: fmt.Sprintf("Timeout in seconds, default to %ds", activeDefaultTimeout),
 				Value: activeDefaultTimeout,
+			},
+		},
+	},
+	{
+		Name:        "add-trusted-ca-certificate",
+		Usage:       "Uploads a CA certificate into the trusted store",
+		Description: "Argument(s) are [machine_name] path_to_ca_certificate.pem",
+		Action:      runCommand(cmdAddCACertificate),
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "restart, r",
+				Usage: "Restart automatically after adding the certificate (necessary step in order to apply the changes)",
 			},
 		},
 	},
