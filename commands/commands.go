@@ -76,28 +76,9 @@ func (c *contextCommandLine) Application() *cli.App {
 }
 
 // targetHost returns a specific host name if one is indicated by the first CLI
-// arg, or the default host name if no host is specified.
-func targetHost(c CommandLine, api libmachine.API) (string, error) {
-	if len(c.Args()) == 0 {
-		defaultExists, err := api.Exists(defaultMachineName)
-		if err != nil {
-			return "", fmt.Errorf("Error checking if host %q exists: %s", defaultMachineName, err)
-		}
-
-		if defaultExists {
-			return defaultMachineName, nil
-		}
-
-		return "", ErrNoDefault
-	}
-
-	return c.Args()[0], nil
-}
-
-// targetHostWithOffset returns a specific host name if one is indicated by the first CLI
 // arg, or the default host name if no host is specified. It ignores a number of arguments
 // equal to the value of `argOffset`.
-func targetHostWithOffset(c CommandLine, api libmachine.API, argOffset int) (string, error) {
+func targetHost(c CommandLine, api libmachine.API, argOffset int) (string, error) {
 	if len(c.Args()) == 0+argOffset {
 		defaultExists, err := api.Exists(defaultMachineName)
 		if err != nil {
@@ -123,7 +104,7 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 	// machine if it exists.  This allows short form commands such as
 	// 'docker-machine stop' for convenience.
 	if len(c.Args()) == 0 {
-		target, err := targetHost(c, api)
+		target, err := targetHost(c, api, 0)
 		if err != nil {
 			return err
 		}

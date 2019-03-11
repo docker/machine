@@ -23,7 +23,7 @@ func cmdSSH(c CommandLine, api libmachine.API) error {
 		return nil
 	}
 
-	target, err := targetHost(c, api)
+	target, err := targetHost(c, api, 0)
 	if err != nil {
 		return err
 	}

@@ -30,7 +30,7 @@ func cmdAddCACertificate(c CommandLine, api libmachine.API) error {
 		return errFirstArgIsNotPEMFile
 	}
 
-	target, err := targetHostWithOffset(c, api, 1)
+	target, err := targetHost(c, api, 1)
 	if err != nil {
 		return err
 	}
