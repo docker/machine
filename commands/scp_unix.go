@@ -23,5 +23,5 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 		return err
 	}
 
-	return runCmdWithStdIo(*cmd)
+	return stdCommandRunner.run(*cmd)
 }

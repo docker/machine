@@ -79,7 +79,7 @@ func (c *contextCommandLine) Application() *cli.App {
 // arg, or the default host name if no host is specified. It ignores a number of arguments
 // equal to the value of `argOffset`.
 func targetHost(c CommandLine, api libmachine.API, argOffset int) (string, error) {
-	if len(c.Args()) == 0+argOffset {
+	if len(c.Args()) == argOffset {
 		defaultExists, err := api.Exists(defaultMachineName)
 		if err != nil {
 			return "", fmt.Errorf("Error checking if host %q exists: %s", defaultMachineName, err)
@@ -92,7 +92,7 @@ func targetHost(c CommandLine, api libmachine.API, argOffset int) (string, error
 		return "", ErrNoDefault
 	}
 
-	return c.Args()[0+argOffset], nil
+	return c.Args()[argOffset], nil
 }
 
 func runAction(actionName string, c CommandLine, api libmachine.API) error {

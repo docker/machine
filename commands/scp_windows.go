@@ -28,7 +28,13 @@ func cmdScp(c CommandLine, api libmachine.API) error {
 	// Default argument escaping is not valid for scp.exe with quoted arguments, so we do it ourselves
 	// see golang/go#15566
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
-	cmd.SysProcAttr.CmdLine = fmt.Sprintf("%s %s", cmd.Path, strings.Join(cmd.Args, " "))
+	cmd.SysProcAttr.CmdLine = fmt.Sprintf("%s %s", cmd.Path, strings.Join(tailArgs(cmd.Args), " "))
+	return stdCommandRunner.run(*cmd)
+}
 
-	return runCmdWithStdIo(*cmd)
+func tailArgs(a []string) []string {
+	if len(a) >= 2 {
+		return []string(a)[1:]
+	}
+	return []string{}
 }

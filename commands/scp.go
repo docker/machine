@@ -20,6 +20,7 @@ var (
 		"-o", "UserKnownHostsFile=/dev/null",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 	}
+	stdCommandRunner CommandRunner = &CommandRunnerWithStdIo{}
 )
 
 // HostInfo gives the mandatory information to connect to a host.
@@ -187,7 +188,16 @@ func generateLocationArg(hostInfo HostInfo, user, path string) (string, error) {
 	return location, nil
 }
 
-func runCmdWithStdIo(cmd exec.Cmd) error {
+func SetCommandRunner(cmdRunner CommandRunner) {
+	stdCommandRunner = cmdRunner
+}
+
+type CommandRunner interface {
+	run(cmd exec.Cmd) error
+}
+type CommandRunnerWithStdIo struct{}
+
+func (r *CommandRunnerWithStdIo) run(cmd exec.Cmd) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

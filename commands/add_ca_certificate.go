@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/docker/machine/commands/commandstest"
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	trustedCertsFolder = "/var/lib/boot2docker/certs"
+	trustedCertsFolder = "/var/lib/boot2docker/certs/"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 )
 
 func cmdAddCACertificate(c CommandLine, api libmachine.API) error {
+	stdout := os.Stdout
 	args := c.Args()
 	if len(args) == 0 {
 		c.ShowHelp()
@@ -47,13 +49,15 @@ func cmdAddCACertificate(c CommandLine, api libmachine.API) error {
 	if err != nil {
 		return err
 	}
+	//restoring the stdout captured by ssh/scp
+	os.Stdout = stdout
 
 	if c.Bool("restart") {
-		if err := runAction("restart", c, api); err != nil {
+		if err := restart(target, api); err != nil {
 			return err
 		}
 	} else {
-		log.Info("In order for the change to be effective, you need to restart the docker-machine with:\n%s", "docker-machine restart")
+		fmt.Printf("In order for the change to be effective, you need to restart the docker-machine with:\n%s", "docker-machine restart")
 	}
 
 	return nil
@@ -61,7 +65,12 @@ func cmdAddCACertificate(c CommandLine, api libmachine.API) error {
 
 func createFolder(targetHost string, api libmachine.API) error {
 	commandLine := &commandstest.FakeCommandLine{
-		CliArgs: strings.Split(fmt.Sprintf("sudo mkdir -p %s", trustedCertsFolder), " "),
+		CliArgs: []string{
+			targetHost,
+			fmt.Sprintf("sudo mkdir -p %s", trustedCertsFolder),
+			" && ",
+			fmt.Sprintf("sudo chown docker:docker %s", trustedCertsFolder),
+		},
 	}
 
 	log.Debug(commandLine)
@@ -78,12 +87,33 @@ func uploadCertificate(src, targetPath string, api libmachine.API) error {
 			src,
 			targetPath,
 		},
+		LocalFlags: &commandstest.FakeFlagger{
+			Data: map[string]interface{}{
+				"quiet": true,
+			},
+		},
 	}
+
 	log.Debug(commandLine)
 	err := cmdScp(commandLine, api)
 	if err != nil {
 		return err
 	}
-	log.Info("Certificate uploaded")
+	fmt.Println("Certificate uploaded successfully")
+	return nil
+}
+
+func restart(targetHost string, api libmachine.API) error {
+	commandLine := &commandstest.FakeCommandLine{
+		CliArgs: []string{
+			targetHost,
+		},
+	}
+
+	log.Debug(commandLine)
+	if err := runAction("restart", commandLine, api); err != nil {
+		return err
+	}
+
 	return nil
 }
