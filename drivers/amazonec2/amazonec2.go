@@ -59,6 +59,7 @@ var (
 	kubeApiPort                          = 6443
 	httpPort                             = 80
 	httpsPort                            = 443
+	nodeExporter                         = 9796
 	etcdPorts                            = []int64{2379, 2380}
 	clusterManagerPorts                  = []int64{6443, 6443}
 	vxlanPorts                           = []int64{4789, 4789}
@@ -1289,6 +1290,20 @@ func (d *Driver) configureSecurityGroupPermissions(group *ec2.SecurityGroup) ([]
 				IpProtocol: aws.String("tcp"),
 				FromPort:   aws.Int64(int64(kubeProxyPorts[0])),
 				ToPort:     aws.Int64(int64(kubeProxyPorts[1])),
+				UserIdGroupPairs: []*ec2.UserIdGroupPair{
+					{
+						GroupId: group.GroupId,
+					},
+				},
+			})
+		}
+
+		// node exporter
+		if !hasPortsInbound[fmt.Sprintf("%d/tcp", nodeExporter)] {
+			inboundPerms = append(inboundPerms, &ec2.IpPermission{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(nodeExporter)),
+				ToPort:     aws.Int64(int64(nodeExporter)),
 				UserIdGroupPairs: []*ec2.UserIdGroupPair{
 					{
 						GroupId: group.GroupId,
