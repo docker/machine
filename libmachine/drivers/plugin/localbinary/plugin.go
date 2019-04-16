@@ -20,7 +20,7 @@ var (
 	CoreDrivers                  = []string{"amazonec2", "azure", "digitalocean",
 		"exoscale", "generic", "google", "hyperv", "none", "openstack",
 		"rackspace", "softlayer", "virtualbox", "vmwarefusion",
-		"vmwarevcloudair", "vmwarevsphere"}
+		"vmwarevcloudair", "vmwarevsphere", "yandex"}
 )
 
 const (

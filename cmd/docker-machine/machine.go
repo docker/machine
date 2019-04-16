@@ -25,6 +25,7 @@ import (
 	"github.com/docker/machine/drivers/vmwarefusion"
 	"github.com/docker/machine/drivers/vmwarevcloudair"
 	"github.com/docker/machine/drivers/vmwarevsphere"
+	"github.com/docker/machine/drivers/yandex"
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/docker/machine/libmachine/log"
@@ -197,6 +198,8 @@ func runDriver(driverName string) {
 		plugin.RegisterDriver(vmwarevcloudair.NewDriver("", ""))
 	case "vmwarevsphere":
 		plugin.RegisterDriver(vmwarevsphere.NewDriver("", ""))
+	case "yandex":
+		plugin.RegisterDriver(yandex.NewDriver("", ""))
 	default:
 		fmt.Fprintf(os.Stderr, "Unsupported driver: %s\n", driverName)
 		os.Exit(1)
