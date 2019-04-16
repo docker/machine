@@ -49,4 +49,12 @@ type Ec2Client interface {
 
 	WaitUntilSpotInstanceRequestFulfilled(input *ec2.DescribeSpotInstanceRequestsInput) error
 	CancelSpotInstanceRequests(input *ec2.CancelSpotInstanceRequestsInput) (*ec2.CancelSpotInstanceRequestsOutput, error)
+
+	//SpotFleet
+
+	RequestSpotFleet(input *ec2.RequestSpotFleetInput) (*ec2.RequestSpotFleetOutput, error)
+
+	DescribeSpotFleetInstances(input *ec2.DescribeSpotFleetInstancesInput) (*ec2.DescribeSpotFleetInstancesOutput, error)
+
+	CancelSpotFleetRequests(input *ec2.CancelSpotFleetRequestsInput) (*ec2.CancelSpotFleetRequestsOutput, error)
 }

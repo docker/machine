@@ -63,6 +63,7 @@ func setupTestFailedSpotInstanceRequest(t *testing.T, r *ec2.RequestSpotInstance
 	driver.SSHPrivateKeyPath = privKeyPath
 	driver.SSHKeyPath = pubKeyPath
 	driver.KeyName = "foo"
+	driver.SubnetIds = []string{"subnet-123456"}
 
 	driver.RequestSpotInstance = true
 
