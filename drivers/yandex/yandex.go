@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/vpc/v1"
 
@@ -20,31 +21,30 @@ import (
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	*drivers.BaseDriver
-	//Tags    string
 
+	Endpoint              string
 	ServiceAccountKeyFile string
 	Token                 string
-	Endpoint              string
 
 	CloudID          string
-	InstanceID       string
-	FolderID         string
-	SubnetID         string
-	Zone             string
-	SSHUser          string
 	Cores            int
-	Memory           int
 	DiskSize         int
 	DiskType         string
-	UserDataFile     string
-	PlatformID       string
-	ServiceAccountID string
-	UseIPv6          bool
-	UseInternalIP    bool
-	ImageID          string
+	FolderID         string
 	ImageFamilyName  string
 	ImageFolderID    string
+	ImageID          string
+	InstanceID       string
+	Labels           []string
+	Memory           int
+	PlatformID       string
 	Preemptible      bool
+	SSHUser          string
+	ServiceAccountID string
+	SubnetID         string
+	UseIPv6          bool
+	UseInternalIP    bool
+	Zone             string
 }
 
 const (
@@ -187,6 +187,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Disk type, e.g. 'network-hdd'",
 			Value:  defaultDiskType,
 		},
+		mcnflag.StringSliceFlag{
+			EnvVar: "YC_LABELS",
+			Name:   "yandex-labels",
+			Usage:  "Instance labels",
+		},
 	}
 
 }
@@ -294,6 +299,11 @@ func (d *Driver) PreCreateCheck() error {
 		if err != nil {
 			return err
 		}
+
+	}
+	/// DO NOT NEED HERE
+	if len(d.Labels) > 0 {
+		d.ParsedLabels()
 	}
 
 	return nil
@@ -351,6 +361,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ImageFamilyName = flags.String("yandex-image-family-name")
 	d.ImageFolderID = flags.String("yandex-image-folder-id")
 	d.ImageID = flags.String("yandex-image-id")
+	d.Labels = flags.StringSlice("yandex-labels")
 	d.Memory = flags.Int("yandex-memory")
 	d.SSHUser = flags.String("yandex-ssh-user")
 	d.SubnetID = flags.String("yandex-subnet-id")
@@ -460,4 +471,19 @@ func (d *Driver) findSubnetID() (string, error) {
 		return subnet.Id, nil
 	}
 	return "", fmt.Errorf("no subnets in zone: %s", d.Zone)
+}
+
+func (d *Driver) ParsedLabels() map[string]string {
+	var labels = make(map[string]string)
+
+	for _, labelPair := range d.Labels {
+		labelPair = strings.TrimSpace(labelPair)
+		chunks := strings.SplitN(labelPair, "=", 2)
+		if len(chunks) == 1 {
+			labels[chunks[0]] = ""
+		} else {
+			labels[chunks[0]] = chunks[1]
+		}
+	}
+	return labels
 }

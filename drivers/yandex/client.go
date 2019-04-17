@@ -56,6 +56,7 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 				},
 			},
 		},
+		Labels: d.ParsedLabels(),
 		NetworkInterfaceSpecs: []*compute.NetworkInterfaceSpec{
 			{
 				SubnetId: d.SubnetID,
@@ -70,9 +71,6 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 			Preemptible: d.Preemptible,
 		},
 		ServiceAccountId: d.ServiceAccountID,
-		//Metadata: map[string]string{
-		//	"user-data": executeSSHKeyTemplate(key),
-		//},
 	}
 
 	// TODO use internalIP only
