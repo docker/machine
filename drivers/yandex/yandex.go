@@ -26,25 +26,24 @@ type Driver struct {
 	ServiceAccountKeyFile string
 	Token                 string
 
-	CloudID          string
-	Cores            int
-	DiskSize         int
-	DiskType         string
-	FolderID         string
-	ImageFamilyName  string
-	ImageFolderID    string
-	ImageID          string
-	InstanceID       string
-	Labels           []string
-	Memory           int
-	PlatformID       string
-	Preemptible      bool
-	SSHUser          string
-	ServiceAccountID string
-	SubnetID         string
-	UseIPv6          bool
-	UseInternalIP    bool
-	Zone             string
+	CloudID         string
+	Cores           int
+	DiskSize        int
+	DiskType        string
+	FolderID        string
+	ImageFamilyName string
+	ImageFolderID   string
+	ImageID         string
+	InstanceID      string
+	Labels          []string
+	Memory          int
+	PlatformID      string
+	Preemptible     bool
+	SSHUser         string
+	SubnetID        string
+	UseIPv6         bool
+	UseInternalIP   bool
+	Zone            string
 }
 
 const (
@@ -317,10 +316,6 @@ func (d *Driver) PreCreateCheck() error {
 			return err
 		}
 
-	}
-	/// DO NOT NEED HERE
-	if len(d.Labels) > 0 {
-		d.ParsedLabels()
 	}
 
 	return nil

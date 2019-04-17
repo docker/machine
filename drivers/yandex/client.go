@@ -70,7 +70,6 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 		SchedulingPolicy: &compute.SchedulingPolicy{
 			Preemptible: d.Preemptible,
 		},
-		ServiceAccountId: d.ServiceAccountID,
 	}
 
 	// TODO support static address assignment
