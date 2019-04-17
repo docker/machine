@@ -73,7 +73,6 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 		ServiceAccountId: d.ServiceAccountID,
 	}
 
-	// TODO use internalIP only
 	// TODO support static address assignment
 	// TODO additional disks
 

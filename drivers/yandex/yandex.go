@@ -51,6 +51,7 @@ const (
 	defaultCores           = 1
 	defaultDiskSize        = 20
 	defaultDiskType        = "network-hdd"
+	defaultEndpoint        = "api.cloud.yandex.net:443"
 	defaultImageFamilyName = "ubuntu-1604-lts"
 	defaultImageFolderID   = StandardImagesFolderID
 	defaultMemory          = 1
@@ -143,6 +144,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultImageFolderID,
 		},
 		mcnflag.StringFlag{
+			EnvVar: "YC_ENDPOINT",
+			Name:   "yandex-endpoint",
+			Usage:  "Yandex.Cloud API Endpoint",
+			Value:  defaultEndpoint,
+		},
+		mcnflag.StringFlag{
 			EnvVar: "YC_FOLDER_ID",
 			Name:   "yandex-folder-id",
 			Usage:  "Folder ID",
@@ -191,6 +198,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "YC_LABELS",
 			Name:   "yandex-labels",
 			Usage:  "Instance labels",
+		},
+		mcnflag.BoolFlag{
+			Name:   "yandex-preemptible",
+			Usage:  "Yandex.Cloud Instance Preemptibility flag",
+			EnvVar: "YC_PREEMPTIBLE",
+		},
+		mcnflag.BoolFlag{
+			Name:   "yandex-use-internal-ip",
+			Usage:  "Use internal Instance IP rather than public one",
+			EnvVar: "YANDEX_USE_INTERNAL_IP",
 		},
 	}
 
@@ -358,13 +375,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Cores = flags.Int("yandex-cores")
 	d.DiskSize = flags.Int("yandex-disk-size")
 	d.DiskType = flags.String("yandex-disk-type")
+	d.Endpoint = flags.String("yandex-endpoint")
 	d.ImageFamilyName = flags.String("yandex-image-family-name")
 	d.ImageFolderID = flags.String("yandex-image-folder-id")
 	d.ImageID = flags.String("yandex-image-id")
 	d.Labels = flags.StringSlice("yandex-labels")
 	d.Memory = flags.Int("yandex-memory")
+	d.Preemptible = flags.Bool("yandex-preemptible")
 	d.SSHUser = flags.String("yandex-ssh-user")
 	d.SubnetID = flags.String("yandex-subnet-id")
+	d.UseInternalIP = flags.Bool("yandex-use-internal-ip")
 	d.Zone = flags.String("yandex-zone")
 
 	return nil
