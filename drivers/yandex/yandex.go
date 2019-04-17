@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/yandex-cloud/go-genproto/yandex/cloud/vpc/v1"
+
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -24,6 +26,7 @@ type Driver struct {
 	Token                 string
 	Endpoint              string
 
+	CloudID          string
 	InstanceID       string
 	FolderID         string
 	SubnetID         string
@@ -145,6 +148,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Folder ID",
 		},
 		mcnflag.StringFlag{
+			EnvVar: "YC_CLOUD_ID",
+			Name:   "yandex-cloud-id",
+			Usage:  "Cloud ID",
+		},
+		mcnflag.StringFlag{
 			EnvVar: "YC_SUBNET_ID",
 			Name:   "yandex-subnet-id",
 			Usage:  "Subnet ID",
@@ -244,15 +252,31 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	log.Infof("Check that folder exists")
+	if d.FolderID == "" {
+		if d.CloudID == "" {
+			log.Warn("No Folder and Cloud identifiers provided")
+			log.Warn("Try guess cloud ID to use")
+			d.CloudID, err = d.guessCloudID()
+			if err != nil {
+				return err
+			}
+		}
 
-	_, err = c.sdk.ResourceManager().Folder().Get(context.TODO(), &resourcemanager.GetFolderRequest{
+		log.Warnf("Try guess folder ID to use inside cloud %q", d.CloudID)
+		d.FolderID, err = d.guessFolderID()
+		if err != nil {
+			return err
+		}
+	}
+	log.Infof("Check that folder exists")
+	folder, err := c.sdk.ResourceManager().Folder().Get(context.TODO(), &resourcemanager.GetFolderRequest{
 		FolderId: d.FolderID,
 	})
 	if err != nil {
 		return fmt.Errorf("Folder with ID %q not found. %v", d.FolderID, err)
 	}
 
+	log.Infof("Check if the instance with name %s already exists in folder", d.MachineName)
 	resp, err := c.sdk.Compute().Instance().List(context.TODO(), &compute.ListInstancesRequest{
 		FolderId: d.FolderID,
 		Filter:   fmt.Sprintf("name = \"%s\"", d.MachineName),
@@ -264,8 +288,15 @@ func (d *Driver) PreCreateCheck() error {
 		return fmt.Errorf("instance %q already exists in folder %q", d.MachineName, d.FolderID)
 	}
 
-	return nil
+	if d.SubnetID == "" {
+		log.Warnf("Subnet ID not provided, will search one for Zone %q in folder %q [%s]", d.Zone, folder.Name, folder.Id)
+		d.SubnetID, err = d.findSubnetID()
+		if err != nil {
+			return err
+		}
+	}
 
+	return nil
 }
 
 func (d *Driver) Remove() error {
@@ -313,6 +344,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("Yandex.Cloud driver requires the --yandex-token option")
 	}
 
+	d.CloudID = flags.String("yandex-cloud-id")
 	d.Cores = flags.Int("yandex-cores")
 	d.DiskSize = flags.Int("yandex-disk-size")
 	d.DiskType = flags.String("yandex-disk-type")
@@ -363,4 +395,69 @@ func (d *Driver) Stop() error {
 
 func (d *Driver) buildClient() (*YandexCloudClient, error) {
 	return NewYandexCloudClient(d)
+}
+
+func (d *Driver) guessCloudID() (string, error) {
+	c, err := d.buildClient()
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := c.sdk.ResourceManager().Cloud().List(context.TODO(), &resourcemanager.ListCloudsRequest{})
+	if err != nil {
+		return "", err
+	}
+	switch {
+	case len(resp.Clouds) == 0:
+		return "", errors.New("no one Cloud available")
+	case len(resp.Clouds) > 1:
+		return "", errors.New("more than one Cloud available, could not choose one")
+	}
+	return resp.Clouds[0].Id, nil
+}
+
+func (d *Driver) guessFolderID() (string, error) {
+	c, err := d.buildClient()
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := c.sdk.ResourceManager().Folder().List(context.TODO(), &resourcemanager.ListFoldersRequest{
+		CloudId: d.CloudID,
+	})
+	if err != nil {
+		return "", err
+	}
+	switch {
+	case len(resp.Folders) == 0:
+		return "", errors.New("no one Folder available")
+	case len(resp.Folders) > 1:
+		return "", errors.New("more than one Folder available, could not choose one")
+	}
+
+	return resp.Folders[0].Id, nil
+}
+
+func (d *Driver) findSubnetID() (string, error) {
+	c, err := d.buildClient()
+	if err != nil {
+		return "", err
+	}
+
+	ctx := context.TODO()
+
+	resp, err := c.sdk.VPC().Subnet().List(ctx, &vpc.ListSubnetsRequest{
+		FolderId: d.FolderID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	for _, subnet := range resp.Subnets {
+		if subnet.ZoneId != d.Zone {
+			continue
+		}
+		return subnet.Id, nil
+	}
+	return "", fmt.Errorf("no subnets in zone: %s", d.Zone)
 }
