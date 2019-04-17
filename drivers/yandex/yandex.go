@@ -249,15 +249,15 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.Error, err
 	}
 
-	status := instance.Status.String()
+	status := instance.Status
 	log.Debugf("Instance State: %s", status)
 
 	switch status {
-	case "PROVISIONING", "STARTING":
+	case compute.Instance_PROVISIONING, compute.Instance_STARTING:
 		return state.Starting, nil
-	case "RUNNING":
+	case compute.Instance_RUNNING:
 		return state.Running, nil
-	case "STOPPING", "STOPPED", "DELETING":
+	case compute.Instance_STOPPING, compute.Instance_STOPPED, compute.Instance_DELETING:
 		return state.Stopped, nil
 	}
 
