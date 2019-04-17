@@ -7,6 +7,9 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/yandex-cloud/go-sdk/iamkey"
+
+	"github.com/c2h5oh/datasize"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/compute/v1"
 	ycsdk "github.com/yandex-cloud/go-sdk"
@@ -38,15 +41,15 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 		ZoneId:     d.Zone,
 		PlatformId: d.PlatformID,
 		ResourcesSpec: &compute.ResourcesSpec{
-			Cores:  int64(d.Cores),  //1,
-			Memory: int64(d.Memory), //2 * 1024 * 1024 * 1024,
+			Cores:  int64(d.Cores),
+			Memory: toBytes(d.Memory),
 		},
 		BootDiskSpec: &compute.AttachedDiskSpec{
 			AutoDelete: true,
 			Disk: &compute.AttachedDiskSpec_DiskSpec_{
 				DiskSpec: &compute.AttachedDiskSpec_DiskSpec{
 					TypeId: d.DiskType,
-					Size:   int64(d.DiskSize), //20 * 1024 * 1024 * 1024,
+					Size:   toBytes(d.DiskSize),
 					Source: &compute.AttachedDiskSpec_DiskSpec_ImageId{
 						ImageId: imageID,
 					},
@@ -117,8 +120,28 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 }
 
 func NewYandexCloudClient(d *Driver) (*YandexCloudClient, error) {
+	if d.Token != "" && d.ServiceAccountKeyFile != "" {
+		return nil, errors.New("one of token or service account key file must be specified, not both")
+	}
+
+	var credentials ycsdk.Credentials
+	switch {
+	case d.Token != "":
+		credentials = ycsdk.OAuthToken(d.Token)
+	case d.ServiceAccountKeyFile != "":
+		key, err := iamkey.ReadFromJSONFile(d.ServiceAccountKeyFile)
+		if err != nil {
+			return nil, err
+		}
+
+		credentials, err = ycsdk.ServiceAccountKey(key)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	config := ycsdk.Config{
-		Credentials: ycsdk.OAuthToken(d.Token),
+		Credentials: credentials,
 	}
 
 	if d.Endpoint != "" {
@@ -235,4 +258,8 @@ func (c *YandexCloudClient) instanceAddresses(instance *compute.Instance) (ipV4I
 	}
 
 	return
+}
+
+func toBytes(gigabytesCount int) int64 {
+	return int64((datasize.ByteSize(gigabytesCount) * datasize.GB).Bytes())
 }

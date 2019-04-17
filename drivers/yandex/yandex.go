@@ -18,11 +18,11 @@ import (
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	*drivers.BaseDriver
-	//Address string
 	//Tags    string
 
-	Token    string
-	Endpoint string
+	ServiceAccountKeyFile string
+	Token                 string
+	Endpoint              string
 
 	InstanceID       string
 	FolderID         string
@@ -45,28 +45,28 @@ type Driver struct {
 }
 
 const (
+	defaultCores           = 1
+	defaultDiskSize        = 20
+	defaultDiskType        = "network-hdd"
+	defaultImageFamilyName = "ubuntu-1604-lts"
+	defaultImageFolderID   = StandardImagesFolderID
+	defaultMemory          = 1
+	defaultPlatformID      = "standard-v1"
 	defaultSSHPort         = 22
 	defaultSSHUser         = "ubuntu"
-	defaultImageFamilyName = "ubuntu-1604-lts"
 	defaultZone            = "ru-central1-a"
-	defaultCores           = 1
-	defaultMemory          = 1 * 1024 * 1024 * 1024
-	defaultDiskSize        = 20 * 1024 * 1024 * 1024
-	defaultDiskType        = "network-hdd"
-	defaultPlatformID      = "standard-v1"
-	defaultImageFolderID   = StandardImagesFolderID
 )
 
 // NewDriver creates a Driver with the specified storePath.
 func NewDriver(machineName string, storePath string) *Driver {
 	return &Driver{
-		ImageID:       defaultImageFamilyName,
 		Cores:         defaultCores,
-		Memory:        defaultMemory,
 		DiskSize:      defaultDiskSize,
 		DiskType:      defaultDiskType,
-		PlatformID:    defaultPlatformID,
 		ImageFolderID: defaultImageFolderID,
+		ImageID:       defaultImageFamilyName,
+		Memory:        defaultMemory,
+		PlatformID:    defaultPlatformID,
 		Zone:          defaultZone,
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: machineName,
@@ -90,7 +90,6 @@ func (d *Driver) Create() error {
 	}
 
 	return c.createInstance(d)
-
 }
 
 // DriverName returns the name of the driver
@@ -103,7 +102,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "YC_TOKEN",
 			Name:   "yandex-token",
-			Usage:  "Yandex.Cloud access token",
+			Usage:  "Yandex.Cloud OAuth token",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_SERVICE_ACCOUNT_KEY_FILE",
+			Name:   "yandex-service-account-key-file",
+			Usage:  "Yandex.Cloud Service Account key file",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "YC_SSH_USER",
@@ -120,19 +124,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "YC_IMAGE_ID",
 			Name:   "yandex-image-id",
-			Usage:  "Yandex.Cloud Image",
+			Usage:  "Yandex.Cloud Image identifier",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "YC_IMAGE_FAMILY_NAME",
 			Name:   "yandex-image-family-name",
-			Usage:  "Yandex.Cloud Image family name to search in ",
+			Usage:  "Yandex.Cloud Image family name to lookup image ID for instance",
 			Value:  defaultImageFamilyName,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "YC_IMAGE_FOLDER_ID",
 			Name:   "yandex-image-folder-id",
-			Usage:  "Yandex.Cloud Folder ID to search image by family name defined in `--yandex-image-family-name`",
+			Usage:  "Yandex.Cloud Folder ID to latest image by family name defined in `--yandex-image-family-name`",
 			Value:  defaultImageFolderID,
 		},
 		mcnflag.StringFlag{
@@ -154,19 +158,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.IntFlag{
 			EnvVar: "YC_CORES",
 			Name:   "yandex-cores",
-			Usage:  "vCPUs",
+			Usage:  "Count of virtual CPUs",
 			Value:  defaultCores,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "YC_MEMORY",
 			Name:   "yandex-memory",
-			Usage:  "Memory in bytes",
+			Usage:  "Memory in gigabytes",
 			Value:  defaultMemory,
 		},
 		mcnflag.IntFlag{
 			EnvVar: "YC_DISK_SIZE",
 			Name:   "yandex-disk-size",
-			Usage:  "Disk size in bytes",
+			Usage:  "Disk size in gigabytes",
 			Value:  defaultDiskSize,
 		},
 		mcnflag.StringFlag{
@@ -179,23 +183,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 
 }
 
-//func (d *Driver) GetIP() (string, error) {
-
-// GetMachineName returns the name of the machine
-//func (d *Driver) GetMachineName() string { panic("implement me") }
-
 // GetSSHHostname returns hostname for use with ssh
 func (d *Driver) GetSSHHostname() (string, error) {
 	return d.GetIP()
 }
-
-// GetSSHKeyPath returns key path for use with ssh
-//func (d *Driver) GetSSHKeyPath() string { panic("implement me") }
-
-// GetSSHPort returns port for use with ssh
-//func (d *Driver) GetSSHPort() (int, error) {
-//	panic("implement me")
-//}
 
 // GetSSHUsername returns username for use with ssh
 func (d *Driver) GetSSHUsername() string {
@@ -253,7 +244,7 @@ func (d *Driver) PreCreateCheck() error {
 		return err
 	}
 
-	log.Infof("Check that the folder exists")
+	log.Infof("Check that folder exists")
 
 	_, err = c.sdk.ResourceManager().Folder().Get(context.TODO(), &resourcemanager.GetFolderRequest{
 		FolderId: d.FolderID,
@@ -322,18 +313,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return fmt.Errorf("Yandex.Cloud driver requires the --yandex-token option")
 	}
 
-	d.ImageID = flags.String("yandex-image-id")
-	d.Zone = flags.String("yandex-zone")
-	d.SSHUser = flags.String("yandex-ssh-user")
-	d.SubnetID = flags.String("yandex-subnet-id")
 	d.Cores = flags.Int("yandex-cores")
-	d.Memory = flags.Int("yandex-memory")
 	d.DiskSize = flags.Int("yandex-disk-size")
 	d.DiskType = flags.String("yandex-disk-type")
-	d.ImageFolderID = flags.String("yandex-image-folder-id")
 	d.ImageFamilyName = flags.String("yandex-image-family-name")
-
-	d.SetSwarmConfigFromFlags(flags)
+	d.ImageFolderID = flags.String("yandex-image-folder-id")
+	d.ImageID = flags.String("yandex-image-id")
+	d.Memory = flags.Int("yandex-memory")
+	d.SSHUser = flags.String("yandex-ssh-user")
+	d.SubnetID = flags.String("yandex-subnet-id")
+	d.Zone = flags.String("yandex-zone")
 
 	return nil
 }
