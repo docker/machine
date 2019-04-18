@@ -1,18 +1,15 @@
 package yandex
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/compute/v1"
 	ycsdk "github.com/yandex-cloud/go-sdk"
 	"github.com/yandex-cloud/go-sdk/iamkey"
-	"google.golang.org/genproto/protobuf/field_mask"
 )
 
 const StandardImagesFolderID = "standard-images"
@@ -32,6 +29,7 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 			return err
 		}
 	}
+
 	log.Infof("Use image with ID %s from folder ID %s", imageID, d.ImageFolderID)
 
 	request := &compute.CreateInstanceRequest{
@@ -69,6 +67,9 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 		SchedulingPolicy: &compute.SchedulingPolicy{
 			Preemptible: d.Preemptible,
 		},
+		Metadata: map[string]string{
+			"user-data": d.UserData,
+		},
 	}
 
 	// TODO support static address assignment
@@ -91,7 +92,7 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 
 	d.InstanceID = md.InstanceId
 
-	log.Infof("Waiting for Instance")
+	log.Infof("Waiting for Instance with ID %q", d.InstanceID)
 	if err = op.Wait(ctx); err != nil {
 		return fmt.Errorf("Error while waiting operation to create instance: %s", err)
 	}
@@ -107,11 +108,8 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 	}
 
 	d.IPAddress, err = c.getInstanceIPAddress(d, instance)
-	if err != nil {
-		return err
-	}
 
-	return c.uploadSSHKey(ctx, instance, d.SSHUser, d.GetSSHKeyPath())
+	return err
 }
 
 func NewYandexCloudClient(d *Driver) (*YandexCloudClient, error) {
@@ -162,35 +160,6 @@ func (c *YandexCloudClient) getImageIDFromFolder(familyName, lookupFolderID stri
 		return "", err
 	}
 	return image.Id, nil
-}
-
-func (c *YandexCloudClient) uploadSSHKey(ctx context.Context, instance *compute.Instance, sshUserName, sshKeyPath string) error {
-	log.Infof("Uploading SSH Key")
-
-	sshKey, err := ioutil.ReadFile(sshKeyPath + ".pub")
-	if err != nil {
-		return err
-	}
-
-	metaDataValue := fmt.Sprintf("%s:%s %s\n", sshUserName, bytes.TrimSpace(sshKey), sshUserName)
-
-	request := &compute.UpdateInstanceRequest{
-		InstanceId: instance.Id,
-		UpdateMask: &field_mask.FieldMask{
-			Paths: []string{"metadata"},
-		},
-		Metadata: map[string]string{
-			"ssh-keys": metaDataValue,
-		},
-	}
-
-	op, err := c.sdk.WrapOperation(c.sdk.Compute().Instance().Update(ctx, request))
-	if err != nil {
-		return fmt.Errorf("Error while requesting API to update instance: %s", err)
-	}
-
-	return op.Wait(ctx)
-
 }
 
 func (c *YandexCloudClient) getInstanceIPAddress(d *Driver, instance *compute.Instance) (address string, err error) {

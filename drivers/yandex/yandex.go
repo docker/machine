@@ -1,11 +1,15 @@
 package yandex
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
 	"strings"
+	"text/template"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
@@ -42,6 +46,8 @@ type Driver struct {
 	SubnetID        string
 	UseIPv6         bool
 	UseInternalIP   bool
+	UserDataFile    string
+	UserData        string
 	Zone            string
 }
 
@@ -55,7 +61,7 @@ const (
 	defaultMemory          = 1
 	defaultPlatformID      = "standard-v1"
 	defaultSSHPort         = 22
-	defaultSSHUser         = "ubuntu"
+	defaultSSHUser         = "yc-user"
 	defaultZone            = "ru-central1-a"
 )
 
@@ -79,11 +85,11 @@ func NewDriver(machineName string, storePath string) *Driver {
 
 // Create creates a Yandex.Cloud VM instance acting as a docker host.
 func (d *Driver) Create() error {
-	log.Infof("Generating SSH Key")
-
-	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+	log.Infof("Prepare instance user-data")
+	if err := d.prepareUserData(); err != nil {
 		return err
 	}
+	log.Debugf("Formed user-data:\n%s\n", d.UserData)
 
 	log.Infof("Creating instance...")
 	c, err := d.buildClient()
@@ -195,17 +201,22 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringSliceFlag{
 			EnvVar: "YC_LABELS",
 			Name:   "yandex-labels",
-			Usage:  "Instance labels",
+			Usage:  "Instance labels in 'key=value' format",
 		},
 		mcnflag.BoolFlag{
-			Name:   "yandex-preemptible",
-			Usage:  "Yandex.Cloud Instance Preemptibility flag",
 			EnvVar: "YC_PREEMPTIBLE",
+			Name:   "yandex-preemptible",
+			Usage:  "Yandex.Cloud Instance preemptibility flag",
 		},
 		mcnflag.BoolFlag{
+			EnvVar: "YANDEX_USE_INTERNAL_IP",
 			Name:   "yandex-use-internal-ip",
 			Usage:  "Use internal Instance IP rather than public one",
-			EnvVar: "YANDEX_USE_INTERNAL_IP",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_USERDATA",
+			Name:   "yandex-userdata",
+			Usage:  "Path to file with cloud-init user-data",
 		},
 	}
 
@@ -267,6 +278,13 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) PreCreateCheck() error {
+	//d.UserData = defaultUserData(d.SSHKeyPath)
+	if d.UserDataFile != "" {
+		if _, err := os.Stat(d.UserDataFile); os.IsNotExist(err) {
+			return fmt.Errorf("user-data file %s could not be found", d.UserDataFile)
+		}
+	}
+
 	c, err := d.buildClient()
 	if err != nil {
 		return err
@@ -296,7 +314,7 @@ func (d *Driver) PreCreateCheck() error {
 		return fmt.Errorf("Folder with ID %q not found. %v", d.FolderID, err)
 	}
 
-	log.Infof("Check if the instance with name %s already exists in folder", d.MachineName)
+	log.Infof("Check if the instance with name %q already exists in folder", d.MachineName)
 	resp, err := c.sdk.Compute().Instance().List(context.TODO(), &compute.ListInstancesRequest{
 		FolderId: d.FolderID,
 		Filter:   fmt.Sprintf("name = \"%s\"", d.MachineName),
@@ -380,6 +398,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = flags.Int("yandex-ssh-port")
 	d.SubnetID = flags.String("yandex-subnet-id")
 	d.UseInternalIP = flags.Bool("yandex-use-internal-ip")
+	d.UserDataFile = flags.String("yandex-userdata")
 	d.Zone = flags.String("yandex-zone")
 
 	return nil
@@ -502,3 +521,62 @@ func (d *Driver) ParsedLabels() map[string]string {
 	}
 	return labels
 }
+
+func (d *Driver) publicSSHKeyPath() string {
+	return d.GetSSHKeyPath() + ".pub"
+}
+
+func (d *Driver) prepareUserData() error {
+	if d.UserDataFile != "" {
+		log.Infof("Use provided file %q with user-data", d.UserDataFile)
+		buf, err := ioutil.ReadFile(d.UserDataFile)
+		if err != nil {
+			return err
+		}
+		d.UserData = string(buf)
+		return nil
+	}
+
+	log.Infof("Generating SSH Key")
+	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+		return err
+	}
+
+	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
+		return err
+	}
+
+	d.UserData, err = defaultUserData(d.GetSSHUsername(), string(publicKey))
+
+	return err
+}
+
+func defaultUserData(sshUserName, sshPublicKey string) (string, error) {
+	type templateData struct {
+		SSHUserName  string
+		SSHPublicKey string
+	}
+	buf := &bytes.Buffer{}
+	err := defaultUserDataTemplate.Execute(buf, templateData{
+		SSHUserName:  sshUserName,
+		SSHPublicKey: sshPublicKey,
+	})
+	if err != nil {
+		return "", fmt.Errorf("error while process template: %s", err)
+	}
+
+	return buf.String(), nil
+}
+
+var defaultUserDataTemplate = template.Must(
+	template.New("user-data").Parse(`#cloud-config
+ssh_pwauth: no
+
+users:
+  - name: {{.SSHUserName}}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - {{.SSHPublicKey}}
+`))
