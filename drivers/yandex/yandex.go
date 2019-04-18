@@ -377,6 +377,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Memory = flags.Int("yandex-memory")
 	d.Preemptible = flags.Bool("yandex-preemptible")
 	d.SSHUser = flags.String("yandex-ssh-user")
+	d.SSHPort = flags.Int("yandex-ssh-port")
 	d.SubnetID = flags.String("yandex-subnet-id")
 	d.UseInternalIP = flags.Bool("yandex-use-internal-ip")
 	d.Zone = flags.String("yandex-zone")
