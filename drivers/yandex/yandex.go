@@ -7,8 +7,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/yandex-cloud/go-genproto/yandex/cloud/vpc/v1"
-
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -16,6 +14,7 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/compute/v1"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/resourcemanager/v1"
+	"github.com/yandex-cloud/go-genproto/yandex/cloud/vpc/v1"
 )
 
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.

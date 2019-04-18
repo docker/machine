@@ -1,18 +1,17 @@
 package yandex
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"strings"
-
-	"github.com/yandex-cloud/go-sdk/iamkey"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/compute/v1"
 	ycsdk "github.com/yandex-cloud/go-sdk"
+	"github.com/yandex-cloud/go-sdk/iamkey"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
@@ -173,7 +172,7 @@ func (c *YandexCloudClient) uploadSSHKey(ctx context.Context, instance *compute.
 		return err
 	}
 
-	metaDataValue := fmt.Sprintf("%s:%s %s\n", sshUserName, strings.TrimSpace(string(sshKey)), sshUserName)
+	metaDataValue := fmt.Sprintf("%s:%s %s\n", sshUserName, bytes.TrimSpace(sshKey), sshUserName)
 
 	request := &compute.UpdateInstanceRequest{
 		InstanceId: instance.Id,
