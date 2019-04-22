@@ -102,6 +102,14 @@
   version = "1.1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:e8891cd354f2af940345f895d5698ab1ed439196d4f69eb44817fc91e80354c1"
+  name = "github.com/c2h5oh/datasize"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4eba002a5eaea69cf8d235a388fc6b65ae68d2dd"
+
+[[projects]]
   digest = "1:f50c858ba1549c39fedde09546274f73991a1525870bd2ab575d35b956d2d246"
   name = "github.com/cenkalti/backoff"
   packages = ["."]
@@ -473,7 +481,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:524ca168039a413c2a3aded9989f201e869d9d888cbc8e274268f30f66a984cc"
+  digest = "1:318102db04c5e7da63495359b5fa9ba183541a5b39beab54e06d725257ce8dc9"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -481,7 +489,7 @@
     "windows/registry",
   ]
   pruneopts = "UT"
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "e8e3143a4f4a00f1fafef0dd82ba78223281b01b"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -629,6 +637,7 @@
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ec2",
     "github.com/bugsnag/bugsnag-go",
+    "github.com/c2h5oh/datasize",
     "github.com/codegangsta/cli",
     "github.com/digitalocean/godo",
     "github.com/docker/docker/pkg/term",
@@ -662,7 +671,9 @@
     "github.com/vmware/govmomi/vim25/types",
     "github.com/yandex-cloud/go-genproto/yandex/cloud/compute/v1",
     "github.com/yandex-cloud/go-genproto/yandex/cloud/resourcemanager/v1",
+    "github.com/yandex-cloud/go-genproto/yandex/cloud/vpc/v1",
     "github.com/yandex-cloud/go-sdk",
+    "github.com/yandex-cloud/go-sdk/iamkey",
     "golang.org/x/crypto/ssh",
     "golang.org/x/crypto/ssh/terminal",
     "golang.org/x/net/context",
@@ -671,7 +682,6 @@
     "golang.org/x/sys/windows/registry",
     "google.golang.org/api/compute/v1",
     "google.golang.org/api/googleapi",
-    "google.golang.org/genproto/protobuf/field_mask",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
