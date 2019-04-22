@@ -19,7 +19,7 @@ func TestNewYandexCloudClient(t *testing.T) {
 			name: "use token",
 			args: args{
 				d: &Driver{
-					Token:                 "some-test-token",
+					Token: "some-test-token",
 					ServiceAccountKeyFile: "",
 				},
 			},
@@ -29,7 +29,7 @@ func TestNewYandexCloudClient(t *testing.T) {
 			name: "service account key file doest not exist",
 			args: args{
 				d: &Driver{
-					Token:                 "",
+					Token: "",
 					ServiceAccountKeyFile: "some-not-exist-sa-key-file",
 				},
 			},
@@ -39,7 +39,7 @@ func TestNewYandexCloudClient(t *testing.T) {
 			name: "both auth methods provided",
 			args: args{
 				d: &Driver{
-					Token:                 "some-test-token",
+					Token: "some-test-token",
 					ServiceAccountKeyFile: "test-fixtures/fake_service_account_key.json",
 				},
 			},
@@ -49,7 +49,7 @@ func TestNewYandexCloudClient(t *testing.T) {
 			name: "service account key file",
 			args: args{
 				d: &Driver{
-					Token:                 "",
+					Token: "",
 					ServiceAccountKeyFile: "test-fixtures/fake_service_account_key.json",
 				},
 			},
