@@ -373,17 +373,19 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.FolderID = flags.String("yandex-folder-id")
-	if d.FolderID == "" {
-		return errors.New("no Yandex.Cloud Folder ID specified (--yandex-folder-id)")
-	}
-
-	d.Token = flags.String("yandex-token")
-	if d.Token == "" {
-		return fmt.Errorf("Yandex.Cloud driver requires the --yandex-token option")
-	}
-
 	d.CloudID = flags.String("yandex-cloud-id")
+	d.FolderID = flags.String("yandex-folder-id")
+
+	d.ServiceAccountKeyFile = flags.String("yandex-service-account-key-file")
+	d.Token = flags.String("yandex-token")
+
+	switch {
+	case d.Token != "" && d.ServiceAccountKeyFile != "":
+		return fmt.Errorf("Yandex.Cloud driver requires one of token or service account key file, not both")
+	case d.Token == "" && d.ServiceAccountKeyFile == "":
+		return fmt.Errorf("A token or service account key file must be specified")
+	}
+
 	d.Cores = flags.Int("yandex-cores")
 	d.DiskSize = flags.Int("yandex-disk-size")
 	d.DiskType = flags.String("yandex-disk-type")
@@ -456,7 +458,7 @@ func (d *Driver) guessCloudID() (string, error) {
 	case len(resp.Clouds) == 0:
 		return "", errors.New("no one Cloud available")
 	case len(resp.Clouds) > 1:
-		return "", errors.New("more than one Cloud available, could not choose one")
+		return "", errors.New("more than one Cloud available, could not choose one; try specify exact Folder ID by '--yandex-folder-id' param")
 	}
 	return resp.Clouds[0].Id, nil
 }
@@ -477,7 +479,7 @@ func (d *Driver) guessFolderID() (string, error) {
 	case len(resp.Folders) == 0:
 		return "", errors.New("no one Folder available")
 	case len(resp.Folders) > 1:
-		return "", errors.New("more than one Folder available, could not choose one")
+		return "", errors.New("more than one Folder available, could not choose one; try specify exact Folder ID by '--yandex-folder-id' param")
 	}
 
 	return resp.Folders[0].Id, nil
