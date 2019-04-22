@@ -438,8 +438,8 @@ func (d *Driver) Stop() error {
 	return op.Wait(ctx)
 }
 
-func (d *Driver) buildClient() (*YandexCloudClient, error) {
-	return NewYandexCloudClient(d)
+func (d *Driver) buildClient() (*YCClient, error) {
+	return NewYCClient(d)
 }
 
 func (d *Driver) guessCloudID() (string, error) {

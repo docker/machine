@@ -14,11 +14,11 @@ import (
 
 const StandardImagesFolderID = "standard-images"
 
-type YandexCloudClient struct {
+type YCClient struct {
 	sdk *ycsdk.SDK
 }
 
-func (c *YandexCloudClient) createInstance(d *Driver) error {
+func (c *YCClient) createInstance(d *Driver) error {
 	ctx := context.TODO()
 
 	imageID := d.ImageID
@@ -112,7 +112,7 @@ func (c *YandexCloudClient) createInstance(d *Driver) error {
 	return err
 }
 
-func NewYandexCloudClient(d *Driver) (*YandexCloudClient, error) {
+func NewYCClient(d *Driver) (*YCClient, error) {
 	if d.Token != "" && d.ServiceAccountKeyFile != "" {
 		return nil, errors.New("one of token or service account key file must be specified, not both")
 	}
@@ -146,12 +146,12 @@ func NewYandexCloudClient(d *Driver) (*YandexCloudClient, error) {
 		return nil, err
 	}
 
-	return &YandexCloudClient{
+	return &YCClient{
 		sdk: sdk,
 	}, nil
 }
 
-func (c *YandexCloudClient) getImageIDFromFolder(familyName, lookupFolderID string) (string, error) {
+func (c *YCClient) getImageIDFromFolder(familyName, lookupFolderID string) (string, error) {
 	image, err := c.sdk.Compute().Image().GetLatestByFamily(context.TODO(), &compute.GetImageLatestByFamilyRequest{
 		FolderId: lookupFolderID,
 		Family:   familyName,
@@ -162,7 +162,7 @@ func (c *YandexCloudClient) getImageIDFromFolder(familyName, lookupFolderID stri
 	return image.Id, nil
 }
 
-func (c *YandexCloudClient) getInstanceIPAddress(d *Driver, instance *compute.Instance) (address string, err error) {
+func (c *YCClient) getInstanceIPAddress(d *Driver, instance *compute.Instance) (address string, err error) {
 	// Instance could have several network interfaces with different configuration each
 	// Get all possible addresses for instance
 	addrIPV4Internal, addrIPV4External, addrIPV6Addr, err := c.instanceAddresses(instance)
@@ -189,7 +189,7 @@ func (c *YandexCloudClient) getInstanceIPAddress(d *Driver, instance *compute.In
 	return "", errors.New("instance has no one IPv4 external address")
 }
 
-func (c *YandexCloudClient) instanceAddresses(instance *compute.Instance) (ipV4Int, ipV4Ext, ipV6 string, err error) {
+func (c *YCClient) instanceAddresses(instance *compute.Instance) (ipV4Int, ipV4Ext, ipV6 string, err error) {
 	if len(instance.NetworkInterfaces) == 0 {
 		return "", "", "", errors.New("No one network interface found for an instance")
 	}

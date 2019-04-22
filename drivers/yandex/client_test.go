@@ -58,9 +58,9 @@ func TestNewYandexCloudClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewYandexCloudClient(tt.args.d)
+			_, err := NewYCClient(tt.args.d)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewYandexCloudClient() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewYCClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 		})
@@ -158,14 +158,14 @@ func TestYandexCloudClient_getInstanceIPAddress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &YandexCloudClient{}
+			c := &YCClient{}
 			gotAddress, err := c.getInstanceIPAddress(tt.args.d, tt.args.instance)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("YandexCloudClient.getInstanceIPAddress() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("YCClient.getInstanceIPAddress() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotAddress != tt.wantAddress {
-				t.Errorf("YandexCloudClient.getInstanceIPAddress() = %v, want %v", gotAddress, tt.wantAddress)
+				t.Errorf("YCClient.getInstanceIPAddress() = %v, want %v", gotAddress, tt.wantAddress)
 			}
 		})
 	}
@@ -178,9 +178,9 @@ func TestYandexCloudClient_instanceAddresses(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        args
-		wantIpV4Int string
-		wantIpV4Ext string
-		wantIpV6    string
+		wantIPV4Int string
+		wantIPV4Ext string
+		wantIPV6    string
 		wantErr     bool
 	}{
 		{
@@ -190,9 +190,9 @@ func TestYandexCloudClient_instanceAddresses(t *testing.T) {
 					NetworkInterfaces: []*compute.NetworkInterface{},
 				},
 			},
-			wantIpV4Int: "",
-			wantIpV4Ext: "",
-			wantIpV6:    "",
+			wantIPV4Int: "",
+			wantIPV4Ext: "",
+			wantIPV6:    "",
 			wantErr:     true,
 		},
 		{
@@ -211,9 +211,9 @@ func TestYandexCloudClient_instanceAddresses(t *testing.T) {
 					},
 				},
 			},
-			wantIpV4Int: "192.168.19.16",
-			wantIpV4Ext: "",
-			wantIpV6:    "",
+			wantIPV4Int: "192.168.19.16",
+			wantIPV4Ext: "",
+			wantIPV6:    "",
 			wantErr:     false,
 		},
 		{
@@ -236,9 +236,9 @@ func TestYandexCloudClient_instanceAddresses(t *testing.T) {
 					},
 				},
 			},
-			wantIpV4Int: "192.168.19.86",
-			wantIpV4Ext: "92.68.12.34",
-			wantIpV6:    "",
+			wantIPV4Int: "192.168.19.86",
+			wantIPV4Ext: "92.68.12.34",
+			wantIPV6:    "",
 			wantErr:     false,
 		},
 		{
@@ -248,6 +248,9 @@ func TestYandexCloudClient_instanceAddresses(t *testing.T) {
 					NetworkInterfaces: []*compute.NetworkInterface{
 						{
 							Index: "1",
+							PrimaryV4Address: &compute.PrimaryAddress{
+								Address: "192.168.19.86",
+							},
 							PrimaryV6Address: &compute.PrimaryAddress{
 								Address: "2001:db8::370:7348",
 							},
@@ -257,28 +260,28 @@ func TestYandexCloudClient_instanceAddresses(t *testing.T) {
 					},
 				},
 			},
-			wantIpV4Int: "",
-			wantIpV4Ext: "",
-			wantIpV6:    "2001:db8::370:7348",
+			wantIPV4Int: "192.168.19.86",
+			wantIPV4Ext: "",
+			wantIPV6:    "2001:db8::370:7348",
 			wantErr:     false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &YandexCloudClient{}
-			gotIpV4Int, gotIpV4Ext, gotIpV6, err := c.instanceAddresses(tt.args.instance)
+			c := &YCClient{}
+			gotIPV4Int, gotIPV4Ext, gotIPV6, err := c.instanceAddresses(tt.args.instance)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("YandexCloudClient.instanceAddresses() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("YCClient.instanceAddresses() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotIpV4Int != tt.wantIpV4Int {
-				t.Errorf("YandexCloudClient.instanceAddresses() gotIpV4Int = %v, want %v", gotIpV4Int, tt.wantIpV4Int)
+			if gotIPV4Int != tt.wantIPV4Int {
+				t.Errorf("YCClient.instanceAddresses() gotIPV4Int = %v, want %v", gotIPV4Int, tt.wantIPV4Int)
 			}
-			if gotIpV4Ext != tt.wantIpV4Ext {
-				t.Errorf("YandexCloudClient.instanceAddresses() gotIpV4Ext = %v, want %v", gotIpV4Ext, tt.wantIpV4Ext)
+			if gotIPV4Ext != tt.wantIPV4Ext {
+				t.Errorf("YCClient.instanceAddresses() gotIPV4Ext = %v, want %v", gotIPV4Ext, tt.wantIPV4Ext)
 			}
-			if gotIpV6 != tt.wantIpV6 {
-				t.Errorf("YandexCloudClient.instanceAddresses() gotIpV6 = %v, want %v", gotIpV6, tt.wantIpV6)
+			if gotIPV6 != tt.wantIPV6 {
+				t.Errorf("YCClient.instanceAddresses() gotIPV6 = %v, want %v", gotIPV6, tt.wantIPV6)
 			}
 		})
 	}
