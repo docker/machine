@@ -218,6 +218,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "yandex-userdata",
 			Usage:  "Path to file with cloud-init user-data",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_PLATFORM_ID",
+			Name:   "yandex-platform-id",
+			Usage:  "ID of the hardware platform configuration for the instance",
+			Value:  defaultPlatformID,
+		},
 	}
 
 }
@@ -395,6 +401,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ImageID = flags.String("yandex-image-id")
 	d.Labels = flags.StringSlice("yandex-labels")
 	d.Memory = flags.Int("yandex-memory")
+	d.PlatformID = flags.String("yandex-platform-id")
 	d.Preemptible = flags.Bool("yandex-preemptible")
 	d.SSHUser = flags.String("yandex-ssh-user")
 	d.SSHPort = flags.Int("yandex-ssh-port")
