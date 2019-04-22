@@ -29,40 +29,40 @@ type Driver struct {
 	ServiceAccountKeyFile string
 	Token                 string
 
-	CloudID         string
-	Cores           int
-	DiskSize        int
-	DiskType        string
-	FolderID        string
-	ImageFamilyName string
-	ImageFolderID   string
-	ImageID         string
-	InstanceID      string
-	Labels          []string
-	Memory          int
-	PlatformID      string
-	Preemptible     bool
-	SSHUser         string
-	SubnetID        string
-	UseIPv6         bool
-	UseInternalIP   bool
-	UserDataFile    string
-	UserData        string
-	Zone            string
+	CloudID       string
+	Cores         int
+	DiskSize      int
+	DiskType      string
+	FolderID      string
+	ImageFamily   string
+	ImageFolderID string
+	ImageID       string
+	InstanceID    string
+	Labels        []string
+	Memory        int
+	PlatformID    string
+	Preemptible   bool
+	SSHUser       string
+	SubnetID      string
+	UseIPv6       bool
+	UseInternalIP bool
+	UserDataFile  string
+	UserData      string
+	Zone          string
 }
 
 const (
-	defaultCores           = 1
-	defaultDiskSize        = 20
-	defaultDiskType        = "network-hdd"
-	defaultEndpoint        = "api.cloud.yandex.net:443"
-	defaultImageFamilyName = "ubuntu-1604-lts"
-	defaultImageFolderID   = StandardImagesFolderID
-	defaultMemory          = 1
-	defaultPlatformID      = "standard-v1"
-	defaultSSHPort         = 22
-	defaultSSHUser         = "yc-user"
-	defaultZone            = "ru-central1-a"
+	defaultCores         = 1
+	defaultDiskSize      = 20
+	defaultDiskType      = "network-hdd"
+	defaultEndpoint      = "api.cloud.yandex.net:443"
+	defaultImageFamily   = "ubuntu-1604-lts"
+	defaultImageFolderID = StandardImagesFolderID
+	defaultMemory        = 1
+	defaultPlatformID    = "standard-v1"
+	defaultSSHPort       = 22
+	defaultSSHUser       = "yc-user"
+	defaultZone          = "ru-central1-a"
 )
 
 // NewDriver creates a Driver with the specified storePath.
@@ -72,7 +72,7 @@ func NewDriver(machineName string, storePath string) *Driver {
 		DiskSize:      defaultDiskSize,
 		DiskType:      defaultDiskType,
 		ImageFolderID: defaultImageFolderID,
-		ImageID:       defaultImageFamilyName,
+		ImageFamily:   defaultImageFamily,
 		Memory:        defaultMemory,
 		PlatformID:    defaultPlatformID,
 		Zone:          defaultZone,
@@ -136,15 +136,15 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  "",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "YC_IMAGE_FAMILY_NAME",
-			Name:   "yandex-image-family-name",
+			EnvVar: "YC_IMAGE_FAMILY",
+			Name:   "yandex-image-family",
 			Usage:  "Yandex.Cloud Image family name to lookup image ID for instance",
-			Value:  defaultImageFamilyName,
+			Value:  defaultImageFamily,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "YC_IMAGE_FOLDER_ID",
 			Name:   "yandex-image-folder-id",
-			Usage:  "Yandex.Cloud Folder ID to latest image by family name defined in `--yandex-image-family-name`",
+			Usage:  "Yandex.Cloud Folder ID to latest image by family name defined in `--yandex-image-family`",
 			Value:  defaultImageFolderID,
 		},
 		mcnflag.StringFlag{
@@ -396,7 +396,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("yandex-disk-size")
 	d.DiskType = flags.String("yandex-disk-type")
 	d.Endpoint = flags.String("yandex-endpoint")
-	d.ImageFamilyName = flags.String("yandex-image-family-name")
+	d.ImageFamily = flags.String("yandex-image-family")
 	d.ImageFolderID = flags.String("yandex-image-folder-id")
 	d.ImageID = flags.String("yandex-image-id")
 	d.Labels = flags.StringSlice("yandex-labels")

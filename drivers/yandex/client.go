@@ -24,7 +24,7 @@ func (c *YCClient) createInstance(d *Driver) error {
 	imageID := d.ImageID
 	if imageID == "" {
 		var err error
-		imageID, err = c.getImageIDFromFolder(d.ImageFamilyName, d.ImageFolderID)
+		imageID, err = c.getImageIDFromFolder(d.ImageFamily, d.ImageFolderID)
 		if err != nil {
 			return err
 		}
