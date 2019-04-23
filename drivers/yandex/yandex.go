@@ -108,32 +108,38 @@ func (d *Driver) DriverName() string {
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.StringFlag{
-			EnvVar: "YC_TOKEN",
-			Name:   "yandex-token",
-			Usage:  "Yandex.Cloud OAuth token",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "YC_SERVICE_ACCOUNT_KEY_FILE",
-			Name:   "yandex-service-account-key-file",
-			Usage:  "Yandex.Cloud Service Account key file",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "YC_SSH_USER",
-			Name:   "yandex-ssh-user",
-			Usage:  "SSH username",
-			Value:  defaultSSHUser,
+			EnvVar: "YC_CLOUD_ID",
+			Name:   "yandex-cloud-id",
+			Usage:  "Cloud ID",
 		},
 		mcnflag.IntFlag{
-			EnvVar: "YC_SSH_PORT",
-			Name:   "yandex-ssh-port",
-			Usage:  "SSH port",
-			Value:  defaultSSHPort,
+			EnvVar: "YC_CORES",
+			Name:   "yandex-cores",
+			Usage:  "Count of virtual CPUs",
+			Value:  defaultCores,
+		},
+		mcnflag.IntFlag{
+			EnvVar: "YC_DISK_SIZE",
+			Name:   "yandex-disk-size",
+			Usage:  "Disk size in gigabytes",
+			Value:  defaultDiskSize,
 		},
 		mcnflag.StringFlag{
-			EnvVar: "YC_IMAGE_ID",
-			Name:   "yandex-image-id",
-			Usage:  "Yandex.Cloud Image identifier",
-			Value:  "",
+			EnvVar: "YC_DISK_TYPE",
+			Name:   "yandex-disk-type",
+			Usage:  "Disk type, e.g. 'network-hdd'",
+			Value:  defaultDiskType,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_ENDPOINT",
+			Name:   "yandex-endpoint",
+			Usage:  "Yandex.Cloud API Endpoint",
+			Value:  defaultEndpoint,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_FOLDER_ID",
+			Name:   "yandex-folder-id",
+			Usage:  "Folder ID",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "YC_IMAGE_FAMILY",
@@ -148,37 +154,15 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultImageFolderID,
 		},
 		mcnflag.StringFlag{
-			EnvVar: "YC_ENDPOINT",
-			Name:   "yandex-endpoint",
-			Usage:  "Yandex.Cloud API Endpoint",
-			Value:  defaultEndpoint,
+			EnvVar: "YC_IMAGE_ID",
+			Name:   "yandex-image-id",
+			Usage:  "Yandex.Cloud Image identifier",
+			Value:  "",
 		},
-		mcnflag.StringFlag{
-			EnvVar: "YC_FOLDER_ID",
-			Name:   "yandex-folder-id",
-			Usage:  "Folder ID",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "YC_CLOUD_ID",
-			Name:   "yandex-cloud-id",
-			Usage:  "Cloud ID",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "YC_SUBNET_ID",
-			Name:   "yandex-subnet-id",
-			Usage:  "Subnet ID",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "YC_ZONE",
-			Name:   "yandex-zone",
-			Usage:  "Yandex.Cloud zone",
-			Value:  defaultZone,
-		},
-		mcnflag.IntFlag{
-			EnvVar: "YC_CORES",
-			Name:   "yandex-cores",
-			Usage:  "Count of virtual CPUs",
-			Value:  defaultCores,
+		mcnflag.StringSliceFlag{
+			EnvVar: "YC_LABELS",
+			Name:   "yandex-labels",
+			Usage:  "Instance labels in 'key=value' format",
 		},
 		mcnflag.IntFlag{
 			EnvVar: "YC_MEMORY",
@@ -186,30 +170,46 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Memory in gigabytes",
 			Value:  defaultMemory,
 		},
-		mcnflag.IntFlag{
-			EnvVar: "YC_DISK_SIZE",
-			Name:   "yandex-disk-size",
-			Usage:  "Disk size in gigabytes",
-			Value:  defaultDiskSize,
-		},
 		mcnflag.StringFlag{
-			EnvVar: "YC_DISK_TYPE",
-			Name:   "yandex-disk-type",
-			Usage:  "Disk type, e.g. 'network-hdd'",
-			Value:  defaultDiskType,
-		},
-		mcnflag.StringSliceFlag{
-			EnvVar: "YC_LABELS",
-			Name:   "yandex-labels",
-			Usage:  "Instance labels in 'key=value' format",
+			EnvVar: "YC_PLATFORM_ID",
+			Name:   "yandex-platform-id",
+			Usage:  "ID of the hardware platform configuration for the instance",
+			Value:  defaultPlatformID,
 		},
 		mcnflag.BoolFlag{
 			EnvVar: "YC_PREEMPTIBLE",
 			Name:   "yandex-preemptible",
 			Usage:  "Yandex.Cloud Instance preemptibility flag",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_SA_KEY_FILE",
+			Name:   "yandex-sa-key-file",
+			Usage:  "Yandex.Cloud Service Account key file",
+		},
+		mcnflag.IntFlag{
+			EnvVar: "YC_SSH_PORT",
+			Name:   "yandex-ssh-port",
+			Usage:  "SSH port",
+			Value:  defaultSSHPort,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_SSH_USER",
+			Name:   "yandex-ssh-user",
+			Usage:  "SSH username",
+			Value:  defaultSSHUser,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_SUBNET_ID",
+			Name:   "yandex-subnet-id",
+			Usage:  "Subnet ID",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "YC_TOKEN",
+			Name:   "yandex-token",
+			Usage:  "Yandex.Cloud OAuth token",
+		},
 		mcnflag.BoolFlag{
-			EnvVar: "YANDEX_USE_INTERNAL_IP",
+			EnvVar: "YC_USE_INTERNAL_IP",
 			Name:   "yandex-use-internal-ip",
 			Usage:  "Use internal Instance IP rather than public one",
 		},
@@ -219,13 +219,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Path to file with cloud-init user-data",
 		},
 		mcnflag.StringFlag{
-			EnvVar: "YC_PLATFORM_ID",
-			Name:   "yandex-platform-id",
-			Usage:  "ID of the hardware platform configuration for the instance",
-			Value:  defaultPlatformID,
+			EnvVar: "YC_ZONE",
+			Name:   "yandex-zone",
+			Usage:  "Yandex.Cloud zone",
+			Value:  defaultZone,
 		},
 	}
-
 }
 
 // GetSSHHostname returns hostname for use with ssh
@@ -382,7 +381,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.CloudID = flags.String("yandex-cloud-id")
 	d.FolderID = flags.String("yandex-folder-id")
 
-	d.ServiceAccountKeyFile = flags.String("yandex-service-account-key-file")
+	d.ServiceAccountKeyFile = flags.String("yandex-sa-key-file")
 	d.Token = flags.String("yandex-token")
 
 	switch {
