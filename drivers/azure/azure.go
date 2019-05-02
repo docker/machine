@@ -21,7 +21,7 @@ import (
 const (
 	defaultAzureEnvironment     = "AzurePublicCloud"
 	defaultAzureResourceGroup   = "docker-machine"
-	defaultAzureSize            = "Standard_A2"
+	defaultAzureSize            = "Standard_D2_v2"
 	defaultAzureLocation        = "westus"
 	defaultSSHUser              = "docker-user" // 'root' not allowed on Azure
 	defaultDockerPort           = 2376
