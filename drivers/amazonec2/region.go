@@ -16,6 +16,7 @@ var regionDetails map[string]*region = map[string]*region{
 	"ap-southeast-1":  {"ami-41e4af3d"},
 	"ap-southeast-2":  {"ami-c1498fa3"},
 	"ap-south-1":      {"ami-1083dc7f"},
+	"ap-east-1":       {"ami-9ca0d8ed"},
 	"ca-central-1":    {"ami-8d9e19e9"},
 	"cn-north-1":      {"ami-cc4499a1"}, // Note: this is 20180126
 	"cn-northwest-1":  {"ami-fd0e1a9f"}, // Note: this is 20180126
@@ -30,6 +31,7 @@ var regionDetails map[string]*region = map[string]*region{
 	"us-west-1":       {"ami-264c4646"},
 	"us-west-2":       {"ami-78a22900"},
 	"us-gov-west-1":   {"ami-2561ea44"},
+	"us-gov-east-1":   {"ami-b740a6c6"},
 	"custom-endpoint": {""},
 }
 
