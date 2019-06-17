@@ -70,3 +70,33 @@ func TestMissingOpenedPorts(t *testing.T) {
 		assert.Equal(t, test.expectedMissing, missingPorts, test.description)
 	}
 }
+
+func TestNetworkName(t *testing.T) {
+	globalURL := apiURL + "test-project" + "/global"
+	var tests = []struct {
+		computeUtil  *ComputeUtil
+		expectedName string
+	}{
+		{&ComputeUtil{globalURL: globalURL, network: "default"}, globalURL + "/networks/" + "default"},
+		{&ComputeUtil{globalURL: globalURL, network: "/networks/shared"}, "/networks/shared"},
+	}
+	for _, test := range tests {
+		network := test.computeUtil.networkName()
+		assert.Equal(t, test.expectedName, network)
+	}
+}
+
+func TestSubnetworkName(t *testing.T) {
+	var tests = []struct {
+		computeUtil  *ComputeUtil
+		expectedName string
+	}{
+		{&ComputeUtil{subnetwork: ""}, ""},
+		{&ComputeUtil{project: "test", subnetwork: "private", zone: "us-central1-a"}, "projects/test/regions/us-central1/subnetworks/private"},
+		{&ComputeUtil{project: "test", subnetwork: "/subnetworks/shared", zone: "us-central1-a"}, "/subnetworks/shared"},
+	}
+	for _, test := range tests {
+		subnetwork := test.computeUtil.subnetworkName()
+		assert.Equal(t, test.expectedName, subnetwork)
+	}
+}
