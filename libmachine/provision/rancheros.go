@@ -101,7 +101,7 @@ func (provisioner *RancherProvisioner) Provision(swarmOptions swarm.Options, aut
 	swarmOptions.Env = engineOptions.Env
 
 	if provisioner.EngineOptions.StorageDriver == "" {
-		provisioner.EngineOptions.StorageDriver = "overlay"
+		provisioner.EngineOptions.StorageDriver = "overlay2"
 	} else if provisioner.EngineOptions.StorageDriver != "overlay" && provisioner.EngineOptions.StorageDriver != "overlay2" {
 		return fmt.Errorf("Unsupported storage driver: %s", provisioner.EngineOptions.StorageDriver)
 	}
