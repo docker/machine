@@ -24,8 +24,10 @@ import (
 	"net/http"
 )
 
-// Client is the client for the Subscriptions methods of the Subscriptions
-// service.
+// Client is the all resource groups and resources exist within subscriptions.
+// These operation enable you get information about your subscriptions and
+// tenants. A tenant is a dedicated instance of Azure Active Directory (Azure
+// AD) for your organization.
 type Client struct {
 	ManagementClient
 }
@@ -40,9 +42,9 @@ func NewClientWithBaseURI(baseURI string) Client {
 	return Client{NewWithBaseURI(baseURI)}
 }
 
-// Get gets details about particular subscription.
+// Get gets details about a specified subscription.
 //
-// subscriptionID is id of the subscription.
+// subscriptionID is the ID of the target subscription.
 func (client Client) Get(subscriptionID string) (result Subscription, err error) {
 	req, err := client.GetPreparer(subscriptionID)
 	if err != nil {
@@ -100,7 +102,7 @@ func (client Client) GetResponder(resp *http.Response) (result Subscription, err
 	return
 }
 
-// List gets a list of the subscriptionIds.
+// List gets all subscriptions for a tenant.
 func (client Client) List() (result SubscriptionListResult, err error) {
 	req, err := client.ListPreparer()
 	if err != nil {
@@ -178,9 +180,11 @@ func (client Client) ListNextResults(lastResults SubscriptionListResult) (result
 	return
 }
 
-// ListLocations gets a list of the subscription locations.
+// ListLocations this operation provides all the locations that are available
+// for resource providers; however, each resource provider may support a
+// subset of this list.
 //
-// subscriptionID is id of the subscription
+// subscriptionID is the ID of the target subscription.
 func (client Client) ListLocations(subscriptionID string) (result LocationListResult, err error) {
 	req, err := client.ListLocationsPreparer(subscriptionID)
 	if err != nil {

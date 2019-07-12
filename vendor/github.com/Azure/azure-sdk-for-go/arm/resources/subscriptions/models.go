@@ -24,6 +24,35 @@ import (
 	"net/http"
 )
 
+// SpendingLimit enumerates the values for spending limit.
+type SpendingLimit string
+
+const (
+	// CurrentPeriodOff specifies the current period off state for spending
+	// limit.
+	CurrentPeriodOff SpendingLimit = "CurrentPeriodOff"
+	// Off specifies the off state for spending limit.
+	Off SpendingLimit = "Off"
+	// On specifies the on state for spending limit.
+	On SpendingLimit = "On"
+)
+
+// State enumerates the values for state.
+type State string
+
+const (
+	// Deleted specifies the deleted state for state.
+	Deleted State = "Deleted"
+	// Disabled specifies the disabled state for state.
+	Disabled State = "Disabled"
+	// Enabled specifies the enabled state for state.
+	Enabled State = "Enabled"
+	// PastDue specifies the past due state for state.
+	PastDue State = "PastDue"
+	// Warned specifies the warned state for state.
+	Warned State = "Warned"
+)
+
 // Location is location information.
 type Location struct {
 	ID             *string `json:"id,omitempty"`
@@ -45,9 +74,11 @@ type Subscription struct {
 	autorest.Response    `json:"-"`
 	ID                   *string               `json:"id,omitempty"`
 	SubscriptionID       *string               `json:"subscriptionId,omitempty"`
+	TenantID             *string               `json:"tenantId,omitempty"`
 	DisplayName          *string               `json:"displayName,omitempty"`
-	State                *string               `json:"state,omitempty"`
+	State                State                 `json:"state,omitempty"`
 	SubscriptionPolicies *SubscriptionPolicies `json:"subscriptionPolicies,omitempty"`
+	AuthorizationSource  *string               `json:"authorizationSource,omitempty"`
 }
 
 // SubscriptionListResult is subscription list operation response.
@@ -71,11 +102,12 @@ func (client SubscriptionListResult) SubscriptionListResultPreparer() (*http.Req
 
 // SubscriptionPolicies is subscription policies.
 type SubscriptionPolicies struct {
-	LocationPlacementID *string `json:"locationPlacementId,omitempty"`
-	QuotaID             *string `json:"quotaId,omitempty"`
+	LocationPlacementID *string       `json:"locationPlacementId,omitempty"`
+	QuotaID             *string       `json:"quotaId,omitempty"`
+	SpendingLimit       SpendingLimit `json:"spendingLimit,omitempty"`
 }
 
-// TenantIDDescription is tenant Id information
+// TenantIDDescription is tenant Id information.
 type TenantIDDescription struct {
 	ID       *string `json:"id,omitempty"`
 	TenantID *string `json:"tenantId,omitempty"`

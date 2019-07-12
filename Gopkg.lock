@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:1c1c2c5c3cd554a489b36c951d1267e1be7f1deb16b63908f35fdbc3b926af59"
+  digest = "1:5251e329aedf2c89d2ddae736b04b633f60b119f9e2e9bafd1d21e9d2d720152"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
     "arm/compute",
@@ -13,8 +13,8 @@
     "storage",
   ]
   pruneopts = "UT"
-  revision = "91f3d4a4d024e3c0d4d9412916d05cf84504a616"
-  version = "v5.0.0-beta"
+  revision = "088007b3b08cc02b27f2eadfdcd870958460ce7e"
+  version = "v9.0.1-beta"
 
 [[projects]]
   branch = "master"
