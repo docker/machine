@@ -74,7 +74,7 @@ func (c *subnetCleanup) ResourceType() string { return "Subnet" }
 func (c *subnetCleanup) LogFields() logutil.Fields { return logutil.Fields{"name": c.name} }
 
 func (c *subnetCleanup) HasAttachedResources() bool {
-	return c.ref.Properties.IPConfigurations != nil && len(*c.ref.Properties.IPConfigurations) > 0
+	return c.ref.SubnetPropertiesFormat.IPConfigurations != nil && len(*c.ref.SubnetPropertiesFormat.IPConfigurations) > 0
 }
 
 // vnetCleanup manages cleanup of Virtual Network resources.
@@ -98,7 +98,7 @@ func (c *vnetCleanup) ResourceType() string { return "Virtual Network" }
 func (c *vnetCleanup) LogFields() logutil.Fields { return logutil.Fields{"name": c.name} }
 
 func (c *vnetCleanup) HasAttachedResources() bool {
-	return c.ref.Properties.Subnets != nil && len(*c.ref.Properties.Subnets) > 0
+	return c.ref.VirtualNetworkPropertiesFormat.Subnets != nil && len(*c.ref.VirtualNetworkPropertiesFormat.Subnets) > 0
 }
 
 // avSetCleanup manages cleanup of Availability Set resources.
@@ -122,5 +122,5 @@ func (c *avSetCleanup) ResourceType() string { return "Availability Set" }
 func (c *avSetCleanup) LogFields() logutil.Fields { return logutil.Fields{"name": c.name} }
 
 func (c *avSetCleanup) HasAttachedResources() bool {
-	return c.ref.Properties.VirtualMachines != nil && len(*c.ref.Properties.VirtualMachines) > 0
+	return c.ref.AvailabilitySetProperties.VirtualMachines != nil && len(*c.ref.AvailabilitySetProperties.VirtualMachines) > 0
 }

@@ -102,7 +102,7 @@ func (a AzureClient) CreateResourceGroup(name, location string) error {
 		"name":     name,
 		"location": location})
 	_, err := a.resourceGroupsClient().CreateOrUpdate(name,
-		resources.ResourceGroup{
+		resources.Group{
 			Location: to.StringPtr(location),
 		})
 	return err
@@ -121,7 +121,7 @@ func (a AzureClient) CreateNetworkSecurityGroup(ctx *DeploymentContext, resource
 	_, err := a.securityGroupsClient().CreateOrUpdate(resourceGroup, name,
 		network.SecurityGroup{
 			Location: to.StringPtr(location),
-			Properties: &network.SecurityGroupPropertiesFormat{
+			SecurityGroupPropertiesFormat: &network.SecurityGroupPropertiesFormat{
 				SecurityRules: rules,
 			},
 		}, nil)
@@ -164,7 +164,7 @@ func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup
 	_, err := a.publicIPAddressClient().CreateOrUpdate(resourceGroup, name,
 		network.PublicIPAddress{
 			Location: to.StringPtr(location),
-			Properties: &network.PublicIPAddressPropertiesFormat{
+			PublicIPAddressPropertiesFormat: &network.PublicIPAddressPropertiesFormat{
 				PublicIPAllocationMethod: ipType,
 				DNSSettings:              dns,
 			},
@@ -206,7 +206,7 @@ func (a AzureClient) CreateVirtualNetworkIfNotExists(resourceGroup, name, locati
 	_, err := a.virtualNetworksClient().CreateOrUpdate(resourceGroup, name,
 		network.VirtualNetwork{
 			Location: to.StringPtr(location),
-			Properties: &network.VirtualNetworkPropertiesFormat{
+			VirtualNetworkPropertiesFormat: &network.VirtualNetworkPropertiesFormat{
 				AddressSpace: &network.AddressSpace{
 					AddressPrefixes: to.StringSlicePtr(defaultVnetAddressPrefixes),
 				},
@@ -249,7 +249,7 @@ func (a AzureClient) CreateSubnet(ctx *DeploymentContext, resourceGroup, virtual
 			"cidr": subnetPrefix})
 		_, err = a.subnetsClient().CreateOrUpdate(resourceGroup, virtualNetwork, name,
 			network.Subnet{
-				Properties: &network.SubnetPropertiesFormat{
+				SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
 					AddressPrefix: to.StringPtr(subnetPrefix),
 				},
 			}, nil)
@@ -296,14 +296,14 @@ func (a AzureClient) CreateNetworkInterface(ctx *DeploymentContext, resourceGrou
 	}
 	_, err := a.networkInterfacesClient().CreateOrUpdate(resourceGroup, name, network.Interface{
 		Location: to.StringPtr(location),
-		Properties: &network.InterfacePropertiesFormat{
+		InterfacePropertiesFormat: &network.InterfacePropertiesFormat{
 			NetworkSecurityGroup: &network.SecurityGroup{
 				ID: to.StringPtr(nsgID),
 			},
 			IPConfigurations: &[]network.InterfaceIPConfiguration{
 				{
 					Name: to.StringPtr("ip"),
-					Properties: &network.InterfaceIPConfigurationPropertiesFormat{
+					InterfaceIPConfigurationPropertiesFormat: &network.InterfaceIPConfigurationPropertiesFormat{
 						PrivateIPAddress:          to.StringPtr(privateIPAddress),
 						PrivateIPAllocationMethod: privateIPAllocMethod,
 						PublicIPAddress:           publicIP,
@@ -376,7 +376,7 @@ func (a AzureClient) findStorageAccount(resourceGroup, location, prefix string, 
 					"name": to.String(v.Name),
 					"sku":  storageType,
 				})
-				return v.Properties, nil
+				return v.AccountProperties, nil
 			}
 		}
 	}
@@ -407,7 +407,7 @@ func (a AzureClient) createStorageAccount(resourceGroup, location string, storag
 	if err != nil {
 		return nil, err
 	}
-	return s.Properties, nil
+	return s.AccountProperties, nil
 }
 
 func (a AzureClient) VirtualMachineExists(resourceGroup, name string) (bool, error) {
@@ -429,8 +429,8 @@ func (a AzureClient) DeleteVirtualMachineIfExists(resourceGroup, name string) er
 	}
 
 	// Remove disk
-	if vmRef.Properties != nil {
-		vhdURL := to.String(vmRef.Properties.StorageProfile.OsDisk.Vhd.URI)
+	if vmRef.VirtualMachineProperties != nil {
+		vhdURL := to.String(vmRef.VirtualMachineProperties.StorageProfile.OsDisk.Vhd.URI)
 		return a.removeOSDiskBlob(resourceGroup, name, vhdURL)
 	}
 	return nil
@@ -473,8 +473,8 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 		"account":   storageAccount,
 		"container": vhdContainer}
 	log.Debug("Removing container of disk blobs.", f)
-	ok, err := bs.GetBlobService().DeleteContainerIfExists(vhdContainer) // HTTP round-trip will not be inspected
-	if err != nil {
+	containerRef := bs.GetBlobService().GetContainerReference(vhdContainer)
+	if ok, err := containerRef.DeleteIfExists(); err != nil {
 		log.Debugf("Container remove happened: %v", ok)
 	}
 
@@ -541,7 +541,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 	_, err = a.virtualMachinesClient().CreateOrUpdate(resourceGroup, name,
 		compute.VirtualMachine{
 			Location: to.StringPtr(location),
-			Properties: &compute.VirtualMachineProperties{
+			VirtualMachineProperties: &compute.VirtualMachineProperties{
 				AvailabilitySet: &compute.SubResource{
 					ID: to.StringPtr(availabilitySetID),
 				},
@@ -584,7 +584,7 @@ func (a AzureClient) GetVirtualMachinePowerState(resourceGroup, name string) (VM
 		log.Errorf("Error querying instance view: %v", err)
 		return Unknown, err
 	}
-	return powerStateFromInstanceView(vm.Properties.InstanceView), nil
+	return powerStateFromInstanceView(vm.VirtualMachineProperties.InstanceView), nil
 }
 
 func (a AzureClient) GetAvailabilitySet(resourceGroup, name string) (compute.AvailabilitySet, error) {
@@ -620,19 +620,19 @@ func (a AzureClient) GetPublicIPAddress(resourceGroup, name string, useFqdn bool
 	if err != nil {
 		return "", err
 	}
-	if ip.Properties == nil {
+	if ip.PublicIPAddressPropertiesFormat == nil {
 		log.Debug("publicIP.Properties is nil. Could not determine IP address", f)
 		return "", nil
 	}
 
 	if useFqdn { // return FQDN value on public IP
 		log.Debug("Will attempt to return FQDN.", f)
-		if ip.Properties.DNSSettings == nil || ip.Properties.DNSSettings.Fqdn == nil {
+		if ip.PublicIPAddressPropertiesFormat.DNSSettings == nil || ip.PublicIPAddressPropertiesFormat.DNSSettings.Fqdn == nil {
 			return "", errors.New("FQDN not found on public IP address")
 		}
-		return to.String(ip.Properties.DNSSettings.Fqdn), nil
+		return to.String(ip.PublicIPAddressPropertiesFormat.DNSSettings.Fqdn), nil
 	}
-	return to.String(ip.Properties.IPAddress), nil
+	return to.String(ip.PublicIPAddressPropertiesFormat.IPAddress), nil
 }
 
 // GetPrivateIPAddress attempts to retrieve private IP address of the specified
@@ -645,12 +645,12 @@ func (a AzureClient) GetPrivateIPAddress(resourceGroup, name string) (string, er
 	if err != nil {
 		return "", err
 	}
-	if nic.Properties == nil || nic.Properties.IPConfigurations == nil ||
-		len(*nic.Properties.IPConfigurations) == 0 {
+	if nic.InterfacePropertiesFormat == nil || nic.InterfacePropertiesFormat.IPConfigurations == nil ||
+		len(*nic.InterfacePropertiesFormat.IPConfigurations) == 0 {
 		log.Debug("No IPConfigurations found on NIC", f)
 		return "", nil
 	}
-	return to.String((*nic.Properties.IPConfigurations)[0].Properties.PrivateIPAddress), nil
+	return to.String((*nic.InterfacePropertiesFormat.IPConfigurations)[0].InterfaceIPConfigurationPropertiesFormat.PrivateIPAddress), nil
 }
 
 // StartVirtualMachine starts the virtual machine and waits until it reaches
