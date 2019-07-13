@@ -34,28 +34,32 @@ const (
 )
 
 const (
-	flAzureEnvironment     = "azure-environment"
-	flAzureSubscriptionID  = "azure-subscription-id"
-	flAzureResourceGroup   = "azure-resource-group"
-	flAzureSSHUser         = "azure-ssh-user"
-	flAzureDockerPort      = "azure-docker-port"
-	flAzureLocation        = "azure-location"
-	flAzureSize            = "azure-size"
-	flAzureImage           = "azure-image"
-	flAzureVNet            = "azure-vnet"
-	flAzureSubnet          = "azure-subnet"
-	flAzureSubnetPrefix    = "azure-subnet-prefix"
-	flAzureAvailabilitySet = "azure-availability-set"
-	flAzurePorts           = "azure-open-port"
-	flAzurePrivateIPAddr   = "azure-private-ip-address"
-	flAzureUsePrivateIP    = "azure-use-private-ip"
-	flAzureStaticPublicIP  = "azure-static-public-ip"
-	flAzureNoPublicIP      = "azure-no-public-ip"
-	flAzureDNSLabel        = "azure-dns"
-	flAzureStorageType     = "azure-storage-type"
-	flAzureCustomData      = "azure-custom-data"
-	flAzureClientID        = "azure-client-id"
-	flAzureClientSecret    = "azure-client-secret"
+	flAzureEnvironment       = "azure-environment"
+	flAzureSubscriptionID    = "azure-subscription-id"
+	flAzureResourceGroup     = "azure-resource-group"
+	flAzureSSHUser           = "azure-ssh-user"
+	flAzureDockerPort        = "azure-docker-port"
+	flAzureLocation          = "azure-location"
+	flAzureSize              = "azure-size"
+	flAzureImage             = "azure-image"
+	flAzureVNet              = "azure-vnet"
+	flAzureSubnet            = "azure-subnet"
+	flAzureSubnetPrefix      = "azure-subnet-prefix"
+	flAzureAvailabilitySet   = "azure-availability-set"
+	flAzureManagedDisks      = "azure-managed-disks"
+	flAzureFaultDomainCount  = "azure-fault-domain-count"
+	flAzureUpdateDomainCount = "azure-update-domain-count"
+	flAzureDiskSize          = "azure-disk-size"
+	flAzurePorts             = "azure-open-port"
+	flAzurePrivateIPAddr     = "azure-private-ip-address"
+	flAzureUsePrivateIP      = "azure-use-private-ip"
+	flAzureStaticPublicIP    = "azure-static-public-ip"
+	flAzureNoPublicIP        = "azure-no-public-ip"
+	flAzureDNSLabel          = "azure-dns"
+	flAzureStorageType       = "azure-storage-type"
+	flAzureCustomData        = "azure-custom-data"
+	flAzureClientID          = "azure-client-id"
+	flAzureClientSecret      = "azure-client-secret"
 )
 
 const (
@@ -82,6 +86,10 @@ type Driver struct {
 	SubnetName      string
 	SubnetPrefix    string
 	AvailabilitySet string
+	ManagedDisks    bool
+	FaultCount      int
+	UpdateCount     int
+	DiskSize        int
 	StorageType     string
 
 	OpenPorts      []string
@@ -187,6 +195,29 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "AZURE_AVAILABILITY_SET",
 			Value:  defaultAzureAvailabilitySet,
 		},
+		mcnflag.BoolFlag{
+			Name:   flAzureManagedDisks,
+			Usage:  "Configures VM and availability set for managed disks",
+			EnvVar: "AZURE_MANAGED_DISKS",
+		},
+		mcnflag.IntFlag{
+			Name:   flAzureFaultDomainCount,
+			Usage:  "Fault domain count to use for availability set",
+			EnvVar: "AZURE_FAULT_DOMAIN_COUNT",
+			Value:  3,
+		},
+		mcnflag.IntFlag{
+			Name:   flAzureUpdateDomainCount,
+			Usage:  "Update domain count to use for availability set",
+			EnvVar: "AZURE_UPDATE_DOMAIN_COUNT",
+			Value:  5,
+		},
+		mcnflag.IntFlag{
+			Name:   flAzureDiskSize,
+			Usage:  "Disk size if using managed disk",
+			EnvVar: "AZURE_DISK_SIZE",
+			Value:  30,
+		},
 		mcnflag.StringFlag{
 			Name:   flAzureCustomData,
 			EnvVar: "AZURE_CUSTOM_DATA_FILE",
@@ -276,6 +307,10 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.DockerPort = fl.Int(flAzureDockerPort)
 	d.DNSLabel = fl.String(flAzureDNSLabel)
 	d.CustomDataFile = fl.String(flAzureCustomData)
+	d.ManagedDisks = fl.Bool(flAzureManagedDisks)
+	d.FaultCount = fl.Int(flAzureFaultDomainCount)
+	d.UpdateCount = fl.Int(flAzureUpdateDomainCount)
+	d.DiskSize = fl.Int(flAzureDiskSize)
 
 	d.ClientID = fl.String(flAzureClientID)
 	d.ClientSecret = fl.String(flAzureClientSecret)
@@ -360,7 +395,7 @@ func (d *Driver) Create() error {
 	if err := c.CreateResourceGroup(d.ResourceGroup, d.Location); err != nil {
 		return err
 	}
-	if err := c.CreateAvailabilitySetIfNotExists(d.ctx, d.ResourceGroup, d.AvailabilitySet, d.Location); err != nil {
+	if err := c.CreateAvailabilitySetIfNotExists(d.ctx, d.ResourceGroup, d.AvailabilitySet, d.Location, d.ManagedDisks, int32(d.FaultCount), int32(d.UpdateCount)); err != nil {
 		return err
 	}
 	if err := c.CreateNetworkSecurityGroup(d.ctx, d.ResourceGroup, d.naming().NSG(), d.Location, d.ctx.FirewallRules); err != nil {
@@ -391,8 +426,9 @@ func (d *Driver) Create() error {
 		return err
 	}
 	if err := c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
-		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount); err != nil {
-			return err
+		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount,
+		d.ManagedDisks, d.StorageType, int32(d.DiskSize)); err != nil {
+		return err
 	}
 	ip, err := d.GetIP()
 	if err != nil {

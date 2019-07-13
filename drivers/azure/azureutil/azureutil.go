@@ -497,7 +497,8 @@ func (a AzureClient) removeOSDiskBlob(resourceGroup, vmName, vhdURL string) erro
 }
 
 func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, availabilitySetID, networkInterfaceID,
-	username, sshPublicKey, imageName, customData string, storageAccount *storage.AccountProperties) error {
+	username, sshPublicKey, imageName, customData string, storageAccount *storage.AccountProperties, isManaged bool,
+	storageType string, diskSize int32) error {
 	log.Info("Creating virtual machine.", logutil.Fields{
 		"name":     name,
 		"location": location,
@@ -563,20 +564,39 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 						Sku:       to.StringPtr(img.sku),
 						Version:   to.StringPtr(img.version),
 					},
-					OsDisk: &compute.OSDisk{
-						Name:         to.StringPtr(fmt.Sprintf(fmtOSDiskResourceName, name)),
-						Caching:      compute.ReadWrite,
-						CreateOption: compute.FromImage,
-						Vhd: &compute.VirtualHardDisk{
-							URI: to.StringPtr(osDiskBlobURL),
-						},
-					},
+					OsDisk: getOSDisk(name, osDiskBlobURL, isManaged, storageType, diskSize),
 				},
 			},
 		}, nil)
 	return err
 }
 
+// GetOSDisk creates and returns pointer to a disk that is configured for either managed or unmanaged disks depending
+// on setting.
+func getOSDisk(name string, osDiskBlobURL string, isManaged bool, storageType string, diskSize int32) *compute.OSDisk {
+	var osdisk *compute.OSDisk
+	if isManaged {
+		osdisk = &compute.OSDisk{
+			Name:         to.StringPtr(fmt.Sprintf(fmtOSDiskResourceName, name)),
+			Caching:      compute.ReadWrite,
+			CreateOption: compute.FromImage,
+			ManagedDisk: &compute.ManagedDiskParameters{
+				StorageAccountType: compute.StorageAccountTypes(storageType),
+			},
+			DiskSizeGB: to.Int32Ptr(diskSize),
+		}
+	} else {
+		osdisk = &compute.OSDisk{
+			Name:         to.StringPtr(fmt.Sprintf(fmtOSDiskResourceName, name)),
+			Caching:      compute.ReadWrite,
+			CreateOption: compute.FromImage,
+			Vhd: &compute.VirtualHardDisk{
+				URI: to.StringPtr(osDiskBlobURL),
+			},
+		}
+	}
+	return osdisk
+}
 func (a AzureClient) GetVirtualMachinePowerState(resourceGroup, name string) (VMPowerState, error) {
 	log.Debug("Querying instance view for power state.")
 	vm, err := a.virtualMachinesClient().Get(resourceGroup, name, "instanceView")
@@ -591,15 +611,61 @@ func (a AzureClient) GetAvailabilitySet(resourceGroup, name string) (compute.Ava
 	return a.availabilitySetsClient().Get(resourceGroup, name)
 }
 
-func (a AzureClient) CreateAvailabilitySetIfNotExists(ctx *DeploymentContext, resourceGroup, name, location string) error {
+// CreateAvailabilitySetIfNotExists checks that managed disk option match availability set if it already exists. If the
+// availability set does not already exists than it is created with configured parameters.
+func (a AzureClient) CreateAvailabilitySetIfNotExists(ctx *DeploymentContext, resourceGroup, name, location string, isManaged bool, faultCount int32, updateCount int32) error {
 	f := logutil.Fields{"name": name}
 	log.Info("Configuring availability set.", f)
-	as, err := a.availabilitySetsClient().CreateOrUpdate(resourceGroup, name,
-		compute.AvailabilitySet{
-			Location: to.StringPtr(location),
-		})
+
+	as, err := a.availabilitySetsClient().Get(resourceGroup, name)
+	if err != nil {
+		if !isNotFoundError(err) {
+			return fmt.Errorf("error getting availability set: %v", err)
+		}
+
+		// availability set will be created because it has not been found
+
+		// sku name dictates whether availability set is managed; Classic = non-managed, Aligned = managed
+		skuName := "Classic"
+		if isManaged {
+			skuName = "Aligned"
+		}
+
+		as, err = a.availabilitySetsClient().CreateOrUpdate(resourceGroup, name,
+			compute.AvailabilitySet{
+				Location: to.StringPtr(location),
+				AvailabilitySetProperties: &compute.AvailabilitySetProperties{
+					PlatformFaultDomainCount:  to.Int32Ptr(faultCount),
+					PlatformUpdateDomainCount: to.Int32Ptr(updateCount),
+				},
+				Sku: &compute.Sku{
+					Name: to.StringPtr(skuName),
+				},
+			})
+
+		ctx.AvailabilitySetID = to.String(as.ID)
+		return err
+	}
+
+	// availability set has been found, and will only be checked for compatibility
+	log.Infof("Availability set [%s] exists, will ignore configured faultDomainCount and updateDomainCount", name)
+	if as.Sku == nil {
+		return fmt.Errorf("cannot read sku of existing availability set")
+	}
+
+	// whether the set is managed should not be changed
+	if isManaged {
+		if as.Sku.Name == nil || *as.Sku.Name != "Aligned" {
+			return fmt.Errorf("cannot convert non-managed availability set to managed availability set")
+		}
+	} else {
+		if as.Sku.Name != nil && *as.Sku.Name != "Classic" {
+			return fmt.Errorf("cannot convert managed availability set to non-managed availability set")
+		}
+	}
+
 	ctx.AvailabilitySetID = to.String(as.ID)
-	return err
+	return nil
 }
 
 // CleanupAvailabilitySetIfExists removes an availability set if there are no
@@ -804,4 +870,9 @@ func extractStorageAccountFromVHDURL(vhdURL string) (string, string) {
 		return "", ""
 	}
 	return parts[0], strings.TrimPrefix(parts[1], "blob.") // "blob." prefix will added by azure storage sdk
+}
+
+// isNotFoundError returns whether the error is a 404 (Not Found).
+func isNotFoundError(err error) bool {
+	return strings.Contains(err.Error(), "StatusCode=404")
 }
