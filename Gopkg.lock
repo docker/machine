@@ -42,7 +42,7 @@
   version = "v7.2.1"
 
 [[projects]]
-  digest = "1:3e3787c889e4c6600e320ae16abfde18cac2c1f96948180be584665a35ee3ec2"
+  digest = "1:12342a2c200bc1fbafd739172f425af3b93377718dcd2013e9ccce97be48271b"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -54,26 +54,33 @@
     "aws/credentials",
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
     "aws/credentials/stscreds",
+    "aws/csm",
     "aws/defaults",
     "aws/ec2metadata",
+    "aws/endpoints",
     "aws/request",
     "aws/session",
     "aws/signer/v4",
-    "private/endpoints",
+    "internal/ini",
+    "internal/sdkio",
+    "internal/sdkrand",
+    "internal/sdkuri",
+    "internal/shareddefaults",
     "private/protocol",
     "private/protocol/ec2query",
+    "private/protocol/json/jsonutil",
     "private/protocol/query",
     "private/protocol/query/queryutil",
     "private/protocol/rest",
     "private/protocol/xml/xmlutil",
-    "private/waiter",
     "service/ec2",
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "ddfd17ec06eee10c24c5c474633273fd034afdda"
-  version = "v1.4.10"
+  revision = "420cda5d6383f94f7d9c231aa44bad3325181950"
+  version = "v1.20.20"
 
 [[projects]]
   digest = "1:676da826460e2bef9b36b2b1fe93fc73c781937d2c70ca459e41c9f3277d2c55"
@@ -163,13 +170,6 @@
   version = "v0.12.3"
 
 [[projects]]
-  digest = "1:ad48c8fd2fb8c747d8798f19890f70b18091196274a773550a9e5dffa9e165d1"
-  name = "github.com/go-ini/ini"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "03e0e7d51a13a91c765d8d0161246bc14a38001a"
-
-[[projects]]
   digest = "1:922ab7a624d8398c8e986beefc25052b26e02a8ac6bba5dc507bda11adbd878b"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
@@ -184,12 +184,11 @@
   revision = "30f7a39f4a218feb5325f3aebc60c32a572a8274"
 
 [[projects]]
-  digest = "1:b87714e57a511d88f307aba7d5b63522da12bed0a050889c81272fc50f71100e"
+  digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3433f3ea46d9f8019119e7dd41274e112a2359a9"
-  version = "0.2.2"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:481d1ca274189bb298947b76bb522b7e2ee494b7ca3206c705c008a02b5124cf"
