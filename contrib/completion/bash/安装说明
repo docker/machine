@@ -1,0 +1,11 @@
+1、以上三个文件下载后将其放置到 /etc/bash_completion.d 目录下
+
+2、然后将如下代码添加到$HOME/.bashrc
+#vim ~/.bashr
+source /etc/bash_completion.d/docker-machine-wrapper.bash
+source /etc/bash_completion.d/docker-machine-prompt.bash
+source /etc/bash_completion.d/docker-machine.bash
+PS1='[\u@\h \W$(__docker_machine_ps1)]\$ '
+
+3、刷新用户变量
+# source ~/.bashrc
