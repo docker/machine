@@ -1,0 +1,11 @@
+linters-settings:
+  golint:
+    min-confidence: 0.3
+
+linters:
+  enable:
+    - golint
+    - megacheck
+    - misspell
+    - unparam
+    - prealloc

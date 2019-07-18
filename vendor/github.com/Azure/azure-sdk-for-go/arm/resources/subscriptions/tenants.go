@@ -24,8 +24,10 @@ import (
 	"net/http"
 )
 
-// TenantsClient is the client for the Tenants methods of the Subscriptions
-// service.
+// TenantsClient is the all resource groups and resources exist within
+// subscriptions. These operation enable you get information about your
+// subscriptions and tenants. A tenant is a dedicated instance of Azure
+// Active Directory (Azure AD) for your organization.
 type TenantsClient struct {
 	ManagementClient
 }
@@ -40,7 +42,7 @@ func NewTenantsClientWithBaseURI(baseURI string) TenantsClient {
 	return TenantsClient{NewWithBaseURI(baseURI)}
 }
 
-// List gets a list of the tenantIds.
+// List gets the tenants for your account.
 func (client TenantsClient) List() (result TenantListResult, err error) {
 	req, err := client.ListPreparer()
 	if err != nil {

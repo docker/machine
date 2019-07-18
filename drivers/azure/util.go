@@ -95,7 +95,7 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 	mkRule := func(priority int, name, description, srcPort, dstPort string, proto network.SecurityRuleProtocol) network.SecurityRule {
 		return network.SecurityRule{
 			Name: to.StringPtr(name),
-			Properties: &network.SecurityRulePropertiesFormat{
+			SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 				Description:              to.StringPtr(description),
 				SourceAddressPrefix:      to.StringPtr("*"),
 				DestinationAddressPrefix: to.StringPtr("*"),

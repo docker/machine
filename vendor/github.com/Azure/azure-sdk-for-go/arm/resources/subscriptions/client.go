@@ -1,6 +1,10 @@
 // Package subscriptions implements the Azure ARM Subscriptions service API
-// version 2015-11-01.
+// version 2016-06-01.
 //
+// All resource groups and resources exist within subscriptions. These
+// operation enable you get information about your subscriptions and tenants.
+// A tenant is a dedicated instance of Azure Active Directory (Azure AD) for
+// your organization.
 package subscriptions
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
@@ -27,7 +31,7 @@ import (
 
 const (
 	// APIVersion is the version of the Subscriptions
-	APIVersion = "2015-11-01"
+	APIVersion = "2016-06-01"
 
 	// DefaultBaseURI is the default URI used for the service Subscriptions
 	DefaultBaseURI = "https://management.azure.com"
