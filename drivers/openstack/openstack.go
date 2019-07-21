@@ -49,6 +49,7 @@ type Driver struct {
 	FloatingIpPoolId string
 	IpVersion        int
 	ConfigDrive      bool
+	metadata         string
 	client           Client
 	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
 	ExistingKey bool
@@ -233,6 +234,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "openstack-config-drive",
 			Usage:  "Enables the OpenStack config drive for the instance",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_METADATA",
+			Name:   "openstack-metadata",
+			Usage:  "OpenStack Instance Metadata (e.g. key1,value1,key2,value2)",
+			Value:  "",
+		},
 	}
 }
 
@@ -286,6 +293,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ImageName = flags.String("openstack-image-name")
 	d.NetworkId = flags.String("openstack-net-id")
 	d.NetworkName = flags.String("openstack-net-name")
+	d.metadata = flags.String("openstack-metadata")
 	if flags.String("openstack-sec-groups") != "" {
 		d.SecurityGroups = strings.Split(flags.String("openstack-sec-groups"), ",")
 	}
@@ -485,6 +493,22 @@ func (d *Driver) Remove() error {
 		}
 	}
 	return nil
+}
+
+func (d *Driver) GetMetadata() map[string]string {
+	metadata := make(map[string]string)
+
+	if d.metadata != "" {
+		items := strings.Split(d.metadata, ",")
+		if len(items) > 0 && len(items)%2 != 0 {
+			log.Warnf("Metadata are not key value in pairs. %d elements found", len(items))
+		}
+		for i := 0; i < len(items)-1; i += 2 {
+			metadata[items[i]] = items[i+1]
+		}
+	}
+
+	return metadata
 }
 
 const (

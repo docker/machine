@@ -69,6 +69,7 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 		SecurityGroups:   d.SecurityGroups,
 		AvailabilityZone: d.AvailabilityZone,
 		ConfigDrive:      d.ConfigDrive,
+		Metadata:         d.GetMetadata(),
 	}
 	if d.NetworkId != "" {
 		serverOpts.Networks = []servers.Network{
