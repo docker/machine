@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/docker/machine/libmachine/log"
@@ -196,7 +197,11 @@ func (*b2dReleaseGetter) download(dir, file, isoURL string) error {
 
 	var src io.ReadCloser
 	if u.Scheme == "file" || u.Scheme == "" {
-		s, err := os.Open(u.Path)
+		path := u.Path
+		if runtime.GOOS == "windows" {
+			path = u.Hostname() + ":/" + u.Path
+		}
+		s, err := os.Open(path)
 		if err != nil {
 			return err
 		}
