@@ -92,6 +92,7 @@ type Driver struct {
 	Tags                    string
 	ReservationId           string
 	DeviceName              string
+	EncryptDevice           bool
 	RootSize                int64
 	VolumeType              string
 	IamInstanceProfile      string
@@ -254,6 +255,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "amazonec2-use-ebs-optimized-instance",
 			Usage: "Create an EBS optimized instance",
 		},
+		mcnflag.BoolFlag{
+			Name:  "amazonec2-encrypt-ebs",
+			Usage: "Encrypt the Ebs Root Device",
+		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-ssh-keypath",
 			Usage:  "SSH Key for Instance",
@@ -376,6 +381,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UsePrivateIP = flags.Bool("amazonec2-use-private-address")
 	d.Monitoring = flags.Bool("amazonec2-monitoring")
 	d.UseEbsOptimizedInstance = flags.Bool("amazonec2-use-ebs-optimized-instance")
+	d.EncryptDevice = flags.Bool("amazonec2-encrypt-ebs")
 	d.SSHPrivateKeyPath = flags.String("amazonec2-ssh-keypath")
 	d.KeyName = flags.String("amazonec2-keypair-name")
 	d.ExistingKey = flags.String("amazonec2-keypair-name") != ""
@@ -623,6 +629,7 @@ func (d *Driver) innerCreate() error {
 			VolumeSize:          aws.Int64(d.RootSize),
 			VolumeType:          aws.String(d.VolumeType),
 			DeleteOnTermination: aws.Bool(true),
+			Encrypted:           aws.Bool(d.EncryptDevice),
 		},
 	}
 	netSpecs := []*ec2.InstanceNetworkInterfaceSpecification{{
