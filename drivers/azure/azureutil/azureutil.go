@@ -593,6 +593,7 @@ func getOSDisk(name string, osDiskBlobURL string, isManaged bool, storageType st
 			Vhd: &compute.VirtualHardDisk{
 				URI: to.StringPtr(osDiskBlobURL),
 			},
+			DiskSizeGB: to.Int32Ptr(diskSize),
 		}
 	}
 	return osdisk
