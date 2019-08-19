@@ -7,6 +7,7 @@ package vmwarevsphere
 import (
 	"archive/tar"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -21,9 +22,6 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-
-	"errors"
-
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/guest"
@@ -31,6 +29,7 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
+	ssh2 "golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 )
 
@@ -754,8 +753,8 @@ func (d *Driver) Create() error {
 
 	auth := AuthFlag{}
 	flag := FileAttrFlag{}
-	auth.auth.Username = B2DUser
-	auth.auth.Password = B2DPass
+	auth.auth.Username = defaultSSHUser
+	auth.auth.Password = defaultSSHPass
 	flag.SetPerms(0, 0, 660)
 	url, err := fileman.InitiateFileTransferToGuest(ctx, auth.Auth(), "/home/docker/userdata.tar", flag.Attr(), s.Size(), true)
 	if err != nil {
@@ -941,13 +940,17 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	if machineState == state.Running {
-		if err = d.Kill(); err != nil {
-			return fmt.Errorf("can't stop VM: %s", err)
-		}
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	pubKeyBytes, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
+		return err
+	}
+	localKeyprint, err := getPublicKeyFingerprint(pubKeyBytes)
+	if err != nil {
+		return err
+	}
 
 	c, err := d.vsphereLogin(ctx)
 	if err != nil {
@@ -965,6 +968,52 @@ func (d *Driver) Remove() error {
 
 	f.SetDatacenter(dc)
 
+	vm, err := d.fetchVM(ctx, c, d.MachineName)
+	if err != nil {
+		return err
+	}
+
+	// grab /home/docker/.ssh/authorized_keys and compare with id_rsa.pub
+	opman := guest.NewOperationsManager(c.Client, vm.Reference())
+
+	fileman, err := opman.FileManager(ctx)
+	if err != nil {
+		return err
+	}
+
+	src := d.ResolveStorePath("auth_keys")
+	auth := AuthFlag{}
+	auth.auth.Username = defaultSSHUser
+	auth.auth.Password = defaultSSHPass
+	resp, err := fileman.InitiateFileTransferFromGuest(ctx, auth.Auth(), "/home/docker/.ssh/authorized_keys")
+	if err != nil {
+		return err
+	}
+	u, err := c.Client.ParseURL(resp.Url)
+	if err != nil {
+		return err
+	}
+	if err = c.Client.DownloadFile(ctx, src, u, nil); err != nil {
+		return err
+	}
+	remoteKeyBytes, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	remoteKeyprint, err := getPublicKeyFingerprint(remoteKeyBytes)
+	if err != nil {
+		return err
+	}
+	if remoteKeyprint != localKeyprint {
+		return errors.New("local key fingerprint is different than remote key fingerprint")
+	}
+
+	if machineState == state.Running {
+		if err = d.Kill(); err != nil {
+
+			return fmt.Errorf("can't stop VM: %s", err)
+		}
+	}
 	dss, err := f.DatastoreOrDefault(ctx, d.Datastore)
 	if err != nil {
 		return err
@@ -977,17 +1026,11 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	err = task.Wait(ctx)
-	if err != nil {
+	if err = task.Wait(ctx); err != nil {
 		if types.IsFileNotFound(err) {
 			// Ignore error
 			return nil
 		}
-	}
-
-	vm, err := d.fetchVM(ctx, c, d.MachineName)
-	if err != nil {
-		return err
 	}
 
 	task, err = vm.Destroy(ctx)
@@ -1104,6 +1147,15 @@ func (d *Driver) fetchVM(ctx context.Context, c *govmomi.Client, vmname string) 
 		return vm, err
 	}
 	return vm, nil
+}
+
+func getPublicKeyFingerprint(pubKeyBytes []byte) (string, error) {
+	pubKey, _, _, _, err := ssh2.ParseAuthorizedKey(pubKeyBytes)
+	if err != nil {
+		return "", err
+	}
+	finger := ssh2.FingerprintLegacyMD5(pubKey)
+	return finger, nil
 }
 
 type AuthFlag struct {
