@@ -50,11 +50,22 @@ func getNameAndItsPpid(pid int) (exefile string, parentid int, err error) {
 
 func Detect() (string, error) {
 	shell := os.Getenv("SHELL")
+	
+	if os.Getenv("__fish_bin_dir") != "" {
+		return "fish", nil
+	}
+	
+	// NB: This is reading tea leaves a bit, but CMD always sets PROMPT
+	// whereas Powershell does not
+	defaultShell := "powershell"
+	if os.Getenv("PROMPT") != "" {
+		defaultShell = "cmd"
+	}
 
 	if shell == "" {
 		shell, shellppid, err := getNameAndItsPpid(os.Getppid())
 		if err != nil {
-			return "cmd", err // defaulting to cmd
+			return defaultShell, err // defaulting to cmd
 		}
 		if strings.Contains(strings.ToLower(shell), "powershell") {
 			return "powershell", nil
@@ -63,7 +74,7 @@ func Detect() (string, error) {
 		} else {
 			shell, _, err := getNameAndItsPpid(shellppid)
 			if err != nil {
-				return "cmd", err // defaulting to cmd
+				return defaultShell, err // defaulting to cmd
 			}
 			if strings.Contains(strings.ToLower(shell), "powershell") {
 				return "powershell", nil
@@ -71,14 +82,10 @@ func Detect() (string, error) {
 				return "cmd", nil
 			} else {
 				fmt.Printf("You can further specify your shell with either 'cmd' or 'powershell' with the --shell flag.\n\n")
-				return "cmd", nil // this could be either powershell or cmd, defaulting to cmd
+				return defaultShell, nil // this could be either powershell or cmd, defaulting to cmd
 			}
 		}
 	}
-
-	if os.Getenv("__fish_bin_dir") != "" {
-		return "fish", nil
-	}
-
+	
 	return filepath.Base(shell), nil
 }
