@@ -429,9 +429,16 @@ func (a AzureClient) DeleteVirtualMachineIfExists(resourceGroup, name string) er
 	}
 
 	// Remove disk
-	if vmRef.VirtualMachineProperties != nil {
-		vhdURL := to.String(vmRef.VirtualMachineProperties.StorageProfile.OsDisk.Vhd.URI)
-		return a.removeOSDiskBlob(resourceGroup, name, vhdURL)
+	if vmProperties := vmRef.VirtualMachineProperties; vmProperties != nil {
+		// TODO: remove unattached managed disk, requires azure sdk upgrade
+		if managedDisk := vmProperties.StorageProfile.OsDisk.ManagedDisk; managedDisk != nil {
+			diskName := fmt.Sprintf("%s-os-disk", name)
+			log.Infof("Disk [%s] in resource group [%s] must be removed manually.", diskName, resourceGroup)
+		}
+		// if vhd is not nil then disk is unmanaged and disk blob should be removed
+		if vhd := vmProperties.StorageProfile.OsDisk.Vhd; vhd != nil {
+			return a.removeOSDiskBlob(resourceGroup, name, to.String(vhd.URI))
+		}
 	}
 	return nil
 }
@@ -512,11 +519,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 		return err
 	}
 
-	var (
-		osDiskBlobURL = osDiskStorageBlobURL(storageAccount, name)
-		sshKeyPath    = fmt.Sprintf("/home/%s/.ssh/authorized_keys", username)
-	)
-	log.Debugf("OS disk blob will be placed at: %s", osDiskBlobURL)
+	sshKeyPath := fmt.Sprintf("/home/%s/.ssh/authorized_keys", username)
 	log.Debugf("SSH key will be placed at: %s", sshKeyPath)
 
 	var osProfile = &compute.OSProfile{
@@ -564,7 +567,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 						Sku:       to.StringPtr(img.sku),
 						Version:   to.StringPtr(img.version),
 					},
-					OsDisk: getOSDisk(name, osDiskBlobURL, isManaged, storageType, diskSize),
+					OsDisk: getOSDisk(name, storageAccount, isManaged, storageType, diskSize),
 				},
 			},
 		}, nil)
@@ -573,7 +576,7 @@ func (a AzureClient) CreateVirtualMachine(resourceGroup, name, location, size, a
 
 // GetOSDisk creates and returns pointer to a disk that is configured for either managed or unmanaged disks depending
 // on setting.
-func getOSDisk(name string, osDiskBlobURL string, isManaged bool, storageType string, diskSize int32) *compute.OSDisk {
+func getOSDisk(name string, account *storage.AccountProperties, isManaged bool, storageType string, diskSize int32) *compute.OSDisk {
 	var osdisk *compute.OSDisk
 	if isManaged {
 		osdisk = &compute.OSDisk{
@@ -586,6 +589,8 @@ func getOSDisk(name string, osDiskBlobURL string, isManaged bool, storageType st
 			DiskSizeGB: to.Int32Ptr(diskSize),
 		}
 	} else {
+		osDiskBlobURL := osDiskStorageBlobURL(account, name)
+		log.Debugf("OS disk blob will be placed at: %s", osDiskBlobURL)
 		osdisk = &compute.OSDisk{
 			Name:         to.StringPtr(fmt.Sprintf(fmtOSDiskResourceName, name)),
 			Caching:      compute.ReadWrite,
@@ -840,6 +845,10 @@ func checkResourceExistsFromError(err error) (bool, error) {
 // osDiskStorageBlobURL gives the full url of the VHD blob where the OS disk for
 // the given VM should be stored.
 func osDiskStorageBlobURL(account *storage.AccountProperties, vmName string) string {
+	if account == nil {
+		return ""
+	}
+
 	containerURL := osDiskStorageContainerURL(account, vmName) // has trailing slash
 	blobName := fmt.Sprintf(fmtOSDiskBlobName, vmName)
 	return containerURL + blobName
