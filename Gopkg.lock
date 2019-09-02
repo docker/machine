@@ -102,6 +102,14 @@
   version = "1.1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:e8891cd354f2af940345f895d5698ab1ed439196d4f69eb44817fc91e80354c1"
+  name = "github.com/c2h5oh/datasize"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4eba002a5eaea69cf8d235a388fc6b65ae68d2dd"
+
+[[projects]]
   digest = "1:f50c858ba1549c39fedde09546274f73991a1525870bd2ab575d35b956d2d246"
   name = "github.com/cenkalti/backoff"
   packages = ["."]
@@ -163,6 +171,14 @@
   version = "v0.9.23"
 
 [[projects]]
+  digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
+  name = "github.com/ghodss/yaml"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:ad48c8fd2fb8c747d8798f19890f70b18091196274a773550a9e5dffa9e165d1"
   name = "github.com/go-ini/ini"
   packages = ["."]
@@ -170,11 +186,23 @@
   revision = "03e0e7d51a13a91c765d8d0161246bc14a38001a"
 
 [[projects]]
-  digest = "1:922ab7a624d8398c8e986beefc25052b26e02a8ac6bba5dc507bda11adbd878b"
+  digest = "1:fd0a0705475581c7eb965259d417706cb49f42bde408502c3b53f139b7253d67"
   name = "github.com/golang/protobuf"
-  packages = ["proto"]
+  packages = [
+    "jsonpb",
+    "proto",
+    "protoc-gen-go/descriptor",
+    "ptypes",
+    "ptypes/any",
+    "ptypes/duration",
+    "ptypes/empty",
+    "ptypes/struct",
+    "ptypes/timestamp",
+    "ptypes/wrappers",
+  ]
   pruneopts = "UT"
-  revision = "3c84672111d91bb5ac31719e112f9f7126a0e26e"
+  revision = "b5d812f8a3706043e23a9cd5babf2e5423744d30"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:5235d8c3e7894393db3e5b1947818966b41e5ae8a5fa5d9c42f6586975894d01"
@@ -182,6 +210,22 @@
   packages = ["query"]
   pruneopts = "UT"
   revision = "30f7a39f4a218feb5325f3aebc60c32a572a8274"
+
+[[projects]]
+  digest = "1:0ade334594e69404d80d9d323445d2297ff8161637f9b2d347cc6973d2d6f05b"
+  name = "github.com/hashicorp/errwrap"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "8a6fb523712970c966eefc6b39ed2c5e74880354"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:f668349b83f7d779567c880550534addeca7ebadfdcf44b0b9c39be61864b4b7"
+  name = "github.com/hashicorp/go-multierror"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "886a7fbe3eb1c874d46f623bfa70af45f425b3d1"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -335,6 +379,64 @@
   version = "v0.6.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:310c0b9fa9efcbefeaaa70c017213d643c8fd446b8d54064613ea985babd3f0e"
+  name = "github.com/yandex-cloud/go-genproto"
+  packages = [
+    "yandex/api",
+    "yandex/cloud/access",
+    "yandex/cloud/compute/v1",
+    "yandex/cloud/containerregistry/v1",
+    "yandex/cloud/endpoint",
+    "yandex/cloud/iam/v1",
+    "yandex/cloud/iam/v1/awscompatibility",
+    "yandex/cloud/loadbalancer/v1",
+    "yandex/cloud/mdb/clickhouse/v1",
+    "yandex/cloud/mdb/clickhouse/v1/config",
+    "yandex/cloud/mdb/mongodb/v1",
+    "yandex/cloud/mdb/mongodb/v1/config",
+    "yandex/cloud/mdb/postgresql/v1",
+    "yandex/cloud/mdb/postgresql/v1/config",
+    "yandex/cloud/mdb/redis/v1",
+    "yandex/cloud/mdb/redis/v1/config",
+    "yandex/cloud/operation",
+    "yandex/cloud/resourcemanager/v1",
+    "yandex/cloud/validation",
+    "yandex/cloud/vpc/v1",
+  ]
+  pruneopts = "UT"
+  revision = "1db0ef3dce9bdfb672f2c2f68089378688b95755"
+
+[[projects]]
+  branch = "master"
+  digest = "1:535dbe44a02f8f64cffbd05d935aacf29464c9500669c1e00f4c84d67ad13406"
+  name = "github.com/yandex-cloud/go-sdk"
+  packages = [
+    ".",
+    "dial",
+    "gen/apiendpoint",
+    "gen/compute",
+    "gen/containerregistry",
+    "gen/iam",
+    "gen/iam/awscompatibility",
+    "gen/loadbalancer",
+    "gen/mdb/clickhouse",
+    "gen/mdb/mongodb",
+    "gen/mdb/postgresql",
+    "gen/mdb/redis",
+    "gen/operation",
+    "gen/resourcemanager",
+    "gen/vpc",
+    "iamkey",
+    "operation",
+    "pkg/grpcclient",
+    "pkg/sdkerrors",
+    "pkg/singleflight",
+  ]
+  pruneopts = "UT"
+  revision = "3fc1d694703593e0d2e48f1df003b7dbc04d8b44"
+
+[[projects]]
   digest = "1:c520e4d4fc9976e4da44ee0a3bdd5a45e8a206a72c1ccd2089f3d184f5eb942a"
   name = "golang.org/x/crypto"
   packages = [
@@ -348,14 +450,21 @@
   revision = "51714a8c4ac1764f07ab4127d7f739351ced4759"
 
 [[projects]]
-  digest = "1:8e965c5396cf5304c8a3473adfd4a70c0a2a15df6a1448492f3472b50414779e"
+  branch = "master"
+  digest = "1:68ad4c549c0def177e5146b40756b9e66d78b7276746023a12361de2f171ef41"
   name = "golang.org/x/net"
   packages = [
     "context",
     "context/ctxhttp",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
+    "internal/timeseries",
+    "trace",
   ]
   pruneopts = "UT"
-  revision = "4f2fc6c1e69d41baf187332ee08fbd2b296f21ed"
+  revision = "1da14a5a36f220ea3f03470682b737b1dfd5de22"
 
 [[projects]]
   digest = "1:5b9c174f7602d8927abd72ed7095e16249fd87da044a7f9d9f8f6cb9f737719a"
@@ -372,7 +481,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:524ca168039a413c2a3aded9989f201e869d9d888cbc8e274268f30f66a984cc"
+  digest = "1:318102db04c5e7da63495359b5fa9ba183541a5b39beab54e06d725257ce8dc9"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -380,7 +489,30 @@
     "windows/registry",
   ]
   pruneopts = "UT"
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "e8e3143a4f4a00f1fafef0dd82ba78223281b01b"
+
+[[projects]]
+  digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable",
+  ]
+  pruneopts = "UT"
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
 
 [[projects]]
   branch = "master"
@@ -423,6 +555,69 @@
   pruneopts = "UT"
   revision = "975617b05ea8a58727e6c1a06b6161ff4185a9f2"
 
+[[projects]]
+  branch = "master"
+  digest = "1:a774c5c3456c5740b14bf51bf573f7d2241bb1618ea3a23547687fca8c492744"
+  name = "google.golang.org/genproto"
+  packages = [
+    "googleapis/api/annotations",
+    "googleapis/rpc/errdetails",
+    "googleapis/rpc/status",
+    "googleapis/type/timeofday",
+    "protobuf/field_mask",
+  ]
+  pruneopts = "UT"
+  revision = "d1146b9035b912113a38af3b138eb2af567b2c67"
+
+[[projects]]
+  digest = "1:31d87f39886fb38a2b6c097ff3b9f985d6960772170d64a68246f7790e955746"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
+    "codes",
+    "connectivity",
+    "credentials",
+    "credentials/internal",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/balancerload",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = "UT"
+  revision = "236199dd5f8031d698fb64091194aecd1c3895b2"
+  version = "v1.20.0"
+
+[[projects]]
+  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -442,6 +637,7 @@
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ec2",
     "github.com/bugsnag/bugsnag-go",
+    "github.com/c2h5oh/datasize",
     "github.com/codegangsta/cli",
     "github.com/digitalocean/godo",
     "github.com/docker/docker/pkg/term",
@@ -473,6 +669,11 @@
     "github.com/vmware/govmomi/vim25/mo",
     "github.com/vmware/govmomi/vim25/soap",
     "github.com/vmware/govmomi/vim25/types",
+    "github.com/yandex-cloud/go-genproto/yandex/cloud/compute/v1",
+    "github.com/yandex-cloud/go-genproto/yandex/cloud/resourcemanager/v1",
+    "github.com/yandex-cloud/go-genproto/yandex/cloud/vpc/v1",
+    "github.com/yandex-cloud/go-sdk",
+    "github.com/yandex-cloud/go-sdk/iamkey",
     "golang.org/x/crypto/ssh",
     "golang.org/x/crypto/ssh/terminal",
     "golang.org/x/net/context",
