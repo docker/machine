@@ -664,7 +664,10 @@ func (d *Driver) innerCreate() error {
 
 		spotInstanceRequest, err := d.getClient().RequestSpotInstances(&req)
 		if err != nil {
-			return fmt.Errorf("Error request spot instance: %s", err)
+			return fmt.Errorf("Error request spot instance: %v", err)
+		}
+		if spotInstanceRequest == nil || len((*spotInstanceRequest).SpotInstanceRequests) < 1 {
+			return fmt.Errorf("Error requesting spot instance: %v", errors.New("Unexpected AWS API response"))
 		}
 		d.spotInstanceRequestId = *spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId
 
@@ -740,7 +743,10 @@ func (d *Driver) innerCreate() error {
 		})
 
 		if err != nil {
-			return fmt.Errorf("Error launching instance: %s", err)
+			return fmt.Errorf("Error launching instance: %v", err)
+		}
+		if inst == nil || len(inst.Instances) < 1 {
+			return fmt.Errorf("Error launching instance: %v", errors.New("Unexpected AWS API response"))
 		}
 		instance = inst.Instances[0]
 	}
