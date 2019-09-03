@@ -24,3 +24,4 @@ func Detect() (string, error) {
 
 	return filepath.Base(shell), nil
 }
+exit()
