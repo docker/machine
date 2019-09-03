@@ -34,7 +34,7 @@ const (
 	defaultCPU                  = 1
 	defaultVLanID               = 0
 	defaultDisableDynamicMemory = false
-	defaultSwitch               = "Default Switch"
+	defaultSwitchID             = "c08cb7b8-9b3c-408e-8e30-5e16a3aeb444"
 )
 
 // NewDriver creates a new Hyper-v driver with default settings.
@@ -299,7 +299,7 @@ func (d *Driver) chooseVirtualSwitch() (string, error) {
 
 	if d.VSwitch == "" {
 		// prefer Default Switch over external switches
-		switches, err := getHyperVSwitches([]string{fmt.Sprintf("Where-Object {($_.SwitchType -eq 'External') -or ($_.Name -eq '%s')}", defaultSwitch), "Sort-Object -Property SwitchType"})
+		switches, err := getHyperVSwitches([]string{fmt.Sprintf("Where-Object {($_.SwitchType -eq 'External') -or ($_.Id -eq '%s')}", defaultSwitchID), "Sort-Object -Property SwitchType"})
 		if err != nil {
 			return "", fmt.Errorf("unable to get available hyperv switches")
 		}
