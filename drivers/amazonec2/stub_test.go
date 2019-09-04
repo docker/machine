@@ -97,6 +97,15 @@ func (f *fakeEC2WithLogin) DescribeAccountAttributes(input *ec2.DescribeAccountA
 	}, nil
 }
 
+func (f *fakeEC2WithLogin) DescribeImages(input *ec2.DescribeImagesInput) (*ec2.DescribeImagesOutput, error) {
+	description := "SomeLinux"
+	return &ec2.DescribeImagesOutput{
+		Images: []*ec2.Image{
+			{Description: &description},
+		},
+	}, nil
+}
+
 type fakeEC2SecurityGroupTestRecorder struct {
 	*fakeEC2
 	mock.Mock

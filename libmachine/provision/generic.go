@@ -13,15 +13,16 @@ import (
 
 type GenericProvisioner struct {
 	SSHCommander
-	OsReleaseID       string
-	DockerOptionsDir  string
-	DaemonOptionsFile string
-	Packages          []string
-	OsReleaseInfo     *OsRelease
-	Driver            drivers.Driver
-	AuthOptions       auth.Options
-	EngineOptions     engine.Options
-	SwarmOptions      swarm.Options
+	OsReleaseID          string
+	DockerOptionsVarName string
+	DockerOptionsDir     string
+	DaemonOptionsFile    string
+	Packages             []string
+	OsReleaseInfo        *OsRelease
+	Driver               drivers.Driver
+	AuthOptions          auth.Options
+	EngineOptions        engine.Options
+	SwarmOptions         swarm.Options
 }
 
 type GenericSSHCommander struct {
@@ -96,8 +97,11 @@ func (provisioner *GenericProvisioner) GenerateDockerOptions(dockerPort int) (*D
 	driverNameLabel := fmt.Sprintf("provider=%s", provisioner.Driver.DriverName())
 	provisioner.EngineOptions.Labels = append(provisioner.EngineOptions.Labels, driverNameLabel)
 
+	if provisioner.DockerOptionsVarName == "" {
+		provisioner.DockerOptionsVarName = "DOCKER_OPTS"
+	}
 	engineConfigTmpl := `
-DOCKER_OPTS='
+{{.DockerOptionsVarName}}='
 -H tcp://0.0.0.0:{{.DockerPort}}
 -H unix:///var/run/docker.sock
 --storage-driver {{.EngineOptions.StorageDriver}}
@@ -120,9 +124,10 @@ DOCKER_OPTS='
 	}
 
 	engineConfigContext := EngineConfigContext{
-		DockerPort:    dockerPort,
-		AuthOptions:   provisioner.AuthOptions,
-		EngineOptions: provisioner.EngineOptions,
+		DockerOptionsVarName: provisioner.DockerOptionsVarName,
+		DockerPort:           dockerPort,
+		AuthOptions:          provisioner.AuthOptions,
+		EngineOptions:        provisioner.EngineOptions,
 	}
 
 	t.Execute(&engineCfg, engineConfigContext)

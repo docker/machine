@@ -434,6 +434,23 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		}
 	}
 
+	images, err := d.getClient().DescribeImages(&ec2.DescribeImagesInput{
+		ImageIds: []*string{&image},
+	})
+	if err != nil {
+		return fmt.Errorf("AMI: %s . Failed call to DescribeImages: %s", image, err)
+	}
+	if d.DeviceName == defaultDeviceName {
+		if strings.Contains(*images.Images[0].Description, "Amazon Linux") {
+			d.DeviceName = "/dev/xvdb"
+		}
+	}
+	if d.SSHUser == defaultSSHUser {
+		if strings.Contains(*images.Images[0].Description, "Amazon Linux") {
+			d.SSHUser = "ec2-user"
+		}
+	}
+
 	if d.isSwarmMaster() {
 		u, err := url.Parse(d.SwarmHost)
 		if err != nil {
