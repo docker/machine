@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -176,4 +177,21 @@ func TestGetScpCmdWithDelta(t *testing.T) {
 
 	assert.Equal(t, expectedCmd, cmd)
 	assert.NoError(t, err)
+}
+
+type cmdAssert func(exec.Cmd) bool
+type MockCommandRunner struct {
+	command   exec.Cmd
+	assertion cmdAssert
+}
+
+func (r *MockCommandRunner) run(cmd exec.Cmd) error {
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if r.assertion != nil {
+		r.assertion(cmd)
+	}
+
+	return nil
 }

@@ -16,7 +16,7 @@ func cmdConfig(c CommandLine, api libmachine.API) error {
 	// being run (it is intended to be run in a subshell)
 	log.SetOutWriter(os.Stderr)
 
-	target, err := targetHost(c, api)
+	target, err := targetHost(c, api, 0)
 	if err != nil {
 		return err
 	}

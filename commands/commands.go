@@ -76,9 +76,10 @@ func (c *contextCommandLine) Application() *cli.App {
 }
 
 // targetHost returns a specific host name if one is indicated by the first CLI
-// arg, or the default host name if no host is specified.
-func targetHost(c CommandLine, api libmachine.API) (string, error) {
-	if len(c.Args()) == 0 {
+// arg, or the default host name if no host is specified. It ignores a number of arguments
+// equal to the value of `argOffset`.
+func targetHost(c CommandLine, api libmachine.API, argOffset int) (string, error) {
+	if len(c.Args()) == argOffset {
 		defaultExists, err := api.Exists(defaultMachineName)
 		if err != nil {
 			return "", fmt.Errorf("Error checking if host %q exists: %s", defaultMachineName, err)
@@ -91,7 +92,7 @@ func targetHost(c CommandLine, api libmachine.API) (string, error) {
 		return "", ErrNoDefault
 	}
 
-	return c.Args()[0], nil
+	return c.Args()[argOffset], nil
 }
 
 func runAction(actionName string, c CommandLine, api libmachine.API) error {
@@ -103,7 +104,7 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 	// machine if it exists.  This allows short form commands such as
 	// 'docker-machine stop' for convenience.
 	if len(c.Args()) == 0 {
-		target, err := targetHost(c, api)
+		target, err := targetHost(c, api, 0)
 		if err != nil {
 			return err
 		}
@@ -202,6 +203,18 @@ var Commands = []cli.Command{
 				Name:  "timeout, t",
 				Usage: fmt.Sprintf("Timeout in seconds, default to %ds", activeDefaultTimeout),
 				Value: activeDefaultTimeout,
+			},
+		},
+	},
+	{
+		Name:        "add-trusted-ca-certificate",
+		Usage:       "Uploads a CA certificate into the trusted store",
+		Description: "Argument(s) are [machine_name] path_to_ca_certificate.pem",
+		Action:      runCommand(cmdAddCACertificate),
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "restart, r",
+				Usage: "Restart automatically after adding the certificate (necessary step in order to apply the changes)",
 			},
 		},
 	},
