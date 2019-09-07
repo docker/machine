@@ -3,6 +3,7 @@ package google
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"strings"
 
@@ -33,6 +34,7 @@ type Driver struct {
 	Tags              string
 	UseExisting       bool
 	OpenPorts         []string
+	Metadata          []string
 }
 
 const (
@@ -46,6 +48,7 @@ const (
 	defaultDiskSize       = 10
 	defaultNetwork        = "default"
 	defaultSubnetwork     = ""
+	defaultMetadata       = ""
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -152,6 +155,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "google-open-port",
 			Usage: "Make the specified port number accessible from the Internet, e.g, 8080/tcp",
 		},
+		mcnflag.StringSliceFlag{
+			Name:  "google-metadata",
+			Usage: "Set the specified metadata in key=value format. If the value starts with an at character (@) the remainder of the value is used as source file for the value.",
+		},
 	}
 }
 
@@ -218,6 +225,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
 		d.OpenPorts = flags.StringSlice("google-open-port")
+		d.Metadata = flags.StringSlice("google-metadata")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
@@ -422,4 +430,41 @@ func (d *Driver) Remove() error {
 	}
 
 	return nil
+}
+
+// GetMetadata parses the commandline metadata option and convert values into a key/value map
+func (d *Driver) GetMetadata() map[string]string {
+	metadata := make(map[string]string)
+
+	if len(d.Metadata) != 0 {
+		for _, item := range d.Metadata {
+			parts := strings.Split(item, "=")
+			if len(parts) != 2 {
+				log.Warnf("The metadata entry %s doesn't follow the format key=value", item)
+				continue
+			}
+
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+
+			if strings.HasPrefix(value, "@") {
+				if len(value) == 1 {
+					log.Warnf("The metadata entry %s starts with an @ but does not specify a file", item)
+					continue
+				}
+				filename := value[1:]
+
+				if content, err := ioutil.ReadFile(filename); err != nil {
+					log.Warnf("Failed to read file %s: %s", filename, err.Error())
+					continue
+				} else {
+					value = string(content[:])
+				}
+			}
+
+			metadata[key] = value
+		}
+	}
+
+	return metadata
 }

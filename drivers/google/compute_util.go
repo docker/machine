@@ -324,7 +324,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		return err
 	}
 
-	return c.uploadSSHKey(instance, d.GetSSHKeyPath())
+	return c.setMetadata(instance, d)
 }
 
 // configureInstance configures an existing instance for use with Docker Machine.
@@ -340,7 +340,7 @@ func (c *ComputeUtil) configureInstance(d *Driver) error {
 		return err
 	}
 
-	return c.uploadSSHKey(instance, d.GetSSHKeyPath())
+	return c.setMetadata(instance, d)
 }
 
 // addFirewallTag adds a tag to the instance to match the firewall rule.
@@ -364,28 +364,48 @@ func (c *ComputeUtil) addFirewallTag(instance *raw.Instance) error {
 	return c.waitForRegionalOp(op.Name)
 }
 
-// uploadSSHKey updates the instance metadata with the given ssh key.
-func (c *ComputeUtil) uploadSSHKey(instance *raw.Instance, sshKeyPath string) error {
+// Set the instance metadata, this is the union of the google-metadata commandline option and the SSH public key
+func (c *ComputeUtil) setMetadata(instance *raw.Instance, d *Driver) error {
+	metadataItems := []*raw.MetadataItems{}
+
+	for key, value := range d.GetMetadata() {
+		v := value
+		metadataItems = append(metadataItems, &raw.MetadataItems{
+			Key:   key,
+			Value: &v,
+		})
+	}
+
+	sshKeyMetadataValue, err := c.getSSHKeyMetadataValue(d.GetSSHKeyPath())
+	if err != nil {
+		return nil
+	}
+
+	metadataItems = append(metadataItems, &raw.MetadataItems{
+		Key:   "sshKeys",
+		Value: &sshKeyMetadataValue,
+	})
+
+	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
+		Fingerprint: instance.Metadata.Fingerprint,
+		Items:       metadataItems,
+	}).Do()
+
+	return c.waitForRegionalOp(op.Name)
+}
+
+// reads and formats the given ssh public key for metadata updates.
+func (c *ComputeUtil) getSSHKeyMetadataValue(sshKeyPath string) (string, error) {
 	log.Infof("Uploading SSH Key")
 
 	sshKey, err := ioutil.ReadFile(sshKeyPath + ".pub")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	metaDataValue := fmt.Sprintf("%s:%s %s\n", c.userName, strings.TrimSpace(string(sshKey)), c.userName)
 
-	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
-		Fingerprint: instance.Metadata.Fingerprint,
-		Items: []*raw.MetadataItems{
-			{
-				Key:   "sshKeys",
-				Value: &metaDataValue,
-			},
-		},
-	}).Do()
-
-	return c.waitForRegionalOp(op.Name)
+	return metaDataValue, nil
 }
 
 // parseTags computes the tags for the instance.
