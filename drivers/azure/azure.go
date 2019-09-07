@@ -30,6 +30,7 @@ const (
 	defaultAzureSubnet          = "docker-machine"
 	defaultAzureSubnetPrefix    = "192.168.0.0/16"
 	defaultStorageType          = string(storage.StandardLRS)
+	defaultDiskSize             = 30
 	defaultAzureAvailabilitySet = "docker-machine"
 )
 
@@ -53,6 +54,7 @@ const (
 	flAzureNoPublicIP      = "azure-no-public-ip"
 	flAzureDNSLabel        = "azure-dns"
 	flAzureStorageType     = "azure-storage-type"
+	flAzureDiskSize        = "azure-disk-size"
 	flAzureCustomData      = "azure-custom-data"
 	flAzureClientID        = "azure-client-id"
 	flAzureClientSecret    = "azure-client-secret"
@@ -83,6 +85,7 @@ type Driver struct {
 	SubnetPrefix    string
 	AvailabilitySet string
 	StorageType     string
+	DiskSize        int32
 
 	OpenPorts      []string
 	PrivateIPAddr  string
@@ -202,6 +205,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "AZURE_STORAGE_TYPE",
 			Value:  defaultStorageType,
 		},
+		mcnflag.IntFlag{
+			Name:   flAzureDiskSize,
+			Usage:  "Size of Azure OS disk in GB",
+			EnvVar: "AZURE_DISK_SIZE",
+			Value:  defaultDiskSize,
+		},
 		mcnflag.BoolFlag{
 			Name:  flAzureUsePrivateIP,
 			Usage: "Use private IP address of the machine to connect",
@@ -275,6 +284,7 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.StaticPublicIP = fl.Bool(flAzureStaticPublicIP)
 	d.DockerPort = fl.Int(flAzureDockerPort)
 	d.DNSLabel = fl.String(flAzureDNSLabel)
+	d.DiskSize = int32(fl.Int(flAzureDiskSize))
 	d.CustomDataFile = fl.String(flAzureCustomData)
 
 	d.ClientID = fl.String(flAzureClientID)
@@ -391,7 +401,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 	err = c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
-		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount)
+		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.DiskSize, d.ctx.StorageAccount)
 	return err
 }
 
