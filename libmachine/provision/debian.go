@@ -15,22 +15,31 @@ import (
 
 func init() {
 	Register("Debian", &RegisteredProvisioner{
-		New: NewDebianProvisioner,
+		New: func(d drivers.Driver) Provisioner {
+			return NewDebianProvisioner("debian", d)
+		},
+	})
+	Register("Raspbian", &RegisteredProvisioner{
+		New: func(d drivers.Driver) Provisioner {
+			return NewDebianProvisioner("raspbian", d)
+		},
 	})
 }
 
-func NewDebianProvisioner(d drivers.Driver) Provisioner {
+func NewDebianProvisioner(osReleaseID string, d drivers.Driver) Provisioner {
 	return &DebianProvisioner{
-		NewSystemdProvisioner("debian", d),
+		SystemdProvisioner: NewSystemdProvisioner(osReleaseID, d),
+		name:               osReleaseID,
 	}
 }
 
 type DebianProvisioner struct {
 	SystemdProvisioner
+	name string
 }
 
 func (provisioner *DebianProvisioner) String() string {
-	return "debian"
+	return provisioner.name
 }
 
 func (provisioner *DebianProvisioner) Package(name string, action pkgaction.PackageAction) error {
