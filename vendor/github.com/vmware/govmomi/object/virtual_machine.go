@@ -300,13 +300,6 @@ func (v VirtualMachine) WaitForNetIP(ctx context.Context, v4 bool) (map[string][
 				}
 			}
 		}
-
-		for _, ips := range macs {
-			if len(ips) == 0 {
-				return false
-			}
-		}
-
 		return true
 	})
 
@@ -314,7 +307,14 @@ func (v VirtualMachine) WaitForNetIP(ctx context.Context, v4 bool) (map[string][
 		return nil, err
 	}
 
-	return macs, nil
+	nonEmptyMacs := make(map[string][]string)
+	for mac, ips := range macs {
+		if len(ips) != 0 {
+			nonEmptyMacs[mac] = ips
+		}
+	}
+
+	return nonEmptyMacs, nil
 }
 
 // Device returns the VirtualMachine's config.hardware.device property.
