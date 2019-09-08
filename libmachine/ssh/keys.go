@@ -80,12 +80,21 @@ func (kp *KeyPair) WriteToFile(privateKeyPath string, publicKeyPath string) erro
 			return ErrUnableToWriteFile
 		}
 
+		// Persist data to stable storage
+		if err := f.Sync(); err != nil {
+			return ErrUnableToWriteFile
+		}
+
 		// windows does not support chmod
 		switch runtime.GOOS {
 		case "darwin", "freebsd", "linux", "openbsd":
 			if err := f.Chmod(0600); err != nil {
 				return err
 			}
+		}
+
+		if err := f.Close(); err != nil {
+			return err
 		}
 	}
 
