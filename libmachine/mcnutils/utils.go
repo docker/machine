@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	math_rand "math/rand"
 	"os"
 	"runtime"
 	"strconv"
@@ -78,7 +79,7 @@ func CopyFile(src, dst string) error {
 	return os.Chmod(dst, fi.Mode())
 }
 
-func WaitForSpecificOrError(f func() (bool, error), maxAttempts int, waitInterval time.Duration) error {
+func WaitForSpecificOrError(f func() (bool, error), maxAttempts int, waitInterval time.Duration, devInterval ...time.Duration) error {
 	for i := 0; i < maxAttempts; i++ {
 		stop, err := f()
 		if err != nil {
@@ -88,18 +89,21 @@ func WaitForSpecificOrError(f func() (bool, error), maxAttempts int, waitInterva
 			return nil
 		}
 		time.Sleep(waitInterval)
+		for _, deviation := range devInterval {
+			time.Sleep(time.Duration(math_rand.Int63n(int64(deviation))))
+		}
 	}
 	return fmt.Errorf("Maximum number of retries (%d) exceeded", maxAttempts)
 }
 
-func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration) error {
+func WaitForSpecific(f func() bool, maxAttempts int, waitInterval time.Duration, devInterval ...time.Duration) error {
 	return WaitForSpecificOrError(func() (bool, error) {
 		return f(), nil
-	}, maxAttempts, waitInterval)
+	}, maxAttempts, waitInterval, devInterval...)
 }
 
 func WaitFor(f func() bool) error {
-	return WaitForSpecific(f, 60, 3*time.Second)
+	return WaitForSpecific(f, 60, 3*time.Second, 9*time.Second)
 }
 
 // TruncateID returns a shorten id
