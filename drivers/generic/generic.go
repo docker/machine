@@ -3,6 +3,7 @@ package generic
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -15,6 +16,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/state"
+	"golang.org/x/crypto/ssh"
 )
 
 type Driver struct {
@@ -107,11 +109,23 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 func (d *Driver) PreCreateCheck() error {
 	if d.SSHKey != "" {
-		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
+		keyFile, err := os.Open(d.SSHKey)
+		if os.IsNotExist(err) {
 			return fmt.Errorf("SSH key does not exist: %q", d.SSHKey)
+		} else if err != nil {
+			return fmt.Errorf("Problem opening ssh key file: %s", err)
+		}
+		defer keyFile.Close()
+
+		keyBytes, err := ioutil.ReadAll(keyFile)
+		if err != nil {
+			return fmt.Errorf("SSH key could not be read: %s", err)
 		}
 
-		// TODO: validate the key is a valid key
+		_, err = ssh.ParsePrivateKey(keyBytes)
+		if err != nil {
+			return fmt.Errorf("%q not valid key: %s", d.SSHKey, err)
+		}
 	}
 
 	return nil
