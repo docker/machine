@@ -9,6 +9,8 @@
 #  1b. Alternatively, just copy this file into into /etc/bash_completion.d
 #  2. Change your PS1 to call __docker-machine-ps1 as command-substitution
 #     PS1='[\u@\h \W$(__docker_machine_ps1 " [%s]")]\$ '
+#  3. Add 'export HISTCONTROL=ignorespace' to your '~/.bash_profile' or '~/.bashrc'
+#     to prevent potential commands history pollution.
 #
 # Configuration:
 #
@@ -18,7 +20,7 @@
 #
 
 __docker_machine_ps1 () {
-    local format=${1:- [%s]}
+    local format=${1:- [[%s]]}
     if test ${DOCKER_MACHINE_NAME}; then
         local status
         if test ${DOCKER_MACHINE_PS1_SHOWSTATUS:-false} = true; then
@@ -45,3 +47,27 @@ __docker_machine_ps1 () {
         printf -- "${format}" "${DOCKER_MACHINE_NAME}${status}"
     fi
 }
+
+__update_shell_prompt () {
+    local new_shell_prompt re="[[:space:]]*\[\[[^]]*\]\]"
+    if [ -n "$(__docker_machine_ps1)" ]; then
+        if [[ $PS1 =~ $re ]]; then
+            new_shell_prompt=$(echo "$PS1" | sed -e "s/$re/$(__docker_machine_ps1)/")
+        else
+            new_shell_prompt=$(echo "$PS1" | sed -e "s/\(.*\)\]\(.*\)/\1$(__docker_machine_ps1)]\2/")
+        fi
+
+        export PS1=$new_shell_prompt
+    else
+        if [[ $PS1 =~ $re ]]; then
+            new_shell_prompt=$(echo "$PS1" | sed -e "s/$re//")
+            export PS1=$new_shell_prompt
+        fi
+    fi
+
+    IFS=';' read -sdR -p $'\E[6n' ROW COL; local current_row=`echo "${ROW#*[}"`
+
+    tput cup $((current_row-2)) 0 && tput el
+}
+
+bind '"\e[24~":"\n __update_shell_prompt\n"'
