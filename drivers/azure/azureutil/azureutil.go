@@ -142,6 +142,10 @@ func (a AzureClient) DeleteNetworkSecurityGroupIfExists(resourceGroup, name stri
 		func() (autorest.Response, error) { return a.securityGroupsClient().Delete(resourceGroup, name, nil) })
 }
 
+func (a AzureClient) CleanupNetworkSecurityGroupIfExists(resourceGroup, name string) error {
+	return a.cleanupResourceIfExists(&nsgCleanup{rg: resourceGroup, name: name})
+}
+
 func (a AzureClient) CreatePublicIPAddress(ctx *DeploymentContext, resourceGroup, name, location string, isStatic bool, dnsLabel string) error {
 	log.Info("Creating public IP address.", logutil.Fields{
 		"name":   name,
