@@ -41,6 +41,8 @@ const (
 	flAzureDockerPort      = "azure-docker-port"
 	flAzureLocation        = "azure-location"
 	flAzureSize            = "azure-size"
+	flAzurePriority        = "azure-priority"
+	flAzureEvictionPolicy  = "azure-evictionPolicy"
 	flAzureImage           = "azure-image"
 	flAzureVNet            = "azure-vnet"
 	flAzureSubnet          = "azure-subnet"
@@ -77,6 +79,8 @@ type Driver struct {
 	DockerPort      int
 	Location        string
 	Size            string
+	Priority        string
+	EvictionPolicy  string
 	Image           string
 	VirtualNetwork  string
 	SubnetName      string
@@ -156,6 +160,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Size for Azure Virtual Machine",
 			EnvVar: "AZURE_SIZE",
 			Value:  defaultAzureSize,
+		},
+		mcnflag.StringFlag{
+			Name:   flAzurePriority,
+			Usage:  "Priority for Azure Virtual Machine",
+			EnvVar: "AZURE_PRIORITY",
+		},
+		mcnflag.StringFlag{
+			Name:   flAzureEvictionPolicy,
+			Usage:  "Eviction Policy for Azure Virtual Machine",
+			EnvVar: "AZURE_EVICTION_POLICY",
 		},
 		mcnflag.StringFlag{
 			Name:   flAzureImage,
@@ -267,6 +281,8 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	}
 
 	// Optional flags or Flags of other types
+	d.Priority = fl.String(flAzurePriority)
+	d.EvictionPolicy = fl.String(flAzureEvictionPolicy)
 	d.Environment = fl.String(flAzureEnvironment)
 	d.OpenPorts = fl.StringSlice(flAzurePorts)
 	d.PrivateIPAddr = fl.String(flAzurePrivateIPAddr)
@@ -390,7 +406,7 @@ func (d *Driver) Create() error {
 	if err := d.generateSSHKey(d.ctx); err != nil {
 		return err
 	}
-	err = c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
+	err = c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.Priority, d.EvictionPolicy, d.ctx.AvailabilitySetID,
 		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount)
 	return err
 }

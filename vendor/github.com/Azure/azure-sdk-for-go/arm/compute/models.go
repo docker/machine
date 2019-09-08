@@ -19,10 +19,11 @@ package compute
 // regenerated.
 
 import (
+	"net/http"
+
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
-	"net/http"
 )
 
 // CachingTypes enumerates the values for caching types.
@@ -611,6 +612,8 @@ type SSHPublicKey struct {
 
 // StorageProfile is describes a storage profile.
 type StorageProfile struct {
+	Priority       *string         `json:"priority,omitempty"`
+	EvictionPolicy *string         `json:"evictionPolicy,omitempty"`
 	ImageReference *ImageReference `json:"imageReference,omitempty"`
 	OsDisk         *OSDisk         `json:"osDisk,omitempty"`
 	DataDisks      *[]DataDisk     `json:"dataDisks,omitempty"`
