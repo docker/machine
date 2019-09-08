@@ -382,6 +382,12 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		Name:        "forward",
+		Usage:       "Forward ports to a machine with SSH.",
+		Description: "Arguments are [machine] [bind_address:]port:host:hostport",
+		Action:      runCommand(cmdForward),
+	},
+	{
 		Name:        "start",
 		Usage:       "Start a machine",
 		Description: "Argument(s) are one or more machine names.",
