@@ -130,12 +130,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringSliceFlag{
 			EnvVar: "VSPHERE_NETWORK",
 			Name:   "vmwarevsphere-network",
-			Usage:  "vSphere network where the docker VM will be attached",
+			Usage:  "vSphere network where the docker VM will be attached. If the port group is inside a folder, specify the whole path name. i.e. folder/network",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_DATASTORE",
 			Name:   "vmwarevsphere-datastore",
-			Usage:  "vSphere datastore for docker VM",
+			Usage:  "vSphere datastore for docker VM. If the datastore is inside a Storage DRS cluster use the whole path name. i.e: storage_cluster/datastore",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_DATACENTER",
@@ -145,12 +145,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_FOLDER",
 			Name:   "vmwarevsphere-folder",
-			Usage:  "vSphere folder for the docker VM. This folder must already exist in the datacenter.",
+			Usage:  "vSphere folder for the docker VM. This folder must already exist in the datacenter. i.e. /folder",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_POOL",
 			Name:   "vmwarevsphere-pool",
-			Usage:  "vSphere resource pool for docker VM",
+			Usage:  "vSphere resource pool for docker VM. i.e. for the root resource pool in a cluster: <datacenter name>/host/<cluster name>/Resources",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_HOSTSYSTEM",
