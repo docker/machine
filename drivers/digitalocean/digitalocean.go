@@ -37,6 +37,7 @@ type Driver struct {
 	UserDataFile      string
 	Monitoring        bool
 	Tags              string
+	VolumeIDs         string
 }
 
 const (
@@ -126,6 +127,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "digitalocean-tags",
 			Usage:  "comma-separated list of tags to apply to the Droplet",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "DIGITALOCEAN_VOLUME_IDS",
+			Name:   "digitalocean-volume-ids",
+			Usage:  "comma-separated list of volumes to apply to the Droplet",
+		},
 	}
 }
 
@@ -165,6 +171,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHKey = flags.String("digitalocean-ssh-key-path")
 	d.Monitoring = flags.Bool("digitalocean-monitoring")
 	d.Tags = flags.String("digitalocean-tags")
+	d.VolumeIDs = flags.String("digitalocean-volume-ids")
 
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -241,6 +248,7 @@ func (d *Driver) Create() error {
 		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID}},
 		Monitoring:        d.Monitoring,
 		Tags:              d.getTags(),
+		Volumes:           d.getVolumes(),
 	}
 
 	newDroplet, _, err := client.Droplets.Create(context.TODO(), createRequest)
@@ -407,6 +415,19 @@ func (d *Driver) getTags() []string {
 	}
 
 	return tagList
+}
+
+func (d *Driver) getVolumes() []godo.DropletCreateVolume {
+	var volumeList []godo.DropletCreateVolume
+
+	for _, v := range strings.Split(d.VolumeIDs, ",") {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			volumeList = append(volumeList, godo.DropletCreateVolume{ID: v, Name: ""})
+		}
+	}
+
+	return volumeList
 }
 
 func (d *Driver) GetSSHKeyPath() string {
