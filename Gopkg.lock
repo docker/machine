@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:1c1c2c5c3cd554a489b36c951d1267e1be7f1deb16b63908f35fdbc3b926af59"
+  digest = "1:9cfc29462578b03991090cd698207f7b2c765501bb465ae7642472c676721128"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
     "arm/compute",
@@ -28,7 +28,7 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
-  digest = "1:7119b0c081a1995d08827e697a94447a922dd57ec4b55962c91cc64c81f363a3"
+  digest = "1:42d4567ff0070355f9b4318b9177d3e97e876d3ba742ee389671bce364fd21f0"
   name = "github.com/Azure/go-autorest"
   packages = [
     "autorest",
@@ -42,7 +42,7 @@
   version = "v7.2.1"
 
 [[projects]]
-  digest = "1:3e3787c889e4c6600e320ae16abfde18cac2c1f96948180be584665a35ee3ec2"
+  digest = "1:18dab67ce8a0d876f02f12fa648f42fbb56991f2a055fa6d9b03c5587e6c21f4"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -54,29 +54,38 @@
     "aws/credentials",
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
     "aws/credentials/stscreds",
+    "aws/csm",
     "aws/defaults",
     "aws/ec2metadata",
+    "aws/endpoints",
     "aws/request",
     "aws/session",
     "aws/signer/v4",
-    "private/endpoints",
+    "internal/ini",
+    "internal/sdkio",
+    "internal/sdkmath",
+    "internal/sdkrand",
+    "internal/sdkuri",
+    "internal/shareddefaults",
     "private/protocol",
     "private/protocol/ec2query",
+    "private/protocol/json/jsonutil",
     "private/protocol/query",
     "private/protocol/query/queryutil",
     "private/protocol/rest",
     "private/protocol/xml/xmlutil",
-    "private/waiter",
     "service/ec2",
     "service/sts",
+    "service/sts/stsiface",
   ]
   pruneopts = "UT"
-  revision = "ddfd17ec06eee10c24c5c474633273fd034afdda"
-  version = "v1.4.10"
+  revision = "e51c7493711a6595b86496dc3f6229bae1354c1c"
+  version = "v1.23.19"
 
 [[projects]]
-  digest = "1:676da826460e2bef9b36b2b1fe93fc73c781937d2c70ca459e41c9f3277d2c55"
+  digest = "1:8d1c2d891bc6af6581932b89a2f3c987aad8d2a35625bc819811a804625bf47f"
   name = "github.com/bugsnag/bugsnag-go"
   packages = [
     ".",
@@ -138,7 +147,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5c709df1e94c6dbee6fdd9699b11e3cdfa06870b1e828e9311e4e879b2ae6a4a"
+  digest = "1:5c87041b31a0c6f12176534cfbebc5b0a640156fb7bc80ae9b0734bdad4264cb"
   name = "github.com/docker/docker"
   packages = [
     "pkg/term",
@@ -161,13 +170,6 @@
   pruneopts = "UT"
   revision = "432a702ab7d709538572f9a2a42eaf0ca0691698"
   version = "v0.9.23"
-
-[[projects]]
-  digest = "1:ad48c8fd2fb8c747d8798f19890f70b18091196274a773550a9e5dffa9e165d1"
-  name = "github.com/go-ini/ini"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "03e0e7d51a13a91c765d8d0161246bc14a38001a"
 
 [[projects]]
   digest = "1:922ab7a624d8398c8e986beefc25052b26e02a8ac6bba5dc507bda11adbd878b"
@@ -200,12 +202,11 @@
   revision = "7e38e58719c33e0d44d585c4ab477a30f8cb82dd"
 
 [[projects]]
-  digest = "1:b87714e57a511d88f307aba7d5b63522da12bed0a050889c81272fc50f71100e"
+  digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3433f3ea46d9f8019119e7dd41274e112a2359a9"
-  version = "0.2.2"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:481d1ca274189bb298947b76bb522b7e2ee494b7ca3206c705c008a02b5124cf"
@@ -223,7 +224,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:89249eaf359dc2b64431f1d37a8da136ee3714852f9f5bf4bad4a41f160fcac4"
+  digest = "1:c93f10d1bade959b01cb6b848dc896e578dc5553e06a2691062e3ca533483217"
   name = "github.com/rackspace/gophercloud"
   packages = [
     ".",
@@ -281,7 +282,7 @@
   revision = "1a9d0bb9f541897e62256577b352fdbc1fb4fd94"
 
 [[projects]]
-  digest = "1:ce346aa04e3c6989aa128ec6778fb4dff403e3077d48e5204c96704f35efe2e0"
+  digest = "1:eaacdd6c66293120718af5e610c7aae7010f73d20f10f5a2e67879cf9f98c618"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
@@ -299,7 +300,7 @@
   revision = "ac974c61c2f990f4115b119354b5e0b47550e888"
 
 [[projects]]
-  digest = "1:0f79aac7325bae1fd3c5b3013d886a212a3a81471a8381058d1f6a455bc158a6"
+  digest = "1:6e935261076a7fcf8de2982995c5f3863c49e29ce5da1798a4da987c99a0d34e"
   name = "github.com/vmware/govcloudair"
   packages = [
     ".",
@@ -310,7 +311,7 @@
   version = "v0.0.2"
 
 [[projects]]
-  digest = "1:46a5783efbdb552f34f2fcac90f3b0bbe790a169153706be69bf22dabdcbf337"
+  digest = "1:a4c0dc47b0a47d120e584c8cd96634e83a2de1b54ef942c859d0cfedb592f8bd"
   name = "github.com/vmware/govmomi"
   packages = [
     ".",
@@ -335,7 +336,7 @@
   version = "v0.6.2"
 
 [[projects]]
-  digest = "1:c520e4d4fc9976e4da44ee0a3bdd5a45e8a206a72c1ccd2089f3d184f5eb942a"
+  digest = "1:15282bff8a0f355afb6b5508d6cd9dbdea287451ae9e11dbdec6af6c4f63f486"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -358,7 +359,7 @@
   revision = "4f2fc6c1e69d41baf187332ee08fbd2b296f21ed"
 
 [[projects]]
-  digest = "1:5b9c174f7602d8927abd72ed7095e16249fd87da044a7f9d9f8f6cb9f737719a"
+  digest = "1:b7850dd2e4bced70ce54a733bfbdaa2362ec4b1c3bada91918b948e5393d4aba"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
@@ -372,7 +373,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:524ca168039a413c2a3aded9989f201e869d9d888cbc8e274268f30f66a984cc"
+  digest = "1:5314f99e75761a05c4efc76f205405823ddb9c7dd9cf3c4e85421be7423d5974"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -384,7 +385,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ee95e00dab6de32d68fa8743b99f11edbac3bc9e65e0261cafb8750b313a14bb"
+  digest = "1:9d86bc43d5be9d700b9f7f8444688f4a51272eafd46f26863f0dce34815b3f16"
   name = "google.golang.org/api"
   packages = [
     "compute/v1",
@@ -396,7 +397,7 @@
   revision = "87a2f5c77b3602f3ae7c8dca6d76f9c2b9bc0957"
 
 [[projects]]
-  digest = "1:08250caf23d0b98c5aec610449d7a8b5c8f7809a55f1ecaa612a0f1b790ecb5d"
+  digest = "1:0fbc49fb45274caf756757f95d813f72d22b9de142b2133ca7ea6d587dd612fe"
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -414,7 +415,7 @@
   revision = "6a436539be38c296a8075a871cc536686b458371"
 
 [[projects]]
-  digest = "1:0b8b0eb3466e09a0aa705b86fa1bd25e8562395cc4034a2dceb297f3ef65e8d3"
+  digest = "1:c438a4c9def7fecb3f40968db0b62c4b80991fee64c55f215956879c9904fef5"
   name = "google.golang.org/cloud"
   packages = [
     "compute/metadata",
