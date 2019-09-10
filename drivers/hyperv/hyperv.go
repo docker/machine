@@ -1,9 +1,11 @@
 package hyperv
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -32,6 +34,7 @@ const (
 	defaultCPU                  = 1
 	defaultVLanID               = 0
 	defaultDisableDynamicMemory = false
+	defaultSwitchID             = "c08cb7b8-9b3c-408e-8e30-5e16a3aeb444"
 )
 
 // NewDriver creates a new Hyper-v driver with default settings.
@@ -271,42 +274,54 @@ func (d *Driver) Create() error {
 }
 
 func (d *Driver) chooseVirtualSwitch() (string, error) {
-	if d.VSwitch == "" {
-		// Default to the first external switche and in the process avoid DockerNAT
-		stdout, err := cmdOut("[Console]::OutputEncoding = [Text.Encoding]::UTF8; (Hyper-V\\Get-VMSwitch -SwitchType External).Name")
+	type Switch struct {
+		ID         string
+		Name       string
+		SwitchType int
+	}
+
+	getHyperVSwitches := func(filters []string) ([]Switch, error) {
+		cmd := []string{"Hyper-V\\Get-VMSwitch", "Select Id, Name, SwitchType"}
+		cmd = append(cmd, filters...)
+		stdout, err := cmdOut(fmt.Sprintf("[Console]::OutputEncoding = [Text.Encoding]::UTF8; ConvertTo-Json @(%s)", strings.Join(cmd, "|")))
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		switches := parseLines(stdout)
+		var switches []Switch
+		err = json.Unmarshal([]byte(strings.NewReplacer("\r", "").Replace(stdout)), &switches)
+		if err != nil {
+			return nil, err
+		}
+
+		return switches, nil
+	}
+
+	if d.VSwitch == "" {
+		// prefer Default Switch over external switches
+		switches, err := getHyperVSwitches([]string{fmt.Sprintf("Where-Object {($_.SwitchType -eq 'External') -or ($_.Id -eq '%s')}", defaultSwitchID), "Sort-Object -Property SwitchType"})
+		if err != nil {
+			return "", fmt.Errorf("unable to get available hyperv switches")
+		}
 
 		if len(switches) < 1 {
-			return "", fmt.Errorf("no External vswitch found. A valid vswitch must be available for this command to run. Check https://docs.docker.com/machine/drivers/hyper-v/")
+			return "", fmt.Errorf("no External vswitch nor Default Switch found. A valid vswitch must be available for this command to run. Check https://docs.docker.com/machine/drivers/hyper-v/")
 		}
 
-		return switches[0], nil
+		return switches[0].Name, nil
 	}
 
-	stdout, err := cmdOut("[Console]::OutputEncoding = [Text.Encoding]::UTF8; (Hyper-V\\Get-VMSwitch).Name")
+	// prefer external switches (using descending order)
+	switches, err := getHyperVSwitches([]string{fmt.Sprintf("Where-Object {$_.Name -eq '%s'}", d.VSwitch), "Sort-Object -Property SwitchType -Descending"})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to get available hyperv switches")
 	}
 
-	switches := parseLines(stdout)
-
-	found := false
-	for _, name := range switches {
-		if name == d.VSwitch {
-			found = true
-			break
-		}
-	}
-
-	if !found {
+	if len(switches) < 1 {
 		return "", fmt.Errorf("vswitch %q not found", d.VSwitch)
 	}
 
-	return d.VSwitch, nil
+	return switches[0].Name, nil
 }
 
 // waitForIP waits until the host has a valid IP
