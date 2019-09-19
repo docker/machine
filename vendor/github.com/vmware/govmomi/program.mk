@@ -30,7 +30,7 @@ $(PROGRAM):
 	CGO_ENABLED=0 go build -a $(BUILD_ARGS) -o $@
 
 install:
-	CGO_ENABLED=0 go install $(BUILD_ARGS)
+	CGO_ENABLED=0 go install -i -v $(BUILD_ARGS)
 
 ifneq (,$(strip $(BUILD_OS)))
 ifneq (,$(strip $(BUILD_ARCH)))

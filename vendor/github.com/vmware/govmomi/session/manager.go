@@ -18,9 +18,11 @@ package session
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25"
@@ -39,6 +41,21 @@ func init() {
 	} else if Locale == "" {
 		Locale = "en_US"
 	}
+}
+
+// Secret returns the contents if a file path value is given, otherwise returns value itself.
+func Secret(value string) (string, error) {
+	if len(value) == 0 {
+		return value, nil
+	}
+	contents, err := ioutil.ReadFile(value)
+	if err != nil {
+		if os.IsPermission(err) {
+			return "", err
+		}
+		return value, nil
+	}
+	return strings.TrimSpace(string(contents)), nil
 }
 
 type Manager struct {

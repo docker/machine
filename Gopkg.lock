@@ -145,6 +145,19 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:e53ebe53703cff15e552a8f6c024d9bc67af07ff0d1e6e0a77794099767fd528"
+  name = "github.com/diskfs/go-diskfs"
+  packages = [
+    "filesystem",
+    "filesystem/iso9660",
+    "partition/mbr",
+    "util",
+  ]
+  pruneopts = "UT"
+  revision = "fa9596b4c09d469e4e28be0da1069630d0afa55c"
+
+[[projects]]
+  branch = "master"
   digest = "1:d2f0fc2e4829c6a0950a8a4c15a37f5585d3fb457d39fecd65ca77706dc1f59e"
   name = "github.com/docker/docker"
   packages = [
@@ -301,7 +314,8 @@
   version = "v0.0.2"
 
 [[projects]]
-  digest = "1:48f74da3809cc4b0792b802b41e34ebac78a12e6a6f800611da5142c9627921b"
+  branch = "master"
+  digest = "1:28b8c0c559f6b8bc9d6439384422e2ebc18791c1ac4346d27fc28442a3840c97"
   name = "github.com/vmware/govmomi"
   packages = [
     ".",
@@ -313,6 +327,11 @@
     "property",
     "session",
     "task",
+    "vapi/internal",
+    "vapi/library",
+    "vapi/library/finder",
+    "vapi/rest",
+    "vapi/vcenter",
     "vim25",
     "vim25/debug",
     "vim25/methods",
@@ -323,8 +342,7 @@
     "vim25/xml",
   ]
   pruneopts = "UT"
-  revision = "bdf05b6cab86b1e9f40ee80a4d2cb07a0c25ef78"
-  version = "v0.20.0"
+  revision = "31565d975e8c13d4577f4fa705d897ed5da2d524"
 
 [[projects]]
   digest = "1:c520e4d4fc9976e4da44ee0a3bdd5a45e8a206a72c1ccd2089f3d184f5eb942a"
@@ -415,6 +433,13 @@
   pruneopts = "UT"
   revision = "975617b05ea8a58727e6c1a06b6161ff4185a9f2"
 
+[[projects]]
+  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "v2.2.2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -436,6 +461,7 @@
     "github.com/bugsnag/bugsnag-go",
     "github.com/codegangsta/cli",
     "github.com/digitalocean/godo",
+    "github.com/diskfs/go-diskfs/filesystem/iso9660",
     "github.com/docker/docker/pkg/term",
     "github.com/exoscale/egoscale",
     "github.com/rackspace/gophercloud",
@@ -461,6 +487,11 @@
     "github.com/vmware/govmomi/find",
     "github.com/vmware/govmomi/guest",
     "github.com/vmware/govmomi/object",
+    "github.com/vmware/govmomi/vapi/library",
+    "github.com/vmware/govmomi/vapi/library/finder",
+    "github.com/vmware/govmomi/vapi/rest",
+    "github.com/vmware/govmomi/vapi/vcenter",
+    "github.com/vmware/govmomi/vim25",
     "github.com/vmware/govmomi/vim25/mo",
     "github.com/vmware/govmomi/vim25/soap",
     "github.com/vmware/govmomi/vim25/types",
@@ -472,6 +503,7 @@
     "golang.org/x/sys/windows/registry",
     "google.golang.org/api/compute/v1",
     "google.golang.org/api/googleapi",
+    "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
