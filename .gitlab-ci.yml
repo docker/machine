@@ -1,21 +1,27 @@
-image: docker
+image: docker:19.03.2
 
 stages:
+- prepare
 - validate
 - build
 
-services:
-- docker:dind
-
 variables:
   USE_CONTAINER: "true"
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_DRIVER: overlay
+  CI_IMAGE: registry.gitlab.com/gitlab-org/ci-cd/docker-machine/ci:alpine3.10
 
-before_script:
-- apk add -U make bash
+.docker_in_docker:
+  services:
+  - docker:19.03.2-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  tags:
+  - docker
 
 .build_base: &build_base
+  extends:
+  - .docker_in_docker
   stage: build
   before_script:
   - apk add -U make bash
@@ -27,8 +33,6 @@ before_script:
     paths:
     - bin/
     expire_in: 1 week
-  tags:
-  - docker
 
 .build_validate: &build_validate
   <<: *build_base
@@ -38,6 +42,20 @@ before_script:
 .build_x: &build_x
   <<: *build_base
   script: make build-x
+
+prepare CI image:
+  extends:
+  - .docker_in_docker
+  stage: prepare
+  script:
+  - docker build --pull --no-cache -t ${CI_IMAGE} -f ./.gitlab/ci/Dockerfile ./.gitlab/ci/
+  - docker login --username ${CI_REGISTRY_USER} --password ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  - docker push ${CI_IMAGE}
+  - docker logout ${CI_REGISTRY}
+  only:
+    changes:
+    - ./gitlab/ci/Dockerfile
+    - .gitlab-ci.yml
 
 darwin amd64: *build_x
 linux amd64: *build_validate
