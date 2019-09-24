@@ -467,6 +467,13 @@ func (d *Driver) GetState() (state.State, error) {
 	return state.None, nil
 }
 
+func (d *Driver) failedToCreate(err error) error {
+	if e := d.Remove(); e != nil {
+		return fmt.Errorf("%v: %v", err, e)
+	}
+	return err
+}
+
 func (d *Driver) Create() error {
 	if err := d.resolveIds(); err != nil {
 		return err
@@ -485,15 +492,15 @@ func (d *Driver) Create() error {
 		return err
 	}
 	if err := d.waitForInstanceActive(); err != nil {
-		return err
+		return d.failedToCreate(err)
 	}
 	if d.FloatingIpPool != "" {
 		if err := d.assignFloatingIP(); err != nil {
-			return err
+			return d.failedToCreate(err)
 		}
 	}
 	if err := d.lookForIPAddress(); err != nil {
-		return err
+		return d.failedToCreate(err)
 	}
 	return nil
 }
