@@ -16,41 +16,50 @@ import (
 	"github.com/docker/machine/libmachine/state"
 
 	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 )
 
 type Driver struct {
 	*drivers.BaseDriver
-	AuthUrl          string
-	ActiveTimeout    int
-	Insecure         bool
-	CaCert           string
-	DomainID         string
-	DomainName       string
-	Username         string
-	Password         string
-	TenantName       string
-	TenantId         string
-	Region           string
-	AvailabilityZone string
-	EndpointType     string
-	MachineId        string
-	FlavorName       string
-	FlavorId         string
-	ImageName        string
-	ImageId          string
-	KeyPairName      string
-	NetworkName      string
-	NetworkId        string
-	UserData         []byte
-	PrivateKeyFile   string
-	SecurityGroups   []string
-	FloatingIpPool   string
-	ComputeNetwork   bool
-	FloatingIpPoolId string
-	IpVersion        int
-	ConfigDrive      bool
-	metadata         string
-	client           Client
+	AuthUrl                     string
+	ActiveTimeout               int
+	Insecure                    bool
+	CaCert                      string
+	DomainId                    string
+	DomainName                  string
+	UserId                      string
+	Username                    string
+	Password                    string
+	TenantName                  string
+	TenantId                    string
+	TenantDomainName            string
+	TenantDomainId              string
+	UserDomainName              string
+	UserDomainId                string
+	ApplicationCredentialId     string
+	ApplicationCredentialName   string
+	ApplicationCredentialSecret string
+	Region                      string
+	AvailabilityZone            string
+	EndpointType                string
+	MachineId                   string
+	FlavorName                  string
+	FlavorId                    string
+	ImageName                   string
+	ImageId                     string
+	KeyPairName                 string
+	NetworkName                 string
+	NetworkId                   string
+	UserData                    []byte
+	PrivateKeyFile              string
+	SecurityGroups              []string
+	FloatingIpPool              string
+	ComputeNetwork              bool
+	FloatingIpPoolId            string
+	IpVersion                   int
+	ConfigDrive                 bool
+	metadata                    string
+	client                      Client
 	// ExistingKey keeps track of whether the key was created by us or we used an existing one. If an existing one was used, we shouldn't delete it when the machine is deleted.
 	ExistingKey bool
 }
@@ -83,13 +92,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "OS_DOMAIN_ID",
 			Name:   "openstack-domain-id",
-			Usage:  "OpenStack domain ID (identity v3 only)",
+			Usage:  "OpenStack domain ID",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "OS_DOMAIN_NAME",
 			Name:   "openstack-domain-name",
-			Usage:  "OpenStack domain name (identity v3 only)",
+			Usage:  "OpenStack domain name",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_USER_ID",
+			Name:   "openstack-user-id",
+			Usage:  "OpenStack user-id",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
@@ -114,6 +129,48 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "OS_TENANT_ID",
 			Name:   "openstack-tenant-id",
 			Usage:  "OpenStack tenant id",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_TENANT_DOMAIN_NAME",
+			Name:   "openstack-tenant-domain-name",
+			Usage:  "OpenStack tenant domain name",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_TENANT_DOMAIN_ID",
+			Name:   "openstack-tenant-domain-id",
+			Usage:  "OpenStack tenant domain id",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_USER_DOMAIN_NAME",
+			Name:   "openstack-user-domain-name",
+			Usage:  "OpenStack user domain name",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_USER_DOMAIN_ID",
+			Name:   "openstack-user-domain-id",
+			Usage:  "OpenStack user domain id",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_APPLICATION_CREDENTIAL_ID",
+			Name:   "openstack-application-credential-id",
+			Usage:  "OpenStack application credential id",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_APPLICATION_CREDENTIAL_NAME",
+			Name:   "openstack-application-credential-name",
+			Usage:  "OpenStack application credential name",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_APPLICATION_CREDENTIAL_SECRET",
+			Name:   "openstack-application-credential-secret",
+			Usage:  "OpenStack application credential secret",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
@@ -278,12 +335,20 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ActiveTimeout = flags.Int("openstack-active-timeout")
 	d.Insecure = flags.Bool("openstack-insecure")
 	d.CaCert = flags.String("openstack-cacert")
-	d.DomainID = flags.String("openstack-domain-id")
+	d.DomainId = flags.String("openstack-domain-id")
 	d.DomainName = flags.String("openstack-domain-name")
+	d.UserId = flags.String("openstack-user-id")
 	d.Username = flags.String("openstack-username")
 	d.Password = flags.String("openstack-password")
 	d.TenantName = flags.String("openstack-tenant-name")
 	d.TenantId = flags.String("openstack-tenant-id")
+	d.TenantDomainName = flags.String("openstack-tenant-domain-name")
+	d.TenantDomainId = flags.String("openstack-tenant-domain-id")
+	d.UserDomainName = flags.String("openstack-user-domain-name")
+	d.UserDomainId = flags.String("openstack-user-domain-id")
+	d.ApplicationCredentialId = flags.String("openstack-application-credential-id")
+	d.ApplicationCredentialName = flags.String("openstack-application-credential-name")
+	d.ApplicationCredentialSecret = flags.String("openstack-application-credential-secret")
 	d.Region = flags.String("openstack-region")
 	d.AvailabilityZone = flags.String("openstack-availability-zone")
 	d.EndpointType = flags.String("openstack-endpoint-type")
@@ -512,30 +577,46 @@ func (d *Driver) GetMetadata() map[string]string {
 }
 
 const (
-	errorMandatoryEnvOrOption    string = "%s must be specified either using the environment variable %s or the CLI option %s"
-	errorMandatoryOption         string = "%s must be specified using the CLI option %s"
-	errorExclusiveOptions        string = "Either %s or %s must be specified, not both"
-	errorBothOptions             string = "Both %s and %s must be specified"
-	errorMandatoryTenantNameOrID string = "Tenant id or name must be provided either using one of the environment variables OS_TENANT_ID and OS_TENANT_NAME or one of the CLI options --openstack-tenant-id and --openstack-tenant-name"
-	errorWrongEndpointType       string = "Endpoint type must be 'publicURL', 'adminURL' or 'internalURL'"
-	errorUnknownFlavorName       string = "Unable to find flavor named %s"
-	errorUnknownImageName        string = "Unable to find image named %s"
-	errorUnknownNetworkName      string = "Unable to find network named %s"
-	errorUnknownTenantName       string = "Unable to find tenant named %s"
+	errorMandatoryEnvOrOption string = "%s must be specified either using the environment variable %s or the CLI option %s"
+	errorMandatoryOption      string = "%s must be specified using the CLI option %s"
+	errorExclusiveOptions     string = "Either %s or %s must be specified, not both"
+	errorBothOptions          string = "Both %s and %s must be specified"
+	errorWrongEndpointType    string = "Endpoint type must be 'publicURL', 'adminURL' or 'internalURL'"
+	errorUnknownFlavorName    string = "Unable to find flavor named %s"
+	errorUnknownImageName     string = "Unable to find image named %s"
+	errorUnknownNetworkName   string = "Unable to find network named %s"
+	errorUnknownTenantName    string = "Unable to find tenant named %s"
 )
 
+func (d *Driver) parseAuthConfig() (*gophercloud.AuthOptions, error) {
+	return clientconfig.AuthOptions(
+		&clientconfig.ClientOpts{
+			// this is needed to disable the clientconfig.AuthOptions func env detection
+			EnvPrefix: "_",
+			AuthInfo: &clientconfig.AuthInfo{
+				AuthURL:                     d.AuthUrl,
+				UserID:                      d.UserId,
+				Username:                    d.Username,
+				Password:                    d.Password,
+				ProjectID:                   d.TenantId,
+				ProjectName:                 d.TenantName,
+				DomainID:                    d.DomainId,
+				DomainName:                  d.DomainName,
+				ProjectDomainID:             d.TenantDomainId,
+				ProjectDomainName:           d.TenantDomainName,
+				UserDomainID:                d.UserDomainId,
+				UserDomainName:              d.UserDomainName,
+				ApplicationCredentialID:     d.ApplicationCredentialId,
+				ApplicationCredentialName:   d.ApplicationCredentialName,
+				ApplicationCredentialSecret: d.ApplicationCredentialSecret,
+			},
+		},
+	)
+}
+
 func (d *Driver) checkConfig() error {
-	if d.AuthUrl == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Authentication URL", "OS_AUTH_URL", "--openstack-auth-url")
-	}
-	if d.Username == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Username", "OS_USERNAME", "--openstack-username")
-	}
-	if d.Password == "" {
-		return fmt.Errorf(errorMandatoryEnvOrOption, "Password", "OS_PASSWORD", "--openstack-password")
-	}
-	if d.TenantName == "" && d.TenantId == "" {
-		return fmt.Errorf(errorMandatoryTenantNameOrID)
+	if _, err := d.parseAuthConfig(); err != nil {
+		return err
 	}
 
 	if d.FlavorName == "" && d.FlavorId == "" {
@@ -650,27 +731,6 @@ func (d *Driver) resolveIds() error {
 		})
 	}
 
-	if d.TenantName != "" && d.TenantId == "" {
-		if err := d.initIdentity(); err != nil {
-			return err
-		}
-		tenantId, err := d.client.GetTenantID(d)
-
-		if err != nil {
-			return err
-		}
-
-		if tenantId == "" {
-			return fmt.Errorf(errorUnknownTenantName, d.TenantName)
-		}
-
-		d.TenantId = tenantId
-		log.Debug("Found tenant id using its name", map[string]string{
-			"Name": d.TenantName,
-			"ID":   d.TenantId,
-		})
-	}
-
 	return nil
 }
 
@@ -679,16 +739,6 @@ func (d *Driver) initCompute() error {
 		return err
 	}
 	if err := d.client.InitComputeClient(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *Driver) initIdentity() error {
-	if err := d.client.Authenticate(d); err != nil {
-		return err
-	}
-	if err := d.client.InitIdentityClient(d); err != nil {
 		return err
 	}
 	return nil

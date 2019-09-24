@@ -19,7 +19,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
-	"github.com/gophercloud/gophercloud/openstack/identity/v2/tenants"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
@@ -29,7 +28,6 @@ import (
 type Client interface {
 	Authenticate(d *Driver) error
 	InitComputeClient(d *Driver) error
-	InitIdentityClient(d *Driver) error
 	InitNetworkClient(d *Driver) error
 
 	CreateInstance(d *Driver) (string, error)
@@ -50,13 +48,11 @@ type Client interface {
 	GetFloatingIPs(d *Driver) ([]FloatingIP, error)
 	GetFloatingIPPoolID(d *Driver) (string, error)
 	GetInstancePortID(d *Driver) (string, error)
-	GetTenantID(d *Driver) (string, error)
 }
 
 type GenericClient struct {
 	Provider *gophercloud.ProviderClient
 	Compute  *gophercloud.ServiceClient
-	Identity *gophercloud.ServiceClient
 	Network  *gophercloud.ServiceClient
 }
 
@@ -283,29 +279,6 @@ func (c *GenericClient) GetImageID(d *Driver) (string, error) {
 	return imageID, err
 }
 
-func (c *GenericClient) GetTenantID(d *Driver) (string, error) {
-	pager := tenants.List(c.Identity, nil)
-	tenantId := ""
-
-	err := pager.EachPage(func(page pagination.Page) (bool, error) {
-		tenantList, err := tenants.ExtractTenants(page)
-		if err != nil {
-			return false, err
-		}
-
-		for _, i := range tenantList {
-			if i.Name == d.TenantName {
-				tenantId = i.ID
-				return false, nil
-			}
-		}
-
-		return true, nil
-	})
-
-	return tenantId, err
-}
-
 func (c *GenericClient) GetPublicKey(keyPairName string) ([]byte, error) {
 	kp, err := keypairs.Get(c.Compute, keyPairName).Extract()
 	if err != nil {
@@ -492,22 +465,6 @@ func (c *GenericClient) InitComputeClient(d *Driver) error {
 	return nil
 }
 
-func (c *GenericClient) InitIdentityClient(d *Driver) error {
-	if c.Identity != nil {
-		return nil
-	}
-
-	identity, err := openstack.NewIdentityV3(c.Provider, gophercloud.EndpointOpts{
-		Region:       d.Region,
-		Availability: c.getEndpointType(d),
-	})
-	if err != nil {
-		return err
-	}
-	c.Identity = identity
-	return nil
-}
-
 func (c *GenericClient) InitNetworkClient(d *Driver) error {
 	if c.Network != nil {
 		return nil
@@ -540,28 +497,32 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 	}
 
 	log.Debug("Authenticating...", map[string]interface{}{
-		"AuthUrl":    d.AuthUrl,
-		"Insecure":   d.Insecure,
-		"CaCert":     d.CaCert,
-		"DomainID":   d.DomainID,
-		"DomainName": d.DomainName,
-		"Username":   d.Username,
-		"TenantName": d.TenantName,
-		"TenantID":   d.TenantId,
+		"AuthUrl":                   d.AuthUrl,
+		"Insecure":                  d.Insecure,
+		"CaCert":                    d.CaCert,
+		"DomainId":                  d.DomainId,
+		"DomainName":                d.DomainName,
+		"UserId":                    d.UserId,
+		"Username":                  d.Username,
+		"TenantName":                d.TenantName,
+		"TenantID":                  d.TenantId,
+		"TenantDomainName":          d.TenantDomainName,
+		"TenantDomainID":            d.TenantDomainId,
+		"UserDomainName":            d.UserDomainName,
+		"UserDomainID":              d.UserDomainId,
+		"ApplicationCredentialId":   d.ApplicationCredentialId,
+		"ApplicationCredentialName": d.ApplicationCredentialName,
 	})
 
-	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: d.AuthUrl,
-		DomainID:         d.DomainID,
-		DomainName:       d.DomainName,
-		Username:         d.Username,
-		Password:         d.Password,
-		TenantName:       d.TenantName,
-		TenantID:         d.TenantId,
-		AllowReauth:      true,
+	ao, err := d.parseAuthConfig()
+	if err != nil {
+		return err
 	}
 
-	provider, err := openstack.NewClient(opts.IdentityEndpoint)
+	// Persistent service, so we need to be able to renew tokens.
+	ao.AllowReauth = true
+
+	provider, err := openstack.NewClient(d.AuthUrl)
 	if err != nil {
 		return err
 	}
@@ -575,7 +536,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		return err
 	}
 
-	err = openstack.Authenticate(c.Provider, opts)
+	err = openstack.Authenticate(c.Provider, *ao)
 	if err != nil {
 		return err
 	}
