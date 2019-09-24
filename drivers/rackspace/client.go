@@ -17,7 +17,8 @@ func unsupportedOpErr(operation string) error {
 // Client is a Rackspace specialization of the generic OpenStack driver.
 type Client struct {
 	openstack.GenericClient
-	driver *Driver
+	Provider *gophercloud.ProviderClient
+	driver   *Driver
 }
 
 // Authenticate creates a Rackspace-specific Gophercloud client.

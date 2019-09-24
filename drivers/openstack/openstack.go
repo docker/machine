@@ -15,7 +15,7 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 
-	"github.com/rackspace/gophercloud"
+	"github.com/gophercloud/gophercloud"
 )
 
 type Driver struct {
@@ -468,7 +468,7 @@ func (d *Driver) Remove() error {
 		return err
 	}
 	if err := d.client.DeleteInstance(d); err != nil {
-		if gopherErr, ok := err.(*gophercloud.UnexpectedResponseCodeError); ok {
+		if gopherErr, ok := err.(*gophercloud.ErrUnexpectedResponseCode); ok {
 			if gopherErr.Actual == http.StatusNotFound {
 				log.Warn("Remote instance does not exist, proceeding with removing local reference")
 			} else {
@@ -481,7 +481,7 @@ func (d *Driver) Remove() error {
 	if !d.ExistingKey {
 		log.Debug("deleting key pair...", map[string]string{"Name": d.KeyPairName})
 		if err := d.client.DeleteKeyPair(d, d.KeyPairName); err != nil {
-			if gopherErr, ok := err.(*gophercloud.UnexpectedResponseCodeError); ok {
+			if gopherErr, ok := err.(*gophercloud.ErrUnexpectedResponseCode); ok {
 				if gopherErr.Actual == http.StatusNotFound {
 					log.Warn("Keypair already deleted")
 				} else {

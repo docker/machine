@@ -22,6 +22,7 @@ require (
 	github.com/exoscale/egoscale v0.9.23
 	github.com/go-ini/ini v0.0.0-20151124192405-03e0e7d51a13 // indirect
 	github.com/google/go-querystring v0.0.0-20140804062624-30f7a39f4a21 // indirect
+	github.com/gophercloud/gophercloud v0.4.0
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/intel-go/cpuid v0.0.0-20181003105527-1a4a6f06a1c6
 	github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3 // indirect
