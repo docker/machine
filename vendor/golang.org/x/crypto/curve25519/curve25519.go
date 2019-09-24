@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// We have a implementation in amd64 assembly so this code is only run on
+// We have an implementation in amd64 assembly so this code is only run on
 // non-amd64 platforms. The amd64 assembly does not support gccgo.
 // +build !amd64 gccgo appengine
 
@@ -86,7 +86,7 @@ func feFromBytes(dst *fieldElement, src *[32]byte) {
 	h6 := load3(src[20:]) << 7
 	h7 := load3(src[23:]) << 5
 	h8 := load3(src[26:]) << 4
-	h9 := load3(src[29:]) << 2
+	h9 := (load3(src[29:]) & 0x7fffff) << 2
 
 	var carry [10]int64
 	carry[9] = (h9 + 1<<24) >> 25
