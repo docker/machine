@@ -19,9 +19,17 @@ variables:
   tags:
   - docker
 
+.merge_request_pipelines:
+  only:
+    refs:
+    - merge_requests
+    - master@gitlab-org/ci-cd/docker-machine
+    - tags@gitlab-org/ci-cd/docker-machine
+
 .build_base: &build_base
   extends:
   - .docker_in_docker
+  - .merge_request_pipelines
   stage: build
   before_script:
   - apk add -U make bash
@@ -46,6 +54,7 @@ variables:
 prepare CI image:
   extends:
   - .docker_in_docker
+  - .merge_request_pipelines
   stage: prepare
   script:
   - docker build --pull --no-cache -t ${CI_IMAGE} -f ./.gitlab/ci/Dockerfile ./.gitlab/ci/
