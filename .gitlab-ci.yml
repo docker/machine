@@ -4,6 +4,7 @@ stages:
 - prepare
 - validate
 - build
+- release
 
 variables:
   USE_CONTAINER: "true"
@@ -51,6 +52,42 @@ variables:
   <<: *build_base
   script: make build-x
 
+.release:
+  image: ${CI_IMAGE}
+  stage: release
+  tags:
+  - release
+
+.release_development:
+  only:
+    refs:
+    - merge_requests
+
+.release_beta:
+  only:
+    refs:
+    - master@gitlab-org/ci-cd/custom-executors/autoscaler
+    - /\Av[0-9]+\.[0-9]+\.[0-9]+-gitlab\.[0-9]+-rc[0-9]+\Z/@gitlab-org/ci-cd/docker-machine
+
+.release_stable:
+  only:
+    refs:
+    - /\Av[0-9]+\.[0-9]+\.[0-9]+-gitlab\.[0-9]+\Z/@gitlab-org/ci-cd/docker-machine
+
+.release_S3:
+  dependencies:
+  - linux amd64
+  - linux arm
+  - linux arm64
+  - windows amd64
+  - darwin amd64
+  variables:
+    S3_URL: s3://${S3_BUCKET}/${CI_COMMIT_REF_NAME}
+  script:
+  - ./.gitlab/ci/scripts/release_s3.sh
+  environment:
+    url: https://${S3_BUCKET}.s3.amazonaws.com/${CI_COMMIT_REF_NAME}/index.html
+
 prepare CI image:
   extends:
   - .docker_in_docker
@@ -73,3 +110,42 @@ windows amd64: *build_x
 linux arm: *build_x
 linux arm64: *build_x
 
+release development S3:
+  extends:
+  - .release
+  - .release_development
+  - .release_S3
+  environment:
+    name: development/S3/${CI_COMMIT_REF_NAME}
+    on_stop: stop release development S3
+
+stop release development S3:
+  dependencies: []
+  extends:
+  - .release
+  - .release_development
+  - .release_S3
+  variables:
+    GIT_STRATEGY: none
+  script:
+   - aws s3 rm ${S3_URL} --recursive
+  when: manual
+  environment:
+    name: development/S3/${CI_COMMIT_REF_NAME}
+    action: stop
+
+release beta S3:
+  extends:
+  - .release
+  - .release_beta
+  - .release_S3
+  environment:
+    name: beta/S3
+
+release stable S3:
+  extends:
+  - .release
+  - .release_stable
+  - .release_S3
+  environment:
+    name: stable/S3
