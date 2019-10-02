@@ -259,6 +259,18 @@ func init() {
 	t["CheckTestType"] = reflect.TypeOf((*CheckTestType)(nil)).Elem()
 }
 
+type ClusterComputeResourceHCIWorkflowState string
+
+const (
+	ClusterComputeResourceHCIWorkflowStateIn_progress = ClusterComputeResourceHCIWorkflowState("in_progress")
+	ClusterComputeResourceHCIWorkflowStateDone        = ClusterComputeResourceHCIWorkflowState("done")
+	ClusterComputeResourceHCIWorkflowStateInvalid     = ClusterComputeResourceHCIWorkflowState("invalid")
+)
+
+func init() {
+	t["ClusterComputeResourceHCIWorkflowState"] = reflect.TypeOf((*ClusterComputeResourceHCIWorkflowState)(nil)).Elem()
+}
+
 type ClusterDasAamNodeStateDasState string
 
 const (
@@ -492,6 +504,20 @@ const (
 
 func init() {
 	t["ConfigSpecOperation"] = reflect.TypeOf((*ConfigSpecOperation)(nil)).Elem()
+}
+
+type CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason string
+
+const (
+	CryptoManagerKmipCryptoKeyStatusKeyUnavailableReasonKeyStateMissingInCache     = CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason("KeyStateMissingInCache")
+	CryptoManagerKmipCryptoKeyStatusKeyUnavailableReasonKeyStateClusterInvalid     = CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason("KeyStateClusterInvalid")
+	CryptoManagerKmipCryptoKeyStatusKeyUnavailableReasonKeyStateClusterUnreachable = CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason("KeyStateClusterUnreachable")
+	CryptoManagerKmipCryptoKeyStatusKeyUnavailableReasonKeyStateMissingInKMS       = CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason("KeyStateMissingInKMS")
+	CryptoManagerKmipCryptoKeyStatusKeyUnavailableReasonKeyStateNotActiveOrEnabled = CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason("KeyStateNotActiveOrEnabled")
+)
+
+func init() {
+	t["CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason"] = reflect.TypeOf((*CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason)(nil)).Elem()
 }
 
 type CustomizationLicenseDataMode string
@@ -997,6 +1023,17 @@ func init() {
 	t["FileSystemMountInfoVStorageSupportStatus"] = reflect.TypeOf((*FileSystemMountInfoVStorageSupportStatus)(nil)).Elem()
 }
 
+type FolderDesiredHostState string
+
+const (
+	FolderDesiredHostStateMaintenance     = FolderDesiredHostState("maintenance")
+	FolderDesiredHostStateNon_maintenance = FolderDesiredHostState("non_maintenance")
+)
+
+func init() {
+	t["FolderDesiredHostState"] = reflect.TypeOf((*FolderDesiredHostState)(nil)).Elem()
+}
+
 type FtIssuesOnHostHostSelectionType string
 
 const (
@@ -1213,6 +1250,7 @@ const (
 	HostCpuPackageVendorUnknown = HostCpuPackageVendor("unknown")
 	HostCpuPackageVendorIntel   = HostCpuPackageVendor("intel")
 	HostCpuPackageVendorAmd     = HostCpuPackageVendor("amd")
+	HostCpuPackageVendorHygon   = HostCpuPackageVendor("hygon")
 )
 
 func init() {
@@ -1963,9 +2001,11 @@ func init() {
 type HostSystemIdentificationInfoIdentifier string
 
 const (
-	HostSystemIdentificationInfoIdentifierAssetTag          = HostSystemIdentificationInfoIdentifier("AssetTag")
-	HostSystemIdentificationInfoIdentifierServiceTag        = HostSystemIdentificationInfoIdentifier("ServiceTag")
-	HostSystemIdentificationInfoIdentifierOemSpecificString = HostSystemIdentificationInfoIdentifier("OemSpecificString")
+	HostSystemIdentificationInfoIdentifierAssetTag                 = HostSystemIdentificationInfoIdentifier("AssetTag")
+	HostSystemIdentificationInfoIdentifierServiceTag               = HostSystemIdentificationInfoIdentifier("ServiceTag")
+	HostSystemIdentificationInfoIdentifierOemSpecificString        = HostSystemIdentificationInfoIdentifier("OemSpecificString")
+	HostSystemIdentificationInfoIdentifierEnclosureSerialNumberTag = HostSystemIdentificationInfoIdentifier("EnclosureSerialNumberTag")
+	HostSystemIdentificationInfoIdentifierSerialNumberTag          = HostSystemIdentificationInfoIdentifier("SerialNumberTag")
 )
 
 func init() {
@@ -2485,6 +2525,32 @@ const (
 
 func init() {
 	t["NvdimmInterleaveSetState"] = reflect.TypeOf((*NvdimmInterleaveSetState)(nil)).Elem()
+}
+
+type NvdimmNamespaceDetailsHealthStatus string
+
+const (
+	NvdimmNamespaceDetailsHealthStatusNormal            = NvdimmNamespaceDetailsHealthStatus("normal")
+	NvdimmNamespaceDetailsHealthStatusMissing           = NvdimmNamespaceDetailsHealthStatus("missing")
+	NvdimmNamespaceDetailsHealthStatusLabelMissing      = NvdimmNamespaceDetailsHealthStatus("labelMissing")
+	NvdimmNamespaceDetailsHealthStatusInterleaveBroken  = NvdimmNamespaceDetailsHealthStatus("interleaveBroken")
+	NvdimmNamespaceDetailsHealthStatusLabelInconsistent = NvdimmNamespaceDetailsHealthStatus("labelInconsistent")
+)
+
+func init() {
+	t["NvdimmNamespaceDetailsHealthStatus"] = reflect.TypeOf((*NvdimmNamespaceDetailsHealthStatus)(nil)).Elem()
+}
+
+type NvdimmNamespaceDetailsState string
+
+const (
+	NvdimmNamespaceDetailsStateInvalid  = NvdimmNamespaceDetailsState("invalid")
+	NvdimmNamespaceDetailsStateNotInUse = NvdimmNamespaceDetailsState("notInUse")
+	NvdimmNamespaceDetailsStateInUse    = NvdimmNamespaceDetailsState("inUse")
+)
+
+func init() {
+	t["NvdimmNamespaceDetailsState"] = reflect.TypeOf((*NvdimmNamespaceDetailsState)(nil)).Elem()
 }
 
 type NvdimmNamespaceHealthStatus string
@@ -4167,6 +4233,7 @@ const (
 	VirtualMachineGuestOsIdentifierVmkernel5Guest          = VirtualMachineGuestOsIdentifier("vmkernel5Guest")
 	VirtualMachineGuestOsIdentifierVmkernel6Guest          = VirtualMachineGuestOsIdentifier("vmkernel6Guest")
 	VirtualMachineGuestOsIdentifierVmkernel65Guest         = VirtualMachineGuestOsIdentifier("vmkernel65Guest")
+	VirtualMachineGuestOsIdentifierAmazonlinux2_64Guest    = VirtualMachineGuestOsIdentifier("amazonlinux2_64Guest")
 	VirtualMachineGuestOsIdentifierOtherGuest              = VirtualMachineGuestOsIdentifier("otherGuest")
 	VirtualMachineGuestOsIdentifierOtherGuest64            = VirtualMachineGuestOsIdentifier("otherGuest64")
 )

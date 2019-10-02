@@ -158,7 +158,7 @@ func bpsLoop(ch <-chan Report, dst *uint64) {
 
 		// Setup timer for front of list to become stale.
 		if e := l.Front(); e != nil {
-			dt := time.Second - time.Now().Sub(e.Value.(readerReport).t)
+			dt := time.Second - time.Since(e.Value.(readerReport).t)
 			tch = time.After(dt)
 		}
 

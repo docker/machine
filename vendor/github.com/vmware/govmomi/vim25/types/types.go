@@ -21,6 +21,23 @@ import (
 	"time"
 )
 
+type AbandonHciWorkflow AbandonHciWorkflowRequestType
+
+func init() {
+	t["AbandonHciWorkflow"] = reflect.TypeOf((*AbandonHciWorkflow)(nil)).Elem()
+}
+
+type AbandonHciWorkflowRequestType struct {
+	This ManagedObjectReference `xml:"_this"`
+}
+
+func init() {
+	t["AbandonHciWorkflowRequestType"] = reflect.TypeOf((*AbandonHciWorkflowRequestType)(nil)).Elem()
+}
+
+type AbandonHciWorkflowResponse struct {
+}
+
 type AbdicateDomOwnership AbdicateDomOwnershipRequestType
 
 func init() {
@@ -1709,6 +1726,62 @@ func init() {
 	t["ArrayOfClusterAttemptedVmInfo"] = reflect.TypeOf((*ArrayOfClusterAttemptedVmInfo)(nil)).Elem()
 }
 
+type ArrayOfClusterComputeResourceDVSSetting struct {
+	ClusterComputeResourceDVSSetting []ClusterComputeResourceDVSSetting `xml:"ClusterComputeResourceDVSSetting,omitempty"`
+}
+
+func init() {
+	t["ArrayOfClusterComputeResourceDVSSetting"] = reflect.TypeOf((*ArrayOfClusterComputeResourceDVSSetting)(nil)).Elem()
+}
+
+type ArrayOfClusterComputeResourceDVSSettingDVPortgroupToServiceMapping struct {
+	ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping []ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping `xml:"ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping,omitempty"`
+}
+
+func init() {
+	t["ArrayOfClusterComputeResourceDVSSettingDVPortgroupToServiceMapping"] = reflect.TypeOf((*ArrayOfClusterComputeResourceDVSSettingDVPortgroupToServiceMapping)(nil)).Elem()
+}
+
+type ArrayOfClusterComputeResourceDvsProfile struct {
+	ClusterComputeResourceDvsProfile []ClusterComputeResourceDvsProfile `xml:"ClusterComputeResourceDvsProfile,omitempty"`
+}
+
+func init() {
+	t["ArrayOfClusterComputeResourceDvsProfile"] = reflect.TypeOf((*ArrayOfClusterComputeResourceDvsProfile)(nil)).Elem()
+}
+
+type ArrayOfClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping struct {
+	ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping []ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping `xml:"ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping,omitempty"`
+}
+
+func init() {
+	t["ArrayOfClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping"] = reflect.TypeOf((*ArrayOfClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping)(nil)).Elem()
+}
+
+type ArrayOfClusterComputeResourceHostConfigurationInput struct {
+	ClusterComputeResourceHostConfigurationInput []ClusterComputeResourceHostConfigurationInput `xml:"ClusterComputeResourceHostConfigurationInput,omitempty"`
+}
+
+func init() {
+	t["ArrayOfClusterComputeResourceHostConfigurationInput"] = reflect.TypeOf((*ArrayOfClusterComputeResourceHostConfigurationInput)(nil)).Elem()
+}
+
+type ArrayOfClusterComputeResourceHostVmkNicInfo struct {
+	ClusterComputeResourceHostVmkNicInfo []ClusterComputeResourceHostVmkNicInfo `xml:"ClusterComputeResourceHostVmkNicInfo,omitempty"`
+}
+
+func init() {
+	t["ArrayOfClusterComputeResourceHostVmkNicInfo"] = reflect.TypeOf((*ArrayOfClusterComputeResourceHostVmkNicInfo)(nil)).Elem()
+}
+
+type ArrayOfClusterComputeResourceValidationResultBase struct {
+	ClusterComputeResourceValidationResultBase []BaseClusterComputeResourceValidationResultBase `xml:"ClusterComputeResourceValidationResultBase,omitempty,typeattr"`
+}
+
+func init() {
+	t["ArrayOfClusterComputeResourceValidationResultBase"] = reflect.TypeOf((*ArrayOfClusterComputeResourceValidationResultBase)(nil)).Elem()
+}
+
 type ArrayOfClusterDasAamNodeState struct {
 	ClusterDasAamNodeState []ClusterDasAamNodeState `xml:"ClusterDasAamNodeState,omitempty"`
 }
@@ -1989,6 +2062,14 @@ func init() {
 	t["ArrayOfCryptoManagerKmipClusterStatus"] = reflect.TypeOf((*ArrayOfCryptoManagerKmipClusterStatus)(nil)).Elem()
 }
 
+type ArrayOfCryptoManagerKmipCryptoKeyStatus struct {
+	CryptoManagerKmipCryptoKeyStatus []CryptoManagerKmipCryptoKeyStatus `xml:"CryptoManagerKmipCryptoKeyStatus,omitempty"`
+}
+
+func init() {
+	t["ArrayOfCryptoManagerKmipCryptoKeyStatus"] = reflect.TypeOf((*ArrayOfCryptoManagerKmipCryptoKeyStatus)(nil)).Elem()
+}
+
 type ArrayOfCryptoManagerKmipServerStatus struct {
 	CryptoManagerKmipServerStatus []CryptoManagerKmipServerStatus `xml:"CryptoManagerKmipServerStatus,omitempty"`
 }
@@ -2091,6 +2172,14 @@ type ArrayOfDasHeartbeatDatastoreInfo struct {
 
 func init() {
 	t["ArrayOfDasHeartbeatDatastoreInfo"] = reflect.TypeOf((*ArrayOfDasHeartbeatDatastoreInfo)(nil)).Elem()
+}
+
+type ArrayOfDatacenterBasicConnectInfo struct {
+	DatacenterBasicConnectInfo []DatacenterBasicConnectInfo `xml:"DatacenterBasicConnectInfo,omitempty"`
+}
+
+func init() {
+	t["ArrayOfDatacenterBasicConnectInfo"] = reflect.TypeOf((*ArrayOfDatacenterBasicConnectInfo)(nil)).Elem()
 }
 
 type ArrayOfDatacenterMismatchArgument struct {
@@ -2581,6 +2670,22 @@ func init() {
 	t["ArrayOfFirewallProfileRulesetProfile"] = reflect.TypeOf((*ArrayOfFirewallProfileRulesetProfile)(nil)).Elem()
 }
 
+type ArrayOfFolderFailedHostResult struct {
+	FolderFailedHostResult []FolderFailedHostResult `xml:"FolderFailedHostResult,omitempty"`
+}
+
+func init() {
+	t["ArrayOfFolderFailedHostResult"] = reflect.TypeOf((*ArrayOfFolderFailedHostResult)(nil)).Elem()
+}
+
+type ArrayOfFolderNewHostSpec struct {
+	FolderNewHostSpec []FolderNewHostSpec `xml:"FolderNewHostSpec,omitempty"`
+}
+
+func init() {
+	t["ArrayOfFolderNewHostSpec"] = reflect.TypeOf((*ArrayOfFolderNewHostSpec)(nil)).Elem()
+}
+
 type ArrayOfGuestAliases struct {
 	GuestAliases []GuestAliases `xml:"GuestAliases,omitempty"`
 }
@@ -2763,6 +2868,14 @@ type ArrayOfHostConnectInfoNetworkInfo struct {
 
 func init() {
 	t["ArrayOfHostConnectInfoNetworkInfo"] = reflect.TypeOf((*ArrayOfHostConnectInfoNetworkInfo)(nil)).Elem()
+}
+
+type ArrayOfHostConnectSpec struct {
+	HostConnectSpec []HostConnectSpec `xml:"HostConnectSpec,omitempty"`
+}
+
+func init() {
+	t["ArrayOfHostConnectSpec"] = reflect.TypeOf((*ArrayOfHostConnectSpec)(nil)).Elem()
 }
 
 type ArrayOfHostCpuIdInfo struct {
@@ -4147,6 +4260,14 @@ type ArrayOfNvdimmInterleaveSetInfo struct {
 
 func init() {
 	t["ArrayOfNvdimmInterleaveSetInfo"] = reflect.TypeOf((*ArrayOfNvdimmInterleaveSetInfo)(nil)).Elem()
+}
+
+type ArrayOfNvdimmNamespaceDetails struct {
+	NvdimmNamespaceDetails []NvdimmNamespaceDetails `xml:"NvdimmNamespaceDetails,omitempty"`
+}
+
+func init() {
+	t["ArrayOfNvdimmNamespaceDetails"] = reflect.TypeOf((*ArrayOfNvdimmNamespaceDetails)(nil)).Elem()
 }
 
 type ArrayOfNvdimmNamespaceInfo struct {
@@ -6163,6 +6284,69 @@ func init() {
 	t["BaseConfigInfoRawDiskMappingBackingInfo"] = reflect.TypeOf((*BaseConfigInfoRawDiskMappingBackingInfo)(nil)).Elem()
 }
 
+type BatchAddHostsToClusterRequestType struct {
+	This          ManagedObjectReference        `xml:"_this"`
+	Cluster       ManagedObjectReference        `xml:"cluster"`
+	NewHosts      []FolderNewHostSpec           `xml:"newHosts,omitempty"`
+	ExistingHosts []ManagedObjectReference      `xml:"existingHosts,omitempty"`
+	CompResSpec   BaseComputeResourceConfigSpec `xml:"compResSpec,omitempty,typeattr"`
+	DesiredState  string                        `xml:"desiredState,omitempty"`
+}
+
+func init() {
+	t["BatchAddHostsToClusterRequestType"] = reflect.TypeOf((*BatchAddHostsToClusterRequestType)(nil)).Elem()
+}
+
+type BatchAddHostsToCluster_Task BatchAddHostsToClusterRequestType
+
+func init() {
+	t["BatchAddHostsToCluster_Task"] = reflect.TypeOf((*BatchAddHostsToCluster_Task)(nil)).Elem()
+}
+
+type BatchAddHostsToCluster_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
+}
+
+type BatchAddStandaloneHostsRequestType struct {
+	This         ManagedObjectReference        `xml:"_this"`
+	NewHosts     []FolderNewHostSpec           `xml:"newHosts,omitempty"`
+	CompResSpec  BaseComputeResourceConfigSpec `xml:"compResSpec,omitempty,typeattr"`
+	AddConnected bool                          `xml:"addConnected"`
+}
+
+func init() {
+	t["BatchAddStandaloneHostsRequestType"] = reflect.TypeOf((*BatchAddStandaloneHostsRequestType)(nil)).Elem()
+}
+
+type BatchAddStandaloneHosts_Task BatchAddStandaloneHostsRequestType
+
+func init() {
+	t["BatchAddStandaloneHosts_Task"] = reflect.TypeOf((*BatchAddStandaloneHosts_Task)(nil)).Elem()
+}
+
+type BatchAddStandaloneHosts_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
+}
+
+type BatchQueryConnectInfo BatchQueryConnectInfoRequestType
+
+func init() {
+	t["BatchQueryConnectInfo"] = reflect.TypeOf((*BatchQueryConnectInfo)(nil)).Elem()
+}
+
+type BatchQueryConnectInfoRequestType struct {
+	This      ManagedObjectReference `xml:"_this"`
+	HostSpecs []HostConnectSpec      `xml:"hostSpecs,omitempty"`
+}
+
+func init() {
+	t["BatchQueryConnectInfoRequestType"] = reflect.TypeOf((*BatchQueryConnectInfoRequestType)(nil)).Elem()
+}
+
+type BatchQueryConnectInfoResponse struct {
+	Returnval []DatacenterBasicConnectInfo `xml:"returnval,omitempty"`
+}
+
 type BatchResult struct {
 	DynamicData
 
@@ -6879,6 +7063,7 @@ type Capability struct {
 	SupportedEVCMode                 []EVCMode `xml:"supportedEVCMode,omitempty"`
 	NetworkBackupAndRestoreSupported *bool     `xml:"networkBackupAndRestoreSupported"`
 	FtDrsWithoutEvcSupported         *bool     `xml:"ftDrsWithoutEvcSupported"`
+	HciWorkflowSupported             *bool     `xml:"hciWorkflowSupported"`
 }
 
 func init() {
@@ -7056,6 +7241,26 @@ func init() {
 }
 
 type ChangeOwnerResponse struct {
+}
+
+type ChangePassword ChangePasswordRequestType
+
+func init() {
+	t["ChangePassword"] = reflect.TypeOf((*ChangePassword)(nil)).Elem()
+}
+
+type ChangePasswordRequestType struct {
+	This        ManagedObjectReference `xml:"_this"`
+	User        string                 `xml:"user"`
+	OldPassword string                 `xml:"oldPassword"`
+	NewPassword string                 `xml:"newPassword"`
+}
+
+func init() {
+	t["ChangePasswordRequestType"] = reflect.TypeOf((*ChangePasswordRequestType)(nil)).Elem()
+}
+
+type ChangePasswordResponse struct {
 }
 
 type ChangesInfoEventArgument struct {
@@ -7724,6 +7929,150 @@ func init() {
 	t["ClusterComplianceCheckedEvent"] = reflect.TypeOf((*ClusterComplianceCheckedEvent)(nil)).Elem()
 }
 
+type ClusterComputeResourceClusterConfigResult struct {
+	DynamicData
+
+	FailedHosts     []FolderFailedHostResult `xml:"failedHosts,omitempty"`
+	ConfiguredHosts []ManagedObjectReference `xml:"configuredHosts,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceClusterConfigResult"] = reflect.TypeOf((*ClusterComputeResourceClusterConfigResult)(nil)).Elem()
+}
+
+type ClusterComputeResourceDVSConfigurationValidation struct {
+	ClusterComputeResourceValidationResultBase
+
+	IsDvsValid  bool `xml:"isDvsValid"`
+	IsDvpgValid bool `xml:"isDvpgValid"`
+}
+
+func init() {
+	t["ClusterComputeResourceDVSConfigurationValidation"] = reflect.TypeOf((*ClusterComputeResourceDVSConfigurationValidation)(nil)).Elem()
+}
+
+type ClusterComputeResourceDVSSetting struct {
+	DynamicData
+
+	DvSwitch           ManagedObjectReference                                        `xml:"dvSwitch"`
+	PnicDevices        []string                                                      `xml:"pnicDevices,omitempty"`
+	DvPortgroupSetting []ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping `xml:"dvPortgroupSetting,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceDVSSetting"] = reflect.TypeOf((*ClusterComputeResourceDVSSetting)(nil)).Elem()
+}
+
+type ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping struct {
+	DynamicData
+
+	DvPortgroup ManagedObjectReference `xml:"dvPortgroup"`
+	Service     string                 `xml:"service"`
+}
+
+func init() {
+	t["ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping"] = reflect.TypeOf((*ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping)(nil)).Elem()
+}
+
+type ClusterComputeResourceDvsProfile struct {
+	DynamicData
+
+	DvsName            string                                                            `xml:"dvsName,omitempty"`
+	DvSwitch           *ManagedObjectReference                                           `xml:"dvSwitch,omitempty"`
+	PnicDevices        []string                                                          `xml:"pnicDevices,omitempty"`
+	DvPortgroupMapping []ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping `xml:"dvPortgroupMapping,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceDvsProfile"] = reflect.TypeOf((*ClusterComputeResourceDvsProfile)(nil)).Elem()
+}
+
+type ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping struct {
+	DynamicData
+
+	DvPortgroupSpec *DVPortgroupConfigSpec  `xml:"dvPortgroupSpec,omitempty"`
+	DvPortgroup     *ManagedObjectReference `xml:"dvPortgroup,omitempty"`
+	Service         string                  `xml:"service"`
+}
+
+func init() {
+	t["ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping"] = reflect.TypeOf((*ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping)(nil)).Elem()
+}
+
+type ClusterComputeResourceHCIConfigInfo struct {
+	DynamicData
+
+	WorkflowState     string                                          `xml:"workflowState"`
+	DvsSetting        []ClusterComputeResourceDVSSetting              `xml:"dvsSetting,omitempty"`
+	ConfiguredHosts   []ManagedObjectReference                        `xml:"configuredHosts,omitempty"`
+	HostConfigProfile *ClusterComputeResourceHostConfigurationProfile `xml:"hostConfigProfile,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceHCIConfigInfo"] = reflect.TypeOf((*ClusterComputeResourceHCIConfigInfo)(nil)).Elem()
+}
+
+type ClusterComputeResourceHCIConfigSpec struct {
+	DynamicData
+
+	DvsProf           []ClusterComputeResourceDvsProfile              `xml:"dvsProf,omitempty"`
+	HostConfigProfile *ClusterComputeResourceHostConfigurationProfile `xml:"hostConfigProfile,omitempty"`
+	VSanConfigSpec    *SDDCBase                                       `xml:"vSanConfigSpec,omitempty"`
+	VcProf            *ClusterComputeResourceVCProfile                `xml:"vcProf,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceHCIConfigSpec"] = reflect.TypeOf((*ClusterComputeResourceHCIConfigSpec)(nil)).Elem()
+}
+
+type ClusterComputeResourceHostConfigurationInput struct {
+	DynamicData
+
+	Host                        ManagedObjectReference                 `xml:"host"`
+	HostVmkNics                 []ClusterComputeResourceHostVmkNicInfo `xml:"hostVmkNics,omitempty"`
+	AllowedInNonMaintenanceMode *bool                                  `xml:"allowedInNonMaintenanceMode"`
+}
+
+func init() {
+	t["ClusterComputeResourceHostConfigurationInput"] = reflect.TypeOf((*ClusterComputeResourceHostConfigurationInput)(nil)).Elem()
+}
+
+type ClusterComputeResourceHostConfigurationProfile struct {
+	DynamicData
+
+	DateTimeConfig *HostDateTimeConfig `xml:"dateTimeConfig,omitempty"`
+	LockdownMode   HostLockdownMode    `xml:"lockdownMode,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceHostConfigurationProfile"] = reflect.TypeOf((*ClusterComputeResourceHostConfigurationProfile)(nil)).Elem()
+}
+
+type ClusterComputeResourceHostConfigurationValidation struct {
+	ClusterComputeResourceValidationResultBase
+
+	Host                 ManagedObjectReference `xml:"host"`
+	IsDvsSettingValid    *bool                  `xml:"isDvsSettingValid"`
+	IsVmknicSettingValid *bool                  `xml:"isVmknicSettingValid"`
+	IsNtpSettingValid    *bool                  `xml:"isNtpSettingValid"`
+	IsLockdownModeValid  *bool                  `xml:"isLockdownModeValid"`
+}
+
+func init() {
+	t["ClusterComputeResourceHostConfigurationValidation"] = reflect.TypeOf((*ClusterComputeResourceHostConfigurationValidation)(nil)).Elem()
+}
+
+type ClusterComputeResourceHostVmkNicInfo struct {
+	DynamicData
+
+	NicSpec HostVirtualNicSpec `xml:"nicSpec"`
+	Service string             `xml:"service"`
+}
+
+func init() {
+	t["ClusterComputeResourceHostVmkNicInfo"] = reflect.TypeOf((*ClusterComputeResourceHostVmkNicInfo)(nil)).Elem()
+}
+
 type ClusterComputeResourceSummary struct {
 	ComputeResourceSummary
 
@@ -7739,6 +8088,27 @@ type ClusterComputeResourceSummary struct {
 
 func init() {
 	t["ClusterComputeResourceSummary"] = reflect.TypeOf((*ClusterComputeResourceSummary)(nil)).Elem()
+}
+
+type ClusterComputeResourceVCProfile struct {
+	DynamicData
+
+	ClusterSpec *ClusterConfigSpecEx `xml:"clusterSpec,omitempty"`
+	EvcModeKey  string               `xml:"evcModeKey,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceVCProfile"] = reflect.TypeOf((*ClusterComputeResourceVCProfile)(nil)).Elem()
+}
+
+type ClusterComputeResourceValidationResultBase struct {
+	DynamicData
+
+	Info []LocalizableMessage `xml:"info,omitempty"`
+}
+
+func init() {
+	t["ClusterComputeResourceValidationResultBase"] = reflect.TypeOf((*ClusterComputeResourceValidationResultBase)(nil)).Elem()
 }
 
 type ClusterConfigInfo struct {
@@ -7809,6 +8179,7 @@ type ClusterConfigSpecEx struct {
 	GroupSpec           []ClusterGroupSpec              `xml:"groupSpec,omitempty"`
 	InfraUpdateHaConfig *ClusterInfraUpdateHaConfigInfo `xml:"infraUpdateHaConfig,omitempty"`
 	ProactiveDrsConfig  *ClusterProactiveDrsConfigInfo  `xml:"proactiveDrsConfig,omitempty"`
+	InHciWorkflow       *bool                           `xml:"inHciWorkflow"`
 }
 
 func init() {
@@ -9119,6 +9490,26 @@ type ConfigureEvcMode_TaskResponse struct {
 	Returnval ManagedObjectReference `xml:"returnval"`
 }
 
+type ConfigureHCIRequestType struct {
+	This        ManagedObjectReference                         `xml:"_this"`
+	ClusterSpec ClusterComputeResourceHCIConfigSpec            `xml:"clusterSpec"`
+	HostInputs  []ClusterComputeResourceHostConfigurationInput `xml:"hostInputs,omitempty"`
+}
+
+func init() {
+	t["ConfigureHCIRequestType"] = reflect.TypeOf((*ConfigureHCIRequestType)(nil)).Elem()
+}
+
+type ConfigureHCI_Task ConfigureHCIRequestType
+
+func init() {
+	t["ConfigureHCI_Task"] = reflect.TypeOf((*ConfigureHCI_Task)(nil)).Elem()
+}
+
+type ConfigureHCI_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
+}
+
 type ConfigureHostCacheRequestType struct {
 	This ManagedObjectReference     `xml:"_this"`
 	Spec HostCacheConfigurationSpec `xml:"spec"`
@@ -10023,6 +10414,25 @@ type CreateNvdimmNamespace_TaskResponse struct {
 	Returnval ManagedObjectReference `xml:"returnval"`
 }
 
+type CreateNvdimmPMemNamespaceRequestType struct {
+	This       ManagedObjectReference        `xml:"_this"`
+	CreateSpec NvdimmPMemNamespaceCreateSpec `xml:"createSpec"`
+}
+
+func init() {
+	t["CreateNvdimmPMemNamespaceRequestType"] = reflect.TypeOf((*CreateNvdimmPMemNamespaceRequestType)(nil)).Elem()
+}
+
+type CreateNvdimmPMemNamespace_Task CreateNvdimmPMemNamespaceRequestType
+
+func init() {
+	t["CreateNvdimmPMemNamespace_Task"] = reflect.TypeOf((*CreateNvdimmPMemNamespace_Task)(nil)).Elem()
+}
+
+type CreateNvdimmPMemNamespace_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
+}
+
 type CreateObjectScheduledTask CreateObjectScheduledTaskRequestType
 
 func init() {
@@ -10579,6 +10989,21 @@ type CryptoManagerKmipClusterStatus struct {
 
 func init() {
 	t["CryptoManagerKmipClusterStatus"] = reflect.TypeOf((*CryptoManagerKmipClusterStatus)(nil)).Elem()
+}
+
+type CryptoManagerKmipCryptoKeyStatus struct {
+	DynamicData
+
+	KeyId            CryptoKeyId              `xml:"keyId"`
+	KeyAvailable     *bool                    `xml:"keyAvailable"`
+	Reason           string                   `xml:"reason,omitempty"`
+	EncryptedVMs     []ManagedObjectReference `xml:"encryptedVMs,omitempty"`
+	AffectedHosts    []ManagedObjectReference `xml:"affectedHosts,omitempty"`
+	ReferencedByTags []string                 `xml:"referencedByTags,omitempty"`
+}
+
+func init() {
+	t["CryptoManagerKmipCryptoKeyStatus"] = reflect.TypeOf((*CryptoManagerKmipCryptoKeyStatus)(nil)).Elem()
 }
 
 type CryptoManagerKmipServerCertInfo struct {
@@ -12187,6 +12612,23 @@ func init() {
 	t["DatabaseSizeParam"] = reflect.TypeOf((*DatabaseSizeParam)(nil)).Elem()
 }
 
+type DatacenterBasicConnectInfo struct {
+	DynamicData
+
+	Hostname        string                `xml:"hostname,omitempty"`
+	Error           *LocalizedMethodFault `xml:"error,omitempty"`
+	ServerIp        string                `xml:"serverIp,omitempty"`
+	NumVm           int32                 `xml:"numVm,omitempty"`
+	NumPoweredOnVm  int32                 `xml:"numPoweredOnVm,omitempty"`
+	HostProductInfo *AboutInfo            `xml:"hostProductInfo,omitempty"`
+	HardwareVendor  string                `xml:"hardwareVendor,omitempty"`
+	HardwareModel   string                `xml:"hardwareModel,omitempty"`
+}
+
+func init() {
+	t["DatacenterBasicConnectInfo"] = reflect.TypeOf((*DatacenterBasicConnectInfo)(nil)).Elem()
+}
+
 type DatacenterConfigInfo struct {
 	DynamicData
 
@@ -12459,6 +12901,7 @@ type DatastoreInfo struct {
 	MaxMemoryFileSize      int64      `xml:"maxMemoryFileSize,omitempty"`
 	Timestamp              *time.Time `xml:"timestamp"`
 	ContainerId            string     `xml:"containerId,omitempty"`
+	AliasOf                string     `xml:"aliasOf,omitempty"`
 }
 
 func init() {
@@ -16724,6 +17167,26 @@ type ExtendDisk_TaskResponse struct {
 	Returnval ManagedObjectReference `xml:"returnval"`
 }
 
+type ExtendHCIRequestType struct {
+	This           ManagedObjectReference                         `xml:"_this"`
+	HostInputs     []ClusterComputeResourceHostConfigurationInput `xml:"hostInputs,omitempty"`
+	VSanConfigSpec *SDDCBase                                      `xml:"vSanConfigSpec,omitempty"`
+}
+
+func init() {
+	t["ExtendHCIRequestType"] = reflect.TypeOf((*ExtendHCIRequestType)(nil)).Elem()
+}
+
+type ExtendHCI_Task ExtendHCIRequestType
+
+func init() {
+	t["ExtendHCI_Task"] = reflect.TypeOf((*ExtendHCI_Task)(nil)).Elem()
+}
+
+type ExtendHCI_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
+}
+
 type ExtendVffs ExtendVffsRequestType
 
 func init() {
@@ -17993,6 +18456,29 @@ func init() {
 	t["FloppyImageFileQuery"] = reflect.TypeOf((*FloppyImageFileQuery)(nil)).Elem()
 }
 
+type FolderBatchAddHostsToClusterResult struct {
+	DynamicData
+
+	HostsAddedToCluster      []ManagedObjectReference `xml:"hostsAddedToCluster,omitempty"`
+	HostsFailedInventoryAdd  []FolderFailedHostResult `xml:"hostsFailedInventoryAdd,omitempty"`
+	HostsFailedMoveToCluster []FolderFailedHostResult `xml:"hostsFailedMoveToCluster,omitempty"`
+}
+
+func init() {
+	t["FolderBatchAddHostsToClusterResult"] = reflect.TypeOf((*FolderBatchAddHostsToClusterResult)(nil)).Elem()
+}
+
+type FolderBatchAddStandaloneHostsResult struct {
+	DynamicData
+
+	AddedHosts              []ManagedObjectReference `xml:"addedHosts,omitempty"`
+	HostsFailedInventoryAdd []FolderFailedHostResult `xml:"hostsFailedInventoryAdd,omitempty"`
+}
+
+func init() {
+	t["FolderBatchAddStandaloneHostsResult"] = reflect.TypeOf((*FolderBatchAddStandaloneHostsResult)(nil)).Elem()
+}
+
 type FolderEventArgument struct {
 	EntityEventArgument
 
@@ -18001,6 +18487,19 @@ type FolderEventArgument struct {
 
 func init() {
 	t["FolderEventArgument"] = reflect.TypeOf((*FolderEventArgument)(nil)).Elem()
+}
+
+type FolderFailedHostResult struct {
+	DynamicData
+
+	HostName string                  `xml:"hostName,omitempty"`
+	Host     *ManagedObjectReference `xml:"host,omitempty"`
+	Context  LocalizableMessage      `xml:"context"`
+	Fault    LocalizedMethodFault    `xml:"fault"`
+}
+
+func init() {
+	t["FolderFailedHostResult"] = reflect.TypeOf((*FolderFailedHostResult)(nil)).Elem()
 }
 
 type FolderFileInfo struct {
@@ -18017,6 +18516,17 @@ type FolderFileQuery struct {
 
 func init() {
 	t["FolderFileQuery"] = reflect.TypeOf((*FolderFileQuery)(nil)).Elem()
+}
+
+type FolderNewHostSpec struct {
+	DynamicData
+
+	HostCnxSpec HostConnectSpec `xml:"hostCnxSpec"`
+	EsxLicense  string          `xml:"esxLicense,omitempty"`
+}
+
+func init() {
+	t["FolderNewHostSpec"] = reflect.TypeOf((*FolderNewHostSpec)(nil)).Elem()
 }
 
 type FormatVffs FormatVffsRequestType
@@ -19925,6 +20435,8 @@ type HostCapability struct {
 	VmCreateDateSupported                     *bool           `xml:"vmCreateDateSupported"`
 	Vmfs3EOLSupported                         *bool           `xml:"vmfs3EOLSupported"`
 	FtVmcpSupported                           *bool           `xml:"ftVmcpSupported"`
+	QuickBootSupported                        *bool           `xml:"quickBootSupported"`
+	MarkPerenniallyReservedSupported          *bool           `xml:"markPerenniallyReservedSupported"`
 }
 
 func init() {
@@ -23949,6 +24461,50 @@ func init() {
 	t["HostRetrieveVStorageObject"] = reflect.TypeOf((*HostRetrieveVStorageObject)(nil)).Elem()
 }
 
+type HostRetrieveVStorageObjectMetadata HostRetrieveVStorageObjectMetadataRequestType
+
+func init() {
+	t["HostRetrieveVStorageObjectMetadata"] = reflect.TypeOf((*HostRetrieveVStorageObjectMetadata)(nil)).Elem()
+}
+
+type HostRetrieveVStorageObjectMetadataRequestType struct {
+	This       ManagedObjectReference `xml:"_this"`
+	Id         ID                     `xml:"id"`
+	Datastore  ManagedObjectReference `xml:"datastore"`
+	SnapshotId *ID                    `xml:"snapshotId,omitempty"`
+	Prefix     string                 `xml:"prefix,omitempty"`
+}
+
+func init() {
+	t["HostRetrieveVStorageObjectMetadataRequestType"] = reflect.TypeOf((*HostRetrieveVStorageObjectMetadataRequestType)(nil)).Elem()
+}
+
+type HostRetrieveVStorageObjectMetadataResponse struct {
+	Returnval []KeyValue `xml:"returnval,omitempty"`
+}
+
+type HostRetrieveVStorageObjectMetadataValue HostRetrieveVStorageObjectMetadataValueRequestType
+
+func init() {
+	t["HostRetrieveVStorageObjectMetadataValue"] = reflect.TypeOf((*HostRetrieveVStorageObjectMetadataValue)(nil)).Elem()
+}
+
+type HostRetrieveVStorageObjectMetadataValueRequestType struct {
+	This       ManagedObjectReference `xml:"_this"`
+	Id         ID                     `xml:"id"`
+	Datastore  ManagedObjectReference `xml:"datastore"`
+	SnapshotId *ID                    `xml:"snapshotId,omitempty"`
+	Key        string                 `xml:"key"`
+}
+
+func init() {
+	t["HostRetrieveVStorageObjectMetadataValueRequestType"] = reflect.TypeOf((*HostRetrieveVStorageObjectMetadataValueRequestType)(nil)).Elem()
+}
+
+type HostRetrieveVStorageObjectMetadataValueResponse struct {
+	Returnval string `xml:"returnval"`
+}
+
 type HostRetrieveVStorageObjectRequestType struct {
 	This      ManagedObjectReference `xml:"_this"`
 	Id        ID                     `xml:"id"`
@@ -24358,6 +24914,14 @@ func init() {
 	t["HostSpecification"] = reflect.TypeOf((*HostSpecification)(nil)).Elem()
 }
 
+type HostSpecificationChangedEvent struct {
+	HostEvent
+}
+
+func init() {
+	t["HostSpecificationChangedEvent"] = reflect.TypeOf((*HostSpecificationChangedEvent)(nil)).Elem()
+}
+
 type HostSpecificationOperationFailed struct {
 	VimFault
 
@@ -24372,6 +24936,24 @@ type HostSpecificationOperationFailedFault HostSpecificationOperationFailed
 
 func init() {
 	t["HostSpecificationOperationFailedFault"] = reflect.TypeOf((*HostSpecificationOperationFailedFault)(nil)).Elem()
+}
+
+type HostSpecificationRequireEvent struct {
+	HostEvent
+}
+
+func init() {
+	t["HostSpecificationRequireEvent"] = reflect.TypeOf((*HostSpecificationRequireEvent)(nil)).Elem()
+}
+
+type HostSpecificationUpdateEvent struct {
+	HostEvent
+
+	HostSpec HostSpecification `xml:"hostSpec"`
+}
+
+func init() {
+	t["HostSpecificationUpdateEvent"] = reflect.TypeOf((*HostSpecificationUpdateEvent)(nil)).Elem()
 }
 
 type HostSriovConfig struct {
@@ -24532,6 +25114,26 @@ type HostSubSpecification struct {
 
 func init() {
 	t["HostSubSpecification"] = reflect.TypeOf((*HostSubSpecification)(nil)).Elem()
+}
+
+type HostSubSpecificationDeleteEvent struct {
+	HostEvent
+
+	SubSpecName string `xml:"subSpecName"`
+}
+
+func init() {
+	t["HostSubSpecificationDeleteEvent"] = reflect.TypeOf((*HostSubSpecificationDeleteEvent)(nil)).Elem()
+}
+
+type HostSubSpecificationUpdateEvent struct {
+	HostEvent
+
+	HostSubSpec HostSubSpecification `xml:"hostSubSpec"`
+}
+
+func init() {
+	t["HostSubSpecificationUpdateEvent"] = reflect.TypeOf((*HostSubSpecificationUpdateEvent)(nil)).Elem()
 }
 
 type HostSyncFailedEvent struct {
@@ -24859,6 +25461,28 @@ type HostUnresolvedVmfsVolumeResolveStatus struct {
 
 func init() {
 	t["HostUnresolvedVmfsVolumeResolveStatus"] = reflect.TypeOf((*HostUnresolvedVmfsVolumeResolveStatus)(nil)).Elem()
+}
+
+type HostUpdateVStorageObjectMetadataRequestType struct {
+	This       ManagedObjectReference `xml:"_this"`
+	Id         ID                     `xml:"id"`
+	Datastore  ManagedObjectReference `xml:"datastore"`
+	Metadata   []KeyValue             `xml:"metadata,omitempty"`
+	DeleteKeys []string               `xml:"deleteKeys,omitempty"`
+}
+
+func init() {
+	t["HostUpdateVStorageObjectMetadataRequestType"] = reflect.TypeOf((*HostUpdateVStorageObjectMetadataRequestType)(nil)).Elem()
+}
+
+type HostUpdateVStorageObjectMetadata_Task HostUpdateVStorageObjectMetadataRequestType
+
+func init() {
+	t["HostUpdateVStorageObjectMetadata_Task"] = reflect.TypeOf((*HostUpdateVStorageObjectMetadata_Task)(nil)).Elem()
+}
+
+type HostUpdateVStorageObjectMetadata_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
 }
 
 type HostUpgradeFailedEvent struct {
@@ -28083,6 +28707,22 @@ func init() {
 	t["KeyAnyValue"] = reflect.TypeOf((*KeyAnyValue)(nil)).Elem()
 }
 
+type KeyNotFound struct {
+	VimFault
+
+	Key string `xml:"key"`
+}
+
+func init() {
+	t["KeyNotFound"] = reflect.TypeOf((*KeyNotFound)(nil)).Elem()
+}
+
+type KeyNotFoundFault KeyNotFound
+
+func init() {
+	t["KeyNotFoundFault"] = reflect.TypeOf((*KeyNotFoundFault)(nil)).Elem()
+}
+
 type KeyProviderId struct {
 	DynamicData
 
@@ -29493,6 +30133,45 @@ func init() {
 }
 
 type MarkForRemovalResponse struct {
+}
+
+type MarkPerenniallyReserved MarkPerenniallyReservedRequestType
+
+func init() {
+	t["MarkPerenniallyReserved"] = reflect.TypeOf((*MarkPerenniallyReserved)(nil)).Elem()
+}
+
+type MarkPerenniallyReservedExRequestType struct {
+	This    ManagedObjectReference `xml:"_this"`
+	LunUuid []string               `xml:"lunUuid,omitempty"`
+	State   bool                   `xml:"state"`
+}
+
+func init() {
+	t["MarkPerenniallyReservedExRequestType"] = reflect.TypeOf((*MarkPerenniallyReservedExRequestType)(nil)).Elem()
+}
+
+type MarkPerenniallyReservedEx_Task MarkPerenniallyReservedExRequestType
+
+func init() {
+	t["MarkPerenniallyReservedEx_Task"] = reflect.TypeOf((*MarkPerenniallyReservedEx_Task)(nil)).Elem()
+}
+
+type MarkPerenniallyReservedEx_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
+}
+
+type MarkPerenniallyReservedRequestType struct {
+	This    ManagedObjectReference `xml:"_this"`
+	LunUuid string                 `xml:"lunUuid"`
+	State   bool                   `xml:"state"`
+}
+
+func init() {
+	t["MarkPerenniallyReservedRequestType"] = reflect.TypeOf((*MarkPerenniallyReservedRequestType)(nil)).Elem()
+}
+
+type MarkPerenniallyReservedResponse struct {
 }
 
 type MemoryFileFormatNotSupportedByDatastore struct {
@@ -31037,7 +31716,7 @@ type NetworkSummary struct {
 	Network    *ManagedObjectReference `xml:"network,omitempty"`
 	Name       string                  `xml:"name"`
 	Accessible bool                    `xml:"accessible"`
-	IpPoolName string                  `xml:"ipPoolName,omitempty"`
+	IpPoolName string                  `xml:"ipPoolName"`
 	IpPoolId   int32                   `xml:"ipPoolId,omitempty"`
 }
 
@@ -32101,6 +32780,22 @@ func init() {
 	t["NvdimmNamespaceDeleteSpec"] = reflect.TypeOf((*NvdimmNamespaceDeleteSpec)(nil)).Elem()
 }
 
+type NvdimmNamespaceDetails struct {
+	DynamicData
+
+	Uuid                  string `xml:"uuid"`
+	FriendlyName          string `xml:"friendlyName"`
+	Size                  int64  `xml:"size"`
+	Type                  string `xml:"type"`
+	NamespaceHealthStatus string `xml:"namespaceHealthStatus"`
+	InterleavesetID       int32  `xml:"interleavesetID"`
+	State                 string `xml:"state"`
+}
+
+func init() {
+	t["NvdimmNamespaceDetails"] = reflect.TypeOf((*NvdimmNamespaceDetails)(nil)).Elem()
+}
+
 type NvdimmNamespaceInfo struct {
 	DynamicData
 
@@ -32116,6 +32811,18 @@ type NvdimmNamespaceInfo struct {
 
 func init() {
 	t["NvdimmNamespaceInfo"] = reflect.TypeOf((*NvdimmNamespaceInfo)(nil)).Elem()
+}
+
+type NvdimmPMemNamespaceCreateSpec struct {
+	DynamicData
+
+	FriendlyName    string `xml:"friendlyName,omitempty"`
+	Size            int64  `xml:"size"`
+	InterleavesetID int32  `xml:"interleavesetID"`
+}
+
+func init() {
+	t["NvdimmPMemNamespaceCreateSpec"] = reflect.TypeOf((*NvdimmPMemNamespaceCreateSpec)(nil)).Elem()
 }
 
 type NvdimmRegionInfo struct {
@@ -32160,6 +32867,7 @@ type NvdimmSystemInfo struct {
 	ISetInfo      []NvdimmInterleaveSetInfo `xml:"iSetInfo,omitempty"`
 	Namespace     []NvdimmGuid              `xml:"namespace,omitempty"`
 	NsInfo        []NvdimmNamespaceInfo     `xml:"nsInfo,omitempty"`
+	NsDetails     []NvdimmNamespaceDetails  `xml:"nsDetails,omitempty"`
 }
 
 func init() {
@@ -33970,6 +34678,20 @@ type PassiveNodeNetworkSpec struct {
 
 func init() {
 	t["PassiveNodeNetworkSpec"] = reflect.TypeOf((*PassiveNodeNetworkSpec)(nil)).Elem()
+}
+
+type PasswordExpired struct {
+	InvalidLogin
+}
+
+func init() {
+	t["PasswordExpired"] = reflect.TypeOf((*PasswordExpired)(nil)).Elem()
+}
+
+type PasswordExpiredFault PasswordExpired
+
+func init() {
+	t["PasswordExpiredFault"] = reflect.TypeOf((*PasswordExpiredFault)(nil)).Elem()
 }
 
 type PasswordField struct {
@@ -36066,6 +36788,26 @@ type QueryConnectionInfoViaSpecResponse struct {
 	Returnval HostConnectInfo `xml:"returnval"`
 }
 
+type QueryCryptoKeyStatus QueryCryptoKeyStatusRequestType
+
+func init() {
+	t["QueryCryptoKeyStatus"] = reflect.TypeOf((*QueryCryptoKeyStatus)(nil)).Elem()
+}
+
+type QueryCryptoKeyStatusRequestType struct {
+	This           ManagedObjectReference `xml:"_this"`
+	KeyIds         []CryptoKeyId          `xml:"keyIds,omitempty"`
+	CheckKeyBitMap int32                  `xml:"checkKeyBitMap"`
+}
+
+func init() {
+	t["QueryCryptoKeyStatusRequestType"] = reflect.TypeOf((*QueryCryptoKeyStatusRequestType)(nil)).Elem()
+}
+
+type QueryCryptoKeyStatusResponse struct {
+	Returnval []CryptoManagerKmipCryptoKeyStatus `xml:"returnval,omitempty"`
+}
+
 type QueryDatastorePerformanceSummary QueryDatastorePerformanceSummaryRequestType
 
 func init() {
@@ -36559,6 +37301,25 @@ func init() {
 
 type QueryHostStatusResponse struct {
 	Returnval VsanHostClusterStatus `xml:"returnval"`
+}
+
+type QueryHostsWithAttachedLun QueryHostsWithAttachedLunRequestType
+
+func init() {
+	t["QueryHostsWithAttachedLun"] = reflect.TypeOf((*QueryHostsWithAttachedLun)(nil)).Elem()
+}
+
+type QueryHostsWithAttachedLunRequestType struct {
+	This    ManagedObjectReference `xml:"_this"`
+	LunUuid string                 `xml:"lunUuid"`
+}
+
+func init() {
+	t["QueryHostsWithAttachedLunRequestType"] = reflect.TypeOf((*QueryHostsWithAttachedLunRequestType)(nil)).Elem()
+}
+
+type QueryHostsWithAttachedLunResponse struct {
+	Returnval []ManagedObjectReference `xml:"returnval,omitempty"`
 }
 
 type QueryIORMConfigOption QueryIORMConfigOptionRequestType
@@ -37133,6 +37894,24 @@ func init() {
 
 type QueryPolicyMetadataResponse struct {
 	Returnval []ProfilePolicyMetadata `xml:"returnval,omitempty"`
+}
+
+type QueryProductLockerLocation QueryProductLockerLocationRequestType
+
+func init() {
+	t["QueryProductLockerLocation"] = reflect.TypeOf((*QueryProductLockerLocation)(nil)).Elem()
+}
+
+type QueryProductLockerLocationRequestType struct {
+	This ManagedObjectReference `xml:"_this"`
+}
+
+func init() {
+	t["QueryProductLockerLocationRequestType"] = reflect.TypeOf((*QueryProductLockerLocationRequestType)(nil)).Elem()
+}
+
+type QueryProductLockerLocationResponse struct {
+	Returnval string `xml:"returnval"`
 }
 
 type QueryProfileStructure QueryProfileStructureRequestType
@@ -41861,25 +42640,26 @@ func init() {
 type ScsiLun struct {
 	HostDevice
 
-	Key              string               `xml:"key,omitempty"`
-	Uuid             string               `xml:"uuid"`
-	Descriptor       []ScsiLunDescriptor  `xml:"descriptor,omitempty"`
-	CanonicalName    string               `xml:"canonicalName,omitempty"`
-	DisplayName      string               `xml:"displayName,omitempty"`
-	LunType          string               `xml:"lunType"`
-	Vendor           string               `xml:"vendor,omitempty"`
-	Model            string               `xml:"model,omitempty"`
-	Revision         string               `xml:"revision,omitempty"`
-	ScsiLevel        int32                `xml:"scsiLevel,omitempty"`
-	SerialNumber     string               `xml:"serialNumber,omitempty"`
-	DurableName      *ScsiLunDurableName  `xml:"durableName,omitempty"`
-	AlternateName    []ScsiLunDurableName `xml:"alternateName,omitempty"`
-	StandardInquiry  []byte               `xml:"standardInquiry,omitempty"`
-	QueueDepth       int32                `xml:"queueDepth,omitempty"`
-	OperationalState []string             `xml:"operationalState"`
-	Capabilities     *ScsiLunCapabilities `xml:"capabilities,omitempty"`
-	VStorageSupport  string               `xml:"vStorageSupport,omitempty"`
-	ProtocolEndpoint *bool                `xml:"protocolEndpoint"`
+	Key                 string               `xml:"key,omitempty"`
+	Uuid                string               `xml:"uuid"`
+	Descriptor          []ScsiLunDescriptor  `xml:"descriptor,omitempty"`
+	CanonicalName       string               `xml:"canonicalName,omitempty"`
+	DisplayName         string               `xml:"displayName,omitempty"`
+	LunType             string               `xml:"lunType"`
+	Vendor              string               `xml:"vendor,omitempty"`
+	Model               string               `xml:"model,omitempty"`
+	Revision            string               `xml:"revision,omitempty"`
+	ScsiLevel           int32                `xml:"scsiLevel,omitempty"`
+	SerialNumber        string               `xml:"serialNumber,omitempty"`
+	DurableName         *ScsiLunDurableName  `xml:"durableName,omitempty"`
+	AlternateName       []ScsiLunDurableName `xml:"alternateName,omitempty"`
+	StandardInquiry     []byte               `xml:"standardInquiry,omitempty"`
+	QueueDepth          int32                `xml:"queueDepth,omitempty"`
+	OperationalState    []string             `xml:"operationalState"`
+	Capabilities        *ScsiLunCapabilities `xml:"capabilities,omitempty"`
+	VStorageSupport     string               `xml:"vStorageSupport,omitempty"`
+	ProtocolEndpoint    *bool                `xml:"protocolEndpoint"`
+	PerenniallyReserved *bool                `xml:"perenniallyReserved"`
 }
 
 func init() {
@@ -42274,6 +43054,7 @@ type ServiceContent struct {
 	HealthUpdateManager         *ManagedObjectReference `xml:"healthUpdateManager,omitempty"`
 	FailoverClusterConfigurator *ManagedObjectReference `xml:"failoverClusterConfigurator,omitempty"`
 	FailoverClusterManager      *ManagedObjectReference `xml:"failoverClusterManager,omitempty"`
+	StorageQueryManager         *ManagedObjectReference `xml:"storageQueryManager,omitempty"`
 }
 
 func init() {
@@ -46427,6 +47208,25 @@ func init() {
 type UpdatePortGroupResponse struct {
 }
 
+type UpdateProductLockerLocationRequestType struct {
+	This ManagedObjectReference `xml:"_this"`
+	Path string                 `xml:"path"`
+}
+
+func init() {
+	t["UpdateProductLockerLocationRequestType"] = reflect.TypeOf((*UpdateProductLockerLocationRequestType)(nil)).Elem()
+}
+
+type UpdateProductLockerLocation_Task UpdateProductLockerLocationRequestType
+
+func init() {
+	t["UpdateProductLockerLocation_Task"] = reflect.TypeOf((*UpdateProductLockerLocation_Task)(nil)).Elem()
+}
+
+type UpdateProductLockerLocation_TaskResponse struct {
+	Returnval ManagedObjectReference `xml:"returnval"`
+}
+
 type UpdateProgress UpdateProgressRequestType
 
 func init() {
@@ -47916,6 +48716,7 @@ type VMwareDVSPortgroupPolicy struct {
 	UplinkTeamingOverrideAllowed  bool  `xml:"uplinkTeamingOverrideAllowed"`
 	SecurityPolicyOverrideAllowed bool  `xml:"securityPolicyOverrideAllowed"`
 	IpfixOverrideAllowed          *bool `xml:"ipfixOverrideAllowed"`
+	MacManagementOverrideAllowed  *bool `xml:"macManagementOverrideAllowed"`
 }
 
 func init() {
@@ -48226,6 +49027,17 @@ type VStorageObjectCreateSnapshot_TaskResponse struct {
 	Returnval ManagedObjectReference `xml:"returnval"`
 }
 
+type VStorageObjectSnapshotDetails struct {
+	DynamicData
+
+	Path                   string `xml:"path,omitempty"`
+	ChangedBlockTrackingId string `xml:"changedBlockTrackingId,omitempty"`
+}
+
+func init() {
+	t["VStorageObjectSnapshotDetails"] = reflect.TypeOf((*VStorageObjectSnapshotDetails)(nil)).Elem()
+}
+
 type VStorageObjectSnapshotInfo struct {
 	DynamicData
 
@@ -48309,6 +49121,26 @@ func init() {
 }
 
 type ValidateCredentialsInGuestResponse struct {
+}
+
+type ValidateHCIConfiguration ValidateHCIConfigurationRequestType
+
+func init() {
+	t["ValidateHCIConfiguration"] = reflect.TypeOf((*ValidateHCIConfiguration)(nil)).Elem()
+}
+
+type ValidateHCIConfigurationRequestType struct {
+	This          ManagedObjectReference               `xml:"_this"`
+	HciConfigSpec *ClusterComputeResourceHCIConfigSpec `xml:"hciConfigSpec,omitempty"`
+	Hosts         []ManagedObjectReference             `xml:"hosts,omitempty"`
+}
+
+func init() {
+	t["ValidateHCIConfigurationRequestType"] = reflect.TypeOf((*ValidateHCIConfigurationRequestType)(nil)).Elem()
+}
+
+type ValidateHCIConfigurationResponse struct {
+	Returnval []BaseClusterComputeResourceValidationResultBase `xml:"returnval,omitempty,typeattr"`
 }
 
 type ValidateHost ValidateHostRequestType
@@ -54651,8 +55483,9 @@ func init() {
 type VslmCloneSpec struct {
 	VslmMigrateSpec
 
-	Name              string `xml:"name"`
-	KeepAfterDeleteVm *bool  `xml:"keepAfterDeleteVm"`
+	Name              string     `xml:"name"`
+	KeepAfterDeleteVm *bool      `xml:"keepAfterDeleteVm"`
+	Metadata          []KeyValue `xml:"metadata,omitempty"`
 }
 
 func init() {
@@ -54667,6 +55500,7 @@ type VslmCreateSpec struct {
 	BackingSpec       BaseVslmCreateSpecBackingSpec   `xml:"backingSpec,typeattr"`
 	CapacityInMB      int64                           `xml:"capacityInMB"`
 	Profile           []BaseVirtualMachineProfileSpec `xml:"profile,omitempty,typeattr"`
+	Metadata          []KeyValue                      `xml:"metadata,omitempty"`
 }
 
 func init() {

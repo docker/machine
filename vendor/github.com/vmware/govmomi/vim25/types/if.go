@@ -214,6 +214,18 @@ func init() {
 	t["BaseClusterAction"] = reflect.TypeOf((*ClusterAction)(nil)).Elem()
 }
 
+func (b *ClusterComputeResourceValidationResultBase) GetClusterComputeResourceValidationResultBase() *ClusterComputeResourceValidationResultBase {
+	return b
+}
+
+type BaseClusterComputeResourceValidationResultBase interface {
+	GetClusterComputeResourceValidationResultBase() *ClusterComputeResourceValidationResultBase
+}
+
+func init() {
+	t["BaseClusterComputeResourceValidationResultBase"] = reflect.TypeOf((*ClusterComputeResourceValidationResultBase)(nil)).Elem()
+}
+
 func (b *ClusterDasAdmissionControlInfo) GetClusterDasAdmissionControlInfo() *ClusterDasAdmissionControlInfo {
 	return b
 }

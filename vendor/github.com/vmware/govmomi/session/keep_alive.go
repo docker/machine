@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015,2019 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ type keepAlive struct {
 }
 
 func defaultKeepAlive(roundTripper soap.RoundTripper) error {
-	_, _ = methods.GetCurrentTime(context.Background(), roundTripper)
-	return nil
+	_, err := methods.GetCurrentTime(context.Background(), roundTripper)
+	return err
 }
 
 // KeepAlive wraps the specified soap.RoundTripper and executes a meaningless
@@ -110,16 +110,20 @@ func (k *keepAlive) stop() {
 }
 
 func (k *keepAlive) RoundTrip(ctx context.Context, req, res soap.HasFault) error {
+	// Stop ticker on logout.
+	switch req.(type) {
+	case *methods.LogoutBody:
+		k.stop()
+	}
+
 	err := k.roundTripper.RoundTrip(ctx, req, res)
 	if err != nil {
 		return err
 	}
-	// Start ticker on login, stop ticker on logout.
+	// Start ticker on login.
 	switch req.(type) {
 	case *methods.LoginBody, *methods.LoginExtensionByCertificateBody, *methods.LoginByTokenBody:
 		k.start()
-	case *methods.LogoutBody:
-		k.stop()
 	}
 
 	return nil

@@ -28,8 +28,16 @@
 
 [[constraint]]
   name = "github.com/vmware/govmomi"
-  version = "0.20.0"
+  branch = "master"
 
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/diskfs/go-diskfs"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  revision = "v2.2.2"
