@@ -35,10 +35,7 @@ func (sshCmder RedHatSSHCommander) SSHCommand(args string) (string, error) {
 
 	log.Debugf("SSH cmd err, output: %v: %s", err, output)
 	if err != nil {
-		return "", fmt.Errorf(`something went wrong running an SSH command
-command : %s
-err     : %v
-output  : %s`, args, err, output)
+		return "", fmt.Errorf(`RHEL ssh command error: command: %s err: %v output: %s`, args, err, output)
 	}
 
 	return output, nil
