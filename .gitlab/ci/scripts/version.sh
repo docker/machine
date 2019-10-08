@@ -10,7 +10,7 @@ if [[ $(echo ${exact_tag} | grep -E "^[0-9]+\.[0-9]+\.[0-9]+-gitlab\.[0-9]+(-rc[
     exit 0
 fi
 
-pre_release_info=$(git describe --always --long | sed -r "s/v[0-9\.]+(-rc[0-9]+)?-gitlab\.[0-9]+-//")
+pre_release_info=$(git describe --always --long | sed -r "s/v[0-9\.]+-gitlab\.[0-9]+(-rc[0-9]+)?-//")
 
 echo "${version}-beta-${pre_release_info}"
 
