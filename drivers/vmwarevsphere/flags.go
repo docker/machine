@@ -162,6 +162,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "If using a non-B2D image the uploaded keys will need chown'ed, defaults to staff e.g. docker:staff",
 			Value:  defaultSSHUserGroup,
 		},
+		mcnflag.StringSliceFlag{
+			EnvVar: "",
+			Name:   "vmwarevsphere-tag",
+			Usage:  "vSphere tag id e.g. urn:xxx",
+		},
+		mcnflag.StringSliceFlag{
+			EnvVar: "",
+			Name:   "vmwarevsphere-custom-attribute",
+			Usage:  "vSphere custom attribute, format key/value e.g. '200=my custom value'",
+		},
 	}
 }
 
@@ -179,6 +189,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Username = flags.String("vmwarevsphere-username")
 	d.Password = flags.String("vmwarevsphere-password")
 	d.Networks = flags.StringSlice("vmwarevsphere-network")
+	d.Tags = flags.StringSlice("vmwarevsphere-tag")
+	d.CustomAttributes = flags.StringSlice("vmwarevsphere-custom-attribute")
 	d.Datastore = flags.String("vmwarevsphere-datastore")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	// Sanitize input on ingress.

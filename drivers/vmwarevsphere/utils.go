@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (d *Driver) exec(procman *guest.ProcessManager, arg string) (int64, error) {
+func (d *Driver) remoteExec(procman *guest.ProcessManager, arg string) (int64, error) {
 	var env []string
 	auth := NewAuthFlag(d.SSHUser, d.SSHPassword)
 	guestspec := types.GuestProgramSpec{
@@ -129,6 +129,14 @@ func (d *Driver) getSoapClient() (*govmomi.Client, error) {
 	}
 
 	return d.soap, nil
+}
+
+func (d *Driver) getRestLogin(c *vim25.Client) *rest.Client {
+	return rest.NewClient(c)
+}
+
+func (d *Driver) getUserInfo() *url.Userinfo {
+	return url.UserPassword(d.Username, d.Password)
 }
 
 func (d *Driver) restLogin(ctx context.Context, c *vim25.Client) (*library.Manager, error) {

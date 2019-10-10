@@ -15,7 +15,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-func (d *Driver) init() error {
+func (d *Driver) preCreate() error {
 	c, err := d.getSoapClient()
 	if err != nil {
 		return err
@@ -66,6 +66,26 @@ func (d *Driver) init() error {
 	}
 
 	return nil
+}
+
+func (d *Driver) postCreate(vm *object.VirtualMachine) error {
+	if err := d.addConfigParams(vm); err != nil {
+		return err
+	}
+
+	if err := d.cloudInit(vm); err != nil {
+		return err
+	}
+
+	if err := d.addTags(vm); err != nil {
+		return err
+	}
+
+	if err := d.addCustomAttributes(vm); err != nil {
+		return err
+	}
+
+	return d.Start()
 }
 
 func (d *Driver) createManual() error {
@@ -235,15 +255,8 @@ func (d *Driver) createManual() error {
 		return err
 	}
 
-	if err := d.addConfigParams(vm); err != nil {
-		return err
-	}
-
-	if err := d.cloudInit(vm); err != nil {
-		return err
-	}
-
-	if err := d.Start(); err != nil {
+	err = d.postCreate(vm)
+	if err != nil {
 		return err
 	}
 
@@ -305,19 +318,7 @@ func (d *Driver) createFromVmName() error {
 		return err
 	}
 
-	if err := d.addConfigParams(vm); err != nil {
-		return err
-	}
-
-	if err := d.cloudInit(vm); err != nil {
-		return err
-	}
-
-	if err := d.Start(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.postCreate(vm)
 }
 
 func (d *Driver) createFromLibraryName() error {
@@ -336,13 +337,13 @@ func (d *Driver) createFromLibraryName() error {
 		return err
 	}
 
-	manager, err := d.restLogin(d.getCtx(), c.Client)
-	if err != nil {
+	libManager := library.NewManager(d.getRestLogin(c.Client))
+	if err := libManager.Login(d.getCtx(), d.getUserInfo()); err != nil {
 		return err
 	}
 
 	query := fmt.Sprintf("/%s/%s", d.ContentLibrary, d.CloneFrom)
-	results, err := vapifinder.NewFinder(manager).Find(d.getCtx(), query)
+	results, err := vapifinder.NewFinder(libManager).Find(d.getCtx(), query)
 	if err != nil {
 		return err
 	}
@@ -388,7 +389,7 @@ func (d *Driver) createFromLibraryName() error {
 		},
 	}
 
-	m := vcenter.NewManager(manager.Client)
+	m := vcenter.NewManager(libManager.Client)
 
 	ref, err := m.DeployLibraryItem(d.getCtx(), item.ID, deploy)
 	if err != nil {
@@ -400,18 +401,5 @@ func (d *Driver) createFromLibraryName() error {
 		return err
 	}
 
-	vm := obj.(*object.VirtualMachine)
-	if err := d.addConfigParams(vm); err != nil {
-		return err
-	}
-
-	if err := d.cloudInit(vm); err != nil {
-		return err
-	}
-
-	if err := d.Start(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.postCreate(obj.(*object.VirtualMachine))
 }
