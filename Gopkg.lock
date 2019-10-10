@@ -315,7 +315,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:28b8c0c559f6b8bc9d6439384422e2ebc18791c1ac4346d27fc28442a3840c97"
+  digest = "1:3cdcd396a602ea7c645920069345f1fa69c128101fb696eb7d976e6b6667ff31"
   name = "github.com/vmware/govmomi"
   packages = [
     ".",
@@ -331,6 +331,7 @@
     "vapi/library",
     "vapi/library/finder",
     "vapi/rest",
+    "vapi/tags",
     "vapi/vcenter",
     "vim25",
     "vim25/debug",
@@ -490,6 +491,7 @@
     "github.com/vmware/govmomi/vapi/library",
     "github.com/vmware/govmomi/vapi/library/finder",
     "github.com/vmware/govmomi/vapi/rest",
+    "github.com/vmware/govmomi/vapi/tags",
     "github.com/vmware/govmomi/vapi/vcenter",
     "github.com/vmware/govmomi/vim25",
     "github.com/vmware/govmomi/vim25/mo",
