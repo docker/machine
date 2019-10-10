@@ -3,12 +3,14 @@ package vmwarevsphere
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/docker/machine/libmachine/log"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/guest"
 	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/vapi/tags"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )
@@ -170,7 +172,7 @@ func (d *Driver) provisionVm(vm *object.VirtualMachine) error {
 	}
 
 	for _, cmd := range cmds {
-		if _, err := d.exec(procman, cmd); err != nil {
+		if _, err := d.remoteExec(procman, cmd); err != nil {
 			return err
 		}
 	}
@@ -213,4 +215,62 @@ func (d *Driver) applyOpts(vm *object.VirtualMachine, opts []types.BaseOptionVal
 	}
 
 	return task.Wait(d.getCtx())
+}
+
+func (d *Driver) addTags(vm *object.VirtualMachine) error {
+	if len(d.Tags) <= 0 {
+		return nil
+	}
+
+	log.Infof("Adding %d tag(s) to VM", len(d.Tags))
+	c, err := d.getSoapClient()
+	if err != nil {
+		return err
+	}
+
+	tagsManager := tags.NewManager(d.getRestLogin(c.Client))
+	if err = tagsManager.Login(d.getCtx(), d.getUserInfo()); err != nil {
+		return err
+	}
+
+	for _, tagID := range d.Tags {
+		tag, err := tagsManager.GetTag(d.getCtx(), tagID)
+		if err != nil {
+			return err
+		}
+
+		tagsManager.AttachTag(d.getCtx(), tag.ID, vm)
+	}
+
+	return nil
+}
+
+func (d *Driver) addCustomAttributes(vm *object.VirtualMachine) error {
+	if len(d.CustomAttributes) <= 0 {
+		return nil
+	}
+
+	log.Infof("Adding %d custom attribute(s) to VM", len(d.CustomAttributes))
+	c, err := d.getSoapClient()
+	if err != nil {
+		return err
+	}
+
+	fieldsManager, err := object.GetCustomFieldsManager(c.Client)
+	if err != nil {
+		return err
+	}
+
+	for _, field := range d.CustomAttributes {
+		split := strings.SplitN(field, "=", 2)
+		i, err := strconv.Atoi(split[0])
+		if err != nil {
+			return err
+		}
+		if err := fieldsManager.Set(d.getCtx(), vm.Reference(), int32(i), split[1]); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

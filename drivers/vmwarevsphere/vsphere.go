@@ -52,6 +52,8 @@ type Driver struct {
 	Password               string
 	Network                string
 	Networks               []string
+	Tags                   []string
+	CustomAttributes       []string
 	Datastore              string
 	Datacenter             string
 	Folder                 string
@@ -328,7 +330,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 
-	if err := d.init(); err != nil {
+	if err := d.preCreate(); err != nil {
 		return err
 	}
 
@@ -469,7 +471,7 @@ func (d *Driver) Remove() error {
 		return nil
 	}
 
-	if err := d.init(); err != nil {
+	if err := d.preCreate(); err != nil {
 		return err
 	}
 
