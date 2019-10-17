@@ -1,20 +1,19 @@
 package amazonec2
 
 import (
-	"testing"
-
 	"errors"
-	"reflect"
-
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/docker/machine/commands/commandstest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/docker/machine/commands/commandstest"
 )
 
 const (
@@ -557,4 +556,32 @@ func TestBase64UserDataIsCorrectWhenFileProvided(t *testing.T) {
 
 	assert.NoError(t, ud_err)
 	assert.Equal(t, contentBase64, userdata)
+}
+
+func TestGetIP(t *testing.T) {
+	privateIPAddress := "127.0.0.1"
+	publicIPAddress := "192.168.1.1"
+
+	describeInstanceRecorder := fakeEC2DescribeInstance{
+		ReturnInstance: ec2.Instance{
+			PrivateIpAddress: &privateIPAddress,
+			PublicIpAddress:  &publicIPAddress,
+		},
+	}
+	defer describeInstanceRecorder.AssertExpectations(t)
+
+	describeInstanceRecorder.On("DescribeInstances", mock.Anything).Once()
+
+	driver := NewCustomTestDriver(&describeInstanceRecorder)
+
+	// Called the first time
+	ip, err := driver.GetIP()
+	assert.NoError(t, err)
+	assert.Equal(t, publicIPAddress, ip)
+
+	// Set IP Address, to use cached version
+	driver.IPAddress = publicIPAddress
+	ip, err = driver.GetIP()
+	assert.NoError(t, err)
+	assert.Equal(t, publicIPAddress, ip)
 }

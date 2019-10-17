@@ -132,6 +132,27 @@ func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *
 	return value, err
 }
 
+type fakeEC2DescribeInstance struct {
+	*fakeEC2
+	ReturnInstance ec2.Instance
+	mock.Mock
+}
+
+func (f *fakeEC2DescribeInstance) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+	f.Called(input)
+
+	return &ec2.DescribeInstancesOutput{
+		NextToken: nil,
+		Reservations: []*ec2.Reservation{
+			{
+				Instances: []*ec2.Instance{
+					&f.ReturnInstance,
+				},
+			},
+		},
+	}, nil
+}
+
 func NewTestDriver() *Driver {
 	driver := NewDriver("machineFoo", "path")
 	driver.clientFactory = func() Ec2Client {
