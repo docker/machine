@@ -11,6 +11,13 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
+var creationTypes = map[string]bool{
+	"vm":       true,
+	"template": true,
+	"library":  true,
+	"legacy":   true,
+}
+
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 	return []mcnflag.Flag{
 		mcnflag.IntFlag{
@@ -125,7 +132,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_CREATION_TYPE",
 			Name:   "vmwarevsphere-creation-type",
-			Usage:  "Creation type when creating a new virtual machine. Supported values: default or clone",
+			Usage:  "Creation type when creating a new virtual machine. Supported values: vm, template, library, legacy",
 			Value:  defaultCreationType,
 		},
 		mcnflag.StringFlag{
@@ -217,10 +224,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.VAppProperties = flags.StringSlice("vmwarevsphere-vapp-property")
 	d.SetSwarmConfigFromFlags(flags)
 	d.ISO = d.ResolveStorePath(isoFilename)
-	d.CreationType = flags.String("vmwarevsphere-creation-type")
-	d.ContentLibrary = flags.String("vmwarevsphere-content-library")
 
-	if d.CreationType == "clone" {
+	d.CreationType = flags.String("vmwarevsphere-creation-type")
+	if _, ok := creationTypes[d.CreationType]; !ok {
+		return fmt.Errorf("Creation type %s not supported", d.CreationType)
+	}
+
+	d.ContentLibrary = flags.String("vmwarevsphere-content-library")
+	if d.CreationType != "legacy" {
 		d.CloneFrom = flags.String("vmwarevsphere-clone-from")
 		if d.CloneFrom == "" {
 			return fmt.Errorf("Creation type clone needs a VM name to clone from, use --vmwarevsphere-clone-from.")
