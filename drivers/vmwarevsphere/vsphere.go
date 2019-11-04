@@ -335,14 +335,14 @@ func (d *Driver) Create() error {
 	}
 
 	switch d.CreationType {
-	case "default":
+	case "legacy":
 		log.Infof("Creating VM...")
 		b2dutils := mcnutils.NewB2dUtils(d.StorePath)
 		if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 			return err
 		}
 		return d.createManual()
-	case "clone":
+	case "vm", "template", "libary":
 		if d.ContentLibrary != "" {
 			log.Infof("Creating VM from /%s/%s...", d.ContentLibrary, d.CloneFrom)
 			return d.createFromLibraryName()
