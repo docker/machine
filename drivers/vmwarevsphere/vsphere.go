@@ -91,7 +91,7 @@ const (
 	defaultMemory       = 2048
 	defaultDiskSize     = 20480
 	defaultSDKPort      = 443
-	defaultCreationType = "manual"
+	defaultCreationType = "legacy"
 )
 
 func NewDriver(hostName, storePath string) drivers.Driver {
