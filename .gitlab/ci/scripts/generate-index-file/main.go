@@ -65,7 +65,7 @@ func main() {
 
 	releaseInfo := release{
 		Name:      version,
-		Project:   "GitLab Runner - Custom Executor's autoscaling driver",
+		Project:   "Docker Machine (GitLab's fork)",
 		SourceURL: fmt.Sprintf("%s/tree/%s", os.Getenv("CI_PROJECT_URL"), ref),
 		Revision:  revision,
 		Ref:       ref,
