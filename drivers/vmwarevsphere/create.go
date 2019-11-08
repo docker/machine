@@ -88,13 +88,8 @@ func (d *Driver) postCreate(vm *object.VirtualMachine) error {
 	return d.Start()
 }
 
-func (d *Driver) createManual() error {
+func (d *Driver) createLegacy() error {
 	c, err := d.getSoapClient()
-	if err != nil {
-		return err
-	}
-
-	dss, err := d.finder.DatastoreOrDefault(d.getCtx(), d.Datastore)
 	if err != nil {
 		return err
 	}
@@ -102,7 +97,6 @@ func (d *Driver) createManual() error {
 	spec := types.VirtualMachineConfigSpec{
 		Name:     d.MachineName,
 		GuestId:  "otherLinux64Guest",
-		Files:    &types.VirtualMachineFileInfo{VmPathName: fmt.Sprintf("[%s]", dss.Name())},
 		NumCPUs:  int32(d.CPU),
 		MemoryMB: int64(d.Memory),
 	}
@@ -190,6 +184,15 @@ func (d *Driver) createManual() error {
 		}
 	}
 
+	ds, err := d.getDatastore(&spec)
+	if err != nil {
+		return err
+	}
+
+	spec.Files = &types.VirtualMachineFileInfo{
+		VmPathName: fmt.Sprintf("[%s]", ds.Name()),
+	}
+
 	task, err := folder.CreateVM(d.getCtx(), spec, d.resourcepool, d.hostsystem)
 	if err != nil {
 		return err
@@ -202,12 +205,12 @@ func (d *Driver) createManual() error {
 
 	log.Infof("Uploading Boot2docker ISO ...")
 	vm := object.NewVirtualMachine(c.Client, info.Result.(types.ManagedObjectReference))
-	vmPath, err := d.getFolder(vm)
+	vmPath, err := d.getVmFolder(vm)
 	if err != nil {
 		return err
 	}
 
-	dsurl, err := dss.URL(d.getCtx(), d.datacenter, filepath.Join(vmPath, isoFilename))
+	dsurl, err := ds.URL(d.getCtx(), d.datacenter, filepath.Join(vmPath, isoFilename))
 	if err != nil {
 		return err
 	}
@@ -222,18 +225,16 @@ func (d *Driver) createManual() error {
 	}
 
 	var add []types.BaseVirtualDevice
-
 	controller, err := devices.FindDiskController("scsi")
 	if err != nil {
 		return err
 	}
 
-	disk := devices.CreateDisk(controller, dss.Reference(),
-		dss.Path(fmt.Sprintf("%s/%s.vmdk", d.MachineName, d.MachineName)))
+	disk := devices.CreateDisk(controller, ds.Reference(),
+		ds.Path(fmt.Sprintf("%s/%s.vmdk", vmPath, d.MachineName)))
 
 	// Convert MB to KB
 	disk.CapacityInKB = int64(d.DiskSize) * 1024
-
 	add = append(add, disk)
 	ide, err := devices.FindIDEController("")
 	if err != nil {
@@ -245,8 +246,7 @@ func (d *Driver) createManual() error {
 		return err
 	}
 
-	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename))))
-
+	add = append(add, devices.InsertIso(cdrom, ds.Path(fmt.Sprintf("%s/%s", vmPath, isoFilename))))
 	if err := vm.AddDevice(d.getCtx(), add...); err != nil {
 		return err
 	}
@@ -273,11 +273,6 @@ func (d *Driver) createFromVmName() error {
 		return err
 	}
 
-	dss, err := d.finder.DatastoreOrDefault(d.getCtx(), d.Datastore)
-	if err != nil {
-		return err
-	}
-
 	var info *types.TaskInfo
 	ref := d.resourcepool.Reference()
 	spec := types.VirtualMachineCloneSpec{
@@ -286,11 +281,22 @@ func (d *Driver) createFromVmName() error {
 		},
 		Config: &types.VirtualMachineConfigSpec{
 			GuestId:  "otherLinux64Guest",
-			Files:    &types.VirtualMachineFileInfo{VmPathName: fmt.Sprintf("[%s]", dss.Name())},
 			NumCPUs:  int32(d.CPU),
 			MemoryMB: int64(d.Memory),
 		},
 	}
+
+	ds, err := d.getDatastore(spec.Config)
+	if err != nil {
+		return err
+	}
+
+	spec.Config.Files = &types.VirtualMachineFileInfo{
+		VmPathName: fmt.Sprintf("[%s]", ds.Name()),
+	}
+
+	dsref := ds.Reference()
+	spec.Location.Datastore = &dsref
 
 	vm2Clone, err := d.fetchVM(d.CloneFrom)
 	if err != nil {
@@ -301,8 +307,15 @@ func (d *Driver) createFromVmName() error {
 	if err != nil {
 		return err
 	}
+	folder := folders.VmFolder
+	if d.Folder != "" {
+		folder, err = d.finder.Folder(d.getCtx(), fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
+		if err != nil {
+			return err
+		}
+	}
 
-	task, err := vm2Clone.Clone(d.getCtx(), folders.VmFolder, d.MachineName, spec)
+	task, err := vm2Clone.Clone(d.getCtx(), folder, d.MachineName, spec)
 	if err != nil {
 		return err
 	}
@@ -323,11 +336,6 @@ func (d *Driver) createFromVmName() error {
 
 func (d *Driver) createFromLibraryName() error {
 	c, err := d.getSoapClient()
-	if err != nil {
-		return err
-	}
-
-	ds, err := d.finder.DatastoreOrDefault(d.getCtx(), d.Datastore)
 	if err != nil {
 		return err
 	}
@@ -372,6 +380,11 @@ func (d *Driver) createFromLibraryName() error {
 	hostId := ""
 	if d.hostsystem != nil {
 		hostId = d.hostsystem.Reference().Value
+	}
+
+	ds, err := d.getDatastore(&types.VirtualMachineConfigSpec{})
+	if err != nil {
+		return err
 	}
 
 	deploy := vcenter.Deploy{

@@ -26,23 +26,25 @@ func (d *Driver) cloudInit(vm *object.VirtualMachine) error {
 		return d.cloudInitGuestInfo(vm)
 	}
 
-	if err := d.createCloudInitIso(); err != nil {
-		return err
-	}
+	if d.CloudConfig == "" {
+		if err := d.createCloudInitIso(); err != nil {
+			return err
+		}
 
-	dss, err := d.finder.DatastoreOrDefault(d.getCtx(), d.Datastore)
-	if err != nil {
-		return err
-	}
+		ds, err := d.getVmDatastore(vm)
+		if err != nil {
+			return err
+		}
 
-	err = d.uploadCloudInitIso(vm, d.datacenter, dss)
-	if err != nil {
-		return err
-	}
+		err = d.uploadCloudInitIso(vm, d.datacenter, ds)
+		if err != nil {
+			return err
+		}
 
-	err = d.mountCloudInitIso(vm, d.datacenter, dss)
-	if err != nil {
-		return err
+		err = d.mountCloudInitIso(vm, d.datacenter, ds)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -78,13 +80,14 @@ func (d *Driver) cloudInitGuestInfo(vm *object.VirtualMachine) error {
 	return d.applyOpts(vm, opts)
 }
 
-func (d *Driver) uploadCloudInitIso(vm *object.VirtualMachine, dc *object.Datacenter, dss *object.Datastore) error {
-	path, err := d.getFolder(vm)
+func (d *Driver) uploadCloudInitIso(vm *object.VirtualMachine, dc *object.Datacenter, ds *object.Datastore) error {
+	log.Infof("Uploading cloud-init.iso")
+	path, err := d.getVmFolder(vm)
 	if err != nil {
 		return err
 	}
 
-	dsurl, err := dss.URL(d.getCtx(), dc, filepath.Join(path, isoName))
+	dsurl, err := ds.URL(d.getCtx(), dc, filepath.Join(path, isoName))
 	if err != nil {
 		return err
 	}
@@ -102,19 +105,20 @@ func (d *Driver) uploadCloudInitIso(vm *object.VirtualMachine, dc *object.Datace
 	return nil
 }
 
-func (d *Driver) removeCloudInitIso(vm *object.VirtualMachine, dc *object.Datacenter, dss *object.Datastore) error {
+func (d *Driver) removeCloudInitIso(vm *object.VirtualMachine, dc *object.Datacenter, ds *object.Datastore) error {
+	log.Infof("Removing cloud-init.iso")
 	c, err := d.getSoapClient()
 	if err != nil {
 		return err
 	}
 
-	path, err := d.getFolder(vm)
+	path, err := d.getVmFolder(vm)
 	if err != nil {
 		return err
 	}
 
 	m := object.NewFileManager(c.Client)
-	task, err := m.DeleteDatastoreFile(d.getCtx(), dss.Path(filepath.Join(path, isoName)), dc)
+	task, err := m.DeleteDatastoreFile(d.getCtx(), ds.Path(filepath.Join(path, isoName)), dc)
 	if err != nil {
 		return err
 	}
@@ -132,6 +136,7 @@ func (d *Driver) removeCloudInitIso(vm *object.VirtualMachine, dc *object.Datace
 }
 
 func (d *Driver) createCloudInitIso() error {
+	log.Infof("Creating cloud-init.iso")
 	//d.CloudConfig stat'ed and loaded in flag load.
 	sshkey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
@@ -224,7 +229,7 @@ func (d *Driver) mountCloudInitIso(vm *object.VirtualMachine, dc *object.Datacen
 		return err
 	}
 
-	path, err := d.getFolder(vm)
+	path, err := d.getVmFolder(vm)
 	if err != nil {
 		return err
 	}

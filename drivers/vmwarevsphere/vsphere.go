@@ -55,6 +55,7 @@ type Driver struct {
 	Tags                   []string
 	CustomAttributes       []string
 	Datastore              string
+	DatastoreCluster       string
 	Datacenter             string
 	Folder                 string
 	Pool                   string
@@ -270,10 +271,6 @@ func (d *Driver) PreCreateCheck() error {
 		}
 	}
 
-	if _, err := f.DatastoreOrDefault(d.getCtx(), d.Datastore); err != nil {
-		return err
-	}
-
 	if d.CreationType == "clone" && d.ContentLibrary == "" {
 		if _, err := d.fetchVM(d.CloneFrom); err != nil {
 			return fmt.Errorf("Error finding vm or template to clone: %s", err)
@@ -341,7 +338,7 @@ func (d *Driver) Create() error {
 		if err := b2dutils.CopyIsoToMachineDir(d.Boot2DockerURL, d.MachineName); err != nil {
 			return err
 		}
-		return d.createManual()
+		return d.createLegacy()
 	case "vm", "template", "libary":
 		if d.ContentLibrary != "" {
 			log.Infof("Creating VM from /%s/%s...", d.ContentLibrary, d.CloneFrom)
@@ -499,7 +496,7 @@ func (d *Driver) Remove() error {
 		}
 	}
 
-	dss, err := d.finder.DatastoreOrDefault(d.getCtx(), d.Datastore)
+	ds, err := d.getVmDatastore(vm)
 	if err != nil {
 		return err
 	}
@@ -508,7 +505,7 @@ func (d *Driver) Remove() error {
 	// Remove B2D Iso from VM folder
 	if d.CreationType == "default" {
 		m := object.NewFileManager(c.Client)
-		task, err = m.DeleteDatastoreFile(d.getCtx(), dss.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename)), d.datacenter)
+		task, err = m.DeleteDatastoreFile(d.getCtx(), ds.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename)), d.datacenter)
 		if err != nil {
 			return err
 		}
@@ -522,7 +519,7 @@ func (d *Driver) Remove() error {
 	}
 
 	if d.CloudConfig != "" {
-		if err = d.removeCloudInitIso(vm, d.datacenter, dss); err != nil {
+		if err = d.removeCloudInitIso(vm, d.datacenter, ds); err != nil {
 			return nil
 		}
 	}

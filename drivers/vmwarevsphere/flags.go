@@ -67,17 +67,22 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringSliceFlag{
 			EnvVar: "VSPHERE_NETWORK",
 			Name:   "vmwarevsphere-network",
-			Usage:  "vSphere network where the docker VM will be attached",
+			Usage:  "vSphere network where the virtual machine will be attached",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_DATASTORE",
 			Name:   "vmwarevsphere-datastore",
-			Usage:  "vSphere datastore for docker VM",
+			Usage:  "vSphere datastore for virtual machine",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "VSPHERE_DATASTORE_CLUSTER",
+			Name:   "vmwarevsphere-datastore-cluster",
+			Usage:  "vSphere datastore cluster for virtual machine",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_DATACENTER",
 			Name:   "vmwarevsphere-datacenter",
-			Usage:  "vSphere datacenter for docker VM",
+			Usage:  "vSphere datacenter for virtual machine",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_FOLDER",
@@ -199,6 +204,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Tags = flags.StringSlice("vmwarevsphere-tag")
 	d.CustomAttributes = flags.StringSlice("vmwarevsphere-custom-attribute")
 	d.Datastore = flags.String("vmwarevsphere-datastore")
+	d.DatastoreCluster = flags.String("vmwarevsphere-datastore-cluster")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	// Sanitize input on ingress.
 	d.Folder = strings.Trim(flags.String("vmwarevsphere-folder"), "/")
@@ -234,7 +240,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if d.CreationType != "legacy" {
 		d.CloneFrom = flags.String("vmwarevsphere-clone-from")
 		if d.CloneFrom == "" {
-			return fmt.Errorf("Creation type clone needs a VM name to clone from, use --vmwarevsphere-clone-from.")
+			return fmt.Errorf("creation type clone needs a VM name to clone from, use --vmwarevsphere-clone-from")
 		}
 	}
 

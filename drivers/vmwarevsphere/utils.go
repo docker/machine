@@ -10,9 +10,12 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/guest"
+	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vapi/library"
 	"github.com/vmware/govmomi/vapi/rest"
 	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 	"golang.org/x/net/context"
 )
@@ -33,6 +36,122 @@ func (d *Driver) remoteExec(procman *guest.ProcessManager, arg string) (int64, e
 	}
 
 	return code, nil
+}
+
+func (d *Driver) getDatastore(spec *types.VirtualMachineConfigSpec) (*object.Datastore, error) {
+	var sp *object.StoragePod
+	if d.DatastoreCluster != "" {
+		log.Infof("Finding datastore cluster %s", d.DatastoreCluster)
+		sp, err := d.finder.DatastoreCluster(d.getCtx(), d.DatastoreCluster)
+		if err != nil {
+			return nil, err
+		}
+
+		return d.recommendDatastore(sp, spec)
+	}
+
+	if d.Datastore != "" {
+		log.Infof("Finding datastore %s", d.Datastore)
+		return d.finder.Datastore(d.getCtx(), d.Datastore)
+	}
+
+	//nothing set, try default ds cluster then default ds
+	log.Infof("Finding default datastore cluster")
+	sp, err := d.finder.DefaultDatastoreCluster(d.getCtx())
+	if err != nil {
+		return nil, err
+	}
+
+	if sp != nil {
+		return d.recommendDatastore(sp, spec)
+	}
+
+	log.Infof("No default datastore cluster, finding default datastore")
+	return d.finder.DefaultDatastore(d.getCtx())
+}
+
+func (d *Driver) recommendDatastore(sp *object.StoragePod, spec *types.VirtualMachineConfigSpec) (*object.Datastore, error) {
+	// Build pod selection spec from config spec
+	spref := sp.Folder.Reference()
+	podSelectionSpec := types.StorageDrsPodSelectionSpec{
+		StoragePod: &spref,
+	}
+
+	// Keep list of disks that need to be placed
+	var disks []*types.VirtualDisk
+	// Collect disks eligible for placement
+	for _, deviceConfigSpec := range spec.DeviceChange {
+		s := deviceConfigSpec.GetVirtualDeviceConfigSpec()
+		if s.Operation != types.VirtualDeviceConfigSpecOperationAdd {
+			continue
+		}
+
+		if s.FileOperation != types.VirtualDeviceConfigSpecFileOperationCreate {
+			continue
+		}
+
+		d, ok := s.Device.(*types.VirtualDisk)
+		if !ok {
+			continue
+		}
+
+		podConfigForPlacement := types.VmPodConfigForPlacement{
+			StoragePod: spref,
+			Disk: []types.PodDiskLocator{
+				{
+					DiskId:          d.Key,
+					DiskBackingInfo: d.Backing,
+				},
+			},
+		}
+
+		podSelectionSpec.InitialVmConfig = append(podSelectionSpec.InitialVmConfig, podConfigForPlacement)
+		disks = append(disks, d)
+	}
+
+	rp := d.resourcepool.Reference()
+	sps := types.StoragePlacementSpec{
+		Type:             string(types.StoragePlacementSpecPlacementTypeCreate),
+		ResourcePool:     &rp,
+		PodSelectionSpec: podSelectionSpec,
+		ConfigSpec:       spec,
+	}
+
+	c, err := d.getSoapClient()
+	if err != nil {
+		return nil, err
+	}
+
+	srm := object.NewStorageResourceManager(c.Client)
+	result, err := srm.RecommendDatastores(d.getCtx(), sps)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use result to pin disks to recommended datastores
+	recs := result.Recommendations
+	if len(recs) == 0 {
+		return nil, fmt.Errorf("no datastore-cluster recommendations")
+	}
+
+	ds := recs[0].Action[0].(*types.StoragePlacementAction).Destination
+
+	var mds mo.Datastore
+	err = property.DefaultCollector(c.Client).RetrieveOne(d.getCtx(), ds, []string{"name"}, &mds)
+	if err != nil {
+		return nil, err
+	}
+
+	datastore := object.NewDatastore(c.Client, ds)
+	datastore.InventoryPath = mds.Name
+
+	// Apply recommendation to eligible disks
+	for _, disk := range disks {
+		backing := disk.Backing.(*types.VirtualDiskFlatVer2BackingInfo)
+		backing.Datastore = &ds
+	}
+
+	return datastore, nil
 }
 
 func (d *Driver) publicSSHKeyPath() string {

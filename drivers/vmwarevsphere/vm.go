@@ -15,7 +15,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-func (d *Driver) getFolder(vm *object.VirtualMachine) (string, error) {
+func (d *Driver) getVmFolder(vm *object.VirtualMachine) (string, error) {
 	var mvm mo.VirtualMachine
 	c, err := d.getSoapClient()
 	if err != nil {
@@ -32,6 +32,31 @@ func (d *Driver) getFolder(vm *object.VirtualMachine) (string, error) {
 	path := strings.Replace(sp[1], fmt.Sprintf("/%s.vmx", d.MachineName), "", 1)
 
 	return path, nil
+}
+
+func (d *Driver) getVmDatastore(vm *object.VirtualMachine) (*object.Datastore, error) {
+	var mvm mo.VirtualMachine
+	c, err := d.getSoapClient()
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.RetrieveOne(d.getCtx(), vm.Reference(), nil, &mvm)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(mvm.Datastore) == 0 {
+		return nil, fmt.Errorf("No datastores for this VM")
+	}
+
+	var ds mo.Datastore
+	err = c.RetrieveOne(d.getCtx(), mvm.Datastore[0], nil, &ds)
+	if err != nil {
+		return nil, err
+	}
+
+	return d.finder.Datastore(d.getCtx(), ds.Name) //convert mo to object
 }
 
 func (d *Driver) fetchVM(vmname string) (*object.VirtualMachine, error) {
@@ -98,7 +123,7 @@ func (d *Driver) addNetworks(vm *object.VirtualMachine, networks map[string]obje
 			return err
 		}
 
-		log.Infof("adding network: %s", netName)
+		log.Infof("Adding network: %s", netName)
 		add = append(add, netdev)
 	}
 
