@@ -87,17 +87,13 @@ func (d *Driver) uploadCloudInitIso(vm *object.VirtualMachine, dc *object.Datace
 		return err
 	}
 
-	dsurl, err := ds.URL(d.getCtx(), dc, filepath.Join(path, isoName))
-	if err != nil {
-		return err
-	}
-
 	p := soap.DefaultUpload
 	c, err := d.getSoapClient()
 	if err != nil {
 		return err
 	}
 
+	dsurl := ds.NewURL(filepath.Join(path, isoName))
 	if err = c.Client.UploadFile(d.getCtx(), d.ResolveStorePath(filepath.Join(isoDir, isoName)), dsurl, &p); err != nil {
 		return err
 	}

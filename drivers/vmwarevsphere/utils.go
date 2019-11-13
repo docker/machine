@@ -142,16 +142,13 @@ func (d *Driver) recommendDatastore(sp *object.StoragePod, spec *types.VirtualMa
 		return nil, err
 	}
 
-	datastore := object.NewDatastore(c.Client, ds)
-	datastore.InventoryPath = mds.Name
-
 	// Apply recommendation to eligible disks
 	for _, disk := range disks {
 		backing := disk.Backing.(*types.VirtualDiskFlatVer2BackingInfo)
 		backing.Datastore = &ds
 	}
 
-	return datastore, nil
+	return d.finder.Datastore(d.getCtx(), mds.Name)
 }
 
 func (d *Driver) publicSSHKeyPath() string {

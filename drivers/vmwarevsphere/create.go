@@ -210,10 +210,7 @@ func (d *Driver) createLegacy() error {
 		return err
 	}
 
-	dsurl, err := ds.URL(d.getCtx(), d.datacenter, filepath.Join(vmPath, isoFilename))
-	if err != nil {
-		return err
-	}
+	dsurl := ds.NewURL(filepath.Join(vmPath, isoFilename))
 	p := soap.DefaultUpload
 	if err = c.Client.UploadFile(d.getCtx(), d.ISO, dsurl, &p); err != nil {
 		return err
