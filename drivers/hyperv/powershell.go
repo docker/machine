@@ -85,7 +85,7 @@ func isAdministrator() (bool, error) {
 }
 
 func isHypervAdministrator() bool {
-	stdout, err := cmdOut(`@([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole("S-1-5-32-578")`)
+	stdout, err := cmdOut(`@([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(([System.Security.Principal.SecurityIdentifier]::new("S-1-5-32-578")))`)
 	if err != nil {
 		log.Debug(err)
 		return false
