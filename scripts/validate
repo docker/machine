@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+cd $(dirname $0)/..
+
+echo Running validation
+
+PACKAGES="$(go list ./...)"
+
+if ! command -v golangci-lint; then
+    echo Skipping validation: no golangci-lint available
+    exit
+fi
+
+echo Running validation
+
+echo Running: golangci-lint
+golangci-lint run --deadline 10m
+
+echo Running: go fmt
+test -z "$(go fmt ${PACKAGES} | tee /dev/stderr)"

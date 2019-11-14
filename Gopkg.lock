@@ -145,7 +145,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e53ebe53703cff15e552a8f6c024d9bc67af07ff0d1e6e0a77794099767fd528"
+  digest = "1:3ff9bb37abe2e06a0e6bcf041ad686961b9393f1e8738e57ba61fe2ae5f1b501"
   name = "github.com/diskfs/go-diskfs"
   packages = [
     "filesystem",
@@ -154,7 +154,7 @@
     "util",
   ]
   pruneopts = "UT"
-  revision = "fa9596b4c09d469e4e28be0da1069630d0afa55c"
+  revision = "6cf046d472d7e2ec4675232b3c596629b3f7b584"
 
 [[projects]]
   branch = "master"
@@ -435,6 +435,14 @@
   revision = "975617b05ea8a58727e6c1a06b6161ff4185a9f2"
 
 [[projects]]
+  digest = "1:b7b063b8125b7aeaf179aa4564ba60c896551d702f7c824ace98cc654fc813a0"
+  name = "gopkg.in/djherbis/times.v1"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "847c5208d8924cea0acea3376ff62aede93afe39"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -488,6 +496,7 @@
     "github.com/vmware/govmomi/find",
     "github.com/vmware/govmomi/guest",
     "github.com/vmware/govmomi/object",
+    "github.com/vmware/govmomi/property",
     "github.com/vmware/govmomi/vapi/library",
     "github.com/vmware/govmomi/vapi/library/finder",
     "github.com/vmware/govmomi/vapi/rest",

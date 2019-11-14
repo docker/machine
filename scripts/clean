@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+cd $(dirname $0)/..
+BASEDIR=$(pwd)
+
+rm -rf $BASEDIR/build
+rm -rf $BASEDIR/dist
+

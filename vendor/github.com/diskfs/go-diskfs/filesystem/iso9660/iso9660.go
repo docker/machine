@@ -465,9 +465,9 @@ func (fs *FileSystem) readDirectory(p string) ([]*directoryEntry, error) {
 
 func validateBlocksize(blocksize int64) error {
 	switch blocksize {
-	case 0, 512, 1024, 2048, 4096, 8192:
+	case 0, 2048, 4096, 8192:
 		return nil
 	default:
-		return fmt.Errorf("blocksize for ISO9660 must be one of 500, 512, 1024, 2048, 4096, 8192")
+		return fmt.Errorf("blocksize for ISO9660 must be one of 2048, 4096, 8192")
 	}
 }

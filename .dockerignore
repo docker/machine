@@ -1,4 +1,8 @@
 docker-machine*
+rancher-machine*
 *.log
-bin
 cover
+bin
+./bin
+./.dapper
+./dist
