@@ -26,28 +26,21 @@ func (d *Driver) cloudInit(vm *object.VirtualMachine) error {
 		return d.cloudInitGuestInfo(vm)
 	}
 
-	if d.CloudConfig == "" {
-		if err := d.createCloudInitIso(); err != nil {
-			return err
-		}
-
-		ds, err := d.getVmDatastore(vm)
-		if err != nil {
-			return err
-		}
-
-		err = d.uploadCloudInitIso(vm, d.datacenter, ds)
-		if err != nil {
-			return err
-		}
-
-		err = d.mountCloudInitIso(vm, d.datacenter, ds)
-		if err != nil {
-			return err
-		}
+	if err := d.createCloudInitIso(); err != nil {
+		return err
 	}
 
-	return nil
+	ds, err := d.getVmDatastore(vm)
+	if err != nil {
+		return err
+	}
+
+	err = d.uploadCloudInitIso(vm, d.datacenter, ds)
+	if err != nil {
+		return err
+	}
+
+	return d.mountCloudInitIso(vm, d.datacenter, ds)
 }
 
 func (d *Driver) cloudInitGuestInfo(vm *object.VirtualMachine) error {
