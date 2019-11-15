@@ -3,15 +3,15 @@ package commands
 import (
 	"testing"
 
-	"github.com/docker/machine/commands/commandstest"
-	"github.com/docker/machine/drivers/fakedriver"
-	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/libmachine/auth"
-	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/host"
-	"github.com/docker/machine/libmachine/libmachinetest"
-	"github.com/docker/machine/libmachine/provision"
-	"github.com/docker/machine/libmachine/swarm"
+	"github.com/rancher/machine/commands/commandstest"
+	"github.com/rancher/machine/drivers/fakedriver"
+	"github.com/rancher/machine/libmachine"
+	"github.com/rancher/machine/libmachine/auth"
+	"github.com/rancher/machine/libmachine/engine"
+	"github.com/rancher/machine/libmachine/host"
+	"github.com/rancher/machine/libmachine/libmachinetest"
+	"github.com/rancher/machine/libmachine/provision"
+	"github.com/rancher/machine/libmachine/swarm"
 	"github.com/stretchr/testify/assert"
 )
 

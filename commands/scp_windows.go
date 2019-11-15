@@ -5,7 +5,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/docker/machine/libmachine"
+	"github.com/rancher/machine/libmachine"
 )
 
 func cmdScp(c CommandLine, api libmachine.API) error {

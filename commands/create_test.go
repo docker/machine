@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"flag"
-	"github.com/docker/machine/commands/commandstest"
-	"github.com/docker/machine/libmachine/mcnflag"
+
+	"github.com/rancher/machine/commands/commandstest"
+	"github.com/rancher/machine/libmachine/mcnflag"
 	"github.com/stretchr/testify/assert"
 )
 

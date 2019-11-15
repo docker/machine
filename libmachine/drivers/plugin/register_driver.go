@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/docker/machine/libmachine/drivers"
-	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
-	"github.com/docker/machine/libmachine/drivers/rpc"
-	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/version"
+	"github.com/rancher/machine/libmachine/drivers"
+	"github.com/rancher/machine/libmachine/drivers/plugin/localbinary"
+	"github.com/rancher/machine/libmachine/drivers/rpc"
+	"github.com/rancher/machine/libmachine/log"
+	"github.com/rancher/machine/libmachine/version"
 )
 
 var (

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/docker/machine/libmachine/log"
+	"github.com/rancher/machine/libmachine/log"
 )
 
 // IsVTXDisabled checks if VT-X is disabled in the BIOS. If it is, the vm will fail to start.

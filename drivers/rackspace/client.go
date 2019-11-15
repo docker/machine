@@ -3,11 +3,11 @@ package rackspace
 import (
 	"fmt"
 
-	"github.com/docker/machine/drivers/openstack"
-	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/version"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/rackspace"
+	"github.com/rancher/machine/drivers/openstack"
+	"github.com/rancher/machine/libmachine/log"
+	"github.com/rancher/machine/libmachine/version"
 )
 
 func unsupportedOpErr(operation string) error {

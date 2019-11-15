@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/docker/machine/libmachine/log"
+	"github.com/rancher/machine/libmachine/log"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/guest"
 	"github.com/vmware/govmomi/object"

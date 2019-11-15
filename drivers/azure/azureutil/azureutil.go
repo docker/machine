@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/machine/drivers/azure/logutil"
-	"github.com/docker/machine/libmachine/log"
+	"github.com/rancher/machine/drivers/azure/logutil"
+	"github.com/rancher/machine/libmachine/log"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
 	"github.com/Azure/azure-sdk-for-go/arm/network"

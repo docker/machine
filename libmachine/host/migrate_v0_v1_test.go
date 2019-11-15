@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/libmachine/auth"
-	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/swarm"
+	"github.com/rancher/machine/commands/mcndirs"
+	"github.com/rancher/machine/libmachine/auth"
+	"github.com/rancher/machine/libmachine/engine"
+	"github.com/rancher/machine/libmachine/swarm"
 )
 
 func TestMigrateHostV0ToV1(t *testing.T) {
