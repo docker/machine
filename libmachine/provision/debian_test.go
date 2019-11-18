@@ -3,11 +3,11 @@ package provision
 import (
 	"testing"
 
-	"github.com/docker/machine/drivers/fakedriver"
-	"github.com/docker/machine/libmachine/auth"
-	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/provision/provisiontest"
-	"github.com/docker/machine/libmachine/swarm"
+	"github.com/rancher/machine/drivers/fakedriver"
+	"github.com/rancher/machine/libmachine/auth"
+	"github.com/rancher/machine/libmachine/engine"
+	"github.com/rancher/machine/libmachine/provision/provisiontest"
+	"github.com/rancher/machine/libmachine/swarm"
 )
 
 func TestDebianDefaultStorageDriver(t *testing.T) {

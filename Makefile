@@ -1,18 +1,15 @@
-# Plain make targets if not requested inside a container
-ifneq (,$(findstring test-integration,$(MAKECMDGOALS)))
-	include Makefile.inc
-	include mk/main.mk
-else ifneq ($(USE_CONTAINER), true)
-	include Makefile.inc
-	include mk/main.mk
-else
-# Otherwise, with docker, swallow all targets and forward into a container
-DOCKER_BUILD_DONE := ""
+TARGETS := $(shell ls scripts)
 
-test: .DEFAULT
+.dapper:
+	@echo Downloading dapper
+	@curl -sL https://releases.rancher.com/dapper/latest/dapper-`uname -s`-`uname -m` > .dapper.tmp
+	@@chmod +x .dapper.tmp
+	@./.dapper.tmp -v
+	@mv .dapper.tmp .dapper
 
-.DEFAULT:
-	@test ! -z "$(DOCKER_BUILD_DONE)" || ./script/build_in_container.sh $(MAKECMDGOALS)
-	$(eval DOCKER_BUILD_DONE := "done")
+$(TARGETS): .dapper
+	./.dapper $@
 
-endif
+.DEFAULT_GOAL := ci
+
+.PHONY: $(TARGETS)

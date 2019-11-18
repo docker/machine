@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/docker/machine/drivers/azure/logutil"
-	"github.com/docker/machine/libmachine/log"
+	"github.com/rancher/machine/drivers/azure/logutil"
+	"github.com/rancher/machine/libmachine/log"
 
 	"github.com/Azure/go-autorest/autorest/azure"
 )

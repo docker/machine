@@ -51,7 +51,7 @@ Refer to the [CHANGELOG](CHANGELOG.md) for version to version changes.
 
 ## Projects using govmomi
 
-* [Docker Machine](https://github.com/docker/machine/tree/master/drivers/vmwarevsphere)
+* [Docker Machine](https://github.com/rancher/machine/tree/master/drivers/vmwarevsphere)
 
 * [Docker InfraKit](https://github.com/docker/infrakit/tree/master/pkg/provider/vsphere)
 

@@ -3,8 +3,8 @@ package drivers
 import (
 	"testing"
 
-	"github.com/docker/machine/libmachine/mcnflag"
-	"github.com/docker/machine/libmachine/state"
+	"github.com/rancher/machine/libmachine/mcnflag"
+	"github.com/rancher/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
 

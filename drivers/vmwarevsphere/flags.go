@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/machine/libmachine/drivers"
-	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/rancher/machine/libmachine/drivers"
+	"github.com/rancher/machine/libmachine/mcnflag"
 	"github.com/vmware/govmomi/vim25/types"
 )
 

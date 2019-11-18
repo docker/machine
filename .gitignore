@@ -1,5 +1,8 @@
 *.log
 *.iml
 .idea/
-./bin
+/bin
 cover
+/.dapper
+/dist
+*.swp

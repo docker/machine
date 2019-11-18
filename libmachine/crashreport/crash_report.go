@@ -16,9 +16,9 @@ import (
 	"io/ioutil"
 
 	"github.com/bugsnag/bugsnag-go"
-	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/shell"
-	"github.com/docker/machine/version"
+	"github.com/rancher/machine/libmachine/log"
+	"github.com/rancher/machine/libmachine/shell"
+	"github.com/rancher/machine/version"
 )
 
 const (
@@ -76,7 +76,7 @@ func (r *BugsnagCrashReporter) Send(err CrashError) error {
 		// XXX we need to abuse bugsnag metrics to get the OS/ARCH information as a usable filter
 		// Can do that with either "stage" or "hostname"
 		ReleaseStage:    fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH),
-		ProjectPackages: []string{"github.com/docker/machine/[^v]*"},
+		ProjectPackages: []string{"github.com/rancher/machine/[^v]*"},
 		AppVersion:      version.FullVersion(),
 		Synchronous:     true,
 		PanicHandler:    func() {},

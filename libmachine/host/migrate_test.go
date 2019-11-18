@@ -3,8 +3,8 @@ package host
 import (
 	"testing"
 
-	"github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/libmachine/auth"
+	"github.com/rancher/machine/drivers/none"
+	"github.com/rancher/machine/libmachine/auth"
 	"github.com/stretchr/testify/assert"
 )
 

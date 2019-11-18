@@ -3,7 +3,7 @@ package vmwarevcloudair
 import (
 	"testing"
 
-	"github.com/docker/machine/libmachine/drivers"
+	"github.com/rancher/machine/libmachine/drivers"
 	"github.com/stretchr/testify/assert"
 )
 

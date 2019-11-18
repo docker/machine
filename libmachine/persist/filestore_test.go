@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/libmachine/host"
-	"github.com/docker/machine/libmachine/hosttest"
+	"github.com/rancher/machine/commands/mcndirs"
+	"github.com/rancher/machine/drivers/none"
+	"github.com/rancher/machine/libmachine/host"
+	"github.com/rancher/machine/libmachine/hosttest"
 )
 
 func cleanup() {

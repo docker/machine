@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -9,24 +10,21 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
-	"errors"
-
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/machine/commands/mcndirs"
-	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/libmachine/auth"
-	"github.com/docker/machine/libmachine/crashreport"
-	"github.com/docker/machine/libmachine/drivers"
-	"github.com/docker/machine/libmachine/drivers/rpc"
-	"github.com/docker/machine/libmachine/engine"
-	"github.com/docker/machine/libmachine/host"
-	"github.com/docker/machine/libmachine/log"
-	"github.com/docker/machine/libmachine/mcnerror"
-	"github.com/docker/machine/libmachine/mcnflag"
-	"github.com/docker/machine/libmachine/swarm"
+	"github.com/rancher/machine/commands/mcndirs"
+	"github.com/rancher/machine/libmachine"
+	"github.com/rancher/machine/libmachine/auth"
+	"github.com/rancher/machine/libmachine/crashreport"
+	"github.com/rancher/machine/libmachine/drivers"
+	rpcdriver "github.com/rancher/machine/libmachine/drivers/rpc"
+	"github.com/rancher/machine/libmachine/engine"
+	"github.com/rancher/machine/libmachine/host"
+	"github.com/rancher/machine/libmachine/log"
+	"github.com/rancher/machine/libmachine/mcnerror"
+	"github.com/rancher/machine/libmachine/mcnflag"
+	"github.com/rancher/machine/libmachine/swarm"
 )
 
 var (

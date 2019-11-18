@@ -3,10 +3,10 @@ package host
 import (
 	"testing"
 
-	"github.com/docker/machine/drivers/fakedriver"
-	_ "github.com/docker/machine/drivers/none"
-	"github.com/docker/machine/libmachine/provision"
-	"github.com/docker/machine/libmachine/state"
+	"github.com/rancher/machine/drivers/fakedriver"
+	_ "github.com/rancher/machine/drivers/none"
+	"github.com/rancher/machine/libmachine/provision"
+	"github.com/rancher/machine/libmachine/state"
 )
 
 func TestValidateHostnameValid(t *testing.T) {

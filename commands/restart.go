@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/docker/machine/libmachine"
-	"github.com/docker/machine/libmachine/log"
+	"github.com/rancher/machine/libmachine"
+	"github.com/rancher/machine/libmachine/log"
 )
 
 func cmdRestart(c CommandLine, api libmachine.API) error {

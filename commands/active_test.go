@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	"github.com/docker/machine/libmachine/state"
+	"github.com/rancher/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
 )
 
