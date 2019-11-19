@@ -5,4 +5,7 @@ set -e
 cd $(dirname $0)/..
 BASEDIR=$(pwd)
 mkdir -p $BASEDIR/dist/artifacts
-tar -cvzf $BASEDIR/dist/artifacts/rancher-machine-${ARCH}.tar.gz ./bin/rancher-machine
+
+cd $BASEDIR/bin
+tar -cvzf $BASEDIR/dist/artifacts/rancher-machine-${ARCH}.tar.gz rancher-machine
+cd $BASEDIR
