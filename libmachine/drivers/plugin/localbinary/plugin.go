@@ -104,7 +104,7 @@ func driverPath(driverName string) string {
 				return os.Args[0]
 			}
 
-			return "docker-machine"
+			return "rancher-machine"
 		}
 	}
 
