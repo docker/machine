@@ -48,6 +48,7 @@ const (
 const (
 	keypairNotFoundCode             = "InvalidKeyPair.NotFound"
 	spotInstanceRequestNotFoundCode = "InvalidSpotInstanceRequestID.NotFound"
+	spotFleetRequestNotFoundCode    = "InvalidSpotFleetRequestID.NotFound"
 )
 
 var (
@@ -87,32 +88,36 @@ type Driver struct {
 	SecurityGroupName  string
 	SecurityGroupNames []string
 
-	SecurityGroupReadOnly   bool
-	OpenPorts               []string
-	Tags                    string
-	ReservationId           string
-	DeviceName              string
-	RootSize                int64
-	VolumeType              string
-	IamInstanceProfile      string
-	VpcId                   string
-	SubnetId                string
-	Zone                    string
-	keyPath                 string
-	RequestSpotInstance     bool
-	SpotPrice               string
-	BlockDurationMinutes    int64
-	PrivateIPOnly           bool
-	UsePrivateIP            bool
-	UseEbsOptimizedInstance bool
-	Monitoring              bool
-	SSHPrivateKeyPath       string
-	RetryCount              int
-	Endpoint                string
-	DisableSSL              bool
-	UserDataFile            string
+	SecurityGroupReadOnly      bool
+	OpenPorts                  []string
+	Tags                       string
+	ReservationId              string
+	DeviceName                 string
+	RootSize                   int64
+	VolumeType                 string
+	IamInstanceProfile         string
+	VpcId                      string
+	SubnetIds                  []string
+	Zone                       string
+	UseDefaultNetworkInterface bool
+	keyPath                    string
+	RequestSpotInstance        bool
+	RequestSpotFleet           bool
+	SpotPrice                  string
+	IamFleetRole               string
+	BlockDurationMinutes       int64
+	PrivateIPOnly              bool
+	UsePrivateIP               bool
+	UseEbsOptimizedInstance    bool
+	Monitoring                 bool
+	SSHPrivateKeyPath          string
+	RetryCount                 int
+	Endpoint                   string
+	DisableSSL                 bool
+	UserDataFile               string
 
-	spotInstanceRequestId string
+	SpotInstanceRequestId string
+	SpotFleetRequestId    string
 }
 
 type clientFactory interface {
@@ -158,7 +163,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  defaultZone,
 			EnvVar: "AWS_ZONE",
 		},
-		mcnflag.StringFlag{
+		mcnflag.StringSliceFlag{
 			Name:   "amazonec2-subnet-id",
 			Usage:  "AWS VPC subnet id",
 			EnvVar: "AWS_SUBNET_ID",
@@ -228,10 +233,19 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "amazonec2-request-spot-instance",
 			Usage: "Set this flag to request spot instance",
 		},
+		mcnflag.BoolFlag{
+			Name:  "amazonec2-request-spot-fleet",
+			Usage: "Set this flag to request spot fleet",
+		},
 		mcnflag.StringFlag{
 			Name:  "amazonec2-spot-price",
 			Usage: "AWS spot instance bid price (in dollar)",
 			Value: defaultSpotPrice,
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-iam-fleet-role",
+			Usage:  "IAM Spot Fleet Role",
+			EnvVar: "AWS_IAM_FLEET_ROLE",
 		},
 		mcnflag.IntFlag{
 			Name:  "amazonec2-block-duration-minutes",
@@ -279,6 +293,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "amazonec2-insecure-transport",
 			Usage:  "Disable SSL when sending requests",
 			EnvVar: "AWS_INSECURE_TRANSPORT",
+		},
+		mcnflag.BoolFlag{
+			Name:   "amazonec2-use-default-network-interface",
+			Usage:  "Use default NetworkInterface",
+			EnvVar: "AWS_USE_DEFAULT_NETWORK_INTERFACE",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-userdata",
@@ -356,11 +375,13 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Region = region
 	d.AMI = image
 	d.RequestSpotInstance = flags.Bool("amazonec2-request-spot-instance")
+	d.RequestSpotFleet = flags.Bool("amazonec2-request-spot-fleet")
 	d.SpotPrice = flags.String("amazonec2-spot-price")
+	d.IamFleetRole = flags.String("amazonec2-iam-fleet-role")
 	d.BlockDurationMinutes = int64(flags.Int("amazonec2-block-duration-minutes"))
 	d.InstanceType = flags.String("amazonec2-instance-type")
 	d.VpcId = flags.String("amazonec2-vpc-id")
-	d.SubnetId = flags.String("amazonec2-subnet-id")
+	d.SubnetIds = flags.StringSlice("amazonec2-subnet-id")
 	d.SecurityGroupNames = flags.StringSlice("amazonec2-security-group")
 	d.SecurityGroupReadOnly = flags.Bool("amazonec2-security-group-readonly")
 	d.Tags = flags.String("amazonec2-tags")
@@ -382,6 +403,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SetSwarmConfigFromFlags(flags)
 	d.RetryCount = flags.Int("amazonec2-retries")
 	d.OpenPorts = flags.StringSlice("amazonec2-open-port")
+	d.UseDefaultNetworkInterface = flags.Bool("amazonec2-use-default-network-interface")
 	d.UserDataFile = flags.String("amazonec2-userdata")
 
 	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
@@ -406,15 +428,17 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		}
 	}
 
-	if d.SubnetId == "" && d.VpcId == "" {
+	if d.VpcId == "" {
 		return errorNoVPCIdFound
 	}
 
-	if d.SubnetId != "" && d.VpcId != "" {
+	for i := range d.SubnetIds {
+		log.Debugf("Veryfing that the subnet %s is in VPC %s", d.SubnetIds[i], d.VpcId)
+
 		subnetFilter := []*ec2.Filter{
 			{
 				Name:   aws.String("subnet-id"),
-				Values: []*string{&d.SubnetId},
+				Values: []*string{&d.SubnetIds[i]},
 			},
 		}
 
@@ -430,7 +454,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		}
 
 		if *subnets.Subnets[0].VpcId != d.VpcId {
-			return fmt.Errorf("SubnetId: %s does not belong to VpcId: %s", d.SubnetId, d.VpcId)
+			return fmt.Errorf("SubnetId: %s does not belong to VpcId: %s", d.SubnetIds[i], d.VpcId)
 		}
 	}
 
@@ -491,7 +515,9 @@ func (d *Driver) checkPrereqs() error {
 	}
 
 	regionZone := d.getRegionZone()
-	if d.SubnetId == "" {
+	if len(d.SubnetIds) == 0 {
+		log.Debugf("No subnets specified, trying to autodetect from AZ %s and VPC %s", &regionZone, &d.VpcId)
+
 		filters := []*ec2.Filter{
 			{
 				Name:   aws.String("availability-zone"),
@@ -514,16 +540,35 @@ func (d *Driver) checkPrereqs() error {
 			return fmt.Errorf("unable to find a subnet that is both in the zone %s and belonging to VPC ID %s", regionZone, d.VpcId)
 		}
 
-		d.SubnetId = *subnets.Subnets[0].SubnetId
+		d.SubnetIds = []string{
+			*subnets.Subnets[0].SubnetId,
+		}
 
 		// try to find default
 		if len(subnets.Subnets) > 1 {
 			for _, subnet := range subnets.Subnets {
 				if subnet.DefaultForAz != nil && *subnet.DefaultForAz {
-					d.SubnetId = *subnet.SubnetId
+					d.SubnetIds = []string{
+						*subnet.SubnetId,
+					}
 					break
 				}
 			}
+		}
+	}
+
+	if d.RequestSpotFleet {
+		if d.IamFleetRole == "" {
+			return fmt.Errorf("RequestSpotFleet requires IamFleetRole")
+		}
+
+		if len(d.SubnetIds) == 0 {
+			return fmt.Errorf("Please specify at least one subnetId")
+		}
+
+	} else {
+		if len(d.SubnetIds) != 1 {
+			return fmt.Errorf("Please specify only one subnetId")
 		}
 	}
 
@@ -625,19 +670,28 @@ func (d *Driver) innerCreate() error {
 			DeleteOnTermination: aws.Bool(true),
 		},
 	}
-	netSpecs := []*ec2.InstanceNetworkInterfaceSpecification{{
-		DeviceIndex:              aws.Int64(0), // eth0
-		Groups:                   makePointerSlice(d.securityGroupIds()),
-		SubnetId:                 &d.SubnetId,
-		AssociatePublicIpAddress: aws.Bool(!d.PrivateIPOnly),
-	}}
-
-	regionZone := d.getRegionZone()
-	log.Debugf("launching instance in subnet %s", d.SubnetId)
 
 	var instance *ec2.Instance
 
 	if d.RequestSpotInstance {
+		var netSpecs []*ec2.InstanceNetworkInterfaceSpecification = nil
+		var securityGroupIds []*string = nil
+		var subnetId *string = nil
+		if !d.UseDefaultNetworkInterface {
+			netSpecs = []*ec2.InstanceNetworkInterfaceSpecification{{
+				DeviceIndex:              aws.Int64(0), // eth0
+				Groups:                   makePointerSlice(d.securityGroupIds()),
+				SubnetId:                 &d.SubnetIds[0],
+				AssociatePublicIpAddress: aws.Bool(!d.PrivateIPOnly),
+			}}
+		} else {
+			securityGroupIds = makePointerSlice(d.securityGroupIds())
+			subnetId = &d.SubnetIds[0]
+		}
+
+		regionZone := d.getRegionZone()
+		log.Debugf("launching spot instance in subnet %s", d.SubnetIds[0])
+
 		req := ec2.RequestSpotInstancesInput{
 			LaunchSpecification: &ec2.RequestSpotLaunchSpecification{
 				ImageId: &d.AMI,
@@ -647,6 +701,8 @@ func (d *Driver) innerCreate() error {
 				KeyName:           &d.KeyName,
 				InstanceType:      &d.InstanceType,
 				NetworkInterfaces: netSpecs,
+				SecurityGroupIds:  securityGroupIds,
+				SubnetId:          subnetId,
 				Monitoring:        &ec2.RunInstancesMonitoringEnabled{Enabled: aws.Bool(d.Monitoring)},
 				IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 					Name: &d.IamInstanceProfile,
@@ -666,13 +722,13 @@ func (d *Driver) innerCreate() error {
 		if err != nil {
 			return fmt.Errorf("Error request spot instance: %s", err)
 		}
-		d.spotInstanceRequestId = *spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId
+		d.SpotInstanceRequestId = *spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId
 
 		log.Info("Waiting for spot instance...")
 		for i := 0; i < 3; i++ {
 			// AWS eventual consistency means we could not have SpotInstanceRequest ready yet
 			err = d.getClient().WaitUntilSpotInstanceRequestFulfilled(&ec2.DescribeSpotInstanceRequestsInput{
-				SpotInstanceRequestIds: []*string{&d.spotInstanceRequestId},
+				SpotInstanceRequestIds: []*string{&d.SpotInstanceRequestId},
 			})
 			if err != nil {
 				if awsErr, ok := err.(awserr.Error); ok {
@@ -685,7 +741,7 @@ func (d *Driver) innerCreate() error {
 			}
 			break
 		}
-		log.Infof("Created spot instance request %v", d.spotInstanceRequestId)
+		log.Infof("Created spot instance request %v", d.SpotInstanceRequestId)
 		// resolve instance id
 		for i := 0; i < 3; i++ {
 			// Even though the waiter succeeded, eventual consistency means we could
@@ -693,7 +749,7 @@ func (d *Driver) innerCreate() error {
 			// few times just in case
 			var resolvedSpotInstance *ec2.DescribeSpotInstanceRequestsOutput
 			resolvedSpotInstance, err = d.getClient().DescribeSpotInstanceRequests(&ec2.DescribeSpotInstanceRequestsInput{
-				SpotInstanceRequestIds: []*string{&d.spotInstanceRequestId},
+				SpotInstanceRequestIds: []*string{&d.SpotInstanceRequestId},
 			})
 			if err != nil {
 				// Unexpected; no need to retry
@@ -719,7 +775,157 @@ func (d *Driver) innerCreate() error {
 		if err != nil {
 			return fmt.Errorf("Error resolving spot instance to real instance: %v", err)
 		}
+
+	} else if d.RequestSpotFleet {
+		var securityGroupIds = makePointerSlice(d.securityGroupIds())
+		var securityGroups = []*ec2.GroupIdentifier{}
+		for i := range securityGroupIds {
+			securityGroups = append(securityGroups, &ec2.GroupIdentifier{
+				GroupId: securityGroupIds[i],
+			})
+		}
+
+		var subnetId = strings.Join(d.SubnetIds,",")
+		log.Debugf("launching spot fleet in subnet [%s]", subnetId)
+
+		var validUntil = time.Now().AddDate(1, 0, 0);
+		req := ec2.RequestSpotFleetInput{
+			DryRun: aws.Bool(false),
+			SpotFleetRequestConfig: &ec2.SpotFleetRequestConfigData{
+				AllocationStrategy: aws.String("lowestPrice"),
+				TargetCapacity: aws.Int64(1),
+				ValidUntil: &validUntil,
+				TerminateInstancesWithExpiration: aws.Bool(true),
+				IamFleetRole: &d.IamFleetRole,
+				Type: aws.String("request"),
+				LaunchSpecifications: []*ec2.SpotFleetLaunchSpecification{
+					{
+						ImageId: &d.AMI,
+						InstanceType: &d.InstanceType,
+						SubnetId: &subnetId,
+						Monitoring: &ec2.SpotFleetMonitoring{Enabled: aws.Bool(d.Monitoring)},
+						KeyName: &d.KeyName,
+						EbsOptimized: &d.UseEbsOptimizedInstance,
+						BlockDeviceMappings: []*ec2.BlockDeviceMapping{bdm},
+						UserData: &userdata,
+						SecurityGroups: securityGroups,
+					},
+				},
+			},
+		}
+		if d.SpotPrice != "" {
+			req.SpotFleetRequestConfig.SpotPrice = &d.SpotPrice;
+			req.SpotFleetRequestConfig.LaunchSpecifications[0].SpotPrice = &d.SpotPrice;
+		}
+
+		spotFleetRequest, err := d.getClient().RequestSpotFleet(&req)
+		if err != nil {
+			return fmt.Errorf("Error request spot instance: %s", err)
+		}
+		d.SpotFleetRequestId = *spotFleetRequest.SpotFleetRequestId
+		log.Infof("Created spot fleet request %s ...", d.SpotFleetRequestId)
+
+		var spotInstanceRequestId *string = nil
+		for i := 0; i < 3; i++ {
+			// AWS eventual consistency means we could not have SpotInstanceRequest ready yet
+			var resolvedSpotFleetInstance *ec2.DescribeSpotFleetInstancesOutput
+			resolvedSpotFleetInstance, err = d.getClient().DescribeSpotFleetInstances(&ec2.DescribeSpotFleetInstancesInput{
+				SpotFleetRequestId: &d.SpotFleetRequestId,
+			})
+
+			if err != nil {
+				if awsErr, ok := err.(awserr.Error); ok {
+					if awsErr.Code() == spotFleetRequestNotFoundCode {
+						time.Sleep(5 * time.Second)
+						continue
+					}
+				}
+				return fmt.Errorf("Error fulfilling spot fleet request: %v", err)
+			}
+
+			if len(resolvedSpotFleetInstance.ActiveInstances) == 0 {
+				continue;
+			}
+
+			spotInstanceRequestId = resolvedSpotFleetInstance.ActiveInstances[0].SpotInstanceRequestId
+			if spotInstanceRequestId == nil {
+				continue;
+			}
+
+			break
+		}
+
+		log.Debugf("Waiting for spot instance %s ...", spotInstanceRequestId)
+		for i := 0; i < 3; i++ {
+			// AWS eventual consistency means we could not have SpotInstanceRequest ready yet
+			err = d.getClient().WaitUntilSpotInstanceRequestFulfilled(&ec2.DescribeSpotInstanceRequestsInput{
+				SpotInstanceRequestIds: []*string{spotInstanceRequestId},
+			})
+			if err != nil {
+				if awsErr, ok := err.(awserr.Error); ok {
+					if awsErr.Code() == spotInstanceRequestNotFoundCode {
+						time.Sleep(5 * time.Second)
+						continue
+					}
+				}
+				return fmt.Errorf("Error fulfilling spot request: %v", err)
+			}
+			break
+		}
+		log.Debugf("Spot instance request fulfilled %s", spotInstanceRequestId)
+
+		log.Debug("Resolving instance id")
+		for i := 0; i < 3; i++ {
+			// Even though the waiter succeeded, eventual consistency means we could
+			// get a describe output that does not include this information. Try a few times just in case
+			var resolvedSpotInstance *ec2.DescribeSpotInstanceRequestsOutput
+			resolvedSpotInstance, err = d.getClient().DescribeSpotInstanceRequests(&ec2.DescribeSpotInstanceRequestsInput{
+				SpotInstanceRequestIds: []*string{spotInstanceRequestId},
+			})
+			if err != nil {
+				// Unexpected; no need to retry
+				return fmt.Errorf("Error describing previously made spot instance request: %v", err)
+			}
+			maybeInstanceId := resolvedSpotInstance.SpotInstanceRequests[0].InstanceId
+			if maybeInstanceId != nil {
+				var instances *ec2.DescribeInstancesOutput
+				instances, err = d.getClient().DescribeInstances(&ec2.DescribeInstancesInput{
+					InstanceIds: []*string{maybeInstanceId},
+				})
+				if err != nil {
+					// Retry if we get an id from spot instance but EC2 doesn't recognize it yet; see above, eventual consistency possible
+					continue
+				}
+				instance = instances.Reservations[0].Instances[0]
+				err = nil
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
+
+		if err != nil {
+			return fmt.Errorf("Error resolving spot fleet to real instance: %v", err)
+		}
+
 	} else {
+		var netSpecs []*ec2.InstanceNetworkInterfaceSpecification = nil
+		var securityGroupIds []*string = nil
+		var subnetId *string = nil
+		if !d.UseDefaultNetworkInterface {
+			netSpecs = []*ec2.InstanceNetworkInterfaceSpecification{{
+				DeviceIndex:              aws.Int64(0), // eth0
+				Groups:                   makePointerSlice(d.securityGroupIds()),
+				SubnetId:                 &d.SubnetIds[0],
+				AssociatePublicIpAddress: aws.Bool(!d.PrivateIPOnly),
+			}}
+		} else {
+			securityGroupIds = makePointerSlice(d.securityGroupIds())
+			subnetId = &d.SubnetIds[0]
+		}
+
+		regionZone := d.getRegionZone()
+		log.Debugf("launching instance in subnet %s", d.SubnetIds[0])
+
 		inst, err := d.getClient().RunInstances(&ec2.RunInstancesInput{
 			ImageId:  &d.AMI,
 			MinCount: aws.Int64(1),
@@ -730,6 +936,8 @@ func (d *Driver) innerCreate() error {
 			KeyName:           &d.KeyName,
 			InstanceType:      &d.InstanceType,
 			NetworkInterfaces: netSpecs,
+			SecurityGroupIds:  securityGroupIds,
+			SubnetId:          subnetId,
 			Monitoring:        &ec2.RunInstancesMonitoringEnabled{Enabled: aws.Bool(d.Monitoring)},
 			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 				Name: &d.IamInstanceProfile,
@@ -900,13 +1108,23 @@ func (d *Driver) Remove() error {
 		Errs: []error{},
 	}
 
-	if err := d.terminate(); err != nil {
-		multierr.Errs = append(multierr.Errs, err)
+	if !d.RequestSpotFleet {
+		if err := d.terminate(); err != nil {
+			multierr.Errs = append(multierr.Errs, err)
+		}
+	}
+
+	// In case of failure waiting for a SpotInstance, we must cancel the unfulfilled request, otherwise an instance may be created later.
+	// If the instance was created, terminating it will be enough for canceling the SpotFleetRequest
+	if d.RequestSpotFleet && d.SpotFleetRequestId != "" {
+		if err := d.cancelSpotFleetRequest(); err != nil {
+			multierr.Errs = append(multierr.Errs, err)
+		}
 	}
 
 	// In case of failure waiting for a SpotInstance, we must cancel the unfulfilled request, otherwise an instance may be created later.
 	// If the instance was created, terminating it will be enough for canceling the SpotInstanceRequest
-	if d.RequestSpotInstance && d.spotInstanceRequestId != "" {
+	if d.RequestSpotInstance && d.SpotInstanceRequestId != "" {
 		if err := d.cancelSpotInstanceRequest(); err != nil {
 			multierr.Errs = append(multierr.Errs, err)
 		}
@@ -925,10 +1143,23 @@ func (d *Driver) Remove() error {
 	return multierr
 }
 
+func (d *Driver) cancelSpotFleetRequest() error {
+	log.Debugf("Canceling SpotFleet request %s ...", d.SpotFleetRequestId)
+
+	_, err := d.getClient().CancelSpotFleetRequests(&ec2.CancelSpotFleetRequestsInput{
+		SpotFleetRequestIds: []*string{&d.SpotFleetRequestId},
+		TerminateInstances: aws.Bool(true),
+	})
+
+	return err
+}
+
 func (d *Driver) cancelSpotInstanceRequest() error {
+	log.Debugf("Canceling Spot request %s ...", d.SpotInstanceRequestId)
+
 	// NB: Canceling a Spot instance request does not terminate running Spot instances associated with the request
 	_, err := d.getClient().CancelSpotInstanceRequests(&ec2.CancelSpotInstanceRequestsInput{
-		SpotInstanceRequestIds: []*string{&d.spotInstanceRequestId},
+		SpotInstanceRequestIds: []*string{&d.SpotInstanceRequestId},
 	})
 
 	return err
@@ -1244,6 +1475,8 @@ func (d *Driver) deleteKeyPair() error {
 }
 
 func (d *Driver) getDefaultVPCId() (string, error) {
+	log.Debug("Trying to autodetect default VPC")
+
 	output, err := d.getClient().DescribeAccountAttributes(&ec2.DescribeAccountAttributesInput{})
 	if err != nil {
 		return "", err
