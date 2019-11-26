@@ -37,6 +37,7 @@ const (
 	defaultDeviceName           = "/dev/sda1"
 	defaultRootSize             = 16
 	defaultVolumeType           = "gp2"
+	defaultVolumeIOPS           = 100
 	defaultZone                 = "a"
 	defaultSecurityGroup        = machineSecurityGroupName
 	defaultSSHPort              = 22
@@ -94,6 +95,7 @@ type Driver struct {
 	DeviceName              string
 	RootSize                int64
 	VolumeType              string
+	VolumeIops              int64
 	IamInstanceProfile      string
 	VpcId                   string
 	SubnetId                string
@@ -206,6 +208,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Amazon EBS volume type",
 			Value:  defaultVolumeType,
 			EnvVar: "AWS_VOLUME_TYPE",
+		},
+		mcnflag.IntFlag{
+			Name:   "amazonec2-volume-iops",
+			Usage:  "Amazon EBS volume IOPS",
+			Value:  defaultVolumeIOPS,
+			EnvVar: "AWS_VOLUME_IOPS",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-iam-instance-profile",
@@ -369,6 +377,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DeviceName = flags.String("amazonec2-device-name")
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
 	d.VolumeType = flags.String("amazonec2-volume-type")
+	d.VolumeIops = int64(flags.Int("amazonec2-volume-iops"))
 	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = flags.Int("amazonec2-ssh-port")
@@ -617,13 +626,24 @@ func (d *Driver) innerCreate() error {
 		userdata = b64
 	}
 
-	bdm := &ec2.BlockDeviceMapping{
-		DeviceName: aws.String(d.DeviceName),
-		Ebs: &ec2.EbsBlockDevice{
+	var ebs *ec2.EbsBlockDevice
+	if d.VolumeType == "io1" {
+		ebs = &ec2.EbsBlockDevice{
+			VolumeSize:          aws.Int64(d.RootSize),
+			VolumeType:          aws.String(d.VolumeType),
+			Iops:                aws.Int64(d.VolumeIops),
+			DeleteOnTermination: aws.Bool(true),
+		}
+	} else {
+		ebs = &ec2.EbsBlockDevice{
 			VolumeSize:          aws.Int64(d.RootSize),
 			VolumeType:          aws.String(d.VolumeType),
 			DeleteOnTermination: aws.Bool(true),
-		},
+		}
+	}
+	bdm := &ec2.BlockDeviceMapping{
+		DeviceName: aws.String(d.DeviceName),
+		Ebs:        ebs,
 	}
 	netSpecs := []*ec2.InstanceNetworkInterfaceSpecification{{
 		DeviceIndex:              aws.Int64(0), // eth0
