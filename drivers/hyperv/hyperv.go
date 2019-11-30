@@ -205,12 +205,14 @@ func (d *Driver) Create() error {
 	}
 
 	log.Infof("Creating VM...")
-	virtualSwitch, err := d.chooseVirtualSwitch()
-	if err != nil {
-		return err
+	if d.VSwitch == "" {
+		defaultVSwitch, err := d.chooseVirtualSwitch()
+		if err != nil {
+			return err
+		}
+		d.VSwitch = defaultVSwitch
 	}
-
-	log.Infof("Using switch %q", virtualSwitch)
+	log.Infof("Using switch %q", d.VSwitch)
 
 	diskImage, err := d.generateDiskImage()
 	if err != nil {
@@ -220,7 +222,7 @@ func (d *Driver) Create() error {
 	if err := cmd("Hyper-V\\New-VM",
 		d.MachineName,
 		"-Path", fmt.Sprintf("'%s'", d.ResolveStorePath(".")),
-		"-SwitchName", quote(virtualSwitch),
+		"-SwitchName", quote(d.VSwitch),
 		"-MemoryStartupBytes", toMb(d.MemSize)); err != nil {
 		return err
 	}
