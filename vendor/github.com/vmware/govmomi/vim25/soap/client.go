@@ -755,7 +755,7 @@ func (c *Client) Download(ctx context.Context, u *url.URL, param *Download) (io.
 	switch res.StatusCode {
 	case http.StatusOK:
 	default:
-		err = fmt.Errorf("download(%s): %s", u, res.Status)
+		err = errors.New(res.Status)
 	}
 
 	if err != nil {

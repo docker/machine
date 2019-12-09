@@ -50,10 +50,10 @@ func Secret(value string) (string, error) {
 	}
 	contents, err := ioutil.ReadFile(value)
 	if err != nil {
-		if os.IsPermission(err) {
-			return "", err
+		if os.IsNotExist(err) {
+			return value, nil
 		}
-		return value, nil
+		return "", err
 	}
 	return strings.TrimSpace(string(contents)), nil
 }

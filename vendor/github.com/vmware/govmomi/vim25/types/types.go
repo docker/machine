@@ -49027,17 +49027,6 @@ type VStorageObjectCreateSnapshot_TaskResponse struct {
 	Returnval ManagedObjectReference `xml:"returnval"`
 }
 
-type VStorageObjectSnapshotDetails struct {
-	DynamicData
-
-	Path                   string `xml:"path,omitempty"`
-	ChangedBlockTrackingId string `xml:"changedBlockTrackingId,omitempty"`
-}
-
-func init() {
-	t["VStorageObjectSnapshotDetails"] = reflect.TypeOf((*VStorageObjectSnapshotDetails)(nil)).Elem()
-}
-
 type VStorageObjectSnapshotInfo struct {
 	DynamicData
 

@@ -42,18 +42,6 @@ type Library struct {
 	Storage          []StorageBackings `json:"storage_backings,omitempty"`
 	Type             string            `json:"type,omitempty"`
 	Version          string            `json:"version,omitempty"`
-	Subscription     *Subscription     `json:"subscription_info,omitempty"`
-}
-
-// Subscription info
-type Subscription struct {
-	AuthenticationMethod string `json:"authentication_method"`
-	AutomaticSyncEnabled *bool  `json:"automatic_sync_enabled,omitempty"`
-	OnDemand             *bool  `json:"on_demand,omitempty"`
-	Password             string `json:"password,omitempty"`
-	SslThumbprint        string `json:"ssl_thumbprint,omitempty"`
-	SubscriptionURL      string `json:"subscription_url,omitempty"`
-	UserName             string `json:"user_name,omitempty"`
 }
 
 // Patch merges updates from the given src.
@@ -107,14 +95,13 @@ func (c *Manager) FindLibrary(ctx context.Context, search Find) ([]string, error
 // CreateLibrary creates a new library with the given Type, Name,
 // Description, and CategoryID.
 func (c *Manager) CreateLibrary(ctx context.Context, library Library) (string, error) {
+	if library.Type != "LOCAL" {
+		return "", fmt.Errorf("unsupported library type: %q", library.Type)
+	}
 	spec := struct {
 		Library Library `json:"create_spec"`
 	}{library}
-	path := internal.LocalLibraryPath
-	if library.Type == "SUBSCRIBED" {
-		path = internal.SubscribedLibraryPath
-	}
-	url := internal.URL(c, path)
+	url := internal.URL(c, internal.LocalLibraryPath)
 	var res string
 	return res, c.Do(ctx, url.Request(http.MethodPost, spec), &res)
 }
