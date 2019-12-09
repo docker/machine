@@ -7,7 +7,6 @@ import (
 
 	"path/filepath"
 
-	"github.com/codegangsta/cli"
 	"github.com/rancher/machine/commands"
 	"github.com/rancher/machine/commands/mcndirs"
 	"github.com/rancher/machine/drivers/amazonec2"
@@ -29,6 +28,7 @@ import (
 	"github.com/rancher/machine/libmachine/drivers/plugin/localbinary"
 	"github.com/rancher/machine/libmachine/log"
 	"github.com/rancher/machine/version"
+	"github.com/urfave/cli"
 )
 
 var AppHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]

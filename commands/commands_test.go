@@ -5,7 +5,6 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/codegangsta/cli"
 	"github.com/rancher/machine/commands/commandstest"
 	"github.com/rancher/machine/drivers/fakedriver"
 	"github.com/rancher/machine/libmachine"
@@ -16,6 +15,7 @@ import (
 	"github.com/rancher/machine/libmachine/provision"
 	"github.com/rancher/machine/libmachine/state"
 	"github.com/stretchr/testify/assert"
+	"github.com/urfave/cli"
 )
 
 func TestRunActionForeachMachine(t *testing.T) {

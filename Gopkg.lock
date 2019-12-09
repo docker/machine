@@ -116,13 +116,6 @@
   revision = "9831e1e25c874e0a0601b6dc43641071414eec7a"
 
 [[projects]]
-  digest = "1:af8559c18ec5d3a1a388dedaa0e790437bb99917845e37a2e4533767b02c3961"
-  name = "github.com/codegangsta/cli"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
-
-[[projects]]
   digest = "1:620bade21ddf8256869717861431d52650c7e40bc56bdcd3d5ec3da63e7573b0"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
