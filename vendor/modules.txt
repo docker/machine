@@ -1,0 +1,199 @@
+# github.com/Azure/azure-sdk-for-go v9.0.1-beta+incompatible
+github.com/Azure/azure-sdk-for-go/arm/compute
+github.com/Azure/azure-sdk-for-go/arm/network
+github.com/Azure/azure-sdk-for-go/arm/resources/resources
+github.com/Azure/azure-sdk-for-go/arm/resources/subscriptions
+github.com/Azure/azure-sdk-for-go/arm/storage
+github.com/Azure/azure-sdk-for-go/storage
+# github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
+github.com/Azure/go-ansiterm
+github.com/Azure/go-ansiterm/winterm
+# github.com/Azure/go-autorest v7.2.1+incompatible
+github.com/Azure/go-autorest/autorest
+github.com/Azure/go-autorest/autorest/azure
+github.com/Azure/go-autorest/autorest/date
+github.com/Azure/go-autorest/autorest/to
+github.com/Azure/go-autorest/autorest/validation
+# github.com/aws/aws-sdk-go v1.20.20
+github.com/aws/aws-sdk-go/aws
+github.com/aws/aws-sdk-go/aws/awserr
+github.com/aws/aws-sdk-go/aws/awsutil
+github.com/aws/aws-sdk-go/aws/client
+github.com/aws/aws-sdk-go/aws/client/metadata
+github.com/aws/aws-sdk-go/aws/corehandlers
+github.com/aws/aws-sdk-go/aws/credentials
+github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds
+github.com/aws/aws-sdk-go/aws/credentials/endpointcreds
+github.com/aws/aws-sdk-go/aws/credentials/processcreds
+github.com/aws/aws-sdk-go/aws/credentials/stscreds
+github.com/aws/aws-sdk-go/aws/csm
+github.com/aws/aws-sdk-go/aws/defaults
+github.com/aws/aws-sdk-go/aws/ec2metadata
+github.com/aws/aws-sdk-go/aws/endpoints
+github.com/aws/aws-sdk-go/aws/request
+github.com/aws/aws-sdk-go/aws/session
+github.com/aws/aws-sdk-go/aws/signer/v4
+github.com/aws/aws-sdk-go/internal/ini
+github.com/aws/aws-sdk-go/internal/sdkio
+github.com/aws/aws-sdk-go/internal/sdkrand
+github.com/aws/aws-sdk-go/internal/sdkuri
+github.com/aws/aws-sdk-go/internal/shareddefaults
+github.com/aws/aws-sdk-go/private/protocol
+github.com/aws/aws-sdk-go/private/protocol/ec2query
+github.com/aws/aws-sdk-go/private/protocol/json/jsonutil
+github.com/aws/aws-sdk-go/private/protocol/query
+github.com/aws/aws-sdk-go/private/protocol/query/queryutil
+github.com/aws/aws-sdk-go/private/protocol/rest
+github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
+github.com/aws/aws-sdk-go/service/ec2
+github.com/aws/aws-sdk-go/service/sts
+# github.com/bugsnag/bugsnag-go v0.0.0-20151120182711-02e952891c52
+github.com/bugsnag/bugsnag-go
+github.com/bugsnag/bugsnag-go/errors
+# github.com/bugsnag/osext v0.0.0-20130617224835-0dd3f918b21b
+github.com/bugsnag/osext
+# github.com/bugsnag/panicwrap v0.0.0-20160118154447-aceac81c6e2f
+github.com/bugsnag/panicwrap
+# github.com/cenkalti/backoff v0.0.0-20141124221459-9831e1e25c87
+github.com/cenkalti/backoff
+# github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d
+github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/davecgh/go-spew v0.0.0-20151105211317-5215b55f46b2
+github.com/davecgh/go-spew/spew
+# github.com/dgrijalva/jwt-go v0.0.0-20160831183534-24c63f56522a
+github.com/dgrijalva/jwt-go
+# github.com/digitalocean/godo v0.0.0-20170317202744-d59ed2fe842b
+github.com/digitalocean/godo
+# github.com/diskfs/go-diskfs v0.0.0-20191115120903-6cf046d472d7
+github.com/diskfs/go-diskfs/filesystem
+github.com/diskfs/go-diskfs/filesystem/iso9660
+github.com/diskfs/go-diskfs/partition/mbr
+github.com/diskfs/go-diskfs/util
+# github.com/docker/docker v0.0.0-20180212224933-bf1345d0b6d9 => github.com/moby/moby v1.4.2-0.20170731201646-1009e6a40b29
+github.com/docker/docker/pkg/term
+github.com/docker/docker/pkg/term/windows
+# github.com/docker/go-units v0.0.0-20151230175859-0bbddae09c5a
+github.com/docker/go-units
+# github.com/exoscale/egoscale v0.12.3
+github.com/exoscale/egoscale
+# github.com/golang/protobuf v1.2.0
+github.com/golang/protobuf/proto
+# github.com/google/go-querystring v0.0.0-20140804062624-30f7a39f4a21
+github.com/google/go-querystring/query
+# github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
+github.com/jmespath/go-jmespath
+# github.com/mitchellh/mapstructure v0.0.0-20140721150620-740c764bc614
+github.com/mitchellh/mapstructure
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/rackspace/gophercloud v0.0.0-20150408191457-ce0f487f6747
+github.com/rackspace/gophercloud
+github.com/rackspace/gophercloud/openstack
+github.com/rackspace/gophercloud/openstack/compute/v2/extensions/floatingip
+github.com/rackspace/gophercloud/openstack/compute/v2/extensions/keypairs
+github.com/rackspace/gophercloud/openstack/compute/v2/extensions/startstop
+github.com/rackspace/gophercloud/openstack/compute/v2/flavors
+github.com/rackspace/gophercloud/openstack/compute/v2/images
+github.com/rackspace/gophercloud/openstack/compute/v2/servers
+github.com/rackspace/gophercloud/openstack/identity/v2/tenants
+github.com/rackspace/gophercloud/openstack/identity/v2/tokens
+github.com/rackspace/gophercloud/openstack/identity/v3/tokens
+github.com/rackspace/gophercloud/openstack/networking/v2/extensions/layer3/floatingips
+github.com/rackspace/gophercloud/openstack/networking/v2/networks
+github.com/rackspace/gophercloud/openstack/networking/v2/ports
+github.com/rackspace/gophercloud/openstack/utils
+github.com/rackspace/gophercloud/pagination
+github.com/rackspace/gophercloud/rackspace
+github.com/rackspace/gophercloud/rackspace/identity/v2/tokens
+github.com/rackspace/gophercloud/testhelper
+github.com/rackspace/gophercloud/testhelper/client
+# github.com/russross/blackfriday/v2 v2.0.1
+github.com/russross/blackfriday/v2
+# github.com/samalba/dockerclient v0.0.0-20151231000007-f661dd4754aa
+github.com/samalba/dockerclient
+# github.com/satori/go.uuid v1.2.0
+github.com/satori/go.uuid
+# github.com/shurcooL/sanitized_anchor_name v1.0.0
+github.com/shurcooL/sanitized_anchor_name
+# github.com/sirupsen/logrus v1.0.4
+github.com/sirupsen/logrus
+# github.com/skarademir/naturalsort v0.0.0-20150715044055-69a5d87bef62
+github.com/skarademir/naturalsort
+# github.com/stretchr/objx v0.0.0-20150928122152-1a9d0bb9f541
+github.com/stretchr/objx
+# github.com/stretchr/testify v0.0.0-20160221104443-1f4a1643a57e
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/mock
+# github.com/tent/http-link-go v0.0.0-20130702225549-ac974c61c2f9
+github.com/tent/http-link-go
+# github.com/urfave/cli v1.22.2
+github.com/urfave/cli
+# github.com/vmware/govcloudair v0.0.2
+github.com/vmware/govcloudair
+github.com/vmware/govcloudair/types/v56
+# github.com/vmware/govmomi v0.21.0
+github.com/vmware/govmomi
+github.com/vmware/govmomi/find
+github.com/vmware/govmomi/guest
+github.com/vmware/govmomi/list
+github.com/vmware/govmomi/nfc
+github.com/vmware/govmomi/object
+github.com/vmware/govmomi/property
+github.com/vmware/govmomi/session
+github.com/vmware/govmomi/task
+github.com/vmware/govmomi/vapi/internal
+github.com/vmware/govmomi/vapi/library
+github.com/vmware/govmomi/vapi/library/finder
+github.com/vmware/govmomi/vapi/rest
+github.com/vmware/govmomi/vapi/tags
+github.com/vmware/govmomi/vapi/vcenter
+github.com/vmware/govmomi/vim25
+github.com/vmware/govmomi/vim25/debug
+github.com/vmware/govmomi/vim25/methods
+github.com/vmware/govmomi/vim25/mo
+github.com/vmware/govmomi/vim25/progress
+github.com/vmware/govmomi/vim25/soap
+github.com/vmware/govmomi/vim25/types
+github.com/vmware/govmomi/vim25/xml
+# golang.org/x/crypto v0.0.0-20170704135851-51714a8c4ac1
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/ssh
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
+golang.org/x/net/context
+golang.org/x/net/context/ctxhttp
+# golang.org/x/oauth2 v0.0.0-20151117210313-442624c9ec92
+golang.org/x/oauth2
+golang.org/x/oauth2/google
+golang.org/x/oauth2/internal
+golang.org/x/oauth2/jws
+golang.org/x/oauth2/jwt
+# golang.org/x/sys v0.0.0-20190804053845-51ab0e2deafa
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+golang.org/x/sys/windows/registry
+# google.golang.org/api v0.0.0-20180213000552-87a2f5c77b36
+google.golang.org/api/compute/v1
+google.golang.org/api/gensupport
+google.golang.org/api/googleapi
+google.golang.org/api/googleapi/internal/uritemplates
+# google.golang.org/appengine v0.0.0-20160205025855-6a436539be38
+google.golang.org/appengine
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/app_identity
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/modules
+google.golang.org/appengine/internal/remote_api
+google.golang.org/appengine/internal/urlfetch
+google.golang.org/appengine/urlfetch
+# google.golang.org/cloud v0.0.0-20151119220103-975617b05ea8
+google.golang.org/cloud/compute/metadata
+google.golang.org/cloud/internal
+# gopkg.in/djherbis/times.v1 v1.2.0
+gopkg.in/djherbis/times.v1
+# gopkg.in/yaml.v2 v2.2.2
+gopkg.in/yaml.v2

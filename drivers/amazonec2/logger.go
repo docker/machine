@@ -1,9 +1,10 @@
 package amazonec2
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"log"
 	"os"
+
+	"github.com/aws/aws-sdk-go/aws"
 )
 
 type awslogger struct {

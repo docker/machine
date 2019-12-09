@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/rancher/machine/commands/mcndirs"
 	"github.com/rancher/machine/libmachine"
 	"github.com/rancher/machine/libmachine/auth"
@@ -25,6 +24,7 @@ import (
 	"github.com/rancher/machine/libmachine/mcnerror"
 	"github.com/rancher/machine/libmachine/mcnflag"
 	"github.com/rancher/machine/libmachine/swarm"
+	"github.com/urfave/cli"
 )
 
 var (

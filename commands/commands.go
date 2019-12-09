@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	"github.com/rancher/machine/commands/mcndirs"
 	"github.com/rancher/machine/libmachine"
 	"github.com/rancher/machine/libmachine/crashreport"
@@ -16,6 +15,7 @@ import (
 	"github.com/rancher/machine/libmachine/mcnutils"
 	"github.com/rancher/machine/libmachine/persist"
 	"github.com/rancher/machine/libmachine/ssh"
+	"github.com/urfave/cli"
 )
 
 const (

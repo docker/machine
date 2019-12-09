@@ -1,9 +1,5 @@
 # changelog
 
-### 0.22.0 (2019-09-13)
-
-* Add VirtualHardwareSection.StorageItem
-
 ### 0.21.0 (2019-07-24)
 
 * Add vsan package

@@ -81,9 +81,9 @@ func ApplyPropertyChange(obj Reference, changes []types.PropertyChange) {
 	}
 }
 
-// LoadObjectContent converts the response of a call to
-// RetrieveProperties{Ex} to one or more managed objects.
-func LoadObjectContent(content []types.ObjectContent, dst interface{}) error {
+// LoadRetrievePropertiesResponse converts the response of a call to
+// RetrieveProperties to one or more managed objects.
+func LoadRetrievePropertiesResponse(res *types.RetrievePropertiesResponse, dst interface{}) error {
 	rt := reflect.TypeOf(dst)
 	if rt == nil || rt.Kind() != reflect.Ptr {
 		panic("need pointer")
@@ -104,7 +104,7 @@ func LoadObjectContent(content []types.ObjectContent, dst interface{}) error {
 	}
 
 	if isSlice {
-		for _, p := range content {
+		for _, p := range res.Returnval {
 			v, err := ObjectContentToType(p)
 			if err != nil {
 				return err
@@ -123,10 +123,10 @@ func LoadObjectContent(content []types.ObjectContent, dst interface{}) error {
 			rv.Set(reflect.Append(rv, reflect.ValueOf(v)))
 		}
 	} else {
-		switch len(content) {
+		switch len(res.Returnval) {
 		case 0:
 		case 1:
-			v, err := ObjectContentToType(content[0])
+			v, err := ObjectContentToType(res.Returnval[0])
 			if err != nil {
 				return err
 			}
@@ -160,7 +160,7 @@ func RetrievePropertiesForRequest(ctx context.Context, r soap.RoundTripper, req 
 		return err
 	}
 
-	return LoadObjectContent(res.Returnval, dst)
+	return LoadRetrievePropertiesResponse(res, dst)
 }
 
 // RetrieveProperties retrieves the properties of the managed object specified

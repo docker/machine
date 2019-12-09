@@ -25,7 +25,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/vmware/govmomi/vapi/internal"
 	"github.com/vmware/govmomi/vim25"
@@ -35,13 +34,6 @@ import (
 // Client extends soap.Client to support JSON encoding, while inheriting security features, debug tracing and session persistence.
 type Client struct {
 	*soap.Client
-}
-
-// Session information
-type Session struct {
-	User         string    `json:"user"`
-	Created      time.Time `json:"created_time"`
-	LastAccessed time.Time `json:"last_accessed_time"`
 }
 
 // LocalizableMessage represents a localizable error
@@ -72,14 +64,6 @@ func (c *Client) WithSigner(ctx context.Context, s Signer) context.Context {
 	return context.WithValue(ctx, signerContext{}, s)
 }
 
-type statusError struct {
-	res *http.Response
-}
-
-func (e *statusError) Error() string {
-	return fmt.Sprintf("%s %s: %s", e.res.Request.Method, e.res.Request.URL, e.res.Status)
-}
-
 // Do sends the http.Request, decoding resBody if provided.
 func (c *Client) Do(ctx context.Context, req *http.Request, resBody interface{}) error {
 	switch req.Method {
@@ -106,7 +90,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, resBody interface{})
 			}
 			return fmt.Errorf("%s: %s", res.Status, bytes.TrimSpace(detail))
 		default:
-			return &statusError{res}
+			return fmt.Errorf("%s %s: %s", req.Method, req.URL, res.Status)
 		}
 
 		if resBody == nil {
@@ -143,23 +127,6 @@ func (c *Client) Login(ctx context.Context, user *url.Userinfo) error {
 
 func (c *Client) LoginByToken(ctx context.Context) error {
 	return c.Login(ctx, nil)
-}
-
-// Session returns the user's current session.
-// Nil is returned if the session is not authenticated.
-func (c *Client) Session(ctx context.Context) (*Session, error) {
-	var s Session
-	req := internal.URL(c, internal.SessionPath).WithAction("get").Request(http.MethodPost)
-	err := c.Do(ctx, req, &s)
-	if err != nil {
-		if e, ok := err.(*statusError); ok {
-			if e.res.StatusCode == http.StatusUnauthorized {
-				return nil, nil
-			}
-		}
-		return nil, err
-	}
-	return &s, nil
 }
 
 // Logout deletes the current session.
