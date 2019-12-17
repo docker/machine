@@ -28,6 +28,7 @@ require (
 	github.com/mitchellh/mapstructure v0.0.0-20140721150620-740c764bc614 // indirect
 	github.com/onsi/ginkgo v1.9.0 // indirect
 	github.com/onsi/gomega v1.6.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rackspace/gophercloud v0.0.0-20150408191457-ce0f487f6747
 	github.com/samalba/dockerclient v0.0.0-20151231000007-f661dd4754aa
 	github.com/sirupsen/logrus v1.0.4 // indirect
@@ -35,7 +36,7 @@ require (
 	github.com/stretchr/objx v0.0.0-20150928122152-1a9d0bb9f541 // indirect
 	github.com/stretchr/testify v0.0.0-20160221104443-1f4a1643a57e
 	github.com/tent/http-link-go v0.0.0-20130702225549-ac974c61c2f9 // indirect
-	github.com/urfave/cli v1.22.2
+	github.com/urfave/cli v1.11.1-0.20151120215642-0302d3914d2a
 	github.com/vmware/govcloudair v0.0.2
 	github.com/vmware/govmomi v0.21.0
 	golang.org/x/crypto v0.0.0-20170704135851-51714a8c4ac1
