@@ -6,3 +6,4 @@ cover
 /.dapper
 /dist
 *.swp
+rancher-machine
