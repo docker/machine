@@ -79,13 +79,7 @@ func (d *Driver) fetchVM(vmname string) (*object.VirtualMachine, error) {
 	}
 
 	f.SetDatacenter(dc)
-
-	vmPath := vmname
-	if d.Folder != "" {
-		vmPath = fmt.Sprintf("%s/%s", d.Folder, vmname)
-	}
-
-	vm, err = f.VirtualMachine(d.getCtx(), vmPath)
+	vm, err = f.VirtualMachine(d.getCtx(), vmname)
 	if err != nil {
 		return nil, err
 	}
