@@ -132,7 +132,7 @@ func (d *Driver) createCloudInitIso() error {
 		return err
 	}
 
-	userdatacontent, err := addSSHUserToYaml(d.CloudConfig, d.SSHUser, string(sshkey))
+	userdatacontent, err := addSSHUserToYaml(d.CloudConfig, d.SSHUser, d.SSHUserGroup, string(sshkey))
 	if err != nil {
 		return err
 	}
@@ -227,16 +227,24 @@ func (d *Driver) mountCloudInitIso(vm *object.VirtualMachine, dc *object.Datacen
 	return vm.AddDevice(d.getCtx(), add...)
 }
 
-func addSSHUserToYaml(yamlcontent, user, sshkey string) (string, error) {
+func addSSHUserToYaml(yamlcontent, user, group, sshkey string) (string, error) {
 	cf := make(map[interface{}]interface{})
 	if err := yaml.Unmarshal([]byte(yamlcontent), &cf); err != nil {
 		return "", err
 	}
 
+	// implements https://github.com/canonical/cloud-init/blob/master/cloudinit/config/cc_users_groups.py#L28-L71
 	newUser := map[interface{}]interface{}{
 		"name":        user,
 		"sudo":        "ALL=(ALL) NOPASSWD:ALL",
-		"lock_passwd": "true",
+		"lock_passwd": true,
+		"groups":      group,
+
+		// technically not in the spec, see this code for context
+		// https://github.com/canonical/cloud-init/blob/master/cloudinit/distros/__init__.py#L394-L397
+		"create_groups": false,
+
+		"no_user_group": true,
 		"ssh_authorized_keys": []string{
 			sshkey,
 		},
@@ -244,12 +252,28 @@ func addSSHUserToYaml(yamlcontent, user, sshkey string) (string, error) {
 
 	if val, ok := cf["users"]; ok {
 		u := val.([]interface{})
-		u = append(u, newUser)
-		cf["users"] = u
+		cf["users"] = append(u, newUser)
 	} else {
 		users := make([]interface{}, 1)
 		users[0] = newUser
 		cf["users"] = users
+	}
+
+	if val, ok := cf["groups"]; ok {
+		g := val.([]interface{})
+		var exists = false
+		for _, v := range g {
+			if y, _ := v.(string); y == group {
+				exists = true
+			}
+		}
+		if !exists {
+			cf["groups"] = append(g, group)
+		}
+	} else {
+		g := make([]interface{}, 1)
+		g[0] = group
+		cf["groups"] = g
 	}
 
 	yaml, err := yaml.Marshal(cf)
