@@ -24,6 +24,8 @@ type Driver struct {
 	ActiveTimeout    int
 	Insecure         bool
 	CaCert           string
+	Cert             string
+	Key              string
 	DomainID         string
 	DomainName       string
 	Username         string
@@ -78,6 +80,18 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "OS_CACERT",
 			Name:   "openstack-cacert",
 			Usage:  "CA certificate bundle to verify against",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_CERT",
+			Name:   "openstack-cert",
+			Usage:  "The location for the keystore (PEM formatted) containing the public key of this clien",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "OS_KEY",
+			Name:   "openstack-key",
+			Usage:  "The location for the keystore (PEM formatted) containing the private key of this client",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
@@ -278,6 +292,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ActiveTimeout = flags.Int("openstack-active-timeout")
 	d.Insecure = flags.Bool("openstack-insecure")
 	d.CaCert = flags.String("openstack-cacert")
+	d.Cert = flags.String("openstack-cert")
+	d.Key = flags.String("openstack-key")
 	d.DomainID = flags.String("openstack-domain-id")
 	d.DomainName = flags.String("openstack-domain-name")
 	d.Username = flags.String("openstack-username")

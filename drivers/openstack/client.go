@@ -596,9 +596,23 @@ func (c *GenericClient) SetTLSConfig(d *Driver) error {
 			return fmt.Errorf("Ill-formed CA certificate(s) PEM file")
 		}
 		config.RootCAs = certpool
+
 	}
 
-	transport := &http.Transport{TLSClientConfig: config, Proxy: http.ProxyFromEnvironment}
+	if d.Cert != "" && d.Key != "" {
+		cert, err := tls.LoadX509KeyPair(d.Cert, d.Key)
+		if err != nil {
+			return fmt.Errorf("Ill-formed Cert File")
+		}
+
+		config.Certificates = []tls.Certificate{cert}
+		config.InsecureSkipVerify = true
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: config,
+		Proxy:           http.ProxyFromEnvironment,
+	}
 	c.Provider.HTTPClient.Transport = transport
 	return nil
 }
