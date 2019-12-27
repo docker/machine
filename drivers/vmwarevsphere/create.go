@@ -328,6 +328,10 @@ func (d *Driver) createFromVmName() error {
 		return err
 	}
 
+	if err := d.resizeDisk(vm); err != nil {
+		return err
+	}
+
 	return d.postCreate(vm)
 }
 
@@ -411,5 +415,10 @@ func (d *Driver) createFromLibraryName() error {
 		return err
 	}
 
-	return d.postCreate(obj.(*object.VirtualMachine))
+	vm := obj.(*object.VirtualMachine)
+	if err := d.resizeDisk(vm); err != nil {
+		return err
+	}
+
+	return d.postCreate(vm)
 }
