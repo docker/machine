@@ -293,3 +293,56 @@ func (d *Driver) addCustomAttributes(vm *object.VirtualMachine) error {
 
 	return nil
 }
+
+func (d *Driver) resizeDisk(vm *object.VirtualMachine) error {
+	devices, err := vm.Device(d.getCtx())
+	if err != nil {
+		return err
+	}
+
+	var disks []*types.VirtualDisk
+	for _, device := range devices {
+		switch md := device.(type) {
+		case *types.VirtualDisk:
+			disks = append(disks, md)
+		default:
+			continue
+		}
+	}
+
+	if len(disks) < 1 {
+		return fmt.Errorf("No disks found for vm: %s", vm.InventoryPath)
+	}
+
+	// only allow an edit on the first primary disk, multi disk resizing not supported
+	editdisk := disks[0]
+	newSize := int64(d.DiskSize) * 1024
+	if newSize <= editdisk.CapacityInKB {
+		log.Infof("Can only resize up, passed size is less than or equal to the cloned disk size: %dKb <= %dKb",
+			newSize, editdisk.CapacityInKB)
+		return nil
+	}
+
+	log.Infof("Resizing disk %s up from %dKb to %dKb",
+		devices.Name(editdisk), editdisk.CapacityInKB, newSize)
+	editdisk.CapacityInKB = newSize
+	spec := types.VirtualMachineConfigSpec{}
+	config := &types.VirtualDeviceConfigSpec{
+		Device:    editdisk,
+		Operation: types.VirtualDeviceConfigSpecOperationEdit,
+	}
+
+	config.FileOperation = ""
+	spec.DeviceChange = append(spec.DeviceChange, config)
+
+	task, err := vm.Reconfigure(d.getCtx(), spec)
+	if err != nil {
+		return err
+	}
+
+	err = task.Wait(d.getCtx())
+	if err != nil {
+		return fmt.Errorf("error resizing main disk\nLogged Item:  %s", err)
+	}
+	return nil
+}
