@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"path"
+	"strings"
 
 	"github.com/rancher/machine/libmachine/log"
 	"github.com/vmware/govmomi"
@@ -264,4 +266,23 @@ func (d *Driver) restLogin(ctx context.Context, c *vim25.Client) (*library.Manag
 	}
 
 	return mgr, nil
+}
+
+func (d *Driver) findFolder() (*object.Folder, error) {
+	folders, err := d.datacenter.Folders(d.getCtx())
+	if err != nil {
+		return nil, err
+	}
+
+	if d.Folder != "" {
+		p := d.Folder
+		if !strings.HasPrefix(p, path.Join(d.Datacenter, "vm")) {
+			p = path.Join(folders.VmFolder.InventoryPath, strings.Trim(p, "/"))
+		}
+
+		return d.finder.Folder(d.getCtx(), p)
+	}
+
+	// root vm folder default
+	return folders.VmFolder, nil
 }

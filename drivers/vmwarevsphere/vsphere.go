@@ -238,37 +238,14 @@ func (d *Driver) GetState() (state.State, error) {
 func (d *Driver) PreCreateCheck() error {
 	log.Debug("Connecting to vSphere for pre-create checks...")
 
-	c, err := d.getSoapClient()
+	err := d.preCreate()
 	if err != nil {
 		return err
 	}
 
-	// Create a new finder
-	f := find.NewFinder(c.Client, true)
-
-	dc, err := f.DatacenterOrDefault(d.getCtx(), d.Datacenter)
+	_, err = d.findFolder()
 	if err != nil {
 		return err
-	}
-
-	f.SetDatacenter(dc)
-
-	// Folder
-	if d.Folder != "" {
-		// Find the specified Folder to create the VM in.
-		folders, err := dc.Folders(d.getCtx())
-		if err != nil {
-			return err
-		}
-		folder, err := f.Folder(d.getCtx(), fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
-		// It's an error to not find the folder, or for the search itself to fail.
-		if err != nil {
-			// The search itself failed.
-			return err
-		}
-		if folder == nil {
-			return fmt.Errorf("failed to find VM Folder '%s'", d.Folder)
-		}
 	}
 
 	if d.CreationType == "clone" && d.ContentLibrary == "" {
@@ -284,7 +261,7 @@ func (d *Driver) PreCreateCheck() error {
 		d.Networks = append(d.Networks, "VM Network")
 	}
 	for _, netName := range d.Networks {
-		if _, err := f.NetworkOrDefault(d.getCtx(), netName); err != nil {
+		if _, err := d.finder.NetworkOrDefault(d.getCtx(), netName); err != nil {
 			return err
 		}
 	}
@@ -294,7 +271,7 @@ func (d *Driver) PreCreateCheck() error {
 	var hs *object.HostSystem
 	if d.HostSystem != "" {
 		var err error
-		hs, err = f.HostSystemOrDefault(d.getCtx(), d.HostSystem)
+		hs, err = d.finder.HostSystemOrDefault(d.getCtx(), d.HostSystem)
 		if err != nil {
 			return err
 		}
@@ -303,7 +280,7 @@ func (d *Driver) PreCreateCheck() error {
 	// ResourcePool
 	if d.Pool != "" {
 		// Find specified Resource Pool
-		if _, err := f.ResourcePool(d.getCtx(), d.Pool); err != nil {
+		if _, err := d.finder.ResourcePool(d.getCtx(), d.Pool); err != nil {
 			return err
 		}
 	} else if hs != nil {
@@ -313,7 +290,7 @@ func (d *Driver) PreCreateCheck() error {
 		}
 	} else {
 		// Pick the default Resource Pool for the Datacenter.
-		if _, err := f.DefaultResourcePool(d.getCtx()); err != nil {
+		if _, err := d.finder.DefaultResourcePool(d.getCtx()); err != nil {
 			return err
 		}
 	}

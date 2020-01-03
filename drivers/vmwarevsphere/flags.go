@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/rancher/machine/libmachine/drivers"
 	"github.com/rancher/machine/libmachine/mcnflag"
@@ -207,7 +206,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DatastoreCluster = flags.String("vmwarevsphere-datastore-cluster")
 	d.Datacenter = flags.String("vmwarevsphere-datacenter")
 	// Sanitize input on ingress.
-	d.Folder = strings.Trim(flags.String("vmwarevsphere-folder"), "/")
+	d.Folder = flags.String("vmwarevsphere-folder")
 	d.Pool = flags.String("vmwarevsphere-pool")
 	d.HostSystem = flags.String("vmwarevsphere-hostsystem")
 	d.CfgParams = flags.StringSlice("vmwarevsphere-cfgparam")
