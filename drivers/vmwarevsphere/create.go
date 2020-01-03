@@ -172,16 +172,9 @@ func (d *Driver) createLegacy() error {
 		spec.VAppConfig = &vApp
 	}
 
-	folders, err := d.datacenter.Folders(d.getCtx())
+	folder, err := d.findFolder()
 	if err != nil {
 		return err
-	}
-	folder := folders.VmFolder
-	if d.Folder != "" {
-		folder, err = d.finder.Folder(d.getCtx(), fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
-		if err != nil {
-			return err
-		}
 	}
 
 	ds, err := d.getDatastore(&spec)
@@ -300,16 +293,9 @@ func (d *Driver) createFromVmName() error {
 		return err
 	}
 
-	folders, err := d.datacenter.Folders(d.getCtx())
+	folder, err := d.findFolder()
 	if err != nil {
 		return err
-	}
-	folder := folders.VmFolder
-	if d.Folder != "" {
-		folder, err = d.finder.Folder(d.getCtx(), fmt.Sprintf("%s/%s", folders.VmFolder.InventoryPath, d.Folder))
-		if err != nil {
-			return err
-		}
 	}
 
 	task, err := vm2Clone.Clone(d.getCtx(), folder, d.MachineName, spec)
