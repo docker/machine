@@ -10,11 +10,11 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-var creationTypes = map[string]bool{
-	"vm":       true,
-	"template": true,
-	"library":  true,
-	"legacy":   true,
+var supportedCreationTypes = map[string]bool{
+	creationTypeVM:      true,
+	creationTypeTmpl:    true,
+	creationTypeLibrary: true,
+	creationTypeLegacy:  true,
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -137,7 +137,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "VSPHERE_CREATION_TYPE",
 			Name:   "vmwarevsphere-creation-type",
 			Usage:  "Creation type when creating a new virtual machine. Supported values: vm, template, library, legacy",
-			Value:  defaultCreationType,
+			Value:  creationTypeLegacy,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "VSPHERE_CLONE_FROM",
@@ -231,7 +231,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.ISO = d.ResolveStorePath(isoFilename)
 
 	d.CreationType = flags.String("vmwarevsphere-creation-type")
-	if _, ok := creationTypes[d.CreationType]; !ok {
+	if _, ok := supportedCreationTypes[d.CreationType]; !ok {
 		return fmt.Errorf("Creation type %s not supported", d.CreationType)
 	}
 

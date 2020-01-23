@@ -92,7 +92,11 @@ const (
 	defaultMemory       = 2048
 	defaultDiskSize     = 20480
 	defaultSDKPort      = 443
-	defaultCreationType = "legacy"
+
+	creationTypeVM      = "vm"
+	creationTypeTmpl    = "template"
+	creationTypeLibrary = "library"
+	creationTypeLegacy  = "legacy"
 )
 
 func NewDriver(hostName, storePath string) drivers.Driver {
@@ -479,7 +483,7 @@ func (d *Driver) Remove() error {
 
 	var task *object.Task
 	// Remove B2D Iso from VM folder
-	if d.CreationType == "default" {
+	if d.CreationType == creationTypeLegacy {
 		m := object.NewFileManager(c.Client)
 		task, err = m.DeleteDatastoreFile(d.getCtx(), ds.Path(fmt.Sprintf("%s/%s", d.MachineName, isoFilename)), d.datacenter)
 		if err != nil {
@@ -492,9 +496,7 @@ func (d *Driver) Remove() error {
 				return nil
 			}
 		}
-	}
-
-	if d.CloudConfig != "" {
+	} else {
 		if err = d.removeCloudInitIso(vm, d.datacenter, ds); err != nil {
 			return nil
 		}
