@@ -22,7 +22,7 @@ const (
 )
 
 func (d *Driver) cloudInit(vm *object.VirtualMachine) error {
-	if d.CloudInit != "" {
+	if d.CreationType == creationTypeLegacy {
 		return d.cloudInitGuestInfo(vm)
 	}
 
@@ -44,8 +44,8 @@ func (d *Driver) cloudInit(vm *object.VirtualMachine) error {
 }
 
 func (d *Driver) cloudInitGuestInfo(vm *object.VirtualMachine) error {
-	var opts []types.BaseOptionValue
 	if d.CloudInit != "" {
+		var opts []types.BaseOptionValue
 		if _, err := url.ParseRequestURI(d.CloudInit); err == nil {
 			log.Infof("setting guestinfo.cloud-init.data.url to %s\n", d.CloudInit)
 			opts = append(opts, &types.OptionValue{
@@ -68,9 +68,10 @@ func (d *Driver) cloudInitGuestInfo(vm *object.VirtualMachine) error {
 				}
 			}
 		}
+		return d.applyOpts(vm, opts)
 	}
 
-	return d.applyOpts(vm, opts)
+	return nil
 }
 
 func (d *Driver) uploadCloudInitIso(vm *object.VirtualMachine, dc *object.Datacenter, ds *object.Datastore) error {
