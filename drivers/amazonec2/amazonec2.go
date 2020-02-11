@@ -125,6 +125,7 @@ type Driver struct {
 	Endpoint                string
 	DisableSSL              bool
 	UserDataFile            string
+	EncryptEbsVolume        bool
 
 	spotInstanceRequestId string
 }
@@ -293,6 +294,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "path to file with cloud-init user data",
 			EnvVar: "AWS_USERDATA",
 		},
+		mcnflag.BoolFlag{
+			Name:   "amazonec2-encrypt-ebs-volume",
+			Usage:  "Encrypt the EBS volume using the AWS Managed CMK",
+			EnvVar: "AWS_ENCRYPT_EBS_VOLUME",
+		},
 	}
 }
 
@@ -390,6 +396,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.RetryCount = flags.Int("amazonec2-retries")
 	d.OpenPorts = flags.StringSlice("amazonec2-open-port")
 	d.UserDataFile = flags.String("amazonec2-userdata")
+	d.EncryptEbsVolume = flags.Bool("amazonec2-encrypt-ebs-volume")
 
 	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
 
@@ -598,6 +605,7 @@ func (d *Driver) innerCreate() error {
 			VolumeSize:          aws.Int64(d.RootSize),
 			VolumeType:          aws.String(d.VolumeType),
 			DeleteOnTermination: aws.Bool(true),
+			Encrypted:           aws.Bool(d.EncryptEbsVolume),
 		},
 	}
 	netSpecs := []*ec2.InstanceNetworkInterfaceSpecification{{
