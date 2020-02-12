@@ -1,6 +1,7 @@
 package amazonec2
 
 import (
+	"github.com/rancher/machine/version"
 	"testing"
 
 	"errors"
@@ -24,10 +25,19 @@ const (
 )
 
 var (
+	/* This test resource should be used in tests that set their own IpPermissions */
 	securityGroup = &ec2.SecurityGroup{
-		GroupName: aws.String("test-group"),
-		GroupId:   aws.String("12345"),
-		VpcId:     aws.String("12345"),
+		GroupName:     aws.String("test-group"),
+		GroupId:       aws.String("12345"),
+		VpcId:         aws.String("12345"),
+	}
+
+	/* This test resource should only be used in tests that do not update IpPermissions */
+	securityGroupNoIpPermissions = &ec2.SecurityGroup{
+		GroupName:     aws.String("test-group"),
+		GroupId:       aws.String("12345"),
+		VpcId:         aws.String("12345"),
+		IpPermissions: []*ec2.IpPermission{},
 	}
 )
 
@@ -101,7 +111,7 @@ func TestConfigureSecurityGroupPermissionsDockerAndSsh(t *testing.T) {
 func TestConfigureSecurityGroupPermissionsSkipReadOnly(t *testing.T) {
 	driver := NewTestDriver()
 	driver.SecurityGroupReadOnly = true
-	perms, err := driver.configureSecurityGroupPermissions(securityGroup)
+	perms, err := driver.configureSecurityGroupPermissions(securityGroupNoIpPermissions)
 
 	assert.Nil(t, err)
 	assert.Len(t, perms, 0)
@@ -110,7 +120,7 @@ func TestConfigureSecurityGroupPermissionsSkipReadOnly(t *testing.T) {
 func TestConfigureSecurityGroupPermissionsOpenPorts(t *testing.T) {
 	driver := NewTestDriver()
 	driver.OpenPorts = []string{"8888/tcp", "8080/udp", "9090"}
-	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
+	perms, err := driver.configureSecurityGroupPermissions(securityGroupNoIpPermissions)
 
 	assert.NoError(t, err)
 	assert.Len(t, perms, 5)
@@ -148,34 +158,10 @@ func TestConfigureSecurityGroupPermissionsOpenPortsSkipExisting(t *testing.T) {
 func TestConfigureSecurityGroupPermissionsInvalidOpenPorts(t *testing.T) {
 	driver := NewTestDriver()
 	driver.OpenPorts = []string{"2222/tcp", "abc1"}
-	perms, err := driver.configureSecurityGroupPermissions(&ec2.SecurityGroup{})
+	perms, err := driver.configureSecurityGroupPermissions(securityGroupNoIpPermissions)
 
 	assert.Error(t, err)
 	assert.Nil(t, perms)
-}
-
-func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
-	driver := NewTestDriver()
-	driver.SwarmMaster = true
-	group := securityGroup
-	group.IpPermissions = []*ec2.IpPermission{
-		{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(testSSHPort),
-			ToPort:     aws.Int64(testSSHPort),
-		},
-		{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(testDockerPort),
-			ToPort:     aws.Int64(testDockerPort),
-		},
-	}
-
-	perms, err := driver.configureSecurityGroupPermissions(group)
-
-	assert.Nil(t, err)
-	assert.Len(t, perms, 1)
-	assert.Equal(t, testSwarmPort, *perms[0].FromPort)
 }
 
 func TestValidateAwsRegionValid(t *testing.T) {
@@ -443,7 +429,7 @@ func TestConfigureSecurityGroupsMixed(t *testing.T) {
 	// The new security group is created.
 	recorder.On("CreateSecurityGroup", &ec2.CreateSecurityGroupInput{
 		GroupName:   aws.String("newGroup"),
-		Description: aws.String("Docker Machine"),
+		Description: aws.String("Rancher Nodes"),
 		VpcId:       aws.String(""),
 	}).Return(
 		&ec2.CreateSecurityGroupOutput{GroupId: aws.String("newGroupId")}, nil)
@@ -465,6 +451,16 @@ func TestConfigureSecurityGroupsMixed(t *testing.T) {
 		IpPermissions: []*ec2.IpPermission{ipPermission(testSSHPort), ipPermission(testDockerPort)},
 	}).Return(
 		&ec2.AuthorizeSecurityGroupIngressOutput{}, nil)
+
+	recorder.On("CreateTags", &ec2.CreateTagsInput{
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String(machineTag),
+				Value: aws.String(version.Version),
+			},
+		},
+		Resources: []*string{aws.String("newGroupId")},
+	}).Return(&ec2.CreateTagsOutput{}, nil)
 
 	driver := NewCustomTestDriver(&recorder)
 	err := driver.configureSecurityGroups(groups)

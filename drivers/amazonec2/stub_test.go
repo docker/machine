@@ -132,6 +132,16 @@ func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *
 	return value, err
 }
 
+func (f *fakeEC2SecurityGroupTestRecorder) CreateTags(input *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
+	result := f.Called(input)
+	err := result.Error(1)
+	value, ok := result.Get(0).(*ec2.CreateTagsOutput)
+	if !ok && err == nil {
+		return nil, errors.New("Type assertion to CreateTagsOutput failed")
+	}
+	return value, err
+}
+
 func NewTestDriver() *Driver {
 	driver := NewDriver("machineFoo", "path")
 	driver.clientFactory = func() Ec2Client {
