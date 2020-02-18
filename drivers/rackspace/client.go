@@ -53,16 +53,6 @@ func (c *Client) Authenticate(d *openstack.Driver) error {
 	return nil
 }
 
-// StartInstance is unfortunately not supported on Rackspace at this time.
-func (c *Client) StartInstance(d *openstack.Driver) error {
-	return unsupportedOpErr("start")
-}
-
-// StopInstance is unfortunately not support on Rackspace at this time.
-func (c *Client) StopInstance(d *openstack.Driver) error {
-	return unsupportedOpErr("stop")
-}
-
 // GetInstanceIPAddresses can be short-circuited with the server's AccessIPv4Addr on Rackspace.
 func (c *Client) GetInstanceIPAddresses(d *openstack.Driver) ([]openstack.IPAddress, error) {
 	server, err := c.GetServerDetail(d)
