@@ -8,19 +8,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/openstack"
-	compute_ips "github.com/rackspace/gophercloud/openstack/compute/v2/extensions/floatingip"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/extensions/keypairs"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/extensions/startstop"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/flavors"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/images"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
-	"github.com/rackspace/gophercloud/openstack/identity/v2/tenants"
-	"github.com/rackspace/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
-	"github.com/rackspace/gophercloud/openstack/networking/v2/networks"
-	"github.com/rackspace/gophercloud/openstack/networking/v2/ports"
-	"github.com/rackspace/gophercloud/pagination"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
+	compute_ips "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/floatingips"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/startstop"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
+	"github.com/gophercloud/gophercloud/pagination"
 	"github.com/rancher/machine/libmachine/log"
 	"github.com/rancher/machine/libmachine/mcnutils"
 	"github.com/rancher/machine/libmachine/version"
@@ -29,7 +28,6 @@ import (
 type Client interface {
 	Authenticate(d *Driver) error
 	InitComputeClient(d *Driver) error
-	InitIdentityClient(d *Driver) error
 	InitNetworkClient(d *Driver) error
 
 	CreateInstance(d *Driver) (string, error)
@@ -50,13 +48,11 @@ type Client interface {
 	GetFloatingIPs(d *Driver) ([]FloatingIP, error)
 	GetFloatingIPPoolID(d *Driver) (string, error)
 	GetInstancePortID(d *Driver) (string, error)
-	GetTenantID(d *Driver) (string, error)
 }
 
 type GenericClient struct {
 	Provider *gophercloud.ProviderClient
 	Compute  *gophercloud.ServiceClient
-	Identity *gophercloud.ServiceClient
 	Network  *gophercloud.ServiceClient
 }
 
@@ -68,7 +64,7 @@ func (c *GenericClient) CreateInstance(d *Driver) (string, error) {
 		UserData:         d.UserData,
 		SecurityGroups:   d.SecurityGroups,
 		AvailabilityZone: d.AvailabilityZone,
-		ConfigDrive:      d.ConfigDrive,
+		ConfigDrive:      &d.ConfigDrive,
 	}
 	if d.NetworkId != "" {
 		serverOpts.Networks = []servers.Network{
@@ -135,7 +131,7 @@ func (c *GenericClient) StopInstance(d *Driver) error {
 }
 
 func (c *GenericClient) RestartInstance(d *Driver) error {
-	if result := servers.Reboot(c.Compute, d.MachineId, servers.SoftReboot); result.Err != nil {
+	if result := servers.Reboot(c.Compute, d.MachineId, servers.RebootOpts{Type: servers.SoftReboot}); result.Err != nil {
 		return result.Err
 	}
 	return nil
@@ -282,29 +278,6 @@ func (c *GenericClient) GetImageID(d *Driver) (string, error) {
 	return imageID, err
 }
 
-func (c *GenericClient) GetTenantID(d *Driver) (string, error) {
-	pager := tenants.List(c.Identity, nil)
-	tenantId := ""
-
-	err := pager.EachPage(func(page pagination.Page) (bool, error) {
-		tenantList, err := tenants.ExtractTenants(page)
-		if err != nil {
-			return false, err
-		}
-
-		for _, i := range tenantList {
-			if i.Name == d.TenantName {
-				tenantId = i.ID
-				return false, nil
-			}
-		}
-
-		return true, nil
-	})
-
-	return tenantId, err
-}
-
 func (c *GenericClient) GetPublicKey(keyPairName string) ([]byte, error) {
 	kp, err := keypairs.Get(c.Compute, keyPairName).Extract()
 	if err != nil {
@@ -357,7 +330,7 @@ func (c *GenericClient) assignNovaFloatingIP(d *Driver, floatingIP *FloatingIP) 
 		floatingIP.Ip = f.IP
 		floatingIP.Pool = f.Pool
 	}
-	return compute_ips.Associate(c.Compute, d.MachineId, floatingIP.Ip).Err
+	return compute_ips.AssociateInstance(c.Compute, d.MachineId, compute_ips.AssociateOpts{FloatingIP: floatingIP.Ip}).Err
 }
 
 func (c *GenericClient) assignNeutronFloatingIP(d *Driver, floatingIP *FloatingIP) error {
@@ -380,7 +353,7 @@ func (c *GenericClient) assignNeutronFloatingIP(d *Driver, floatingIP *FloatingI
 		return nil
 	}
 	_, err = floatingips.Update(c.Network, floatingIP.Id, floatingips.UpdateOpts{
-		PortID: portID,
+		PortID: &portID,
 	}).Extract()
 	if err != nil {
 		return err
@@ -491,16 +464,6 @@ func (c *GenericClient) InitComputeClient(d *Driver) error {
 	return nil
 }
 
-func (c *GenericClient) InitIdentityClient(d *Driver) error {
-	if c.Identity != nil {
-		return nil
-	}
-
-	identity := openstack.NewIdentityV2(c.Provider)
-	c.Identity = identity
-	return nil
-}
-
 func (c *GenericClient) InitNetworkClient(d *Driver) error {
 	if c.Network != nil {
 		return nil
@@ -533,28 +496,32 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 	}
 
 	log.Debug("Authenticating...", map[string]interface{}{
-		"AuthUrl":    d.AuthUrl,
-		"Insecure":   d.Insecure,
-		"CaCert":     d.CaCert,
-		"DomainID":   d.DomainID,
-		"DomainName": d.DomainName,
-		"Username":   d.Username,
-		"TenantName": d.TenantName,
-		"TenantID":   d.TenantId,
+		"AuthUrl":                   d.AuthUrl,
+		"Insecure":                  d.Insecure,
+		"CaCert":                    d.CaCert,
+		"DomainId":                  d.DomainId,
+		"DomainName":                d.DomainName,
+		"UserId":                    d.UserId,
+		"Username":                  d.Username,
+		"TenantName":                d.TenantName,
+		"TenantID":                  d.TenantId,
+		"TenantDomainName":          d.TenantDomainName,
+		"TenantDomainID":            d.TenantDomainId,
+		"UserDomainName":            d.UserDomainName,
+		"UserDomainID":              d.UserDomainId,
+		"ApplicationCredentialId":   d.ApplicationCredentialId,
+		"ApplicationCredentialName": d.ApplicationCredentialName,
 	})
 
-	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: d.AuthUrl,
-		DomainID:         d.DomainID,
-		DomainName:       d.DomainName,
-		Username:         d.Username,
-		Password:         d.Password,
-		TenantName:       d.TenantName,
-		TenantID:         d.TenantId,
-		AllowReauth:      true,
+	ao, err := d.parseAuthConfig()
+	if err != nil {
+		return err
 	}
 
-	provider, err := openstack.NewClient(opts.IdentityEndpoint)
+	// Persistent service, so we need to be able to renew tokens.
+	ao.AllowReauth = true
+
+	provider, err := openstack.NewClient(d.AuthUrl)
 	if err != nil {
 		return err
 	}
@@ -568,7 +535,7 @@ func (c *GenericClient) Authenticate(d *Driver) error {
 		return err
 	}
 
-	err = openstack.Authenticate(c.Provider, opts)
+	err = openstack.Authenticate(c.Provider, *ao)
 	if err != nil {
 		return err
 	}
