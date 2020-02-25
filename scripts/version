@@ -8,6 +8,6 @@ if [ -z "$GIT_TAG" ]; then
     fi
 fi
 
-if [ -z $VERSION ]; then
+if [ -z "$VERSION" ]; then
     VERSION=$GIT_TAG
 fi
