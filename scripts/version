@@ -1,6 +1,6 @@
 #!/bin/bash
 COMMIT=$(git rev-parse --short HEAD)
-VERSION=$(git tag -l --contains HEAD | head -n 1)
+VERSION=${DRONE_TAG:-$(git tag -l --contains HEAD | head -n 1)}
 if [ -z "$VERSION" ]; then
     VERSION=$(git rev-parse --short HEAD)
     if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
