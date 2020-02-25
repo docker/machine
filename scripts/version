@@ -1,13 +1,9 @@
 #!/bin/bash
 COMMIT=$(git rev-parse --short HEAD)
-GIT_TAG=${DRONE_TAG:-$(git tag -l --contains HEAD | head -n 1)}
-if [ -z "$GIT_TAG" ]; then
-    GIT_TAG=$(git rev-parse --short HEAD)
-    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-        GIT_TAG="$GIT_TAG-dirty"
-    fi
-fi
-
+VERSION=${DRONE_TAG:-$(git tag -l --contains HEAD | head -n 1)}
 if [ -z "$VERSION" ]; then
-    VERSION=$GIT_TAG
+    VERSION=$(git rev-parse --short HEAD)
+    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+        VERSION="$VERSION-dirty"
+    fi
 fi
