@@ -21,8 +21,6 @@ steps:
   - name: github_binary_release
     image: plugins/github-release
     settings:
-      build_args:
-      - "VERSION=${DRONE_TAG}"
       api_key:
         from_secret: github_token
       files:
@@ -63,8 +61,6 @@ steps:
   - name: github_binary_release
     image: plugins/github-release
     settings:
-      build_args:
-      - "VERSION=${DRONE_TAG}"
       api_key:
         from_secret: github_token
       files:
