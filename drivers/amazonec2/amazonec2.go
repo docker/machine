@@ -952,12 +952,12 @@ func (d *Driver) createKeyPair() error {
 		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath, d.GetSSHKeyPath()); err != nil {
 			return err
 		}
-		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
-			return err
-		}
 		if d.KeyName != "" {
 			log.Debugf("Using existing EC2 key pair: %s", d.KeyName)
 			return nil
+		}
+		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
+			return err
 		}
 		keyPath = d.SSHPrivateKeyPath
 	}
