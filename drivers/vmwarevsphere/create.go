@@ -264,10 +264,13 @@ func (d *Driver) createFromVmName() error {
 	}
 
 	var info *types.TaskInfo
-	ref := d.resourcepool.Reference()
+	poolref := d.resourcepool.Reference()
+	hostref := d.hostsystem.Reference()
+
 	spec := types.VirtualMachineCloneSpec{
 		Location: types.VirtualMachineRelocateSpec{
-			Pool: &ref,
+			Pool: &poolref,
+			Host: &hostref,
 		},
 		Config: &types.VirtualMachineConfigSpec{
 			GuestId:  "otherLinux64Guest",
