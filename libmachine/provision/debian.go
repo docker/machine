@@ -33,6 +33,10 @@ func (provisioner *DebianProvisioner) String() string {
 	return "debian"
 }
 
+func (provisioner *DebianProvisioner) CompatibleWithHost() bool {
+	return provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID || provisioner.OsReleaseInfo.IDLike == provisioner.OsReleaseID
+}
+
 func (provisioner *DebianProvisioner) Package(name string, action pkgaction.PackageAction) error {
 	var packageAction string
 
