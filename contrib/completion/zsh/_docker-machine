@@ -175,7 +175,7 @@ __docker-machine_subcommand() {
         "*:host:__docker-machine_hosts_all"
     )
     opts_driver=('amazonec2' 'azure' 'digitalocean' 'exoscale' 'generic' 'google' 'hyperv' 'none' 'openstack' 'rackspace' 'softlayer' 'virtualbox' 'vmwarefusion' 'vmwarevcloudair' 'vmwarevsphere')
-    opts_storage_driver=('overlay' 'aufs' 'btrfs' 'devicemapper' 'vfs' 'zfs')
+    opts_storage_driver=('overlay' 'overlay2' 'aufs' 'btrfs' 'devicemapper' 'vfs' 'zfs')
     integer ret=1
 
     case "$words[1]" in
