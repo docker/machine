@@ -88,7 +88,7 @@ func ConfigureAuth(p Provisioner) error {
 	}
 
 	// The Host IP is always added to the certificate's SANs list
-	hosts := append(authOptions.ServerCertSANs, ip, "localhost")
+	hosts := append(authOptions.ServerCertSANs, ip, "localhost", "127.0.0.1")
 	log.Debugf("generating server cert: %s ca-key=%s private-key=%s org=%s san=%s",
 		authOptions.ServerCertPath,
 		authOptions.CaCertPath,
