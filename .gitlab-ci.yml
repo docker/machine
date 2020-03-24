@@ -55,8 +55,6 @@ variables:
 .release:
   image: ${CI_IMAGE}
   stage: release
-  tags:
-  - release
 
 .release_development:
   only:
