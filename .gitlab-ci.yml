@@ -1,5 +1,3 @@
-image: docker:19.03.2
-
 stages:
 - prepare
 - validate
@@ -10,6 +8,11 @@ variables:
   USE_CONTAINER: "true"
   CI_IMAGE: registry.gitlab.com/gitlab-org/ci-cd/docker-machine/ci:alpine3.10
 
+default:
+  image: docker:19.03.2
+  tags:
+  - gitlab-org
+
 .docker_in_docker:
   services:
   - docker:19.03.2-dind
@@ -18,7 +21,7 @@ variables:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: "/certs"
   tags:
-  - docker
+  - gitlab-org-docker
 
 .merge_request_pipelines:
   only:
