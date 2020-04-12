@@ -43,6 +43,10 @@ func (provisioner *CoreOSProvisioner) String() string {
 	return "coreOS"
 }
 
+func (provisioner *CoreOSProvisioner) CompatibleWithHost() bool {
+	return provisioner.OsReleaseInfo.ID == provisioner.OsReleaseID || provisioner.OsReleaseInfo.IDLike == provisioner.OsReleaseID
+}
+
 func (provisioner *CoreOSProvisioner) SetHostname(hostname string) error {
 	log.Debugf("SetHostname: %s", hostname)
 
