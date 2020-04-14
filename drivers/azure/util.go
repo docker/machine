@@ -1,13 +1,13 @@
 package azure
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/url"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/arm/network"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2019-12-01/network"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/rancher/machine/drivers/azure/azureutil"
@@ -19,11 +19,11 @@ import (
 )
 
 var (
-	environments = map[string]azure.Environment{
-		azure.PublicCloud.Name:       azure.PublicCloud,
-		azure.USGovernmentCloud.Name: azure.USGovernmentCloud,
-		azure.ChinaCloud.Name:        azure.ChinaCloud,
-		azure.GermanCloud.Name:       azure.GermanCloud,
+	supportedEnvironments = []string{
+		azure.PublicCloud.Name,
+		azure.USGovernmentCloud.Name,
+		azure.ChinaCloud.Name,
+		azure.GermanCloud.Name,
 	}
 )
 
@@ -37,40 +37,35 @@ func (r requiredOptionError) Error() string {
 
 // newAzureClient creates an AzureClient helper from the Driver context and
 // initiates authentication if required.
-func (d *Driver) newAzureClient() (*azureutil.AzureClient, error) {
-	env, ok := environments[d.Environment]
-	if !ok {
-		valid := make([]string, 0, len(environments))
-		for k := range environments {
-			valid = append(valid, k)
-		}
-
-		return nil, fmt.Errorf("Invalid Azure environment: %q, supported values: %s", d.Environment, strings.Join(valid, ", "))
+func (d *Driver) newAzureClient(ctx context.Context) (*azureutil.AzureClient, error) {
+	env, err := azure.EnvironmentFromName(d.Environment)
+	if err != nil {
+		supportedValues := strings.Join(supportedEnvironments, ", ")
+		return nil, fmt.Errorf("Invalid Azure environment: %q, supported values: %s", d.Environment, supportedValues)
 	}
 
 	var (
-		token *azure.ServicePrincipalToken
-		err   error
+		authorizer *autorest.BearerAuthorizer
 	)
-	if d.ClientID != "" && d.ClientSecret != "" { // use Service Principal auth
-		log.Debug("Using Azure service principal authentication.")
-		token, err = azureutil.AuthenticateServicePrincipal(env, d.SubscriptionID, d.ClientID, d.ClientSecret)
+	if d.ClientID != "" && d.ClientSecret != "" { // use client credentials auth
+		log.Debug("Using Azure client credentials.")
+		authorizer, err = azureutil.AuthenticateClientCredentials(ctx, env, d.SubscriptionID, d.ClientID, d.ClientSecret)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to authenticate using service principal credentials: %+v", err)
+			return nil, fmt.Errorf("Failed to authenticate using client credentials: %+v", err)
 		}
 	} else { // use browser-based device auth
 		log.Debug("Using Azure device flow authentication.")
-		token, err = azureutil.AuthenticateDeviceFlow(env, d.SubscriptionID)
+		authorizer, err = azureutil.AuthenticateDeviceFlow(ctx, env, d.SubscriptionID)
 		if err != nil {
 			return nil, fmt.Errorf("Error creating Azure client: %v", err)
 		}
 	}
-	return azureutil.New(env, d.SubscriptionID, token), nil
+	return azureutil.New(env, d.SubscriptionID, authorizer), nil
 }
 
 // generateSSHKey creates a ssh key pair locally and saves the public key file
 // contents in OpenSSH format to the DeploymentContext.
-func (d *Driver) generateSSHKey(ctx *azureutil.DeploymentContext) error {
+func (d *Driver) generateSSHKey(deploymentCtx *azureutil.DeploymentContext) error {
 	privPath := d.GetSSHKeyPath()
 	pubPath := privPath + ".pub"
 
@@ -85,7 +80,7 @@ func (d *Driver) generateSSHKey(ctx *azureutil.DeploymentContext) error {
 	log.Debug("SSH key pair generated.")
 
 	publicKey, err := ioutil.ReadFile(pubPath)
-	ctx.SSHPublicKey = string(publicKey)
+	deploymentCtx.SSHPublicKey = string(publicKey)
 	return err
 }
 
@@ -101,8 +96,8 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 				DestinationAddressPrefix: to.StringPtr("*"),
 				SourcePortRange:          to.StringPtr(srcPort),
 				DestinationPortRange:     to.StringPtr(dstPort),
-				Access:                   network.Allow,
-				Direction:                network.Inbound,
+				Access:                   network.SecurityRuleAccessAllow,
+				Direction:                network.SecurityRuleDirectionInbound,
 				Protocol:                 proto,
 				Priority:                 to.Int32Ptr(int32(priority)),
 			},
@@ -113,25 +108,8 @@ func (d *Driver) getSecurityRules(extraPorts []string) (*[]network.SecurityRule,
 
 	// Base ports to be opened for any machine
 	rl := []network.SecurityRule{
-		mkRule(100, "SSHAllowAny", "Allow ssh from public Internet", "*", fmt.Sprintf("%d", d.BaseDriver.SSHPort), network.TCP),
-		mkRule(300, "DockerAllowAny", "Allow docker engine access (TLS-protected)", "*", fmt.Sprintf("%d", d.DockerPort), network.TCP),
-	}
-
-	// Open swarm port if configured
-	if d.BaseDriver.SwarmMaster {
-		swarmHost := d.BaseDriver.SwarmHost
-		log.Debugf("Swarm host is configured as %q", swarmHost)
-		u, err := url.Parse(swarmHost)
-		if err != nil {
-			return nil, fmt.Errorf("Cannot parse URL %q: %v", swarmHost, err)
-		}
-		_, swarmPort, err := net.SplitHostPort(u.Host)
-		if err != nil {
-			return nil, fmt.Errorf("Could not parse swarm port in %q: %v", u.Host, err)
-		}
-		rl = append(rl, mkRule(500, "DockerSwarmAllowAny", "Allow swarm manager access (TLS-protected)", "*", swarmPort, network.TCP))
-	} else {
-		log.Debug("Swarm host is not configured.")
+		mkRule(100, "SSHAllowAny", "Allow ssh from public Internet", "*", fmt.Sprintf("%d", d.BaseDriver.SSHPort), network.SecurityRuleProtocolTCP),
+		mkRule(300, "DockerAllowAny", "Allow docker engine access (TLS-protected)", "*", fmt.Sprintf("%d", d.DockerPort), network.SecurityRuleProtocolTCP),
 	}
 
 	// extra port numbers requested by user
@@ -159,8 +137,8 @@ func (d *Driver) naming() azureutil.ResourceNaming {
 
 // ipAddress returns machine’s private or public IP address according to the
 // configuration. If no IP address is found it returns empty string.
-func (d *Driver) ipAddress() (ip string, err error) {
-	c, err := d.newAzureClient()
+func (d *Driver) ipAddress(ctx context.Context) (ip string, err error) {
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -168,10 +146,10 @@ func (d *Driver) ipAddress() (ip string, err error) {
 	var ipType string
 	if d.UsePrivateIP || d.NoPublicIP {
 		ipType = "Private"
-		ip, err = c.GetPrivateIPAddress(d.ResourceGroup, d.naming().NIC())
+		ip, err = c.GetPrivateIPAddress(ctx, d.ResourceGroup, d.naming().NIC())
 	} else {
 		ipType = "Public"
-		ip, err = c.GetPublicIPAddress(d.ResourceGroup,
+		ip, err = c.GetPublicIPAddress(ctx, d.ResourceGroup,
 			d.naming().IP(),
 			d.DNSLabel != "")
 	}
@@ -219,11 +197,11 @@ func parseVirtualNetwork(name string, defaultRG string) (string, string) {
 func parseSecurityRuleProtocol(proto string) (network.SecurityRuleProtocol, error) {
 	switch strings.ToLower(proto) {
 	case "tcp":
-		return network.TCP, nil
+		return network.SecurityRuleProtocolTCP, nil
 	case "udp":
-		return network.UDP, nil
+		return network.SecurityRuleProtocolUDP, nil
 	case "*":
-		return network.Asterisk, nil
+		return network.SecurityRuleProtocolAsterisk, nil
 	default:
 		return "", fmt.Errorf("invalid protocol %s", proto)
 	}

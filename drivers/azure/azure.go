@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 	"github.com/rancher/machine/libmachine/mcnflag"
 	"github.com/rancher/machine/libmachine/state"
 
-	"github.com/Azure/azure-sdk-for-go/arm/storage"
+	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-06-01/storage"
 )
 
 const (
@@ -98,11 +99,11 @@ type Driver struct {
 	NoPublicIP     bool
 	DNSLabel       string
 	StaticPublicIP bool
-	CustomDataFile string
+	CustomDataFile string // Can provide cloud-config file here
 
 	// Ephemeral fields
-	ctx        *azureutil.DeploymentContext
-	resolvedIP string // cache
+	deploymentCtx *azureutil.DeploymentContext
+	resolvedIP    string // cache
 }
 
 // NewDriver returns a new driver instance.
@@ -271,7 +272,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 // and checks if the arguments have values.
 func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	// Initialize driver context for machine
-	d.ctx = &azureutil.DeploymentContext{}
+	d.deploymentCtx = &azureutil.DeploymentContext{}
 
 	// Required string flags
 	flags := []struct {
@@ -334,31 +335,46 @@ func (d *Driver) PreCreateCheck() (err error) {
 		}
 	}
 
-	c, err := d.newAzureClient()
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Register used resource providers with current Azure subscription.
-	if err := c.RegisterResourceProviders(
+	if err := c.RegisterResourceProviders(ctx,
 		"Microsoft.Compute",
 		"Microsoft.Network",
-		"Microsoft.Storage"); err != nil {
+		"Microsoft.Storage",
+		"Microsoft.Subscription",
+		"Microsoft.Resources"); err != nil {
 		return err
 	}
 
 	// Validate if firewall rules can be read correctly
-	d.ctx.FirewallRules, err = d.getSecurityRules(d.OpenPorts)
+	d.deploymentCtx.FirewallRules, err = d.getSecurityRules(d.OpenPorts)
 	if err != nil {
 		return err
 	}
 
 	// Check if virtual machine exists. An existing virtual machine cannot be updated.
 	log.Debug("Checking if Virtual Machine already exists.")
-	if exists, err := c.VirtualMachineExists(d.ResourceGroup, d.naming().VM()); err != nil {
+	exists, err := c.VirtualMachineExists(ctx, d.ResourceGroup, d.naming().VM())
+	if err != nil {
 		return err
-	} else if exists {
+	}
+	if exists {
 		return fmt.Errorf("Virtual Machine with name %s already exists in resource group %q", d.naming().VM(), d.ResourceGroup)
+	}
+
+	// Check if virtual machine exists. An existing virtual machine cannot be updated.
+	log.Debug("Checking if OS Disk already exists.")
+	exists, err = c.OSDiskExists(ctx, d.ResourceGroup, d.naming().OSDisk())
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("OS Disk with name %s already exists in resource group %q", d.naming().VM(), d.ResourceGroup)
 	}
 
 	// NOTE(ahmetalpbalkan) we could have done more checks here but Azure often
@@ -378,7 +394,8 @@ func (d *Driver) Create() error {
 	// However that would lead to a concurrency logic and while creation of a
 	// resource fails, other ones would be kicked off, which could lead to a
 	// resource leak. This is slower but safer.
-	c, err := d.newAzureClient()
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return err
 	}
@@ -392,44 +409,44 @@ func (d *Driver) Create() error {
 		customData = base64.StdEncoding.EncodeToString(buf)
 	}
 
-	if err := c.CreateResourceGroup(d.ResourceGroup, d.Location); err != nil {
+	if err := c.CreateResourceGroup(ctx, d.ResourceGroup, d.Location); err != nil {
 		return err
 	}
-	if err := c.CreateAvailabilitySetIfNotExists(d.ctx, d.ResourceGroup, d.AvailabilitySet, d.Location, d.ManagedDisks, int32(d.FaultCount), int32(d.UpdateCount)); err != nil {
+	if err := c.CreateAvailabilitySetIfNotExists(ctx, d.deploymentCtx, d.ResourceGroup, d.AvailabilitySet, d.Location, d.ManagedDisks, int32(d.FaultCount), int32(d.UpdateCount)); err != nil {
 		return err
 	}
-	if err := c.CreateNetworkSecurityGroup(d.ctx, d.ResourceGroup, d.naming().NSG(), d.Location, d.ctx.FirewallRules); err != nil {
+	if err := c.CreateNetworkSecurityGroup(ctx, d.deploymentCtx, d.ResourceGroup, d.naming().NSG(), d.Location, d.deploymentCtx.FirewallRules); err != nil {
 		return err
 	}
 	vnetResourceGroup, vNetName := parseVirtualNetwork(d.VirtualNetwork, d.ResourceGroup)
-	if err := c.CreateVirtualNetworkIfNotExists(vnetResourceGroup, vNetName, d.Location); err != nil {
+	if err := c.CreateVirtualNetworkIfNotExists(ctx, vnetResourceGroup, vNetName, d.Location); err != nil {
 		return err
 	}
-	if err := c.CreateSubnet(d.ctx, vnetResourceGroup, vNetName, d.SubnetName, d.SubnetPrefix); err != nil {
+	if err := c.CreateSubnet(ctx, d.deploymentCtx, vnetResourceGroup, vNetName, d.SubnetName, d.SubnetPrefix); err != nil {
 		return err
 	}
 	if d.NoPublicIP {
 		log.Info("Not creating a public IP address.")
 	} else {
-		if err := c.CreatePublicIPAddress(d.ctx, d.ResourceGroup, d.naming().IP(), d.Location, d.StaticPublicIP, d.DNSLabel); err != nil {
+		if err := c.CreatePublicIPAddress(ctx, d.deploymentCtx, d.ResourceGroup, d.naming().IP(), d.Location, d.StaticPublicIP, d.DNSLabel); err != nil {
 			return err
 		}
 	}
-	if err := c.CreateNetworkInterface(d.ctx, d.ResourceGroup, d.naming().NIC(), d.Location,
-		d.ctx.PublicIPAddressID, d.ctx.SubnetID, d.ctx.NetworkSecurityGroupID, d.PrivateIPAddr); err != nil {
+	if err := c.CreateNetworkInterface(ctx, d.deploymentCtx, d.ResourceGroup, d.naming().NIC(), d.Location,
+		d.deploymentCtx.PublicIPAddressID, d.deploymentCtx.SubnetID, d.deploymentCtx.NetworkSecurityGroupID, d.PrivateIPAddr); err != nil {
 		return err
 	}
 	if !d.ManagedDisks {
 		// storage account is only necessary when using unmanaged disks
-		if err := c.CreateStorageAccount(d.ctx, d.ResourceGroup, d.Location, storage.SkuName(d.StorageType)); err != nil {
+		if err := c.CreateStorageAccount(ctx, d.deploymentCtx, d.ResourceGroup, d.Location, storage.SkuName(d.StorageType)); err != nil {
 			return err
 		}
 	}
-	if err := d.generateSSHKey(d.ctx); err != nil {
+	if err := d.generateSSHKey(d.deploymentCtx); err != nil {
 		return err
 	}
-	if err := c.CreateVirtualMachine(d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.ctx.AvailabilitySetID,
-		d.ctx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.ctx.SSHPublicKey, d.Image, customData, d.ctx.StorageAccount,
+	if err := c.CreateVirtualMachine(ctx, d.ResourceGroup, d.naming().VM(), d.Location, d.Size, d.deploymentCtx.AvailabilitySetID,
+		d.deploymentCtx.NetworkInterfaceID, d.BaseDriver.SSHUser, d.deploymentCtx.SSHPublicKey, d.Image, customData, d.deploymentCtx.StorageAccount,
 		d.ManagedDisks, d.StorageType, int32(d.DiskSize)); err != nil {
 		return err
 	}
@@ -455,29 +472,30 @@ func (d *Driver) Remove() error {
 	//     then delete the VM, this could enable some parallelization.
 
 	log.Info("NOTICE: Please check Azure portal/CLI to make sure you have no leftover resources to avoid unexpected charges.")
-	c, err := d.newAzureClient()
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return err
 	}
-	if err := c.DeleteVirtualMachineIfExists(d.ResourceGroup, d.naming().VM()); err != nil {
+	if err := c.DeleteVirtualMachineIfExists(ctx, d.ResourceGroup, d.naming().VM()); err != nil {
 		return err
 	}
-	if err := c.DeleteNetworkInterfaceIfExists(d.ResourceGroup, d.naming().NIC()); err != nil {
+	if err := c.DeleteNetworkInterfaceIfExists(ctx, d.ResourceGroup, d.naming().NIC()); err != nil {
 		return err
 	}
-	if err := c.DeletePublicIPAddressIfExists(d.ResourceGroup, d.naming().IP()); err != nil {
+	if err := c.DeletePublicIPAddressIfExists(ctx, d.ResourceGroup, d.naming().IP()); err != nil {
 		return err
 	}
-	if err := c.DeleteNetworkSecurityGroupIfExists(d.ResourceGroup, d.naming().NSG()); err != nil {
+	if err := c.DeleteNetworkSecurityGroupIfExists(ctx, d.ResourceGroup, d.naming().NSG()); err != nil {
 		return err
 	}
-	if err := c.CleanupAvailabilitySetIfExists(d.ResourceGroup, d.AvailabilitySet); err != nil {
+	if err := c.CleanupAvailabilitySetIfExists(ctx, d.ResourceGroup, d.AvailabilitySet); err != nil {
 		return err
 	}
-	if err := c.CleanupSubnetIfExists(d.ResourceGroup, d.VirtualNetwork, d.SubnetName); err != nil {
+	if err := c.CleanupSubnetIfExists(ctx, d.ResourceGroup, d.VirtualNetwork, d.SubnetName); err != nil {
 		return err
 	}
-	err = c.CleanupVirtualNetworkIfExists(d.ResourceGroup, d.VirtualNetwork)
+	err = c.CleanupVirtualNetworkIfExists(ctx, d.ResourceGroup, d.VirtualNetwork)
 	return err
 }
 
@@ -488,7 +506,8 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	if d.resolvedIP == "" {
-		ip, err := d.ipAddress()
+		ctx := context.Background()
+		ip, err := d.ipAddress(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -531,11 +550,12 @@ func (d *Driver) GetState() (state.State, error) {
 		return state.None, err
 	}
 
-	c, err := d.newAzureClient()
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return state.None, err
 	}
-	powerState, err := c.GetVirtualMachinePowerState(
+	powerState, err := c.GetVirtualMachinePowerState(ctx,
 		d.ResourceGroup, d.naming().VM())
 	if err != nil {
 		return state.None, err
@@ -553,11 +573,12 @@ func (d *Driver) Start() error {
 		return err
 	}
 
-	c, err := d.newAzureClient()
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return err
 	}
-	return c.StartVirtualMachine(d.ResourceGroup, d.naming().VM())
+	return c.StartVirtualMachine(ctx, d.ResourceGroup, d.naming().VM())
 }
 
 // Stop issues a power off for the virtual machine instance.
@@ -566,13 +587,14 @@ func (d *Driver) Stop() error {
 		return err
 	}
 
-	c, err := d.newAzureClient()
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return err
 	}
 	log.Info("NOTICE: Stopping an Azure Virtual Machine is just going to power it off, not deallocate.")
 	log.Info("NOTICE: You should remove the machine if you would like to avoid unexpected costs.")
-	return c.StopVirtualMachine(d.ResourceGroup, d.naming().VM())
+	return c.StopVirtualMachine(ctx, d.ResourceGroup, d.naming().VM(), false)
 }
 
 // Restart reboots the virtual machine instance.
@@ -584,19 +606,26 @@ func (d *Driver) Restart() error {
 	// NOTE(ahmetalpbalkan) Azure will always keep the VM in Running state
 	// during the restart operation. Hence we rely on returned async operation
 	// polling to make sure the reboot is waited upon.
-	c, err := d.newAzureClient()
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
 	if err != nil {
 		return err
 	}
-	return c.RestartVirtualMachine(d.ResourceGroup, d.naming().VM())
+	return c.RestartVirtualMachine(ctx, d.ResourceGroup, d.naming().VM())
 }
 
 // Kill stops the virtual machine role instance.
 func (d *Driver) Kill() error {
-	// NOTE(ahmetalpbalkan) In Azure, there is no kill option for virtual
-	// machines, Stop() is the closest option.
-	log.Debug("Azure does not implement kill. Calling Stop instead.")
-	return d.Stop()
+	if err := d.checkLegacyDriver(true); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	c, err := d.newAzureClient(ctx)
+	if err != nil {
+		return err
+	}
+	return c.StopVirtualMachine(ctx, d.ResourceGroup, d.naming().VM(), true)
 }
 
 // checkLegacyDriver errors out if it encounters an Azure VM created with the

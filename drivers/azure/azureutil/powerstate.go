@@ -5,10 +5,11 @@ import (
 
 	"github.com/rancher/machine/libmachine/log"
 
-	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-12-01/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 )
 
+// VMPowerState indicates the power state of the VM or is Unknown
 type VMPowerState string
 
 const (
@@ -52,7 +53,8 @@ func powerStateFromInstanceView(instanceView *compute.VirtualMachineInstanceView
 	if instanceView == nil {
 		log.Debug("Retrieved nil instance view.")
 		return Unknown
-	} else if instanceView.Statuses == nil || len(*instanceView.Statuses) == 0 {
+	}
+	if instanceView.Statuses == nil || len(*instanceView.Statuses) == 0 {
 		log.Debug("Retrieved nil or empty instanceView.statuses.")
 		return Unknown
 	}
