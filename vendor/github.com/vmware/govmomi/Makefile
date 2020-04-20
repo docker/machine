@@ -1,24 +1,32 @@
-.PHONY: test
+GO                      ?= go
+pkgs                    = $(shell $(GO) list ./... | grep -v 'github.com/vmware/govmomi/vim25/xml')
 
 all: check test
 
 check: goimports govet
 
-vendor:
-	go get golang.org/x/tools/cmd/goimports
-	go get github.com/davecgh/go-spew/spew
-	go get golang.org/x/net/context
-
-goimports: vendor
+goimports:
 	@echo checking go imports...
+	@command -v goimports >/dev/null 2>&1 || $(GO) get golang.org/x/tools/cmd/goimports
 	@! goimports -d . 2>&1 | egrep -v '^$$'
 
 govet:
 	@echo checking go vet...
-	@go tool vet -structtags=false -methods=false .
+	@$(GO) vet -structtag=false -methods=false $(pkgs)
 
-test: vendor
-	go test -v $(TEST_OPTS) ./...
+install:
+	$(MAKE) -C govc install
+	$(MAKE) -C vcsim install
 
-install: vendor
-	go install github.com/vmware/govmomi/govc
+go-test:
+	GORACE=history_size=5 $(GO) test -timeout 5m -count 1 -race -v $(TEST_OPTS) ./...
+
+govc-test: install
+	./govc/test/images/update.sh
+	(cd govc/test && ./vendor/github.com/sstephenson/bats/libexec/bats -t .)
+
+.PHONY: test
+test: go-test govc-test
+
+doc: install
+	./govc/usage.sh > ./govc/USAGE.md

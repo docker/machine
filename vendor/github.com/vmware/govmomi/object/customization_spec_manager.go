@@ -17,10 +17,12 @@ limitations under the License.
 package object
 
 import (
+	"context"
+
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
+	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type CustomizationSpecManager struct {
@@ -33,6 +35,12 @@ func NewCustomizationSpecManager(c *vim25.Client) *CustomizationSpecManager {
 	}
 
 	return &cs
+}
+
+func (cs CustomizationSpecManager) Info(ctx context.Context) ([]types.CustomizationSpecInfo, error) {
+	var m mo.CustomizationSpecManager
+	err := cs.Properties(ctx, cs.Reference(), []string{"info"}, &m)
+	return m.Info, err
 }
 
 func (cs CustomizationSpecManager) DoesCustomizationSpecExist(ctx context.Context, name string) (bool, error) {

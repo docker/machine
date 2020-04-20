@@ -534,7 +534,7 @@ func (d *Driver) Create() error {
 		return err
 	}
 	p := soap.DefaultUpload
-	if err = c.Client.UploadFile(d.ISO, dsurl, &p); err != nil {
+	if err = c.Client.UploadFile(ctx, d.ISO, dsurl, &p); err != nil {
 		return err
 	}
 
@@ -676,7 +676,7 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return err
 	}
-	if err = c.Client.UploadFile(src, u, nil); err != nil {
+	if err = c.Client.UploadFile(ctx, src, u, nil); err != nil {
 		return err
 	}
 
@@ -1030,8 +1030,10 @@ type FileAttrFlag struct {
 }
 
 func (f *FileAttrFlag) SetPerms(owner, group, perms int) {
-	f.OwnerId = int32(owner)
-	f.GroupId = int32(group)
+	owner32 := int32(owner)
+	group32 := int32(group)
+	f.OwnerId = &owner32
+	f.GroupId = &group32
 	f.Permissions = int64(perms)
 }
 

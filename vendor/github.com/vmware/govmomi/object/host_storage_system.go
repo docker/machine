@@ -17,12 +17,12 @@ limitations under the License.
 package object
 
 import (
+	"context"
 	"errors"
 
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type HostStorageSystem struct {
@@ -77,4 +77,124 @@ func (s HostStorageSystem) UpdateDiskPartitionInfo(ctx context.Context, devicePa
 
 	_, err := methods.UpdateDiskPartitions(ctx, s.c, &req)
 	return err
+}
+
+func (s HostStorageSystem) RescanAllHba(ctx context.Context) error {
+	req := types.RescanAllHba{
+		This: s.Reference(),
+	}
+
+	_, err := methods.RescanAllHba(ctx, s.c, &req)
+	return err
+}
+
+func (s HostStorageSystem) Refresh(ctx context.Context) error {
+	req := types.RefreshStorageSystem{
+		This: s.Reference(),
+	}
+
+	_, err := methods.RefreshStorageSystem(ctx, s.c, &req)
+	return err
+}
+
+func (s HostStorageSystem) RescanVmfs(ctx context.Context) error {
+	req := types.RescanVmfs{
+		This: s.Reference(),
+	}
+
+	_, err := methods.RescanVmfs(ctx, s.c, &req)
+	return err
+}
+
+func (s HostStorageSystem) MarkAsSsd(ctx context.Context, uuid string) (*Task, error) {
+	req := types.MarkAsSsd_Task{
+		This:         s.Reference(),
+		ScsiDiskUuid: uuid,
+	}
+
+	res, err := methods.MarkAsSsd_Task(ctx, s.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(s.c, res.Returnval), nil
+}
+
+func (s HostStorageSystem) MarkAsNonSsd(ctx context.Context, uuid string) (*Task, error) {
+	req := types.MarkAsNonSsd_Task{
+		This:         s.Reference(),
+		ScsiDiskUuid: uuid,
+	}
+
+	res, err := methods.MarkAsNonSsd_Task(ctx, s.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(s.c, res.Returnval), nil
+}
+
+func (s HostStorageSystem) MarkAsLocal(ctx context.Context, uuid string) (*Task, error) {
+	req := types.MarkAsLocal_Task{
+		This:         s.Reference(),
+		ScsiDiskUuid: uuid,
+	}
+
+	res, err := methods.MarkAsLocal_Task(ctx, s.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(s.c, res.Returnval), nil
+}
+
+func (s HostStorageSystem) MarkAsNonLocal(ctx context.Context, uuid string) (*Task, error) {
+	req := types.MarkAsNonLocal_Task{
+		This:         s.Reference(),
+		ScsiDiskUuid: uuid,
+	}
+
+	res, err := methods.MarkAsNonLocal_Task(ctx, s.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(s.c, res.Returnval), nil
+}
+
+func (s HostStorageSystem) AttachScsiLun(ctx context.Context, uuid string) error {
+	req := types.AttachScsiLun{
+		This:    s.Reference(),
+		LunUuid: uuid,
+	}
+
+	_, err := methods.AttachScsiLun(ctx, s.c, &req)
+
+	return err
+}
+
+func (s HostStorageSystem) QueryUnresolvedVmfsVolumes(ctx context.Context) ([]types.HostUnresolvedVmfsVolume, error) {
+	req := &types.QueryUnresolvedVmfsVolume{
+		This: s.Reference(),
+	}
+
+	res, err := methods.QueryUnresolvedVmfsVolume(ctx, s.Client(), req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Returnval, nil
+}
+
+func (s HostStorageSystem) UnmountVmfsVolume(ctx context.Context, vmfsUuid string) error {
+	req := &types.UnmountVmfsVolume{
+		This:     s.Reference(),
+		VmfsUuid: vmfsUuid,
+	}
+
+	_, err := methods.UnmountVmfsVolume(ctx, s.Client(), req)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

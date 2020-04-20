@@ -9,15 +9,23 @@ Change _$USER_ below to your github username if they are not the same.
 
 ``` shell
 export GOPATH=$HOME/govmomi
-mkdir -p $GOPATH/src/github.com/vmware
-cd $GOPATH/src/github.com/vmware
-git clone git@github.com:vmware/govmomi.git
-cd govmomi
+go get github.com/vmware/govmomi
+cd $GOPATH/src/github.com/vmware/govmomi
 git config push.default nothing # anything to avoid pushing to vmware/govmomi by default
 git remote rename origin vmware
 git remote add $USER git@github.com:$USER/govmomi.git
 git fetch $USER
 ```
+
+## Installing from source
+
+Compile the govmomi libraries and install govc using:
+
+``` shell
+go install -v github.com/vmware/govmomi/govc
+```
+
+Note that **govc/build.sh** is only used for building release binaries.
 
 ## Contribution flow
 
@@ -26,6 +34,7 @@ This is a rough outline of what a contributor's workflow looks like:
 - Create a topic branch from where you want to base your work.
 - Make commits of logical units.
 - Make sure your commit messages are in the proper format (see below).
+- Update CHANGELOG.md and/or govc/CHANGELOG.md when appropriate.
 - Push your changes to a topic branch in your fork of the repository.
 - Submit a pull request to vmware/govmomi.
 
