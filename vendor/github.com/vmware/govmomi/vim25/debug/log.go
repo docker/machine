@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2014 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,30 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package object
+package debug
 
 import (
-	"github.com/vmware/govmomi/vim25"
-	"github.com/vmware/govmomi/vim25/methods"
-	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
+	"io"
+	"log"
 )
 
-type ListView struct {
-	Common
+type LogWriterCloser struct {
 }
 
-func NewListView(c *vim25.Client, ref types.ManagedObjectReference) *ListView {
-	return &ListView{
-		Common: NewCommon(c, ref),
-	}
+func NewLogWriterCloser() *LogWriterCloser {
+	return &LogWriterCloser{}
 }
 
-func (v ListView) Destroy(ctx context.Context) error {
-	req := types.DestroyView{
-		This: v.Reference(),
-	}
+func (lwc *LogWriterCloser) Write(p []byte) (n int, err error) {
+	log.Print(string(Scrub(p)))
+	return len(p), nil
+}
 
-	_, err := methods.DestroyView(ctx, v.c, &req)
-	return err
+func (lwc *LogWriterCloser) Close() error {
+	return nil
+}
+
+type LogProvider struct {
+}
+
+func (s *LogProvider) NewFile(p string) io.WriteCloser {
+	log.Print(p)
+	return NewLogWriterCloser()
+}
+
+func (s *LogProvider) Flush() {
 }

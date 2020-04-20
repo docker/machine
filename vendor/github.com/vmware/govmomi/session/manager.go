@@ -17,15 +17,46 @@ limitations under the License.
 package session
 
 import (
+	"context"
+	"io/ioutil"
+	"net/http"
 	"net/url"
+	"os"
+	"strings"
 
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
+
+// Locale defaults to "en_US" and can be overridden via this var or the GOVMOMI_LOCALE env var.
+// A value of "_" uses the server locale setting.
+var Locale = os.Getenv("GOVMOMI_LOCALE")
+
+func init() {
+	if Locale == "_" {
+		Locale = ""
+	} else if Locale == "" {
+		Locale = "en_US"
+	}
+}
+
+// Secret returns the contents if a file path value is given, otherwise returns value itself.
+func Secret(value string) (string, error) {
+	if len(value) == 0 {
+		return value, nil
+	}
+	contents, err := ioutil.ReadFile(value)
+	if err != nil {
+		if os.IsPermission(err) {
+			return "", err
+		}
+		return value, nil
+	}
+	return strings.TrimSpace(string(contents)), nil
+}
 
 type Manager struct {
 	client      *vim25.Client
@@ -44,9 +75,20 @@ func (sm Manager) Reference() types.ManagedObjectReference {
 	return *sm.client.ServiceContent.SessionManager
 }
 
+func (sm *Manager) SetLocale(ctx context.Context, locale string) error {
+	req := types.SetLocale{
+		This:   sm.Reference(),
+		Locale: locale,
+	}
+
+	_, err := methods.SetLocale(ctx, sm.client, &req)
+	return err
+}
+
 func (sm *Manager) Login(ctx context.Context, u *url.Userinfo) error {
 	req := types.Login{
-		This: sm.Reference(),
+		This:   sm.Reference(),
+		Locale: Locale,
 	}
 
 	if u != nil {
@@ -65,14 +107,51 @@ func (sm *Manager) Login(ctx context.Context, u *url.Userinfo) error {
 	return nil
 }
 
-func (sm *Manager) LoginExtensionByCertificate(ctx context.Context, key string, locale string) error {
+// LoginExtensionByCertificate uses the vCenter SDK tunnel to login using a client certificate.
+// The client certificate can be set using the soap.Client.SetCertificate method.
+// See: https://kb.vmware.com/s/article/2004305
+func (sm *Manager) LoginExtensionByCertificate(ctx context.Context, key string) error {
+	c := sm.client
+	u := c.URL()
+	if u.Hostname() != "sdkTunnel" {
+		sc := c.Tunnel()
+		c = &vim25.Client{
+			Client:         sc,
+			RoundTripper:   sc,
+			ServiceContent: c.ServiceContent,
+		}
+		// When http.Transport.Proxy is used, our thumbprint checker is bypassed, resulting in:
+		// "Post https://sdkTunnel:8089/sdk: x509: certificate is valid for $vcenter_hostname, not sdkTunnel"
+		// The only easy way around this is to disable verification for the call to LoginExtensionByCertificate().
+		// TODO: find a way to avoid disabling InsecureSkipVerify.
+		c.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
+	}
+
 	req := types.LoginExtensionByCertificate{
 		This:         sm.Reference(),
 		ExtensionKey: key,
-		Locale:       locale,
+		Locale:       Locale,
 	}
 
-	login, err := methods.LoginExtensionByCertificate(ctx, sm.client, &req)
+	login, err := methods.LoginExtensionByCertificate(ctx, c, &req)
+	if err != nil {
+		return err
+	}
+
+	// Copy the session cookie
+	sm.client.Jar.SetCookies(u, c.Jar.Cookies(c.URL()))
+
+	sm.userSession = &login.Returnval
+	return nil
+}
+
+func (sm *Manager) LoginByToken(ctx context.Context) error {
+	req := types.LoginByToken{
+		This:   sm.Reference(),
+		Locale: Locale,
+	}
+
+	login, err := methods.LoginByToken(ctx, sm.client, &req)
 	if err != nil {
 		return err
 	}
@@ -160,4 +239,46 @@ func (sm *Manager) AcquireGenericServiceTicket(ctx context.Context, spec types.B
 	}
 
 	return &res.Returnval, nil
+}
+
+func (sm *Manager) AcquireLocalTicket(ctx context.Context, userName string) (*types.SessionManagerLocalTicket, error) {
+	req := types.AcquireLocalTicket{
+		This:     sm.Reference(),
+		UserName: userName,
+	}
+
+	res, err := methods.AcquireLocalTicket(ctx, sm.client, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Returnval, nil
+}
+
+func (sm *Manager) AcquireCloneTicket(ctx context.Context) (string, error) {
+	req := types.AcquireCloneTicket{
+		This: sm.Reference(),
+	}
+
+	res, err := methods.AcquireCloneTicket(ctx, sm.client, &req)
+	if err != nil {
+		return "", err
+	}
+
+	return res.Returnval, nil
+}
+
+func (sm *Manager) CloneSession(ctx context.Context, ticket string) error {
+	req := types.CloneSession{
+		This:        sm.Reference(),
+		CloneTicket: ticket,
+	}
+
+	res, err := methods.CloneSession(ctx, sm.client, &req)
+	if err != nil {
+		return err
+	}
+
+	sm.userSession = &res.Returnval
+	return nil
 }

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015-2017 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,10 +17,16 @@ limitations under the License.
 package guest
 
 import (
+	"context"
+	"net"
+	"net/url"
+	"sync"
+
+	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
+	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type FileManager struct {
@@ -29,6 +35,9 @@ type FileManager struct {
 	vm types.ManagedObjectReference
 
 	c *vim25.Client
+
+	mu    *sync.Mutex
+	hosts map[string]string
 }
 
 func (m FileManager) Reference() types.ManagedObjectReference {
@@ -48,13 +57,14 @@ func (m FileManager) ChangeFileAttributes(ctx context.Context, auth types.BaseGu
 	return err
 }
 
-func (m FileManager) CreateTemporaryDirectory(ctx context.Context, auth types.BaseGuestAuthentication, prefix, suffix string) (string, error) {
+func (m FileManager) CreateTemporaryDirectory(ctx context.Context, auth types.BaseGuestAuthentication, prefix, suffix string, path string) (string, error) {
 	req := types.CreateTemporaryDirectoryInGuest{
-		This:   m.Reference(),
-		Vm:     m.vm,
-		Auth:   auth,
-		Prefix: prefix,
-		Suffix: suffix,
+		This:          m.Reference(),
+		Vm:            m.vm,
+		Auth:          auth,
+		Prefix:        prefix,
+		Suffix:        suffix,
+		DirectoryPath: path,
 	}
 
 	res, err := methods.CreateTemporaryDirectoryInGuest(ctx, m.c, &req)
@@ -65,13 +75,14 @@ func (m FileManager) CreateTemporaryDirectory(ctx context.Context, auth types.Ba
 	return res.Returnval, nil
 }
 
-func (m FileManager) CreateTemporaryFile(ctx context.Context, auth types.BaseGuestAuthentication, prefix, suffix string) (string, error) {
+func (m FileManager) CreateTemporaryFile(ctx context.Context, auth types.BaseGuestAuthentication, prefix, suffix string, path string) (string, error) {
 	req := types.CreateTemporaryFileInGuest{
-		This:   m.Reference(),
-		Vm:     m.vm,
-		Auth:   auth,
-		Prefix: prefix,
-		Suffix: suffix,
+		This:          m.Reference(),
+		Vm:            m.vm,
+		Auth:          auth,
+		Prefix:        prefix,
+		Suffix:        suffix,
+		DirectoryPath: path,
 	}
 
 	res, err := methods.CreateTemporaryFileInGuest(ctx, m.c, &req)
@@ -105,6 +116,87 @@ func (m FileManager) DeleteFile(ctx context.Context, auth types.BaseGuestAuthent
 
 	_, err := methods.DeleteFileInGuest(ctx, m.c, &req)
 	return err
+}
+
+// TransferURL rewrites the url with a valid hostname and adds the host's thumbprint.
+// The InitiateFileTransfer{From,To}Guest methods return a URL with the host set to "*" when connected directly to ESX,
+// but return the address of VM's runtime host when connected to vCenter.
+func (m FileManager) TransferURL(ctx context.Context, u string) (*url.URL, error) {
+	turl, err := url.Parse(u)
+	if err != nil {
+		return nil, err
+	}
+
+	if turl.Hostname() == "*" {
+		turl.Host = m.c.URL().Host // Also use Client's port, to support port forwarding
+	}
+
+	if !m.c.IsVC() {
+		return turl, nil // we already connected to the ESX host and have its thumbprint
+	}
+
+	name := turl.Hostname()
+	port := turl.Port()
+
+	m.mu.Lock()
+	mname, ok := m.hosts[name]
+	m.mu.Unlock()
+
+	if ok {
+		turl.Host = net.JoinHostPort(mname, port)
+		return turl, nil
+	}
+
+	c := property.DefaultCollector(m.c)
+
+	var vm mo.VirtualMachine
+	err = c.RetrieveOne(ctx, m.vm, []string{"runtime.host"}, &vm)
+	if err != nil {
+		return nil, err
+	}
+
+	if vm.Runtime.Host == nil {
+		return turl, nil // won't matter if the VM was powered off since the call to InitiateFileTransfer will fail
+	}
+
+	props := []string{"summary.config.sslThumbprint", "config.virtualNicManagerInfo.netConfig"}
+
+	var host mo.HostSystem
+	err = c.RetrieveOne(ctx, *vm.Runtime.Host, props, &host)
+	if err != nil {
+		return nil, err
+	}
+
+	// prefer an ESX management IP, as the hostname used when adding to VC may not be valid for this client
+	// See also object.HostSystem.ManagementIPs which we can't use here due to import cycle
+	for _, nc := range host.Config.VirtualNicManagerInfo.NetConfig {
+		if nc.NicType != string(types.HostVirtualNicManagerNicTypeManagement) {
+			continue
+		}
+		for ix := range nc.CandidateVnic {
+			for _, selectedVnicKey := range nc.SelectedVnic {
+				if nc.CandidateVnic[ix].Key != selectedVnicKey {
+					continue
+				}
+				ip := net.ParseIP(nc.CandidateVnic[ix].Spec.Ip.IpAddress)
+				if ip != nil {
+					mname = ip.String()
+					m.mu.Lock()
+					m.hosts[name] = mname
+					m.mu.Unlock()
+
+					name = mname
+					break
+				}
+			}
+		}
+	}
+
+	turl.Host = net.JoinHostPort(name, port)
+
+	m.c.SetThumbprint(turl.Host, host.Summary.Config.SslThumbprint)
+
+	return turl, nil
 }
 
 func (m FileManager) InitiateFileTransferFromGuest(ctx context.Context, auth types.BaseGuestAuthentication, guestFilePath string) (*types.FileTransferInformation, error) {

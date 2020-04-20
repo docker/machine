@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015,2019 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ limitations under the License.
 package session
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/soap"
-	"golang.org/x/net/context"
 )
 
 type keepAlive struct {
@@ -40,8 +40,8 @@ type keepAlive struct {
 }
 
 func defaultKeepAlive(roundTripper soap.RoundTripper) error {
-	_, _ = methods.GetCurrentTime(context.Background(), roundTripper)
-	return nil
+	_, err := methods.GetCurrentTime(context.Background(), roundTripper)
+	return err
 }
 
 // KeepAlive wraps the specified soap.RoundTripper and executes a meaningless
@@ -80,17 +80,18 @@ func (k *keepAlive) start() {
 	k.notifyWaitGroup.Add(1)
 
 	go func() {
-		defer k.notifyWaitGroup.Done()
-
 		for t := time.NewTimer(k.idleTime); ; {
 			select {
 			case <-k.notifyStop:
+				k.notifyWaitGroup.Done()
 				return
 			case <-k.notifyRequest:
 				t.Reset(k.idleTime)
 			case <-t.C:
 				if err := k.keepAlive(k.roundTripper); err != nil {
+					k.notifyWaitGroup.Done()
 					k.stop()
+					return
 				}
 				t = time.NewTimer(k.idleTime)
 			}
@@ -110,17 +111,20 @@ func (k *keepAlive) stop() {
 }
 
 func (k *keepAlive) RoundTrip(ctx context.Context, req, res soap.HasFault) error {
+	// Stop ticker on logout.
+	switch req.(type) {
+	case *methods.LogoutBody:
+		k.stop()
+	}
+
 	err := k.roundTripper.RoundTrip(ctx, req, res)
 	if err != nil {
 		return err
 	}
-
-	// Start ticker on login, stop ticker on logout.
+	// Start ticker on login.
 	switch req.(type) {
-	case *methods.LoginBody, *methods.LoginExtensionByCertificateBody:
+	case *methods.LoginBody, *methods.LoginExtensionByCertificateBody, *methods.LoginByTokenBody:
 		k.start()
-	case *methods.LogoutBody:
-		k.stop()
 	}
 
 	return nil

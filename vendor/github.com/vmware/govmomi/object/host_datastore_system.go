@@ -17,10 +17,11 @@ limitations under the License.
 package object
 
 import (
+	"context"
+
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 type HostDatastoreSystem struct {
@@ -31,6 +32,21 @@ func NewHostDatastoreSystem(c *vim25.Client, ref types.ManagedObjectReference) *
 	return &HostDatastoreSystem{
 		Common: NewCommon(c, ref),
 	}
+}
+
+func (s HostDatastoreSystem) CreateLocalDatastore(ctx context.Context, name string, path string) (*Datastore, error) {
+	req := types.CreateLocalDatastore{
+		This: s.Reference(),
+		Name: name,
+		Path: path,
+	}
+
+	res, err := methods.CreateLocalDatastore(ctx, s.Client(), &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewDatastore(s.Client(), res.Returnval), nil
 }
 
 func (s HostDatastoreSystem) CreateNasDatastore(ctx context.Context, spec types.HostNasVolumeSpec) (*Datastore, error) {
@@ -100,4 +116,20 @@ func (s HostDatastoreSystem) QueryVmfsDatastoreCreateOptions(ctx context.Context
 	}
 
 	return res.Returnval, nil
+}
+
+func (s HostDatastoreSystem) ResignatureUnresolvedVmfsVolumes(ctx context.Context, devicePaths []string) (*Task, error) {
+	req := &types.ResignatureUnresolvedVmfsVolume_Task{
+		This: s.Reference(),
+		ResolutionSpec: types.HostUnresolvedVmfsResignatureSpec{
+			ExtentDevicePath: devicePaths,
+		},
+	}
+
+	res, err := methods.ResignatureUnresolvedVmfsVolume_Task(ctx, s.Client(), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(s.c, res.Returnval), nil
 }

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 VMware, Inc. All Rights Reserved.
+Copyright (c) 2015-2017 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,50 +17,33 @@ limitations under the License.
 package object
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+	"path"
 
+	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 const (
 	PropRuntimePowerState = "summary.runtime.powerState"
+	PropConfigTemplate    = "summary.config.template"
 )
 
 type VirtualMachine struct {
 	Common
-
-	InventoryPath string
-}
-
-func (v VirtualMachine) String() string {
-	if v.InventoryPath == "" {
-		return v.Common.String()
-	}
-	return fmt.Sprintf("%v @ %v", v.Common, v.InventoryPath)
 }
 
 func NewVirtualMachine(c *vim25.Client, ref types.ManagedObjectReference) *VirtualMachine {
 	return &VirtualMachine{
 		Common: NewCommon(c, ref),
 	}
-}
-
-func (v VirtualMachine) Name(ctx context.Context) (string, error) {
-	var o mo.VirtualMachine
-
-	err := v.Properties(ctx, v.Reference(), []string{"name"}, &o)
-	if err != nil {
-		return "", err
-	}
-
-	return o.Name, nil
 }
 
 func (v VirtualMachine) PowerState(ctx context.Context) (types.VirtualMachinePowerState, error) {
@@ -72,6 +55,17 @@ func (v VirtualMachine) PowerState(ctx context.Context) (types.VirtualMachinePow
 	}
 
 	return o.Summary.Runtime.PowerState, nil
+}
+
+func (v VirtualMachine) IsTemplate(ctx context.Context) (bool, error) {
+	var o mo.VirtualMachine
+
+	err := v.Properties(ctx, v.Reference(), []string{PropConfigTemplate}, &o)
+	if err != nil {
+		return false, err
+	}
+
+	return o.Summary.Config.Template, nil
 }
 
 func (v VirtualMachine) PowerOn(ctx context.Context) (*Task, error) {
@@ -98,6 +92,20 @@ func (v VirtualMachine) PowerOff(ctx context.Context) (*Task, error) {
 	}
 
 	return NewTask(v.c, res.Returnval), nil
+}
+
+func (v VirtualMachine) PutUsbScanCodes(ctx context.Context, spec types.UsbScanCodeSpec) (int32, error) {
+	req := types.PutUsbScanCodes{
+		This: v.Reference(),
+		Spec: spec,
+	}
+
+	res, err := methods.PutUsbScanCodes(ctx, v.c, &req)
+	if err != nil {
+		return 0, err
+	}
+
+	return res.Returnval, nil
 }
 
 func (v VirtualMachine) Reset(ctx context.Context) (*Task, error) {
@@ -216,7 +224,18 @@ func (v VirtualMachine) Reconfigure(ctx context.Context, config types.VirtualMac
 	return NewTask(v.c, res.Returnval), nil
 }
 
-func (v VirtualMachine) WaitForIP(ctx context.Context) (string, error) {
+func (v VirtualMachine) RefreshStorageInfo(ctx context.Context) error {
+	req := types.RefreshStorageInfo{
+		This: v.Reference(),
+	}
+
+	_, err := methods.RefreshStorageInfo(ctx, v.c, &req)
+	return err
+}
+
+// WaitForIP waits for the VM guest.ipAddress property to report an IP address.
+// Waits for an IPv4 address if the v4 param is true.
+func (v VirtualMachine) WaitForIP(ctx context.Context, v4 ...bool) (string, error) {
 	var ip string
 
 	p := property.DefaultCollector(v.c)
@@ -233,6 +252,11 @@ func (v VirtualMachine) WaitForIP(ctx context.Context) (string, error) {
 			}
 
 			ip = c.Val.(string)
+			if len(v4) == 1 && v4[0] {
+				if net.ParseIP(ip).To4() == nil {
+					return false
+				}
+			}
 			return true
 		}
 
@@ -248,9 +272,12 @@ func (v VirtualMachine) WaitForIP(ctx context.Context) (string, error) {
 
 // WaitForNetIP waits for the VM guest.net property to report an IP address for all VM NICs.
 // Only consider IPv4 addresses if the v4 param is true.
+// By default, wait for all NICs to get an IP address, unless 1 or more device is given.
+// A device can be specified by the MAC address or the device name, e.g. "ethernet-0".
 // Returns a map with MAC address as the key and IP address list as the value.
-func (v VirtualMachine) WaitForNetIP(ctx context.Context, v4 bool) (map[string][]string, error) {
+func (v VirtualMachine) WaitForNetIP(ctx context.Context, v4 bool, device ...string) (map[string][]string, error) {
 	macs := make(map[string][]string)
+	eths := make(map[string]string)
 
 	p := property.DefaultCollector(v.c)
 
@@ -261,20 +288,36 @@ func (v VirtualMachine) WaitForNetIP(ctx context.Context, v4 bool) (map[string][
 				continue
 			}
 
-			devices := c.Val.(types.ArrayOfVirtualDevice).VirtualDevice
-			for _, device := range devices {
-				if nic, ok := device.(types.BaseVirtualEthernetCard); ok {
+			devices := VirtualDeviceList(c.Val.(types.ArrayOfVirtualDevice).VirtualDevice)
+			for _, d := range devices {
+				if nic, ok := d.(types.BaseVirtualEthernetCard); ok {
 					mac := nic.GetVirtualEthernetCard().MacAddress
 					if mac == "" {
 						return false
 					}
 					macs[mac] = nil
+					eths[devices.Name(d)] = mac
 				}
 			}
 		}
 
 		return true
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(device) != 0 {
+		// Only wait for specific NIC(s)
+		macs = make(map[string][]string)
+		for _, mac := range device {
+			if eth, ok := eths[mac]; ok {
+				mac = eth // device name, e.g. "ethernet-0"
+			}
+			macs[mac] = nil
+		}
+	}
 
 	err = property.Wait(ctx, p, v.Reference(), []string{"guest.net"}, func(pc []types.PropertyChange) bool {
 		for _, c := range pc {
@@ -321,9 +364,19 @@ func (v VirtualMachine) WaitForNetIP(ctx context.Context, v4 bool) (map[string][
 func (v VirtualMachine) Device(ctx context.Context) (VirtualDeviceList, error) {
 	var o mo.VirtualMachine
 
-	err := v.Properties(ctx, v.Reference(), []string{"config.hardware.device"}, &o)
+	err := v.Properties(ctx, v.Reference(), []string{"config.hardware.device", "summary.runtime.connectionState"}, &o)
 	if err != nil {
 		return nil, err
+	}
+
+	// Quoting the SDK doc:
+	//   The virtual machine configuration is not guaranteed to be available.
+	//   For example, the configuration information would be unavailable if the server
+	//   is unable to access the virtual machine files on disk, and is often also unavailable
+	//   during the initial phases of virtual machine creation.
+	if o.Config == nil {
+		return nil, fmt.Errorf("%s Config is not available, connectionState=%s",
+			v.Reference(), o.Summary.Runtime.ConnectionState)
 	}
 
 	return VirtualDeviceList(o.Config.Hardware.Device), nil
@@ -332,7 +385,7 @@ func (v VirtualMachine) Device(ctx context.Context) (VirtualDeviceList, error) {
 func (v VirtualMachine) HostSystem(ctx context.Context) (*HostSystem, error) {
 	var o mo.VirtualMachine
 
-	err := v.Properties(ctx, v.Reference(), []string{"summary"}, &o)
+	err := v.Properties(ctx, v.Reference(), []string{"summary.runtime.host"}, &o)
 	if err != nil {
 		return nil, err
 	}
@@ -458,6 +511,20 @@ func (v VirtualMachine) Answer(ctx context.Context, id, answer string) error {
 	return nil
 }
 
+func (v VirtualMachine) AcquireTicket(ctx context.Context, kind string) (*types.VirtualMachineTicket, error) {
+	req := types.AcquireTicket{
+		This:       v.Reference(),
+		TicketType: kind,
+	}
+
+	res, err := methods.AcquireTicket(ctx, v.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Returnval, nil
+}
+
 // CreateSnapshot creates a new snapshot of a virtual machine.
 func (v VirtualMachine) CreateSnapshot(ctx context.Context, name string, description string, memory bool, quiesce bool) (*Task, error) {
 	req := types.CreateSnapshot_Task{
@@ -491,24 +558,102 @@ func (v VirtualMachine) RemoveAllSnapshot(ctx context.Context, consolidate *bool
 	return NewTask(v.c, res.Returnval), nil
 }
 
-// RevertToSnapshot reverts to a named snapshot
-func (v VirtualMachine) RevertToSnapshot(ctx context.Context, name string, suppressPowerOn bool) (*Task, error) {
+type snapshotMap map[string][]types.ManagedObjectReference
+
+func (m snapshotMap) add(parent string, tree []types.VirtualMachineSnapshotTree) {
+	for i, st := range tree {
+		sname := st.Name
+		names := []string{sname, st.Snapshot.Value}
+
+		if parent != "" {
+			sname = path.Join(parent, sname)
+			// Add full path as an option to resolve duplicate names
+			names = append(names, sname)
+		}
+
+		for _, name := range names {
+			m[name] = append(m[name], tree[i].Snapshot)
+		}
+
+		m.add(sname, st.ChildSnapshotList)
+	}
+}
+
+// FindSnapshot supports snapshot lookup by name, where name can be:
+// 1) snapshot ManagedObjectReference.Value (unique)
+// 2) snapshot name (may not be unique)
+// 3) snapshot tree path (may not be unique)
+func (v VirtualMachine) FindSnapshot(ctx context.Context, name string) (*types.ManagedObjectReference, error) {
 	var o mo.VirtualMachine
 
 	err := v.Properties(ctx, v.Reference(), []string{"snapshot"}, &o)
-
-	snapshotTree := o.Snapshot.RootSnapshotList
-	if len(snapshotTree) < 1 {
-		return nil, errors.New("No snapshots for this VM")
+	if err != nil {
+		return nil, err
 	}
 
-	snapshot, err := traverseSnapshotInTree(snapshotTree, name)
+	if o.Snapshot == nil || len(o.Snapshot.RootSnapshotList) == 0 {
+		return nil, errors.New("no snapshots for this VM")
+	}
+
+	m := make(snapshotMap)
+	m.add("", o.Snapshot.RootSnapshotList)
+
+	s := m[name]
+	switch len(s) {
+	case 0:
+		return nil, fmt.Errorf("snapshot %q not found", name)
+	case 1:
+		return &s[0], nil
+	default:
+		return nil, fmt.Errorf("%q resolves to %d snapshots", name, len(s))
+	}
+}
+
+// RemoveSnapshot removes a named snapshot
+func (v VirtualMachine) RemoveSnapshot(ctx context.Context, name string, removeChildren bool, consolidate *bool) (*Task, error) {
+	snapshot, err := v.FindSnapshot(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	req := types.RemoveSnapshot_Task{
+		This:           snapshot.Reference(),
+		RemoveChildren: removeChildren,
+		Consolidate:    consolidate,
+	}
+
+	res, err := methods.RemoveSnapshot_Task(ctx, v.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(v.c, res.Returnval), nil
+}
+
+// RevertToCurrentSnapshot reverts to the current snapshot
+func (v VirtualMachine) RevertToCurrentSnapshot(ctx context.Context, suppressPowerOn bool) (*Task, error) {
+	req := types.RevertToCurrentSnapshot_Task{
+		This:            v.Reference(),
+		SuppressPowerOn: types.NewBool(suppressPowerOn),
+	}
+
+	res, err := methods.RevertToCurrentSnapshot_Task(ctx, v.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(v.c, res.Returnval), nil
+}
+
+// RevertToSnapshot reverts to a named snapshot
+func (v VirtualMachine) RevertToSnapshot(ctx context.Context, name string, suppressPowerOn bool) (*Task, error) {
+	snapshot, err := v.FindSnapshot(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
 	req := types.RevertToSnapshot_Task{
-		This:            snapshot,
+		This:            snapshot.Reference(),
 		SuppressPowerOn: types.NewBool(suppressPowerOn),
 	}
 
@@ -518,32 +663,6 @@ func (v VirtualMachine) RevertToSnapshot(ctx context.Context, name string, suppr
 	}
 
 	return NewTask(v.c, res.Returnval), nil
-}
-
-// traverseSnapshotInTree is a recursive function that will traverse a snapshot tree to find a given snapshot
-func traverseSnapshotInTree(tree []types.VirtualMachineSnapshotTree, name string) (types.ManagedObjectReference, error) {
-	var o types.ManagedObjectReference
-	if tree == nil {
-		return o, errors.New("Snapshot tree is empty")
-	}
-	for _, s := range tree {
-		if s.Name == name {
-			o = s.Snapshot
-			break
-		} else {
-			childTree := s.ChildSnapshotList
-			var err error
-			o, err = traverseSnapshotInTree(childTree, name)
-			if err != nil {
-				return o, err
-			}
-		}
-	}
-	if o.Value == "" {
-		return o, errors.New("Snapshot not found")
-	}
-
-	return o, nil
 }
 
 // IsToolsRunning returns true if VMware Tools is currently running in the guest OS, and false otherwise.
@@ -611,4 +730,195 @@ func (v VirtualMachine) MarkAsVirtualMachine(ctx context.Context, pool ResourceP
 	}
 
 	return nil
+}
+
+func (v VirtualMachine) Migrate(ctx context.Context, pool *ResourcePool, host *HostSystem, priority types.VirtualMachineMovePriority, state types.VirtualMachinePowerState) (*Task, error) {
+	req := types.MigrateVM_Task{
+		This:     v.Reference(),
+		Priority: priority,
+		State:    state,
+	}
+
+	if pool != nil {
+		ref := pool.Reference()
+		req.Pool = &ref
+	}
+
+	if host != nil {
+		ref := host.Reference()
+		req.Host = &ref
+	}
+
+	res, err := methods.MigrateVM_Task(ctx, v.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(v.c, res.Returnval), nil
+}
+
+func (v VirtualMachine) Unregister(ctx context.Context) error {
+	req := types.UnregisterVM{
+		This: v.Reference(),
+	}
+
+	_, err := methods.UnregisterVM(ctx, v.Client(), &req)
+	return err
+}
+
+// QueryEnvironmentBrowser is a helper to get the environmentBrowser property.
+func (v VirtualMachine) QueryConfigTarget(ctx context.Context) (*types.ConfigTarget, error) {
+	var vm mo.VirtualMachine
+
+	err := v.Properties(ctx, v.Reference(), []string{"environmentBrowser"}, &vm)
+	if err != nil {
+		return nil, err
+	}
+
+	req := types.QueryConfigTarget{
+		This: vm.EnvironmentBrowser,
+	}
+
+	res, err := methods.QueryConfigTarget(ctx, v.Client(), &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Returnval, nil
+}
+
+func (v VirtualMachine) MountToolsInstaller(ctx context.Context) error {
+	req := types.MountToolsInstaller{
+		This: v.Reference(),
+	}
+
+	_, err := methods.MountToolsInstaller(ctx, v.Client(), &req)
+	return err
+}
+
+func (v VirtualMachine) UnmountToolsInstaller(ctx context.Context) error {
+	req := types.UnmountToolsInstaller{
+		This: v.Reference(),
+	}
+
+	_, err := methods.UnmountToolsInstaller(ctx, v.Client(), &req)
+	return err
+}
+
+func (v VirtualMachine) UpgradeTools(ctx context.Context, options string) (*Task, error) {
+	req := types.UpgradeTools_Task{
+		This:             v.Reference(),
+		InstallerOptions: options,
+	}
+
+	res, err := methods.UpgradeTools_Task(ctx, v.Client(), &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(v.c, res.Returnval), nil
+}
+
+func (v VirtualMachine) Export(ctx context.Context) (*nfc.Lease, error) {
+	req := types.ExportVm{
+		This: v.Reference(),
+	}
+
+	res, err := methods.ExportVm(ctx, v.Client(), &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return nfc.NewLease(v.c, res.Returnval), nil
+}
+
+func (v VirtualMachine) UpgradeVM(ctx context.Context, version string) (*Task, error) {
+	req := types.UpgradeVM_Task{
+		This:    v.Reference(),
+		Version: version,
+	}
+
+	res, err := methods.UpgradeVM_Task(ctx, v.Client(), &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(v.c, res.Returnval), nil
+}
+
+// UUID is a helper to get the UUID of the VirtualMachine managed object.
+// This method returns an empty string if an error occurs when retrieving UUID from the VirtualMachine object.
+func (v VirtualMachine) UUID(ctx context.Context) string {
+	var o mo.VirtualMachine
+
+	err := v.Properties(ctx, v.Reference(), []string{"config.uuid"}, &o)
+	if err != nil {
+		return ""
+	}
+
+	return o.Config.Uuid
+}
+
+func (v VirtualMachine) QueryChangedDiskAreas(ctx context.Context, baseSnapshot, curSnapshot *types.ManagedObjectReference, disk *types.VirtualDisk, offset int64) (types.DiskChangeInfo, error) {
+	var noChange types.DiskChangeInfo
+	var err error
+
+	if offset > disk.CapacityInBytes {
+		return noChange, fmt.Errorf("offset is greater than the disk size (%#x and %#x)", offset, disk.CapacityInBytes)
+	} else if offset == disk.CapacityInBytes {
+		return types.DiskChangeInfo{StartOffset: offset, Length: 0}, nil
+	}
+
+	var b mo.VirtualMachineSnapshot
+	err = v.Properties(ctx, baseSnapshot.Reference(), []string{"config.hardware"}, &b)
+	if err != nil {
+		return noChange, fmt.Errorf("failed to fetch config.hardware of snapshot %s: %s", baseSnapshot, err)
+	}
+
+	var changeId *string
+	for _, vd := range b.Config.Hardware.Device {
+		d := vd.GetVirtualDevice()
+		if d.Key != disk.Key {
+			continue
+		}
+
+		// As per VDDK programming guide, these are the four types of disks
+		// that support CBT, see "Gathering Changed Block Information".
+		if b, ok := d.Backing.(*types.VirtualDiskFlatVer2BackingInfo); ok {
+			changeId = &b.ChangeId
+			break
+		}
+		if b, ok := d.Backing.(*types.VirtualDiskSparseVer2BackingInfo); ok {
+			changeId = &b.ChangeId
+			break
+		}
+		if b, ok := d.Backing.(*types.VirtualDiskRawDiskMappingVer1BackingInfo); ok {
+			changeId = &b.ChangeId
+			break
+		}
+		if b, ok := d.Backing.(*types.VirtualDiskRawDiskVer2BackingInfo); ok {
+			changeId = &b.ChangeId
+			break
+		}
+
+		return noChange, fmt.Errorf("disk %d has backing info without .ChangeId: %t", disk.Key, d.Backing)
+	}
+	if changeId == nil || *changeId == "" {
+		return noChange, fmt.Errorf("CBT is not enabled on disk %d", disk.Key)
+	}
+
+	req := types.QueryChangedDiskAreas{
+		This:        v.Reference(),
+		Snapshot:    curSnapshot,
+		DeviceKey:   disk.Key,
+		StartOffset: offset,
+		ChangeId:    *changeId,
+	}
+
+	res, err := methods.QueryChangedDiskAreas(ctx, v.Client(), &req)
+	if err != nil {
+		return noChange, err
+	}
+
+	return res.Returnval, nil
 }
