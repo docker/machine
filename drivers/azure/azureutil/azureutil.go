@@ -583,16 +583,22 @@ func (a AzureClient) CreateVirtualMachine(ctx context.Context, resourceGroup, na
 
 // getImageReference parses a publisher:offer:sku:version or parses the string as a custom image reference
 func (a AzureClient) getImageReference(ctx context.Context, image, location string) (*compute.ImageReference, error) {
+	if strings.Contains(strings.ToLower(image), "/images/") {
+		// image represents an ARM resource identifer for a custom image
+		return &compute.ImageReference{
+			ID: to.StringPtr(image),
+		}, nil
+	}
 	if urn := strings.Split(image, ":"); len(urn) == 4 {
-		imageReference := &compute.ImageReference{
+		// image represents an ARM resource identifier for a gallery image version
+		return &compute.ImageReference{
 			Publisher: to.StringPtr(urn[0]),
 			Offer:     to.StringPtr(urn[1]),
 			Sku:       to.StringPtr(urn[2]),
 			Version:   to.StringPtr(urn[3]),
-		}
-		return imageReference, nil
+		}, nil
 	}
-	return nil, fmt.Errorf("image provided does not have a valid format: expected: <publisher>:<offer>:<sku>:<version>, got %s", image)
+	return nil, fmt.Errorf("image provided must be an image URN or an ARM resource identifier")
 }
 
 // GetOSDisk creates and returns pointer to a disk that is configured for either managed or unmanaged disks depending
