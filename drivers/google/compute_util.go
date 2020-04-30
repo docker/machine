@@ -191,7 +191,11 @@ func (c *ComputeUtil) openFirewallPorts(d *Driver) error {
 	log.Infof("Opening firewall ports")
 
 	create := false
-	rule, _ := c.firewallRule()
+	rule, err := c.firewallRule()
+	if err != nil {
+		return fmt.Errorf("requesting firewall rule: %v", err)
+	}
+
 	if rule == nil {
 		create = true
 		rule = &raw.Firewall{
