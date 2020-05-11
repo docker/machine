@@ -135,16 +135,6 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 		return err
 	}
 
-	if strings.ToLower(provisioner.OsReleaseInfo.ID) != "opensuse" {
-		// This is a SLE machine, enable the containers module to have access
-		// to the docker packages
-		if _, err := provisioner.SSHCommand("sudo -E SUSEConnect -p sle-module-containers/12/$(uname -m) -r ''"); err != nil {
-			return fmt.Errorf(
-				"Error while adding the 'containers' module, make sure this machine is registered either against SUSE Customer Center (SCC) or to a local Subscription Management Tool (SMT): %v",
-				err)
-		}
-	}
-
 	log.Debug("Installing base packages")
 	for _, pkg := range provisioner.Packages {
 		if err := provisioner.Package(pkg, pkgaction.Install); err != nil {
@@ -153,27 +143,14 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 	}
 
 	log.Debug("Installing docker")
-	if err := provisioner.Package("docker", pkgaction.Install); err != nil {
-		return err
-	}
-
-	// create symlinks for containerd, containerd-shim and runc.
-	// We have to do that because machine overrides the openSUSE systemd
-	// unit of docker
-	if _, err := provisioner.SSHCommand("sudo -E ln -sf /usr/sbin/runc /usr/sbin/docker-runc"); err != nil {
-		return err
-	}
-	if _, err := provisioner.SSHCommand("sudo -E ln -sf /usr/sbin/containerd /usr/sbin/docker-containerd"); err != nil {
-		return err
-	}
-	if _, err := provisioner.SSHCommand("sudo -E ln -sf /usr/sbin/containerd-shim /usr/sbin/docker-containerd-shim"); err != nil {
+	if err := installDockerGeneric(provisioner, provisioner.EngineOptions.InstallURL); err != nil {
 		return err
 	}
 
 	// Is yast2 firewall installed?
 	if _, installed := provisioner.SSHCommand("rpm -q yast2-firewall"); installed == nil {
-		// Open the firewall port required by docker
-		if _, err := provisioner.SSHCommand("sudo -E /sbin/yast2 firewall services add ipprotocol=tcp tcpport=2376 zone=EXT"); err != nil {
+		log.Debug("Configuring SUSE firewall")
+		if err := provisioner.configureFirewall(); err != nil {
 			return err
 		}
 	}
@@ -204,4 +181,33 @@ func (provisioner *SUSEProvisioner) Provision(swarmOptions swarm.Options, authOp
 	log.Debug("Enabling docker in systemd")
 	err = provisioner.Service("docker", serviceaction.Enable)
 	return err
+}
+
+func (provisioner *SUSEProvisioner) configureFirewall() error {
+	tcpPorts := "22 80 443 2376 2379 2380 6443 9099 9796 10250 10254 30000:32767"
+	udpPorts := "8472 30000:32767"
+	var cmds []string
+	if _, installed := provisioner.SSHCommand("rpm -q firewalld"); installed == nil {
+		tcpPorts := strings.ReplaceAll(tcpPorts, ":", "-")
+		udpPorts := strings.ReplaceAll(udpPorts, ":", "-")
+		for _, port := range strings.Split(tcpPorts, " ") {
+			cmds = append(cmds, fmt.Sprintf("sudo firewall-cmd --permanent --add-port=%s/tcp", port))
+		}
+		for _, port := range strings.Split(udpPorts, " ") {
+			cmds = append(cmds, fmt.Sprintf("sudo firewall-cmd --permanent --add-port=%s/udp", port))
+		}
+		cmds = append(cmds, "sudo firewall-cmd --reload")
+	} else {
+		cmds = []string{
+			fmt.Sprintf(`sudo sed -i 's/FW_SERVICES_EXT_TCP=".*"/FW_SERVICES_EXT_TCP="%s"/' /etc/sysconfig/SuSEfirewall2`, tcpPorts),
+			fmt.Sprintf(`sudo sed -i 's/FW_SERVICES_EXT_UDP=".*"/FW_SERVICES_EXT_UDP="%s"/' /etc/sysconfig/SuSEfirewall2`, udpPorts),
+			"sudo /sbin/SuSEfirewall2",
+		}
+	}
+	for _, cmd := range cmds {
+		if _, err := provisioner.SSHCommand(cmd); err != nil {
+			return err
+		}
+	}
+	return nil
 }
