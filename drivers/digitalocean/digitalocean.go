@@ -254,6 +254,9 @@ func (d *Driver) Create() error {
 	for {
 		newDroplet, _, err = client.Droplets.Get(context.TODO(), d.DropletID)
 		if err != nil {
+			if removeErr := d.Remove(); removeErr != nil {
+				return fmt.Errorf("failed to create machine due to error: %v. Removing droplets: %v", err, removeErr)
+			}
 			return err
 		}
 		for _, network := range newDroplet.Networks.V4 {
@@ -266,7 +269,7 @@ func (d *Driver) Create() error {
 			break
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 
 	log.Debugf("Created droplet ID %d, IP address %s",
