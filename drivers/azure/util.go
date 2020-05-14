@@ -164,6 +164,32 @@ func (d *Driver) ipAddress(ctx context.Context) (ip string, err error) {
 	return ip, nil
 }
 
+// resolveNSGReference extracts the NetworkSecurityGroupID from nsg
+func (d *Driver) resolveNSGReference(nsg string) (azure.Resource, error) {
+	if strings.Contains(nsg, "/") {
+		// ARM resource identifier provided
+		nsgResource, err := azure.ParseResourceID(nsg)
+		if err != nil {
+			return nsgResource, fmt.Errorf("unable to parse resource ID of network security group: %s", nsg)
+		}
+		return nsgResource, nil
+	}
+	var name string
+	if len(nsg) == 0 {
+		// Legacy case
+		name = d.naming().NSG()
+	} else {
+		name = nsg
+	}
+	return azure.Resource{
+		SubscriptionID: d.SubscriptionID,
+		ResourceGroup:  d.ResourceGroup,
+		Provider:       "Microsoft.Network",
+		ResourceType:   "networkSecurityGroups",
+		ResourceName:   name,
+	}, nil
+}
+
 func machineStateForVMPowerState(ps azureutil.VMPowerState) state.State {
 	m := map[azureutil.VMPowerState]state.State{
 		azureutil.Running:      state.Running,
