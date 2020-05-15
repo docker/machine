@@ -11,6 +11,7 @@ type region struct {
 // Ubuntu 16.04 LTS 20180228.1 hvm:ebs-ssd (amd64)
 // See https://cloud-images.ubuntu.com/locator/ec2/
 var regionDetails map[string]*region = map[string]*region{
+	"af-south-1":      {"ami-03611e0f71e9d9f66"},
 	"ap-northeast-1":  {"ami-bcb7f6da"},
 	"ap-northeast-2":  {"ami-5073de3e"},
 	"ap-southeast-1":  {"ami-41e4af3d"},
