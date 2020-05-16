@@ -23,3 +23,9 @@ type FedoraProvisioner struct {
 func (provisioner *FedoraProvisioner) String() string {
 	return "fedora"
 }
+
+func (provisioner *FedoraProvisioner) CompatibleWithHost() bool {
+	isFedora := provisioner.OsReleaseInfo.ID == "fedora"
+	isCoreOS := provisioner.OsReleaseInfo.VariantID == "coreos"
+	return isFedora && !isCoreOS
+}
