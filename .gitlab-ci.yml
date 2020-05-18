@@ -62,7 +62,7 @@ default:
 .release_development:
   only:
     refs:
-    - merge_requests
+    - merge_requests@gitlab-org/ci-cd/docker-machine
 
 .release_beta:
   only:
