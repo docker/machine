@@ -62,17 +62,17 @@ func (provisioner *FedoraCoreOSProvisioner) GenerateDockerOptions(dockerPort int
 Environment=TMPDIR=/var/tmp
 ExecStart=
 ExecStart=/usr/bin/dockerd \
-				 --exec-opt native.cgroupdriver=systemd \
-				 --host=unix:///var/run/docker.sock \
-				 --host=tcp://0.0.0.0:{{.DockerPort}} \
-				 --tlsverify \
-				 --tlscacert {{.AuthOptions.CaCertRemotePath}} \
-				 --tlscert {{.AuthOptions.ServerCertRemotePath}} \
-				 --tlskey {{.AuthOptions.ServerKeyRemotePath}}{{ range .EngineOptions.Labels }} \
-				 --label {{.}}{{ end }}{{ range .EngineOptions.InsecureRegistry }} \
-				 --insecure-registry {{.}}{{ end }}{{ range .EngineOptions.RegistryMirror }} \
-				 --registry-mirror {{.}}{{ end }}{{ range .EngineOptions.ArbitraryFlags }} \
-				 --{{.}}{{ end }} \$DOCKER_OPTS \$DOCKER_OPT_BIP \$DOCKER_OPT_MTU \$DOCKER_OPT_IPMASQ
+--exec-opt native.cgroupdriver=systemd \
+--host=unix:///var/run/docker.sock \
+--host=tcp://0.0.0.0:{{.DockerPort}} \
+--tlsverify \
+--tlscacert {{.AuthOptions.CaCertRemotePath}} \
+--tlscert {{.AuthOptions.ServerCertRemotePath}} \
+--tlskey {{.AuthOptions.ServerKeyRemotePath}}{{ range .EngineOptions.Labels }} \
+--label {{.}}{{ end }}{{ range .EngineOptions.InsecureRegistry }} \
+--insecure-registry {{.}}{{ end }}{{ range .EngineOptions.RegistryMirror }} \
+--registry-mirror {{.}}{{ end }}{{ range .EngineOptions.ArbitraryFlags }} \
+--{{.}}{{ end }} \$OPTIONS \$DOCKER_OPTS \$DOCKER_OPT_BIP \$DOCKER_OPT_MTU \$DOCKER_OPT_IPMASQ
 Environment={{range .EngineOptions.Env}}{{ printf "%q" . }} {{end}}
 `
 
