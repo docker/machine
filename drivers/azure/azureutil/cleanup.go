@@ -189,7 +189,16 @@ func (c *nsgCleanup) CanBeDeleted(ctx context.Context, a AzureClient) bool {
 	sgProp := c.ref.SecurityGroupPropertiesFormat
 	orphaned := (sgProp.Subnets == nil || len(*sgProp.Subnets) == 0) &&
 		(sgProp.NetworkInterfaces == nil || len(*sgProp.NetworkInterfaces) == 0)
-	return orphaned
+	if !orphaned {
+		return false
+	}
+	if c.usedInPool {
+		if _, ok := c.ref.Tags[ManagedByRancherKey]; !ok {
+			log.Warnf("User-provided pooled NSG %s requires manual cleanup", c.name)
+			return false
+		}
+	}
+	return true
 }
 
 type publicIPCleanup struct {

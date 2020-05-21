@@ -17,6 +17,7 @@ import (
 	"github.com/rancher/machine/libmachine/state"
 
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-06-01/storage"
+	"github.com/Azure/go-autorest/autorest/azure"
 )
 
 const (
@@ -61,6 +62,7 @@ const (
 	flAzureCustomData        = "azure-custom-data"
 	flAzureClientID          = "azure-client-id"
 	flAzureClientSecret      = "azure-client-secret"
+	flAzureNSG               = "azure-nsg"
 )
 
 const (
@@ -87,6 +89,7 @@ type Driver struct {
 	SubnetName      string
 	SubnetPrefix    string
 	AvailabilitySet string
+	NSG             string
 	ManagedDisks    bool
 	FaultCount      int
 	UpdateCount     int
@@ -104,6 +107,8 @@ type Driver struct {
 	// Ephemeral fields
 	deploymentCtx *azureutil.DeploymentContext
 	resolvedIP    string // cache
+	nsgResource   azure.Resource
+	nsgUsedInPool bool
 }
 
 // NewDriver returns a new driver instance.
@@ -195,6 +200,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Azure Availability Set to place the virtual machine into",
 			EnvVar: "AZURE_AVAILABILITY_SET",
 			Value:  defaultAzureAvailabilitySet,
+		},
+		mcnflag.StringFlag{
+			Name:   flAzureNSG,
+			Usage:  "Azure Network Security Group to assign this node to (accepts either a name or resource ID, default is to create a new NSG for each machine)",
+			EnvVar: "AZURE_NSG",
+			Value:  "",
 		},
 		mcnflag.BoolFlag{
 			Name:   flAzureManagedDisks,
@@ -312,6 +323,12 @@ func (d *Driver) SetConfigFromFlags(fl drivers.DriverOptions) error {
 	d.FaultCount = fl.Int(flAzureFaultDomainCount)
 	d.UpdateCount = fl.Int(flAzureUpdateDomainCount)
 	d.DiskSize = fl.Int(flAzureDiskSize)
+	d.NSG = fl.String(flAzureNSG)
+	var err error
+	d.nsgUsedInPool = len(d.NSG) > 0
+	if d.nsgResource, err = d.resolveNSGReference(d.NSG); err != nil {
+		return err
+	}
 
 	d.ClientID = fl.String(flAzureClientID)
 	d.ClientSecret = fl.String(flAzureClientSecret)
@@ -415,7 +432,7 @@ func (d *Driver) Create() error {
 	if err := c.CreateAvailabilitySetIfNotExists(ctx, d.deploymentCtx, d.ResourceGroup, d.AvailabilitySet, d.Location, d.ManagedDisks, int32(d.FaultCount), int32(d.UpdateCount)); err != nil {
 		return err
 	}
-	if err := c.CreateNetworkSecurityGroup(ctx, d.deploymentCtx, d.ResourceGroup, d.naming().NSG(), d.Location, d.deploymentCtx.FirewallRules); err != nil {
+	if err := c.CreateNetworkSecurityGroup(ctx, d.deploymentCtx, d.ResourceGroup, d.nsgResource, d.Location, d.nsgUsedInPool, d.deploymentCtx.FirewallRules); err != nil {
 		return err
 	}
 	vnetResourceGroup, vNetName := parseVirtualNetwork(d.VirtualNetwork, d.ResourceGroup)
@@ -477,6 +494,7 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
+
 	if err := c.DeleteVirtualMachineIfExists(ctx, d.ResourceGroup, d.naming().VM()); err != nil {
 		return err
 	}
@@ -486,7 +504,7 @@ func (d *Driver) Remove() error {
 	if err := c.DeletePublicIPAddressIfExists(ctx, d.ResourceGroup, d.naming().IP()); err != nil {
 		return err
 	}
-	if err := c.DeleteNetworkSecurityGroupIfExists(ctx, d.ResourceGroup, d.naming().NSG()); err != nil {
+	if err := c.DeleteNetworkSecurityGroupIfExists(ctx, d.nsgResource, d.nsgUsedInPool); err != nil {
 		return err
 	}
 	if err := c.CleanupAvailabilitySetIfExists(ctx, d.ResourceGroup, d.AvailabilitySet); err != nil {
