@@ -1,3 +1,9 @@
+# ⚠️This is a fork of Docker Machine ⚠
+
+This is a fork of Docker Machine maintained by GitLab for [fixing critical bugs](https://docs.gitlab.com/runner/executors/docker_machine.html#forked-version-of-docker-machine).
+
+Builds from this fork can be downloaded at https://gitlab-docker-machine-downloads.s3.amazonaws.com/master/index.html
+
 # Docker Machine
 
 ![](https://docs.docker.com/machine/img/logo.png)
