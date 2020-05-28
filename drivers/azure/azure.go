@@ -384,16 +384,6 @@ func (d *Driver) PreCreateCheck() (err error) {
 		return fmt.Errorf("Virtual Machine with name %s already exists in resource group %q", d.naming().VM(), d.ResourceGroup)
 	}
 
-	// Check if virtual machine exists. An existing virtual machine cannot be updated.
-	log.Debug("Checking if OS Disk already exists.")
-	exists, err = c.OSDiskExists(ctx, d.ResourceGroup, d.naming().OSDisk())
-	if err != nil {
-		return err
-	}
-	if exists {
-		return fmt.Errorf("OS Disk with name %s already exists in resource group %q", d.naming().VM(), d.ResourceGroup)
-	}
-
 	// NOTE(ahmetalpbalkan) we could have done more checks here but Azure often
 	// returns meaningful error messages and it would be repeating the backend
 	// logic on the client side. Some examples:

@@ -657,17 +657,6 @@ func getOSDisk(name string, account *storage.AccountProperties, isManaged bool, 
 	return osdisk
 }
 
-// OSDiskExists queries to see if a particular OS Disk exists in the given resource group
-func (a AzureClient) OSDiskExists(ctx context.Context, resourceGroup, name string) (bool, error) {
-	disksClient := a.disksClient()
-	_, err := disksClient.Get(ctx, resourceGroup, name)
-	exists, err := checkResourceExistsFromError(err)
-	if err != nil {
-		return false, fmt.Errorf("Failed to query disks client: %s", err)
-	}
-	return exists, nil
-}
-
 // GetVirtualMachinePowerState returns the VM's power state
 func (a AzureClient) GetVirtualMachinePowerState(ctx context.Context, resourceGroup, name string) (VMPowerState, error) {
 	log.Debug("Querying instance view for power state.")
