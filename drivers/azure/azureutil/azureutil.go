@@ -468,10 +468,8 @@ func (a AzureClient) DeleteVirtualMachineIfExists(ctx context.Context, resourceG
 
 	// Remove disk
 	if vmProperties := vm.VirtualMachineProperties; vmProperties != nil {
-		// TODO: remove unattached managed disk, requires azure sdk upgrade
 		if managedDisk := vmProperties.StorageProfile.OsDisk.ManagedDisk; managedDisk != nil {
-			diskName := ResourceNaming(name).OSDisk()
-			log.Infof("Disk [%s] in resource group [%s] must be removed manually.", diskName, resourceGroup)
+			return a.removeManagedDisk(ctx, resourceGroup, to.String(vm.ID), ResourceNaming(name).OSDisk())
 		}
 		// if vhd is not nil then disk is unmanaged and disk blob should be removed
 		if vhd := vmProperties.StorageProfile.OsDisk.Vhd; vhd != nil {
@@ -479,6 +477,33 @@ func (a AzureClient) DeleteVirtualMachineIfExists(ctx context.Context, resourceG
 		}
 	}
 	return nil
+}
+
+func (a AzureClient) removeManagedDisk(ctx context.Context, resourceGroup, vmID, diskName string) error {
+	log.Debug("Attempting to remove managed disk.", logutil.Fields{"vm": vmID, "diskName": diskName})
+	disksClient := a.disksClient()
+	disk, err := disksClient.Get(ctx, resourceGroup, diskName)
+	exists, err := checkResourceExistsFromError(err)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	// Managed disk is safe to remove once it is no longer managed by any VMs
+	if disk.ManagedBy != nil || disk.ManagedByExtended != nil {
+		log.Warnf("Disk [%s] in resource group [%s] must be removed manually.", diskName, resourceGroup)
+		return nil
+	}
+	future, err := disksClient.Delete(ctx, resourceGroup, diskName)
+	if err != nil {
+		return err
+	}
+	if err = future.WaitForCompletionRef(ctx, disksClient.Client); err != nil {
+		return err
+	}
+	_, err = future.Result(disksClient)
+	return err
 }
 
 func (a AzureClient) removeOSDiskBlob(ctx context.Context, resourceGroup, vmName, vhdURL string) error {
@@ -655,17 +680,6 @@ func getOSDisk(name string, account *storage.AccountProperties, isManaged bool, 
 		}
 	}
 	return osdisk
-}
-
-// OSDiskExists queries to see if a particular OS Disk exists in the given resource group
-func (a AzureClient) OSDiskExists(ctx context.Context, resourceGroup, name string) (bool, error) {
-	disksClient := a.disksClient()
-	_, err := disksClient.Get(ctx, resourceGroup, name)
-	exists, err := checkResourceExistsFromError(err)
-	if err != nil {
-		return false, fmt.Errorf("Failed to query disks client: %s", err)
-	}
-	return exists, nil
 }
 
 // GetVirtualMachinePowerState returns the VM's power state
