@@ -49,6 +49,7 @@ type Client interface {
 	AssignFloatingIP(d *Driver, floatingIP *FloatingIP) error
 	DeleteFloatingIP(d *Driver, floatingIP *FloatingIP) error
 	GetFloatingIPs(d *Driver) ([]FloatingIP, error)
+	GetFloatingIP(d *Driver, ip string) (*FloatingIP, error)
 	GetFloatingIPPoolID(d *Driver) (string, error)
 	GetInstancePortID(d *Driver) (string, error)
 	GetTenantID(d *Driver) (string, error)
@@ -410,7 +411,25 @@ func (c *GenericClient) GetFloatingIPs(d *Driver) ([]FloatingIP, error) {
 	if d.ComputeNetwork {
 		return c.getNovaNetworkFloatingIPs(d)
 	}
-	return c.getNeutronNetworkFloatingIPs(d)
+	return c.getNeutronNetworkFloatingIPs(d, nil)
+}
+
+func (c *GenericClient) GetFloatingIP(d *Driver, ip string) (*FloatingIP, error) {
+	if d.ComputeNetwork {
+		return nil, fmt.Errorf("operation not supported for nova networks")
+	}
+	opts := &floatingips.ListOpts{
+		FloatingIP: ip,
+	}
+
+	ips, err := c.getNeutronNetworkFloatingIPs(d, opts)
+	if err != nil {
+		return nil, err
+	}
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("no floating IP associated with address %q", ip)
+	}
+	return &ips[0], nil
 }
 
 func (c *GenericClient) getNovaNetworkFloatingIPs(d *Driver) ([]FloatingIP, error) {
@@ -435,15 +454,23 @@ func (c *GenericClient) getNovaNetworkFloatingIPs(d *Driver) ([]FloatingIP, erro
 	return ips, err
 }
 
-func (c *GenericClient) getNeutronNetworkFloatingIPs(d *Driver) ([]FloatingIP, error) {
+func (c *GenericClient) getNeutronNetworkFloatingIPs(d *Driver, opts *floatingips.ListOpts) ([]FloatingIP, error) {
 	log.Debug("Listing floating IPs", map[string]string{
 		"FloatingNetworkId": d.FloatingIpPoolId,
 		"TenantID":          d.TenantId,
 	})
-	pager := floatingips.List(c.Network, floatingips.ListOpts{
-		FloatingNetworkID: d.FloatingIpPoolId,
-		TenantID:          d.TenantId,
-	})
+
+	if opts != nil {
+		opts.FloatingNetworkID = d.FloatingIpPoolId
+		opts.TenantID = d.TenantId
+	} else {
+		opts = &floatingips.ListOpts{
+			FloatingNetworkID: d.FloatingIpPoolId,
+			TenantID:          d.TenantId,
+		}
+	}
+
+	pager := floatingips.List(c.Network, *opts)
 
 	ips := []FloatingIP{}
 	err := pager.EachPage(func(page pagination.Page) (bool, error) {

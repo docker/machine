@@ -462,30 +462,23 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) Remove() error {
-
-	var floatingIP *FloatingIP
-
 	log.Debug("deleting instance...", map[string]string{"MachineId": d.MachineId})
 	log.Info("Deleting OpenStack instance...")
 
 	if err := d.resolveIds(); err != nil {
 		return err
 	}
-	if ips, err := d.client.GetFloatingIPs(d); err != nil {
-		return err
-	} else {
-		for _, xip := range ips {
-			if xip.Ip == d.IPAddress {
-				floatingIP = &xip
-				_ = floatingIP
-				break
-			}
-		}
-	}
-	log.Debug("Deleting Floating IP: ", map[string]string{"floatingIP": floatingIP.Ip})
-	if floatingIP != nil {
-		if err := d.client.DeleteFloatingIP(d, floatingIP); err != nil {
+	if !d.ComputeNetwork {
+		floatingIP, err := d.client.GetFloatingIP(d, d.IPAddress)
+		if err != nil {
 			return err
+		}
+
+		if floatingIP != nil {
+			log.Debug("Deleting Floating IP: ", map[string]string{"floatingIP": floatingIP.Ip})
+			if err := d.client.DeleteFloatingIP(d, floatingIP); err != nil {
+				return err
+			}
 		}
 	}
 
