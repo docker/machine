@@ -796,42 +796,8 @@ func (d *Driver) assignFloatingIP() error {
 		return err
 	}
 
-	ips, err := d.client.GetFloatingIPs(d)
-	if err != nil {
-		return err
-	}
-
-	var floatingIP *FloatingIP
-
-	// This is currently broken
-	// When using parallel docker-machine create calls, it might get the same IP
-	// and fail to update the port, but somehow Update() does not fail
-	// and it will think the same IP has been given to different VMs
-	// https://github.com/docker/machine/issues/4038
-
-	_ = ips
-	/*log.Debugf("Looking for an available floating IP", map[string]string{
-		"MachineId": d.MachineId,
-		"Pool":      d.FloatingIpPool,
-	})
-
-	for _, ip := range ips {
-		if ip.PortId == "" {
-			log.Debug("Available floating IP found", map[string]string{
-				"MachineId": d.MachineId,
-				"IP":        ip.Ip,
-			})
-			floatingIP = &ip
-			break
-		}
-	}*/
-
-	if floatingIP == nil {
-		floatingIP = &FloatingIP{}
-		log.Debug("No available floating IP found. Allocating a new one...", map[string]string{"MachineId": d.MachineId})
-	} else {
-		log.Debug("Assigning floating IP to the instance", map[string]string{"MachineId": d.MachineId})
-	}
+	floatingIP := &FloatingIP{}
+	log.Debug("Allocating a new floating IP...", map[string]string{"MachineId": d.MachineId})
 
 	if err := d.client.AssignFloatingIP(d, floatingIP); err != nil {
 		return err
