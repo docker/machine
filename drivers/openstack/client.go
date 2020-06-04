@@ -393,7 +393,9 @@ func (c *GenericClient) assignNeutronFloatingIP(d *Driver, floatingIP *FloatingI
 
 func (c *GenericClient) DeleteFloatingIP(d *Driver, floatingIP *FloatingIP) error {
 	if d.ComputeNetwork {
-		// Not implemented
+		// Nova network is is deprecated in OpenStack
+		// https://docs.openstack.org/nova/rocky/admin/networking-nova.html
+		log.Warn("Detected that you use Nova network. Floating IP will not be removed, please do so manually if necessary")
 		return nil
 	}
 	return c.deleteNeutronFloatingIP(d, floatingIP)
