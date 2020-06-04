@@ -468,7 +468,7 @@ func (d *Driver) Remove() error {
 	if err := d.resolveIds(); err != nil {
 		return err
 	}
-	if !d.ComputeNetwork {
+	if d.FloatingIpPool != "" && !d.ComputeNetwork {
 		floatingIP, err := d.client.GetFloatingIP(d, d.IPAddress)
 		if err != nil {
 			return err
