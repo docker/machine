@@ -464,6 +464,25 @@ func (d *Driver) Kill() error {
 func (d *Driver) Remove() error {
 	log.Debug("deleting instance...", map[string]string{"MachineId": d.MachineId})
 	log.Info("Deleting OpenStack instance...")
+
+	if err := d.resolveIds(); err != nil {
+		return err
+	}
+
+	if d.FloatingIpPool != "" && d.IPAddress != "" && !d.ComputeNetwork {
+		floatingIP, err := d.client.GetFloatingIP(d, d.IPAddress)
+		if err != nil {
+			return err
+		}
+
+		if floatingIP != nil {
+			log.Debug("Deleting Floating IP: ", map[string]string{"floatingIP": floatingIP.Ip})
+			if err := d.client.DeleteFloatingIP(d, floatingIP); err != nil {
+				return err
+			}
+		}
+	}
+
 	if err := d.initCompute(); err != nil {
 		return err
 	}
@@ -778,35 +797,8 @@ func (d *Driver) assignFloatingIP() error {
 		return err
 	}
 
-	ips, err := d.client.GetFloatingIPs(d)
-	if err != nil {
-		return err
-	}
-
-	var floatingIP *FloatingIP
-
-	log.Debugf("Looking for an available floating IP", map[string]string{
-		"MachineId": d.MachineId,
-		"Pool":      d.FloatingIpPool,
-	})
-
-	for _, ip := range ips {
-		if ip.PortId == "" {
-			log.Debug("Available floating IP found", map[string]string{
-				"MachineId": d.MachineId,
-				"IP":        ip.Ip,
-			})
-			floatingIP = &ip
-			break
-		}
-	}
-
-	if floatingIP == nil {
-		floatingIP = &FloatingIP{}
-		log.Debug("No available floating IP found. Allocating a new one...", map[string]string{"MachineId": d.MachineId})
-	} else {
-		log.Debug("Assigning floating IP to the instance", map[string]string{"MachineId": d.MachineId})
-	}
+	floatingIP := &FloatingIP{}
+	log.Debug("Allocating a new floating IP...", map[string]string{"MachineId": d.MachineId})
 
 	if err := d.client.AssignFloatingIP(d, floatingIP); err != nil {
 		return err
