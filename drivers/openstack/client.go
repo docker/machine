@@ -429,7 +429,7 @@ func (c *GenericClient) GetFloatingIP(d *Driver, ip string) (*FloatingIP, error)
 		return nil, err
 	}
 	if len(ips) == 0 {
-		return nil, fmt.Errorf("no floating IP associated with address %q", ip)
+		return nil, nil
 	}
 	return &ips[0], nil
 }
