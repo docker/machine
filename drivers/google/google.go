@@ -33,19 +33,25 @@ type Driver struct {
 	Tags              string
 	UseExisting       bool
 	OpenPorts         []string
+	MinCPUPlatform    string
+	AcceleratorCount  int
+	AcceleratorType   string
 }
 
 const (
-	defaultZone           = "us-central1-a"
-	defaultUser           = "docker-user"
-	defaultMachineType    = "n1-standard-1"
-	defaultImageName      = "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
-	defaultServiceAccount = "default"
-	defaultScopes         = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
-	defaultDiskType       = "pd-standard"
-	defaultDiskSize       = 10
-	defaultNetwork        = "default"
-	defaultSubnetwork     = ""
+	defaultZone           	= "us-central1-a"
+	defaultUser           	= "docker-user"
+	defaultMachineType    	= "n1-standard-1"
+	defaultImageName      	= "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
+	defaultServiceAccount 	= "default"
+	defaultScopes         	= "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
+	defaultDiskType       	= "pd-standard"
+	defaultDiskSize       	= 10
+	defaultNetwork        	= "default"
+	defaultSubnetwork     	= ""
+	defaultMinCPUPlatform   = ""
+	defaultAcceleratorCount = 0
+	defaultAcceleratorType  = ""
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -152,6 +158,24 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "google-open-port",
 			Usage: "Make the specified port number accessible from the Internet, e.g, 8080/tcp",
 		},
+		mcnflag.StringFlag{
+			Name:   "google-min-cpu-platform",
+			Usage:  "Configure the minimum CPU platform, e.g, Intel Broadwell",
+			EnvVar: "GOOGLE_MIN_CPU_PLATFORM",
+			Value:  defaultMinCPUPlatform,
+		},
+		mcnflag.IntFlag{
+			Name:   "google-accelerator-count",
+			Usage:  "Number of GPUs to be attached to the instance",
+			EnvVar: "GOOGLE_ACCELERATOR_COUNT",
+			Value:  defaultAcceleratorCount,
+		},
+		mcnflag.StringFlag{
+			Name:   "google-accelerator-type",
+			Usage:  "Type of GPU to be attached to the instance, e.g, nvidia-tesla-p100",
+			EnvVar: "GOOGLE_ACCELERATOR_TYPE",
+			Value:  defaultAcceleratorType,
+		},
 	}
 }
 
@@ -218,6 +242,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
 		d.OpenPorts = flags.StringSlice("google-open-port")
+		d.MinCPUPlatform = flags.String("google-min-cpu-platform")
+		d.AcceleratorCount = flags.Int("google-accelerator-count")
+		d.AcceleratorType = flags.String("google-accelerator-type")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
