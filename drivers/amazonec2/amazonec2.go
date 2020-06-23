@@ -904,16 +904,16 @@ func (d *Driver) Remove() error {
 		multierr.Errs = append(multierr.Errs, err)
 	}
 
+	if !d.ExistingKey {
+		if err := d.deleteKeyPair(); err != nil {
+			multierr.Errs = append(multierr.Errs, err)
+		}
+	}
+	
 	// In case of failure waiting for a SpotInstance, we must cancel the unfulfilled request, otherwise an instance may be created later.
 	// If the instance was created, terminating it will be enough for canceling the SpotInstanceRequest
 	if d.RequestSpotInstance && d.spotInstanceRequestId != "" {
 		if err := d.cancelSpotInstanceRequest(); err != nil {
-			multierr.Errs = append(multierr.Errs, err)
-		}
-	}
-
-	if !d.ExistingKey {
-		if err := d.deleteKeyPair(); err != nil {
 			multierr.Errs = append(multierr.Errs, err)
 		}
 	}

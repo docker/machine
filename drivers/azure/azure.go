@@ -413,25 +413,36 @@ func (d *Driver) Remove() error {
 	if err != nil {
 		return err
 	}
-	if err := c.DeleteVirtualMachineIfExists(d.ResourceGroup, d.naming().VM()); err != nil {
-		return err
-	}
-	if err := c.DeleteNetworkInterfaceIfExists(d.ResourceGroup, d.naming().NIC()); err != nil {
-		return err
-	}
+
 	if err := c.DeletePublicIPAddressIfExists(d.ResourceGroup, d.naming().IP()); err != nil {
 		return err
 	}
-	if err := c.DeleteNetworkSecurityGroupIfExists(d.ResourceGroup, d.naming().NSG()); err != nil {
-		return err
-	}
+	
 	if err := c.CleanupAvailabilitySetIfExists(d.ResourceGroup, d.AvailabilitySet); err != nil {
 		return err
 	}
+
 	if err := c.CleanupSubnetIfExists(d.ResourceGroup, d.VirtualNetwork, d.SubnetName); err != nil {
 		return err
 	}
-	err = c.CleanupVirtualNetworkIfExists(d.ResourceGroup, d.VirtualNetwork)
+	
+	if err := c.CleanupVirtualNetworkIfExists(d.ResourceGroup, d.VirtualNetwork); err != nil {
+		return err
+	}
+
+	if err := c.DeleteNetworkSecurityGroupIfExists(d.ResourceGroup, d.naming().NSG()); err != nil {
+		return err
+	}
+
+	if err := c.DeleteNetworkInterfaceIfExists(d.ResourceGroup, d.naming().NIC()); err != nil {
+		return err
+	}
+
+	if err := c.DeleteVirtualMachineIfExists(d.ResourceGroup, d.naming().VM()); err != nil {
+		return err
+	}
+	
+	
 	return err
 }
 

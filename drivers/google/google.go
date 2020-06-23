@@ -432,17 +432,17 @@ func (d *Driver) Remove() error {
 		return err
 	}
 
-	if err := c.deleteInstance(); err != nil {
+	if err := c.deleteDisk(); err != nil {
 		if isNotFound(err) {
-			log.Warn("Remote instance does not exist, proceeding with removing local reference")
+			log.Warn("Remote disk does not exist, proceeding")
 		} else {
 			return err
 		}
 	}
-
-	if err := c.deleteDisk(); err != nil {
+	
+	if err := c.deleteInstance(); err != nil {
 		if isNotFound(err) {
-			log.Warn("Remote disk does not exist, proceeding")
+			log.Warn("Remote instance does not exist, proceeding with removing local reference")
 		} else {
 			return err
 		}
