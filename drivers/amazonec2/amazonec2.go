@@ -877,6 +877,19 @@ func (d *Driver) GetSSHUsername() string {
 	return d.SSHUser
 }
 
+func (d *Driver) getEbsVolumeId() (string, error) {
+	inst, err := d.getInstance()
+	if err != nil {
+		return "", err
+	}
+
+	if len(inst.BlockDeviceMappings) == 0 || inst.BlockDeviceMappings[0].Ebs == nil {
+		return "", err
+	}
+
+	return *inst.BlockDeviceMappings[0].Ebs.VolumeId, nil
+}
+
 func (d *Driver) Start() error {
 	_, err := d.getClient().StartInstances(&ec2.StartInstancesInput{
 		InstanceIds: []*string{&d.InstanceId},
@@ -1091,8 +1104,17 @@ func (d *Driver) configureTags(tagGroups string) error {
 		}
 	}
 
-	_, err := d.getClient().CreateTags(&ec2.CreateTagsInput{
-		Resources: []*string{&d.InstanceId},
+	volumeId, err := d.getEbsVolumeId()
+	resources := []*string{}
+	if err != nil {
+		log.Warnf("failed to get EBS volume ID: %s", err)
+		resources = []*string{&d.InstanceId}
+	} else {
+		resources = []*string{&d.InstanceId, &volumeId}
+	}
+
+	_, err = d.getClient().CreateTags(&ec2.CreateTagsInput{
+		Resources: resources,
 		Tags:      tags,
 	})
 
