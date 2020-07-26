@@ -56,7 +56,7 @@ func Detect() (string, error) {
 		if err != nil {
 			return "cmd", err // defaulting to cmd
 		}
-		if strings.Contains(strings.ToLower(shell), "powershell") {
+		if strings.Contains(strings.ToLower(shell), "powershell") || strings.Contains(strings.ToLower(shell), "pwsh") {
 			return "powershell", nil
 		} else if strings.Contains(strings.ToLower(shell), "cmd") {
 			return "cmd", nil
@@ -65,7 +65,7 @@ func Detect() (string, error) {
 			if err != nil {
 				return "cmd", err // defaulting to cmd
 			}
-			if strings.Contains(strings.ToLower(shell), "powershell") {
+			if strings.Contains(strings.ToLower(shell), "powershell") || strings.Contains(strings.ToLower(shell), "pwsh") {
 				return "powershell", nil
 			} else if strings.Contains(strings.ToLower(shell), "cmd") {
 				return "cmd", nil
