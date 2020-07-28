@@ -61,7 +61,7 @@ func hypervAvailable() error {
 	}
 
 	resp := parseLines(stdout)
-	if resp[0] != "Hyper-V" {
+	if resp == nil || resp[0] != "Hyper-V" {
 		return ErrNotInstalled
 	}
 
