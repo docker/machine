@@ -884,7 +884,7 @@ func (d *Driver) getEbsVolumeId() (string, error) {
 	}
 
 	if len(inst.BlockDeviceMappings) == 0 || inst.BlockDeviceMappings[0].Ebs == nil {
-		return "", err
+		return "", nil
 	}
 
 	return *inst.BlockDeviceMappings[0].Ebs.VolumeId, nil
@@ -1104,17 +1104,8 @@ func (d *Driver) configureTags(tagGroups string) error {
 		}
 	}
 
-	volumeId, err := d.getEbsVolumeId()
-	resources := []*string{}
-	if err != nil {
-		log.Warnf("failed to get EBS volume ID: %s", err)
-		resources = []*string{&d.InstanceId}
-	} else {
-		resources = []*string{&d.InstanceId, &volumeId}
-	}
-
-	_, err = d.getClient().CreateTags(&ec2.CreateTagsInput{
-		Resources: resources,
+	_, err := d.getClient().CreateTags(&ec2.CreateTagsInput{
+		Resources: d.getTagResources(),
 		Tags:      tags,
 	})
 
@@ -1123,6 +1114,19 @@ func (d *Driver) configureTags(tagGroups string) error {
 	}
 
 	return nil
+}
+
+func (d *Driver) getTagResources() []*string {
+	resources := []*string{&d.InstanceId}
+
+	volumeId, err := d.getEbsVolumeId()
+	if err != nil {
+		log.Warnf("failed to get EBS volume ID: %s", err)
+
+		return resources
+	}
+
+	return append(resources, &volumeId)
 }
 
 func (d *Driver) configureSecurityGroups(groupNames []string) error {
