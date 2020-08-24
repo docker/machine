@@ -155,6 +155,70 @@
   revision = "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 
 [[projects]]
+  digest = "1:e5eaa6c6fac285fceebc9647df96e3df424ba249517b54e95a18be518e8a1224"
+  name = "github.com/docker/machine"
+  packages = [
+    "commands",
+    "commands/commandstest",
+    "commands/mcndirs",
+    "drivers/amazonec2",
+    "drivers/azure",
+    "drivers/azure/azureutil",
+    "drivers/azure/logutil",
+    "drivers/digitalocean",
+    "drivers/driverutil",
+    "drivers/errdriver",
+    "drivers/exoscale",
+    "drivers/fakedriver",
+    "drivers/generic",
+    "drivers/google",
+    "drivers/hyperv",
+    "drivers/none",
+    "drivers/openstack",
+    "drivers/rackspace",
+    "drivers/softlayer",
+    "drivers/virtualbox",
+    "drivers/vmwarefusion",
+    "drivers/vmwarevcloudair",
+    "drivers/vmwarevsphere",
+    "its",
+    "libmachine",
+    "libmachine/auth",
+    "libmachine/cert",
+    "libmachine/check",
+    "libmachine/crashreport",
+    "libmachine/drivers",
+    "libmachine/drivers/plugin",
+    "libmachine/drivers/plugin/localbinary",
+    "libmachine/drivers/rpc",
+    "libmachine/engine",
+    "libmachine/host",
+    "libmachine/hosttest",
+    "libmachine/libmachinetest",
+    "libmachine/log",
+    "libmachine/mcndockerclient",
+    "libmachine/mcnerror",
+    "libmachine/mcnflag",
+    "libmachine/mcnutils",
+    "libmachine/persist",
+    "libmachine/provision",
+    "libmachine/provision/pkgaction",
+    "libmachine/provision/provisiontest",
+    "libmachine/provision/serviceaction",
+    "libmachine/shell",
+    "libmachine/ssh",
+    "libmachine/ssh/sshtest",
+    "libmachine/state",
+    "libmachine/swarm",
+    "libmachine/version",
+    "libmachine/versioncmp",
+    "version",
+  ]
+  pruneopts = "UT"
+  revision = "bd45ab13d88c32a3dd701485983354514abc41fa"
+  version = "v0.16.2"
+
+[[projects]]
   digest = "1:7515ee368d2554cccaecdb552cf602e7a555139ffe45aad7500294fc14bcf2e1"
   name = "github.com/exoscale/egoscale"
   packages = ["."]
@@ -182,6 +246,17 @@
   packages = ["query"]
   pruneopts = "UT"
   revision = "30f7a39f4a218feb5325f3aebc60c32a572a8274"
+
+[[projects]]
+  branch = "master"
+  digest = "1:239338f6f78884213107067789aed51ede5ee34ce3bd126592574b5a7b713cfb"
+  name = "github.com/hectane/go-acl"
+  packages = [
+    ".",
+    "api",
+  ]
+  pruneopts = "UT"
+  revision = "da78bae5fc95895d8855ed8c5b1505b10e254450"
 
 [[projects]]
   branch = "master"
@@ -445,7 +520,63 @@
     "github.com/codegangsta/cli",
     "github.com/digitalocean/godo",
     "github.com/docker/docker/pkg/term",
+    "github.com/docker/machine/commands",
+    "github.com/docker/machine/commands/commandstest",
+    "github.com/docker/machine/commands/mcndirs",
+    "github.com/docker/machine/drivers/amazonec2",
+    "github.com/docker/machine/drivers/azure",
+    "github.com/docker/machine/drivers/azure/azureutil",
+    "github.com/docker/machine/drivers/azure/logutil",
+    "github.com/docker/machine/drivers/digitalocean",
+    "github.com/docker/machine/drivers/driverutil",
+    "github.com/docker/machine/drivers/errdriver",
+    "github.com/docker/machine/drivers/exoscale",
+    "github.com/docker/machine/drivers/fakedriver",
+    "github.com/docker/machine/drivers/generic",
+    "github.com/docker/machine/drivers/google",
+    "github.com/docker/machine/drivers/hyperv",
+    "github.com/docker/machine/drivers/none",
+    "github.com/docker/machine/drivers/openstack",
+    "github.com/docker/machine/drivers/rackspace",
+    "github.com/docker/machine/drivers/softlayer",
+    "github.com/docker/machine/drivers/virtualbox",
+    "github.com/docker/machine/drivers/vmwarefusion",
+    "github.com/docker/machine/drivers/vmwarevcloudair",
+    "github.com/docker/machine/drivers/vmwarevsphere",
+    "github.com/docker/machine/its",
+    "github.com/docker/machine/libmachine",
+    "github.com/docker/machine/libmachine/auth",
+    "github.com/docker/machine/libmachine/cert",
+    "github.com/docker/machine/libmachine/check",
+    "github.com/docker/machine/libmachine/crashreport",
+    "github.com/docker/machine/libmachine/drivers",
+    "github.com/docker/machine/libmachine/drivers/plugin",
+    "github.com/docker/machine/libmachine/drivers/plugin/localbinary",
+    "github.com/docker/machine/libmachine/drivers/rpc",
+    "github.com/docker/machine/libmachine/engine",
+    "github.com/docker/machine/libmachine/host",
+    "github.com/docker/machine/libmachine/hosttest",
+    "github.com/docker/machine/libmachine/libmachinetest",
+    "github.com/docker/machine/libmachine/log",
+    "github.com/docker/machine/libmachine/mcndockerclient",
+    "github.com/docker/machine/libmachine/mcnerror",
+    "github.com/docker/machine/libmachine/mcnflag",
+    "github.com/docker/machine/libmachine/mcnutils",
+    "github.com/docker/machine/libmachine/persist",
+    "github.com/docker/machine/libmachine/provision",
+    "github.com/docker/machine/libmachine/provision/pkgaction",
+    "github.com/docker/machine/libmachine/provision/provisiontest",
+    "github.com/docker/machine/libmachine/provision/serviceaction",
+    "github.com/docker/machine/libmachine/shell",
+    "github.com/docker/machine/libmachine/ssh",
+    "github.com/docker/machine/libmachine/ssh/sshtest",
+    "github.com/docker/machine/libmachine/state",
+    "github.com/docker/machine/libmachine/swarm",
+    "github.com/docker/machine/libmachine/version",
+    "github.com/docker/machine/libmachine/versioncmp",
+    "github.com/docker/machine/version",
     "github.com/exoscale/egoscale",
+    "github.com/hectane/go-acl",
     "github.com/intel-go/cpuid",
     "github.com/rackspace/gophercloud",
     "github.com/rackspace/gophercloud/openstack",

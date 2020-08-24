@@ -14,6 +14,7 @@ import (
 	"runtime"
 
 	gossh "golang.org/x/crypto/ssh"
+	"github.com/hectane/go-acl"
 )
 
 var (
@@ -86,6 +87,10 @@ func (kp *KeyPair) WriteToFile(privateKeyPath string, publicKeyPath string) erro
 			if err := f.Chmod(0600); err != nil {
 				return err
 			}
+		case "windows":
+			if err = windowsChmod(v.File, 0600); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -122,3 +127,12 @@ func GenerateSSHKey(path string) error {
 
 	return nil
 }
+
+// change windows acl based permissions on file
+func windowsChmod(filePath string, fileMode os.FileMode) error {
+	if err := acl.Chmod(filePath, fileMode); err != nil {
+		return err
+	}
+	return nil
+}
+
