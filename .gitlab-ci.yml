@@ -29,7 +29,6 @@ before_script:
     expire_in: 1 week
   tags:
   - docker
-  - privileged
 
 .build_validate: &build_validate
   <<: *build_base
