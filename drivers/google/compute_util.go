@@ -283,6 +283,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		Scheduling: &raw.Scheduling{
 			Preemptible: c.preemptible,
 		},
+		Labels: parseLabels(d),
 	}
 
 	if strings.Contains(c.subnetwork, "/subnetworks/") {
@@ -408,6 +409,29 @@ func parseTags(d *Driver) []string {
 	}
 
 	return tags
+}
+
+// parseLabels computes the tags for the instance.
+func parseLabels(d *Driver) map[string]string {
+	labels := map[string]string{}
+
+	if d.Labels != "" {
+		// d.Labels is in the format "key:value,key:value"
+		// also account for spaces in the format and ignores them
+		for _, kv := range strings.Split(d.Labels, ",") {
+			split := strings.SplitN(kv, ":", 2)
+			key := strings.TrimSpace(split[0])
+
+			value := ""
+			if len(split) > 1 {
+				value = strings.TrimSpace(split[1])
+			}
+
+			labels[key] = value
+		}
+	}
+
+	return labels
 }
 
 // deleteInstance deletes the instance, leaving the persistent disk.
