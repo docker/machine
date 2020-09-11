@@ -217,8 +217,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value: defaultGoogleOperationBackoffMaxElapsedTime,
 		},
 		mcnflag.StringSliceFlag{
-			Name:  "google-labels",
-			Usage: "Labels to set on the VM (format: key:value,key:value)",
+			Name:  "google-label",
+			Usage: "Label to set on the VM (format: key:value). Repeat the flag to set more labels",
 		},
 	}
 }
@@ -288,7 +288,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
 		d.OpenPorts = flags.StringSlice("google-open-port")
-		d.Labels = flags.StringSlice("google-labels")
+		d.Labels = flags.StringSlice("google-label")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
