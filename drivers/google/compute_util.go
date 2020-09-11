@@ -417,7 +417,7 @@ func parseLabels(d *Driver) map[string]string {
 
 	if d.Labels != "" {
 		// d.Labels is in the format "key:value,key:value"
-		// also account for spaces in the format and ignores them
+		// also account for spaces in the format and ignore them
 		for _, kv := range strings.Split(d.Labels, ",") {
 			split := strings.SplitN(kv, ":", 2)
 			key := strings.TrimSpace(split[0])

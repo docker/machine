@@ -218,7 +218,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:  "google-labels",
-			Usage: "Labels to set on the vm (format: key:value,key:value)",
+			Usage: "Labels to set on the VM (format: key:value,key:value)",
 			Value: "",
 		},
 	}
