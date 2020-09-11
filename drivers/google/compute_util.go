@@ -415,20 +415,18 @@ func parseTags(d *Driver) []string {
 func parseLabels(d *Driver) map[string]string {
 	labels := map[string]string{}
 
-	if d.Labels != "" {
-		// d.Labels is in the format "key:value,key:value"
-		// also account for spaces in the format and ignore them
-		for _, kv := range strings.Split(d.Labels, ",") {
-			split := strings.SplitN(kv, ":", 2)
-			key := strings.TrimSpace(split[0])
+	// d.Labels is an array of strings in the format "key:value"
+	// also account for spaces in the format and ignore them
+	for _, kv := range d.Labels {
+		split := strings.SplitN(kv, ":", 2)
+		key := strings.TrimSpace(split[0])
 
-			value := ""
-			if len(split) > 1 {
-				value = strings.TrimSpace(split[1])
-			}
-
-			labels[key] = value
+		value := ""
+		if len(split) > 1 {
+			value = strings.TrimSpace(split[1])
 		}
+
+		labels[key] = value
 	}
 
 	return labels

@@ -28,19 +28,19 @@ func TestAdditionalTags(t *testing.T) {
 }
 
 func TestDefaultLabel(t *testing.T) {
-	labels := parseLabels(&Driver{Labels: ""})
+	labels := parseLabels(&Driver{Labels: []string{}})
 
 	assert.Equal(t, map[string]string{}, labels)
 }
 
 func TestAdditionalLabel(t *testing.T) {
-	labels := parseLabels(&Driver{Labels: "key1:value1"})
+	labels := parseLabels(&Driver{Labels: []string{"key1:value1"}})
 
 	assert.Equal(t, map[string]string{"key1": "value1"}, labels)
 }
 
 func TestAdditionalLabels(t *testing.T) {
-	labels := parseLabels(&Driver{Labels: "key1: value1, key2: value2"})
+	labels := parseLabels(&Driver{Labels: []string{"key1: value1", "key2: value2"}})
 
 	assert.Equal(t, map[string]string{"key1": "value1", "key2": "value2"}, labels)
 }

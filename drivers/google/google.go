@@ -56,7 +56,7 @@ type Driver struct {
 	Tags              string
 	UseExisting       bool
 	OpenPorts         []string
-	Labels            string
+	Labels            []string
 
 	OperationBackoffFactory *backoffFactory
 }
@@ -216,10 +216,9 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage: "Maximum elapsed time for GCP Operation check exponential backoff",
 			Value: defaultGoogleOperationBackoffMaxElapsedTime,
 		},
-		mcnflag.StringFlag{
+		mcnflag.StringSliceFlag{
 			Name:  "google-labels",
 			Usage: "Labels to set on the VM (format: key:value,key:value)",
-			Value: "",
 		},
 	}
 }
@@ -289,7 +288,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
 		d.OpenPorts = flags.StringSlice("google-open-port")
-		d.Labels = flags.String("google-labels")
+		d.Labels = flags.StringSlice("google-labels")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
