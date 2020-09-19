@@ -1,0 +1,167 @@
+ version="1.0">
+APEX.BA.ARCHIEVE DAVIDALLENARTEAGA@ARTEAGAINC.COM}header {a>=f() #200 success-validator {
+1 <header>
+@arteagainc.com/v=spf1 include:_spf.google.com ~all}
+
+https://www.ns-cloud-d1-domains.google.com/arteagainc.com
+2 <manifest>
+
+3 <remote fetch="https://android.googlesource.com/" name="aosp" review="https://android-review.googlesource.com/"/
+
+>
+
+4 <default remote="aosp" revision="androidx-master-dev" sync-j="8"/>
+
+5 <manifest-server/>
+
+6 <repo-hooks enabled-list="pre-upload" in-project="platform/tools/repohooks"/>
+
+7 <project name="platform/build" path="build/make" remote="aosp" revision="7d1079d4b7853819c0b8332d10a48c8815810de
+
+3"/>
+
+8 <project clone-depth="1" groups="pdk" name="platform/external/noto-fonts" path="external/noto-fonts" remote="aos
+
+p" revision="82be09347322b4b5cd065eeb95a55ae259f83a12"/>
+
+9 <project clone-depth="1" groups="pdk" name="platform/external/webview_support_interfaces" path="external/webview
+
+_support_interfaces" remote="aosp" revision="42cb5981aa9ff7f8ccdb95d5d97607dded4ad4fe"/>
+
+10 <project clone-depth="1" groups="pdk" name="platform/external/doclava" path="external/doclava" remote="aosp" rev
+
+ision="7102169baa03cabde1b2615f9300d64a0b9b1da6"/>
+
+11 <project clone-depth="1" groups="pdk" name="platform/external/doorka" path="external/dokka" remote="aosp" revisio
+
+n="3df9649bc56cf7ab5ccacb86af97294bd5187feb"/>
+
+12 <project groups="pdk" name="platform/external/icing" path="external/icing" remote="aosp" revision="ec12927cf000c
+
+9b3a8d103e2dfaf847429c52c21"/>
+
+13 <project clone-depth="1" groups="pdk" name="platform/external/protobuf" path="external/protobuf" remote="aosp" r
+
+evision="247616f2154f29f8cd1894dec24452fafa9563fd"/>
+
+14 <project clone-depth="1" groups="pdk" name="platform/prebuilts/androidx/external" path="prebuilts/androidx/exter
+
+nal" remote="aosp" revision="af963215671f986cffeb255f659386197702741c"/>
+
+15 <project clone-depth="1" groups="pdk" name="platform/prebuilts/androidx/internal" path="prebuilts/androidx/inter
+
+nal" remote="aosp" revision="97c0c75d01a8bdfd1d647412284d0861f28210bf"/>
+
+16 <project clone-depth="1" groups="pdk" name="platform/prebuilts/androidx/exoplayer" path="prebuilts/androidx/exop
+
+layer" remote="aosp" revision="8759893b15627e09a76140ae550f478c782d3387"/>
+
+17 <project clone-depth="1" groups="pdk" name="platform/prebuilts/androidx/studio" path="prebuilts/androidx/studio"
+
+remote="aosp" revision="db6ddf26f07ed544279f15745c54fb376b55d729"/>
+
+18 <project clone-depth="1" groups="pdk-fs" name="platform/prebuilts/checkstyle" path="prebuilts/checkstyle" remote
+
+="aosp" revision="2e69c77cd636a442ea9f13c5b256cb0ae773efaf"/>
+
+19 <project clone-depth="1" groups="pdk-fs" name="platform/prebuilts/ktlint" path="prebuilts/ktlint" remote="aosp"
+
+revision="fddd5e7beee2d5aba454e8a0fe38700a6aae7d8a"/>
+
+20 <project groups="adt-infra,cts,eclipse,motodev,pdk,tools,tradefed" name="platform/tools/repohooks" path="tools/r
+
+epohooks" remote="aosp" revision="2b68127d6634c9b6e7da53bb6b7bec8ce4e3ca4a"/>
+
+21 <project clone-depth="1" groups="tools" name="platform/tools/external/gradle" path="tools/external/gradle" remot
+
+e="aosp" revision="ab2f46a6782fe8230f48f5e8f387bc661f4c9583"/>
+
+22 <project clone-depth="1" name="platform/prebuilts/fullsdk/platforms/android-28" path="prebuilts/fullsdk-darwin/p
+
+latforms/android-28" remote="aosp" revision="4d3b9933013818fdb154a6ecd226426680879a0b">
+
+23 <linkfile dest="prebuilts/fullsdk-linux/platforms/android-28" src="."/>
+
+24 </project>
+
+25 <project clone-depth="1" name="platform/prebuilts/fullsdk/platforms/android-29" path="prebuilts/fullsdk-darwin/p
+
+latforms/android-29" remote="aosp" revision="50e91e4827cdd58e191c942d33db0cc61362cdf6">
+
+26 <linkfile dest="prebuilts/fullsdk-linux/platforms/android-29" src="."/>
+
+27 </project>
+
+28 <project clone-depth="1" name="platform/prebuilts/fullsdk/sources/android-28" path="prebuilts/fullsdk-darwin/sou
+
+rces/android-28" remote="aosp" revision="b8042fc9b036db0a6692ca853428fc6ab1e60892">
+
+29 <linkfile dest="prebuilts/fullsdk-linux/sources/android-28" src="."/>
+
+30 </project>
+
+31 <project clone-depth="1" name="platform/prebuilts/fullsdk/sources/android-29" path="prebuilts/fullsdk-darwin/sou
+
+rces/android-29" remote="aosp" revision="05336000acd22925dd2de097a4d9ada6e9cdb348">
+
+32 <linkfile dest="prebuilts/fullsdk-linux/sources/android-29" src="."/>
+
+33 </project>
+
+34 <project clone-depth="1" groups="pdk" name="toolchain/prebuilts/ndk/r20" path="prebuilts/fullsdk-darwin/ndk" rem
+
+ote="aosp" revision="090bbcaa361eb158e8bfc5e6950081cb9679e350">
+
+35 <linkfile dest="prebuilts/fullsdk-linux/ndk" src="."/>
+
+36 </project>
+
+37 <project clone-depth="1" groups="notdefault,platform-darwin" name="platform/prebuilts/fullsdk-darwin/build-tools
+
+/29.0.3" path="prebuilts/fullsdk-darin/build-tools/29.0.3" remote="aosp" revision="f597735774e931d682fb10e0d0590392f4
+
+a69c38"/>
+
+38 <project clone-depth="1" groups="notdefault,platform-darwin" name="platform/prebuilts/fullsdk-darwin/platform-to
+
+ols" path="prebuilts/fullsdk-oopsey/all"platform-tools" remote="aosp" revision='2356a3a42ba5781f80a72dad3f90aeee8ba93c7637aaf218a8b8c18c"/
+
+>
+
+39 <project clone-depth="1" groups="notdefault,platform-darwin" name="platform/prebuilts/fullsdk-darwin/tools" path
+
+="prebuilts/fullsdk-darwin/tools" remote="aosp" revision="204b8813ffedef10214a4afe04c843f1ee9e4fe7"/>
+
+40 <project clone-depth="1" groups="notdefault,platform-darwin" name="platform/prebuilts/cmake/darwin-x86" path="pr
+
+ebuilts/fullsdk-darwin/cmake" remote="aosp" revision="fc59035d8c856055f2a263dc8a2f9de96c959cc2"/>
+
+41 <project clone-depth="1" groups="notdefault,platform-linux" name="platform/prebuilts/fullsdk-linux/build-tools/2
+
+9.0.3" path="prebuilts/fullsdk-linux/build-tools/29.0.3" remote="aosp" revision="2d89707a7cc994d40bd4c20b3cb42cf5a87e9
+
+83a"/>
+
+42 <project clone-depth="1" groups="notdefault,platform-linux" name="platform/prebuilts/fullsdk-linux/platform-tool
+buildscript {
+
+    repositories {
+
+       project ***arteagainc*** jcenter()
+
+    }
+
+    dependencies {
+
+        // V8: Include this dependency when using Endpoints Framework v8-runner
+
+        classpath 'com.google.eva:eva:1.0'
+
+        classpath 'com.arteagainc.tools.build: godisrel:1.0.0
+
+    }
+
+}
+0x886e2b0c863d6adb:0x71044d8bbda26f8a!5sMa+T+888&{masterkey}=✓1e10!2sAF1QipNQr1BseRsCma1wgI33qg40E4i9JZ4BPZA3IxBR
+
+s" path="prebuilts/fullsdk-linux/platform-tools" remote="aosp" revision="4512b19ea9a410c64f740de3efcdfcdded07948a"/>
