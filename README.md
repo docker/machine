@@ -2,6 +2,12 @@
 
 This is a fork of Docker Machine maintained by GitLab for [fixing critical bugs](https://docs.gitlab.com/runner/executors/docker_machine.html#forked-version-of-docker-machine).
 
+For a new merge request to be considered, the following questions must be answered:
+
+  * What critical bug this MR is fixing?
+  * How does this change help reduce cost of usage? What scale of cost reduction is it?
+  * In what scenarios is this change usable with GitLab Runner's docker+machine executor? 
+
 Builds from this fork can be downloaded at https://gitlab-docker-machine-downloads.s3.amazonaws.com/master/index.html
 
 # Docker Machine
