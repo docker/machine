@@ -6,7 +6,7 @@ For a new merge request to be considered, the following questions must be answer
 
   * What critical bug this MR is fixing?
   * How does this change help reduce cost of usage? What scale of cost reduction is it?
-  * In what scenarios is this change usable with GitLab Runner's docker+machine executor? 
+  * In what scenarios is this change usable with GitLab Runner's `docker+machine` executor? 
 
 Builds from this fork can be downloaded at https://gitlab-docker-machine-downloads.s3.amazonaws.com/master/index.html
 
