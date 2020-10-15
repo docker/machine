@@ -179,7 +179,7 @@ func TestConfigureSecurityGroupPermissionsWithSwarm(t *testing.T) {
 }
 
 func TestValidateAwsRegionValid(t *testing.T) {
-	regions := []string{"eu-west-1", "eu-central-1"}
+	regions := []string{"eu-west-1", "eu-central-1", "eu-south-1"}
 
 	for _, region := range regions {
 		validatedRegion, err := validateAwsRegion(region)
