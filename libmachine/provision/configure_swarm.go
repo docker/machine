@@ -1,17 +1,19 @@
 package provision
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
 	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcndockerclient"
 	"github.com/docker/machine/libmachine/swarm"
-	"github.com/samalba/dockerclient"
 )
 
 func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.Options) error {
@@ -79,23 +81,23 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		cmdMaster = append(cmdMaster, swarmOptions.Discovery)
 
 		hostBind := fmt.Sprintf("%s:%s", dockerDir, dockerDir)
-		masterHostConfig := dockerclient.HostConfig{
-			RestartPolicy: dockerclient.RestartPolicy{
+		masterHostConfig := &container.HostConfig{
+			RestartPolicy: container.RestartPolicy{
 				Name:              "always",
 				MaximumRetryCount: 0,
 			},
 			Binds: []string{hostBind},
-			PortBindings: map[string][]dockerclient.PortBinding{
-				fmt.Sprintf("%s/tcp", port): {
+			PortBindings: nat.PortMap{
+				nat.Port(fmt.Sprintf("%s/tcp", port)): []nat.PortBinding{
 					{
-						HostIp:   "0.0.0.0",
+						HostIP:   "0.0.0.0",
 						HostPort: port,
 					},
 				},
 			},
 		}
 
-		swarmMasterConfig := &dockerclient.ContainerConfig{
+		swarmMasterConfig := &mcndockerclient.ContainerConfig{
 			Image: swarmOptions.Image,
 			Env:   swarmOptions.Env,
 			ExposedPorts: map[string]struct{}{
@@ -106,15 +108,15 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			HostConfig: masterHostConfig,
 		}
 
-		err = mcndockerclient.CreateContainer(dockerHost, swarmMasterConfig, "swarm-agent-master")
+		err = mcndockerclient.CreateContainer(context.TODO(), dockerHost, swarmMasterConfig, "swarm-agent-master")
 		if err != nil {
 			return err
 		}
 	}
 
 	if swarmOptions.Agent {
-		workerHostConfig := dockerclient.HostConfig{
-			RestartPolicy: dockerclient.RestartPolicy{
+		workerHostConfig := &container.HostConfig{
+			RestartPolicy: container.RestartPolicy{
 				Name:              "always",
 				MaximumRetryCount: 0,
 			},
@@ -130,7 +132,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 		}
 		cmdWorker = append(cmdWorker, swarmOptions.Discovery)
 
-		swarmWorkerConfig := &dockerclient.ContainerConfig{
+		swarmWorkerConfig := &mcndockerclient.ContainerConfig{
 			Image:      swarmOptions.Image,
 			Env:        swarmOptions.Env,
 			Cmd:        cmdWorker,
@@ -140,7 +142,7 @@ func configureSwarm(p Provisioner, swarmOptions swarm.Options, authOptions auth.
 			swarmWorkerConfig.Cmd = append([]string{"--experimental"}, swarmWorkerConfig.Cmd...)
 		}
 
-		err = mcndockerclient.CreateContainer(dockerHost, swarmWorkerConfig, "swarm-agent")
+		err = mcndockerclient.CreateContainer(context.TODO(), dockerHost, swarmWorkerConfig, "swarm-agent")
 		if err != nil {
 			return err
 		}

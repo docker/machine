@@ -11,7 +11,7 @@
   version = "1.4.10"
 
 [[constraint]]
-  branch = "master"
+  version = "v19.03.13"
   name = "github.com/docker/docker"
 
 [[constraint]]
@@ -33,6 +33,10 @@
 [[constraint]]
   name = "github.com/intel-go/cpuid"
   branch = "master"
+
+[[override]]
+  name = "github.com/golang/protobuf"
+  version = "v1.0.0"
 
 [prune]
   go-tests = true
