@@ -1,6 +1,9 @@
 package mcndockerclient
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 var CurrentDockerVersioner DockerVersioner = &defaultDockerVersioner{}
 
@@ -20,7 +23,7 @@ func (dv *defaultDockerVersioner) DockerVersion(host DockerHost) (string, error)
 		return "", fmt.Errorf("Unable to query docker version: %s", err)
 	}
 
-	version, err := client.Version()
+	version, err := client.ServerVersion(context.TODO())
 	if err != nil {
 		return "", fmt.Errorf("Unable to query docker version: %s", err)
 	}
