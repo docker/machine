@@ -229,3 +229,61 @@ func TestWaitForOpBackOff(t *testing.T) {
 		})
 	}
 }
+
+func TestPrepareMetadata_NoConfiguration(t *testing.T) {
+	m := prepareMetadata(nil)
+	if !assert.NotNil(t, m) {
+		t.FailNow()
+	}
+	assert.Empty(t, m.Items)
+}
+
+func TestPrepareMetadata_WithConfiguration(t *testing.T) {
+	metadataKey1 := "key_1"
+	metadataValue1 := "value_1"
+	metadataKey2 := "key_2"
+	metadataValue2 := "value_2"
+	metadata := metadataMap{
+		metadataKey1: metadataValue1,
+		metadataKey2: metadataValue2,
+	}
+
+	assertMetadata := func(t *testing.T, m *raw.Metadata, key string, value string) {
+		if !assert.NotNil(t, m) {
+			t.FailNow()
+		}
+		found := false
+		for _, item := range m.Items {
+			if item.Key != key {
+				continue
+			}
+
+			found = true
+
+			if !assert.NotNil(t, item.Value) {
+				t.FailNow()
+			}
+			assert.Equal(t, value, *item.Value)
+		}
+		assert.True(t, found, "not found the metadata item %q=%q", key, value)
+	}
+
+	tests := map[string]struct {
+		metadata       metadataMap
+		assertMetadata func(t *testing.T, m *raw.Metadata)
+	}{
+		"metadata provided": {
+			metadata: metadata,
+			assertMetadata: func(t *testing.T, m *raw.Metadata) {
+				assertMetadata(t, m, metadataKey1, metadataValue1)
+				assertMetadata(t, m, metadataKey2, metadataValue2)
+			},
+		},
+	}
+
+	for tn, tt := range tests {
+		t.Run(tn, func(t *testing.T) {
+			tt.assertMetadata(t, prepareMetadata(tt.metadata))
+		})
+	}
+}

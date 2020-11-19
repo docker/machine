@@ -283,7 +283,8 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		Scheduling: &raw.Scheduling{
 			Preemptible: c.preemptible,
 		},
-		Labels: parseLabels(d),
+		Labels:   parseLabels(d),
+		Metadata: prepareMetadata(d.Metadata),
 	}
 
 	if strings.Contains(c.subnetwork, "/subnetworks/") {
@@ -387,17 +388,36 @@ func (c *ComputeUtil) uploadSSHKey(instance *raw.Instance, sshKeyPath string) er
 
 	metaDataValue := fmt.Sprintf("%s:%s %s\n", c.userName, strings.TrimSpace(string(sshKey)), c.userName)
 
-	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
-		Fingerprint: instance.Metadata.Fingerprint,
-		Items: []*raw.MetadataItems{
-			{
-				Key:   "sshKeys",
-				Value: &metaDataValue,
-			},
-		},
-	}).Do()
+	metadata := instance.Metadata
+	metadata.Items = append(metadata.Items, &raw.MetadataItems{
+		Key:   "sshKeys",
+		Value: &metaDataValue,
+	})
+
+	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, metadata).Do()
+	if err != nil {
+		return err
+	}
 
 	return c.waitForRegionalOp(op.Name)
+}
+
+// prepareMetadata prepares instance metadata entries from provided configuration
+func prepareMetadata(values metadataMap) *raw.Metadata {
+	metadata := &raw.Metadata{
+		Items: make([]*raw.MetadataItems, 0),
+	}
+
+	for key := range values {
+		value := values[key]
+		item := &raw.MetadataItems{
+			Key:   key,
+			Value: &value,
+		}
+		metadata.Items = append(metadata.Items, item)
+	}
+
+	return metadata
 }
 
 // parseTags computes the tags for the instance.

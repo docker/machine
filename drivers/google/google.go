@@ -16,6 +16,8 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
+type metadataMap map[string]string
+
 type backoffFactory struct {
 	InitialInterval     time.Duration
 	RandomizationFactor float64
@@ -57,6 +59,7 @@ type Driver struct {
 	UseExisting       bool
 	OpenPorts         []string
 	Labels            []string
+	Metadata          metadataMap
 
 	OperationBackoffFactory *backoffFactory
 }
@@ -220,6 +223,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "google-label",
 			Usage: "Label to set on the VM (format: key:value). Repeat the flag to set more labels",
 		},
+		mcnflag.StringSliceFlag{
+			Name:  "google-metadata",
+			Usage: "Custom metadata value passed in key=value form. Use multiple times for multiple settings",
+		},
 	}
 }
 
@@ -289,6 +296,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Tags = flags.String("google-tags")
 		d.OpenPorts = flags.StringSlice("google-open-port")
 		d.Labels = flags.StringSlice("google-label")
+		d.Metadata = metadataMapFromStringSlice(flags.StringSlice("google-metadata"))
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
@@ -313,6 +321,19 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	return nil
+}
+
+func metadataMapFromStringSlice(slice []string) metadataMap {
+	result := make(metadataMap, 0)
+	for _, element := range slice {
+		parts := strings.SplitN(element, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		result[parts[0]] = parts[1]
+	}
+
+	return result
 }
 
 // PreCreateCheck is called to enforce pre-creation steps
