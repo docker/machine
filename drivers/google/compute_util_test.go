@@ -2,6 +2,9 @@ package google
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -230,60 +233,177 @@ func TestWaitForOpBackOff(t *testing.T) {
 	}
 }
 
-func TestPrepareMetadata_NoConfiguration(t *testing.T) {
-	m := prepareMetadata(nil)
-	if !assert.NotNil(t, m) {
-		t.FailNow()
-	}
-	assert.Empty(t, m.Items)
-}
+func TestPrepareMetadata(t *testing.T) {
+	const (
+		metadataKey1   = "key_1"
+		metadataValue1 = "value_1"
+		metadataKey2   = "key_2"
+		metadataValue2 = "value_2"
+		metadataKey3   = "key_3"
+		fileContent3   = "file-content-3"
+		metadataKey4   = "key_4"
+		fileContent4   = "file-content-4"
+	)
 
-func TestPrepareMetadata_WithConfiguration(t *testing.T) {
-	metadataKey1 := "key_1"
-	metadataValue1 := "value_1"
-	metadataKey2 := "key_2"
-	metadataValue2 := "value_2"
 	metadata := metadataMap{
 		metadataKey1: metadataValue1,
 		metadataKey2: metadataValue2,
 	}
+	metadataFiles := [][]string{
+		{metadataKey3, fileContent3},
+		{metadataKey4, fileContent4},
+	}
 
-	assertMetadata := func(t *testing.T, m *raw.Metadata, key string, value string) {
+	noMetadataFile := func(_ *testing.T) (metadataMap, func()) { return metadataMap{}, func() {} }
+	failingMetadataFile := func(_ *testing.T) (metadataMap, func()) {
+		return metadataMap{"non-existing": "non-existing"}, func() {}
+	}
+	missingMetadataFilePath := func(_ *testing.T) (metadataMap, func()) {
+		return metadataMap{"non-existing": ""}, func() {}
+	}
+	emptyMetadata := func(t *testing.T, m *raw.Metadata) {
 		if !assert.NotNil(t, m) {
 			t.FailNow()
 		}
-		found := false
-		for _, item := range m.Items {
-			if item.Key != key {
-				continue
-			}
-
-			found = true
-
-			if !assert.NotNil(t, item.Value) {
-				t.FailNow()
-			}
-			assert.Equal(t, value, *item.Value)
-		}
-		assert.True(t, found, "not found the metadata item %q=%q", key, value)
+		assert.Empty(t, m.Items)
 	}
 
 	tests := map[string]struct {
 		metadata       metadataMap
+		metadataFiles  func(t *testing.T) (metadataMap, func())
+		expectedError  bool
 		assertMetadata func(t *testing.T, m *raw.Metadata)
 	}{
-		"metadata provided": {
-			metadata: metadata,
+		"error on metadata file reading": {
+			metadataFiles:  failingMetadataFile,
+			expectedError:  true,
+			assertMetadata: emptyMetadata,
+		},
+		"missing metadata file path": {
+			metadataFiles:  missingMetadataFilePath,
+			expectedError:  false,
+			assertMetadata: emptyMetadata,
+		},
+		"missing metadata value": {
+			metadata:       metadataMap{"key": ""},
+			metadataFiles:  noMetadataFile,
+			expectedError:  false,
+			assertMetadata: emptyMetadata,
+		},
+		"no metadata configuration": {
+			metadata:       nil,
+			metadataFiles:  noMetadataFile,
+			expectedError:  false,
+			assertMetadata: emptyMetadata,
+		},
+		"only metadata passed": {
+			metadata:      metadata,
+			metadataFiles: noMetadataFile,
+			expectedError: false,
 			assertMetadata: func(t *testing.T, m *raw.Metadata) {
 				assertMetadata(t, m, metadataKey1, metadataValue1)
 				assertMetadata(t, m, metadataKey2, metadataValue2)
+			},
+		},
+		"only metadata file passed": {
+			metadataFiles: prepareMetadataFiles(metadataFiles),
+			expectedError: false,
+			assertMetadata: func(t *testing.T, m *raw.Metadata) {
+				assertMetadata(t, m, metadataKey3, fileContent3)
+				assertMetadata(t, m, metadataKey4, fileContent4)
+			},
+		},
+		"both metadata and metadata file passed": {
+			metadata:      metadata,
+			metadataFiles: prepareMetadataFiles(metadataFiles),
+			expectedError: false,
+			assertMetadata: func(t *testing.T, m *raw.Metadata) {
+				assertMetadata(t, m, metadataKey1, metadataValue1)
+				assertMetadata(t, m, metadataKey2, metadataValue2)
+				assertMetadata(t, m, metadataKey3, fileContent3)
+				assertMetadata(t, m, metadataKey4, fileContent4)
 			},
 		},
 	}
 
 	for tn, tt := range tests {
 		t.Run(tn, func(t *testing.T) {
-			tt.assertMetadata(t, prepareMetadata(tt.metadata))
+			metadataFiles, cleanup := tt.metadataFiles(t)
+			defer cleanup()
+
+			metadata, err := prepareMetadata(&Driver{
+				Metadata:         tt.metadata,
+				MetadataFromFile: metadataFiles,
+			})
+
+			if tt.expectedError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			tt.assertMetadata(t, metadata)
 		})
 	}
+}
+
+func assertMetadata(t *testing.T, m *raw.Metadata, key string, value string) {
+	if !assert.NotNil(t, m) {
+		t.FailNow()
+	}
+	found := false
+	for _, item := range m.Items {
+		if item.Key != key {
+			continue
+		}
+
+		found = true
+
+		if !assert.NotNil(t, item.Value) {
+			t.FailNow()
+		}
+		assert.Equal(t, value, *item.Value)
+	}
+	assert.True(t, found, "not found the metadata item %q=%q", key, value)
+}
+
+func prepareMetadataFiles(configuration [][]string) func(t *testing.T) (metadataMap, func()) {
+	return func(t *testing.T) (metadataMap, func()) {
+		metadata := make(metadataMap, 0)
+		files := make([]string, 0)
+
+		for _, entry := range configuration {
+			file := prepareMetadataFile(t, entry[0], entry[1])
+
+			files = append(files, file.Name())
+			metadata[entry[0]] = file.Name()
+		}
+
+		cleanup := func() {
+			for _, file := range files {
+				err := os.RemoveAll(file)
+				if !assert.NoError(t, err) {
+					t.FailNow()
+				}
+			}
+		}
+
+		return metadata, cleanup
+	}
+}
+
+func prepareMetadataFile(t *testing.T, key string, content string) *os.File {
+	file, err := ioutil.TempFile("", "metadata-file-"+key)
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
+
+	defer file.Close()
+
+	_, err = fmt.Fprint(file, content)
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
+
+	return file
 }

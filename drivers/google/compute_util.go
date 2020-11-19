@@ -253,6 +253,11 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		net = c.globalURL + "/networks/" + d.Network
 	}
 
+	metadata, err := prepareMetadata(d)
+	if err != nil {
+		return err
+	}
+
 	instance := &raw.Instance{
 		Name:           c.instanceName,
 		Description:    "docker host vm",
@@ -284,7 +289,7 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 			Preemptible: c.preemptible,
 		},
 		Labels:   parseLabels(d),
-		Metadata: prepareMetadata(d.Metadata),
+		Metadata: metadata,
 	}
 
 	if strings.Contains(c.subnetwork, "/subnetworks/") {
@@ -403,21 +408,53 @@ func (c *ComputeUtil) uploadSSHKey(instance *raw.Instance, sshKeyPath string) er
 }
 
 // prepareMetadata prepares instance metadata entries from provided configuration
-func prepareMetadata(values metadataMap) *raw.Metadata {
+func prepareMetadata(d *Driver) (*raw.Metadata, error) {
 	metadata := &raw.Metadata{
 		Items: make([]*raw.MetadataItems, 0),
 	}
 
-	for key := range values {
-		value := values[key]
-		item := &raw.MetadataItems{
-			Key:   key,
-			Value: &value,
-		}
-		metadata.Items = append(metadata.Items, item)
+	for key, value := range d.Metadata {
+		appendMetadata(metadata, key, value)
 	}
 
-	return metadata
+	for key, filePath := range d.MetadataFromFile {
+		value, err := readMetadataFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		appendMetadata(metadata, key, value)
+	}
+
+	return metadata, nil
+}
+
+// readMetadataFile reads the data from the provided file
+func readMetadataFile(filePath string) (string, error) {
+	if filePath == "" {
+		return "", nil
+	}
+
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
+// appendMetadata creates a new item from provided key and value and appends it to the provided metadata object
+func appendMetadata(metadata *raw.Metadata, key string, value string) {
+	if value == "" {
+		return
+	}
+
+	item := &raw.MetadataItems{
+		Key:   key,
+		Value: &value,
+	}
+
+	metadata.Items = append(metadata.Items, item)
 }
 
 // parseTags computes the tags for the instance.
