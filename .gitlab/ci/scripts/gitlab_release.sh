@@ -30,7 +30,7 @@ release=$(cat <<EOS
   "description": "See [the changelog](${changelogUrl}) :rocket:",
   "assets": {
     "links": [
-      { "name": "linux amd64", "url": "$s3/docker-machine" },
+      { "name": "linux amd64", "url": "$s3/docker-machine-Linux-x86_64" },
       { "name": "macOS amd64", "url": "$s3/docker-machine-Darwin-x86_64" },
       { "name": "Windows amd64", "url": "$s3/docker-machine-Windows-x86_64.exe" },
       { "name": "others", "url": "$s3/index.html" }

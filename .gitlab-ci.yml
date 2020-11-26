@@ -46,11 +46,6 @@ default:
     - bin/
     expire_in: 1 week
 
-.build_validate: &build_validate
-  <<: *build_base
-  stage: validate
-  script: make build validate
-
 .build_x: &build_x
   <<: *build_base
   script: make build-x
@@ -104,8 +99,17 @@ prepare CI image:
     - ./gitlab/ci/Dockerfile
     - .gitlab-ci.yml
 
+validate:
+  stage: validate
+  extends:
+  - .docker_in_docker
+  - .merge_request_pipelines
+  before_script:
+  - apk add -U make bash
+  script: make build validate
+
 darwin amd64: *build_x
-linux amd64: *build_validate
+linux amd64: *build_x
 openbsd amd64: *build_x
 windows amd64: *build_x
 linux arm: *build_x
