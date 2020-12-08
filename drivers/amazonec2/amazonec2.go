@@ -37,6 +37,8 @@ const (
 	defaultDeviceName           = "/dev/sda1"
 	defaultRootSize             = 16
 	defaultVolumeType           = "gp2"
+	defaultVolumeIops           = "100"
+	defaultVolumeThroughput     = "125"
 	defaultZone                 = "a"
 	defaultSecurityGroup        = machineSecurityGroupName
 	defaultSSHPort              = 22
@@ -59,6 +61,7 @@ var (
 	errorNoSubnetsFound                  = errors.New("The desired subnet could not be located in this region. Is '--amazonec2-subnet-id' or AWS_SUBNET_ID configured correctly?")
 	errorDisableSSLWithoutCustomEndpoint = errors.New("using --amazonec2-insecure-transport also requires --amazonec2-endpoint")
 	errorReadingUserData                 = errors.New("unable to read --amazonec2-userdata file")
+	errorUnprocessableResponse           = errors.New("unexpected AWS API response")
 )
 
 type Driver struct {
@@ -94,6 +97,8 @@ type Driver struct {
 	DeviceName              string
 	RootSize                int64
 	VolumeType              string
+	VolumeIops              int64
+	VolumeThroughput        int64
 	IamInstanceProfile      string
 	VpcId                   string
 	SubnetId                string
@@ -206,6 +211,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Amazon EBS volume type",
 			Value:  defaultVolumeType,
 			EnvVar: "AWS_VOLUME_TYPE",
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-volume-iops",
+			Usage:  "AWS EBS volume IOPS",
+			EnvVar: "AWS_VOLUME_IOPS",
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-volume-throughput",
+			Usage:  "AWS EBS volume throughput",
+			EnvVar: "AWS_VOLUME_THROUGHPUT",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-iam-instance-profile",
@@ -369,6 +384,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DeviceName = flags.String("amazonec2-device-name")
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
 	d.VolumeType = flags.String("amazonec2-volume-type")
+	d.VolumeIops = flags.String("amazonec2-volume-iops")
+	d.VolumeThroughput = flags.String("amazonec2-volume-throughput")
 	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = flags.Int("amazonec2-ssh-port")
@@ -617,14 +634,36 @@ func (d *Driver) innerCreate() error {
 		userdata = b64
 	}
 
+	var ebsVolume *ec2.EbsBlockDevice
+
+	ebsVolume = &ec2.EbsBlockDevice{
+		VolumeSize:          aws.Int64(d.RootSize),
+		VolumeType:          aws.String(d.VolumeType),
+		DeleteOnTermination: aws.Bool(true),
+	}
+
+	if d.VolumeType == "io1" || d.VolumeType == "io2" {
+		ebsVolume.Iops = aws.Int64(d.VolumeIops)
+	} else if d.VolumeType == "gp3" {
+		// Minimum is 3000 IOPS
+		if d.VolumeIops < 3000 {
+			ebsVolume.Iops = aws.Int64(3000)
+		} else {
+			ebsVolume.Iops = aws.Int64(d.VolumeIops)
+		}
+		// Minimum is 125 MiB/s
+		if d.VolumeThroughput < 125 {
+			ebsVolume.Throughput = aws.Int64(125)
+		} else {
+			ebsVolume.Throughput = aws.Int64(d.VolumeThroughput)
+		}
+	}
+
 	bdm := &ec2.BlockDeviceMapping{
 		DeviceName: aws.String(d.DeviceName),
-		Ebs: &ec2.EbsBlockDevice{
-			VolumeSize:          aws.Int64(d.RootSize),
-			VolumeType:          aws.String(d.VolumeType),
-			DeleteOnTermination: aws.Bool(true),
-		},
+		Ebs:        ebsVolume,
 	}
+
 	netSpecs := []*ec2.InstanceNetworkInterfaceSpecification{{
 		DeviceIndex:              aws.Int64(0), // eth0
 		Groups:                   makePointerSlice(d.securityGroupIds()),
@@ -664,8 +703,13 @@ func (d *Driver) innerCreate() error {
 
 		spotInstanceRequest, err := d.getClient().RequestSpotInstances(&req)
 		if err != nil {
+			return fmt.Errorf("Error request spot instance: %v", err)
+		}
+		if spotInstanceRequest == nil || len((*spotInstanceRequest).SpotInstanceRequests) < 1 {
+			return fmt.Errorf("error requesting spot instance: %v", errorUnprocessableResponse)
 			return fmt.Errorf("Error request spot instance: %s", err)
 		}
+
 		d.spotInstanceRequestId = *spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId
 
 		log.Info("Waiting for spot instance...")
@@ -699,6 +743,10 @@ func (d *Driver) innerCreate() error {
 				// Unexpected; no need to retry
 				return fmt.Errorf("Error describing previously made spot instance request: %v", err)
 			}
+			if resolvedSpotInstance == nil || len((*resolvedSpotInstance).SpotInstanceRequests) < 1 {
+				return fmt.Errorf("Error describing spot instance: %v", errorUnprocessableResponse)
+			}
+
 			maybeInstanceId := resolvedSpotInstance.SpotInstanceRequests[0].InstanceId
 			if maybeInstanceId != nil {
 				var instances *ec2.DescribeInstancesOutput
@@ -740,8 +788,13 @@ func (d *Driver) innerCreate() error {
 		})
 
 		if err != nil {
+			return fmt.Errorf("Error launching instance: %v", err)
+		}
+		if inst == nil || len(inst.Instances) < 1 {
+			return fmt.Errorf("error launching instance: %v", errorUnprocessableResponse)
 			return fmt.Errorf("Error launching instance: %s", err)
 		}
+
 		instance = inst.Instances[0]
 	}
 
@@ -791,6 +844,10 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	if d.IPAddress != "" {
+		return d.IPAddress, nil
+	}
+
 	inst, err := d.getInstance()
 	if err != nil {
 		return "", err
@@ -859,6 +916,19 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
+}
+
+func (d *Driver) getEbsVolumeId() (string, error) {
+	inst, err := d.getInstance()
+	if err != nil {
+		return "", err
+	}
+
+	if len(inst.BlockDeviceMappings) == 0 || inst.BlockDeviceMappings[0].Ebs == nil {
+		return "", nil
+	}
+
+	return *inst.BlockDeviceMappings[0].Ebs.VolumeId, nil
 }
 
 func (d *Driver) Start() error {
@@ -941,6 +1011,10 @@ func (d *Driver) getInstance() (*ec2.Instance, error) {
 	if err != nil {
 		return nil, err
 	}
+	if instances == nil || len(instances.Reservations) < 1 || len(instances.Reservations[0].Instances) < 1 {
+		return nil, fmt.Errorf("error getting instance: %v", errorUnprocessableResponse)
+	}
+
 	return instances.Reservations[0].Instances[0], nil
 }
 
@@ -1072,7 +1146,7 @@ func (d *Driver) configureTags(tagGroups string) error {
 	}
 
 	_, err := d.getClient().CreateTags(&ec2.CreateTagsInput{
-		Resources: []*string{&d.InstanceId},
+		Resources: d.getTagResources(),
 		Tags:      tags,
 	})
 
@@ -1081,6 +1155,19 @@ func (d *Driver) configureTags(tagGroups string) error {
 	}
 
 	return nil
+}
+
+func (d *Driver) getTagResources() []*string {
+	resources := []*string{&d.InstanceId}
+
+	volumeId, err := d.getEbsVolumeId()
+	if err != nil {
+		log.Warnf("failed to get EBS volume ID: %s", err)
+
+		return resources
+	}
+
+	return append(resources, &volumeId)
 }
 
 func (d *Driver) configureSecurityGroups(groupNames []string) error {
