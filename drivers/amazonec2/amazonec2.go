@@ -37,6 +37,8 @@ const (
 	defaultDeviceName           = "/dev/sda1"
 	defaultRootSize             = 16
 	defaultVolumeType           = "gp2"
+	defaultVolumeIops           = "100"
+	defaultVolumeThroughput     = "125"
 	defaultZone                 = "a"
 	defaultSecurityGroup        = machineSecurityGroupName
 	defaultSSHPort              = 22
@@ -94,6 +96,8 @@ type Driver struct {
 	DeviceName              string
 	RootSize                int64
 	VolumeType              string
+	VolumeIops              int64
+	VolumeThroughput        int64
 	IamInstanceProfile      string
 	VpcId                   string
 	SubnetId                string
@@ -206,6 +210,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Amazon EBS volume type",
 			Value:  defaultVolumeType,
 			EnvVar: "AWS_VOLUME_TYPE",
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-volume-iops",
+			Usage:  "AWS EBS volume IOPS",
+			EnvVar: "AWS_VOLUME_IOPS",
+		},
+		mcnflag.StringFlag{
+			Name:   "amazonec2-volume-throughput",
+			Usage:  "AWS EBS volume throughput",
+			EnvVar: "AWS_VOLUME_THROUGHPUT",
 		},
 		mcnflag.StringFlag{
 			Name:   "amazonec2-iam-instance-profile",
@@ -369,6 +383,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DeviceName = flags.String("amazonec2-device-name")
 	d.RootSize = int64(flags.Int("amazonec2-root-size"))
 	d.VolumeType = flags.String("amazonec2-volume-type")
+	d.VolumeIops = flags.String("amazonec2-volume-iops")
+	d.VolumeThroughput = flags.String("amazonec2-volume-throughput")
 	d.IamInstanceProfile = flags.String("amazonec2-iam-instance-profile")
 	d.SSHUser = flags.String("amazonec2-ssh-user")
 	d.SSHPort = flags.Int("amazonec2-ssh-port")
@@ -617,14 +633,36 @@ func (d *Driver) innerCreate() error {
 		userdata = b64
 	}
 
+	var ebsVolume *ec2.EbsBlockDevice
+
+	ebsVolume = &ec2.EbsBlockDevice{
+		VolumeSize:          aws.Int64(d.RootSize),
+		VolumeType:          aws.String(d.VolumeType),
+		DeleteOnTermination: aws.Bool(true),
+	}
+
+	if d.VolumeType == "io1" || d.VolumeType == "io2" {
+		ebsVolume.Iops = aws.Int64(d.VolumeIops)
+	} else if d.VolumeType == "gp3" {
+		// Minimum is 3000 IOPS
+		if d.VolumeIops < 3000 {
+			ebsVolume.Iops = aws.Int64(3000)
+		} else {
+			ebsVolume.Iops = aws.Int64(d.VolumeIops)
+		}
+		// Minimum is 125 MiB/s
+		if d.VolumeThroughput < 125 {
+			ebsVolume.Throughput = aws.Int64(125)
+		} else {
+			ebsVolume.Throughput = aws.Int64(d.VolumeThroughput)
+		}
+	}
+
 	bdm := &ec2.BlockDeviceMapping{
 		DeviceName: aws.String(d.DeviceName),
-		Ebs: &ec2.EbsBlockDevice{
-			VolumeSize:          aws.Int64(d.RootSize),
-			VolumeType:          aws.String(d.VolumeType),
-			DeleteOnTermination: aws.Bool(true),
-		},
+		Ebs:        ebsVolume,
 	}
+
 	netSpecs := []*ec2.InstanceNetworkInterfaceSpecification{{
 		DeviceIndex:              aws.Int64(0), // eth0
 		Groups:                   makePointerSlice(d.securityGroupIds()),
