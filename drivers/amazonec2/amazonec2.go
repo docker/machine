@@ -61,6 +61,7 @@ var (
 	errorNoSubnetsFound                  = errors.New("The desired subnet could not be located in this region. Is '--amazonec2-subnet-id' or AWS_SUBNET_ID configured correctly?")
 	errorDisableSSLWithoutCustomEndpoint = errors.New("using --amazonec2-insecure-transport also requires --amazonec2-endpoint")
 	errorReadingUserData                 = errors.New("unable to read --amazonec2-userdata file")
+	errorUnprocessableResponse           = errors.New("unexpected AWS API response")
 )
 
 type Driver struct {
@@ -702,8 +703,13 @@ func (d *Driver) innerCreate() error {
 
 		spotInstanceRequest, err := d.getClient().RequestSpotInstances(&req)
 		if err != nil {
+			return fmt.Errorf("Error request spot instance: %v", err)
+		}
+		if spotInstanceRequest == nil || len((*spotInstanceRequest).SpotInstanceRequests) < 1 {
+			return fmt.Errorf("error requesting spot instance: %v", errorUnprocessableResponse)
 			return fmt.Errorf("Error request spot instance: %s", err)
 		}
+
 		d.spotInstanceRequestId = *spotInstanceRequest.SpotInstanceRequests[0].SpotInstanceRequestId
 
 		log.Info("Waiting for spot instance...")
@@ -737,6 +743,10 @@ func (d *Driver) innerCreate() error {
 				// Unexpected; no need to retry
 				return fmt.Errorf("Error describing previously made spot instance request: %v", err)
 			}
+			if resolvedSpotInstance == nil || len((*resolvedSpotInstance).SpotInstanceRequests) < 1 {
+				return fmt.Errorf("Error describing spot instance: %v", errorUnprocessableResponse)
+			}
+
 			maybeInstanceId := resolvedSpotInstance.SpotInstanceRequests[0].InstanceId
 			if maybeInstanceId != nil {
 				var instances *ec2.DescribeInstancesOutput
@@ -778,8 +788,13 @@ func (d *Driver) innerCreate() error {
 		})
 
 		if err != nil {
+			return fmt.Errorf("Error launching instance: %v", err)
+		}
+		if inst == nil || len(inst.Instances) < 1 {
+			return fmt.Errorf("error launching instance: %v", errorUnprocessableResponse)
 			return fmt.Errorf("Error launching instance: %s", err)
 		}
+
 		instance = inst.Instances[0]
 	}
 
@@ -829,6 +844,10 @@ func (d *Driver) GetURL() (string, error) {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	if d.IPAddress != "" {
+		return d.IPAddress, nil
+	}
+
 	inst, err := d.getInstance()
 	if err != nil {
 		return "", err
@@ -897,6 +916,19 @@ func (d *Driver) GetSSHUsername() string {
 	}
 
 	return d.SSHUser
+}
+
+func (d *Driver) getEbsVolumeId() (string, error) {
+	inst, err := d.getInstance()
+	if err != nil {
+		return "", err
+	}
+
+	if len(inst.BlockDeviceMappings) == 0 || inst.BlockDeviceMappings[0].Ebs == nil {
+		return "", nil
+	}
+
+	return *inst.BlockDeviceMappings[0].Ebs.VolumeId, nil
 }
 
 func (d *Driver) Start() error {
@@ -979,6 +1011,10 @@ func (d *Driver) getInstance() (*ec2.Instance, error) {
 	if err != nil {
 		return nil, err
 	}
+	if instances == nil || len(instances.Reservations) < 1 || len(instances.Reservations[0].Instances) < 1 {
+		return nil, fmt.Errorf("error getting instance: %v", errorUnprocessableResponse)
+	}
+
 	return instances.Reservations[0].Instances[0], nil
 }
 
@@ -1110,7 +1146,7 @@ func (d *Driver) configureTags(tagGroups string) error {
 	}
 
 	_, err := d.getClient().CreateTags(&ec2.CreateTagsInput{
-		Resources: []*string{&d.InstanceId},
+		Resources: d.getTagResources(),
 		Tags:      tags,
 	})
 
@@ -1119,6 +1155,19 @@ func (d *Driver) configureTags(tagGroups string) error {
 	}
 
 	return nil
+}
+
+func (d *Driver) getTagResources() []*string {
+	resources := []*string{&d.InstanceId}
+
+	volumeId, err := d.getEbsVolumeId()
+	if err != nil {
+		log.Warnf("failed to get EBS volume ID: %s", err)
+
+		return resources
+	}
+
+	return append(resources, &volumeId)
 }
 
 func (d *Driver) configureSecurityGroups(groupNames []string) error {
