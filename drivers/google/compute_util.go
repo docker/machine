@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -41,6 +42,8 @@ type ComputeUtil struct {
 	SwarmHost         string
 	openPorts         []string
 	minCPUPlatform    string
+	accelerator       string
+	maintenancePolicy string
 
 	operationBackoffFactory *backoffFactory
 }
@@ -84,7 +87,46 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 		openPorts:               driver.OpenPorts,
 		operationBackoffFactory: driver.OperationBackoffFactory,
 		minCPUPlatform:          driver.MinCPUPlatform,
+		accelerator:             driver.Accelerator,
+		maintenancePolicy:       driver.MaintenancePolicy,
 	}, nil
+}
+
+func (c *ComputeUtil) acceleratorCountAndType() (int, string) {
+	if c.accelerator == "" {
+		return 0, ""
+	}
+
+	split := strings.Split(strings.TrimSpace(c.accelerator), ",")
+	count := 1
+	acceleratorType := ""
+
+	for _, kvStr := range split {
+		kv := strings.Split(kvStr, "=")
+
+		if len(kv) != 2 {
+			log.Infof("Invalid key/value parameter for accelerator: %s, ignoring", kvStr)
+			continue
+		}
+
+		key, value := strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1])
+		switch key {
+		case "count":
+			var err error
+			count, err = strconv.Atoi(value)
+			if err != nil {
+				log.Infof("Failed to parse %q as count, disabling accelerator", value)
+				return 0, ""
+			}
+		case "type":
+			acceleratorType = strings.TrimSpace(value)
+		default:
+			log.Infof("Invalid accelerator defined %q, should be count=N,type=type", c.accelerator)
+			return 0, ""
+		}
+	}
+
+	return count, acceleratorType
 }
 
 func (c *ComputeUtil) diskName() string {
@@ -290,6 +332,21 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		},
 		Labels:   parseLabels(d),
 		Metadata: metadata,
+	}
+
+	if c.maintenancePolicy != "" {
+		instance.Scheduling.OnHostMaintenance = c.maintenancePolicy
+	}
+
+	acceleratorCount, acceleratorType := c.acceleratorCountAndType()
+
+	if acceleratorCount > 0 && len(acceleratorType) > 0 {
+		instance.GuestAccelerators = []*raw.AcceleratorConfig{
+			{
+				AcceleratorCount: int64(acceleratorCount),
+				AcceleratorType:  "https://www.googleapis.com/compute/v1/projects/" + c.project + "/zones/" + c.zone + "/acceleratorTypes/" + acceleratorType,
+			},
+		}
 	}
 
 	if strings.Contains(c.subnetwork, "/subnetworks/") {

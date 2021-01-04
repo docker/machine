@@ -61,22 +61,26 @@ type Driver struct {
 	Labels            []string
 	Metadata          metadataMap
 	MetadataFromFile  metadataMap
+	Accelerator       string
+	MaintenancePolicy string
 
 	OperationBackoffFactory *backoffFactory
 }
 
 const (
-	defaultZone           = "us-central1-a"
-	defaultUser           = "docker-user"
-	defaultMachineType    = "n1-standard-1"
-	defaultImageName      = "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
-	defaultServiceAccount = "default"
-	defaultScopes         = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
-	defaultDiskType       = "pd-standard"
-	defaultDiskSize       = 10
-	defaultNetwork        = "default"
-	defaultSubnetwork     = ""
-	defaultMinCPUPlatform = ""
+	defaultZone              = "us-central1-a"
+	defaultUser              = "docker-user"
+	defaultMachineType       = "n1-standard-1"
+	defaultImageName         = "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
+	defaultServiceAccount    = "default"
+	defaultScopes            = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
+	defaultDiskType          = "pd-standard"
+	defaultDiskSize          = 10
+	defaultNetwork           = "default"
+	defaultSubnetwork        = ""
+	defaultMinCPUPlatform    = ""
+	defaultAccelerator       = ""
+	defaultMaintenancePolicy = ""
 
 	defaultGoogleOperationBackoffInitialInterval     = 1
 	defaultGoogleOperationBackoffRandomizationFactor = "0.5"
@@ -232,6 +236,18 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "google-metadata-from-file",
 			Usage: "Path to a file containing the metadata value inform of key=path/to/file. Use multiple times for multiple settings",
 		},
+		mcnflag.StringFlag{
+			Name:   "google-accelerator",
+			Usage:  "Count and specific type of GPU accelerators (format: count=N,type=type) to attach to the instance, e.g. count=1,type=nvidia-tesla-p100",
+			EnvVar: "GOOGLE_ACCELERATOR",
+			Value:  defaultAccelerator,
+		},
+		mcnflag.StringFlag{
+			Name:   "google-maintenance-policy",
+			Usage:  "Defines the maintenance behavior for this instance, e.g, MIGRATE or TERMINATE",
+			EnvVar: "GOOGLE_MAINTENANCE_POLICY",
+			Value:  defaultMaintenancePolicy,
+		},
 	}
 }
 
@@ -303,6 +319,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Labels = flags.StringSlice("google-label")
 		d.Metadata = metadataMapFromStringSlice(flags.StringSlice("google-metadata"))
 		d.MetadataFromFile = metadataMapFromStringSlice(flags.StringSlice("google-metadata-from-file"))
+		d.Accelerator = flags.String("google-accelerator")
+		d.MaintenancePolicy = flags.String("google-maintenance-policy")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
