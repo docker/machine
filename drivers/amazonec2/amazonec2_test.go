@@ -324,6 +324,42 @@ func TestGetRegionZoneForDefaultEndpoint(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestMetadataTokenSetting(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentialsFactory = NewValidAwsCredentials
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                     "test",
+			"amazonec2-metadata-token": "optional",
+			"amazonec2-region":         "us-east-1",
+			"amazonec2-zone":           "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, "optional", driver.MetadataTokenSetting)
+	assert.NoError(t, err)
+}
+
+func TestMetadataTokenResponseHopLimit(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentialsFactory = NewValidAwsCredentials
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name": "test",
+			"amazonec2-metadata-token-response-hop-limit": 1,
+			"amazonec2-region":                            "us-east-1",
+			"amazonec2-zone":                              "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, int64(1), driver.MetadataTokenResponseHopLimit)
+	assert.NoError(t, err)
+}
+
 func TestGetRegionZoneForCustomEndpoint(t *testing.T) {
 	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
 	driver.awsCredentialsFactory = NewValidAwsCredentials

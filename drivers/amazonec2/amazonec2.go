@@ -29,21 +29,23 @@ import (
 )
 
 const (
-	driverName                  = "amazonec2"
-	ipRange                     = "0.0.0.0/0"
-	machineSecurityGroupName    = "docker-machine"
-	defaultAmiId                = "ami-c60b90d1"
-	defaultRegion               = "us-east-1"
-	defaultInstanceType         = "t2.micro"
-	defaultDeviceName           = "/dev/sda1"
-	defaultRootSize             = 16
-	defaultVolumeType           = "gp2"
-	defaultZone                 = "a"
-	defaultSecurityGroup        = machineSecurityGroupName
-	defaultSSHPort              = 22
-	defaultSSHUser              = "ubuntu"
-	defaultSpotPrice            = "0.50"
-	defaultBlockDurationMinutes = 0
+	driverName                           = "amazonec2"
+	ipRange                              = "0.0.0.0/0"
+	machineSecurityGroupName             = "docker-machine"
+	defaultAmiId                         = "ami-c60b90d1"
+	defaultRegion                        = "us-east-1"
+	defaultInstanceType                  = "t2.micro"
+	defaultDeviceName                    = "/dev/sda1"
+	defaultRootSize                      = 16
+	defaultVolumeType                    = "gp2"
+	defaultZone                          = "a"
+	defaultSecurityGroup                 = machineSecurityGroupName
+	defaultSSHPort                       = 22
+	defaultSSHUser                       = "ubuntu"
+	defaultSpotPrice                     = "0.50"
+	defaultBlockDurationMinutes          = 0
+	defaultMetadataTokenSetting          = "optional"
+	defaultMetadataTokenResponseHopLimit = 1
 )
 
 const (
@@ -89,30 +91,32 @@ type Driver struct {
 	SecurityGroupName  string
 	SecurityGroupNames []string
 
-	SecurityGroupReadOnly   bool
-	OpenPorts               []string
-	Tags                    string
-	ReservationId           string
-	DeviceName              string
-	RootSize                int64
-	VolumeType              string
-	IamInstanceProfile      string
-	VpcId                   string
-	SubnetId                string
-	Zone                    string
-	keyPath                 string
-	RequestSpotInstance     bool
-	SpotPrice               string
-	BlockDurationMinutes    int64
-	PrivateIPOnly           bool
-	UsePrivateIP            bool
-	UseEbsOptimizedInstance bool
-	Monitoring              bool
-	SSHPrivateKeyPath       string
-	RetryCount              int
-	Endpoint                string
-	DisableSSL              bool
-	UserDataFile            string
+	SecurityGroupReadOnly         bool
+	OpenPorts                     []string
+	Tags                          string
+	ReservationId                 string
+	DeviceName                    string
+	RootSize                      int64
+	VolumeType                    string
+	IamInstanceProfile            string
+	VpcId                         string
+	SubnetId                      string
+	Zone                          string
+	keyPath                       string
+	RequestSpotInstance           bool
+	SpotPrice                     string
+	BlockDurationMinutes          int64
+	PrivateIPOnly                 bool
+	UsePrivateIP                  bool
+	UseEbsOptimizedInstance       bool
+	Monitoring                    bool
+	SSHPrivateKeyPath             string
+	RetryCount                    int
+	Endpoint                      string
+	DisableSSL                    bool
+	UserDataFile                  string
+	MetadataTokenSetting          string
+	MetadataTokenResponseHopLimit int64
 
 	spotInstanceRequestId string
 }
@@ -287,6 +291,16 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "path to file with cloud-init user data",
 			EnvVar: "AWS_USERDATA",
 		},
+		mcnflag.StringFlag{
+			Name:  "amazonec2-metadata-token",
+			Usage: "Whether the metadata token is required or optional",
+			Value: defaultMetadataTokenSetting,
+		},
+		mcnflag.IntFlag{
+			Name:  "amazonec2-metadata-token-response-hop-limit",
+			Usage: "The number of network hops that the metadata token can travel",
+			Value: defaultMetadataTokenResponseHopLimit,
+		},
 	}
 }
 
@@ -308,6 +322,8 @@ func NewDriver(hostName, storePath string) *Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
+		MetadataTokenSetting:          defaultMetadataTokenSetting,
+		MetadataTokenResponseHopLimit: defaultMetadataTokenResponseHopLimit,
 	}
 
 	driver.clientFactory = driver.buildClient
@@ -385,7 +401,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.RetryCount = flags.Int("amazonec2-retries")
 	d.OpenPorts = flags.StringSlice("amazonec2-open-port")
 	d.UserDataFile = flags.String("amazonec2-userdata")
-
+	d.MetadataTokenSetting = flags.String("amazonec2-metadata-token")
+	d.MetadataTokenResponseHopLimit = int64(flags.Int("amazonec2-metadata-token-response-hop-limit"))
 	d.DisableSSL = flags.Bool("amazonec2-insecure-transport")
 
 	if d.DisableSSL && d.Endpoint == "" {
@@ -739,7 +756,11 @@ func (d *Driver) innerCreate() error {
 			KeyName:           &d.KeyName,
 			InstanceType:      &d.InstanceType,
 			NetworkInterfaces: netSpecs,
-			Monitoring:        &ec2.RunInstancesMonitoringEnabled{Enabled: aws.Bool(d.Monitoring)},
+			MetadataOptions: &ec2.InstanceMetadataOptionsRequest{
+				HttpTokens:              &d.MetadataTokenSetting,
+				HttpPutResponseHopLimit: &d.MetadataTokenResponseHopLimit,
+			},
+			Monitoring: &ec2.RunInstancesMonitoringEnabled{Enabled: aws.Bool(d.Monitoring)},
 			IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
 				Name: &d.IamInstanceProfile,
 			},
