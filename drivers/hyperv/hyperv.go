@@ -414,6 +414,9 @@ func (d *Driver) Kill() error {
 }
 
 func (d *Driver) GetIP() (string, error) {
+	if d.IPAddress != "" {
+		return d.IPAddress, nil
+	}
 	s, err := d.GetState()
 	if err != nil {
 		return "", err
@@ -432,7 +435,8 @@ func (d *Driver) GetIP() (string, error) {
 		return "", fmt.Errorf("IP not found")
 	}
 
-	return resp[0], nil
+	d.IPAddress = resp[0]
+	return d.IPAddress, nil
 }
 
 func (d *Driver) publicSSHKeyPath() string {
