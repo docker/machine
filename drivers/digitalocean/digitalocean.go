@@ -37,6 +37,7 @@ type Driver struct {
 	UserDataFile      string
 	Monitoring        bool
 	Tags              string
+	VPC               string	
 }
 
 const (
@@ -104,7 +105,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.BoolFlag{
 			EnvVar: "DIGITALOCEAN_PRIVATE_NETWORKING",
 			Name:   "digitalocean-private-networking",
-			Usage:  "enable private networking for droplet",
+			Usage:  "enable private networking for droplet (deprecated use vpc)",
 		},
 		mcnflag.BoolFlag{
 			EnvVar: "DIGITALOCEAN_BACKUPS",
@@ -125,6 +126,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "DIGITALOCEAN_TAGS",
 			Name:   "digitalocean-tags",
 			Usage:  "comma-separated list of tags to apply to the Droplet",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "DIGITALOCEAN_VPC",
+			Name:   "digitalocean-vpc",
+			Usage:  "virtual private cloud network",
 		},
 	}
 }
@@ -165,6 +171,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHKey = flags.String("digitalocean-ssh-key-path")
 	d.Monitoring = flags.Bool("digitalocean-monitoring")
 	d.Tags = flags.String("digitalocean-tags")
+	d.VPC = flags.String("digitalocean-vpc")
 
 	d.SetSwarmConfigFromFlags(flags)
 
@@ -241,6 +248,7 @@ func (d *Driver) Create() error {
 		SSHKeys:           []godo.DropletCreateSSHKey{{ID: d.SSHKeyID}},
 		Monitoring:        d.Monitoring,
 		Tags:              d.getTags(),
+		VPC:		   d.vpc,
 	}
 
 	newDroplet, _, err := client.Droplets.Create(context.TODO(), createRequest)
