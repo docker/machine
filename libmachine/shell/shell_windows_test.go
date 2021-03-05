@@ -17,6 +17,15 @@ func TestDetect(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDetectOnSSH(t *testing.T) {
+	defer func(shell string) { os.Setenv("SHELL", shell) }(os.Getenv("SHELL"))
+	os.Setenv("SHELL", "c:\\windows\\system32\\windowspowershell\\v1.0\\powershell.exe")
+
+	shell, err := Detect()
+
+	assert.Equal(t, "powershell", shell)
+	assert.NoError(t, err)
+}
 func TestGetNameAndItsPpidOfCurrent(t *testing.T) {
 	shell, shellppid, err := getNameAndItsPpid(os.Getpid())
 

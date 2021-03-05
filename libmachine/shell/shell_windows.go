@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -78,6 +79,10 @@ func Detect() (string, error) {
 
 	if os.Getenv("__fish_bin_dir") != "" {
 		return "fish", nil
+	}
+
+	if runtime.GOOS == "windows" {
+		shell = strings.TrimSuffix(shell, filepath.Ext(shell))
 	}
 
 	return filepath.Base(shell), nil
