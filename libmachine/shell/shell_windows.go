@@ -80,5 +80,7 @@ func Detect() (string, error) {
 		return "fish", nil
 	}
 
+	shell = strings.TrimSuffix(shell, filepath.Ext(shell))
+
 	return filepath.Base(shell), nil
 }
