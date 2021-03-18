@@ -14,8 +14,8 @@ ifeq ($(DEBUG),true)
 	# Disable function inlining and variable registerization
 	GO_GCFLAGS := -gcflags "-N -l"
 else
-	# Turn of DWARF debugging information and strip the binary otherwise
-	GO_LDFLAGS := $(GO_LDFLAGS) -w -s
+	# Turn of DWARF debugging information otherwise
+	GO_LDFLAGS := $(GO_LDFLAGS) -w
 endif
 
 # Honor static
@@ -25,7 +25,7 @@ ifeq ($(STATIC),true)
 endif
 
 # Honor verbose
-VERBOSE_GO := 
+VERBOSE_GO :=
 GO := go
 ifeq ($(VERBOSE),true)
 	VERBOSE_GO := -v
