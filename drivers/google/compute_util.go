@@ -618,14 +618,14 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 // waitForRegionalOp waits for the regional operation to finish.
 func (c *ComputeUtil) waitForRegionalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
-		return c.service.ZoneOperations.Get(c.project, c.zone, name).Do()
+		return c.service.ZoneOperations.Wait(c.project, c.zone, name).Do()
 	})
 }
 
 // waitForGlobalOp waits for the global operation to finish.
 func (c *ComputeUtil) waitForGlobalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
-		return c.service.GlobalOperations.Get(c.project, name).Do()
+		return c.service.GlobalOperations.Wait(c.project, name).Do()
 	})
 }
 
