@@ -183,16 +183,18 @@
   revision = "8c9f03a8e57eb486e42badaed3fb287da51807ba"
 
 [[projects]]
-  digest = "1:549cdbb2ba028d2971b52d9b6487a3958d8760e79954e8ebff3904371efe4547"
+  digest = "1:6ad0084de8fefa2b9bca7e6e627bb9868a0dedccc1274a6730a813b7853ac41c"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
     "ptypes",
+    "ptypes/any",
     "ptypes/duration",
     "ptypes/timestamp",
   ]
   pruneopts = "UT"
-  revision = "3c84672111d91bb5ac31719e112f9f7126a0e26e"
+  revision = "ae97035608a719c7a1c1c41bed0ae0744bdb0c6f"
+  version = "v1.5.2"
 
 [[projects]]
   digest = "1:5235d8c3e7894393db3e5b1947818966b41e5ae8a5fa5d9c42f6586975894d01"
@@ -547,7 +549,7 @@
   version = "v1.36.0"
 
 [[projects]]
-  digest = "1:fd328c5b52e433ea3ffc891bcc4f94469a82bf478558208db2b386aad8a304a1"
+  digest = "1:a2b672730204a3720049b809ff4a98c923d265dbea20386134770c1570f2a719"
   name = "google.golang.org/protobuf"
   packages = [
     "encoding/prototext",
@@ -572,10 +574,12 @@
     "internal/strs",
     "internal/version",
     "proto",
+    "reflect/protodesc",
     "reflect/protoreflect",
     "reflect/protoregistry",
     "runtime/protoiface",
     "runtime/protoimpl",
+    "types/descriptorpb",
     "types/known/anypb",
     "types/known/durationpb",
     "types/known/timestamppb",
