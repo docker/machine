@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:b1aa87c86a10632d143a5893a7776b6b884542124e6d45a1b6b46acdf975c3c9"
+  name = "cloud.google.com/go"
+  packages = ["compute/metadata"]
+  pruneopts = "UT"
+  revision = "5176ba42f92af23d3c0e7a0da2e196c311a956f0"
+  version = "v0.80.0"
+
+[[projects]]
   digest = "1:1c1c2c5c3cd554a489b36c951d1267e1be7f1deb16b63908f35fdbc3b926af59"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
@@ -401,10 +409,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:78eb21aa935823b5a6bc70742fa546b108f850b35469fc8863dc54ad8536b72d"
+  digest = "1:d2a8ded4c52e63428bba9298690f40ee384d6828c29e854e82ba24111ad28059"
   name = "golang.org/x/net"
   packages = [
     "context",
+    "context/ctxhttp",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -416,17 +425,19 @@
   revision = "c8897c278d1087bda543ec7041384fcedc5e4036"
 
 [[projects]]
-  digest = "1:5b9c174f7602d8927abd72ed7095e16249fd87da044a7f9d9f8f6cb9f737719a"
+  branch = "master"
+  digest = "1:e76208ff4b9eb957e5f070224f57e9f1a97c5d5956b4f3cf24e3e596fe1aea47"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
     "google",
+    "google/internal/externalaccount",
     "internal",
     "jws",
     "jwt",
   ]
   pruneopts = "UT"
-  revision = "442624c9ec9243441e83b374a9e22ac549b5c51d"
+  revision = "22b0adad7558c54bf49787666d8773cae1dd3e77"
 
 [[projects]]
   branch = "master"
@@ -505,16 +516,6 @@
   ]
   pruneopts = "UT"
   revision = "6a436539be38c296a8075a871cc536686b458371"
-
-[[projects]]
-  digest = "1:0b8b0eb3466e09a0aa705b86fa1bd25e8562395cc4034a2dceb297f3ef65e8d3"
-  name = "google.golang.org/cloud"
-  packages = [
-    "compute/metadata",
-    "internal",
-  ]
-  pruneopts = "UT"
-  revision = "975617b05ea8a58727e6c1a06b6161ff4185a9f2"
 
 [[projects]]
   branch = "master"
