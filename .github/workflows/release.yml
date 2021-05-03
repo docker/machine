@@ -1,0 +1,38 @@
+name: Release
+on:
+  release:
+    types: [edited, published]
+    branches:
+      - main
+      - master
+      - feature-*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Checkout submodules
+        uses: textbook/git-checkout-submodule-action@master
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          buildx-version: latest
+          qemu-version: latest
+      
+      - name: Build
+        env:
+          USE_CONTAINER: true
+        run: |
+          make build
+        
+      - name: Publish binaries  
+        uses: skx/github-action-publish-binaries@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: 'bin/docker-machine'
