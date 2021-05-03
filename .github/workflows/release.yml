@@ -29,10 +29,11 @@ jobs:
           USE_CONTAINER: true
         run: |
           make build
+          zip docker-machine.zip bin/docker-machine
         
       - name: Publish binaries  
         uses: skx/github-action-publish-binaries@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: 'bin/docker-machine'
+          args: 'docker-machine.zip'
