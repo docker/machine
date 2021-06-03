@@ -8,7 +8,7 @@ For a new merge request to be considered, the following questions must be answer
   * How does this change help reduce cost of usage? What scale of cost reduction is it?
   * In what scenarios is this change usable with GitLab Runner's `docker+machine` executor? 
 
-Builds from this fork can be downloaded at https://gitlab-docker-machine-downloads.s3.amazonaws.com/master/index.html
+Builds from this fork can be downloaded at https://gitlab-docker-machine-downloads.s3.amazonaws.com/main/index.html
 
 # Docker Machine
 
@@ -74,7 +74,7 @@ Full documentation [is available here](https://docs.docker.com/machine/).
 
 ## Contributing
 
-Want to hack on Machine? Please start with the [Contributing Guide](https://github.com/docker/machine/blob/master/CONTRIBUTING.md).
+Want to hack on Machine? Please start with the [Contributing Guide](https://github.com/docker/machine/blob/main/CONTRIBUTING.md).
 
 ## Driver Plugins
 
@@ -91,7 +91,7 @@ sometimes things do not go according to plan.  Here is a quick troubleshooting
 guide which may help you to resolve of the issues you may be seeing.
 
 Note that some of the suggested solutions are only available on the Docker
-Machine master branch.  If you need them, consider compiling Docker Machine from
+Machine default branch.  If you need them, consider compiling Docker Machine from
 source.
 #### `docker-machine` hangs
 

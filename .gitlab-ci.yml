@@ -27,7 +27,7 @@ default:
   only:
     refs:
     - merge_requests
-    - master@gitlab-org/ci-cd/docker-machine
+    - main@gitlab-org/ci-cd/docker-machine
     - tags@gitlab-org/ci-cd/docker-machine
 
 .build_base: &build_base
@@ -62,7 +62,7 @@ default:
 .release_beta:
   only:
     refs:
-    - master@gitlab-org/ci-cd/docker-machine
+    - main@gitlab-org/ci-cd/docker-machine
     - /\Av[0-9]+\.[0-9]+\.[0-9]+-gitlab\.[0-9]+-rc[0-9]+\Z/@gitlab-org/ci-cd/docker-machine
 
 .release_stable:
