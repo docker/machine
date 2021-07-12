@@ -10,8 +10,8 @@ if [[ -z "${tag}" ]]; then
     exit 0
 fi
 
-if [[ -z "${DEPLOY_TOKEN}" ]]; then
-    echo -e "\033[0;31m****** Missing DEPLOY_TOKEN, cannot release ******\033[0m"
+if [[ -z "${CI_JOB_TOKEN}" ]]; then
+    echo -e "\033[0;31m****** Missing CI_JOB_TOKEN, cannot release ******\033[0m"
     exit 0
 fi
 
@@ -42,7 +42,7 @@ EOS
 
 curl -f \
      --header 'Content-Type: application/json' \
-     --header "PRIVATE-TOKEN: ${DEPLOY_TOKEN}" \
+     --header "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
      --data "${release}" \
      --request POST \
      "${api}/projects/${projectID}/releases"
