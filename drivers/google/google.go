@@ -63,6 +63,7 @@ type Driver struct {
 	MetadataFromFile  metadataMap
 	Accelerator       string
 	MaintenancePolicy string
+	SkipFirewall      bool
 
 	OperationBackoffFactory *backoffFactory
 }
@@ -248,6 +249,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "GOOGLE_MAINTENANCE_POLICY",
 			Value:  defaultMaintenancePolicy,
 		},
+		mcnflag.BoolFlag{
+			Name:   "google-skip-firewall-create",
+			Usage:  "Skip firewall setup",
+			EnvVar: "GOOGLE_SKIP_FIREWALL_CREATE",
+		},
 	}
 }
 
@@ -321,6 +327,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.MetadataFromFile = metadataMapFromStringSlice(flags.StringSlice("google-metadata-from-file"))
 		d.Accelerator = flags.String("google-accelerator")
 		d.MaintenancePolicy = flags.String("google-maintenance-policy")
+		d.SkipFirewall = flags.Bool("google-skip-firewall-create")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22

@@ -1,15 +1,21 @@
 package google
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	raw "google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 )
 
 func TestDefaultTag(t *testing.T) {
@@ -75,6 +81,61 @@ func TestLabels(t *testing.T) {
 	}
 }
 
+func TestOpenFirewallPorts(t *testing.T) {
+	tests := map[string]struct {
+		skipFirewall bool
+		mockResponse http.HandlerFunc
+	}{
+		"skip firewall": {
+			skipFirewall: true,
+			mockResponse: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			}),
+		},
+		"firewall rules exists": {
+			skipFirewall: false,
+			mockResponse: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				firewall := raw.Firewall{
+
+					Allowed: []*raw.FirewallAllowed{
+						{
+							IPProtocol: "tcp",
+							Ports:      []string{"22", "2376"},
+						},
+					},
+				}
+				var body io.Reader = nil
+				body, err := googleapi.WithoutDataWrapper.JSONReader(firewall)
+				if err != nil {
+					t.Fatal(err)
+				}
+				fmt.Fprint(w, body)
+			}),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			srv := httptest.NewServer(tt.mockResponse)
+			defer srv.Close()
+
+			svc, err := raw.NewService(context.Background(), option.WithoutAuthentication(), option.WithEndpoint(srv.URL))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			computeUtil := ComputeUtil{
+				skipFirewall: tt.skipFirewall,
+				service:      svc,
+			}
+
+			driver := &Driver{}
+
+			err = computeUtil.openFirewallPorts(driver)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestPortsUsed(t *testing.T) {
 	var tests = []struct {
 		description   string
@@ -90,7 +151,6 @@ func TestPortsUsed(t *testing.T) {
 
 	for _, test := range tests {
 		ports, err := test.computeUtil.portsUsed()
-
 		assert.Equal(t, test.expectedPorts, ports)
 		assert.Equal(t, test.expectedError, err)
 	}
