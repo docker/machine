@@ -303,7 +303,7 @@ func (d *Driver) Create() (err error) {
 		}
 		try++
 
-		d.sleep(2, 8)
+		d.sleep(time.Second*2, time.Second*8)
 	}
 
 	log.Infof("Created droplet ID %d, IP address %s",
