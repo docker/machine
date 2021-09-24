@@ -185,7 +185,7 @@ func ConfigureAuth(p Provisioner) error {
 		return err
 	}
 
-	if err := p.Service("docker", serviceaction.Start); err != nil {
+	if err := p.Service("docker", serviceaction.Restart); err != nil {
 		return err
 	}
 
