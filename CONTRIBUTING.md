@@ -1,3 +1,10 @@
+# Contributing to GitLab's fork of machine
+
+⚠   ️**NOTE THAT THIS FORK IS MAINTAINED FOR CRITICAL BUG FIXES AFFECTING RUNNING COSTS ONLY. 
+NO OTHER CONTRIBUTIONS WILL BE ACCEPTED.**  ⚠️
+
+For more information on the fixes we have added to this fork please see the [docs](https://docs.gitlab.com/runner/executors/docker_machine.html#forked-version-of-docker-machine).
+
 # Contributing to machine
 
 [![GoDoc](https://godoc.org/github.com/docker/machine?status.png)](https://godoc.org/github.com/docker/machine)

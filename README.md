@@ -1,3 +1,15 @@
+# ⚠️This is a fork of Docker Machine ⚠
+
+This is a fork of Docker Machine maintained by GitLab for [fixing critical bugs](https://docs.gitlab.com/runner/executors/docker_machine.html#forked-version-of-docker-machine). Docker Machine, which Docker has deprecated as of 2021-09-27, is the basis of the GitLab Runner Docker Machine Executor. Our plan, as discussed [here](https://gitlab.com/gitlab-org/gitlab/-/issues/341856), is to continue to maintain the fork in the near term, with a primary focus on driver maintenance for Amazon Web Services, Google Cloud Platform, Microsoft Azure.
+
+For a new merge request to be considered, the following questions must be answered: 
+
+  * What critical bug this MR is fixing?
+  * How does this change help reduce cost of usage? What scale of cost reduction is it?
+  * In what scenarios is this change usable with GitLab Runner's `docker+machine` executor? 
+
+Builds from this fork can be downloaded at https://gitlab-docker-machine-downloads.s3.amazonaws.com/main/index.html
+
 # Docker Machine
 
 ![](https://docs.docker.com/machine/img/logo.png)
@@ -58,19 +70,7 @@ staging   -        digitalocean   Running   tcp://203.0.113.81:2376             
 
 ## Installation and documentation
 
-Full documentation [is available here](https://docs.docker.com/machine/).
-
-## Contributing
-
-Want to hack on Machine? Please start with the [Contributing Guide](https://github.com/docker/machine/blob/master/CONTRIBUTING.md).
-
-## Driver Plugins
-
-In addition to the core driver plugins bundled alongside Docker Machine, users
-can make and distribute their own plugin for any virtualization technology or
-cloud provider.  To browse the list of known Docker Machine plugins, please [see
-this document in our
-docs repo](https://github.com/docker/docker.github.io/blob/master/machine/AVAILABLE_DRIVER_PLUGINS.md).
+Full documentation [is available here](/docs/install-machine.md).
 
 ## Troubleshooting
 
@@ -79,8 +79,9 @@ sometimes things do not go according to plan.  Here is a quick troubleshooting
 guide which may help you to resolve of the issues you may be seeing.
 
 Note that some of the suggested solutions are only available on the Docker
-Machine master branch.  If you need them, consider compiling Docker Machine from
+Machine default branch.  If you need them, consider compiling Docker Machine from
 source.
+
 #### `docker-machine` hangs
 
 A common issue with Docker Machine is that it will hang when attempting to start
@@ -101,43 +102,3 @@ networking.  Consider the following:
     removing the ones you are not using (`VBoxManage hostonlyif remove name`) and
     trying machine creation again.
 
-We are keenly aware of this as an issue and working towards a set of solutions
-which is robust for all users, so please give us feedback and/or report issues,
-workarounds, and desired workflows as you discover them.
-
-#### Machine creation errors out before finishing
-
-If you see messages such as "exit status 1" creating machines with VirtualBox,
-this frequently indicates that there is an issue with VirtualBox itself.  Please
-[file an issue](https://github.com/docker/machine/issues/new) and include a link
-to a [Github Gist](https://gist.github.com/) with the output of the VirtualBox
-log (usually located at
-`$HOME/.docker/machine/machines/machinename/machinename/Logs/VBox.log`), as well
-as the output of running the Docker Machine command which is failing with the
-global `--debug` flag enabled.  This will help us to track down which versions
-of VirtualBox are failing where, and under which conditions.
-
-If you see messages such as "exit status 255", this frequently indicates there
-has been an issue with SSH.  Please investigate your SSH configuration if you
-have one, and/or [file an issue](https://github.com/docker/machine/issues).
-
-#### "You may be getting rate limited by Github" error message
-
-In order to `create` or `upgrade` virtual machines running Docker, Docker
-Machine will check the Github API for the latest release of the [boot2docker
-operating system](https://github.com/boot2docker/boot2docker).  The Github API
-allows for a small number of unauthenticated requests from a given client, but
-if you share an IP address with many other users (e.g. in an office), you may
-get rate limited by their API, and Docker Machine will error out with messages
-indicating this.
-
-In order to work around this issue, you can [generate a
-token](https://help.github.com/articles/creating-an-access-token-for-command-line-use/)
-and pass it to Docker Machine using the global `--github-api-token` flag like
-so:
-
-```console
-$ docker-machine --github-api-token=token create -d virtualbox newbox
-```
-
-This should eliminate any issues you've been experiencing with rate limiting.

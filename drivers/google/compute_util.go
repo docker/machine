@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/docker/machine/drivers/driverutil"
 	"github.com/docker/machine/libmachine/log"
 	raw "google.golang.org/api/compute/v1"
@@ -39,6 +41,12 @@ type ComputeUtil struct {
 	SwarmMaster       bool
 	SwarmHost         string
 	openPorts         []string
+	minCPUPlatform    string
+	accelerator       string
+	maintenancePolicy string
+	skipFirewall      bool
+
+	operationBackoffFactory *backoffFactory
 }
 
 const (
@@ -61,24 +69,66 @@ func newComputeUtil(driver *Driver) (*ComputeUtil, error) {
 	}
 
 	return &ComputeUtil{
-		zone:              driver.Zone,
-		instanceName:      driver.MachineName,
-		userName:          driver.SSHUser,
-		project:           driver.Project,
-		diskTypeURL:       driver.DiskType,
-		address:           driver.Address,
-		network:           driver.Network,
-		subnetwork:        driver.Subnetwork,
-		preemptible:       driver.Preemptible,
-		useInternalIP:     driver.UseInternalIP,
-		useInternalIPOnly: driver.UseInternalIPOnly,
-		service:           service,
-		zoneURL:           apiURL + driver.Project + "/zones/" + driver.Zone,
-		globalURL:         apiURL + driver.Project + "/global",
-		SwarmMaster:       driver.SwarmMaster,
-		SwarmHost:         driver.SwarmHost,
-		openPorts:         driver.OpenPorts,
+		zone:                    driver.Zone,
+		instanceName:            driver.MachineName,
+		userName:                driver.SSHUser,
+		project:                 driver.Project,
+		diskTypeURL:             driver.DiskType,
+		address:                 driver.Address,
+		network:                 driver.Network,
+		subnetwork:              driver.Subnetwork,
+		preemptible:             driver.Preemptible,
+		useInternalIP:           driver.UseInternalIP,
+		useInternalIPOnly:       driver.UseInternalIPOnly,
+		service:                 service,
+		zoneURL:                 apiURL + driver.Project + "/zones/" + driver.Zone,
+		globalURL:               apiURL + driver.Project + "/global",
+		SwarmMaster:             driver.SwarmMaster,
+		SwarmHost:               driver.SwarmHost,
+		openPorts:               driver.OpenPorts,
+		operationBackoffFactory: driver.OperationBackoffFactory,
+		minCPUPlatform:          driver.MinCPUPlatform,
+		accelerator:             driver.Accelerator,
+		maintenancePolicy:       driver.MaintenancePolicy,
+		skipFirewall:            driver.SkipFirewall,
 	}, nil
+}
+
+func (c *ComputeUtil) acceleratorCountAndType() (int, string) {
+	if c.accelerator == "" {
+		return 0, ""
+	}
+
+	split := strings.Split(strings.TrimSpace(c.accelerator), ",")
+	count := 1
+	acceleratorType := ""
+
+	for _, kvStr := range split {
+		kv := strings.Split(kvStr, "=")
+
+		if len(kv) != 2 {
+			log.Infof("Invalid key/value parameter for accelerator: %s, ignoring", kvStr)
+			continue
+		}
+
+		key, value := strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1])
+		switch key {
+		case "count":
+			var err error
+			count, err = strconv.Atoi(value)
+			if err != nil {
+				log.Infof("Failed to parse %q as count, disabling accelerator", value)
+				return 0, ""
+			}
+		case "type":
+			acceleratorType = strings.TrimSpace(value)
+		default:
+			log.Infof("Invalid accelerator defined %q, should be count=N,type=type", c.accelerator)
+			return 0, ""
+		}
+	}
+
+	return count, acceleratorType
 }
 
 func (c *ComputeUtil) diskName() string {
@@ -182,10 +232,19 @@ func (c *ComputeUtil) portsUsed() ([]string, error) {
 
 // openFirewallPorts configures the firewall to open docker and swarm ports.
 func (c *ComputeUtil) openFirewallPorts(d *Driver) error {
+	if c.skipFirewall {
+		log.Infof("Skipping opening firewall ports")
+		return nil
+	}
+
 	log.Infof("Opening firewall ports")
 
 	create := false
-	rule, _ := c.firewallRule()
+	rule, err := c.firewallRule()
+	if err != nil {
+		return fmt.Errorf("requesting firewall rule: %v", err)
+	}
+
 	if rule == nil {
 		create = true
 		rule = &raw.Firewall{
@@ -243,10 +302,16 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		net = c.globalURL + "/networks/" + d.Network
 	}
 
+	metadata, err := prepareMetadata(d)
+	if err != nil {
+		return err
+	}
+
 	instance := &raw.Instance{
-		Name:        c.instanceName,
-		Description: "docker host vm",
-		MachineType: c.zoneURL + "/machineTypes/" + d.MachineType,
+		Name:           c.instanceName,
+		Description:    "docker host vm",
+		MachineType:    c.zoneURL + "/machineTypes/" + d.MachineType,
+		MinCpuPlatform: c.minCPUPlatform,
 		Disks: []*raw.AttachedDisk{
 			{
 				Boot:       true,
@@ -272,6 +337,23 @@ func (c *ComputeUtil) createInstance(d *Driver) error {
 		Scheduling: &raw.Scheduling{
 			Preemptible: c.preemptible,
 		},
+		Labels:   parseLabels(d),
+		Metadata: metadata,
+	}
+
+	if c.maintenancePolicy != "" {
+		instance.Scheduling.OnHostMaintenance = c.maintenancePolicy
+	}
+
+	acceleratorCount, acceleratorType := c.acceleratorCountAndType()
+
+	if acceleratorCount > 0 && len(acceleratorType) > 0 {
+		instance.GuestAccelerators = []*raw.AcceleratorConfig{
+			{
+				AcceleratorCount: int64(acceleratorCount),
+				AcceleratorType:  "https://www.googleapis.com/compute/v1/projects/" + c.project + "/zones/" + c.zone + "/acceleratorTypes/" + acceleratorType,
+			},
+		}
 	}
 
 	if strings.Contains(c.subnetwork, "/subnetworks/") {
@@ -375,17 +457,68 @@ func (c *ComputeUtil) uploadSSHKey(instance *raw.Instance, sshKeyPath string) er
 
 	metaDataValue := fmt.Sprintf("%s:%s %s\n", c.userName, strings.TrimSpace(string(sshKey)), c.userName)
 
-	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, &raw.Metadata{
-		Fingerprint: instance.Metadata.Fingerprint,
-		Items: []*raw.MetadataItems{
-			{
-				Key:   "sshKeys",
-				Value: &metaDataValue,
-			},
-		},
-	}).Do()
+	metadata := instance.Metadata
+	metadata.Items = append(metadata.Items, &raw.MetadataItems{
+		Key:   "sshKeys",
+		Value: &metaDataValue,
+	})
+
+	op, err := c.service.Instances.SetMetadata(c.project, c.zone, c.instanceName, metadata).Do()
+	if err != nil {
+		return err
+	}
 
 	return c.waitForRegionalOp(op.Name)
+}
+
+// prepareMetadata prepares instance metadata entries from provided configuration
+func prepareMetadata(d *Driver) (*raw.Metadata, error) {
+	metadata := &raw.Metadata{
+		Items: make([]*raw.MetadataItems, 0),
+	}
+
+	for key, value := range d.Metadata {
+		appendMetadata(metadata, key, value)
+	}
+
+	for key, filePath := range d.MetadataFromFile {
+		value, err := readMetadataFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		appendMetadata(metadata, key, value)
+	}
+
+	return metadata, nil
+}
+
+// readMetadataFile reads the data from the provided file
+func readMetadataFile(filePath string) (string, error) {
+	if filePath == "" {
+		return "", nil
+	}
+
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
+// appendMetadata creates a new item from provided key and value and appends it to the provided metadata object
+func appendMetadata(metadata *raw.Metadata, key string, value string) {
+	if value == "" {
+		return
+	}
+
+	item := &raw.MetadataItems{
+		Key:   key,
+		Value: &value,
+	}
+
+	metadata.Items = append(metadata.Items, item)
 }
 
 // parseTags computes the tags for the instance.
@@ -397,6 +530,27 @@ func parseTags(d *Driver) []string {
 	}
 
 	return tags
+}
+
+// parseLabels computes the tags for the instance.
+func parseLabels(d *Driver) map[string]string {
+	labels := map[string]string{}
+
+	// d.Labels is an array of strings in the format "key:value"
+	// also account for spaces in the format and ignore them
+	for _, kv := range d.Labels {
+		split := strings.SplitN(kv, ":", 2)
+		key := strings.TrimSpace(split[0])
+
+		value := ""
+		if len(split) > 1 {
+			value = strings.TrimSpace(split[1])
+		}
+
+		labels[key] = value
+	}
+
+	return labels
 }
 
 // deleteInstance deletes the instance, leaving the persistent disk.
@@ -435,6 +589,15 @@ func (c *ComputeUtil) startInstance() error {
 
 // waitForOp waits for the operation to finish.
 func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
+	var next time.Duration
+
+	if c.operationBackoffFactory == nil {
+		return errors.New("operationBackoffFactory is not defined")
+	}
+
+	b := c.operationBackoffFactory.create()
+	b.Reset()
+
 	for {
 		op, err := opGetter()
 		if err != nil {
@@ -444,26 +607,32 @@ func (c *ComputeUtil) waitForOp(opGetter func() (*raw.Operation, error)) error {
 		log.Debugf("Operation %q status: %s", op.Name, op.Status)
 		if op.Status == "DONE" {
 			if op.Error != nil {
-				return fmt.Errorf("Operation error: %v", *op.Error.Errors[0])
+				return fmt.Errorf("operation error: %v", *op.Error.Errors[0])
 			}
 			break
 		}
-		time.Sleep(1 * time.Second)
+
+		if next = b.NextBackOff(); next == backoff.Stop {
+			return errors.New("maximum backoff elapsed time exceeded")
+		}
+
+		time.Sleep(next)
 	}
+
 	return nil
 }
 
 // waitForRegionalOp waits for the regional operation to finish.
 func (c *ComputeUtil) waitForRegionalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
-		return c.service.ZoneOperations.Get(c.project, c.zone, name).Do()
+		return c.service.ZoneOperations.Wait(c.project, c.zone, name).Do()
 	})
 }
 
 // waitForGlobalOp waits for the global operation to finish.
 func (c *ComputeUtil) waitForGlobalOp(name string) error {
 	return c.waitForOp(func() (*raw.Operation, error) {
-		return c.service.GlobalOperations.Get(c.project, name).Do()
+		return c.service.GlobalOperations.Wait(c.project, name).Do()
 	})
 }
 

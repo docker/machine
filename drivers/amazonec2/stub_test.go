@@ -97,6 +97,16 @@ func (f *fakeEC2WithLogin) DescribeAccountAttributes(input *ec2.DescribeAccountA
 	}, nil
 }
 
+type fakeEC2SpotInstance struct {
+	output *ec2.RequestSpotInstancesOutput
+	err    error
+	*fakeEC2
+}
+
+func (f *fakeEC2SpotInstance) RequestSpotInstances(_ *ec2.RequestSpotInstancesInput) (*ec2.RequestSpotInstancesOutput, error) {
+	return f.output, f.err
+}
+
 type fakeEC2SecurityGroupTestRecorder struct {
 	*fakeEC2
 	mock.Mock
@@ -130,6 +140,27 @@ func (f *fakeEC2SecurityGroupTestRecorder) AuthorizeSecurityGroupIngress(input *
 		return nil, errors.New("Type assertion to AuthorizeSecurityGroupIngressInput failed")
 	}
 	return value, err
+}
+
+type fakeEC2DescribeInstance struct {
+	*fakeEC2
+	mock.Mock
+}
+
+func (f *fakeEC2DescribeInstance) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+	args := f.Called(input)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	describeInstancesOutput, ok := args.Get(0).(*ec2.DescribeInstancesOutput)
+	if !ok {
+		panic("first argument, not type of *ec2.DescribeInstancesOutput")
+	}
+
+	return describeInstancesOutput, args.Error(1)
+
 }
 
 func NewTestDriver() *Driver {

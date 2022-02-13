@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build ignore
 // +build ignore
 
 /*
@@ -75,14 +76,14 @@ struct sockaddr_any {
 */
 import "C"
 
-// Machine characteristics; for internal use.
+// Machine characteristics
 
 const (
-	sizeofPtr      = C.sizeofPtr
-	sizeofShort    = C.sizeof_short
-	sizeofInt      = C.sizeof_int
-	sizeofLong     = C.sizeof_long
-	sizeofLongLong = C.sizeof_longlong
+	SizeofPtr      = C.sizeofPtr
+	SizeofShort    = C.sizeof_short
+	SizeofInt      = C.sizeof_int
+	SizeofLong     = C.sizeof_long
+	SizeofLongLong = C.sizeof_longlong
 	PathMax        = C.PATH_MAX
 	MaxHostNameLen = C.MAXHOSTNAMELEN
 )
@@ -117,23 +118,6 @@ type Rlimit C.struct_rlimit
 type _Gid_t C.gid_t
 
 // Files
-
-const ( // Directory mode bits
-	S_IFMT   = C.S_IFMT
-	S_IFIFO  = C.S_IFIFO
-	S_IFCHR  = C.S_IFCHR
-	S_IFDIR  = C.S_IFDIR
-	S_IFBLK  = C.S_IFBLK
-	S_IFREG  = C.S_IFREG
-	S_IFLNK  = C.S_IFLNK
-	S_IFSOCK = C.S_IFSOCK
-	S_ISUID  = C.S_ISUID
-	S_ISGID  = C.S_ISGID
-	S_ISVTX  = C.S_ISVTX
-	S_IRUSR  = C.S_IRUSR
-	S_IWUSR  = C.S_IWUSR
-	S_IXUSR  = C.S_IXUSR
-)
 
 type Stat_t C.struct_stat
 
@@ -175,6 +159,8 @@ type Msghdr C.struct_msghdr
 
 type Cmsghdr C.struct_cmsghdr
 
+type Inet4Pktinfo C.struct_in_pktinfo
+
 type Inet6Pktinfo C.struct_in6_pktinfo
 
 type IPv6MTUInfo C.struct_ip6_mtuinfo
@@ -188,10 +174,12 @@ const (
 	SizeofSockaddrUnix     = C.sizeof_struct_sockaddr_un
 	SizeofSockaddrDatalink = C.sizeof_struct_sockaddr_dl
 	SizeofLinger           = C.sizeof_struct_linger
+	SizeofIovec            = C.sizeof_struct_iovec
 	SizeofIPMreq           = C.sizeof_struct_ip_mreq
 	SizeofIPv6Mreq         = C.sizeof_struct_ipv6_mreq
 	SizeofMsghdr           = C.sizeof_struct_msghdr
 	SizeofCmsghdr          = C.sizeof_struct_cmsghdr
+	SizeofInet4Pktinfo     = C.sizeof_struct_in_pktinfo
 	SizeofInet6Pktinfo     = C.sizeof_struct_in6_pktinfo
 	SizeofIPv6MTUInfo      = C.sizeof_struct_ip6_mtuinfo
 	SizeofICMPv6Filter     = C.sizeof_struct_icmp6_filter

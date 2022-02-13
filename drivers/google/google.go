@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
@@ -13,11 +16,33 @@ import (
 	"github.com/docker/machine/libmachine/state"
 )
 
+type metadataMap map[string]string
+
+type backoffFactory struct {
+	InitialInterval     time.Duration
+	RandomizationFactor float64
+	Multiplier          float64
+	MaxInterval         time.Duration
+	MaxElapsedTime      time.Duration
+}
+
+func (bf *backoffFactory) create() *backoff.ExponentialBackOff {
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = bf.InitialInterval
+	b.RandomizationFactor = bf.RandomizationFactor
+	b.Multiplier = bf.Multiplier
+	b.MaxInterval = bf.MaxInterval
+	b.MaxElapsedTime = bf.MaxElapsedTime
+
+	return b
+}
+
 // Driver is a struct compatible with the docker.hosts.drivers.Driver interface.
 type Driver struct {
 	*drivers.BaseDriver
 	Zone              string
 	MachineType       string
+	MinCPUPlatform    string
 	MachineImage      string
 	DiskType          string
 	Address           string
@@ -33,19 +58,36 @@ type Driver struct {
 	Tags              string
 	UseExisting       bool
 	OpenPorts         []string
+	Labels            []string
+	Metadata          metadataMap
+	MetadataFromFile  metadataMap
+	Accelerator       string
+	MaintenancePolicy string
+	SkipFirewall      bool
+
+	OperationBackoffFactory *backoffFactory
 }
 
 const (
-	defaultZone           = "us-central1-a"
-	defaultUser           = "docker-user"
-	defaultMachineType    = "n1-standard-1"
-	defaultImageName      = "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
-	defaultServiceAccount = "default"
-	defaultScopes         = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
-	defaultDiskType       = "pd-standard"
-	defaultDiskSize       = 10
-	defaultNetwork        = "default"
-	defaultSubnetwork     = ""
+	defaultZone              = "us-central1-a"
+	defaultUser              = "docker-user"
+	defaultMachineType       = "n1-standard-1"
+	defaultImageName         = "ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170721"
+	defaultServiceAccount    = "default"
+	defaultScopes            = "https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write"
+	defaultDiskType          = "pd-standard"
+	defaultDiskSize          = 10
+	defaultNetwork           = "default"
+	defaultSubnetwork        = ""
+	defaultMinCPUPlatform    = ""
+	defaultAccelerator       = ""
+	defaultMaintenancePolicy = ""
+
+	defaultGoogleOperationBackoffInitialInterval     = 1
+	defaultGoogleOperationBackoffRandomizationFactor = "0.5"
+	defaultGoogleOperationBackoffMultipler           = "2"
+	defaultGoogleOperationBackoffMaxInterval         = 30
+	defaultGoogleOperationBackoffMaxElapsedTime      = 300
 )
 
 // GetCreateFlags registers the flags this driver adds to
@@ -63,6 +105,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "GCE Machine Type",
 			Value:  defaultMachineType,
 			EnvVar: "GOOGLE_MACHINE_TYPE",
+		},
+		mcnflag.StringFlag{
+			Name:   "google-min-cpu-platform",
+			Usage:  "Minimal CPU Platform for created VM (use friendly name e.g. 'Intel Sandy Bridge')",
+			EnvVar: "GOOGLE_MIN_CPU_PLATFORM",
+			Value:  defaultMinCPUPlatform,
 		},
 		mcnflag.StringFlag{
 			Name:   "google-machine-image",
@@ -152,6 +200,60 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:  "google-open-port",
 			Usage: "Make the specified port number accessible from the Internet, e.g, 8080/tcp",
 		},
+		mcnflag.IntFlag{
+			Name:  "google-operation-backoff-initial-interval",
+			Usage: "Initial interval for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffInitialInterval,
+		},
+		mcnflag.StringFlag{
+			Name:  "google-operation-backoff-randomization-factor",
+			Usage: "Randomization factor for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffRandomizationFactor,
+		},
+		mcnflag.StringFlag{
+			Name:  "google-operation-backoff-multipler",
+			Usage: "Multipler factor for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffMultipler,
+		},
+		mcnflag.IntFlag{
+			Name:  "google-operation-backoff-max-interval",
+			Usage: "Maximum interval for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffMaxInterval,
+		},
+		mcnflag.IntFlag{
+			Name:  "google-operation-backoff-max-elapsed-time",
+			Usage: "Maximum elapsed time for GCP Operation check exponential backoff",
+			Value: defaultGoogleOperationBackoffMaxElapsedTime,
+		},
+		mcnflag.StringSliceFlag{
+			Name:  "google-label",
+			Usage: "Label to set on the VM (format: key:value). Repeat the flag to set more labels",
+		},
+		mcnflag.StringSliceFlag{
+			Name:  "google-metadata",
+			Usage: "Custom metadata value passed in key=value form. Use multiple times for multiple settings",
+		},
+		mcnflag.StringSliceFlag{
+			Name:  "google-metadata-from-file",
+			Usage: "Path to a file containing the metadata value inform of key=path/to/file. Use multiple times for multiple settings",
+		},
+		mcnflag.StringFlag{
+			Name:   "google-accelerator",
+			Usage:  "Count and specific type of GPU accelerators (format: count=N,type=type) to attach to the instance, e.g. count=1,type=nvidia-tesla-p100",
+			EnvVar: "GOOGLE_ACCELERATOR",
+			Value:  defaultAccelerator,
+		},
+		mcnflag.StringFlag{
+			Name:   "google-maintenance-policy",
+			Usage:  "Defines the maintenance behavior for this instance, e.g, MIGRATE or TERMINATE",
+			EnvVar: "GOOGLE_MAINTENANCE_POLICY",
+			Value:  defaultMaintenancePolicy,
+		},
+		mcnflag.BoolFlag{
+			Name:   "google-skip-firewall-create",
+			Usage:  "Skip firewall setup",
+			EnvVar: "GOOGLE_SKIP_FIREWALL_CREATE",
+		},
 	}
 }
 
@@ -166,6 +268,7 @@ func NewDriver(machineName string, storePath string) *Driver {
 		Network:        defaultNetwork,
 		Subnetwork:     defaultSubnetwork,
 		ServiceAccount: defaultServiceAccount,
+		MinCPUPlatform: defaultMinCPUPlatform,
 		Scopes:         defaultScopes,
 		BaseDriver: &drivers.BaseDriver{
 			SSHUser:     defaultUser,
@@ -204,6 +307,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.UseExisting = flags.Bool("google-use-existing")
 	if !d.UseExisting {
 		d.MachineType = flags.String("google-machine-type")
+		d.MinCPUPlatform = flags.String("google-min-cpu-platform")
 		d.MachineImage = flags.String("google-machine-image")
 		d.MachineImage = strings.TrimPrefix(d.MachineImage, "https://www.googleapis.com/compute/v1/projects/")
 		d.DiskSize = flags.Int("google-disk-size")
@@ -218,12 +322,49 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.Scopes = flags.String("google-scopes")
 		d.Tags = flags.String("google-tags")
 		d.OpenPorts = flags.StringSlice("google-open-port")
+		d.Labels = flags.StringSlice("google-label")
+		d.Metadata = metadataMapFromStringSlice(flags.StringSlice("google-metadata"))
+		d.MetadataFromFile = metadataMapFromStringSlice(flags.StringSlice("google-metadata-from-file"))
+		d.Accelerator = flags.String("google-accelerator")
+		d.MaintenancePolicy = flags.String("google-maintenance-policy")
+		d.SkipFirewall = flags.Bool("google-skip-firewall-create")
 	}
 	d.SSHUser = flags.String("google-username")
 	d.SSHPort = 22
 	d.SetSwarmConfigFromFlags(flags)
 
+	backoffRandomizationFactor, err := strconv.ParseFloat(flags.String("google-operation-backoff-randomization-factor"), 64)
+	if err != nil {
+		return fmt.Errorf("error while parsing google-operation-backoff-randomization-factor value: %v", err)
+	}
+
+	backoffMultipler, err := strconv.ParseFloat(flags.String("google-operation-backoff-multipler"), 64)
+	if err != nil {
+		return fmt.Errorf("error while parsing google-operation-backoff-multipler value: %v", err)
+	}
+
+	d.OperationBackoffFactory = &backoffFactory{
+		InitialInterval:     time.Duration(flags.Int("google-operation-backoff-initial-interval")) * time.Second,
+		RandomizationFactor: backoffRandomizationFactor,
+		Multiplier:          backoffMultipler,
+		MaxInterval:         time.Duration(flags.Int("google-operation-backoff-max-interval")) * time.Second,
+		MaxElapsedTime:      time.Duration(flags.Int("google-operation-backoff-max-elapsed-time")) * time.Second,
+	}
+
 	return nil
+}
+
+func metadataMapFromStringSlice(slice []string) metadataMap {
+	result := make(metadataMap, 0)
+	for _, element := range slice {
+		parts := strings.SplitN(element, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		result[parts[0]] = parts[1]
+	}
+
+	return result
 }
 
 // PreCreateCheck is called to enforce pre-creation steps
@@ -296,6 +437,10 @@ func (d *Driver) GetURL() (string, error) {
 
 // GetIP returns the IP address of the GCE instance.
 func (d *Driver) GetIP() (string, error) {
+	if d.IPAddress != "" {
+		return d.IPAddress, nil
+	}
+
 	c, err := newComputeUtil(d)
 	if err != nil {
 		return "", err
@@ -308,6 +453,8 @@ func (d *Driver) GetIP() (string, error) {
 	if ip == "" {
 		return "", drivers.ErrHostIsNotRunning
 	}
+
+	d.IPAddress = ip
 
 	return ip, nil
 }

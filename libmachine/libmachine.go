@@ -135,6 +135,9 @@ func (api *Client) Create(h *host.Host) error {
 	log.Info("Creating machine...")
 
 	if err := api.performCreate(h); err != nil {
+		// Try to save machine when Create fails, it can store some critical information like DropletID
+		api.Save(h)
+
 		return fmt.Errorf("Error creating machine: %s", err)
 	}
 

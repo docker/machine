@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build ignore
 // +build ignore
 
 /*
@@ -26,6 +27,7 @@ package unix
 #include <mach/mach.h>
 #include <mach/message.h>
 #include <sys/event.h>
+#include <sys/kern_control.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/param.h>
@@ -37,6 +39,7 @@ package unix
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/ucred.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
@@ -70,14 +73,14 @@ struct sockaddr_any {
 */
 import "C"
 
-// Machine characteristics; for internal use.
+// Machine characteristics
 
 const (
-	sizeofPtr      = C.sizeofPtr
-	sizeofShort    = C.sizeof_short
-	sizeofInt      = C.sizeof_int
-	sizeofLong     = C.sizeof_long
-	sizeofLongLong = C.sizeof_longlong
+	SizeofPtr      = C.sizeofPtr
+	SizeofShort    = C.sizeof_short
+	SizeofInt      = C.sizeof_int
+	SizeofLong     = C.sizeof_long
+	SizeofLongLong = C.sizeof_longlong
 )
 
 // Basic types
@@ -125,6 +128,12 @@ type Fsid C.struct_fsid
 
 type Dirent C.struct_dirent
 
+// File system limits
+
+const (
+	PathMax = C.PATH_MAX
+)
+
 // Sockets
 
 type RawSockaddrInet4 C.struct_sockaddr_in
@@ -139,7 +148,11 @@ type RawSockaddr C.struct_sockaddr
 
 type RawSockaddrAny C.struct_sockaddr_any
 
+type RawSockaddrCtl C.struct_sockaddr_ctl
+
 type _Socklen C.socklen_t
+
+type Xucred C.struct_xucred
 
 type Linger C.struct_linger
 
@@ -167,7 +180,10 @@ const (
 	SizeofSockaddrAny      = C.sizeof_struct_sockaddr_any
 	SizeofSockaddrUnix     = C.sizeof_struct_sockaddr_un
 	SizeofSockaddrDatalink = C.sizeof_struct_sockaddr_dl
+	SizeofSockaddrCtl      = C.sizeof_struct_sockaddr_ctl
+	SizeofXucred           = C.sizeof_struct_xucred
 	SizeofLinger           = C.sizeof_struct_linger
+	SizeofIovec            = C.sizeof_struct_iovec
 	SizeofIPMreq           = C.sizeof_struct_ip_mreq
 	SizeofIPv6Mreq         = C.sizeof_struct_ipv6_mreq
 	SizeofMsghdr           = C.sizeof_struct_msghdr
@@ -275,3 +291,13 @@ const (
 // uname
 
 type Utsname C.struct_utsname
+
+// Clockinfo
+
+const SizeofClockinfo = C.sizeof_struct_clockinfo
+
+type Clockinfo C.struct_clockinfo
+
+// ctl_info
+
+type CtlInfo C.struct_ctl_info

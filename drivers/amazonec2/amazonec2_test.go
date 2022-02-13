@@ -1,20 +1,19 @@
 package amazonec2
 
 import (
-	"testing"
-
 	"errors"
-	"reflect"
-
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/docker/machine/commands/commandstest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/docker/machine/commands/commandstest"
 )
 
 const (
@@ -38,6 +37,61 @@ func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, perms, 2)
+}
+
+func setupTestFailedSpotInstanceRequest(t *testing.T, r *ec2.RequestSpotInstancesOutput) (*Driver, func()) {
+	dir, _ := ioutil.TempDir("", "awsuserdata")
+	privKeyPath := filepath.Join(dir, "key")
+	pubKeyPath := filepath.Join(dir, "key.pub")
+
+	content := []byte("test\n")
+	err := ioutil.WriteFile(privKeyPath, content, 0666)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(pubKeyPath, content, 0666)
+	assert.NoError(t, err)
+
+	driver := NewDriver("machineFoo", "path")
+	driver.clientFactory = func() Ec2Client {
+		return &fakeEC2SpotInstance{
+			output: r,
+			err:    nil,
+		}
+	}
+
+	driver.SecurityGroupNames = []string{}
+
+	driver.SSHPrivateKeyPath = privKeyPath
+	driver.SSHKeyPath = pubKeyPath
+	driver.KeyName = "foo"
+	driver.SubnetIds = []string{"subnet-123456"}
+
+	driver.RequestSpotInstance = true
+
+	return driver, func() {
+		os.RemoveAll(dir)
+	}
+}
+
+func TestFailedSpotInstanceRequest(t *testing.T) {
+	var failureScenarios = []struct {
+		requestResult *ec2.RequestSpotInstancesOutput
+	}{
+		{requestResult: nil},
+		{
+			requestResult: &ec2.RequestSpotInstancesOutput{
+				SpotInstanceRequests: []*ec2.SpotInstanceRequest{},
+			},
+		},
+	}
+
+	for _, tt := range failureScenarios {
+		driver, cleanup := setupTestFailedSpotInstanceRequest(t, tt.requestResult)
+		defer cleanup()
+
+		err := driver.innerCreate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), errorUnprocessableResponse.Error())
+	}
 }
 
 func TestConfigureSecurityGroupPermissionsSshOnly(t *testing.T) {
@@ -268,6 +322,42 @@ func TestGetRegionZoneForDefaultEndpoint(t *testing.T) {
 	regionZone := driver.getRegionZone()
 
 	assert.Equal(t, "us-east-1e", regionZone)
+	assert.NoError(t, err)
+}
+
+func TestMetadataTokenSetting(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentialsFactory = NewValidAwsCredentials
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name":                     "test",
+			"amazonec2-metadata-token": "optional",
+			"amazonec2-region":         "us-east-1",
+			"amazonec2-zone":           "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, "optional", driver.MetadataTokenSetting)
+	assert.NoError(t, err)
+}
+
+func TestMetadataTokenResponseHopLimit(t *testing.T) {
+	driver := NewCustomTestDriver(&fakeEC2WithLogin{})
+	driver.awsCredentialsFactory = NewValidAwsCredentials
+	options := &commandstest.FakeFlagger{
+		Data: map[string]interface{}{
+			"name": "test",
+			"amazonec2-metadata-token-response-hop-limit": 1,
+			"amazonec2-region":                            "us-east-1",
+			"amazonec2-zone":                              "e",
+		},
+	}
+
+	err := driver.SetConfigFromFlags(options)
+
+	assert.Equal(t, int64(1), driver.MetadataTokenResponseHopLimit)
 	assert.NoError(t, err)
 }
 
@@ -557,4 +647,111 @@ func TestBase64UserDataIsCorrectWhenFileProvided(t *testing.T) {
 
 	assert.NoError(t, ud_err)
 	assert.Equal(t, contentBase64, userdata)
+}
+
+func TestGetIP(t *testing.T) {
+	privateIPAddress := "127.0.0.1"
+	publicIPAddress := "192.168.1.1"
+
+	describeInstanceRecorder := fakeEC2DescribeInstance{}
+	defer describeInstanceRecorder.AssertExpectations(t)
+
+	describeInstanceRecorder.On("DescribeInstances", mock.Anything).
+		Return(
+			&ec2.DescribeInstancesOutput{
+				NextToken: nil,
+				Reservations: []*ec2.Reservation{
+					{
+						Instances: []*ec2.Instance{
+							{
+								PrivateIpAddress: &privateIPAddress,
+								PublicIpAddress:  &publicIPAddress,
+							},
+						},
+					},
+				},
+			},
+			nil,
+		).Once()
+
+	driver := NewCustomTestDriver(&describeInstanceRecorder)
+
+	// Called the first time
+	ip, err := driver.GetIP()
+	assert.NoError(t, err)
+	assert.Equal(t, publicIPAddress, ip)
+
+	// Set IP Address, to use cached version
+	driver.IPAddress = publicIPAddress
+	ip, err = driver.GetIP()
+	assert.NoError(t, err)
+	assert.Equal(t, publicIPAddress, ip)
+}
+
+func TestGetInstance(t *testing.T) {
+	fakeInstance := &ec2.Instance{}
+	fakeErr := errors.New("fake-err")
+
+	tests := []struct {
+		name                    string
+		describeInstancesOutput *ec2.DescribeInstancesOutput
+		err                     error
+		wantInstance            *ec2.Instance
+		wantErr                 error
+	}{
+		{
+			name:                    "describe returns instances",
+			describeInstancesOutput: &ec2.DescribeInstancesOutput{Reservations: []*ec2.Reservation{{Instances: []*ec2.Instance{fakeInstance}}}},
+			err:                     nil,
+			wantInstance:            fakeInstance,
+			wantErr:                 nil,
+		},
+		{
+			name:                    "describe returns error",
+			describeInstancesOutput: nil,
+			err:                     fakeErr,
+			wantInstance:            nil,
+			wantErr:                 fakeErr,
+		},
+		{
+			name:                    "no describe is provided",
+			describeInstancesOutput: nil,
+			err:                     nil,
+			wantInstance:            nil,
+			wantErr:                 errorUnprocessableResponse,
+		},
+		{
+			name:                    "describe with no reservations",
+			describeInstancesOutput: &ec2.DescribeInstancesOutput{Reservations: nil},
+			err:                     nil,
+			wantInstance:            nil,
+			wantErr:                 errorUnprocessableResponse,
+		},
+		{
+			name:                    "describe with no instances",
+			describeInstancesOutput: &ec2.DescribeInstancesOutput{Reservations: []*ec2.Reservation{{Instances: nil}}},
+			err:                     nil,
+			wantInstance:            nil,
+			wantErr:                 errorUnprocessableResponse,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			describeInstanceRecorder := fakeEC2DescribeInstance{}
+			defer describeInstanceRecorder.AssertExpectations(t)
+
+			describeInstanceRecorder.On("DescribeInstances", mock.Anything).
+				Return(tt.describeInstancesOutput, tt.err).
+				Once()
+
+			driver := NewCustomTestDriver(&describeInstanceRecorder)
+
+			gotInstance, err := driver.getInstance()
+			if tt.wantErr != nil {
+				assert.Contains(t, err.Error(), tt.wantErr.Error())
+			}
+			assert.Equal(t, tt.wantInstance, gotInstance)
+		})
+	}
 }
